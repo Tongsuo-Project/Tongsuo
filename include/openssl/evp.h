@@ -1334,6 +1334,9 @@ void EVP_PKEY_asn1_set_security_bits(EVP_PKEY_ASN1_METHOD *ameth,
  */
 # define EVP_PKEY_FLAG_SIGCTX_CUSTOM     4
 
+/* Downstream modification, large value to avoid conflict */
+# define EVP_PKEY_FLAG_FIPS              0x4000
+
 /* Used by Chromium/QUIC */
 # define X25519_PRIVATE_KEY_LEN          32
 # define X25519_PUBLIC_VALUE_LEN         32

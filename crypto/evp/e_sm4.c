@@ -16,7 +16,6 @@
 # include <openssl/crypto.h>
 # include <openssl/rand.h>
 # include "modes_local.h"
-# include "evp_local.h"
 # include "crypto/sm4.h"
 # include "crypto/evp.h"
 

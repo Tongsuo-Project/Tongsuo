@@ -4639,3 +4639,11 @@ DC_load_from_file                       4593	1_1_1h	EXIST::FUNCTION:DELEGATED_CR
 DC_set0_raw_byte                        4594	1_1_1h	EXIST::FUNCTION:DELEGATED_CREDENTIAL
 EVP_eea3                                4595	1_1_1h	EXIST::FUNCTION:ZUC
 EC_KEY_decoded_from_explicit_params     4596	1_1_1h	EXIST::FUNCTION:EC
+EVP_KDF_CTX_new_id                      6590	1_1_1b	EXIST::FUNCTION:
+EVP_KDF_CTX_free                        6591	1_1_1b	EXIST::FUNCTION:
+EVP_KDF_reset                           6592	1_1_1b	EXIST::FUNCTION:
+EVP_KDF_ctrl                            6593	1_1_1b	EXIST::FUNCTION:
+EVP_KDF_vctrl                           6594	1_1_1b	EXIST::FUNCTION:
+EVP_KDF_ctrl_str                        6595	1_1_1b	EXIST::FUNCTION:
+EVP_KDF_size                            6596	1_1_1b	EXIST::FUNCTION:
+EVP_KDF_derive                          6597	1_1_1b	EXIST::FUNCTION:
