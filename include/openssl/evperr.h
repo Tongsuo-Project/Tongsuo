@@ -55,6 +55,9 @@ int ERR_load_EVP_strings(void);
 # define EVP_F_EVP_ENCRYPTDECRYPTUPDATE                   219
 # define EVP_F_EVP_ENCRYPTFINAL_EX                        127
 # define EVP_F_EVP_ENCRYPTUPDATE                          167
+# define EVP_F_EVP_KDF_CTRL                               224
+# define EVP_F_EVP_KDF_CTRL_STR                           225
+# define EVP_F_EVP_KDF_CTX_NEW_ID                         226
 # define EVP_F_EVP_MD_CTX_COPY_EX                         110
 # define EVP_F_EVP_MD_SIZE                                162
 # define EVP_F_EVP_OPENINIT                               102
@@ -117,11 +120,13 @@ int ERR_load_EVP_strings(void);
 # define EVP_F_PKCS5_V2_PBE_KEYIVGEN                      118
 # define EVP_F_PKCS5_V2_PBKDF2_KEYIVGEN                   164
 # define EVP_F_PKCS5_V2_SCRYPT_KEYIVGEN                   180
+# define EVP_F_PKEY_KDF_CTRL                              227
 # define EVP_F_PKEY_SET_TYPE                              158
 # define EVP_F_RC2_MAGIC_TO_METH                          109
 # define EVP_F_RC5_CTRL                                   125
 # define EVP_F_R_32_12_16_INIT_KEY                        242
 # define EVP_F_S390X_AES_GCM_CTRL                         201
+# define EVP_F_SCRYPT_ALG                                 228
 # define EVP_F_UPDATE                                     173
 
 /*
@@ -177,6 +182,7 @@ int ERR_load_EVP_strings(void);
 # define EVP_R_ONLY_ONESHOT_SUPPORTED                     177
 # define EVP_R_OPERATION_NOT_SUPPORTED_FOR_THIS_KEYTYPE   150
 # define EVP_R_OPERATON_NOT_INITIALIZED                   151
+# define EVP_R_PARAMETER_TOO_LARGE                        187
 # define EVP_R_OUTPUT_WOULD_OVERFLOW                      184
 # define EVP_R_PARTIALLY_OVERLAPPING                      162
 # define EVP_R_PBKDF2_ERROR                               181

@@ -21,6 +21,23 @@ int ERR_load_KDF_strings(void);
 /*
  * KDF function codes.
  */
+# define KDF_F_HKDF_EXTRACT                               112
+# define KDF_F_KDF_HKDF_DERIVE                            113
+# define KDF_F_KDF_HKDF_NEW                               114
+# define KDF_F_KDF_HKDF_SIZE                              115
+# define KDF_F_KDF_MD2CTRL                                116
+# define KDF_F_KDF_PBKDF2_CTRL_STR                        117
+# define KDF_F_KDF_PBKDF2_DERIVE                          118
+# define KDF_F_KDF_PBKDF2_NEW                             119
+# define KDF_F_KDF_SCRYPT_CTRL_STR                        120
+# define KDF_F_KDF_SCRYPT_CTRL_UINT32                     121
+# define KDF_F_KDF_SCRYPT_CTRL_UINT64                     122
+# define KDF_F_KDF_SCRYPT_DERIVE                          123
+# define KDF_F_KDF_SCRYPT_NEW                             124
+# define KDF_F_KDF_TLS1_PRF_CTRL_STR                      125
+# define KDF_F_KDF_TLS1_PRF_DERIVE                        126
+# define KDF_F_KDF_TLS1_PRF_NEW                           127
+# define KDF_F_PBKDF2_SET_MEMBUF                          128
 # define KDF_F_PKEY_HKDF_CTRL_STR                         103
 # define KDF_F_PKEY_HKDF_DERIVE                           102
 # define KDF_F_PKEY_HKDF_INIT                             108
@@ -32,6 +49,7 @@ int ERR_load_KDF_strings(void);
 # define KDF_F_PKEY_TLS1_PRF_CTRL_STR                     100
 # define KDF_F_PKEY_TLS1_PRF_DERIVE                       101
 # define KDF_F_PKEY_TLS1_PRF_INIT                         110
+# define KDF_F_SCRYPT_SET_MEMBUF                          129
 # define KDF_F_TLS1_PRF_ALG                               111
 
 /*
@@ -49,5 +67,6 @@ int ERR_load_KDF_strings(void);
 # define KDF_R_UNKNOWN_PARAMETER_TYPE                     103
 # define KDF_R_VALUE_ERROR                                108
 # define KDF_R_VALUE_MISSING                              102
+# define KDF_R_WRONG_OUTPUT_BUFFER_SIZE                   112
 
 #endif

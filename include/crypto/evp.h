@@ -38,6 +38,26 @@ struct evp_pkey_ctx_st {
     int keygen_info_count;
 } /* EVP_PKEY_CTX */ ;
 
+struct evp_cipher_ctx_st {
+    const EVP_CIPHER *cipher;
+    ENGINE *engine;             /* functional reference if 'cipher' is
+                                 * ENGINE-provided */
+    int encrypt;                /* encrypt or decrypt */
+    int buf_len;                /* number we have left */
+    unsigned char oiv[EVP_MAX_IV_LENGTH]; /* original iv */
+    unsigned char iv[EVP_MAX_IV_LENGTH]; /* working iv */
+    unsigned char buf[EVP_MAX_BLOCK_LENGTH]; /* saved partial block */
+    int num;                    /* used by cfb/ofb/ctr mode */
+    /* FIXME: Should this even exist? It appears unused */
+    void *app_data;             /* application stuff */
+    int key_len;                /* May change for variable length cipher */
+    unsigned long flags;        /* Various flags */
+    void *cipher_data;          /* per EVP data */
+    int final_used;
+    int block_mask;
+    unsigned char final[EVP_MAX_BLOCK_LENGTH]; /* possible final block */
+}  /* EVP_CIPHER_CTX */ ;
+
 #define EVP_PKEY_FLAG_DYNAMIC   1
 
 struct evp_pkey_method_st {
@@ -111,6 +131,24 @@ extern const EVP_PKEY_METHOD tls1_prf_pkey_meth;
 extern const EVP_PKEY_METHOD hkdf_pkey_meth;
 extern const EVP_PKEY_METHOD poly1305_pkey_meth;
 extern const EVP_PKEY_METHOD siphash_pkey_meth;
+
+/* struct evp_kdf_impl_st is defined by the implementation */
+typedef struct evp_kdf_impl_st EVP_KDF_IMPL;
+typedef struct {
+    int type;
+    EVP_KDF_IMPL *(*new) (void);
+    void (*free) (EVP_KDF_IMPL *impl);
+    void (*reset) (EVP_KDF_IMPL *impl);
+    int (*ctrl) (EVP_KDF_IMPL *impl, int cmd, va_list args);
+    int (*ctrl_str) (EVP_KDF_IMPL *impl, const char *type, const char *value);
+    size_t (*size) (EVP_KDF_IMPL *impl);
+    int (*derive) (EVP_KDF_IMPL *impl, unsigned char *key, size_t keylen);
+} EVP_KDF_METHOD;
+
+extern const EVP_KDF_METHOD pbkdf2_kdf_meth;
+extern const EVP_KDF_METHOD scrypt_kdf_meth;
+extern const EVP_KDF_METHOD tls1_prf_kdf_meth;
+extern const EVP_KDF_METHOD hkdf_kdf_meth;
 
 struct evp_md_st {
     int type;
