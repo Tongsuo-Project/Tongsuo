@@ -71,3 +71,16 @@ int kdf_md2ctrl(EVP_KDF_IMPL *impl,
     return call_ctrl(ctrl, impl, cmd, md);
 }
 
+/* Pass a cipher to a ctrl */
+int kdf_cipher2ctrl(EVP_KDF_IMPL *impl,
+                    int (*ctrl)(EVP_KDF_IMPL *impl, int cmd, va_list args),
+                    int cmd, const char *cipher_name)
+{
+    const EVP_CIPHER *cipher;
+
+    if (cipher_name == NULL || (cipher = EVP_get_cipherbyname(cipher_name)) == NULL) {
+        KDFerr(KDF_F_KDF_CIPHER2CTRL, KDF_R_INVALID_CIPHER);
+        return 0;
+    }
+    return call_ctrl(ctrl, impl, cmd, cipher);
+}

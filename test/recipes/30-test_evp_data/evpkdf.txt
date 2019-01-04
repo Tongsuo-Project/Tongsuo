@@ -5286,3 +5286,440 @@ Ctrl.hexsession_id = hexsession_id:a4ebd45934f56792b5112dcd75a1075fdc889245
 Ctrl.type = type:A
 Output = FF
 Result = KDF_MISMATCH
+
+#There are currently no official test vectors for Single Step KDF
+#https://github.com/patrickfav/singlestep-kdf/wiki/NIST-SP-800-56C-Rev1:-Non-Official-Test-Vectors
+Title = Single Step KDF tests
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:d09a6b1a472f930db4f5e6b967900744
+Ctrl.hexinfo = hexinfo:b117255ab5f1b6b96fc434b0
+Output = b5a3c52e97ae6e8c5069954354eab3c7
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:343666c0dd34b756e70f759f14c304f5
+Ctrl.hexinfo = hexinfo:722b28448d7eab85491bce09
+Output = 1003b650ddd3f0891a15166db5ec881d
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:b84acf03ab08652dd7f82fa956933261
+Ctrl.hexinfo = hexinfo:3d8773ec068c86053a918565
+Output = 1635dcd1ce698f736831b4badb68ab2b
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:8cc24ca3f1d1a8b34783780b79890430
+Ctrl.hexinfo = hexinfo:f08d4f2d9a8e6d7105c0bc16
+Output = b8e716fb84a420aed4812cd76d9700ee
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:b616905a6f7562cd2689142ce21e42a3
+Ctrl.hexinfo = hexinfo:ead310159a909da87e7b4b40
+Output = 1b9201358c50fe5d5d42907c4a9fce78
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:3f57fd3fd56199b3eb33890f7ee28180
+Ctrl.hexinfo = hexinfo:7a5056ba4fdb034c7cb6c4fe
+Output = e51ebd30a8c4b8449b0fb29d9adc11af
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:fb9fb108d104e9f662d6593fc84cde69
+Ctrl.hexinfo = hexinfo:5faf29211c1bdbf1b2696a7c
+Output = 7a3a7e670656e48c390cdd7c51e167e0
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:237a39981794f4516dccffc3dda28396
+Ctrl.hexinfo = hexinfo:62ed9528d104c241e0f66275
+Output = 0c26fc9e90e1c5c5f943428301682045
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:b9b6c45f7279218fa09894e06366a3a1
+Ctrl.hexinfo = hexinfo:0f384339670aaed4b89ecb7e
+Output = ee5fad414e32fad5d52a2bf61a7f6c72
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:08b7140e2cd0a4abd79171e4d5a71cad
+Ctrl.hexinfo = hexinfo:099211f0d8a2e02dbb5958c0
+Output = 6162f5142e057efafd2c4f2bad5985a1
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a2
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f4853
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f485382cb
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f485382cb358a
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f485382cb358a493d
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f485382cb358a493daec1
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f485382cb358a493daec1759a
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f485382cb358a493daec1759ac704
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f485382cb358a493daec1759ac7043dbe
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f485382cb358a493daec1759ac7043dbeac37
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f485382cb358a493daec1759ac7043dbeac37152c
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f485382cb358a493daec1759ac7043dbeac37152c6ddf
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f485382cb358a493daec1759ac7043dbeac37152c6ddf1050
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f485382cb358a493daec1759ac7043dbeac37152c6ddf105031f0
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f485382cb358a493daec1759ac7043dbeac37152c6ddf105031f0f239
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f485382cb358a493daec1759ac7043dbeac37152c6ddf105031f0f239f270
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f485382cb358a493daec1759ac7043dbeac37152c6ddf105031f0f239f270b7f3
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f485382cb358a493daec1759ac7043dbeac37152c6ddf105031f0f239f270b7f30616
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f485382cb358a493daec1759ac7043dbeac37152c6ddf105031f0f239f270b7f30616166f
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f485382cb358a493daec1759ac7043dbeac37152c6ddf105031f0f239f270b7f30616166f10e5
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f485382cb358a493daec1759ac7043dbeac37152c6ddf105031f0f239f270b7f30616166f10e5d2b4
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f485382cb358a493daec1759ac7043dbeac37152c6ddf105031f0f239f270b7f30616166f10e5d2b4cb11
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f485382cb358a493daec1759ac7043dbeac37152c6ddf105031f0f239f270b7f30616166f10e5d2b4cb11ba8b
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f485382cb358a493daec1759ac7043dbeac37152c6ddf105031f0f239f270b7f30616166f10e5d2b4cb11ba8bf4ba
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f485382cb358a493daec1759ac7043dbeac37152c6ddf105031f0f239f270b7f30616166f10e5d2b4cb11ba8bf4ba3f22
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f485382cb358a493daec1759ac7043dbeac37152c6ddf105031f0f239f270b7f30616166f10e5d2b4cb11ba8bf4ba3f227688
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f485382cb358a493daec1759ac7043dbeac37152c6ddf105031f0f239f270b7f30616166f10e5d2b4cb11ba8bf4ba3f2276885abf
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f485382cb358a493daec1759ac7043dbeac37152c6ddf105031f0f239f270b7f30616166f10e5d2b4cb11ba8bf4ba3f2276885abfbc3e
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f485382cb358a493daec1759ac7043dbeac37152c6ddf105031f0f239f270b7f30616166f10e5d2b4cb11ba8bf4ba3f2276885abfbc3e811a
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f485382cb358a493daec1759ac7043dbeac37152c6ddf105031f0f239f270b7f30616166f10e5d2b4cb11ba8bf4ba3f2276885abfbc3e811a568d
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f485382cb358a493daec1759ac7043dbeac37152c6ddf105031f0f239f270b7f30616166f10e5d2b4cb11ba8bf4ba3f2276885abfbc3e811a568d480d
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:ebe28edbae5a410b87a479243db3f690
+Ctrl.hexinfo = hexinfo:e60dd8b28228ce5b9be74d3b
+Output = b4a23963e07f485382cb358a493daec1759ac7043dbeac37152c6ddf105031f0f239f270b7f30616166f10e5d2b4cb11ba8bf4ba3f2276885abfbc3e811a568d480d9192
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:d7e6
+Ctrl.hexinfo = hexinfo:0bbe1fa8722023d7c3da4fff
+Output = 31e798e9931b612a3ad1b9b1008faa8c
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:4646779d
+Ctrl.hexinfo = hexinfo:0bbe1fa8722023d7c3da4fff
+Output = 139f68bcca879b490e268e569087d04d
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:d9811c81d4c6
+Ctrl.hexinfo = hexinfo:0bbe1fa8722023d7c3da4fff
+Output = 914dc4f09cb633a76e6c389e04c64485
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:8838f9d99ec46f09
+Ctrl.hexinfo = hexinfo:0bbe1fa8722023d7c3da4fff
+Output = 4f07dfb6f7a5bf348689e08b2e29c948
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:3e0939b33f34e779f30e
+Ctrl.hexinfo = hexinfo:0bbe1fa8722023d7c3da4fff
+Output = b42c7a98c23be19d1187ff960e87557f
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:f36230cacca4d245d303058c
+Ctrl.hexinfo = hexinfo:0bbe1fa8722023d7c3da4fff
+Output = 50f2068d8010d355d56c5e34aaffbc67
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:7005d32c3d4284c73c3aefc70438
+Ctrl.hexinfo = hexinfo:0bbe1fa8722023d7c3da4fff
+Output = 66fd712ccf5462bbd41e89041ea7ea26
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:c01c83150b7734f8dbd6efd6f54d7365
+Ctrl.hexinfo = hexinfo:0bbe1fa8722023d7c3da4fff
+Output = 5c5edb0ceda9cd0c7f1f3d9e239c67d5
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:da69f1dbbebc837480af692e7e9ee6b9
+Ctrl.hexinfo = hexinfo:9949
+Output = 33c83f54ed00fb1bccd2113e88550941
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:da69f1dbbebc837480af692e7e9ee6b9
+Ctrl.hexinfo = hexinfo:17144da6
+Output = a999c28961424cab35ec06015e8c376a
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:da69f1dbbebc837480af692e7e9ee6b9
+Ctrl.hexinfo = hexinfo:dffdee1062eb
+Output = 4101ad50e626ed6f957bff926dfbb7db
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:da69f1dbbebc837480af692e7e9ee6b9
+Ctrl.hexinfo = hexinfo:9f365043e23b4648
+Output = 4d3e4b971b88771f229df9f564984832
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:da69f1dbbebc837480af692e7e9ee6b9
+Ctrl.hexinfo = hexinfo:a885a0c4567ddc4f96da
+Output = bebbc30f5a83df5e9c9b57db33c0c879
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:da69f1dbbebc837480af692e7e9ee6b9
+Ctrl.hexinfo = hexinfo:c9d86183295bfe4c3d85f0fd
+Output = 87c947e45407db63eb94cbaa02d14e94
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:da69f1dbbebc837480af692e7e9ee6b9
+Ctrl.hexinfo = hexinfo:825fadce46964236a486732c5dad
+Output = 192370a85ff78e3c0245129d9b398558
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:da69f1dbbebc837480af692e7e9ee6b9
+Ctrl.hexinfo = hexinfo:5c0b5eb3ac9f342347d73d7a521723aa
+Output = c7b7634fd809383e87c4b1b3e728be56
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:8d7a4e7d5cf34b3f74873b862aeb33b7
+Output = 6a5594f402f74f69
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:9b208e7ee1e641fac1dff48fc1beb2d2
+Output = 556ed67e24ac0c7c46cc432da8bdb23c
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:4d2572539fed433211da28c8a0eebac3
+Output = 5a4054c59c5b92814025578f43c1b79fe84968fc284e240b
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:4e1e70c9886819a31bc29a537911add9
+Output = ddbfc440449aab4131c6d8aec08ce1496f2702241d0e27cc155c5c7c3cda75b5
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:68f144c952528e540c686dc353b766f2
+Output = 59ed66bb6f54a9688a0b891d0b2ea6743621d9e1b5cc098cf3a55e6f864f9af8a95e4d945d2f987f
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:b66c9d507c9f837fbe60b6675fdbf38b
+Output = c282787ddf421a72fc88811be81b08d0d6ab66c92d1011974aa58335a6bbbd62e9e982bfae5929865ea1d517247089d2
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:34e730b49e46c7ed2fb25975a4cccd2d
+Output = 39e76e6571cb00740260b9070accbdcc4a492c295cbef33d9e37dac21e5e9d07e0f12dc7063d2172641475d4e08b8e3712fb26a10c8376b8
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:e340d87e2d7adbc1b95ec2dbdc3b82be
+Output = a660c0037a53f76f1e7667043f5869348ad07ac0e272e615ce31f16d4ab90d4b35fe5c370c0010ce79aff45682c6fb8b97f9a05b7d40b5af3c62999a10df9c6d
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA256
+Ctrl.hexsecret = hexsecret:afc4e154498d4770aa8365f6903dc83b
+Ctrl.hexinfo = hexinfo:662af20379b29d5ef813e655
+Output = f0b80d6ae4c1e19e2105a37024e35dc6
+
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA512
+Ctrl.hexsecret = hexsecret:108cf63318555c787fa578731dd4f037
+Ctrl.hexinfo = hexinfo:53191b1dd3f94d83084d61d6
+Output = 0ad475c1826da3007637970c8b92b993
+
+Title = SSKDF Test vectors from RFC 8636 Section 8 (With precoumputed ASN.1 info)
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA1
+Ctrl.hexsecret = hexsecret:00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+Ctrl.hexinfo = hexinfo:307e300a06082b06010502030601a01f041d301ba0071b0553552e5345a110300ea003020101a10730051b036c6861a12904273025a0071b0553552e5345a11a3018a003020101a111300f1b066b72627467741b0553552e5345a22404223020a003020112a10c040aaaaaaaaaaaaaaaaaaaaaa20b0409bbbbbbbbbbbbbbbbbb
+Output = e6ab38c9413e035bb079201ed0b6b73d8d49a814a737c04ee6649614206f73ad
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA256
+Ctrl.hexsecret = hexsecret:00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+Ctrl.hexinfo = hexinfo:307e300a06082b06010502030602a01f041d301ba0071b0553552e5345a110300ea003020101a10730051b036c6861a12904273025a0071b0553552e5345a11a3018a003020101a111300f1b066b72627467741b0553552e5345a22404223020a003020112a10c040aaaaaaaaaaaaaaaaaaaaaa20b0409bbbbbbbbbbbbbbbbbb
+Output = 77ef4e48c420ae3fec75109d7981697eed5d295c90c62564f7bfd101fa9bc1d5
+
+KDF = SSKDF
+Ctrl.digest = digest:SHA512
+Ctrl.hexsecret = hexsecret:00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+Ctrl.hexinfo = hexinfo:307e300a06082b06010502030603a01f041d301ba0071b0553552e5345a110300ea003020101a10730051b036c6861a12904273025a0071b0553552e5345a11a3018a003020101a111300f1b066b72627467741b0553552e5345a22404223020a003020110a10c040aaaaaaaaaaaaaaaaaaaaaa20b0409bbbbbbbbbbbbbbbbbb
+Output = d3c78b78d75313e9a926f75dfb012363fa17fa01db

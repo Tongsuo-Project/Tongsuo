@@ -21,6 +21,7 @@ extern "C" {
 # define EVP_KDF_TLS1_PRF   NID_tls1_prf
 # define EVP_KDF_HKDF       NID_hkdf
 # define EVP_KDF_SSHKDF     NID_sshkdf
+# define EVP_KDF_SS         NID_sskdf
 
 EVP_KDF_CTX *EVP_KDF_CTX_new_id(int id);
 void EVP_KDF_CTX_free(EVP_KDF_CTX *ctx);
@@ -51,6 +52,7 @@ int EVP_KDF_derive(EVP_KDF_CTX *ctx, unsigned char *key, size_t keylen);
 # define EVP_KDF_CTRL_SET_SSHKDF_XCGHASH    0x10 /* unsigned char *, size_t */
 # define EVP_KDF_CTRL_SET_SSHKDF_SESSION_ID 0x11 /* unsigned char *, size_t */
 # define EVP_KDF_CTRL_SET_SSHKDF_TYPE       0x12 /* int */
+# define EVP_KDF_CTRL_SET_SSKDF_INFO    0x19 /* unsigned char *, size_t */
 
 # define EVP_KDF_HKDF_MODE_EXTRACT_AND_EXPAND  0
 # define EVP_KDF_HKDF_MODE_EXTRACT_ONLY        1
