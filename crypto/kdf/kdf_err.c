@@ -15,6 +15,7 @@
 
 static const ERR_STRING_DATA KDF_str_functs[] = {
     {ERR_PACK(ERR_LIB_KDF, KDF_F_HKDF_EXTRACT, 0), "HKDF_Extract"},
+    {ERR_PACK(ERR_LIB_KDF, KDF_F_KDF_CIPHER2CTRL, 0), "kdf_cipher2ctrl"},
     {ERR_PACK(ERR_LIB_KDF, KDF_F_KDF_HKDF_DERIVE, 0), "kdf_hkdf_derive"},
     {ERR_PACK(ERR_LIB_KDF, KDF_F_KDF_HKDF_NEW, 0), "kdf_hkdf_new"},
     {ERR_PACK(ERR_LIB_KDF, KDF_F_KDF_HKDF_SIZE, 0), "kdf_hkdf_size"},
@@ -59,12 +60,22 @@ static const ERR_STRING_DATA KDF_str_functs[] = {
      "pkey_tls1_prf_derive"},
     {ERR_PACK(ERR_LIB_KDF, KDF_F_PKEY_TLS1_PRF_INIT, 0), "pkey_tls1_prf_init"},
     {ERR_PACK(ERR_LIB_KDF, KDF_F_SCRYPT_SET_MEMBUF, 0), "scrypt_set_membuf"},
+    {ERR_PACK(ERR_LIB_KDF, KDF_F_SSKDF_DERIVE, 0), "sskdf_derive"},
+    {ERR_PACK(ERR_LIB_KDF, KDF_F_SSKDF_NEW, 0), "sskdf_new"},
+    {ERR_PACK(ERR_LIB_KDF, KDF_F_SSKDF_SIZE, 0), "sskdf_size"},
     {ERR_PACK(ERR_LIB_KDF, KDF_F_TLS1_PRF_ALG, 0), "tls1_prf_alg"},
     {0, NULL}
 };
 
 static const ERR_STRING_DATA KDF_str_reasons[] = {
+    {ERR_PACK(ERR_LIB_KDF, 0, KDF_R_FAILED_TO_GENERATE_KEY),
+    "failed to generate key"},
+    {ERR_PACK(ERR_LIB_KDF, 0, KDF_R_INVALID_CIPHER), "invalid cipher"},
+    {ERR_PACK(ERR_LIB_KDF, 0, KDF_R_INVALID_CONSTANT_LENGTH),
+    "invalid constant length"},
     {ERR_PACK(ERR_LIB_KDF, 0, KDF_R_INVALID_DIGEST), "invalid digest"},
+    {ERR_PACK(ERR_LIB_KDF, 0, KDF_R_MISSING_CIPHER), "missing cipher"},
+    {ERR_PACK(ERR_LIB_KDF, 0, KDF_R_MISSING_CONSTANT), "missing constant"},
     {ERR_PACK(ERR_LIB_KDF, 0, KDF_R_MISSING_ITERATION_COUNT),
     "missing iteration count"},
     {ERR_PACK(ERR_LIB_KDF, 0, KDF_R_MISSING_KEY), "missing key"},
@@ -82,6 +93,8 @@ static const ERR_STRING_DATA KDF_str_reasons[] = {
     "unknown parameter type"},
     {ERR_PACK(ERR_LIB_KDF, 0, KDF_R_VALUE_ERROR), "value error"},
     {ERR_PACK(ERR_LIB_KDF, 0, KDF_R_VALUE_MISSING), "value missing"},
+    {ERR_PACK(ERR_LIB_KDF, 0, KDF_R_WRONG_FINAL_BLOCK_LENGTH),
+    "wrong final block length"},
     {ERR_PACK(ERR_LIB_KDF, 0, KDF_R_WRONG_OUTPUT_BUFFER_SIZE),
     "wrong output buffer size"},
     {0, NULL}

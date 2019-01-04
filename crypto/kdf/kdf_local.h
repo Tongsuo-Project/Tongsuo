@@ -19,4 +19,6 @@ int kdf_hex2ctrl(EVP_KDF_IMPL *impl,
 int kdf_md2ctrl(EVP_KDF_IMPL *impl,
                 int (*ctrl)(EVP_KDF_IMPL *impl, int cmd, va_list args),
                 int cmd, const char *md_name);
-
+int kdf_cipher2ctrl(EVP_KDF_IMPL *impl,
+                    int (*ctrl)(EVP_KDF_IMPL *impl, int cmd, va_list args),
+                    int cmd, const char *cipher_name);

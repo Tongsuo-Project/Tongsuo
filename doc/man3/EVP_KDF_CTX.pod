@@ -140,7 +140,14 @@ The value string is expected to be a decimal number.
 This control expects one argument: C<EVP_MD *md>
 
 For MAC implementations that use a message digest as an underlying computation
-algorithm, this control set what the digest algorithm should be.
+algorithm, this control sets what the digest algorithm should be.
+
+=item B<EVP_KDF_CTRL_SET_CIPHER>
+
+This control expects one argument: C<EVP_CIPHER *cipher>
+
+For MAC implementations that use a cipher as an underlying computation
+algorithm, this control sets what the cipher algorithm should be.
 
 EVP_KDF_ctrl_str() type string: "md"
 
