@@ -262,7 +262,7 @@ LABEL	("ChaCha20_ctr32");
 &{$z?	\&ltgr:\&ltr}	($len,$len);		# len==0?
 	bzr	("%r14");
 	lg	("%r1","S390X_STFLE+16(%r1)");
-&{$z?	\&cgr:\&cr}	($len,"%r0");
+&{$z?	\&clgr:\&clr}	($len,"%r0");
 	jle	(".Lshort");
 
 	tmhh	("%r1",0x4000);			# check for vx bit
