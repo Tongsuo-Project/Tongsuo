@@ -1612,6 +1612,9 @@ secg-scheme 14 3 : dhSinglePass-cofactorDH-sha512kdf-scheme
 # NID for SSHKDF
                             : SSHKDF            : sshkdf
 
+# NID for KBKDF
+                            : KBKDF             : kbkdf
+
 # NID for KRB5KDF
                             : KRB5KDF           : krb5kdf
 

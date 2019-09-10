@@ -21,6 +21,7 @@ extern "C" {
 # define EVP_KDF_TLS1_PRF   NID_tls1_prf
 # define EVP_KDF_HKDF       NID_hkdf
 # define EVP_KDF_SSHKDF     NID_sshkdf
+# define EVP_KDF_KB         NID_kbkdf
 # define EVP_KDF_KRB5KDF    NID_krb5kdf
 # define EVP_KDF_SS         NID_sskdf
 
@@ -53,7 +54,11 @@ int EVP_KDF_derive(EVP_KDF_CTX *ctx, unsigned char *key, size_t keylen);
 # define EVP_KDF_CTRL_SET_SSHKDF_XCGHASH    0x10 /* unsigned char *, size_t */
 # define EVP_KDF_CTRL_SET_SSHKDF_SESSION_ID 0x11 /* unsigned char *, size_t */
 # define EVP_KDF_CTRL_SET_SSHKDF_TYPE       0x12 /* int */
+# define EVP_KDF_CTRL_SET_KB_MODE       0x13 /* int */
+# define EVP_KDF_CTRL_SET_KB_MAC_TYPE   0x14 /* int */
 # define EVP_KDF_CTRL_SET_CIPHER        0x15 /* EVP_CIPHER * */
+# define EVP_KDF_CTRL_SET_KB_INFO       0x16 /* unsigned char *, size_t */
+# define EVP_KDF_CTRL_SET_KB_SEED       0x17 /* unsigned char *, size_t */
 # define EVP_KDF_CTRL_SET_KRB5KDF_CONSTANT  0x18 /* unsigned char *, size_t */
 # define EVP_KDF_CTRL_SET_SSKDF_INFO    0x19 /* unsigned char *, size_t */
 
@@ -67,6 +72,12 @@ int EVP_KDF_derive(EVP_KDF_CTX *ctx, unsigned char *key, size_t keylen);
 #define EVP_KDF_SSHKDF_TYPE_ENCRYPTION_KEY_SRV_TO_CLI 68
 #define EVP_KDF_SSHKDF_TYPE_INTEGRITY_KEY_CLI_TO_SRV 69
 #define EVP_KDF_SSHKDF_TYPE_INTEGRITY_KEY_SRV_TO_CLI 70
+
+#define EVP_KDF_KB_MODE_COUNTER     0
+#define EVP_KDF_KB_MODE_FEEDBACK    1
+
+#define EVP_KDF_KB_MAC_TYPE_HMAC    0
+#define EVP_KDF_KB_MAC_TYPE_CMAC    1
 
 /**** The legacy PKEY-based KDF API follows. ****/
 
