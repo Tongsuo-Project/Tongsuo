@@ -23,6 +23,10 @@ int ERR_load_KDF_strings(void);
  */
 # define KDF_F_HKDF_EXTRACT                               112
 # define KDF_F_KDF_CIPHER2CTRL                            134
+# define KDF_F_KBKDF_CTRL                                 144
+# define KDF_F_KBKDF_CTRL_STR                             145
+# define KDF_F_KBKDF_DERIVE                               146
+# define KDF_F_KBKDF_NEW                                  147
 # define KDF_F_KDF_HKDF_DERIVE                            113
 # define KDF_F_KDF_HKDF_NEW                               114
 # define KDF_F_KDF_HKDF_SIZE                              115

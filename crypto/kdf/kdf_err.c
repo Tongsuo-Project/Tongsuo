@@ -15,6 +15,10 @@
 
 static const ERR_STRING_DATA KDF_str_functs[] = {
     {ERR_PACK(ERR_LIB_KDF, KDF_F_HKDF_EXTRACT, 0), "HKDF_Extract"},
+    {ERR_PACK(ERR_LIB_KDF, KDF_F_KBKDF_CTRL, 0), "kbkdf_ctrl"},
+    {ERR_PACK(ERR_LIB_KDF, KDF_F_KBKDF_CTRL_STR, 0), "kbkdf_ctrl_str"},
+    {ERR_PACK(ERR_LIB_KDF, KDF_F_KBKDF_DERIVE, 0), "kbkdf_derive"},
+    {ERR_PACK(ERR_LIB_KDF, KDF_F_KBKDF_NEW, 0), "kbkdf_new"},
     {ERR_PACK(ERR_LIB_KDF, KDF_F_KDF_CIPHER2CTRL, 0), "kdf_cipher2ctrl"},
     {ERR_PACK(ERR_LIB_KDF, KDF_F_KDF_HKDF_DERIVE, 0), "kdf_hkdf_derive"},
     {ERR_PACK(ERR_LIB_KDF, KDF_F_KDF_HKDF_NEW, 0), "kdf_hkdf_new"},

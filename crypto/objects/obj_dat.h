@@ -2293,12 +2293,12 @@ static const ASN1_OBJECT nid_objs[NUM_NID] = {
     {"ZUC-128-EEA3", "zuc-128-eea3", NID_zuc_128_eea3, 8, &so[7802]},
     {"ZUC-128-EIA3", "zuc-128-eia3", NID_zuc_128_eia3, 8, &so[7810]},
     {"SSHKDF", "sshkdf", NID_sshkdf},
-    { NULL, NULL, NID_undef },
+    {"KBKDF", "kbkdf", NID_kbkdf},
     {"KRB5KDF", "krb5kdf", NID_krb5kdf},
     {"SSKDF", "sskdf", NID_sskdf},
 };
 
-#define NUM_SN 1199
+#define NUM_SN 1200
 static const unsigned int sn_objs[NUM_SN] = {
      364,    /* "AD_DVCS" */
      419,    /* "AES-128-CBC" */
@@ -2463,6 +2463,7 @@ static const unsigned int sn_objs[NUM_SN] = {
      183,    /* "ISO-US" */
      645,    /* "ITU-T" */
      646,    /* "JOINT-ISO-ITU-T" */
+    1204,    /* "KBKDF" */
      773,    /* "KISA" */
     1205,    /* "KRB5KDF" */
     1063,    /* "KxANY" */
@@ -3501,7 +3502,7 @@ static const unsigned int sn_objs[NUM_SN] = {
     1093,    /* "x509ExtAdmission" */
 };
 
-#define NUM_LN 1199
+#define NUM_LN 1200
 static const unsigned int ln_objs[NUM_LN] = {
      363,    /* "AD Time Stamping" */
      405,    /* "ANSI X9.62" */
@@ -4298,6 +4299,7 @@ static const unsigned int ln_objs[NUM_LN] = {
      955,    /* "jurisdictionLocalityName" */
      956,    /* "jurisdictionStateOrProvinceName" */
      150,    /* "keyBag" */
+    1204,    /* "kbkdf" */
      773,    /* "kisa" */
     1205,    /* "krb5kdf" */
     1063,    /* "kx-any" */
