@@ -225,6 +225,49 @@ err:
 }
 #endif
 
+static int test_kdf_krb5kdf(void)
+{
+    int ret = 0;
+    EVP_KDF_CTX *kctx;
+    unsigned char out[16];
+    static unsigned char key[] = {
+        0x42, 0x26, 0x3C, 0x6E, 0x89, 0xF4, 0xFC, 0x28,
+        0xB8, 0xDF, 0x68, 0xEE, 0x09, 0x79, 0x9F, 0x15
+    };
+    static unsigned char constant[] = {
+        0x00, 0x00, 0x00, 0x02, 0x99
+    };
+    static const unsigned char expected[sizeof(out)] = {
+        0x34, 0x28, 0x0A, 0x38, 0x2B, 0xC9, 0x27, 0x69,
+        0xB2, 0xDA, 0x2F, 0x9E, 0xF0, 0x66, 0x85, 0x4B
+    };
+
+    if ((kctx = EVP_KDF_CTX_new_id(EVP_KDF_KRB5KDF)) == NULL) {
+        TEST_error("EVP_KDF_KRB5KDF");
+        goto err;
+    }
+    if (EVP_KDF_ctrl(kctx, EVP_KDF_CTRL_SET_CIPHER, EVP_aes_128_cbc()) <= 0) {
+        TEST_error("EVP_KDF_CTRL_SET_CIPHER");
+        goto err;
+    }
+    if (EVP_KDF_ctrl(kctx, EVP_KDF_CTRL_SET_KEY, key, sizeof(key)) <= 0) {
+        TEST_error("EVP_KDF_CTRL_SET_KEY");
+        goto err;
+    }
+    if (EVP_KDF_ctrl(kctx, EVP_KDF_CTRL_SET_KRB5KDF_CONSTANT, constant, sizeof(constant)) <= 0) {
+        TEST_error("EVP_KDF_CTRL_SET_KRB5KDF_CONSTANT");
+        goto err;
+    }
+
+    ret =
+        TEST_int_gt(EVP_KDF_derive(kctx, out, sizeof(out)), 0)
+        && TEST_mem_eq(out, sizeof(out), expected, sizeof(expected));
+
+err:
+    EVP_KDF_CTX_free(kctx);
+    return ret;
+}
+
 static int test_kdf_ss_hash(void)
 {
     EVP_KDF_CTX *kctx;
@@ -280,6 +323,7 @@ int setup_tests(void)
 #ifndef OPENSSL_NO_SCRYPT
     ADD_TEST(test_kdf_scrypt);
 #endif
+    ADD_TEST(test_kdf_krb5kdf);
     ADD_TEST(test_kdf_ss_hash);
     return 1;
 }
