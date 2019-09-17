@@ -844,6 +844,10 @@ KDF_F_KDF_SSHKDF_NEW:133:kdf_sshkdf_new
 KDF_F_KDF_TLS1_PRF_CTRL_STR:125:kdf_tls1_prf_ctrl_str
 KDF_F_KDF_TLS1_PRF_DERIVE:126:kdf_tls1_prf_derive
 KDF_F_KDF_TLS1_PRF_NEW:127:kdf_tls1_prf_new
+KDF_F_KRB5KDF:139:KRB5KDF
+KDF_F_KRB5KDF_CTRL_STR:135:krb5kdf_ctrl_str
+KDF_F_KRB5KDF_DERIVE:140:krb5kdf_derive
+KDF_F_KRB5KDF_NEW:136:krb5kdf_new
 KDF_F_PBKDF2_SET_MEMBUF:128:pbkdf2_set_membuf
 KDF_F_PKEY_HKDF_CTRL_STR:103:pkey_hkdf_ctrl_str
 KDF_F_PKEY_HKDF_DERIVE:102:pkey_hkdf_derive
@@ -2671,6 +2675,7 @@ KDF_R_FAILED_TO_GENERATE_KEY:118:failed to generate key
 KDF_R_INVALID_CIPHER:116:invalid cipher
 KDF_R_INVALID_CONSTANT_LENGTH:119:invalid constant length
 KDF_R_INVALID_DIGEST:100:invalid digest
+KDF_R_INVALID_SEED_LENGTH:117:invalid seed length
 KDF_R_MISSING_CIPHER:120:missing cipher
 KDF_R_MISSING_CONSTANT:121:missing constant
 KDF_R_MISSING_ITERATION_COUNT:109:missing iteration count
