@@ -184,6 +184,7 @@ void X509_STORE_CTX_set_depth(X509_STORE_CTX *ctx, int depth);
 # define         X509_V_ERR_OCSP_VERIFY_NEEDED                   73  /* Need OCSP verification */
 # define         X509_V_ERR_OCSP_VERIFY_FAILED                   74  /* Couldn't verify cert through OCSP */
 # define         X509_V_ERR_OCSP_CERT_UNKNOWN                    75  /* Certificate wasn't recognized by the OCSP responder */
+# define         X509_V_ERR_EC_KEY_EXPLICIT_PARAMS               79
 
 /* Certificate verify flags */
 
