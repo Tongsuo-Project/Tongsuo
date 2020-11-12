@@ -49,6 +49,7 @@ static const ERR_STRING_DATA ASN1_str_functs[] = {
      "asn1_item_embed_d2i"},
     {ERR_PACK(ERR_LIB_ASN1, ASN1_F_ASN1_ITEM_EMBED_NEW, 0),
      "asn1_item_embed_new"},
+    {ERR_PACK(ERR_LIB_ASN1, ASN1_F_ASN1_ITEM_EX_I2D, 0), "ASN1_item_ex_i2d"},
     {ERR_PACK(ERR_LIB_ASN1, ASN1_F_ASN1_ITEM_FLAGS_I2D, 0),
      "asn1_item_flags_i2d"},
     {ERR_PACK(ERR_LIB_ASN1, ASN1_F_ASN1_ITEM_I2D_BIO, 0), "ASN1_item_i2d_bio"},
