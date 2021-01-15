@@ -5,31 +5,19 @@
  This is a high-level summary of the most important changes.
  For a full list of changes, see the git commit log.
 
- Changes between 8.1.2 and 8.1.3 [23 Jun 2020]
+ Changes with 8.1.3 [15 Jan 2021]
 
   *) Support more QUIC related APIs
 
- Changes between 8.1.1 and 8.1.2 [22 Apr 2020]
+  *) Fix CVE-2020-1971
 
   *) Fix CVE-2020-1967
 
- Changes between 8.1.0 and 8.1.1 [15 Apr 2020]
-
-  *) Fix up memory leak problems
-
   *) Give a default sm2-id for sm2 sign process which not set sm-id
-
- Changes between 8.0.0 and 8.1.0 [25 Mar 2020]
 
   *) Support BoringSSL QUIC API
 
   *) Fix up problems of CVE-2019-1551
-
- The Genesis of the BabaSSL project [26 Dec 2019]
-
- We fork this project from OpenSSL version 1.1.1d which is created by all
- OpenSSL authors. The first release of BabaSSL is 8.0.0. BabaSSL 8.0.0
- provides the following features:
 
   *) Support TLS1.3-GM ciphersuite, see https://datatracker.ietf.org/doc/draft-yang-tls-tls13-sm-suites/ for more information
 
@@ -38,3 +26,5 @@
   *) Support SM2 cert sign, SM2 speed testing for babassl/apps
 
   *) Support dynamic cipher, make EVP api compatible with lua ffi
+
+  *) Fork from OpenSSL version 1.1.1d
