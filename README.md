@@ -5,7 +5,8 @@ BabaSSL is a modern cryptographic and secure protocol library developed by the a
 # Feature
 
 BabaSSL provides the following major features:
-  * Chinese SM cipher suites in TLS 1.3 protocol
+
+  * Support [RFC 8998](https://tools.ietf.org/html/rfc8998), Chinese SM cipher suites in TLS 1.3 protocol
   * QUIC API support
   * ...
 
