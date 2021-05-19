@@ -7,7 +7,7 @@ use OpenSSL::Test::Utils;
 our @tests = (
 
     {
-        name => "test cipher ECC-SM2-WITH-SM4-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only",
+        name => "test cipher ECC-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only",
         server => {
             "EncCertificate" => test_pem("SE.cert.pem"),
             "EncPrivateKey" => test_pem("SE.key.pem"),
@@ -16,20 +16,42 @@ our @tests = (
             "Enable_ntls" => "on",
         },
         client => {
-            "CipherString" => "ECC-SM2-WITH-SM4-SM3",
+            "CipherString" => "ECC-SM2-SM4-CBC-SM3",
             "VerifyCAFile" => test_pem("CA.cert.pem"),
             "Enable_ntls" => "on",
         },
         test   => {
             "Method" => "NTLS",
             "ExpectedResult" => "Success",
-            "ExpectedCipher" => "ECC-SM2-WITH-SM4-SM3",
+            "ExpectedCipher" => "ECC-SM2-SM4-CBC-SM3",
             "ExpectedProtocol" => "NTLS",
         },
     },
 
     {
-        name => "test cipher ECDHE-SM2-WITH-SM4-SM3 in NTLS_UNIQUE mode",
+        name => "test cipher ECC-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only",
+        server => {
+            "EncCertificate" => test_pem("SE.cert.pem"),
+            "EncPrivateKey" => test_pem("SE.key.pem"),
+            "SignCertificate" => test_pem("SS.cert.pem"),
+            "SignPrivateKey" => test_pem("SS.key.pem"),
+            "Enable_ntls" => "on",
+        },
+        client => {
+            "CipherString" => "ECC-SM2-SM4-GCM-SM3",
+            "VerifyCAFile" => test_pem("CA.cert.pem"),
+            "Enable_ntls" => "on",
+        },
+        test   => {
+            "Method" => "NTLS",
+            "ExpectedResult" => "Success",
+            "ExpectedCipher" => "ECC-SM2-SM4-GCM-SM3",
+            "ExpectedProtocol" => "NTLS",
+        },
+    },
+
+    {
+        name => "test cipher ECDHE-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode",
         server => {
             "EncCertificate" => test_pem("SE.cert.pem"),
             "EncPrivateKey" => test_pem("SE.key.pem"),
@@ -43,14 +65,41 @@ our @tests = (
             "SignPrivateKey" => test_pem("CS.key.pem"),
             "EncCertificate" => test_pem("CE.cert.pem"),
             "EncPrivateKey" => test_pem("CE.key.pem"),
-            "CipherString" => "ECDHE-SM2-WITH-SM4-SM3",
+            "CipherString" => "ECDHE-SM2-SM4-CBC-SM3",
             "VerifyCAFile" => test_pem("CA.cert.pem"),
             "Enable_ntls" => "on",
         },
         test   => {
             "Method" => "NTLS",
             "ExpectedResult" => "Success",
-            "ExpectedCipher" => "ECDHE-SM2-WITH-SM4-SM3",
+            "ExpectedCipher" => "ECDHE-SM2-SM4-CBC-SM3",
+            "ExpectedProtocol" => "NTLS",
+        },
+    },
+
+    {
+        name => "test cipher ECDHE-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode",
+        server => {
+            "EncCertificate" => test_pem("SE.cert.pem"),
+            "EncPrivateKey" => test_pem("SE.key.pem"),
+            "SignCertificate" => test_pem("SS.cert.pem"),
+            "SignPrivateKey" => test_pem("SS.key.pem"),
+            "VerifyCAFile" => test_pem("CA.cert.pem"),
+            "Enable_ntls" => "on",
+        },
+        client => {
+            "SignCertificate" => test_pem("CS.cert.pem"),
+            "SignPrivateKey" => test_pem("CS.key.pem"),
+            "EncCertificate" => test_pem("CE.cert.pem"),
+            "EncPrivateKey" => test_pem("CE.key.pem"),
+            "CipherString" => "ECDHE-SM2-SM4-GCM-SM3",
+            "VerifyCAFile" => test_pem("CA.cert.pem"),
+            "Enable_ntls" => "on",
+        },
+        test   => {
+            "Method" => "NTLS",
+            "ExpectedResult" => "Success",
+            "ExpectedCipher" => "ECDHE-SM2-SM4-GCM-SM3",
             "ExpectedProtocol" => "NTLS",
         },
     },
@@ -61,7 +110,7 @@ our @tests = (
             "Enable_ntls" => "on",
         },
         client => {
-            "CipherString" => "ECC-SM2-WITH-SM4-SM3",
+            "CipherString" => "ECC-SM2-SM4-CBC-SM3",
             "Enable_ntls" => "on",
         },
         test   => {

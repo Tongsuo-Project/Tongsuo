@@ -1198,3 +1198,4 @@ SM2_with_SM3		1197
 kx_sm2		1198
 kx_sm2dhe		1199
 auth_sm2		1200
+delegation_usage		1201

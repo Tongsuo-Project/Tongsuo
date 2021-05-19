@@ -47,6 +47,10 @@ IF[{- !$disabled{apps} -}]
     SOURCE[openssl]=dhparam.c
     DEPEND[dhparam.o]=progs.h
   ENDIF
+  IF[{- !$disabled{'delegated-credential'} -}]
+    SOURCE[openssl]=delecred.c
+    DEPEND[delecred.o]=progs.h
+  ENDIF
   IF[{- !$disabled{'dsa'} -}]
     SOURCE[openssl]=dsa.c dsaparam.c gendsa.c
     DEPEND[dsa.o]=progs.h

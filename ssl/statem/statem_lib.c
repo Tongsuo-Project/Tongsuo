@@ -42,17 +42,24 @@ int ssl3_do_write(SSL *s, int type)
 {
     int ret;
     size_t written = 0;
+
 #ifndef OPENSSL_NO_QUIC
-    if (SSL_IS_QUIC(s) && type == SSL3_RT_HANDSHAKE) {
-        ret = s->quic_method->add_handshake_data(s, s->quic_write_level,
-                                                 (const uint8_t*)&s->init_buf->data[s->init_off],
-                                          s->init_num);
-        if (!ret) {
-            ret = -1;
-            /* QUIC can't sent anything out sice the above failed */
-            SSLerr(SSL_F_SSL3_DO_WRITE, SSL_R_INTERNAL_ERROR);
+    if (SSL_IS_QUIC(s)) {
+        if (type == SSL3_RT_HANDSHAKE) {
+            ret = s->quic_method->add_handshake_data(s, s->quic_write_level,
+                                                     (const uint8_t*)&s->init_buf->data[s->init_off],
+                                                     s->init_num);
+            if (!ret) {
+                ret = -1;
+                /* QUIC can't sent anything out sice the above failed */
+                SSLerr(SSL_F_SSL3_DO_WRITE, ERR_R_INTERNAL_ERROR);
+            } else {
+                written = s->init_num;
+            }
         } else {
-            written = s->init_num;
+            /* QUIC doesn't use ChangeCipherSpec */
+            ret = -1;
+            SSLerr(SSL_F_SSL3_DO_WRITE, ERR_R_SHOULD_NOT_HAVE_BEEN_CALLED);
         }
     } else
 #endif
@@ -259,7 +266,12 @@ int tls_construct_cert_verify(SSL *s, WPACKET *pkt)
         goto err;
     }
 
-    pkey = s->s3->tmp.cert->privatekey;
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    if (s->delegated_credential_tag & DC_HAS_BEEN_USED_FOR_SIGN)
+        pkey = s->s3->tmp.cert->dc_privatekey;
+    else
+#endif
+        pkey = s->s3->tmp.cert->privatekey;
 
     if (pkey == NULL || !tls1_lookup_md(lu, &md)) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_CERT_VERIFY,
@@ -414,6 +426,16 @@ MSG_PROCESS_RETURN tls_process_cert_verify(SSL *s, PACKET *pkt)
 
     peer = s->session->peer;
     pkey = X509_get0_pubkey(peer);
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    if (s->delegated_credential_tag & DC_HAS_BEEN_USED_FOR_VERIFY_PEER) {
+        if (s->session->peer_dc == NULL) {
+            SSLfatal(s, SSL_AD_UNEXPECTED_MESSAGE, SSL_F_TLS_PROCESS_CERT_VERIFY,
+                     ERR_R_INTERNAL_ERROR);
+            goto err;
+        }
+        pkey = DC_get0_publickey(s->session->peer_dc);
+    }
+#endif
     if (pkey == NULL) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PROCESS_CERT_VERIFY,
                  ERR_R_INTERNAL_ERROR);
@@ -448,10 +470,29 @@ MSG_PROCESS_RETURN tls_process_cert_verify(SSL *s, PACKET *pkt)
             /* SSLfatal() already called */
             goto err;
         }
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+        /*
+         * Verify that dc expected_cert_verify_algorithm matches the scheme
+         * indicated in the server's CertificateVerify message.
+         */
+        if (s->delegated_credential_tag & DC_HAS_BEEN_USED_FOR_VERIFY_PEER) {
+            if (s->session->peer_dc == NULL) {
+                SSLfatal(s, SSL_AD_UNEXPECTED_MESSAGE, SSL_F_TLS_PROCESS_CERT_VERIFY,
+                         ERR_R_INTERNAL_ERROR);
+                goto err;
+            }
+
+            if (DC_get_expected_cert_verify_algorithm(s->session->peer_dc) != sigalg) {
+                SSLfatal(s, SSL_AD_UNEXPECTED_MESSAGE, SSL_F_TLS_PROCESS_CERT_VERIFY,
+                         ERR_R_INTERNAL_ERROR);
+                goto err;
+            }
+        }
+#endif
     } else if (!tls1_set_peer_legacy_sigalg(s, pkey)) {
-            SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PROCESS_CERT_VERIFY,
-                     ERR_R_INTERNAL_ERROR);
-            goto err;
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PROCESS_CERT_VERIFY,
+                 ERR_R_INTERNAL_ERROR);
+        goto err;
     }
 
     if (!tls1_lookup_md(s->s3->tmp.peer_sigalg, &md)) {
@@ -687,6 +728,14 @@ int tls_construct_finished(SSL *s, WPACKET *pkt)
 
 int tls_construct_key_update(SSL *s, WPACKET *pkt)
 {
+#ifndef OPENSSL_NO_QUIC
+    if (SSL_IS_QUIC(s)) {
+        /* TLS KeyUpdate is not used for QUIC, so this is an error. */
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_KEY_UPDATE,
+                 ERR_R_INTERNAL_ERROR);
+        return 0;
+    }
+#endif
     if (!WPACKET_put_bytes_u8(pkt, s->key_update)) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_KEY_UPDATE,
                  ERR_R_INTERNAL_ERROR);
@@ -710,6 +759,14 @@ MSG_PROCESS_RETURN tls_process_key_update(SSL *s, PACKET *pkt)
                  SSL_R_NOT_ON_RECORD_BOUNDARY);
         return MSG_PROCESS_ERROR;
     }
+
+#ifndef OPENSSL_NO_QUIC
+    if (SSL_is_quic(s)) {
+        SSLfatal(s, SSL_AD_UNEXPECTED_MESSAGE, SSL_F_TLS_PROCESS_KEY_UPDATE,
+                 SSL_R_UNEXPECTED_MESSAGE);
+        return MSG_PROCESS_ERROR;
+    }
+#endif
 
     if (!PACKET_get_1(pkt, &updatetype)
             || PACKET_remaining(pkt) != 0) {
@@ -1627,6 +1684,12 @@ static int is_tls13_capable(const SSL *s)
         default:
             break;
         }
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+        if (s->enable_sign_by_dc
+            && ssl_has_dc(s, i)) {
+            /* nothing */
+        } else
+#endif
         if (!ssl_has_cert(s, i))
             continue;
 #ifndef OPENSSL_NO_EC
@@ -1637,7 +1700,13 @@ static int is_tls13_capable(const SSL *s)
          * more restrictive so check that our sig algs are consistent with this
          * EC cert. See section 4.2.3 of RFC8446.
          */
-        eckey = EVP_PKEY_get0_EC_KEY(s->cert->pkeys[SSL_PKEY_ECC].privatekey);
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+        if (s->enable_sign_by_dc
+            && ssl_has_dc(s, SSL_PKEY_ECC)) {
+            eckey = EVP_PKEY_get0_EC_KEY(s->cert->dc_pkeys[SSL_PKEY_ECC].privatekey);
+        } else
+#endif
+            eckey = EVP_PKEY_get0_EC_KEY(s->cert->pkeys[SSL_PKEY_ECC].privatekey);
         if (eckey == NULL)
             continue;
         curve = EC_GROUP_get_curve_name(EC_KEY_get0_group(eckey));

@@ -306,10 +306,6 @@ typedef int (*tls_session_secret_cb_fn)(SSL *s, void *secret, int *secret_len,
 #define SSL_EXT_TLS1_3_NEW_SESSION_TICKET       0x2000
 #define SSL_EXT_TLS1_3_CERTIFICATE_REQUEST      0x4000
 
-#ifndef OPENSSL_NO_NTLS
-#define SSL_EXT_NTLS_IMCOMPATIBLE               0x8000
-#endif
-
 /* Typedefs for handling custom extensions */
 
 typedef int (*custom_ext_add_cb)(SSL *s, unsigned int ext_type,
@@ -438,7 +434,8 @@ typedef int (*SSL_verify_cb)(int preverify_ok, X509_STORE_CTX *x509_ctx);
 
 # if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
      && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-#  define SSL_OP_NO_NTLS                                 0x10000000U
+/* Just use a reserved value, don't conflict with OP TLS */
+#  define SSL_OP_NO_NTLS                                 0x00000080U
 # endif
 
 # define SSL_OP_NO_SSL_MASK (SSL_OP_NO_SSLv3|\
@@ -1260,7 +1257,6 @@ DECLARE_PEM_rw(SSL_SESSION, SSL_SESSION)
 # define SSL_AD_NO_APPLICATION_PROTOCOL  TLS1_AD_NO_APPLICATION_PROTOCOL
 # if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
      && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-/* NTLS GM/T 0024-2014 alert codes */
 #  define SSL_AD_UNSUPPORTED_SITE2SITE   NTLS_AD_UNSUPPORTED_SITE2SITE
 #  define SSL_AD_NO_AREA                 NTLS_AD_NO_AREA
 #  define SSL_AD_UNSUPPORTED_AREATYPE    NTLS_AD_UNSUPPORTED_AREATYPE
@@ -1851,6 +1847,37 @@ void SSL_CTX_enable_sm_tls13_strict(SSL_CTX *ctx);
 void SSL_CTX_disable_sm_tls13_strict(SSL_CTX *ctx);
 void SSL_enable_sm_tls13_strict(SSL *s);
 void SSL_disable_sm_tls13_strict(SSL *s);
+# endif
+
+# ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+
+#  define DC_REQ_HAS_BEEN_SEND_TO_PEER          0x01
+#  define DC_HAS_BEEN_USED_FOR_VERIFY_PEER      0x02
+#  define DC_HAS_BEEN_USED_FOR_SIGN             0x04
+
+void SSL_CTX_enable_verify_peer_by_dc(SSL_CTX *ctx);
+void SSL_CTX_disable_verify_peer_by_dc(SSL_CTX *ctx);
+void SSL_enable_verify_peer_by_dc(SSL *s);
+void SSL_disable_verify_peer_by_dc(SSL *s);
+void SSL_CTX_enable_sign_by_dc(SSL_CTX *ctx);
+void SSL_CTX_disable_sign_by_dc(SSL_CTX *ctx);
+void SSL_enable_sign_by_dc(SSL *s);
+void SSL_disable_sign_by_dc(SSL *s);
+int SSL_get_delegated_credential_tag(SSL *s);
+int SSL_verify_delegated_credential_signature(X509 *parent_cert, DELEGATED_CREDENTIAL *dc,
+                                              int is_server);
+int DC_print(BIO *bp, DELEGATED_CREDENTIAL *dc);
+int DC_sign(DELEGATED_CREDENTIAL *dc, EVP_PKEY *dc_pkey,
+            unsigned int valid_time, int expect_verify_hash,
+            X509 *ee_cert, EVP_PKEY *ee_pkey, const EVP_MD *md, int is_server);
+int SSL_use_dc(SSL *ssl, DELEGATED_CREDENTIAL *dc);
+int SSL_use_dc_file(SSL *ssl, const char *file, int type);
+int SSL_use_dc_PrivateKey(SSL *ssl, EVP_PKEY *pkey);
+int SSL_use_dc_PrivateKey_file(SSL *ssl, const char *file, int type);
+int SSL_CTX_use_dc(SSL_CTX *ctx, DELEGATED_CREDENTIAL *dc);
+int SSL_CTX_use_dc_file(SSL_CTX *ctx, const char *file, int type);
+int SSL_CTX_use_dc_PrivateKey(SSL_CTX *ctx, EVP_PKEY *pkey);
+int SSL_CTX_use_dc_PrivateKey_file(SSL_CTX *ctx, const char *file, int type);
 # endif
 
 __owur int SSL_CTX_use_PrivateKey_ASN1(int pk, SSL_CTX *ctx,
@@ -2750,10 +2777,13 @@ typedef enum ssl_encryption_level_t {
 } OSSL_ENCRYPTION_LEVEL;
 
 struct ssl_quic_method_st {
-    int (*set_encryption_secrets)(SSL *ssl, OSSL_ENCRYPTION_LEVEL level,
-                                  const uint8_t *read_secret,
-                                  const uint8_t *write_secret, size_t secret_len);
-    int (*add_handshake_data)(SSL *ssl, OSSL_ENCRYPTION_LEVEL level,
+    int (*set_read_secret)(SSL *ssl, enum ssl_encryption_level_t level,
+                           const SSL_CIPHER *cipher, const uint8_t *secret,
+                           size_t secret_len);
+    int (*set_write_secret)(SSL *ssl, enum ssl_encryption_level_t level,
+                            const SSL_CIPHER *cipher, const uint8_t *secret,
+                            size_t secret_len);
+    int (*add_handshake_data)(SSL *ssl, enum ssl_encryption_level_t level,
                               const uint8_t *data, size_t len);
     int (*flush_flight)(SSL *ssl);
     int (*send_alert)(SSL *ssl, enum ssl_encryption_level_t level, uint8_t alert);
@@ -2776,7 +2806,25 @@ __owur int SSL_process_quic_post_handshake(SSL *ssl);
 
 __owur int SSL_is_quic(SSL *ssl);
 
+/* BoringSSL API */
+void SSL_set_quic_use_legacy_codepoint(SSL *ssl, int use_legacy);
+
+/*
+ * Set an explicit value that you want to use
+ * If 0 (default) the server will use the highest extenstion the client sent
+ * If 0 (default) the client will send both extensions
+ */
+void SSL_set_quic_transport_version(SSL *ssl, int version);
+__owur int SSL_get_quic_transport_version(const SSL *ssl);
+/* Returns the negotiated version, or -1 on error */
+__owur int SSL_get_peer_quic_transport_version(const SSL *ssl);
+
+int SSL_CIPHER_get_prf_nid(const SSL_CIPHER *c);
+
 void SSL_set_quic_early_data_enabled(SSL *ssl, int enabled);
+__owur int SSL_set_quic_early_data_context(SSL *ssl,
+                                           const uint8_t *context,
+                                           size_t context_len);
 
 # endif
 
@@ -2792,8 +2840,6 @@ __owur int SSL_use_sign_PrivateKey(SSL *ssl, EVP_PKEY *pkey);
 __owur int SSL_use_sign_PrivateKey_file(SSL *ssl, const char *file, int type);
 #  endif
 # endif
-
-int SSL_CIPHER_get_prf_nid(const SSL_CIPHER *c);
 
 # ifdef  __cplusplus
 }

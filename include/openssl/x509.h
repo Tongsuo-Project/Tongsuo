@@ -389,6 +389,46 @@ int X509_REQ_digest(const X509_REQ *data, const EVP_MD *type,
 int X509_NAME_digest(const X509_NAME *data, const EVP_MD *type,
                      unsigned char *md, unsigned int *len);
 
+# ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+# define DC_FILETYPE_RAW       0
+
+void DC_free(DELEGATED_CREDENTIAL *dc);
+DELEGATED_CREDENTIAL *DC_new(void);
+DELEGATED_CREDENTIAL *DC_new_from_raw_byte(const unsigned char *byte,
+                                           unsigned long len);
+int DC_check_valid(X509 *parent_cert, DELEGATED_CREDENTIAL *dc);
+int DC_check_time_valid(X509 *parent_cert, DELEGATED_CREDENTIAL *dc);
+int DC_check_parent_cert_valid(X509 *parent_cert);
+unsigned long DC_get_valid_time(DELEGATED_CREDENTIAL *dc);
+unsigned int DC_get_expected_cert_verify_algorithm(DELEGATED_CREDENTIAL *dc);
+unsigned long DC_get_dc_publickey_raw_len(DELEGATED_CREDENTIAL *dc);
+unsigned char *DC_get0_dc_publickey_raw(DELEGATED_CREDENTIAL *dc);
+unsigned int DC_get_signature_sign_algorithm(DELEGATED_CREDENTIAL *dc);
+unsigned int DC_get_dc_signature_len(DELEGATED_CREDENTIAL *dc);
+unsigned char *DC_get0_dc_signature(DELEGATED_CREDENTIAL *dc);
+EVP_PKEY *DC_get0_publickey(DELEGATED_CREDENTIAL *dc);
+unsigned char *DC_get0_raw_byte(DELEGATED_CREDENTIAL *dc);
+unsigned long DC_get_raw_byte_len(DELEGATED_CREDENTIAL *dc);
+int DC_set_valid_time(DELEGATED_CREDENTIAL *dc, unsigned long valid_time);
+int DC_set_expected_cert_verify_algorithm(DELEGATED_CREDENTIAL *dc, unsigned int alg);
+int DC_set_dc_publickey_len(DELEGATED_CREDENTIAL *dc, unsigned long len);
+int DC_set0_dc_publickey(DELEGATED_CREDENTIAL *dc, unsigned char *pub_key);
+int DC_set_signature_sign_algorithm(DELEGATED_CREDENTIAL *dc, unsigned int alg);
+int DC_set_dc_signature_len(DELEGATED_CREDENTIAL *dc, unsigned int len);
+int DC_set0_dc_signature(DELEGATED_CREDENTIAL *dc, unsigned char *sig);
+int DC_set0_raw_byte(DELEGATED_CREDENTIAL *dc, unsigned char *byte,
+                     unsigned long len);
+int DC_set1_raw_byte(DELEGATED_CREDENTIAL *dc, const unsigned char *byte,
+                     unsigned long len);
+int DC_set0_publickey(DELEGATED_CREDENTIAL *dc, EVP_PKEY *pkey);
+
+
+int DC_check_private_key(DELEGATED_CREDENTIAL *dc, EVP_PKEY *pkey);
+
+int DC_up_ref(DELEGATED_CREDENTIAL *dc);
+DELEGATED_CREDENTIAL *DC_load_from_file(const char *file);
+# endif
+
 # ifndef OPENSSL_NO_STDIO
 X509 *d2i_X509_fp(FILE *fp, X509 **x509);
 int i2d_X509_fp(FILE *fp, X509 *x509);

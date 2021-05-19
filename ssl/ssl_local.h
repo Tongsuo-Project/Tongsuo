@@ -594,6 +594,9 @@ struct ssl_session_st {
     int not_resumable;
     /* This is the cert and type for the other end. */
     X509 *peer;
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    DELEGATED_CREDENTIAL *peer_dc;
+#endif
     int peer_type;
     /* Certificate chain peer sent. */
     STACK_OF(X509) *peer_chain;
@@ -649,6 +652,12 @@ struct ssl_session_st {
     size_t ticket_appdata_len;
     uint32_t flags;
     CRYPTO_RWLOCK *lock;
+# ifndef OPENSSL_NO_QUIC
+    unsigned int is_quic : 1;
+
+    uint8_t *quic_early_data_context;
+    size_t quic_early_data_context_len;
+# endif
 };
 
 /* Extended master secret support */
@@ -770,6 +779,7 @@ typedef enum tlsext_index_en {
     TLSEXT_IDX_use_srtp,
     TLSEXT_IDX_encrypt_then_mac,
     TLSEXT_IDX_signed_certificate_timestamp,
+    TLSEXT_IDX_delegated_credential,
     TLSEXT_IDX_extended_master_secret,
     TLSEXT_IDX_signature_algorithms_cert,
     TLSEXT_IDX_post_handshake_auth,
@@ -781,6 +791,7 @@ typedef enum tlsext_index_en {
     TLSEXT_IDX_cryptopro_bug,
     TLSEXT_IDX_early_data,
     TLSEXT_IDX_certificate_authorities,
+    TLSEXT_IDX_quic_transport_params_draft,
     TLSEXT_IDX_quic_transport_params,
     TLSEXT_IDX_padding,
     TLSEXT_IDX_psk,
@@ -1144,11 +1155,19 @@ struct ssl_ctx_st {
      */
     int enable_sm_tls13_strict;
 #endif
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    int enable_verify_peer_by_dc;
+    int enable_sign_by_dc;
+#endif
 
 #ifndef OPENSSL_NO_QUIC
     const SSL_QUIC_METHOD *quic_method;
 #endif
 };
+
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+typedef struct dc_pkey_st DC_PKEY;
+#endif
 
 typedef struct cert_pkey_st CERT_PKEY;
 
@@ -1156,11 +1175,11 @@ typedef struct cert_pkey_st CERT_PKEY;
 struct quic_data_st {
     struct quic_data_st *next;
     OSSL_ENCRYPTION_LEVEL level;
-    size_t offset;
+    size_t start;       /* offset into quic_buf->data */
     size_t length;
 };
 typedef struct quic_data_st QUIC_DATA;
-int quic_set_encryption_secrets(SSL *ssl, OSSL_ENCRYPTION_LEVEL level);
+int quic_set_encryption_secrets(SSL *s, OSSL_ENCRYPTION_LEVEL level);
 #endif
 
 struct ssl_st {
@@ -1471,6 +1490,8 @@ struct ssl_st {
 #ifndef OPENSSL_NO_QUIC
         uint8_t *quic_transport_params;
         size_t quic_transport_params_len;
+        uint8_t *peer_quic_transport_params_draft;
+        size_t peer_quic_transport_params_draft_len;
         uint8_t *peer_quic_transport_params;
         size_t peer_quic_transport_params_len;
 #endif
@@ -1479,9 +1500,22 @@ struct ssl_st {
 #ifndef OPENSSL_NO_QUIC
     OSSL_ENCRYPTION_LEVEL quic_read_level;
     OSSL_ENCRYPTION_LEVEL quic_write_level;
+    OSSL_ENCRYPTION_LEVEL quic_latest_level_received;
+    /*
+     * defaults to 0, but can be set to:
+     * - TLSEXT_TYPE_quic_transport_parameters_draft
+     * - TLSEXT_TYPE_quic_transport_parameters
+     * Client: if 0, send both
+     * Server: if 0, use same version as client sent
+     */
+    int quic_transport_version;
+    BUF_MEM *quic_buf;          /* buffer incoming handshake messages */
     QUIC_DATA *quic_input_data_head;
     QUIC_DATA *quic_input_data_tail;
+    size_t quic_next_record_start;
     const SSL_QUIC_METHOD *quic_method;
+    uint8_t *quic_early_data_context;
+    size_t quic_early_data_context_len;
 #endif
     /*
      * Parsed form of the ClientHello, kept around across client_hello_cb
@@ -1601,6 +1635,20 @@ struct ssl_st {
      * without sm2 cert at server. This tag set to 0 default
      */
     int enable_sm_tls13_strict;
+#endif
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    int enable_verify_peer_by_dc;
+    int enable_sign_by_dc;
+    /*
+     * delegated_credential_tag is used to illustrate whether client/server has send
+     * a delegated_credential extension or used it for handshake, If the client receives
+     * a delegated credential without sending this extension, then the client MUST abort
+     * with an "unexpected_message" alert.
+     */
+    int delegated_credential_tag;
+
+    const struct sigalg_lookup_st **shared_dc_sigalgs;
+    size_t shared_dc_sigalgslen;
 #endif
     /*
      * Signature algorithms shared by client and server: cached because these
@@ -1775,6 +1823,10 @@ typedef struct ssl3_state_st {
         /* Size of above arrays */
         size_t peer_sigalgslen;
         size_t peer_cert_sigalgslen;
+# ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+        uint16_t *peer_dc_sigalgs;
+        size_t peer_dc_sigalgslen;
+# endif
         /* Sigalg peer actually uses */
         const SIGALG_LOOKUP *peer_sigalg;
         /*
@@ -1962,6 +2014,15 @@ typedef struct dtls1_state_st {
 #  define NAMED_CURVE_TYPE           3
 # endif                         /* OPENSSL_NO_EC */
 
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+struct dc_pkey_st {
+    DELEGATED_CREDENTIAL *dc;
+    EVP_PKEY *privatekey;
+
+    CERT_PKEY *parent;
+};
+#endif
+
 struct cert_pkey_st {
     X509 *x509;
     EVP_PKEY *privatekey;
@@ -1976,6 +2037,10 @@ struct cert_pkey_st {
      */
     unsigned char *serverinfo;
     size_t serverinfo_length;
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    DELEGATED_CREDENTIAL *dc;
+    EVP_PKEY *dc_privatekey;
+#endif
 };
 /* Retrieve Suite B flags */
 # define tls1_suiteb(s)  (s->cert->cert_flags & SSL_CERT_FLAG_SUITEB_128_LOS)
@@ -2041,6 +2106,9 @@ typedef struct cert_st {
     /* Flags related to certificates */
     uint32_t cert_flags;
     CERT_PKEY pkeys[SSL_PKEY_NUM];
+# ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    DC_PKEY dc_pkeys[SSL_PKEY_NUM];
+# endif
     /* Custom certificate types sent in certificate request message. */
     uint8_t *ctype;
     size_t ctype_len;
@@ -2392,6 +2460,17 @@ struct openssl_ssl_test_functions {
 
 const char *ssl_protocol_to_string(int version);
 
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+static ossl_inline int ssl_has_dc(const SSL *s, int idx)
+{
+    if (idx < 0 || idx >= SSL_PKEY_NUM)
+        return 0;
+
+    return s->cert->dc_pkeys[idx].dc != NULL
+           && s->cert->dc_pkeys[idx].privatekey != NULL;
+}
+#endif
+
 /* Returns true if certificate and private key for 'idx' are present */
 static ossl_inline int ssl_has_cert(const SSL *s, int idx)
 {
@@ -2742,7 +2821,10 @@ __owur int tls1_save_sigalgs(SSL *s, PACKET *pkt, int cert);
 __owur int tls1_process_sigalgs(SSL *s);
 __owur int tls1_set_peer_legacy_sigalg(SSL *s, const EVP_PKEY *pkey);
 __owur int tls1_lookup_md(const SIGALG_LOOKUP *lu, const EVP_MD **pmd);
+__owur int tls1_get_sig_and_hash(uint16_t sigalg, int *psig, int *phash);
 __owur size_t tls12_get_psigalgs(SSL *s, int sent, const uint16_t **psigs);
+__owur int tls1_lookup_sigalg_by_pkey_and_hash(EVP_PKEY *pkey, int hash,
+                                        int is_tls13, uint16_t *psigalg);
 #  ifndef OPENSSL_NO_EC
 __owur int tls_check_sigalg_curve(const SSL *s, int curve);
 #  endif
@@ -2829,6 +2911,12 @@ void ssl_comp_free_compression_methods_int(void);
 
 /* ssl_mcnf.c */
 void ssl_ctx_system_config(SSL_CTX *ctx);
+
+#  ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+int tls1_set_shared_dc_sigalgs(SSL *s);
+#  endif
+
+__owur const SIGALG_LOOKUP *tls1_lookup_sigalg(uint16_t sigalg);
 
 # else /* OPENSSL_UNIT_TEST */
 

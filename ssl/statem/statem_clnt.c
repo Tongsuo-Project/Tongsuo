@@ -2010,6 +2010,36 @@ MSG_PROCESS_RETURN tls_process_server_certificate(SSL *s, PACKET *pkt)
     X509_up_ref(x);
     s->session->peer = x;
     s->session->verify_result = s->verify_result;
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    if (s->delegated_credential_tag & DC_HAS_BEEN_USED_FOR_VERIFY_PEER) {
+        if (!SSL_IS_TLS13(s)) {
+            SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER,
+                     SSL_F_TLS_PROCESS_SERVER_CERTIFICATE,
+                     SSL_R_UNKNOWN_CERTIFICATE_TYPE);
+            /* x will free later, so set x to NULL now */
+            x = NULL;
+            goto err;
+        }
+
+        if (!DC_check_valid(x, s->session->peer_dc)) {
+            SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER,
+                     SSL_F_TLS_PROCESS_SERVER_CERTIFICATE,
+                     SSL_R_CERTIFICATE_VERIFY_FAILED);
+            /* x will free later, so set x to NULL now */
+            x = NULL;
+            goto err;
+        }
+
+        if (SSL_verify_delegated_credential_signature(x, s->session->peer_dc, 1) <= 0) {
+            SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER,
+                    SSL_F_TLS_PROCESS_SERVER_CERTIFICATE,
+                    SSL_R_CERTIFICATE_VERIFY_FAILED);
+            /* x will free later, so set x to NULL now */
+            x = NULL;
+            goto err;
+        }
+    }
+#endif
     x = NULL;
 
     /* Save the current hash state for when we receive the CertificateVerify */

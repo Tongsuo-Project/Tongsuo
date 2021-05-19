@@ -162,6 +162,9 @@ unsigned long BabaSSL_version_num(void);
 # define OPENSSL_DIR              4
 # define OPENSSL_ENGINES_DIR      5
 # define BABASSL_VERSION          6
+# ifndef OPENSSL_NO_QUIC
+#  define OPENSSL_INFO_QUIC       2000
+# endif
 
 int OPENSSL_issetugid(void);
 

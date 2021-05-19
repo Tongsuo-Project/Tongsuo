@@ -10,6 +10,97 @@ static const char *sign_key_file;
 static const char *enc_cert_file;
 static const char *enc_key_file;
 
+static int test_ntls_ctx_set_cipher_list(void)
+{
+    int           ret = 1;
+#ifndef OPENSSL_NO_NTLS
+    SSL_CTX      *ctx = NULL;
+
+    ret = 0;
+    ctx = SSL_CTX_new(NTLS_client_method());
+    if (!TEST_true(ctx != NULL))
+        goto err;
+
+    SSL_CTX_enable_ntls(ctx);
+    if (!TEST_true(ctx->enable_ntls == 1))
+        goto err;
+
+    if (!TEST_true(SSL_CTX_set_cipher_list(ctx, NTLS_TXT_SM2DHE_WITH_SM4_SM3))) {
+        goto err;
+    }
+
+    if (!TEST_true(SSL_CTX_set_cipher_list(ctx, NTLS_TXT_SM2_WITH_SM4_SM3))) {
+        goto err;
+    }
+
+    if (!TEST_true(SSL_CTX_set_cipher_list(ctx, NTLS_TXT_ECDHE_SM2_SM4_CBC_SM3))) {
+        goto err;
+    }
+
+    if (!TEST_true(SSL_CTX_set_cipher_list(ctx, NTLS_TXT_ECDHE_SM2_SM4_GCM_SM3))) {
+        goto err;
+    }
+
+    if (!TEST_true(SSL_CTX_set_cipher_list(ctx, NTLS_TXT_ECC_SM2_SM4_CBC_SM3))) {
+        goto err;
+    }
+
+    if (!TEST_true(SSL_CTX_set_cipher_list(ctx, NTLS_TXT_ECC_SM2_SM4_GCM_SM3))) {
+        goto err;
+    }
+
+    ret = 1;
+err:
+    SSL_CTX_free(ctx);
+#endif
+    return ret;
+}
+
+static int test_ntls_ssl_set_cipher_list(void)
+{
+    int           ret = 1;
+#ifndef OPENSSL_NO_NTLS
+    SSL_CTX      *ctx = NULL;
+    SSL          *ssl = NULL;
+
+    ret = 0;
+    ctx = SSL_CTX_new(NTLS_client_method());
+    if (!TEST_true(ctx != NULL))
+        goto err;
+
+    SSL_CTX_enable_ntls(ctx);
+    if (!TEST_true(ctx->enable_ntls == 1))
+        goto err;
+
+
+    ssl = SSL_new(ctx);
+    if (!TEST_true(ssl != NULL))
+        goto err;
+
+    if (!TEST_true(SSL_set_cipher_list(ssl, NTLS_TXT_ECDHE_SM2_SM4_CBC_SM3))) {
+        goto err;
+    }
+
+    if (!TEST_true(SSL_set_cipher_list(ssl, NTLS_TXT_ECDHE_SM2_SM4_GCM_SM3))) {
+        goto err;
+    }
+
+    if (!TEST_true(SSL_set_cipher_list(ssl, NTLS_TXT_ECC_SM2_SM4_CBC_SM3))) {
+        goto err;
+    }
+
+    if (!TEST_true(SSL_set_cipher_list(ssl, NTLS_TXT_ECC_SM2_SM4_GCM_SM3))) {
+        goto err;
+    }
+
+    ret = 1;
+err:
+    SSL_CTX_free(ctx);
+    SSL_free(ssl);
+#endif
+    return ret;
+}
+
 static int test_ntls_ctx_set_cert_pkey_file_api(void)
 {
     int           ret = 1;
@@ -353,5 +444,7 @@ int setup_tests(void)
     ADD_TEST(test_ntls_ssl_set_cert_pkey_file_api);
     ADD_TEST(test_ntls_ssl_set_cert_pkey_api);
     ADD_TEST(test_ntls_method_api);
+    ADD_TEST(test_ntls_ctx_set_cipher_list);
+    ADD_TEST(test_ntls_ssl_set_cipher_list);
     return 1;
 }

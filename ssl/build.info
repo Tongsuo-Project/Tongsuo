@@ -13,4 +13,15 @@ SOURCE[../libssl]=\
         bio_ssl.c ssl_err.c tls_srp.c t1_trce.c ssl_utst.c \
         record/ssl3_buffer.c record/ssl3_record.c record/dtls1_bitmap.c \
         statem/statem.c record/ssl3_record_tls13.c \
-        ssl_quic.c statem/statem_quic.c
+        statem_ntls/statem_srvr.c statem_ntls/statem_clnt.c statem_ntls/extensions_cust.c \
+        statem_ntls/statem_lib.c statem_ntls/extensions.c statem_ntls/extensions_srvr.c \
+        statem_ntls/extensions_clnt.c statem_ntls/statem.c \
+        statem_ntls/statem_ntls.c statem_ntls/statem_ntls_clnt.c statem_ntls/statem_ntls_srvr.c
+
+IF[{- !$disabled{quic} -}]
+  SOURCE[../libssl]=ssl_quic.c statem/statem_quic.c
+ENDIF
+
+IF[{- !$disabled{'delegated-credential'} -}]
+  SOURCE[../libssl]=ssl_dc.c
+ENDIF

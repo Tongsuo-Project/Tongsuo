@@ -118,6 +118,44 @@ const char *ssl_test_result_name(ssl_test_result_t result)
     return enum_name(ssl_test_results, OSSL_NELEM(ssl_test_results), result);
 }
 
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+/* ExpextDCusage */
+
+static const test_enum ssl_dc_usage[] = {
+    {"NotUseDC", SSL_NOT_USE_DC},
+    {"VerifyPeerByDCOnly", SSL_VERIFY_PEER_BY_DC_ONLY},
+    {"SignByDCOnly", SSL_SIGN_BY_DC_ONLY},
+    {"VerifyPeerAndSignByDC", SSL_VERIFY_PEER_AND_SIGN_BY_DC},
+};
+
+__owur static int parse_client_expected_dc_usage(SSL_TEST_CTX *test_ctx, const char *value)
+{
+    int ret_value;
+    if (!parse_enum(ssl_dc_usage, OSSL_NELEM(ssl_dc_usage),
+                    &ret_value, value)) {
+        return 0;
+    }
+    test_ctx->client_expected_dc_usage = ret_value;
+    return 1;
+}
+
+__owur static int parse_server_expected_dc_usage(SSL_TEST_CTX *test_ctx, const char *value)
+{
+    int ret_value;
+    if (!parse_enum(ssl_dc_usage, OSSL_NELEM(ssl_dc_usage),
+                    &ret_value, value)) {
+        return 0;
+    }
+    test_ctx->server_expected_dc_usage = ret_value;
+    return 1;
+}
+
+const char *ssl_test_dc_usage(ssl_test_dc_usage_t result)
+{
+    return enum_name(ssl_dc_usage, OSSL_NELEM(ssl_dc_usage), result);
+}
+#endif
+
 /* ExpectedClientAlert / ExpectedServerAlert */
 
 static const test_enum ssl_alerts[] = {
@@ -681,6 +719,10 @@ static const ssl_test_ctx_option ssl_test_ctx_options[] = {
     { "EnableServerSCTPLabelBug", &parse_test_enable_server_sctp_label_bug },
     { "ExpectedCipher", &parse_test_expected_cipher },
     { "ExpectedSessionTicketAppData", &parse_test_expected_session_ticket_app_data },
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    { "ExpextClientDCusage", &parse_client_expected_dc_usage},
+    { "ExpextServerDCusage", &parse_server_expected_dc_usage},
+#endif
 };
 
 /* Nested client options. */

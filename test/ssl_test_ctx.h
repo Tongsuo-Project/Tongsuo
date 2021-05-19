@@ -22,6 +22,15 @@ typedef enum {
     SSL_TEST_FIRST_HANDSHAKE_FAILED
 } ssl_test_result_t;
 
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+typedef enum {
+    SSL_NOT_USE_DC,
+    SSL_VERIFY_PEER_BY_DC_ONLY,
+    SSL_SIGN_BY_DC_ONLY,
+    SSL_VERIFY_PEER_AND_SIGN_BY_DC
+} ssl_test_dc_usage_t;
+#endif
+
 typedef enum {
     SSL_TEST_VERIFY_NONE = 0, /* Default */
     SSL_TEST_VERIFY_ACCEPT_ALL,
@@ -226,9 +235,16 @@ typedef struct {
     char *expected_cipher;
     /* Expected Session Ticket Application Data */
     char *expected_session_ticket_app_data;
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    ssl_test_dc_usage_t client_expected_dc_usage;
+    ssl_test_dc_usage_t server_expected_dc_usage;
+#endif
 } SSL_TEST_CTX;
 
 const char *ssl_test_result_name(ssl_test_result_t result);
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+const char *ssl_test_dc_usage(ssl_test_dc_usage_t result);
+#endif
 const char *ssl_alert_name(int alert);
 const char *ssl_protocol_name(int protocol);
 const char *ssl_verify_callback_name(ssl_verify_callback_t verify_callback);

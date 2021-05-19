@@ -123,6 +123,7 @@ int ERR_load_EVP_strings(void);
 # define EVP_F_R_32_12_16_INIT_KEY                        242
 # define EVP_F_S390X_AES_GCM_CTRL                         201
 # define EVP_F_UPDATE                                     173
+
 /*
  * EVP reason codes.
  */

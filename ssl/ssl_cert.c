@@ -111,6 +111,22 @@ CERT *ssl_cert_dup(CERT *cert)
             EVP_PKEY_up_ref(cpk->privatekey);
         }
 
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+        if (cert->dc_pkeys[i].dc) {
+            DC_up_ref(cert->dc_pkeys[i].dc);
+            ret->dc_pkeys[i].dc = cert->dc_pkeys[i].dc;
+            ret->dc_pkeys[i].parent = cert->dc_pkeys[i].parent;
+        }
+
+        if (cert->dc_pkeys[i].privatekey) {
+            EVP_PKEY_up_ref(cert->dc_pkeys[i].privatekey);
+            ret->dc_pkeys[i].privatekey = cert->dc_pkeys[i].privatekey;
+        }
+
+        rpk->dc = cpk->dc;
+        rpk->dc_privatekey = cpk->dc_privatekey;
+#endif
+
         if (cpk->chain) {
             rpk->chain = X509_chain_up_ref(cpk->chain);
             if (!rpk->chain) {
@@ -216,6 +232,16 @@ void ssl_cert_clear_certs(CERT *c)
         OPENSSL_free(cpk->serverinfo);
         cpk->serverinfo = NULL;
         cpk->serverinfo_length = 0;
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+        DC_free(c->dc_pkeys[i].dc);
+        c->dc_pkeys[i].dc = NULL;
+        c->dc_pkeys[i].parent = NULL;
+        EVP_PKEY_free(c->dc_pkeys[i].privatekey);
+        c->dc_pkeys[i].privatekey = NULL;
+
+        cpk->dc = NULL;
+        cpk->dc_privatekey = NULL;
+#endif
     }
 }
 

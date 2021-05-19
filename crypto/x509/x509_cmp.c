@@ -469,3 +469,260 @@ STACK_OF(X509) *X509_chain_up_ref(STACK_OF(X509) *chain)
     sk_X509_free(ret);
     return NULL;
 }
+
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+int DC_check_private_key(DELEGATED_CREDENTIAL *dc, EVP_PKEY *pkey)
+{
+    EVP_PKEY *pub_key;
+    int ret;
+
+    pub_key = dc->pkey;
+
+    if (pub_key)
+        ret = EVP_PKEY_cmp(pub_key, pkey);
+    else
+        ret = -2;
+
+    switch (ret) {
+    case 1:
+        break;
+    case 0:
+        X509err(X509_F_DC_CHECK_PRIVATE_KEY, X509_R_KEY_VALUES_MISMATCH);
+        break;
+    case -1:
+        X509err(X509_F_DC_CHECK_PRIVATE_KEY, X509_R_KEY_TYPE_MISMATCH);
+        break;
+    case -2:
+        X509err(X509_F_DC_CHECK_PRIVATE_KEY, X509_R_UNKNOWN_KEY_TYPE);
+    }
+    if (ret > 0)
+        return 1;
+    return 0;
+}
+
+int DC_check_valid(X509 *parent_cert, DELEGATED_CREDENTIAL *dc)
+{
+    /*
+     * check if dc time expire
+     */
+    if (!DC_check_time_valid(parent_cert, dc))
+        return 0;
+    /*
+     * check dc parent_cert has DelegationUsage extension.
+     * check dc parent_cert has the digitalSignature KeyUsage
+     * see https://tools.ietf.org/html/draft-ietf-tls-subcerts-07#section-4.2
+     */
+    if (!DC_check_parent_cert_valid(parent_cert))
+        return 0;
+
+    return 1;
+}
+
+int DC_check_time_valid(X509 *parent_cert, DELEGATED_CREDENTIAL *dc)
+{
+    ASN1_TIME *time;
+    struct tm tm;
+    int ret = 0;
+
+    time = ASN1_STRING_dup(X509_get0_notBefore(parent_cert));
+    if (time == NULL)
+        goto err;
+    if (!ASN1_TIME_to_tm(time, &tm))
+        goto err;
+    if (ASN1_TIME_adj(time, mktime(&tm), 0, DC_get_valid_time(dc)) == NULL)
+        goto err;
+    if (X509_cmp_time(time, NULL) <= 0)
+        goto err;
+
+    ret = 1;
+err:
+    ASN1_STRING_clear_free(time);
+    return ret;
+}
+
+int DC_check_parent_cert_valid(X509 *parent_cert)
+{
+    const STACK_OF(X509_EXTENSION) *exts;
+    int i;
+
+    if ((X509_get_key_usage(parent_cert) & X509v3_KU_DIGITAL_SIGNATURE) == 0)
+        return 0;
+
+    exts = X509_get0_extensions(parent_cert);
+    for (i = 0; i < sk_X509_EXTENSION_num(exts); i++) {
+        ASN1_OBJECT *obj;
+        X509_EXTENSION *ex;
+
+        ex = sk_X509_EXTENSION_value(exts, i);
+        obj = X509_EXTENSION_get_object(ex);
+        if (OBJ_obj2nid(obj) == NID_delegation_usage) {
+            int critical;
+
+            critical = X509_EXTENSION_get_critical(ex);
+            if (critical == 1)
+                return 0;
+
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+unsigned long DC_get_valid_time(DELEGATED_CREDENTIAL *dc)
+{
+    return dc->valid_time;
+}
+
+unsigned int DC_get_expected_cert_verify_algorithm(DELEGATED_CREDENTIAL *dc)
+{
+    return dc->expected_cert_verify_algorithm;
+}
+
+unsigned long DC_get_dc_publickey_raw_len(DELEGATED_CREDENTIAL *dc)
+{
+    return dc->dc_publickey_raw_len;
+}
+
+unsigned char *DC_get0_dc_publickey_raw(DELEGATED_CREDENTIAL *dc)
+{
+    return dc->dc_publickey_raw;
+}
+
+unsigned int DC_get_signature_sign_algorithm(DELEGATED_CREDENTIAL *dc)
+{
+    return dc->signature_sign_algorithm;
+}
+
+unsigned int DC_get_dc_signature_len(DELEGATED_CREDENTIAL *dc)
+{
+    return dc->dc_signature_len;
+}
+
+unsigned char *DC_get0_dc_signature(DELEGATED_CREDENTIAL *dc)
+{
+    return dc->dc_signature;
+}
+
+EVP_PKEY *DC_get0_publickey(DELEGATED_CREDENTIAL *dc)
+{
+    return dc->pkey;
+}
+
+unsigned char *DC_get0_raw_byte(DELEGATED_CREDENTIAL *dc)
+{
+    return dc->raw_byte;
+}
+
+unsigned long DC_get_raw_byte_len(DELEGATED_CREDENTIAL *dc)
+{
+    return dc->raw_byte_len;
+}
+
+int DC_set_valid_time(DELEGATED_CREDENTIAL *dc, unsigned long valid_time)
+{
+    if (dc == NULL)
+        return 0;
+    dc->valid_time = valid_time;
+    return 1;
+}
+
+int DC_set_expected_cert_verify_algorithm(DELEGATED_CREDENTIAL *dc, unsigned int alg)
+{
+    if (dc == NULL)
+        return 0;
+    dc->expected_cert_verify_algorithm = alg;
+    return 1;
+}
+
+int DC_set_dc_publickey_len(DELEGATED_CREDENTIAL *dc, unsigned long len)
+{
+    if (dc == NULL)
+        return 0;
+    dc->dc_publickey_raw_len = len;
+    return 1;
+}
+
+int DC_set0_dc_publickey(DELEGATED_CREDENTIAL *dc, unsigned char *pub_key)
+{
+    if (dc == NULL)
+        return 0;
+    dc->dc_publickey_raw = pub_key;
+    return 1;
+}
+
+int DC_set_signature_sign_algorithm(DELEGATED_CREDENTIAL *dc, unsigned int alg)
+{
+    if (dc == NULL)
+        return 0;
+    dc->signature_sign_algorithm = alg;
+    return 1;
+}
+
+int DC_set_dc_signature_len(DELEGATED_CREDENTIAL *dc, unsigned int len)
+{
+    if (dc == NULL)
+        return 0;
+    dc->dc_signature_len = len;
+    return 1;
+}
+
+int DC_set0_dc_signature(DELEGATED_CREDENTIAL *dc, unsigned char *sig)
+{
+    if (dc == NULL)
+        return 0;
+    dc->dc_signature = sig;
+    return 1;
+}
+
+int DC_set0_publickey(DELEGATED_CREDENTIAL *dc, EVP_PKEY *pkey)
+{
+    if (dc == NULL)
+        return 0;
+    dc->pkey = pkey;
+    return 1;
+}
+
+int DC_set0_raw_byte(DELEGATED_CREDENTIAL *dc, unsigned char *byte,
+                     unsigned long len)
+{
+    if (dc == NULL)
+        return 0;
+
+    if (dc->raw_byte && dc->raw_byte != byte)
+        OPENSSL_free(dc->raw_byte);
+
+    dc->raw_byte = byte;
+    dc->raw_byte_len = len;
+
+    return 1;
+}
+
+int DC_set1_raw_byte(DELEGATED_CREDENTIAL *dc, const unsigned char *byte,
+                     unsigned long len)
+{
+    unsigned char *raw_byte = NULL;
+
+    if (dc == NULL || byte == NULL || len <= 0)
+        return 0;
+
+    if (dc->raw_byte == byte) {
+        dc->raw_byte_len = len;
+        return 1;
+    }
+
+    raw_byte = OPENSSL_malloc(len);
+    if (raw_byte == NULL)
+        return 0;
+
+    if (dc->raw_byte) {
+        OPENSSL_free(dc->raw_byte);
+    }
+
+    memcpy(raw_byte, byte, len);
+    dc->raw_byte = raw_byte;
+    dc->raw_byte_len = len;
+    return 1;
+}
+
+#endif

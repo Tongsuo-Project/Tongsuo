@@ -751,6 +751,10 @@ typedef enum OPTION_choice {
 #ifndef OPENSSL_NO_SM2
     OPT_ENABLE_SM_TLS13_STRICT,
 #endif
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    OPT_DELEGATED_CREDENTIAL, OPT_DELEGATED_CREDENTIAL_PRIVATE_KEY,
+    OPT_ENABLE_SIGN_BY_DC, OPT_ENABLE_VERIFY_PEER_BY_DC,
+#endif
     OPT_DTLS1_2, OPT_SCTP, OPT_TIMEOUT, OPT_MTU, OPT_LISTEN, OPT_STATELESS,
     OPT_ID_PREFIX, OPT_SERVERNAME, OPT_SERVERNAME_FATAL,
     OPT_CERT2, OPT_KEY2, OPT_NEXTPROTONEG, OPT_ALPN,
@@ -944,6 +948,12 @@ const OPTIONS s_server_options[] = {
 #ifndef OPENSSL_NO_SM2
     {"enable_sm_tls13_strict", OPT_ENABLE_SM_TLS13_STRICT, '-', "enable sm tls13 strict"},
 #endif
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    {"dc", OPT_DELEGATED_CREDENTIAL, 's', "delegated crential path"},
+    {"dc_pkey", OPT_DELEGATED_CREDENTIAL_PRIVATE_KEY, 's', "delegated crential private key path"},
+    {"enable_sign_by_dc", OPT_ENABLE_SIGN_BY_DC, '-', "enable sign by delegated crential"},
+    {"enable_verify_peer_by_dc", OPT_ENABLE_VERIFY_PEER_BY_DC, '-', "enable verify peer by delegated crential"},
+#endif
 #ifndef OPENSSL_NO_DTLS
     {"dtls", OPT_DTLS, '-', "Use any DTLS version"},
     {"timeout", OPT_TIMEOUT, '-', "Enable timeouts"},
@@ -1092,6 +1102,14 @@ int s_server_main(int argc, char *argv[])
     char *psksessf = NULL;
 #ifndef OPENSSL_NO_SCTP
     int sctp_label_bug = 0;
+#endif
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    DELEGATED_CREDENTIAL *dc = NULL;
+    EVP_PKEY *dc_pkey = NULL;
+    int enable_sign_by_dc = 0;
+    int enable_verify_peer_by_dc = 0;
+    const char *s_delegated_credential_file = NULL;
+    const char *s_delegated_credential_pkey_file = NULL;
 #endif
 
     /* Init of few remaining global variables */
@@ -1555,6 +1573,20 @@ int s_server_main(int argc, char *argv[])
             enable_ntls = 1;
             break;
 #endif
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+        case OPT_ENABLE_SIGN_BY_DC:
+            enable_sign_by_dc = 1;
+            break;
+        case OPT_ENABLE_VERIFY_PEER_BY_DC:
+            enable_verify_peer_by_dc = 1;
+            break;
+        case OPT_DELEGATED_CREDENTIAL:
+            s_delegated_credential_file = opt_arg();
+            break;
+        case OPT_DELEGATED_CREDENTIAL_PRIVATE_KEY:
+            s_delegated_credential_pkey_file = opt_arg();
+            break;
+#endif
 #ifndef OPENSSL_NO_SM2
         case OPT_ENABLE_SM_TLS13_STRICT:
             enable_sm_tls13_strict = 1;
@@ -1740,10 +1772,13 @@ int s_server_main(int argc, char *argv[])
             goto skip;
         }
 #endif
-
         s_key = load_key(s_key_file, s_key_format, 0, pass, engine,
                          "server certificate private key file");
-        if (s_key == NULL) {
+        if (s_key == NULL
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+            && !enable_sign_by_dc
+#endif
+        ) {
             ERR_print_errors(bio_err);
             goto end;
         }
@@ -1755,6 +1790,23 @@ int s_server_main(int argc, char *argv[])
             ERR_print_errors(bio_err);
             goto end;
         }
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+        if (enable_sign_by_dc) {
+            dc = DC_load_from_file(s_delegated_credential_file);
+            if (dc == NULL) {
+                ERR_print_errors(bio_err);
+                goto end;
+            }
+
+            dc_pkey = load_key(s_delegated_credential_pkey_file, s_key_format,
+                               0, pass, engine, "server dc private key file");
+            if (dc_pkey == NULL) {
+                ERR_print_errors(bio_err);
+                goto end;
+            }
+        }
+#endif
+
         if (s_chain_file != NULL) {
             if (!load_certs(s_chain_file, &s_chain, FORMAT_PEM, NULL,
                             "server certificate chain"))
@@ -2143,7 +2195,26 @@ skip:
         DH_free(dh);
     }
 #endif
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    if (enable_verify_peer_by_dc)
+        SSL_CTX_enable_verify_peer_by_dc(ctx);
 
+    if (enable_sign_by_dc) {
+        if(!set_dc_cert_key_stuff(ctx, s_cert, dc_pkey, dc, 1)) {
+            BIO_printf(bio_err, "error setting delegated credential to context\n");
+            ERR_print_errors(bio_err);
+            goto end;
+        }
+
+        if (s_key != NULL) {
+            if (SSL_CTX_use_PrivateKey(ctx, s_key) <= 0) {
+                BIO_printf(bio_err, "error setting private key\n");
+                ERR_print_errors(bio_err);
+                return 0;
+            }
+        }
+    } else
+#endif
     if (!set_cert_key_stuff(ctx, s_cert, s_key, s_chain, build_chain))
         goto end;
 
@@ -2348,6 +2419,10 @@ skip:
     bio_s_msg = NULL;
 #ifdef CHARSET_EBCDIC
     BIO_meth_free(methods_ebcdic);
+#endif
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    DC_free(dc);
+    EVP_PKEY_free(dc_pkey);
 #endif
     return ret;
 }
@@ -3332,6 +3407,11 @@ static int www_body(int s, int stype, int prot, unsigned char *context)
             SSL_SESSION_print(io, SSL_get_session(con));
             BIO_printf(io, "---\n");
             print_stats(io, SSL_get_SSL_CTX(con));
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+            BIO_printf(io, "---\n");
+            BIO_printf(io, "DC tag: %d\n",
+                       SSL_get_delegated_credential_tag(con));
+#endif
             BIO_printf(io, "---\n");
             peer = SSL_get_peer_certificate(con);
             if (peer != NULL) {

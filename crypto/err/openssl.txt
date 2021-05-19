@@ -82,6 +82,8 @@ ASN1_F_D2I_ASN1_UINTEGER:150:d2i_ASN1_UINTEGER
 ASN1_F_D2I_AUTOPRIVATEKEY:207:d2i_AutoPrivateKey
 ASN1_F_D2I_PRIVATEKEY:154:d2i_PrivateKey
 ASN1_F_D2I_PUBLICKEY:155:d2i_PublicKey
+ASN1_F_DC_NEW:144:DC_new
+ASN1_F_DC_NEW_FROM_RAW_BYTE:145:DC_new_from_raw_byte
 ASN1_F_DO_BUF:142:do_buf
 ASN1_F_DO_CREATE:124:do_create
 ASN1_F_DO_DUMP:125:do_dump
@@ -814,7 +816,6 @@ EVP_F_RC2_MAGIC_TO_METH:109:rc2_magic_to_meth
 EVP_F_RC5_CTRL:125:rc5_ctrl
 EVP_F_R_32_12_16_INIT_KEY:242:r_32_12_16_init_key
 EVP_F_S390X_AES_GCM_CTRL:201:s390x_aes_gcm_ctrl
-EVP_F_SM4_GCM_CTRL:220:sm4_gcm_ctrl
 EVP_F_UPDATE:173:update
 KDF_F_PKEY_HKDF_CTRL_STR:103:pkey_hkdf_ctrl_str
 KDF_F_PKEY_HKDF_DERIVE:102:pkey_hkdf_derive
@@ -1134,6 +1135,7 @@ SSL_F_D2I_SSL_SESSION:103:d2i_SSL_SESSION
 SSL_F_DANE_CTX_ENABLE:347:dane_ctx_enable
 SSL_F_DANE_MTYPE_SET:393:dane_mtype_set
 SSL_F_DANE_TLSA_ADD:394:dane_tlsa_add
+SSL_F_DC_SIGN:836:DC_sign
 SSL_F_DERIVE_SECRET_KEY_AND_IV:514:derive_secret_key_and_iv
 SSL_F_DO_DTLS1_WRITE:245:do_dtls1_write
 SSL_F_DO_SSL3_WRITE:104:do_ssl3_write
@@ -1171,6 +1173,7 @@ SSL_F_FINAL_EC_PT_FORMATS:485:final_ec_pt_formats
 SSL_F_FINAL_EMS:486:final_ems
 SSL_F_FINAL_KEY_SHARE:503:final_key_share
 SSL_F_FINAL_MAXFRAGMENTLEN:557:final_maxfragmentlen
+SSL_F_FINAL_QUIC_TRANSPORT_PARAMS:3012:final_quic_transport_params
 SSL_F_FINAL_RENEGOTIATE:483:final_renegotiate
 SSL_F_FINAL_SERVER_NAME:558:final_server_name
 SSL_F_FINAL_SIG_ALGS:497:final_sig_algs
@@ -1266,9 +1269,9 @@ SSL_F_PARSE_CA_NAMES_NTLS:702:parse_ca_names_ntls
 SSL_F_PITEM_NEW:624:pitem_new
 SSL_F_PQUEUE_NEW:625:pqueue_new
 SSL_F_PROCESS_KEY_SHARE_EXT:439:*
-SSL_F_QUIC_CHANGE_CIPHER_STATE:836:quic_change_cipher_state
-SSL_F_QUIC_GET_MESSAGE:837:quic_get_message
-SSL_F_QUIC_SET_ENCRYPTION_SECRETS:838:quic_set_encryption_secrets
+SSL_F_QUIC_CHANGE_CIPHER_STATE:3000:quic_change_cipher_state
+SSL_F_QUIC_GET_MESSAGE:3001:quic_get_message
+SSL_F_QUIC_SET_ENCRYPTION_SECRETS:3002:quic_set_encryption_secrets
 SSL_F_READ_STATE_MACHINE:352:read_state_machine
 SSL_F_READ_STATE_MACHINE_NTLS:703:read_state_machine_ntls
 SSL_F_SET_CLIENT_CIPHERSUITE:540:set_client_ciphersuite
@@ -1355,6 +1358,10 @@ SSL_F_SSL_CTX_SET_TLSEXT_MAX_FRAGMENT_LENGTH:551:\
 SSL_F_SSL_CTX_USE_CERTIFICATE:171:SSL_CTX_use_certificate
 SSL_F_SSL_CTX_USE_CERTIFICATE_ASN1:172:SSL_CTX_use_certificate_ASN1
 SSL_F_SSL_CTX_USE_CERTIFICATE_FILE:173:SSL_CTX_use_certificate_file
+SSL_F_SSL_CTX_USE_DC:880:SSL_CTX_use_dc
+SSL_F_SSL_CTX_USE_DC_FILE:881:SSL_CTX_use_dc_file
+SSL_F_SSL_CTX_USE_DC_PRIVATEKEY:882:SSL_CTX_use_dc
+SSL_F_SSL_CTX_USE_DC_PRIVATEKEY_FILE:883:SSL_CTX_use_dc_file
 SSL_F_SSL_CTX_USE_ENC_CERTIFICATE:661:SSL_CTX_use_enc_certificate
 SSL_F_SSL_CTX_USE_ENC_CERTIFICATE_FILE:662:SSL_CTX_use_enc_certificate_file
 SSL_F_SSL_CTX_USE_ENC_PRIVATEKEY:663:SSL_CTX_use_enc_PrivateKey
@@ -1375,6 +1382,7 @@ SSL_F_SSL_CTX_USE_SIGN_PRIVATEKEY:667:SSL_CTX_use_sign_PrivateKey
 SSL_F_SSL_CTX_USE_SIGN_PRIVATEKEY_FILE:668:SSL_CTX_use_sign_PrivateKey_file
 SSL_F_SSL_DANE_DUP:403:ssl_dane_dup
 SSL_F_SSL_DANE_ENABLE:395:SSL_dane_enable
+SSL_F_SSL_DC_TBS_DATA:855:ssl_dc_tbs_data
 SSL_F_SSL_DERIVE:590:ssl_derive
 SSL_F_SSL_DO_CONFIG:391:ssl_do_config
 SSL_F_SSL_DO_HANDSHAKE:180:SSL_do_handshake
@@ -1404,8 +1412,8 @@ SSL_F_SSL_PARSE_SERVERHELLO_USE_SRTP_EXT:311:*
 SSL_F_SSL_PEEK:270:SSL_peek
 SSL_F_SSL_PEEK_EX:432:SSL_peek_ex
 SSL_F_SSL_PEEK_INTERNAL:522:ssl_peek_internal
-SSL_F_SSL_PROCESS_QUIC_POST_HANDSHAKE:841:SSL_process_quic_post_handshake
-SSL_F_SSL_PROVIDE_QUIC_DATA:842:SSL_provide_quic_data
+SSL_F_SSL_PROCESS_QUIC_POST_HANDSHAKE:3005:SSL_process_quic_post_handshake
+SSL_F_SSL_PROVIDE_QUIC_DATA:3006:SSL_provide_quic_data
 SSL_F_SSL_READ:223:SSL_read
 SSL_F_SSL_READ_EARLY_DATA:529:SSL_read_early_data
 SSL_F_SSL_READ_EX:434:SSL_read_ex
@@ -1425,6 +1433,8 @@ SSL_F_SSL_SET_CERT_AND_KEY:621:ssl_set_cert_and_key
 SSL_F_SSL_SET_CERT_IDX:669:ssl_set_cert_idx
 SSL_F_SSL_SET_CIPHER_LIST:271:SSL_set_cipher_list
 SSL_F_SSL_SET_CT_VALIDATION_CALLBACK:399:SSL_set_ct_validation_callback
+SSL_F_SSL_SET_DC:884:ssl_set_dc
+SSL_F_SSL_SET_DC_PKEY:861:ssl_set_dc_pkey
 SSL_F_SSL_SET_FD:192:SSL_set_fd
 SSL_F_SSL_SET_PKEY:193:ssl_set_pkey
 SSL_F_SSL_SET_PKEY_IDX:670:ssl_set_pkey_idx
@@ -1444,6 +1454,10 @@ SSL_F_SSL_USE_CERTIFICATE_ASN1:199:SSL_use_certificate_ASN1
 SSL_F_SSL_USE_CERTIFICATE_FILE:200:SSL_use_certificate_file
 SSL_F_SSL_USE_CERTIFICATE_FILE_IDX:848:ssl_use_certificate_file_idx
 SSL_F_SSL_USE_CERTIFICATE_IDX:849:ssl_use_certificate_idx
+SSL_F_SSL_USE_DC:885:SSL_use_dc
+SSL_F_SSL_USE_DC_FILE:886:SSL_use_dc_file
+SSL_F_SSL_USE_DC_PRIVATEKEY:869:SSL_use_dc_PrivateKey
+SSL_F_SSL_USE_DC_PRIVATEKEY_FILE:873:SSL_use_dc_PrivateKey_file
 SSL_F_SSL_USE_PRIVATEKEY:201:SSL_use_PrivateKey
 SSL_F_SSL_USE_PRIVATEKEY_ASN1:202:SSL_use_PrivateKey_ASN1
 SSL_F_SSL_USE_PRIVATEKEY_FILE:203:SSL_use_PrivateKey_file
@@ -1456,6 +1470,8 @@ SSL_F_SSL_USE_RSAPRIVATEKEY_FILE:206:SSL_use_RSAPrivateKey_file
 SSL_F_SSL_VALIDATE_CT:400:ssl_validate_ct
 SSL_F_SSL_VERIFY_CERT_CHAIN:207:ssl_verify_cert_chain
 SSL_F_SSL_VERIFY_CLIENT_POST_HANDSHAKE:616:SSL_verify_client_post_handshake
+SSL_F_SSL_VERIFY_DELEGATED_CREDENTIAL_SIGNATURE:856:\
+	SSL_verify_delegated_credential_signature
 SSL_F_SSL_WRITE:208:SSL_write
 SSL_F_SSL_WRITE_EARLY_DATA:526:SSL_write_early_data
 SSL_F_SSL_WRITE_EARLY_FINISH:527:*
@@ -1492,6 +1508,7 @@ SSL_F_TLS1_SETUP_KEY_BLOCK:211:tls1_setup_key_block
 SSL_F_TLS1_SET_GROUPS:629:tls1_set_groups
 SSL_F_TLS1_SET_RAW_SIGALGS:630:tls1_set_raw_sigalgs
 SSL_F_TLS1_SET_SERVER_SIGALGS:335:tls1_set_server_sigalgs
+SSL_F_TLS1_SET_SHARED_DC_SIGALGS:858:tls1_set_shared_dc_sigalgs
 SSL_F_TLS1_SET_SHARED_SIGALGS:631:tls1_set_shared_sigalgs
 SSL_F_TLS1_SET_SIGALGS:632:tls1_set_sigalgs
 SSL_F_TLS_CHOOSE_SIGALG:513:tls_choose_sigalg
@@ -1534,6 +1551,8 @@ SSL_F_TLS_CONSTRUCT_CTOS_ALPN_NTLS:721:tls_construct_ctos_alpn_ntls
 SSL_F_TLS_CONSTRUCT_CTOS_CERTIFICATE:355:*
 SSL_F_TLS_CONSTRUCT_CTOS_COOKIE:535:tls_construct_ctos_cookie
 SSL_F_TLS_CONSTRUCT_CTOS_COOKIE_NTLS:722:tls_construct_ctos_cookie_ntls
+SSL_F_TLS_CONSTRUCT_CTOS_DELEGATED_CREDENTIAL:853:\
+	tls_construct_ctos_delegated_credential
 SSL_F_TLS_CONSTRUCT_CTOS_EARLY_DATA:530:tls_construct_ctos_early_data
 SSL_F_TLS_CONSTRUCT_CTOS_EARLY_DATA_NTLS:723:tls_construct_ctos_early_data_ntls
 SSL_F_TLS_CONSTRUCT_CTOS_EC_PT_FORMATS:467:tls_construct_ctos_ec_pt_formats
@@ -1563,8 +1582,10 @@ SSL_F_TLS_CONSTRUCT_CTOS_PSK_KEX_MODES:509:tls_construct_ctos_psk_kex_modes
 SSL_F_TLS_CONSTRUCT_CTOS_PSK_KEX_MODES_NTLS:733:\
 	tls_construct_ctos_psk_kex_modes_ntls
 SSL_F_TLS_CONSTRUCT_CTOS_PSK_NTLS:732:tls_construct_ctos_psk_ntls
-SSL_F_TLS_CONSTRUCT_CTOS_QUIC_TRANSPORT_PARAMS:844:\
+SSL_F_TLS_CONSTRUCT_CTOS_QUIC_TRANSPORT_PARAMS:3008:\
 	tls_construct_ctos_quic_transport_params
+SSL_F_TLS_CONSTRUCT_CTOS_QUIC_TRANSPORT_PARAMS_DRAFT:3013:\
+	tls_construct_ctos_quic_transport_params_draft
 SSL_F_TLS_CONSTRUCT_CTOS_RENEGOTIATE:473:tls_construct_ctos_renegotiate
 SSL_F_TLS_CONSTRUCT_CTOS_RENEGOTIATE_NTLS:734:\
 	tls_construct_ctos_renegotiate_ntls
@@ -1594,6 +1615,10 @@ SSL_F_TLS_CONSTRUCT_CTOS_SUPPORTED_VERSIONS_NTLS:742:\
 SSL_F_TLS_CONSTRUCT_CTOS_USE_SRTP:482:tls_construct_ctos_use_srtp
 SSL_F_TLS_CONSTRUCT_CTOS_USE_SRTP_NTLS:743:tls_construct_ctos_use_srtp_ntls
 SSL_F_TLS_CONSTRUCT_CTOS_VERIFY:358:*
+SSL_F_TLS_CONSTRUCT_DELEGATED_CREDENTIAL_RAW:866:\
+	tls_construct_delegated_credential_raw
+SSL_F_TLS_CONSTRUCT_DELEGATED_CREDENTIAL_REQUEST:867:\
+	tls_construct_delegated_credential_request
 SSL_F_TLS_CONSTRUCT_ENCRYPTED_EXTENSIONS:443:tls_construct_encrypted_extensions
 SSL_F_TLS_CONSTRUCT_END_OF_EARLY_DATA:536:tls_construct_end_of_early_data
 SSL_F_TLS_CONSTRUCT_END_OF_EARLY_DATA_NTLS:744:\
@@ -1627,6 +1652,8 @@ SSL_F_TLS_CONSTRUCT_STOC_COOKIE_NTLS:754:tls_construct_stoc_cookie_ntls
 SSL_F_TLS_CONSTRUCT_STOC_CRYPTOPRO_BUG:452:tls_construct_stoc_cryptopro_bug
 SSL_F_TLS_CONSTRUCT_STOC_CRYPTOPRO_BUG_NTLS:755:\
 	tls_construct_stoc_cryptopro_bug_ntls
+SSL_F_TLS_CONSTRUCT_STOC_DELEGATED_CREDENTIAL:863:\
+	tls_construct_stoc_delegated_credential
 SSL_F_TLS_CONSTRUCT_STOC_DONE:375:*
 SSL_F_TLS_CONSTRUCT_STOC_EARLY_DATA:531:tls_construct_stoc_early_data
 SSL_F_TLS_CONSTRUCT_STOC_EARLY_DATA_INFO:525:*
@@ -1650,8 +1677,10 @@ SSL_F_TLS_CONSTRUCT_STOC_NEXT_PROTO_NEG_NTLS:762:\
 	tls_construct_stoc_next_proto_neg_ntls
 SSL_F_TLS_CONSTRUCT_STOC_PSK:504:tls_construct_stoc_psk
 SSL_F_TLS_CONSTRUCT_STOC_PSK_NTLS:763:tls_construct_stoc_psk_ntls
-SSL_F_TLS_CONSTRUCT_STOC_QUIC_TRANSPORT_PARAMS:845:\
+SSL_F_TLS_CONSTRUCT_STOC_QUIC_TRANSPORT_PARAMS:3009:\
 	tls_construct_stoc_quic_transport_params
+SSL_F_TLS_CONSTRUCT_STOC_QUIC_TRANSPORT_PARAMS_DRAFT:3014:\
+	tls_construct_stoc_quic_transport_params_draft
 SSL_F_TLS_CONSTRUCT_STOC_RENEGOTIATE:458:tls_construct_stoc_renegotiate
 SSL_F_TLS_CONSTRUCT_STOC_RENEGOTIATE_NTLS:764:\
 	tls_construct_stoc_renegotiate_ntls
@@ -1674,6 +1703,8 @@ SSL_F_TLS_CONSTRUCT_STOC_SUPPORTED_VERSIONS_NTLS:769:\
 	tls_construct_stoc_supported_versions_ntls
 SSL_F_TLS_CONSTRUCT_STOC_USE_SRTP:462:tls_construct_stoc_use_srtp
 SSL_F_TLS_CONSTRUCT_STOC_USE_SRTP_NTLS:770:tls_construct_stoc_use_srtp_ntls
+SSL_F_TLS_DETERMINE_IF_USE_DC_FROM_EXTENSION:865:\
+	tls_determine_if_use_dc_from_extension
 SSL_F_TLS_EARLY_POST_PROCESS_CLIENT_HELLO:521:\
 	tls_early_post_process_client_hello
 SSL_F_TLS_FINISH_HANDSHAKE:597:tls_finish_handshake
@@ -1690,6 +1721,8 @@ SSL_F_TLS_PARSE_CTOS_ALPN:567:tls_parse_ctos_alpn
 SSL_F_TLS_PARSE_CTOS_ALPN_NTLS:774:tls_parse_ctos_alpn_ntls
 SSL_F_TLS_PARSE_CTOS_COOKIE:614:tls_parse_ctos_cookie
 SSL_F_TLS_PARSE_CTOS_COOKIE_NTLS:775:tls_parse_ctos_cookie_ntls
+SSL_F_TLS_PARSE_CTOS_DELEGATED_CREDENTIAL:862:\
+	tls_parse_ctos_delegated_credential
 SSL_F_TLS_PARSE_CTOS_EARLY_DATA:568:tls_parse_ctos_early_data
 SSL_F_TLS_PARSE_CTOS_EARLY_DATA_NTLS:776:tls_parse_ctos_early_data_ntls
 SSL_F_TLS_PARSE_CTOS_EC_PT_FORMATS:569:tls_parse_ctos_ec_pt_formats
@@ -1707,8 +1740,10 @@ SSL_F_TLS_PARSE_CTOS_PSK:505:tls_parse_ctos_psk
 SSL_F_TLS_PARSE_CTOS_PSK_KEX_MODES:572:tls_parse_ctos_psk_kex_modes
 SSL_F_TLS_PARSE_CTOS_PSK_KEX_MODES_NTLS:783:tls_parse_ctos_psk_kex_modes_ntls
 SSL_F_TLS_PARSE_CTOS_PSK_NTLS:782:tls_parse_ctos_psk_ntls
-SSL_F_TLS_PARSE_CTOS_QUIC_TRANSPORT_PARAMS:846:\
+SSL_F_TLS_PARSE_CTOS_QUIC_TRANSPORT_PARAMS:3010:\
 	tls_parse_ctos_quic_transport_params
+SSL_F_TLS_PARSE_CTOS_QUIC_TRANSPORT_PARAMS_DRAFT:3015:\
+	tls_parse_ctos_quic_transport_params_draft
 SSL_F_TLS_PARSE_CTOS_RENEGOTIATE:464:tls_parse_ctos_renegotiate
 SSL_F_TLS_PARSE_CTOS_RENEGOTIATE_NTLS:784:tls_parse_ctos_renegotiate_ntls
 SSL_F_TLS_PARSE_CTOS_SERVER_NAME:573:tls_parse_ctos_server_name
@@ -1728,10 +1763,13 @@ SSL_F_TLS_PARSE_CTOS_SUPPORTED_GROUPS_NTLS:791:\
 	tls_parse_ctos_supported_groups_ntls
 SSL_F_TLS_PARSE_CTOS_USE_SRTP:465:tls_parse_ctos_use_srtp
 SSL_F_TLS_PARSE_CTOS_USE_SRTP_NTLS:792:tls_parse_ctos_use_srtp_ntls
+SSL_F_TLS_PARSE_DC_FROM_EXTENSION:864:tls_parse_dc_from_extension
 SSL_F_TLS_PARSE_STOC_ALPN:579:tls_parse_stoc_alpn
 SSL_F_TLS_PARSE_STOC_ALPN_NTLS:793:tls_parse_stoc_alpn_ntls
 SSL_F_TLS_PARSE_STOC_COOKIE:534:tls_parse_stoc_cookie
 SSL_F_TLS_PARSE_STOC_COOKIE_NTLS:794:tls_parse_stoc_cookie_ntls
+SSL_F_TLS_PARSE_STOC_DELEGATED_CREDENTIAL:854:\
+	tls_parse_stoc_delegated_credential
 SSL_F_TLS_PARSE_STOC_EARLY_DATA:538:tls_parse_stoc_early_data
 SSL_F_TLS_PARSE_STOC_EARLY_DATA_INFO:528:*
 SSL_F_TLS_PARSE_STOC_EARLY_DATA_NTLS:795:tls_parse_stoc_early_data_ntls
@@ -1745,8 +1783,10 @@ SSL_F_TLS_PARSE_STOC_NPN:582:tls_parse_stoc_npn
 SSL_F_TLS_PARSE_STOC_NPN_NTLS:799:tls_parse_stoc_npn_ntls
 SSL_F_TLS_PARSE_STOC_PSK:502:tls_parse_stoc_psk
 SSL_F_TLS_PARSE_STOC_PSK_NTLS:800:tls_parse_stoc_psk_ntls
-SSL_F_TLS_PARSE_STOC_QUIC_TRANSPORT_PARAMS:847:\
+SSL_F_TLS_PARSE_STOC_QUIC_TRANSPORT_PARAMS:3011:\
 	tls_parse_stoc_quic_transport_params
+SSL_F_TLS_PARSE_STOC_QUIC_TRANSPORT_PARAMS_DRAFT:3016:\
+	tls_parse_stoc_quic_transport_params_draft
 SSL_F_TLS_PARSE_STOC_RENEGOTIATE:448:tls_parse_stoc_renegotiate
 SSL_F_TLS_PARSE_STOC_RENEGOTIATE_NTLS:801:tls_parse_stoc_renegotiate_ntls
 SSL_F_TLS_PARSE_STOC_SCT:564:tls_parse_stoc_sct
@@ -1797,6 +1837,7 @@ SSL_F_TLS_PROCESS_CLIENT_HELLO_NTLS:816:tls_process_client_hello_ntls
 SSL_F_TLS_PROCESS_CLIENT_KEY_EXCHANGE:382:tls_process_client_key_exchange
 SSL_F_TLS_PROCESS_CLIENT_KEY_EXCHANGE_NTLS:817:\
 	tls_process_client_key_exchange_ntls
+SSL_F_TLS_PROCESS_DC_REQUEST:868:tls_process_dc_request
 SSL_F_TLS_PROCESS_ENCRYPTED_EXTENSIONS:444:tls_process_encrypted_extensions
 SSL_F_TLS_PROCESS_END_OF_EARLY_DATA:537:tls_process_end_of_early_data
 SSL_F_TLS_PROCESS_END_OF_EARLY_DATA_NTLS:818:tls_process_end_of_early_data_ntls
@@ -1989,6 +2030,7 @@ X509_F_CHECK_NAME_CONSTRAINTS:149:check_name_constraints
 X509_F_CHECK_POLICY:145:check_policy
 X509_F_COMMON_VERIFY_SM2:161:common_verify_sm2
 X509_F_DANE_I2D:107:dane_i2d
+X509_F_DC_CHECK_PRIVATE_KEY:164:DC_check_private_key
 X509_F_DIR_CTRL:102:dir_ctrl
 X509_F_GET_CERT_BY_SUBJECT:103:get_cert_by_subject
 X509_F_I2D_X509_AUX:151:i2d_X509_AUX
@@ -2962,6 +3004,8 @@ SSL_R_DANE_TLSA_BAD_SELECTOR:202:dane tlsa bad selector
 SSL_R_DANE_TLSA_NULL_DATA:203:dane tlsa null data
 SSL_R_DATA_BETWEEN_CCS_AND_FINISHED:145:data between ccs and finished
 SSL_R_DATA_LENGTH_TOO_LONG:146:data length too long
+SSL_R_DC_LOAD_FAILED:457:failed to load delegated credential
+SSL_R_DC_VALID_TIME_TOO_LARGE:346:DC valid time too large
 SSL_R_DECRYPTION_FAILED:147:decryption failed
 SSL_R_DECRYPTION_FAILED_OR_BAD_RECORD_MAC:281:\
 	decryption failed or bad record mac
@@ -2972,6 +3016,7 @@ SSL_R_DTLS_MESSAGE_TOO_BIG:334:dtls message too big
 SSL_R_DUPLICATE_COMPRESSION_ID:309:duplicate compression id
 SSL_R_ECC_CERT_NOT_FOR_SIGNING:318:ecc cert not for signing
 SSL_R_ECDH_REQUIRED_FOR_SUITEB_MODE:374:ecdh required for suiteb mode
+SSL_R_EE_CERT_NOT_FOUND:393:ee cert not found
 SSL_R_EE_KEY_TOO_SMALL:399:ee key too small
 SSL_R_EMPTY_SRTP_PROTECTION_PROFILE_LIST:354:empty srtp protection profile list
 SSL_R_ENCRYPTED_LENGTH_TOO_LONG:150:encrypted length too long
@@ -2983,7 +3028,9 @@ SSL_R_EXTENSION_NOT_RECEIVED:279:extension not received
 SSL_R_EXTRA_DATA_IN_MESSAGE:153:extra data in message
 SSL_R_EXT_LENGTH_MISMATCH:163:ext length mismatch
 SSL_R_FAILED_TO_INIT_ASYNC:405:failed to init async
+SSL_R_FAILED_TO_VERIFY_DC_SIGNATURE:453:failed to verify dc signature
 SSL_R_FRAGMENTED_CLIENT_HELLO:401:fragmented client hello
+SSL_R_GET_SIG_AND_HASH_ERR:450:unable to get sig and hash
 SSL_R_GOT_A_FIN_BEFORE_A_CCS:154:got a fin before a ccs
 SSL_R_HTTPS_PROXY_REQUEST:155:https proxy request
 SSL_R_HTTP_REQUEST:156:http request
@@ -3023,6 +3070,8 @@ SSL_R_MISSING_DSA_SIGNING_CERT:165:missing dsa signing cert
 SSL_R_MISSING_ECDSA_SIGNING_CERT:381:missing ecdsa signing cert
 SSL_R_MISSING_FATAL:256:missing fatal
 SSL_R_MISSING_PARAMETERS:290:missing parameters
+SSL_R_MISSING_QUIC_TRANSPORT_PARAMETERS_EXTENSION:801:\
+	missing quic transport parameters extension
 SSL_R_MISSING_RSA_CERTIFICATE:168:missing rsa certificate
 SSL_R_MISSING_RSA_ENCRYPTING_CERT:169:missing rsa encrypting cert
 SSL_R_MISSING_RSA_SIGNING_CERT:170:missing rsa signing cert
@@ -3081,6 +3130,7 @@ SSL_R_PEM_NAME_BAD_PREFIX:391:pem name bad prefix
 SSL_R_PEM_NAME_TOO_SHORT:392:pem name too short
 SSL_R_PIPELINE_FAILURE:406:pipeline failure
 SSL_R_POST_HANDSHAKE_AUTH_ENCODING_ERR:278:post handshake auth encoding err
+SSL_R_PRIVATE_KEY_DOES_NOT_MATCH_DC:454:private key does not match dc
 SSL_R_PRIVATE_KEY_MISMATCH:288:private key mismatch
 SSL_R_PROTOCOL_IS_SHUTDOWN:207:protocol is shutdown
 SSL_R_PSK_IDENTITY_NOT_FOUND:223:psk identity not found
@@ -3143,6 +3193,7 @@ SSL_R_UNABLE_TO_FIND_PUBLIC_KEY_PARAMETERS:239:\
 	unable to find public key parameters
 SSL_R_UNABLE_TO_LOAD_SSL3_MD5_ROUTINES:242:unable to load ssl3 md5 routines
 SSL_R_UNABLE_TO_LOAD_SSL3_SHA1_ROUTINES:243:unable to load ssl3 sha1 routines
+SSL_R_UNABLE_TO_LOOKUP_CERT:451:unable to lookup cert
 SSL_R_UNEXPECTED_CCS_MESSAGE:262:unexpected ccs message
 SSL_R_UNEXPECTED_END_OF_EARLY_DATA:178:unexpected end of early data
 SSL_R_UNEXPECTED_MESSAGE:244:unexpected message
@@ -3174,7 +3225,7 @@ SSL_R_VERSION_TOO_LOW:396:version too low
 SSL_R_WRONG_CERTIFICATE_TYPE:383:wrong certificate type
 SSL_R_WRONG_CIPHER_RETURNED:261:wrong cipher returned
 SSL_R_WRONG_CURVE:378:wrong curve
-SSL_R_WRONG_ENCRYPTION_LEVEL_RECEIVED:316:wrong encryption level received
+SSL_R_WRONG_ENCRYPTION_LEVEL_RECEIVED:800:wrong encryption level received
 SSL_R_WRONG_SIGNATURE_LENGTH:264:wrong signature length
 SSL_R_WRONG_SIGNATURE_SIZE:265:wrong signature size
 SSL_R_WRONG_SIGNATURE_TYPE:370:wrong signature type

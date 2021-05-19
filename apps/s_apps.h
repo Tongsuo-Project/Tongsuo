@@ -20,7 +20,10 @@ int do_server(int *accept_sock, const char *host, const char *port,
               unsigned char *context, int naccept, BIO *bio_s_out);
 
 int verify_callback(int ok, X509_STORE_CTX *ctx);
-
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+int set_dc_cert_key_stuff(SSL_CTX *ctx, X509 *cert, EVP_PKEY *key,
+                          DELEGATED_CREDENTIAL *dc, int is_server);
+#endif
 int set_cert_stuff(SSL_CTX *ctx, char *cert_file, char *key_file);
 int set_cert_key_stuff(SSL_CTX *ctx, X509 *cert, EVP_PKEY *key,
                        STACK_OF(X509) *chain, int build_chain);

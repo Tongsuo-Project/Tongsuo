@@ -47,6 +47,10 @@ typedef struct {
      && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
     X509 *peer_extra;
 #endif
+#ifndef OPENSSL_NO_QUIC
+    uint32_t is_quic;
+    ASN1_OCTET_STRING *quic_early_data_context;
+#endif
 } SSL_SESSION_ASN1;
 
 ASN1_SEQUENCE(SSL_SESSION_ASN1) = {
@@ -80,7 +84,11 @@ ASN1_SEQUENCE(SSL_SESSION_ASN1) = {
     ASN1_EXP_OPT(SSL_SESSION_ASN1, ticket_appdata, ASN1_OCTET_STRING, 18),
 #if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
      && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-    ASN1_EXP_OPT(SSL_SESSION_ASN1, peer_extra, X509, 19)
+    ASN1_EXP_OPT(SSL_SESSION_ASN1, peer_extra, X509, 19),
+#endif
+#ifndef OPENSSL_NO_QUIC
+    ASN1_EXP_OPT_EMBED(SSL_SESSION_ASN1, is_quic, ZUINT32, 20),
+    ASN1_EXP_OPT(SSL_SESSION_ASN1, quic_early_data_context, ASN1_OCTET_STRING, 21),
 #endif
 } static_ASN1_SEQUENCE_END(SSL_SESSION_ASN1)
 
@@ -131,7 +139,9 @@ int i2d_SSL_SESSION(SSL_SESSION *in, unsigned char **pp)
 #endif
     ASN1_OCTET_STRING alpn_selected;
     ASN1_OCTET_STRING ticket_appdata;
-
+#ifndef OPENSSL_NO_QUIC
+    ASN1_OCTET_STRING quic_early_data_context;
+#endif
     long l;
 
     if ((in == NULL) || ((in->cipher == NULL) && (in->cipher_id == 0)))
@@ -211,6 +221,17 @@ int i2d_SSL_SESSION(SSL_SESSION *in, unsigned char **pp)
      && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
     as.peer_extra = in->peer_extra;
 #endif
+
+#ifndef OPENSSL_NO_QUIC
+    as.is_quic = in->is_quic;
+
+    if (in->quic_early_data_context == NULL)
+        as.quic_early_data_context = NULL;
+    else
+        ssl_session_oinit(&as.quic_early_data_context, &quic_early_data_context,
+                          in->quic_early_data_context, in->quic_early_data_context_len);
+#endif
+
     return i2d_SSL_SESSION_ASN1(&as, pp);
 
 }
@@ -398,6 +419,20 @@ SSL_SESSION *d2i_SSL_SESSION(SSL_SESSION **a, const unsigned char **pp,
     X509_free(ret->peer_extra);
     ret->peer_extra = as->peer_extra;
     as->peer_extra = NULL;
+#endif
+
+#ifndef OPENSSL_NO_QUIC
+    ret->is_quic = as->is_quic;
+
+    OPENSSL_free(ret->quic_early_data_context);
+    if (as->quic_early_data_context != NULL) {
+        ret->quic_early_data_context = as->quic_early_data_context->data;
+        ret->quic_early_data_context_len = as->quic_early_data_context->length;
+        as->quic_early_data_context->data = NULL;
+    } else {
+        ret->quic_early_data_context = NULL;
+        ret->quic_early_data_context_len = 0;
+    }
 #endif
 
     M_ASN1_free_of(as, SSL_SESSION_ASN1);
