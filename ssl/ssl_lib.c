@@ -641,7 +641,11 @@ int SSL_clear(SSL *s)
     OPENSSL_free(s->shared_sigalgs);
     s->shared_sigalgs = NULL;
     s->shared_sigalgslen = 0;
-
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    OPENSSL_free(s->shared_dc_sigalgs);
+    s->shared_dc_sigalgs = NULL;
+    s->shared_dc_sigalgslen = 0;
+#endif
     /*
      * Check to see if we were changed into a different method, if so, revert
      * back.
@@ -727,7 +731,11 @@ SSL *SSL_new(SSL_CTX *ctx)
 #ifndef OPENSSL_NO_SM2
     s->enable_sm_tls13_strict = ctx->enable_sm_tls13_strict;
 #endif
-
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    s->enable_verify_peer_by_dc = ctx->enable_verify_peer_by_dc;
+    s->enable_sign_by_dc = ctx->enable_sign_by_dc;
+    s->delegated_credential_tag = 0;
+#endif
     /* Shallow copy of the ciphersuites stack */
     s->tls13_ciphersuites = sk_SSL_CIPHER_dup(ctx->tls13_ciphersuites);
     if (s->tls13_ciphersuites == NULL)
@@ -1205,8 +1213,9 @@ void SSL_free(SSL *s)
 
     ssl_cert_free(s->cert);
     OPENSSL_free(s->shared_sigalgs);
-    /* Free up if allocated */
-
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    OPENSSL_free(s->shared_dc_sigalgs);
+#endif
     OPENSSL_free(s->ext.hostname);
     SSL_CTX_free(s->session_ctx);
 #ifndef OPENSSL_NO_EC
@@ -1232,7 +1241,10 @@ void SSL_free(SSL *s)
 
 #ifndef OPENSSL_NO_QUIC
     OPENSSL_free(s->ext.quic_transport_params);
+    OPENSSL_free(s->ext.peer_quic_transport_params_draft);
     OPENSSL_free(s->ext.peer_quic_transport_params);
+    BUF_MEM_free(s->quic_buf);
+    OPENSSL_free(s->quic_early_data_context);
     while (s->quic_input_data_head != NULL) {
         QUIC_DATA *qd;
 
@@ -3045,6 +3057,10 @@ SSL_CTX *SSL_CTX_new(const SSL_METHOD *meth)
 #ifndef OPENSSL_NO_SM2
     ret->enable_sm_tls13_strict = 0;
 #endif
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    ret->enable_verify_peer_by_dc = 0;
+    ret->enable_sign_by_dc = 0;
+#endif
     ret->method = meth;
     ret->min_proto_version = 0;
     ret->max_proto_version = 0;
@@ -3826,7 +3842,7 @@ int SSL_do_handshake(SSL *s)
             ret = s->handshake_func(s);
         }
     }
-
+#ifndef OPENSSL_NO_QUIC
     if (SSL_IS_QUIC(s) && ret == 1) {
         if (s->server) {
             if (s->early_data_state == SSL_EARLY_DATA_ACCEPTING) {
@@ -3834,15 +3850,13 @@ int SSL_do_handshake(SSL *s)
                 s->rwstate = SSL_READING;
                 ret = 0;
             }
-        } else {
-            if (s->early_data_state == SSL_EARLY_DATA_CONNECTING) {
-                s->early_data_state = SSL_EARLY_DATA_WRITE_RETRY;
-                s->rwstate = SSL_READING;
-                ret = 0;
-            }
+        } else if (s->early_data_state == SSL_EARLY_DATA_CONNECTING) {
+            s->early_data_state = SSL_EARLY_DATA_WRITE_RETRY;
+            s->rwstate = SSL_READING;
+            ret = 0;
         }
     }
-
+#endif
     return ret;
 }
 

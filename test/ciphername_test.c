@@ -438,7 +438,7 @@ static int test_cipher_name(void)
             continue;
 #if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
      && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-        if ((id == 0xE011) || (id == 0xE013) || (id == 0xE019) || (id == 0xE01a))
+        if ((id == 0xE011) || (id == 0xE051) || (id == 0xE013) || (id == 0xE053))
             /* skip GM/T cipher suites who have no standard TLS names  */
             continue;
 #endif

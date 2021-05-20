@@ -343,7 +343,6 @@ static int ssl_set_pkey(CERT *c, EVP_PKEY *pkey)
             return 0;
         }
     }
-
     EVP_PKEY_free(c->pkeys[i].privatekey);
     EVP_PKEY_up_ref(pkey);
     c->pkeys[i].privatekey = pkey;
@@ -1689,4 +1688,356 @@ int SSL_CTX_use_sign_certificate_file(SSL_CTX *ctx, const char *file, int type)
     return ret;
 }
 
+#endif
+
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+static int ssl_set_dc(CERT *c, DELEGATED_CREDENTIAL *dc, int is_server)
+{
+    EVP_PKEY *pkey;
+    uint16_t sigalg;
+    int sig;
+    size_t sig_idx;
+    size_t i;
+
+    sigalg = DC_get_signature_sign_algorithm(dc);
+
+    if (!tls1_get_sig_and_hash(sigalg, &sig, NULL)) {
+        SSLerr(SSL_F_SSL_SET_DC, SSL_R_GET_SIG_AND_HASH_ERR);
+        return 0;
+    }
+
+    if (!ssl_cert_lookup_by_nid(sig, &sig_idx)) {
+        SSLerr(SSL_F_SSL_SET_DC, SSL_R_UNABLE_TO_LOOKUP_CERT);
+        return 0;
+    }
+
+    if (c->pkeys[sig_idx].x509 == NULL) {
+        SSLerr(SSL_F_SSL_SET_DC, SSL_R_EE_CERT_NOT_FOUND);
+        return 0;
+    }
+
+    if (!DC_check_valid(c->pkeys[sig_idx].x509 , dc)) {
+        SSLerr(SSL_F_SSL_SET_DC, SSL_R_CERTIFICATE_VERIFY_FAILED);
+        return 0;
+    }
+
+    if (SSL_verify_delegated_credential_signature(c->pkeys[sig_idx].x509, dc, is_server) <= 0) {
+        SSLerr(SSL_F_SSL_SET_DC, SSL_R_FAILED_TO_VERIFY_DC_SIGNATURE);
+        return 0;
+    }
+
+    pkey = DC_get0_publickey(dc);
+    if (pkey == NULL) {
+        SSLerr(SSL_F_SSL_SET_DC, SSL_R_X509_LIB);
+        return 0;
+    }
+
+# ifndef OPENSSL_NO_SM2
+    if (EVP_PKEY_is_sm2(pkey)) {
+        if (!EVP_PKEY_set_alias_type(pkey, EVP_PKEY_SM2)) {
+            SSLerr(SSL_F_SSL_SET_DC, SSL_R_UNKNOWN_CERTIFICATE_TYPE);
+            return 0;
+        }
+    }
+# endif
+
+    if (ssl_cert_lookup_by_pkey(pkey, &i) == NULL) {
+        SSLerr(SSL_F_SSL_SET_DC, SSL_R_UNKNOWN_CERTIFICATE_TYPE);
+        return 0;
+    }
+# ifndef OPENSSL_NO_EC
+    if (i == SSL_PKEY_ECC && !EC_KEY_can_sign(EVP_PKEY_get0_EC_KEY(pkey))) {
+        SSLerr(SSL_F_SSL_SET_DC, SSL_R_ECC_CERT_NOT_FOR_SIGNING);
+        return 0;
+    }
+# endif
+    if (c->dc_pkeys[i].privatekey != NULL) {
+        /*
+         * The return code from EVP_PKEY_copy_parameters is deliberately
+         * ignored. Some EVP_PKEY types cannot do this.
+         */
+        EVP_PKEY_copy_parameters(pkey, c->dc_pkeys[i].privatekey);
+        ERR_clear_error();
+
+# ifndef OPENSSL_NO_RSA
+        /*
+         * Don't check the public/private key, this is mostly for smart
+         * cards.
+         */
+        if (EVP_PKEY_id(c->dc_pkeys[i].privatekey) == EVP_PKEY_RSA
+            && RSA_flags(EVP_PKEY_get0_RSA(c->dc_pkeys[i].privatekey)) &
+               RSA_METHOD_FLAG_NO_CHECK) ;
+        else
+# endif                          /* OPENSSL_NO_RSA */
+        if (!DC_check_private_key(dc, c->dc_pkeys[i].privatekey)) {
+            /*
+             * don't fail for a dc/key mismatch, just free current private
+             * key (when switching to a different dc & key, first this
+             * function should be used, then ssl_set_pkey
+             */
+            EVP_PKEY_free(c->dc_pkeys[i].privatekey);
+            c->dc_pkeys[i].privatekey = NULL;
+            /* clear error queue */
+            ERR_clear_error();
+        }
+    }
+
+    DC_free(c->dc_pkeys[i].dc);
+    DC_up_ref(dc);
+    c->dc_pkeys[i].dc = dc;
+    c->dc_pkeys[i].parent = &c->pkeys[sig_idx];
+
+    c->pkeys[sig_idx].dc = dc;
+    c->pkeys[sig_idx].dc_privatekey = c->dc_pkeys[i].privatekey;
+
+    return 1;
+}
+
+static int ssl_set_dc_pkey(CERT *c, EVP_PKEY *pkey)
+{
+    size_t i;
+
+# ifndef OPENSSL_NO_SM2
+    if (EVP_PKEY_is_sm2(pkey)) {
+        if (!EVP_PKEY_set_alias_type(pkey, EVP_PKEY_SM2)) {
+            SSLerr(SSL_F_SSL_SET_DC_PKEY, SSL_R_UNKNOWN_CERTIFICATE_TYPE);
+            return 0;
+        }
+    }
+# endif
+
+    if (ssl_cert_lookup_by_pkey(pkey, &i) == NULL) {
+        SSLerr(SSL_F_SSL_SET_DC_PKEY, SSL_R_UNKNOWN_CERTIFICATE_TYPE);
+        return 0;
+    }
+
+    if (c->dc_pkeys[i].dc != NULL) {
+        EVP_PKEY *pktmp;
+        pktmp = DC_get0_publickey(c->dc_pkeys[i].dc);
+        if (pktmp == NULL) {
+            SSLerr(SSL_F_SSL_SET_DC_PKEY, ERR_R_MALLOC_FAILURE);
+            return 0;
+        }
+        /*
+         * The return code from EVP_PKEY_copy_parameters is deliberately
+         * ignored. Some EVP_PKEY types cannot do this.
+         */
+        EVP_PKEY_copy_parameters(pktmp, pkey);
+        ERR_clear_error();
+
+# ifndef OPENSSL_NO_RSA
+        /*
+         * Don't check the public/private key, this is mostly for smart
+         * cards.
+         */
+        if (EVP_PKEY_id(pkey) == EVP_PKEY_RSA
+            && RSA_flags(EVP_PKEY_get0_RSA(pkey)) & RSA_METHOD_FLAG_NO_CHECK) ;
+        else
+# endif
+        if (!DC_check_private_key(c->dc_pkeys[i].dc, pkey)) {
+            DC_free(c->dc_pkeys[i].dc);
+            c->dc_pkeys[i].dc = NULL;
+            return 0;
+        }
+    }
+    EVP_PKEY_free(c->dc_pkeys[i].privatekey);
+    EVP_PKEY_up_ref(pkey);
+    c->dc_pkeys[i].privatekey = pkey;
+
+    if (c->dc_pkeys[i].parent) {
+        c->dc_pkeys[i].parent->dc = c->dc_pkeys[i].dc;
+        c->dc_pkeys[i].parent->dc_privatekey = pkey;
+    }
+
+    return 1;
+}
+
+int SSL_use_dc(SSL *ssl, DELEGATED_CREDENTIAL *dc)
+{
+    if (ssl == NULL || dc == NULL) {
+        SSLerr(SSL_F_SSL_USE_DC, ERR_R_PASSED_NULL_PARAMETER);
+        return 0;
+    }
+
+    return ssl_set_dc(ssl->cert, dc, SSL_is_server(ssl));
+}
+
+int SSL_use_dc_file(SSL *ssl, const char *file, int type)
+{
+    DELEGATED_CREDENTIAL *dc = NULL;
+    int ret = 0;
+
+    if (ssl == NULL || file == NULL) {
+        SSLerr(SSL_F_SSL_USE_DC_FILE, ERR_R_PASSED_NULL_PARAMETER);
+        return 0;
+    }
+
+    if (type == DC_FILETYPE_RAW) {
+        dc = DC_load_from_file(file);
+    } else {
+        SSLerr(SSL_F_SSL_USE_DC_FILE, SSL_R_BAD_SSL_FILETYPE);
+        goto end;
+    }
+
+    if (dc == NULL) {
+        SSLerr(SSL_F_SSL_USE_DC_FILE, SSL_R_BAD_SSL_FILETYPE);
+        goto end;
+    }
+
+    ret = ssl_set_dc(ssl->cert, dc, SSL_is_server(ssl));
+end:
+    DC_free(dc);
+    return ret;
+}
+
+int SSL_CTX_use_dc(SSL_CTX *ctx, DELEGATED_CREDENTIAL *dc)
+{
+    int is_server;
+
+    if (ctx == NULL || dc == NULL) {
+        SSLerr(SSL_F_SSL_CTX_USE_DC, ERR_R_PASSED_NULL_PARAMETER);
+        return 0;
+    }
+
+    if (ctx->method == NULL) {
+        SSLerr(SSL_F_SSL_CTX_USE_DC,
+               SSL_R_SSL_CTX_HAS_NO_DEFAULT_SSL_VERSION);
+        return 0;
+    }
+
+    is_server = (ctx->method->ssl_accept == ssl_undefined_function) ? 0 : 1;
+
+    return ssl_set_dc(ctx->cert, dc, is_server);
+}
+
+int SSL_CTX_use_dc_file(SSL_CTX *ctx, const char *file, int type)
+{
+    int ret = 0;
+    int is_server;
+    DELEGATED_CREDENTIAL *dc = NULL;
+
+    if (ctx == NULL || file == NULL) {
+        SSLerr(SSL_F_SSL_CTX_USE_DC_FILE, ERR_R_PASSED_NULL_PARAMETER);
+        return 0;
+    }
+
+    if (type == DC_FILETYPE_RAW) {
+        dc = DC_load_from_file(file);
+    } else {
+        SSLerr(SSL_F_SSL_CTX_USE_DC_FILE, SSL_R_BAD_SSL_FILETYPE);
+        goto end;
+    }
+
+    if (dc == NULL) {
+        SSLerr(SSL_F_SSL_CTX_USE_DC_FILE, SSL_R_BAD_SSL_FILETYPE);
+        goto end;
+    }
+
+    is_server = (ctx->method->ssl_accept == ssl_undefined_function) ? 0 : 1;
+
+    ret = ssl_set_dc(ctx->cert, dc, is_server);
+end:
+    DC_free(dc);
+    return ret;
+}
+
+int SSL_use_dc_PrivateKey(SSL *ssl, EVP_PKEY *pkey)
+{
+    if (ssl == NULL || pkey == NULL) {
+        SSLerr(SSL_F_SSL_USE_DC_PRIVATEKEY, ERR_R_PASSED_NULL_PARAMETER);
+        return 0;
+    }
+
+    return ssl_set_dc_pkey(ssl->cert, pkey);
+}
+
+int SSL_use_dc_PrivateKey_file(SSL *ssl, const char *file, int type)
+{
+    BIO *in;
+    int j, ret = 0;
+    EVP_PKEY *pkey = NULL;
+
+    in = BIO_new(BIO_s_file());
+    if (in == NULL) {
+        SSLerr(SSL_F_SSL_USE_DC_PRIVATEKEY_FILE, ERR_R_BUF_LIB);
+        goto end;
+    }
+
+    if (BIO_read_filename(in, file) <= 0) {
+        SSLerr(SSL_F_SSL_USE_DC_PRIVATEKEY_FILE, ERR_R_SYS_LIB);
+        goto end;
+    }
+    if (type == SSL_FILETYPE_PEM) {
+        j = ERR_R_PEM_LIB;
+        pkey = PEM_read_bio_PrivateKey(in, NULL,
+                                       ssl->default_passwd_callback,
+                                       ssl->default_passwd_callback_userdata);
+    } else if (type == SSL_FILETYPE_ASN1) {
+        j = ERR_R_ASN1_LIB;
+        pkey = d2i_PrivateKey_bio(in, NULL);
+    } else {
+        SSLerr(SSL_F_SSL_USE_DC_PRIVATEKEY_FILE, SSL_R_BAD_SSL_FILETYPE);
+        goto end;
+    }
+    if (pkey == NULL) {
+        SSLerr(SSL_F_SSL_USE_DC_PRIVATEKEY_FILE, j);
+        goto end;
+    }
+
+    ret = ssl_set_dc_pkey(ssl->cert, pkey);
+    EVP_PKEY_free(pkey);
+end:
+    BIO_free(in);
+    return ret;
+}
+
+int SSL_CTX_use_dc_PrivateKey(SSL_CTX *ctx, EVP_PKEY *pkey)
+{
+    if (ctx == NULL || pkey == NULL) {
+        SSLerr(SSL_F_SSL_CTX_USE_DC_PRIVATEKEY, ERR_R_PASSED_NULL_PARAMETER);
+        return 0;
+    }
+
+    return ssl_set_dc_pkey(ctx->cert, pkey);
+}
+
+int SSL_CTX_use_dc_PrivateKey_file(SSL_CTX *ctx, const char *file, int type)
+{
+    BIO *in;
+    int j, ret = 0;
+    EVP_PKEY *pkey = NULL;
+
+    in = BIO_new(BIO_s_file());
+    if (in == NULL) {
+        SSLerr(SSL_F_SSL_CTX_USE_DC_PRIVATEKEY_FILE, ERR_R_BUF_LIB);
+        goto end;
+    }
+
+    if (BIO_read_filename(in, file) <= 0) {
+        SSLerr(SSL_F_SSL_CTX_USE_DC_PRIVATEKEY_FILE, ERR_R_SYS_LIB);
+        goto end;
+    }
+    if (type == SSL_FILETYPE_PEM) {
+        j = ERR_R_PEM_LIB;
+        pkey = PEM_read_bio_PrivateKey(in, NULL,
+                                       ctx->default_passwd_callback,
+                                       ctx->default_passwd_callback_userdata);
+    } else if (type == SSL_FILETYPE_ASN1) {
+        j = ERR_R_ASN1_LIB;
+        pkey = d2i_PrivateKey_bio(in, NULL);
+    } else {
+        SSLerr(SSL_F_SSL_CTX_USE_DC_PRIVATEKEY_FILE, SSL_R_BAD_SSL_FILETYPE);
+        goto end;
+    }
+    if (pkey == NULL) {
+        SSLerr(SSL_F_SSL_CTX_USE_DC_PRIVATEKEY_FILE, j);
+        goto end;
+    }
+
+    ret = ssl_set_dc_pkey(ctx->cert, pkey);
+    EVP_PKEY_free(pkey);
+end:
+    BIO_free(in);
+    return ret;
+}
 #endif

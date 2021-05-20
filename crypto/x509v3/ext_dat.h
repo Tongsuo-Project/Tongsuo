@@ -10,6 +10,9 @@
 int name_cmp(const char *name, const char *cmp);
 
 extern const X509V3_EXT_METHOD v3_bcons, v3_nscert, v3_key_usage, v3_ext_ku;
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+extern const X509V3_EXT_METHOD v3_dc_usage;
+#endif
 extern const X509V3_EXT_METHOD v3_pkey_usage_period, v3_sxnet, v3_info, v3_sinfo;
 extern const X509V3_EXT_METHOD v3_ns_ia5_list[8], v3_alt[3], v3_skey_id, v3_akey_id;
 extern const X509V3_EXT_METHOD v3_crl_num, v3_crl_reason, v3_crl_invdate;

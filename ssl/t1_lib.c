@@ -23,6 +23,9 @@
 
 static const SIGALG_LOOKUP *find_sig_alg(SSL *s, X509 *x, EVP_PKEY *pkey);
 static int tls12_sigalg_allowed(const SSL *s, int op, const SIGALG_LOOKUP *lu);
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+static const SIGALG_LOOKUP *find_dc_sig_alg(SSL *s);
+#endif
 
 SSL3_ENC_METHOD const TLSv1_enc_data = {
     tls1_enc,
@@ -852,7 +855,7 @@ static const uint16_t tls_default_sigalg[] = {
 };
 
 /* Lookup TLS signature algorithm */
-static const SIGALG_LOOKUP *tls1_lookup_sigalg(uint16_t sigalg)
+const SIGALG_LOOKUP *tls1_lookup_sigalg(uint16_t sigalg)
 {
     size_t i;
     const SIGALG_LOOKUP *s;
@@ -880,6 +883,22 @@ int tls1_lookup_md(const SIGALG_LOOKUP *lu, const EVP_MD **pmd)
     }
     if (pmd)
         *pmd = md;
+    return 1;
+}
+
+/* get NID of signature algorithm and NID of hash algorithm */
+int tls1_get_sig_and_hash(uint16_t sigalg, int *psig, int *phash)
+{
+    const SIGALG_LOOKUP *lu = tls1_lookup_sigalg(sigalg);
+    if (!lu)
+        return 0;
+
+    if (psig)
+        *psig = lu->sig;
+
+    if (phash)
+        *phash = lu->hash;
+
     return 1;
 }
 
@@ -2843,6 +2862,9 @@ static const SIGALG_LOOKUP *find_sig_alg(SSL *s, X509 *x, EVP_PKEY *pkey)
  */
 int tls_choose_sigalg(SSL *s, int fatalerrs)
 {
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    const SIGALG_LOOKUP *dc_lu = NULL;
+#endif
     const SIGALG_LOOKUP *lu = NULL;
     int sig_idx = -1;
 
@@ -2850,14 +2872,21 @@ int tls_choose_sigalg(SSL *s, int fatalerrs)
     s->s3->tmp.sigalg = NULL;
 
     if (SSL_IS_TLS13(s)) {
-        lu = find_sig_alg(s, NULL, NULL);
-        if (lu == NULL) {
-            if (!fatalerrs)
-                return 1;
-            SSLfatal(s, SSL_AD_HANDSHAKE_FAILURE, SSL_F_TLS_CHOOSE_SIGALG,
-                     SSL_R_NO_SUITABLE_SIGNATURE_ALGORITHM);
-            return 0;
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+        dc_lu = find_dc_sig_alg(s);
+        if (dc_lu == NULL) {
+#endif
+            lu = find_sig_alg(s, NULL, NULL);
+            if (lu == NULL) {
+                if (!fatalerrs)
+                    return 1;
+                SSLfatal(s, SSL_AD_HANDSHAKE_FAILURE, SSL_F_TLS_CHOOSE_SIGALG,
+                         SSL_R_NO_SUITABLE_SIGNATURE_ALGORITHM);
+                return 0;
+            }
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
         }
+#endif
     } else {
         /* If ciphersuite doesn't require a cert nothing to do */
         if (!(s->s3->tmp.new_cipher->algorithm_auth & SSL_aCERT))
@@ -2983,11 +3012,25 @@ int tls_choose_sigalg(SSL *s, int fatalerrs)
             }
         }
     }
-    if (sig_idx == -1)
-        sig_idx = lu->sig_idx;
-    s->s3->tmp.cert = &s->cert->pkeys[sig_idx];
-    s->cert->key = s->s3->tmp.cert;
-    s->s3->tmp.sigalg = lu;
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    if (dc_lu) {
+        sig_idx = dc_lu->sig_idx;
+        s->s3->tmp.cert = s->cert->dc_pkeys[sig_idx].parent;
+        s->cert->key = s->s3->tmp.cert;
+        s->s3->tmp.sigalg = dc_lu;
+
+        s->delegated_credential_tag |= DC_HAS_BEEN_USED_FOR_SIGN;
+    } else {
+#endif
+        if (sig_idx == -1)
+            sig_idx = lu->sig_idx;
+        s->s3->tmp.cert = &s->cert->pkeys[sig_idx];
+        s->cert->key = s->s3->tmp.cert;
+        s->s3->tmp.sigalg = lu;
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    }
+#endif
+
     return 1;
 }
 
@@ -3021,3 +3064,222 @@ uint8_t SSL_SESSION_get_max_fragment_length(const SSL_SESSION *session)
 {
     return session->ext.max_fragment_len_mode;
 }
+
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+static int check_dc_usable(SSL *s, const SIGALG_LOOKUP *sig,
+                           DELEGATED_CREDENTIAL *dc, EVP_PKEY *pkey)
+{
+    int default_mdnid;
+    size_t i;
+    unsigned int dc_expect_sig_alg;
+
+    /* If the EVP_PKEY reports a mandatory digest, allow nothing else. */
+    ERR_set_mark();
+    if (EVP_PKEY_get_default_digest_nid(pkey, &default_mdnid) == 2 &&
+        sig->hash != default_mdnid)
+        return 0;
+
+    /* If it didn't report a mandatory NID, for whatever reasons,
+     * just clear the error and allow all hashes to be used. */
+    ERR_pop_to_mark();
+
+    dc_expect_sig_alg = DC_get_expected_cert_verify_algorithm(dc);
+
+    for (i = 0; i < s->s3->tmp.peer_dc_sigalgslen; i++) {
+        if (dc_expect_sig_alg == s->s3->tmp.peer_dc_sigalgs[i]) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+static int has_usable_dc(SSL *s, const SIGALG_LOOKUP *sig, int idx)
+{
+    if (idx == -1)
+        idx = sig->sig_idx;
+
+    if (!ssl_has_dc(s, idx))
+        return 0;
+
+    return check_dc_usable(s, sig, s->cert->dc_pkeys[idx].dc,
+                           s->cert->dc_pkeys[idx].privatekey);
+}
+
+static const SIGALG_LOOKUP *find_dc_sig_alg(SSL *s)
+{
+    const SIGALG_LOOKUP *lu = NULL;
+    size_t i;
+#ifndef OPENSSL_NO_EC
+    int curve = -1;
+#endif
+    EVP_PKEY *tmppkey;
+
+    if (!s->enable_sign_by_dc || !SSL_IS_TLS13(s))
+        return NULL;
+
+    /* Look for a shared sigalgs matching possible certificates */
+    for (i = 0; i < s->shared_dc_sigalgslen; i++) {
+        lu = s->shared_dc_sigalgs[i];
+
+        /* Skip SHA1, SHA224, DSA and RSA if not PSS */
+        if (lu->hash == NID_sha1
+            || lu->hash == NID_sha224
+            || lu->sig == EVP_PKEY_DSA
+            || lu->sig == EVP_PKEY_RSA)
+            continue;
+
+        if (!tls1_lookup_md(lu, NULL))
+            continue;
+
+        if (!has_usable_dc(s, lu, -1))
+            continue;
+
+        tmppkey = s->cert->dc_pkeys[lu->sig_idx].privatekey;
+
+        if (lu->sig == EVP_PKEY_EC
+            # ifndef OPENSSL_NO_SM2
+            || lu->sig == EVP_PKEY_SM2
+# endif
+                ) {
+#ifndef OPENSSL_NO_EC
+            if (curve == -1) {
+                EC_KEY *ec = EVP_PKEY_get0_EC_KEY(tmppkey);
+                curve = EC_GROUP_get_curve_name(EC_KEY_get0_group(ec));
+            }
+            if (lu->curve != NID_undef && curve != lu->curve)
+                continue;
+#else
+            continue;
+#endif
+        } else if (lu->sig == EVP_PKEY_RSA_PSS) {
+            /* validate that key is large enough for the signature algorithm */
+            if (!rsa_pss_check_min_key_size(EVP_PKEY_get0(tmppkey), lu))
+                continue;
+        }
+        break;
+    }
+
+    if (i == s->shared_dc_sigalgslen)
+        return NULL;
+
+    return lu;
+}
+
+int tls1_set_shared_dc_sigalgs(SSL *s)
+{
+    const uint16_t *pref, *allow, *conf;
+    size_t preflen, allowlen, conflen;
+    size_t nmatch;
+    const SIGALG_LOOKUP **salgs = NULL;
+    unsigned int is_suiteb = tls1_suiteb(s);
+
+    OPENSSL_free(s->shared_dc_sigalgs);
+    s->shared_dc_sigalgs = NULL;
+    s->shared_dc_sigalgslen = 0;
+
+    conflen = tls12_get_psigalgs(s, 0, &conf);
+
+    if (s->options & SSL_OP_CIPHER_SERVER_PREFERENCE || is_suiteb) {
+        pref = conf;
+        preflen = conflen;
+        allow = s->s3->tmp.peer_dc_sigalgs;
+        allowlen = s->s3->tmp.peer_dc_sigalgslen;
+    } else {
+        allow = conf;
+        allowlen = conflen;
+        pref = s->s3->tmp.peer_dc_sigalgs;
+        preflen = s->s3->tmp.peer_dc_sigalgslen;
+    }
+
+    nmatch = tls12_shared_sigalgs(s, NULL, pref, preflen, allow, allowlen);
+    if (nmatch) {
+        if ((salgs = OPENSSL_malloc(nmatch * sizeof(*salgs))) == NULL) {
+            SSLerr(SSL_F_TLS1_SET_SHARED_DC_SIGALGS, ERR_R_MALLOC_FAILURE);
+            return 0;
+        }
+        nmatch = tls12_shared_sigalgs(s, salgs, pref, preflen, allow, allowlen);
+    } else {
+        salgs = NULL;
+    }
+
+    s->shared_dc_sigalgs = salgs;
+    s->shared_dc_sigalgslen = nmatch;
+    return 1;
+}
+#endif
+
+int tls1_lookup_sigalg_by_pkey_and_hash(EVP_PKEY *pkey, int hash, int is_tls13,
+                                        uint16_t *psigalg)
+{
+    int md_nid = hash;
+    int def_nid, def_ret;
+    size_t i;
+    size_t sig_idx;
+#ifndef OPENSSL_NO_EC
+    int curve_nid = NID_undef;
+    const EC_GROUP *group = NULL;
+#endif
+    const SIGALG_LOOKUP *s;
+
+    if (ssl_cert_lookup_by_pkey(pkey, &sig_idx) == NULL) {
+        return 0;
+    }
+
+    def_ret = EVP_PKEY_get_default_digest_nid(pkey, &def_nid);
+    if (def_ret == 2) {
+        md_nid = def_nid;
+    } else if (def_ret == 1) {
+        if (md_nid == NID_undef) {
+            md_nid = def_nid;
+        }
+    }
+
+#ifndef OPENSSL_NO_EC
+    if (sig_idx == SSL_PKEY_ECC
+#if (!defined OPENSSL_NO_SM2) && (!defined OPENSSL_NO_SM3)
+        || sig_idx == SSL_PKEY_SM2
+#endif
+    ) {
+        group = EC_KEY_get0_group(EVP_PKEY_get0_EC_KEY(pkey));
+
+        if (group) {
+            curve_nid = EC_GROUP_get_curve_name(group);
+        }
+    }
+#endif
+
+    for (i = 0, s = sigalg_lookup_tbl; i < OSSL_NELEM(sigalg_lookup_tbl);
+         i++, s++) {
+
+        if (is_tls13) {
+            /* Skip SHA1, SHA224, DSA and RSA if not PSS */
+            if (s->hash == NID_sha1
+                || s->hash == NID_sha224
+                || s->sig == EVP_PKEY_DSA
+                || s->sig == EVP_PKEY_RSA)
+                continue;
+        }
+
+        if (s->sig_idx != (int)sig_idx)
+            continue;
+
+        if (s->hash != NID_undef && s->hash != md_nid)
+            continue;
+
+#ifndef OPENSSL_NO_EC
+        if (s->curve != curve_nid)
+            continue;
+#endif
+        if (psigalg)
+            *psigalg = s->sigalg;
+
+        break;
+    }
+
+    if (i == OSSL_NELEM(sigalg_lookup_tbl))
+        return 0;
+
+    return 1;
+}
+

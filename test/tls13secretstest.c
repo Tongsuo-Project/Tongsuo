@@ -217,7 +217,7 @@ int ossl_statem_export_early_allowed(SSL *s)
 }
 
 #ifndef OPENSSL_NO_QUIC
-int quic_set_encryption_secrets(SSL *ssl, OSSL_ENCRYPTION_LEVEL level)
+int quic_set_encryption_secrets(SSL *s, OSSL_ENCRYPTION_LEVEL level)
 {
     return 1;
 }

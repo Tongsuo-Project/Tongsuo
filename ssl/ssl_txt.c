@@ -155,6 +155,18 @@ int SSL_SESSION_print(BIO *bp, const SSL_SESSION *x)
                        x->ext.max_early_data) <= 0)
             goto err;
     }
+#ifndef OPENSSL_NO_QUIC
+    if (BIO_printf(bp, "    QUIC: %s\n", x->is_quic ? "yes" : "no") <= 0)
+        goto err;
+
+    if (x->quic_early_data_context) {
+        if (BIO_puts(bp, "    QUIC early data ctx:\n") <= 0)
+            goto err;
+        if (BIO_dump_indent(bp, (const char *)x->quic_early_data_context,
+                            (int)x->quic_early_data_context_len, 4) <= 0)
+            goto err;
+    }
+#endif
 
     return 1;
  err:

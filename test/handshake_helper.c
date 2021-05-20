@@ -1420,6 +1420,31 @@ static int create_sctp_socks(int *ssock, int *csock)
  * in cleaner argument passing but would complicate the test configuration
  * parsing.)
  */
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+static ssl_test_dc_usage_t get_ssl_dc_usage(SSL *s)
+{
+    int dc_tag = SSL_get_delegated_credential_tag(s);
+
+    switch (dc_tag)
+    {
+    case DC_HAS_BEEN_USED_FOR_VERIFY_PEER:
+    case DC_REQ_HAS_BEEN_SEND_TO_PEER|DC_HAS_BEEN_USED_FOR_VERIFY_PEER:
+        return SSL_VERIFY_PEER_BY_DC_ONLY;
+
+    case DC_HAS_BEEN_USED_FOR_SIGN:
+    case DC_REQ_HAS_BEEN_SEND_TO_PEER|DC_HAS_BEEN_USED_FOR_SIGN:
+        return SSL_SIGN_BY_DC_ONLY;
+
+    case DC_HAS_BEEN_USED_FOR_SIGN|DC_HAS_BEEN_USED_FOR_VERIFY_PEER:
+    case DC_REQ_HAS_BEEN_SEND_TO_PEER|DC_HAS_BEEN_USED_FOR_SIGN|DC_HAS_BEEN_USED_FOR_VERIFY_PEER:
+        return SSL_VERIFY_PEER_AND_SIGN_BY_DC;
+
+    default:
+        return SSL_NOT_USE_DC;
+    }
+}
+#endif
+
 static HANDSHAKE_RESULT *do_handshake_internal(
     SSL_CTX *server_ctx, SSL_CTX *server2_ctx, SSL_CTX *client_ctx,
     const SSL_TEST_CTX *test_ctx, const SSL_TEST_EXTRA_CONF *extra,
@@ -1733,6 +1758,10 @@ static HANDSHAKE_RESULT *do_handshake_internal(
     ret->server_cert_type = peer_pkey_type(client.ssl);
     ret->client_cert_type = peer_pkey_type(server.ssl);
 
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    ret->client_dc_usage = get_ssl_dc_usage(client.ssl);
+    ret->server_dc_usage = get_ssl_dc_usage(server.ssl);
+#endif
     ctx_data_free_data(&server_ctx_data);
     ctx_data_free_data(&server2_ctx_data);
     ctx_data_free_data(&client_ctx_data);

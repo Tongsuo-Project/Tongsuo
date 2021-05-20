@@ -591,6 +591,10 @@ typedef enum OPTION_choice {
 #ifndef OPENSSL_NO_SM2
     OPT_ENABLE_SM_TLS13_STRICT,
 #endif
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    OPT_ENABLE_VERIFY_PEER_BY_DC, OPT_ENABLE_SIGN_BY_DC,
+    OPT_DELEGATED_CREDENTIAL, OPT_DELEGATED_CREDENTIAL_PRIVATE_KEY,
+#endif
     OPT_DTLS1_2, OPT_SCTP, OPT_TIMEOUT, OPT_MTU, OPT_KEYFORM, OPT_PASS,
     OPT_CERT_CHAIN, OPT_CAPATH, OPT_NOCAPATH, OPT_CHAINCAPATH, OPT_VERIFYCAPATH,
     OPT_KEY, OPT_RECONNECT, OPT_BUILD_CHAIN, OPT_CAFILE, OPT_NOCAFILE,
@@ -771,6 +775,12 @@ const OPTIONS s_client_options[] = {
 #endif
 #ifndef OPENSSL_NO_SM2
     {"enable_sm_tls13_strict", OPT_ENABLE_SM_TLS13_STRICT, '-', "enable sm tls13 strict"},
+#endif
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    {"dc", OPT_DELEGATED_CREDENTIAL, 's', "delegated crential path"},
+    {"dc_pkey", OPT_DELEGATED_CREDENTIAL_PRIVATE_KEY, 's', "c private key path"},
+    {"enable_verify_peer_by_dc", OPT_ENABLE_VERIFY_PEER_BY_DC, '-', "enable verify server by delegated crential"},
+    {"enable_sign_by_dc", OPT_ENABLE_SIGN_BY_DC, '-', "enable sign by delegated crential"},
 #endif
 #ifndef OPENSSL_NO_DTLS
     {"dtls", OPT_DTLS, '-', "Use any version of DTLS"},
@@ -959,6 +969,14 @@ int s_client_main(int argc, char **argv)
 #endif
 #ifndef OPENSSL_NO_SM2
     int enable_sm_tls13_strict = 0;
+#endif
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    DELEGATED_CREDENTIAL *dc = NULL;
+    EVP_PKEY *dc_pkey = NULL;
+    int enable_verify_peer_by_dc = 0;
+    int enable_sign_by_dc = 0;
+    const char *s_delegated_credential_file = NULL;
+    const char *s_delegated_credential_pkey_file = NULL;
 #endif
     char *chCApath = NULL, *chCAfile = NULL, *host = NULL;
     char *port = OPENSSL_strdup(PORT);
@@ -1383,6 +1401,20 @@ int s_client_main(int argc, char **argv)
             enable_sm_tls13_strict = 1;
             break;
 #endif
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+        case OPT_ENABLE_VERIFY_PEER_BY_DC:
+            enable_verify_peer_by_dc = 1;
+            break;
+        case OPT_ENABLE_SIGN_BY_DC:
+            enable_sign_by_dc = 1;
+            break;
+        case OPT_DELEGATED_CREDENTIAL:
+            s_delegated_credential_file = opt_arg();
+            break;
+        case OPT_DELEGATED_CREDENTIAL_PRIVATE_KEY:
+            s_delegated_credential_pkey_file = opt_arg();
+            break;
+#endif
         case OPT_DTLS:
 #ifndef OPENSSL_NO_DTLS
             meth = DTLS_client_method();
@@ -1733,7 +1765,11 @@ int s_client_main(int argc, char **argv)
     if (key_file != NULL) {
         key = load_key(key_file, key_format, 0, pass, e,
                        "client certificate private key file");
-        if (key == NULL) {
+        if (key == NULL
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+            && !enable_sign_by_dc
+#endif
+        ) {
             ERR_print_errors(bio_err);
             goto end;
         }
@@ -1746,6 +1782,23 @@ int s_client_main(int argc, char **argv)
             goto end;
         }
     }
+
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    if (enable_sign_by_dc) {
+        dc = DC_load_from_file(s_delegated_credential_file);
+        if (dc == NULL) {
+            ERR_print_errors(bio_err);
+            goto end;
+        }
+
+        dc_pkey = load_key(s_delegated_credential_pkey_file, key_format,
+                            0, pass, e, "server dc private key file");
+        if (dc_pkey == NULL) {
+            ERR_print_errors(bio_err);
+            goto end;
+        }
+    }
+#endif
 
 #if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
      && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
@@ -1844,6 +1897,12 @@ int s_client_main(int argc, char **argv)
 #ifndef OPENSSL_NO_SM2
     if (enable_sm_tls13_strict) {
         SSL_CTX_enable_sm_tls13_strict(ctx);
+    }
+#endif
+
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    if (enable_verify_peer_by_dc) {
+        SSL_CTX_enable_verify_peer_by_dc(ctx);
     }
 #endif
 
@@ -2055,6 +2114,23 @@ int s_client_main(int argc, char **argv)
 
     ssl_ctx_add_crls(ctx, crls, crl_download);
 
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    if (enable_sign_by_dc) {
+        if(!set_dc_cert_key_stuff(ctx, cert, dc_pkey, dc, 0)) {
+            BIO_printf(bio_err, "error setting delegated credential to context\n");
+            ERR_print_errors(bio_err);
+            goto end;
+        }
+
+        if (key != NULL) {
+            if (SSL_CTX_use_PrivateKey(ctx, key) <= 0) {
+                BIO_printf(bio_err, "error setting private key\n");
+                ERR_print_errors(bio_err);
+                return 0;
+            }
+        }
+    } else
+#endif
     if (!set_cert_key_stuff(ctx, cert, key, chain, build_chain))
         goto end;
 
@@ -3316,6 +3392,10 @@ int s_client_main(int argc, char **argv)
     bio_c_out = NULL;
     BIO_free(bio_c_msg);
     bio_c_msg = NULL;
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    DC_free(dc);
+    EVP_PKEY_free(dc_pkey);
+#endif
     return ret;
 }
 

@@ -131,6 +131,9 @@ extern "C" {
 /* ExtensionType value from RFC7627 */
 # define TLSEXT_TYPE_extended_master_secret      23
 
+/* ExtensionType value from draft-ietf-tls-subcerts-07 */
+# define TLSEXT_TYPE_delegated_credential        34
+
 /* ExtensionType value from RFC4507 */
 # define TLSEXT_TYPE_session_ticket              35
 
@@ -148,8 +151,9 @@ extern "C" {
 /* Temporary extension type */
 # define TLSEXT_TYPE_renegotiate                 0xff01
 
-/* ExtensionType value from draft-ietf-quic-tls-13 */
-# define TLSEXT_TYPE_quic_transport_parameters   0xffa5
+/* ExtensionType value from draft-ietf-quic-tls-27 */
+# define TLSEXT_TYPE_quic_transport_parameters_draft   0xffa5
+# define TLSEXT_TYPE_quic_transport_parameters         0x0039
 
 # ifndef OPENSSL_NO_NEXTPROTONEG
 /* This is not an IANA defined extension number */

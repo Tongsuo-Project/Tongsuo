@@ -69,7 +69,10 @@ static const X509V3_EXT_METHOD *standard_exts[] = {
     &v3_ct_scts[2],
 #endif
     &v3_tls_feature,
-    &v3_ext_admission
+    &v3_ext_admission,
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    &v3_dc_usage
+#endif
 };
 
 /* Number of standard extensions */

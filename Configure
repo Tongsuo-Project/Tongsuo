@@ -445,7 +445,8 @@ my @disablables = (
     "status",
     "req-status",
     "dycert-ocsp",
-    "options2"
+    "options2",
+    "delegated-credential"
     );
 foreach my $proto ((@tls, @dtls))
         {

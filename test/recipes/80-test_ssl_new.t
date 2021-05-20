@@ -28,7 +28,7 @@ map { s/\^// } @conf_files if $^O eq "VMS";
 
 # We hard-code the number of tests to double-check that the globbing above
 # finds all files as expected.
-plan tests => 37;  # = scalar @conf_srcs
+plan tests => 32;  # = scalar @conf_srcs
 
 # Some test results depend on the configuration of enabled protocols. We only
 # verify generated sources in the default configuration.
@@ -105,12 +105,7 @@ my %skip = (
   "29-dtls-sctp-label-bug.conf" => disabled("sctp") || disabled("sock"),
   "30-tls13-sm.conf" => disabled("sm2") || disabled("sm3") || disabled("sm4"),
   "31-ntls.conf" => disabled("ntls") || disabled("sm2") || disabled("sm3") || disabled("sm4"),
-  "32-keyless-normal.conf" => disabled("keyless"),
-  "33-keyless-tls13-sm.conf" => disabled("keyless") || disabled("sm2") || disabled("sm3") || disabled("sm4"),
-  "34-keyless-ntls.conf" => disabled("ntls") || disabled("keyless") || disabled("sm2") || disabled("sm3") || disabled("sm4"),
-  "35-lurk-normal.conf" => disabled("lurk"),
-  "36-lurk-tls13-sm.conf" => disabled("lurk") || disabled("sm2") || disabled("sm3") || disabled("sm4"),
-  "37-lurk-ntls.conf" => disabled("ntls") || disabled("lurk") || disabled("sm2") || disabled("sm3") || disabled("sm4"),
+  "38-delegated-credential.conf" => disabled("delegated-credential"),
 );
 
 foreach my $conf (@conf_files) {

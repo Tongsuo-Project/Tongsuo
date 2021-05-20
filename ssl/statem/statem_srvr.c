@@ -967,6 +967,7 @@ WORK_STATE ossl_statem_server_post_work(SSL *s, WORK_STATE wst)
             /* SSLfatal() already called */
             return WORK_ERROR;
 
+#ifndef OPENSSL_NO_QUIC
             if (SSL_IS_QUIC(s)
                 && s->ext.early_data == SSL_EARLY_DATA_ACCEPTED) {
                 s->early_data_state = SSL_EARLY_DATA_FINISHED_READING;
@@ -975,6 +976,7 @@ WORK_STATE ossl_statem_server_post_work(SSL *s, WORK_STATE wst)
                     /* SSLfatal() already called */
                     return WORK_ERROR;
             }
+#endif
         }
         break;
 
@@ -3908,6 +3910,8 @@ MSG_PROCESS_RETURN tls_process_client_certificate(SSL *s, PACKET *pkt)
         }
     } else {
         EVP_PKEY *pkey;
+        X509 *peer_cert;
+
         i = ssl_verify_cert_chain(s, sk);
 
         if (i <= 0) {
@@ -3921,13 +3925,38 @@ MSG_PROCESS_RETURN tls_process_client_certificate(SSL *s, PACKET *pkt)
                      SSL_F_TLS_PROCESS_CLIENT_CERTIFICATE, i);
             goto err;
         }
-        pkey = X509_get0_pubkey(sk_X509_value(sk, 0));
+        peer_cert = sk_X509_value(sk, 0);
+        pkey = X509_get0_pubkey(peer_cert);
         if (pkey == NULL) {
             SSLfatal(s, SSL_AD_HANDSHAKE_FAILURE,
                      SSL_F_TLS_PROCESS_CLIENT_CERTIFICATE,
                      SSL_R_UNKNOWN_CERTIFICATE_TYPE);
             goto err;
         }
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+        if (s->delegated_credential_tag & DC_HAS_BEEN_USED_FOR_VERIFY_PEER) {
+            if (!SSL_IS_TLS13(s)) {
+                SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER,
+                         SSL_F_TLS_PROCESS_CLIENT_CERTIFICATE,
+                         SSL_R_UNKNOWN_CERTIFICATE_TYPE);
+                goto err;
+            }
+
+            if (!DC_check_valid(peer_cert, s->session->peer_dc)) {
+                SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER,
+                         SSL_F_TLS_PROCESS_CLIENT_CERTIFICATE,
+                         SSL_R_CERTIFICATE_VERIFY_FAILED);
+                goto err;
+            }
+
+            if (SSL_verify_delegated_credential_signature(peer_cert, s->session->peer_dc, 0) <= 0) {
+                SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER,
+                        SSL_F_TLS_PROCESS_CLIENT_CERTIFICATE,
+                        SSL_R_CERTIFICATE_VERIFY_FAILED);
+                goto err;
+            }
+        }
+#endif
     }
 
     /*

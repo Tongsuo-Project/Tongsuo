@@ -191,6 +191,23 @@ struct x509_st {
 # endif
 } /* X509 */ ;
 
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+struct delegated_credential_st{
+    unsigned long    valid_time;
+    unsigned int     expected_cert_verify_algorithm;
+    unsigned long    dc_publickey_raw_len;
+    unsigned char   *dc_publickey_raw;
+    unsigned int     signature_sign_algorithm;
+    unsigned int     dc_signature_len;
+    unsigned char   *dc_signature;
+    EVP_PKEY        *pkey;
+    unsigned char   *raw_byte;
+    unsigned long    raw_byte_len;
+    CRYPTO_REF_COUNT references;
+    CRYPTO_RWLOCK   *lock;
+} /* DC */;
+#endif
+
 /*
  * This is a used when verifying cert chains.  Since the gathering of the
  * cert chain can take some time (and have to be 'retried', this needs to be

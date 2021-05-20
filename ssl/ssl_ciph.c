@@ -2258,6 +2258,7 @@ unsigned long BABASSL_CIPHER_get_mac(const SSL_CIPHER *c)
     return c->algorithm_mac;
 }
 
+#ifndef OPENSSL_NO_QUIC
 int SSL_CIPHER_get_prf_nid(const SSL_CIPHER *c)
 {
     switch (c->algorithm2 & (0xFF << TLS1_PRF_DGST_SHIFT)) {
@@ -2289,3 +2290,4 @@ int SSL_CIPHER_get_prf_nid(const SSL_CIPHER *c)
     }
     return NID_undef;
 }
+#endif

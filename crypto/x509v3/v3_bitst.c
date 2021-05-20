@@ -38,10 +38,22 @@ static BIT_STRING_BITNAME key_usage_type_table[] = {
     {-1, NULL, NULL}
 };
 
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+static BIT_STRING_BITNAME dc_usage_type_table[] = {
+    {0, "Server Delegation", "serverDelegation"},
+    {1, "Client Delegation", "clientDelegation"},
+    {-1, NULL, NULL}
+};
+#endif
+
 const X509V3_EXT_METHOD v3_nscert =
 EXT_BITSTRING(NID_netscape_cert_type, ns_cert_type_table);
 const X509V3_EXT_METHOD v3_key_usage =
 EXT_BITSTRING(NID_key_usage, key_usage_type_table);
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+const X509V3_EXT_METHOD v3_dc_usage =
+EXT_BITSTRING(NID_delegation_usage, dc_usage_type_table);
+#endif
 
 STACK_OF(CONF_VALUE) *i2v_ASN1_BIT_STRING(X509V3_EXT_METHOD *method,
                                           ASN1_BIT_STRING *bits,

@@ -136,6 +136,10 @@ SSL_SESSION *ssl_session_dup(SSL_SESSION *src, int ticket)
     dest->ticket_appdata = NULL;
     memset(&dest->ex_data, 0, sizeof(dest->ex_data));
 
+#ifndef OPENSSL_NO_QUIC
+    dest->quic_early_data_context = NULL;
+    dest->quic_early_data_context_len = 0;
+#endif
     /* We deliberately don't copy the prev and next pointers */
     dest->prev = NULL;
     dest->next = NULL;
@@ -148,6 +152,14 @@ SSL_SESSION *ssl_session_dup(SSL_SESSION *src, int ticket)
 
     if (!CRYPTO_new_ex_data(CRYPTO_EX_INDEX_SSL_SESSION, dest, &dest->ex_data))
         goto err;
+
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    if (src->peer_dc != NULL) {
+        if (!DC_up_ref(src->peer_dc))
+            goto err;
+        dest->peer_dc = src->peer_dc;
+    }
+#endif
 
     if (src->peer != NULL) {
         if (!X509_up_ref(src->peer))
@@ -228,6 +240,18 @@ SSL_SESSION *ssl_session_dup(SSL_SESSION *src, int ticket)
         if (dest->ticket_appdata == NULL)
             goto err;
     }
+
+#ifndef OPENSSL_NO_QUIC
+    if (src->quic_early_data_context) {
+        dest->quic_early_data_context =
+                OPENSSL_memdup(src->quic_early_data_context,
+                               src->quic_early_data_context_len);
+        if (dest->quic_early_data_context == NULL)
+            goto err;
+
+        dest->quic_early_data_context_len = src->quic_early_data_context_len;
+    }
+#endif
 
     return dest;
  err:
@@ -425,7 +449,23 @@ int ssl_get_new_session(SSL *s, int session)
     s->session = ss;
     ss->ssl_version = s->version;
     ss->verify_result = X509_V_OK;
+#ifndef OPENSSL_NO_QUIC
+    ss->is_quic = (s->quic_method != NULL);
 
+    if (s->quic_early_data_context) {
+        ss->quic_early_data_context =
+                OPENSSL_memdup(s->quic_early_data_context,
+                               s->quic_early_data_context_len);
+        if (ss->quic_early_data_context == NULL) {
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_SSL_GET_NEW_SESSION,
+                     ERR_R_MALLOC_FAILURE);
+            SSL_SESSION_free(ss);
+            return 0;
+        }
+
+        ss->quic_early_data_context_len = s->quic_early_data_context_len;
+    }
+#endif
     /* If client supports extended master secret set it in session */
     if (s->s3->flags & TLS1_FLAGS_RECEIVED_EXTMS)
         ss->flags |= SSL_SESS_FLAG_EXTMS;
@@ -830,6 +870,9 @@ void SSL_SESSION_free(SSL_SESSION *ss)
      && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
     X509_free(ss->peer_extra);
 #endif
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    DC_free(ss->peer_dc);
+#endif
     sk_X509_pop_free(ss->peer_chain, X509_free);
     OPENSSL_free(ss->ext.hostname);
     OPENSSL_free(ss->ext.tick);
@@ -839,6 +882,9 @@ void SSL_SESSION_free(SSL_SESSION *ss)
 #endif
 #ifndef OPENSSL_NO_SRP
     OPENSSL_free(ss->srp_username);
+#endif
+#ifndef OPENSSL_NO_QUIC
+    OPENSSL_free(ss->quic_early_data_context);
 #endif
     OPENSSL_free(ss->ext.alpn_selected);
     OPENSSL_free(ss->ticket_appdata);

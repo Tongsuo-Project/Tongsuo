@@ -51,7 +51,8 @@ INCLUDE_MAIN___test_libtestutil_OLB = /INCLUDE=MAIN
           recordlentest drbgtest drbg_cavs_test sslbuffertest \
           time_offset_test pemtest ssl_cert_table_internal_test ciphername_test \
           servername_test ocspapitest rsa_mp_test fatalerrtest tls13ccstest \
-          sysdefaulttest errtest ssl_ctx_test gosttest
+          sysdefaulttest errtest ssl_ctx_test gosttest \
+          ssl_ntls_api_test
 
 
   SOURCE[versions]=versions.c

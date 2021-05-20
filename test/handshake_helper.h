@@ -67,6 +67,10 @@ typedef struct handshake_result {
     char *cipher;
     /* session ticket application data */
     char *result_session_ticket_app_data;
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    int client_dc_usage;
+    int server_dc_usage;
+#endif
 } HANDSHAKE_RESULT;
 
 HANDSHAKE_RESULT *HANDSHAKE_RESULT_new(void);

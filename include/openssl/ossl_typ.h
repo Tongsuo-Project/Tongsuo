@@ -126,6 +126,9 @@ typedef struct x509_revoked_st X509_REVOKED;
 typedef struct X509_name_st X509_NAME;
 typedef struct X509_pubkey_st X509_PUBKEY;
 typedef struct x509_store_st X509_STORE;
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+typedef struct delegated_credential_st DELEGATED_CREDENTIAL;
+#endif
 typedef struct x509_store_ctx_st X509_STORE_CTX;
 
 typedef struct x509_object_st X509_OBJECT;
