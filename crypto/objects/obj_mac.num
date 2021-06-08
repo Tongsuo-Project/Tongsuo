@@ -1199,3 +1199,6 @@ kx_sm2		1198
 kx_sm2dhe		1199
 auth_sm2		1200
 delegation_usage		1201
+zuc		1202
+zuc_128_eea3		1203
+zuc_128_eia3		1204
