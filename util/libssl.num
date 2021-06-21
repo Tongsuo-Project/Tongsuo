@@ -564,12 +564,6 @@ SSL_use_sign_PrivateKey                 614	1_1_1e	EXIST::FUNCTION:NTLS,SM2
 SSL_use_enc_certificate                 615	1_1_1e	EXIST::FUNCTION:NTLS,SM2
 SSL_use_enc_certificate_file            616	1_1_1e	EXIST::FUNCTION:NTLS,SM2
 SSL_use_enc_PrivateKey                  617	1_1_1e	EXIST::FUNCTION:NTLS,SM2
-SSL_CTX_get_options2                    620	1_1_1g	EXIST::FUNCTION:OPTIONS2
-SSL_set_options2                        621	1_1_1g	EXIST::FUNCTION:OPTIONS2
-SSL_CTX_set_options2                    622	1_1_1g	EXIST::FUNCTION:OPTIONS2
-SSL_CTX_clear_options2                  623	1_1_1g	EXIST::FUNCTION:OPTIONS2
-SSL_get_options2                        625	1_1_1g	EXIST::FUNCTION:OPTIONS2
-SSL_clear_options2                      626	1_1_1g	EXIST::FUNCTION:OPTIONS2
 SSL_verify_delegated_credential_signature 632	1_1_1h	EXIST::FUNCTION:DELEGATED_CREDENTIAL
 SSL_disable_verify_peer_by_dc           639	1_1_1h	EXIST::FUNCTION:DELEGATED_CREDENTIAL
 SSL_CTX_enable_sign_by_dc               640	1_1_1h	EXIST::FUNCTION:DELEGATED_CREDENTIAL

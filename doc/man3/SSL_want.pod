@@ -17,7 +17,6 @@ information TLS/SSL I/O operation
  int SSL_want_x509_lookup(const SSL *ssl);
  int SSL_want_async(const SSL *ssl);
  int SSL_want_async_job(const SSL *ssl);
- int SSL_want_sess_lookup(const SSL *ssl);
  int SSL_want_client_hello_cb(const SSL *ssl);
 
 =head1 DESCRIPTION

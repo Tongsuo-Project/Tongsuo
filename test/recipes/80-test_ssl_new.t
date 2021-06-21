@@ -20,6 +20,7 @@ setup("test_ssl_new");
 
 $ENV{TEST_CERTS_DIR} = srctop_dir("test", "certs");
 $ENV{CTLOG_FILE} = srctop_file("test", "ct", "log_list.conf");
+$ENV{TEST_RUNS_DIR} = $ENV{RESULT_D};
 
 my @conf_srcs =  glob(srctop_file("test", "ssl-tests", "*.conf.in"));
 map { s/;.*// } @conf_srcs if $^O eq "VMS";
@@ -105,7 +106,7 @@ my %skip = (
   "29-dtls-sctp-label-bug.conf" => disabled("sctp") || disabled("sock"),
   "30-tls13-sm.conf" => disabled("sm2") || disabled("sm3") || disabled("sm4"),
   "31-ntls.conf" => disabled("ntls") || disabled("sm2") || disabled("sm3") || disabled("sm4"),
-  "38-delegated-credential.conf" => disabled("delegated-credential"),
+  "38-delegated-credential.conf" => disabled("delegated-credential") || disabled("ec"),
 );
 
 foreach my $conf (@conf_files) {

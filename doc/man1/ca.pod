@@ -615,7 +615,7 @@ Sign a certificate request:
 Sign an SM2 certificate request:
 
  openssl ca -in sm2.csr -out sm2.crt -md sm3 -sigopt "sm2_id:1234567812345678" -sm2-id "1234567812345678"
- 
+
 Sign a certificate request, using CA extensions:
 
  openssl ca -in req.pem -extensions v3_ca -out newcert.pem

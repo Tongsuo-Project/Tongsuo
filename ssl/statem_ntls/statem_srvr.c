@@ -1231,18 +1231,6 @@ static int tls_early_post_process_client_hello(SSL *s)
         }
     }
 
-# if !(defined(OPENSSL_NO_KEYLESS) && defined(OPENSSL_NO_LURK))
-    if (s->sig_hash && s->cert->cert_cb2) {
-        int rv = s->cert->cert_cb2(s, s->cert->cert_cb2_arg);
-        if (rv < 0) {
-            SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                     SSL_F_TLS_EARLY_POST_PROCESS_CLIENT_HELLO,
-                     SSL_R_CERT_CB2_ERROR);
-            goto err;
-        }
-    }
-# endif
-
     if (!s->hit
             && s->version >= TLS1_VERSION
             && s->ext.session_secret_cb) {
@@ -1702,47 +1690,9 @@ int tls_construct_server_key_exchange_ntls(SSL *s, WPACKET *pkt)
     int i;
     unsigned long type;
     const BIGNUM *r[4];
-# if !(defined(OPENSSL_NO_KEYLESS) && defined(OPENSSL_NO_LURK))
-    EVP_MD_CTX *md_ctx = NULL;
-# else
     EVP_MD_CTX *md_ctx = EVP_MD_CTX_new();
-# endif
     EVP_PKEY_CTX *pctx = NULL;
     size_t paramlen, paramoffset;
-# if !(defined(OPENSSL_NO_KEYLESS) && defined(OPENSSL_NO_LURK))
-    int use_keyless = 0;
-
-    if (0
-#  ifndef OPENSSL_NO_KEYLESS
-        || s->keyless_ntls
-#  endif
-#  ifndef OPENSSL_NO_LURK
-        || s->lurk_ntls
-#  endif
-       )
-    {
-        /*We currently support rsa and ecdsa signature processes*/
-        if (lu->sig == EVP_PKEY_RSA
-            || lu->sig == EVP_PKEY_RSA_PSS
-#  ifndef OPENSSL_NO_SM2
-            || lu->sig == EVP_PKEY_SM2
-#  endif
-            || lu->sig == EVP_PKEY_EC)
-            use_keyless = 1;
-
-#  ifndef OPENSSL_NO_KEYLESS
-        if (s->keyless_again)
-            goto keyless_recover;
-#  endif
-#  ifndef OPENSSL_NO_LURK
-        if (s->lurk_again)
-            goto lurk_recover;
-#  endif
-    }
-# endif
-# if !(defined(OPENSSL_NO_KEYLESS) && defined(OPENSSL_NO_LURK))
-    md_ctx = EVP_MD_CTX_new();
-# endif
 
     if (!WPACKET_get_total_written(pkt, &paramoffset)) {
         SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
@@ -1967,12 +1917,7 @@ int tls_construct_server_key_exchange_ntls(SSL *s, WPACKET *pkt)
         size_t siglen, tbslen;
         int rv;
 
-# if !(defined(OPENSSL_NO_KEYLESS) && defined(OPENSSL_NO_LURK))
-        if (use_keyless)
-            pkey = X509_get0_pubkey(s->s3->tmp.cert->x509);
-        else
-# endif
-            pkey = s->s3->tmp.cert->privatekey;
+        pkey = s->s3->tmp.cert->privatekey;
 
         if (pkey == NULL || !tls1_lookup_md(lu, &md)) {
             /* Should never happen */
@@ -2002,33 +1947,21 @@ int tls_construct_server_key_exchange_ntls(SSL *s, WPACKET *pkt)
          * afterwards.
          */
         siglen = EVP_PKEY_size(pkey);
-# if !(defined(OPENSSL_NO_KEYLESS) && defined(OPENSSL_NO_LURK))
-        if (use_keyless) {
-            if (!WPACKET_sub_reserve_bytes_u16(pkt, siglen, &sigbytes1)
-                || (EVP_DigestInit(md_ctx, md) <= 0)) {
+
+        if (!WPACKET_sub_reserve_bytes_u16(pkt, siglen, &sigbytes1)
+            || EVP_DigestSignInit(md_ctx, &pctx, md, NULL, pkey) <= 0) {
+            SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
+                     SSL_F_TLS_CONSTRUCT_SERVER_KEY_EXCHANGE_NTLS,
+                     ERR_R_INTERNAL_ERROR);
+            goto err;
+        }
+        if (lu->sig == EVP_PKEY_RSA_PSS) {
+            if (EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PSS_PADDING) <= 0
+                || EVP_PKEY_CTX_set_rsa_pss_saltlen(pctx, RSA_PSS_SALTLEN_DIGEST) <= 0) {
                 SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
                          SSL_F_TLS_CONSTRUCT_SERVER_KEY_EXCHANGE_NTLS,
-                         ERR_R_INTERNAL_ERROR);
+                         ERR_R_EVP_LIB);
                 goto err;
-            }
-        } else
-# endif
-        {
-            if (!WPACKET_sub_reserve_bytes_u16(pkt, siglen, &sigbytes1)
-                || EVP_DigestSignInit(md_ctx, &pctx, md, NULL, pkey) <= 0) {
-                SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                         SSL_F_TLS_CONSTRUCT_SERVER_KEY_EXCHANGE_NTLS,
-                         ERR_R_INTERNAL_ERROR);
-                goto err;
-            }
-            if (lu->sig == EVP_PKEY_RSA_PSS) {
-                if (EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PSS_PADDING) <= 0
-                    || EVP_PKEY_CTX_set_rsa_pss_saltlen(pctx, RSA_PSS_SALTLEN_DIGEST) <= 0) {
-                    SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                             SSL_F_TLS_CONSTRUCT_SERVER_KEY_EXCHANGE_NTLS,
-                             ERR_R_EVP_LIB);
-                    goto err;
-                }
             }
         }
         tbslen = construct_key_exchange_tbs_ntls(s, &tbs,
@@ -2038,183 +1971,16 @@ int tls_construct_server_key_exchange_ntls(SSL *s, WPACKET *pkt)
             /* SSLfatal_ntls() already called */
             goto err;
         }
-# ifndef OPENSSL_NO_KEYLESS
-        if (s->keyless_ntls && use_keyless) {
-            unsigned char md_buf[EVP_MAX_MD_SIZE];
-            unsigned int mdlen = 0;
-            int ret = 0;
-            unsigned char *tbuf = NULL;
 
-            if ((EVP_DigestUpdate(md_ctx, (const void *)tbs, tbslen) <= 0)
-                || (EVP_DigestFinal(md_ctx,&(md_buf[0]), &mdlen) <= 0)) {
-                OPENSSL_free(tbs);
-                SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                         SSL_F_TLS_CONSTRUCT_SERVER_KEY_EXCHANGE_NTLS,
-                         ERR_R_INTERNAL_ERROR);
-                goto err;
-            }
-            OPENSSL_free(tbs);
-
-            if (lu->sig == EVP_PKEY_RSA_PSS) {
-                tbuf = OPENSSL_malloc(EVP_PKEY_size(pkey));
-                if (tbuf == NULL) {
-                    SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_SERVER_KEY_EXCHANGE_NTLS,
-                             ERR_R_MALLOC_FAILURE);
-                    goto err;
-                }
-
-                if (!RSA_padding_add_PKCS1_PSS_mgf1(EVP_PKEY_get0_RSA(pkey),
-                                                    tbuf, &(md_buf[0]),
-                                                    md, md,
-                                                    RSA_PSS_SALTLEN_DIGEST)) {
-                    OPENSSL_free(tbuf);
-                    SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_SERVER_KEY_EXCHANGE_NTLS,
-                             ERR_R_INTERNAL_ERROR);
-                    goto err;
-                }
-
-                s->keyless_callback_param.data = tbuf;
-                s->keyless_callback_param.len = RSA_size(EVP_PKEY_get0_RSA(pkey));
-                s->keyless_callback_param.type = SSL_KEYLESS_TYPE_RSA_PSS_SIGN;
-            } else {
-                s->keyless_callback_param.data = md_buf;
-                s->keyless_callback_param.len = mdlen;
-                if (lu->sig == EVP_PKEY_RSA)
-                    s->keyless_callback_param.type = EVP_MD_type(md);
-# ifndef OPENSSL_NO_SM2
-                else if (lu->sig == EVP_PKEY_SM2)
-                    s->keyless_callback_param.type = SSL_KEYLESS_TYPE_SM2_SIGN;
-# endif
-                else
-                    s->keyless_callback_param.type = SSL_KEYLESS_TYPE_ECDSA_SIGN;
-            }
-            s->keyless_callback_param.cert_tag = SSL_NORMAL_CERT;
-            s->keyless_recover_pos = sigbytes1;
-            s->keyless_recover_n = pkt->written;
-            ret = s->keyless_callback(s, &s->keyless_callback_param);
-            if (lu->sig == EVP_PKEY_RSA_PSS) {
-                OPENSSL_free(tbuf);
-                tbuf = NULL;
-            }
-            if (ret == 1) {
-                /* again or done */
-                s->keyless_again = 1;
-                return 0;
-            }  else if (ret == 2) {
-                SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_SERVER_KEY_EXCHANGE_NTLS,
-                         SSL_R_KEYLESS_ERROR);
-                goto err;
-            } else if (ret == 0) {
-keyless_recover:
-                siglen = s->keyless_result_len;
-                sigbytes1 = s->keyless_recover_pos;
-                pkt->curr = pkt->written = s->keyless_recover_n;
-
-                memcpy(sigbytes1, s->keyless_result, siglen);
-
-                if (s->keyless_again)
-                    s->keyless_again = 0;
-            } else {
-                /* invalid return value */
-                SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_SERVER_KEY_EXCHANGE_NTLS,
-                         SSL_R_KEYLESS_INVALID_RETURN_ERROR);
-                goto err;
-            }
-
-            if (!WPACKET_sub_allocate_bytes_u16(pkt, siglen, &sigbytes2)
-                || sigbytes1 != sigbytes2) {
-                SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                         SSL_F_TLS_CONSTRUCT_SERVER_KEY_EXCHANGE_NTLS,
-                         ERR_R_INTERNAL_ERROR);
-                goto err;
-            }
-
-        } else
-# endif
         /* signature params and callback */
-# ifndef OPENSSL_NO_LURK
-        if (s->lurk_ntls && s->lurk && use_keyless) {
-            int ret = 0;
-
-            s->lurk_callback_param.type = SSL_LURK_QUERY_ECDHE;
-            s->lurk_callback_param.data = (unsigned char *)s->init_buf->data + paramoffset;
-            s->lurk_callback_param.len = paramlen;
-
-#  ifndef OPENSSL_NO_SM2
-            if (lu->sig == EVP_PKEY_SM2) {
-                unsigned char md_buf[EVP_MAX_MD_SIZE];
-                unsigned int mdlen = 0;
-
-                if ((EVP_DigestUpdate(md_ctx, (const void *)tbs, tbslen) <= 0)
-                    || (EVP_DigestFinal(md_ctx, &(md_buf[0]), &mdlen) <= 0)) {
-                    OPENSSL_free(tbs);
-                    SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                             SSL_F_TLS_CONSTRUCT_SERVER_KEY_EXCHANGE_NTLS,
-                             ERR_R_INTERNAL_ERROR);
-                    goto err;
-                }
-                OPENSSL_free(tbs);
-
-                s->lurk_callback_param.data = md_buf;
-                s->lurk_callback_param.len = mdlen;
-
-                s->lurk_callback_param.cert_tag = SSL_NORMAL_CERT;
-                s->lurk_callback_param.type = SSL_LURK_QUERY_SM2_SIGN;
-            }
-#  endif
-
-            EVP_MD_CTX_free(md_ctx);
-            md_ctx = NULL;
-
-            s->lurk_recover_pos = sigbytes1;
-            s->lurk_recover_n = pkt->written;
-
-            ret = s->lurk_callback(s, &s->lurk_callback_param);
-            switch(ret) {
-            case SSL_LURK_OK:
- lurk_recover:
-                if (s->lurk_result == NULL || s->lurk_result_len == 0)
-                    goto err;
-
-                siglen = s->lurk_result_len;
-                sigbytes1 = s->lurk_recover_pos;
-                pkt->curr = pkt->written = s->lurk_recover_n;
-
-                memcpy(sigbytes1, s->lurk_result, siglen);
-
-                s->lurk_again = 0;
-                break;
-            case SSL_LURK_AGAIN:
-            case SSL_LURK_DONE:
-                /* again or done */
-                s->lurk_again = 1;
-                return 0;
-            case SSL_LURK_ERROR:
-                /* error */
-            default:
-                /* invalid return value */
-                goto err;
-            }
-
-            if (!WPACKET_sub_allocate_bytes_u16(pkt, siglen, &sigbytes2)
-                    || sigbytes1 != sigbytes2) {
-                SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                         SSL_F_TLS_CONSTRUCT_SERVER_KEY_EXCHANGE_NTLS,
-                         ERR_R_INTERNAL_ERROR);
-                goto err;
-            }
-        } else
-# endif
-        {
-            rv = EVP_DigestSign(md_ctx, sigbytes1, &siglen, tbs, tbslen);
-            OPENSSL_free(tbs);
-            if (rv <= 0 || !WPACKET_sub_allocate_bytes_u16(pkt, siglen, &sigbytes2)
-                || sigbytes1 != sigbytes2) {
-                SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                         SSL_F_TLS_CONSTRUCT_SERVER_KEY_EXCHANGE_NTLS,
-                         ERR_R_INTERNAL_ERROR);
-                goto err;
-            }
+        rv = EVP_DigestSign(md_ctx, sigbytes1, &siglen, tbs, tbslen);
+        OPENSSL_free(tbs);
+        if (rv <= 0 || !WPACKET_sub_allocate_bytes_u16(pkt, siglen, &sigbytes2)
+            || sigbytes1 != sigbytes2) {
+            SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
+                     SSL_F_TLS_CONSTRUCT_SERVER_KEY_EXCHANGE_NTLS,
+                     ERR_R_INTERNAL_ERROR);
+            goto err;
         }
     }
 
@@ -2287,83 +2053,7 @@ static int tls_process_cke_rsa(SSL *s, PACKET *pkt)
     unsigned char *rsa_decrypt = NULL;
     int ret = 0;
 
-#  ifndef OPENSSL_NO_KEYLESS
-    if (s->keyless_ntls && s->keyless_again)
-        goto keyless_recover;
-#  endif
-#  ifndef OPENSSL_NO_LURK
-    if(s->lurk_ntls && s->lurk_again)
-        goto lurk_recover;
-#  endif
-
-#  ifndef OPENSSL_NO_LURK
-    if (s->lurk_ntls && s->lurk) {
-        /* SSLv3  omit the length bytes. */
-        if (s->version == SSL3_VERSION) {
-            enc_premaster = *pkt;
-        } else {
-            if (!PACKET_get_length_prefixed_2(pkt, &enc_premaster)
-                        || PACKET_remaining(pkt) != 0) {
-                SSLfatal_ntls(s, SSL_AD_DECODE_ERROR, SSL_F_TLS_PROCESS_CKE_RSA,
-                            SSL_R_LENGTH_MISMATCH);
-                return 0;
-            }
-        }
-
-        s->lurk_callback_param.data = (unsigned char *)PACKET_data(&enc_premaster);
-        s->lurk_callback_param.len = (int)PACKET_remaining(&enc_premaster);
-
-        if (s->session->flags & SSL_SESS_FLAG_EXTMS)
-            s->lurk_callback_param.type = SSL_LURK_QUERY_RSA_EXTEND_MASTER;
-        else
-            s->lurk_callback_param.type = SSL_LURK_QUERY_RSA_MASTER;
-
-        ret = s->lurk_callback(s, &s->lurk_callback_param);
-        switch(ret) {
-            case SSL_LURK_OK:
- lurk_recover:
-                if (s->lurk_result == NULL || s->lurk_result_len == 0) {
-                    SSLfatal_ntls(s, SSL_AD_DECRYPT_ERROR, SSL_F_TLS_PROCESS_CKE_RSA,
-                                ERR_R_RSA_LIB);
-                    goto err;
-                }
-
-                if (s->lurk_result_len > SSL_MAX_MASTER_KEY_LENGTH)
-                    goto err;
-
-                s->session->master_key_length = s->lurk_result_len;
-                memcpy(s->session->master_key, s->lurk_result, s->lurk_result_len);
-
-                s->lurk_again = 0;
-                return 1;
-            case SSL_LURK_AGAIN:
-            case SSL_LURK_DONE:
-                /* again or done */
-                s->lurk_again = 1;
-                return 1;
-            case SSL_LURK_ERROR:
-                /* error */
-            default:
-                /* invalid return value */
-                goto err;
-        }
-    }
-#  endif
-#  ifndef OPENSSL_NO_KEYLESS
-    if (s->keyless_ntls) {
-        /*The following use the RSA secret key of the large number N, keyless scenario
-             *we use the public key*/
-        EVP_PKEY   *t_pkey;
-        t_pkey = X509_get0_pubkey(s->cert->pkeys[SSL_PKEY_RSA].x509);
-        if (t_pkey == NULL) {
-            SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PROCESS_CKE_RSA,
-                     SSL_R_MISSING_RSA_CERTIFICATE);
-            return 0;
-        }
-        rsa = EVP_PKEY_get0_RSA(t_pkey);
-    } else
-#  endif
-        rsa = EVP_PKEY_get0_RSA(s->cert->pkeys[SSL_PKEY_RSA].privatekey);
+    rsa = EVP_PKEY_get0_RSA(s->cert->pkeys[SSL_PKEY_RSA].privatekey);
     if (rsa == NULL) {
         SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PROCESS_CKE_RSA,
                  SSL_R_MISSING_RSA_CERTIFICATE);
@@ -2415,79 +2105,42 @@ static int tls_process_cke_rsa(SSL *s, PACKET *pkt)
                  ERR_R_INTERNAL_ERROR);
         goto err;
     }
-#  ifndef OPENSSL_NO_KEYLESS
-    if (s->keyless_ntls) {
-        int keyless_ret = 0;
-        s->keyless_recover_pos = rsa_decrypt;
-        s->keyless_callback_param.data = PACKET_data(&enc_premaster);
-        s->keyless_callback_param.len = (unsigned long)PACKET_remaining(&enc_premaster);
-        s->keyless_callback_param.type = SSL_KEYLESS_TYPE_RSA_DECRYPT;
-        s->keyless_callback_param.cert_tag = SSL_NORMAL_CERT;
 
-        keyless_ret = s->keyless_callback(s, &s->keyless_callback_param);
-        if (keyless_ret == 1) {
-            /* again or done */
-            s->keyless_again = 1;
-            return 0;
-        } else if (keyless_ret == 2) {
-            SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PROCESS_CKE_RSA,
-                     SSL_R_KEYLESS_ERROR);
-            goto err;
-        } else if (keyless_ret == 0) {
-keyless_recover:
-            decrypt_len = s->keyless_result_len;
-            rsa_decrypt = s->keyless_recover_pos;
-            if (s->keyless_again)
-                s->keyless_again = 0;
+    /*
+     * Decrypt with no padding. PKCS# 1 padding will be removed as part of
+     * the timing-sensitive code below.
+     */
+    /* TODO(size_t): Convert this function */
+    decrypt_len = (int)RSA_private_decrypt((int)PACKET_remaining(&enc_premaster),
+                                           PACKET_data(&enc_premaster),
+                                           rsa_decrypt, rsa, RSA_NO_PADDING);
 
-            memcpy(rsa_decrypt, s->keyless_result, decrypt_len);
-        } else {
-            /* invalid return value */
-            SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PROCESS_CKE_RSA,
-                     SSL_R_KEYLESS_INVALID_RETURN_ERROR);
-            goto err;
-        }
-        padding_len = 0;
-        decrypt_good = 0xff;
-    } else
-#  endif
-    {
-        /*
-         * Decrypt with no padding. PKCS# 1 padding will be removed as part of
-         * the timing-sensitive code below.
-         */
-        /* TODO(size_t): Convert this function */
-        decrypt_len = (int)RSA_private_decrypt((int)PACKET_remaining(&enc_premaster),
-                                               PACKET_data(&enc_premaster),
-                                               rsa_decrypt, rsa, RSA_NO_PADDING);
-
-        if (decrypt_len < 0) {
-            SSLfatal_ntls(s, SSL_AD_DECRYPT_ERROR, SSL_F_TLS_PROCESS_CKE_RSA,
-                     ERR_R_INTERNAL_ERROR);
-            goto err;
-        }
-
-        /* Check the padding. See RFC 3447, section 7.2.2. */
-
-        /*
-         * The smallest padded premaster is 11 bytes of overhead. Small keys
-         * are publicly invalid, so this may return immediately. This ensures
-         * PS is at least 8 bytes.
-         */
-        if (decrypt_len < 11 + SSL_MAX_MASTER_KEY_LENGTH) {
-            SSLfatal_ntls(s, SSL_AD_DECRYPT_ERROR, SSL_F_TLS_PROCESS_CKE_RSA,
-                     SSL_R_DECRYPTION_FAILED);
-            goto err;
-        }
-
-        padding_len = decrypt_len - SSL_MAX_MASTER_KEY_LENGTH;
-        decrypt_good = constant_time_eq_int_8(rsa_decrypt[0], 0) &
-            constant_time_eq_int_8(rsa_decrypt[1], 2);
-        for (j = 2; j < padding_len - 1; j++) {
-            decrypt_good &= ~constant_time_is_zero_8(rsa_decrypt[j]);
-        }
-        decrypt_good &= constant_time_is_zero_8(rsa_decrypt[padding_len - 1]);
+    if (decrypt_len < 0) {
+        SSLfatal_ntls(s, SSL_AD_DECRYPT_ERROR, SSL_F_TLS_PROCESS_CKE_RSA,
+                 ERR_R_INTERNAL_ERROR);
+        goto err;
     }
+
+    /* Check the padding. See RFC 3447, section 7.2.2. */
+
+    /*
+     * The smallest padded premaster is 11 bytes of overhead. Small keys
+     * are publicly invalid, so this may return immediately. This ensures
+     * PS is at least 8 bytes.
+     */
+    if (decrypt_len < 11 + SSL_MAX_MASTER_KEY_LENGTH) {
+        SSLfatal_ntls(s, SSL_AD_DECRYPT_ERROR, SSL_F_TLS_PROCESS_CKE_RSA,
+                 SSL_R_DECRYPTION_FAILED);
+        goto err;
+    }
+
+    padding_len = decrypt_len - SSL_MAX_MASTER_KEY_LENGTH;
+    decrypt_good = constant_time_eq_int_8(rsa_decrypt[0], 0) &
+        constant_time_eq_int_8(rsa_decrypt[1], 2);
+    for (j = 2; j < padding_len - 1; j++) {
+        decrypt_good &= ~constant_time_is_zero_8(rsa_decrypt[j]);
+    }
+    decrypt_good &= constant_time_is_zero_8(rsa_decrypt[padding_len - 1]);
 
     /*
      * If the version in the decrypted pre-master secret is correct then
@@ -2865,16 +2518,6 @@ MSG_PROCESS_RETURN tls_process_client_key_exchange_ntls(SSL *s, PACKET *pkt)
                  SSL_R_UNKNOWN_CIPHER_TYPE);
         goto err;
     }
-
-# ifndef OPENSSL_NO_KEYLESS
-    if (s->keyless_ntls && s->keyless_again)
-        return MSG_PROCESS_ERROR;
-# endif
-
-# ifndef OPENSSL_NO_LURK
-    if (s->lurk_ntls && s->lurk_again)
-        return MSG_PROCESS_ERROR;
-# endif
 
     return MSG_PROCESS_CONTINUE_PROCESSING;
  err:

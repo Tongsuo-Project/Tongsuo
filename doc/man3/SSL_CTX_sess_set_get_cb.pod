@@ -17,8 +17,6 @@ SSL_CTX_sess_set_new_cb, SSL_CTX_sess_set_remove_cb, SSL_CTX_sess_set_get_cb, SS
                               SSL_SESSION (*get_session_cb)(SSL *,
                                                             const unsigned char *,
                                                             int, int *));
- SSL_SESSION *SSL_magic_pending_session_ptr(void);
-
  int (*SSL_CTX_sess_get_new_cb(SSL_CTX *ctx))(struct ssl_st *ssl,
                                               SSL_SESSION *sess);
  void (*SSL_CTX_sess_get_remove_cb(SSL_CTX *ctx))(struct ssl_ctx_st *ctx,

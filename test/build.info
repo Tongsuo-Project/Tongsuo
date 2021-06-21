@@ -374,10 +374,6 @@ INCLUDE_MAIN___test_libtestutil_OLB = /INCLUDE=MAIN
   INCLUDE[ssl_cert_table_internal_test]=.. ../include
   DEPEND[ssl_cert_table_internal_test]=../libcrypto libtestutil.a
 
-  SOURCE[ssl_keyless_api_test]=ssl_keyless_api_test.c
-  INCLUDE[ssl_keyless_api_test]=.. ../include
-  DEPEND[ssl_keyless_api_test]=../libcrypto ../libssl libtestutil.a
-
   SOURCE[ssl_ntls_api_test]=ssl_ntls_api_test.c
   INCLUDE[ssl_ntls_api_test]=.. ../include
   DEPEND[ssl_ntls_api_test]=../libcrypto ../libssl libtestutil.a

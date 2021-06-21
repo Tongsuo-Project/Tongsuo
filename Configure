@@ -1,6 +1,6 @@
 #! /usr/bin/env perl
 # -*- mode: perl; -*-
-# Copyright 2016-2020 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2016-2021 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the OpenSSL license (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -217,12 +217,22 @@ sub resolve_config;
 # Unified build supports separate build dir
 my $srcdir = catdir(absolutedir(dirname($0))); # catdir ensures local syntax
 my $blddir = catdir(absolutedir("."));         # catdir ensures local syntax
+
+# File::Spec::Unix doesn't detect case insensitivity, so we make sure to
+# check if the source and build directory are really the same, and make
+# them so.  This avoids all kinds of confusion later on.
+# We must check @File::Spec::ISA rather than using File::Spec->isa() to
+# know if File::Spec ended up loading File::Spec::Unix.
+$srcdir = $blddir
+    if (grep(/::Unix$/, @File::Spec::ISA)
+        && samedir($srcdir, $blddir));
+
 my $dofile = abs2rel(catfile($srcdir, "util/dofile.pl"));
 
 my $local_config_envname = 'OPENSSL_LOCAL_CONFIG_DIR';
 
-$config{sourcedir} = abs2rel($srcdir);
-$config{builddir} = abs2rel($blddir);
+$config{sourcedir} = abs2rel($srcdir, $blddir);
+$config{builddir} = abs2rel($blddir, $blddir);
 
 # Collect reconfiguration information if needed
 my @argvcopy=@ARGV;
@@ -379,7 +389,6 @@ my @disablables = (
     "heartbeats",
     "hw(-.+)?",
     "idea",
-    "keyless",
     "makedepend",
     "md2",
     "md4",
@@ -430,8 +439,6 @@ my @disablables = (
     "weak-ssl-ciphers",
     "zlib",
     "zlib-dynamic",
-    "keyless",
-    "lurk",
     "skip-scsv",
     "verify-sni",
     "global-session-cache",
@@ -445,7 +452,6 @@ my @disablables = (
     "status",
     "req-status",
     "dycert-ocsp",
-    "options2",
     "delegated-credential"
     );
 foreach my $proto ((@tls, @dtls))
@@ -478,8 +484,6 @@ our %disabled = ( # "what"         => "comment"
                   "fuzz-libfuzzer"      => "default",
                   "fuzz-afl"            => "default",
                   "heartbeats"          => "default",
-                  "keyless"             => "default",
-                  "lurk"                => "default",
                   "md2"                 => "default",
                   "msan"                => "default",
                   "rc5"                 => "default",
@@ -508,7 +512,6 @@ my @disable_cascades = (
     "zlib"              => [ "zlib-dynamic" ],
     "des"               => [ "mdc2" ],
     "ec"                => [ "ecdsa", "ecdh" ],
-    "options2"          => [ "lurk"],
 
     "dgram"             => [ "dtls", "sctp" ],
     "sock"              => [ "dgram" ],
@@ -794,10 +797,6 @@ while (@argvcopy)
                 elsif ($1 eq "compatible-gm-ver")
                         {
                         delete $disabled{"compatible-gm-ver"};
-                        }
-                elsif ($1 eq "keyless")
-                        {
-                        delete $disabled{"keyless"};
                         }
                 elsif ($1 eq "crypto-mdebug-count")
                         {
@@ -1100,6 +1099,9 @@ if (scalar(@seed_sources) == 0) {
     print "Using os-specific seed configuration\n";
     push @seed_sources, 'os';
 }
+if (scalar(grep { $_ eq 'egd' } @seed_sources) > 0) {
+    delete $disabled{'egd'};
+}
 if (scalar(grep { $_ eq 'none' } @seed_sources) > 0) {
     die "Cannot seed with none and anything else" if scalar(@seed_sources) > 1;
     warn <<_____ if scalar(@seed_sources) == 1;
@@ -1238,6 +1240,10 @@ foreach (keys %useradd) {
 }
 # At this point, we can forget everything about %user and %useradd,
 # because it's now all been merged into the corresponding $config entry
+
+if (grep { $_ eq '-static' } @{$config{LDFLAGS}}) {
+    disable('static', 'pic', 'threads');
+}
 
 # Allow overriding the build file name
 $config{build_file} = env('BUILDFILE') || $target{build_file} || "Makefile";
@@ -1558,10 +1564,6 @@ if ($strict_warnings)
                 warn "WARNING --strict-warnings requires gcc[>=4] or gcc-alike, or MSVC"
                 }
         }
-
-if (grep { $_ eq '-static' } @{$config{LDFLAGS}}) {
-    disable('static', 'pic', 'threads');
-}
 
 $config{CFLAGS} = [ map { $_ eq '--ossl-strict-warnings'
                               ? @strict_warnings_collection
@@ -2649,19 +2651,22 @@ _____
         }
         print "\nEnabled features:\n\n";
         foreach my $what (@disablables) {
-            print "    $what\n" unless $disabled{$what};
+            print "    $what\n"
+                unless grep { $_ =~ /^${what}$/ } keys %disabled;
         }
         print "\nDisabled features:\n\n";
         foreach my $what (@disablables) {
-            if ($disabled{$what}) {
-                print "    $what", ' ' x ($longest - length($what) + 1),
-                    "[$disabled{$what}]", ' ' x ($longest2 - length($disabled{$what}) + 1);
-                print $disabled_info{$what}->{macro}
-                    if $disabled_info{$what}->{macro};
+            my @what2 = grep { $_ =~ /^${what}$/ } keys %disabled;
+            my $what3 = $what2[0];
+            if ($what3) {
+                print "    $what3", ' ' x ($longest - length($what3) + 1),
+                    "[$disabled{$what3}]", ' ' x ($longest2 - length($disabled{$what3}) + 1);
+                print $disabled_info{$what3}->{macro}
+                    if $disabled_info{$what3}->{macro};
                 print ' (skip ',
-                    join(', ', @{$disabled_info{$what}->{skipped}}),
+                    join(', ', @{$disabled_info{$what3}->{skipped}}),
                     ')'
-                    if $disabled_info{$what}->{skipped};
+                    if $disabled_info{$what3}->{skipped};
                 print "\n";
             }
         }
@@ -3473,6 +3478,27 @@ sub absolutedir {
     use Cwd qw/realpath/;
 
     return realpath($dir);
+}
+
+# Check if all paths are one and the same, using stat.  They must both exist
+# We need this for the cases when File::Spec doesn't detect case insensitivity
+# (File::Spec::Unix assumes case sensitivity)
+sub samedir {
+    die "samedir expects two arguments\n" unless scalar @_ == 2;
+
+    my @stat0 = stat($_[0]);    # First argument
+    my @stat1 = stat($_[1]);    # Second argument
+
+    die "Couldn't stat $_[0]" unless @stat0;
+    die "Couldn't stat $_[1]" unless @stat1;
+
+    # Compare device number
+    return 0 unless ($stat0[0] == $stat1[0]);
+    # Compare "inode".  The perl manual recommends comparing as
+    # string rather than as number.
+    return 0 unless ($stat0[1] eq $stat1[1]);
+
+    return 1;                   # All the same
 }
 
 sub quotify {
