@@ -309,15 +309,6 @@ int state_machine_ntls(SSL *s, int server)
 
     cb = get_callback(s);
 
-# ifndef OPENSSL_NO_KEYLESS
-    if (s->keyless_ntls && s->keyless_again)
-        goto keyless_recover;
-# endif
-# ifndef OPENSSL_NO_LURK
-    if (s->lurk_ntls && s->lurk_again)
-        goto keyless_recover;
-# endif
-
     st->in_handshake++;
     if (!SSL_in_init_ntls(s) || SSL_in_before_ntls(s)) {
         /*
@@ -403,19 +394,11 @@ int state_machine_ntls(SSL *s, int server)
     }
 
     while (st->state != MSG_FLOW_FINISHED) {
-# if !(defined(OPENSSL_NO_KEYLESS) && defined(OPENSSL_NO_LURK))
-keyless_recover:
-# endif
         if (st->state == MSG_FLOW_READING) {
             ssret = read_state_machine_ntls(s);
             if (ssret == SUB_STATE_FINISHED) {
                 st->state = MSG_FLOW_WRITING;
                 init_write_state_machine_ntls(s);
-# if !(defined(OPENSSL_NO_KEYLESS) && defined(OPENSSL_NO_LURK))
-            } else if (ssret == SSL_ERROR_WANT_KEYLESS_RESULT) {
-                s->rwstate = SSL_KEYLESS_CB;
-                return -1;
-# endif
             } else {
                 /* NBIO or error */
                 goto end;
@@ -427,11 +410,6 @@ keyless_recover:
                 init_read_state_machine_ntls(s);
             } else if (ssret == SUB_STATE_END_HANDSHAKE) {
                 st->state = MSG_FLOW_FINISHED;
-# if !(defined(OPENSSL_NO_KEYLESS) && defined(OPENSSL_NO_LURK))
-            } else if (ssret == SSL_ERROR_WANT_KEYLESS_RESULT) {
-                s->rwstate = SSL_KEYLESS_CB;
-                return -1;
-# endif
             } else {
                 /* NBIO or error */
                 goto end;
@@ -536,15 +514,6 @@ static SUB_STATE_RETURN read_state_machine_ntls(SSL *s)
         post_process_message = ossl_statem_client_post_process_message_ntls;
     }
 
-# ifndef OPENSSL_NO_KEYLESS
-    if (s->keyless_ntls && s->keyless_again)
-        goto keyless_recover;
-# endif
-# ifndef OPENSSL_NO_LURK
-    if (s->lurk_ntls && s->lurk_again)
-        goto keyless_recover;
-# endif
-
     if (st->read_state_first_init) {
         s->first_packet = 1;
         st->read_state_first_init = 0;
@@ -608,9 +577,6 @@ static SUB_STATE_RETURN read_state_machine_ntls(SSL *s)
                 return SUB_STATE_ERROR;
             }
 
-# if !(defined(OPENSSL_NO_KEYLESS) && defined(OPENSSL_NO_LURK))
-keyless_recover:
-# endif
             ret = process_message(s, &pkt);
 
             /* Discard the packet data */
@@ -618,14 +584,6 @@ keyless_recover:
 
             switch (ret) {
             case MSG_PROCESS_ERROR:
-# ifndef OPENSSL_NO_KEYLESS
-                if (s->keyless_ntls && s->keyless_again)
-                    return SSL_ERROR_WANT_KEYLESS_RESULT;
-# endif
-# ifndef OPENSSL_NO_LURK
-                if (s->lurk_ntls && s->lurk_again)
-                    return SSL_ERROR_WANT_KEYLESS_RESULT;
-# endif
                 SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_READ_STATE_MACHINE_NTLS,
                               ERR_R_INTERNAL_ERROR);
                 return SUB_STATE_ERROR;
@@ -764,15 +722,6 @@ static SUB_STATE_RETURN write_state_machine_ntls(SSL *s)
         get_construct_message_f = ossl_statem_client_construct_message_ntls;
     }
 
-# ifndef OPENSSL_NO_KEYLESS
-    if (s->keyless_ntls && s->keyless_again)
-        goto keyless_recover;
-# endif
-# ifndef OPENSSL_NO_LURK
-    if (s->lurk_ntls && s->lurk_again)
-        goto keyless_recover;
-# endif
-
     while (1) {
         switch (st->write_state) {
         case WRITE_STATE_TRANSITION:
@@ -822,9 +771,7 @@ static SUB_STATE_RETURN write_state_machine_ntls(SSL *s)
                          ERR_R_INTERNAL_ERROR);
                 return SUB_STATE_ERROR;
             }
-# if !(defined(OPENSSL_NO_KEYLESS) && defined(OPENSSL_NO_LURK))
-keyless_recover:
-# endif
+
             if (!get_construct_message_f(s, &pkt, &confunc, &mt)) {
                 /* SSLfatal_ntls() already called */
                 return SUB_STATE_ERROR;
@@ -836,21 +783,6 @@ keyless_recover:
                 break;
             }
 
-# ifndef OPENSSL_NO_KEYLESS
-            if (s->keyless_again && s->keyless_result == NULL) {
-                SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_WRITE_STATE_MACHINE_NTLS,
-                         ERR_R_INTERNAL_ERROR);
-                return SUB_STATE_ERROR;
-            }
-# endif
-# ifndef OPENSSL_NO_LURK
-            if (s->lurk_again && s->lurk_result == NULL) {
-                SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_WRITE_STATE_MACHINE_NTLS,
-                         ERR_R_INTERNAL_ERROR);
-                return SUB_STATE_ERROR;
-            }
-# endif
-
             if (!WPACKET_init(&pkt, s->init_buf)
                     || !ssl_set_handshake_header(s, &pkt, mt)) {
                 WPACKET_cleanup(&pkt);
@@ -860,14 +792,7 @@ keyless_recover:
             }
             if (confunc != NULL && !confunc(s, &pkt)) {
                 WPACKET_cleanup(&pkt);
-# ifndef OPENSSL_NO_KEYLESS
-                if (s->keyless_ntls && s->keyless_again)
-                    return SSL_ERROR_WANT_KEYLESS_RESULT;
-# endif
-# ifndef OPENSSL_NO_LURK
-                if (s->lurk_ntls && s->lurk_again)
-                    return SSL_ERROR_WANT_KEYLESS_RESULT;
-# endif
+
                 SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_WRITE_STATE_MACHINE_NTLS,
                          ERR_R_INTERNAL_ERROR);
                 return SUB_STATE_ERROR;

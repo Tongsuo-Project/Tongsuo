@@ -10,6 +10,14 @@
 
 package ssltests;
 
+use File::Spec::Functions qw/catfile/;
+
+sub test_run
+{
+    my $dir_sep = $^O ne "VMS" ? "/" : "";
+    return "\${ENV::TEST_RUNS_DIR}" . $dir_sep . catfile(@_)
+}
+
 sub test_pem
 {
     my ($file) = @_;

@@ -14,7 +14,9 @@
 #include "testutil/output.h"
 #include "internal/nelem.h"
 #include "../ssl/ssl_local.h"
+# ifndef OPENSSL_NO_EC
 #include "crypto/ec/ec_local.h"
+# endif
 
 static char *certsdir = NULL;
 static char *cert = NULL;
@@ -235,7 +237,7 @@ static int test_babassl_api(void)
     if(!TEST_int_eq(ftell(fp), 30))
         goto end;
     fclose(fp);
-    freopen("/dev/tty", "w", stdout);
+    fp = freopen("/dev/tty", "w", stdout);
     remove("BABASSL_debug.log");
 
 #ifdef SSL_get_master_key
@@ -480,8 +482,8 @@ end:
 #ifndef OPENSSL_NO_DYNAMIC_CIPHERS
 
 # ifndef OPENSSL_NO_TLS1_2
-STACK_OF(SSL_CIPHER)       *cipher_list = NULL;
-STACK_OF(SSL_CIPHER)       *cipher_list_by_id = NULL;
+static STACK_OF(SSL_CIPHER)       *cipher_list = NULL;
+static STACK_OF(SSL_CIPHER)       *cipher_list_by_id = NULL;
 static int dynamic_ciphers_cb_count = 0;
 
 static int babassl_dynamic_ciphers_client_hello_callback(SSL *s, int *al, void *arg)
