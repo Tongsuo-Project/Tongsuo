@@ -68,28 +68,8 @@ static int ntls_construct_ske_sm2dhe(SSL *s, WPACKET *pkt)
                  SSL_F_NTLS_CONSTRUCT_SKE_SM2DHE, ERR_R_INTERNAL_ERROR);
         return 0;
     }
-#ifndef OPENSSL_NO_KEYLESS
-    if (s->keyless_ntls && s->keyless_again)
-        goto keyless_recover;
-#endif
-#ifndef OPENSSL_NO_LURK
-    if (s->lurk_ntls && s->lurk_again)
-        goto lurk_recover;
-#endif
 
-#if !(defined(OPENSSL_NO_KEYLESS) && defined(OPENSSL_NO_LURK))
-    if (0
-# ifndef OPENSSL_NO_KEYLESS
-        || s->keyless_ntls
-# endif
-# ifndef OPENSSL_NO_LURK
-        || s->lurk_ntls
-# endif
-       )
-        pkey = X509_get0_pubkey(s->cert->pkeys[SSL_PKEY_SM2_SIGN].x509);
-    else
-#endif
-        pkey = s->cert->pkeys[SSL_PKEY_SM2_SIGN].privatekey;
+    pkey = s->cert->pkeys[SSL_PKEY_SM2_SIGN].privatekey;
     if (pkey == NULL) {
         SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
                  SSL_F_NTLS_CONSTRUCT_SKE_SM2DHE, ERR_R_INTERNAL_ERROR);
@@ -204,102 +184,10 @@ static int ntls_construct_ske_sm2dhe(SSL *s, WPACKET *pkt)
         goto err;
     }
 
-#if !(defined(OPENSSL_NO_KEYLESS) && defined(OPENSSL_NO_LURK))
-    if (0
-# ifndef OPENSSL_NO_KEYLESS
-        || s->keyless_ntls
-# endif
-# ifndef OPENSSL_NO_LURK
-        || s->lurk_ntls
-# endif
-       )
-    {
-        unsigned char md_buf[EVP_MAX_MD_SIZE];
-        unsigned int mdlen = 0;
-        int keyless_ret = 0;
-
-        if (EVP_DigestFinal(md_ctx, &(md_buf[0]), &mdlen) <= 0) {
-            SSLfatal(s, SSL_AD_INTERNAL_ERROR,
-                        SSL_F_NTLS_CONSTRUCT_SKE_SM2DHE,
-                        ERR_R_INTERNAL_ERROR);
-            goto err;
-        }
-
-# ifndef OPENSSL_NO_KEYLESS
-        if (s->keyless_ntls) {
-            s->keyless_callback_param.data = md_buf;
-            s->keyless_callback_param.len = mdlen;
-            s->keyless_callback_param.type = SSL_KEYLESS_TYPE_SM2_SIGN_NTLS;
-            s->keyless_callback_param.cert_tag = SSL_SIGN_CERT;
-            s->keyless_recover_pos = sigbytes1;
-            s->keyless_recover_n = pkt->written;
-
-            keyless_ret = s->keyless_callback(s, &s->keyless_callback_param);
-
-            if (keyless_ret == 1) {
-                /* again or done */
-                s->keyless_again = 1;
-                return 0;
-            } else if (keyless_ret == 0) {
-keyless_recover:
-                siglen = s->keyless_result_len;
-                sigbytes1 = s->keyless_recover_pos;
-                pkt->curr = pkt->written = s->keyless_recover_n;
-
-                memcpy(sigbytes1, s->keyless_result, siglen);
-
-                if (s->keyless_again)
-                    s->keyless_again = 0;
-            } else {
-                SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_CONSTRUCT_SKE_SM2DHE,
-                            SSL_R_KEYLESS_ERROR);
-                goto err;
-            }
-        } else
-# endif
-# ifndef OPENSSL_NO_LURK
-        if (s->lurk && s->lurk_ntls) {
-            s->lurk_callback_param.data = md_buf;
-            s->lurk_callback_param.len = mdlen;
-            s->lurk_callback_param.type = SSL_LURK_QUERY_SM2_SIGN_NTLS;
-            s->lurk_callback_param.cert_tag = SSL_SIGN_CERT;
-            s->lurk_recover_pos = sigbytes1;
-            s->lurk_recover_n = pkt->written;
-
-            keyless_ret = s->lurk_callback(s, &s->lurk_callback_param);
-
-            if (keyless_ret == 1) {
-                /* again or done */
-                s->lurk_again = 1;
-                return 0;
-            } else if (keyless_ret == 0) {
-lurk_recover:
-                siglen = s->lurk_result_len;
-                sigbytes1 = s->lurk_recover_pos;
-                pkt->curr = pkt->written = s->lurk_recover_n;
-
-                memcpy(sigbytes1, s->lurk_result, siglen);
-
-                if (s->lurk_again)
-                    s->lurk_again = 0;
-            } else {
-                SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_CONSTRUCT_SKE_SM2DHE,
-                            SSL_R_KEYLESS_ERROR);
-                goto err;
-            }
-        }
-# else
-        {
-        }
-# endif
-    } else
-#endif
-    {
-        if (EVP_DigestSignFinal(md_ctx, sigbytes1, (size_t *)&siglen) <= 0) {
-            SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                          SSL_F_NTLS_CONSTRUCT_SKE_SM2DHE, ERR_R_EVP_LIB);
-            goto err;
-        }
+    if (EVP_DigestSignFinal(md_ctx, sigbytes1, (size_t *)&siglen) <= 0) {
+        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
+                      SSL_F_NTLS_CONSTRUCT_SKE_SM2DHE, ERR_R_EVP_LIB);
+        goto err;
     }
 
     if (!WPACKET_sub_allocate_bytes_u16(pkt, siglen, &sigbytes2)
@@ -334,28 +222,7 @@ static int ntls_construct_ske_sm2(SSL *s, WPACKET *pkt)
     size_t siglen;
     unsigned char *sigbytes1, *sigbytes2;
 
-#ifndef OPENSSL_NO_KEYLESS
-    if (s->keyless_ntls && s->keyless_again)
-        goto keyless_recover;
-#endif
-#ifndef OPENSSL_NO_LURK
-    if (s->lurk_ntls && s->lurk_again)
-        goto lurk_recover;
-#endif
-
-#if !(defined(OPENSSL_NO_KEYLESS) && defined(OPENSSL_NO_LURK))
-    if (0
-# ifndef OPENSSL_NO_KEYLESS
-        || s->keyless_ntls
-# endif
-# ifndef OPENSSL_NO_LURK
-        || s->lurk_ntls
-# endif
-       )
-        pkey = X509_get0_pubkey(s->cert->pkeys[SSL_PKEY_SM2_SIGN].x509);
-    else
-#endif
-        pkey = s->cert->pkeys[SSL_PKEY_SM2_SIGN].privatekey;
+    pkey = s->cert->pkeys[SSL_PKEY_SM2_SIGN].privatekey;
     /* prepare sign key */
     if (pkey == NULL) {
         SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
@@ -456,103 +323,10 @@ static int ntls_construct_ske_sm2(SSL *s, WPACKET *pkt)
         goto end;
     }
 
-#if !(defined(OPENSSL_NO_KEYLESS) && defined(OPENSSL_NO_LURK))
-    if (0
-# ifndef OPENSSL_NO_KEYLESS
-        || s->keyless_ntls
-# endif
-# ifndef OPENSSL_NO_LURK
-        || s->lurk_ntls
-# endif
-       )
-    {
-        unsigned char md_buf[EVP_MAX_MD_SIZE];
-        unsigned int mdlen = 0;
-        int keyless_ret = 0;
-
-        if (EVP_DigestFinal(md_ctx, &(md_buf[0]), &mdlen) <= 0) {
-            SSLfatal(s, SSL_AD_INTERNAL_ERROR,
-                        SSL_F_NTLS_CONSTRUCT_SKE_SM2,
-                        ERR_R_INTERNAL_ERROR);
-            goto end;
-        }
-
-# ifndef OPENSSL_NO_KEYLESS
-        if (s->keyless_ntls) {
-            s->keyless_callback_param.data = md_buf;
-            s->keyless_callback_param.len = mdlen;
-            s->keyless_callback_param.type = SSL_KEYLESS_TYPE_SM2_SIGN_NTLS;
-            s->keyless_callback_param.cert_tag = SSL_SIGN_CERT;
-            s->keyless_recover_pos = sigbytes1;
-            s->keyless_recover_n = pkt->written;
-
-            keyless_ret = s->keyless_callback(s, &s->keyless_callback_param);
-
-            if (keyless_ret == 1) {
-                /* again or done */
-                s->keyless_again = 1;
-                return 0;
-            } else if (keyless_ret == 0) {
-keyless_recover:
-                siglen = s->keyless_result_len;
-                sigbytes1 = s->keyless_recover_pos;
-                pkt->curr = pkt->written = s->keyless_recover_n;
-
-                memcpy(sigbytes1, s->keyless_result, siglen);
-
-                if (s->keyless_again)
-                    s->keyless_again = 0;
-            } else {
-                SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_CONSTRUCT_SKE_SM2,
-                            SSL_R_KEYLESS_ERROR);
-                goto end;
-            }
-        } else
-# endif
-# ifndef OPENSSL_NO_LURK
-        if (s->lurk && s->lurk_ntls) {
-            s->lurk_callback_param.data = md_buf;
-            s->lurk_callback_param.len = mdlen;
-            s->lurk_callback_param.type = SSL_LURK_QUERY_SM2_SIGN_NTLS;
-            s->lurk_callback_param.cert_tag = SSL_SIGN_CERT;
-            s->lurk_recover_pos = sigbytes1;
-            s->lurk_recover_n = pkt->written;
-
-            keyless_ret = s->lurk_callback(s, &s->lurk_callback_param);
-
-            if (keyless_ret == 1) {
-                /* again or done */
-                s->lurk_again = 1;
-                return 0;
-            } else if (keyless_ret == 0) {
-lurk_recover:
-                siglen = s->lurk_result_len;
-                sigbytes1 = s->lurk_recover_pos;
-                pkt->curr = pkt->written = s->lurk_recover_n;
-
-                memcpy(sigbytes1, s->lurk_result, siglen);
-
-                if (s->lurk_again)
-                    s->lurk_again = 0;
-            } else {
-                SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_CONSTRUCT_SKE_SM2,
-                            SSL_R_KEYLESS_ERROR);
-                goto end;
-            }
-        }
-# else
-        {
-        }
-# endif
-
-    } else
-#endif
-    {
-        if (EVP_DigestSignFinal(md_ctx, sigbytes1, &siglen) <= 0) {
-            SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                          SSL_F_NTLS_CONSTRUCT_SKE_SM2, ERR_R_EVP_LIB);
-            goto end;
-        }
+    if (EVP_DigestSignFinal(md_ctx, sigbytes1, &siglen) <= 0) {
+        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
+                      SSL_F_NTLS_CONSTRUCT_SKE_SM2, ERR_R_EVP_LIB);
+        goto end;
     }
 
     if (!WPACKET_sub_allocate_bytes_u16(pkt, siglen, &sigbytes2)
@@ -717,15 +491,6 @@ static int ntls_process_cke_sm2dhe(SSL *s, PACKET *pkt)
     EVP_PKEY *skey = s->s3->tmp.pkey;
     EVP_PKEY *ckey = NULL;
 
-#ifndef OPENSSL_NO_KEYLESS
-    if (s->keyless_ntls && s->keyless_again)
-        goto keyless_recover;
-#endif
-#ifndef OPENSSL_NO_LURK
-    if (s->lurk_ntls && s->lurk_again)
-        goto keyless_recover;
-#endif
-
     if ((skey = s->s3->tmp.pkey) == NULL) {
         SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
                  SSL_F_NTLS_PROCESS_CKE_SM2DHE, ERR_R_INTERNAL_ERROR);
@@ -764,18 +529,8 @@ static int ntls_process_cke_sm2dhe(SSL *s, PACKET *pkt)
                  SSL_F_NTLS_PROCESS_CKE_SM2DHE, ERR_R_EVP_LIB);
         goto end;
     }
-#if !(defined(OPENSSL_NO_KEYLESS) && defined(OPENSSL_NO_LURK))
-keyless_recover:
-#endif
+
     if (!ntls_sm2_derive_ntls(s, skey, ckey)) {
-#ifndef OPENSSL_NO_KEYLESS
-        if (s->keyless_ntls && s->keyless_again)
-            goto end;
-#endif
-#ifndef OPENSSL_NO_LURK
-        if (s->lurk_ntls && s->lurk_again)
-            goto end;
-#endif
         SSLfatal_ntls(s, SSL_AD_HANDSHAKE_FAILURE,
                  SSL_F_NTLS_PROCESS_CKE_SM2DHE, ERR_R_INTERNAL_ERROR);
         goto end;
@@ -800,29 +555,7 @@ static int ntls_process_cke_sm2(SSL *s, PACKET *pkt)
     size_t pmslen;
     unsigned char pms[SSL_MAX_MASTER_KEY_LENGTH];
 
-#ifndef OPENSSL_NO_KEYLESS
-    if (s->keyless_ntls && s->keyless_again)
-        goto keyless_recover;
-#endif
-#ifndef OPENSSL_NO_LURK
-    if (s->lurk_ntls && s->lurk_again)
-        goto lurk_recover;
-#endif
-
-#if !(defined(OPENSSL_NO_KEYLESS) && defined(OPENSSL_NO_LURK))
-    if (0
-# ifndef OPENSSL_NO_KEYLESS
-        || s->keyless_ntls
-# endif
-# ifndef OPENSSL_NO_LURK
-        || s->lurk_ntls
-# endif
-       )
-        pkey = X509_get0_pubkey(s->cert->pkeys[SSL_PKEY_SM2_ENC].x509);
-    else
-#endif
-        pkey = s->cert->pkeys[SSL_PKEY_SM2_ENC].privatekey;
-
+    pkey = s->cert->pkeys[SSL_PKEY_SM2_ENC].privatekey;
     /* prepare decryption key */
     if (pkey == NULL) {
         SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
@@ -852,99 +585,27 @@ static int ntls_process_cke_sm2(SSL *s, PACKET *pkt)
         return 0;
     }
 
-#if !(defined(OPENSSL_NO_KEYLESS) && defined(OPENSSL_NO_LURK))
-    if (0
-# ifndef OPENSSL_NO_KEYLESS
-        || s->keyless_ntls
-# endif
-# ifndef OPENSSL_NO_LURK
-        || s->lurk_ntls
-# endif
-       )
-    {
-        int keyless_ret = 0;
-# ifndef OPENSSL_NO_KEYLESS
-        if (s->keyless_ntls) {
-            s->keyless_callback_param.data = PACKET_data(&enced_pms);
-            s->keyless_callback_param.len = PACKET_remaining(&enced_pms);
-            s->keyless_callback_param.type = SSL_KEYLESS_TYPE_ECC_ENC_DECRYPT;
-            s->keyless_callback_param.cert_tag = SSL_ENC_CERT;
+    /* decrypt encrypted pre_master_secret */
+    if ((pctx = EVP_PKEY_CTX_new(pkey, NULL)) == NULL) {
+        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
+                      SSL_F_NTLS_PROCESS_CKE_SM2, ERR_R_MALLOC_FAILURE);
+        return 0;
+    }
 
-            keyless_ret = s->keyless_callback(s, &s->keyless_callback_param);
+    if (!EVP_PKEY_decrypt_init(pctx)) {
+        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
+                      SSL_F_NTLS_PROCESS_CKE_SM2, ERR_R_EVP_LIB);
+        goto end;
+    }
 
-            if (keyless_ret == 1) {
-                /* again or done */
-                s->keyless_again = 1;
-                return 0;
-            } else if (keyless_ret == 0) {
-keyless_recover:
-                pmslen = s->keyless_result_len;
-                memcpy(pms, s->keyless_result, s->keyless_result_len);
+    pmslen = sizeof(pms);
 
-                if (s->keyless_again)
-                    s->keyless_again = 0;
-            } else {
-                SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_PROCESS_CKE_SM2,
-                            SSL_R_KEYLESS_ERROR);
-                goto end;
-            }
-        } else
-# endif
-# ifndef OPENSSL_NO_LURK
-        if (s->lurk && s->lurk_ntls) {
-            s->lurk_callback_param.data = PACKET_data(&enced_pms);
-            s->lurk_callback_param.len = PACKET_remaining(&enced_pms);
-            s->lurk_callback_param.type = SSL_LURK_QUERY_ECC_ENC_DECRYPT;
-            s->lurk_callback_param.cert_tag = SSL_ENC_CERT;
-
-            keyless_ret = s->lurk_callback(s, &s->lurk_callback_param);
-
-            if (keyless_ret == 1) {
-                /* again or done */
-                s->lurk_again = 1;
-                return 0;
-            } else if (keyless_ret == 0) {
-lurk_recover:
-                pmslen = s->lurk_result_len;
-                memcpy(pms, s->lurk_result, s->lurk_result_len);
-
-                if (s->lurk_again)
-                    s->lurk_again = 0;
-            } else {
-                SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_PROCESS_CKE_SM2,
-                            SSL_R_KEYLESS_ERROR);
-                goto end;
-            }
-        }
-# else
-        {
-        }
-# endif
-    } else
-#endif
-    {
-        /* decrypt encrypted pre_master_secret */
-        if ((pctx = EVP_PKEY_CTX_new(pkey, NULL)) == NULL) {
-            SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                          SSL_F_NTLS_PROCESS_CKE_SM2, ERR_R_MALLOC_FAILURE);
-            return 0;
-        }
-
-        if (!EVP_PKEY_decrypt_init(pctx)) {
-            SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                          SSL_F_NTLS_PROCESS_CKE_SM2, ERR_R_EVP_LIB);
-            goto end;
-        }
-
-        pmslen = sizeof(pms);
-
-        if (!EVP_PKEY_decrypt(pctx, pms, &pmslen,
-                              PACKET_data(&enced_pms),
-                              PACKET_remaining(&enced_pms))) {
-            SSLfatal_ntls(s, SSL_AD_DECRYPT_ERROR,
-                          SSL_F_NTLS_PROCESS_CKE_SM2, SSL_R_DECRYPTION_FAILED);
-            goto end;
-        }
+    if (!EVP_PKEY_decrypt(pctx, pms, &pmslen,
+                          PACKET_data(&enced_pms),
+                          PACKET_remaining(&enced_pms))) {
+        SSLfatal_ntls(s, SSL_AD_DECRYPT_ERROR,
+                      SSL_F_NTLS_PROCESS_CKE_SM2, SSL_R_DECRYPTION_FAILED);
+        goto end;
     }
 
     if (pmslen != SSL_MAX_MASTER_KEY_LENGTH) {
