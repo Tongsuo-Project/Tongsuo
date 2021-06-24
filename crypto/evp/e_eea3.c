@@ -27,7 +27,7 @@ static int eea3_cleanup(EVP_CIPHER_CTX *ctx);
 
 static const EVP_CIPHER zuc_128_eea3_cipher = {
     NID_zuc_128_eea3,
-    1, EVP_ZUC_KEY_SIZE, 5,
+    1, EVP_ZUC_KEY_SIZE, 16,
     EVP_CIPH_VARIABLE_LENGTH,
     eea3_init_key,
     eea3_cipher,

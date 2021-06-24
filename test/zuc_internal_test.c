@@ -25,6 +25,16 @@ typedef struct zuc_test_st {
     uint32_t output[3]; /* store the 2000th output in output[2] */
 } ZUC_TV;
 
+/*
+ * All test vectors listed here are defined in:
+ * "Specification of the 3GPP Confidentiality and Integrity Algorithms
+ * 128-EEA3 & 128-EIA3
+ * Document 3: Implementor’s Test Data" Section 3.
+ *
+ * Note: we only include test vectors of ZUC, the keystream generator only.
+ * The 128-EEA3 cipher's test vectors are not included here. That part is
+ * placed in EVP's test case.
+ */
 static ZUC_TV ztv[4] = {
 
     /* Test 1 */
