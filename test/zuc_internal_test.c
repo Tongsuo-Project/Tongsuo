@@ -138,10 +138,10 @@ static int test_zuc(int idx)
              * in the spec, one test reads the last keystream byte
              */
             if (i == 2)
-                z = zk.keystream[7996] << 24 | zk.keystream[7997] << 16
+                z = (long)zk.keystream[7996] << 24 | zk.keystream[7997] << 16
                     | zk.keystream[7998] << 8 | zk.keystream[7999];
             else
-                z = zk.keystream[i * 4] << 24 | zk.keystream[i * 4 + 1] << 16
+                z = (long)zk.keystream[i * 4] << 24 | zk.keystream[i * 4 + 1] << 16
                     | zk.keystream[i * 4 + 2] << 8 | zk.keystream[i * 4 + 3];
 
             if (!TEST_uint_eq(z, ztv[idx].output[i])) {
