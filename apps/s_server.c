@@ -746,7 +746,7 @@ typedef enum OPTION_choice {
 #if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
      && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
     OPT_NTLS, OPT_ENC_CERT, OPT_ENC_KEY, OPT_SIGN_CERT, OPT_SIGN_KEY,
-    OPT_ENABLE_NTLS,
+    OPT_ENABLE_NTLS, OPT_ENC_KEYFORM, OPT_SIGN_KEYFORM,
 #endif
 #ifndef OPENSSL_NO_SM2
     OPT_ENABLE_SM_TLS13_STRICT,
@@ -807,6 +807,10 @@ const OPTIONS s_server_options[] = {
      "NTLS signing certificate file to use, PEM format assumed"},
     {"enc_key", OPT_ENC_KEY, 's', "NTLS encryption private key file to use"},
     {"sign_key", OPT_SIGN_KEY, 's', "NTLS signing private key file to use"},
+    {"enc_keyform", OPT_ENC_KEYFORM, 'f',
+     "Enc Key format (PEM, DER or ENGINE) PEM default"},
+    {"sign_keyform", OPT_SIGN_KEYFORM, 'f',
+     "Sign Key format (PEM, DER or ENGINE) PEM default"},
 #endif
     {"dhparam", OPT_DHPARAM, '<', "DH parameters file to use"},
     {"dcertform", OPT_DCERTFORM, 'F',
@@ -1085,6 +1089,8 @@ int s_server_main(int argc, char *argv[])
     EVP_PKEY *s_sign_key = NULL;
     X509 *s_enc_cert = NULL;
     X509 *s_sign_cert = NULL;
+    int s_enc_key_format = FORMAT_PEM;
+    int s_sign_key_format = FORMAT_PEM;
     int enable_ntls = 0;
 #endif
 #ifndef OPENSSL_NO_SM2
@@ -1302,6 +1308,14 @@ int s_server_main(int argc, char *argv[])
             break;
         case OPT_SIGN_KEY:
             s_sign_key_file = opt_arg();
+            break;
+        case OPT_ENC_KEYFORM:
+            if (!opt_format(opt_arg(), OPT_FMT_ANY, &s_enc_key_format))
+                goto opthelp;
+            break;
+        case OPT_SIGN_KEYFORM:
+            if (!opt_format(opt_arg(), OPT_FMT_ANY, &s_sign_key_format))
+                goto opthelp;
             break;
 #endif
         case OPT_DKEYFORM:
@@ -1624,6 +1638,10 @@ int s_server_main(int argc, char *argv[])
             session_id_prefix = opt_arg();
             break;
         case OPT_ENGINE:
+            if (engine) {
+                release_engine(engine);
+                engine = NULL;
+            }
             engine = setup_engine(opt_arg(), 1);
             break;
         case OPT_R_CASES:
@@ -1895,9 +1913,8 @@ skip:
 #if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
      && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
     /* XXX: don't support cert-key bundle at current stage */
-    /* TODO: fix the key format stuff and password stuffs */
     if (s_enc_key_file) {
-        s_enc_key = load_key(s_enc_key_file, FORMAT_PEM, 0, pass, engine,
+        s_enc_key = load_key(s_enc_key_file, s_enc_key_format, 0, pass, engine,
                              "NTLS server encryption certificate private key file");
         if (s_enc_key == NULL) {
             ERR_print_errors(bio_err);
@@ -1915,7 +1932,7 @@ skip:
     }
 
     if (s_sign_key_file) {
-        s_sign_key = load_key(s_sign_key_file, FORMAT_PEM, 0, pass, engine,
+        s_sign_key = load_key(s_sign_key_file, s_sign_key_format, 0, pass, engine,
                               "NTLS server signing certificate private key file");
         if (s_sign_key == NULL) {
             ERR_print_errors(bio_err);
