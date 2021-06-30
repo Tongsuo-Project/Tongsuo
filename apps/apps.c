@@ -775,6 +775,16 @@ EVP_PKEY *load_key(const char *file, int format, int maybe_stdin,
         BIO_printf(bio_err, "bad input format specified for key file\n");
         goto end;
     }
+
+#ifndef OPENSSL_NO_SM2
+    if (pkey && EVP_PKEY_is_sm2(pkey)) {
+        if (!EVP_PKEY_set_alias_type(pkey, EVP_PKEY_SM2)) {
+            BIO_printf(bio_err, "failed to set sm2 alias type");
+            goto end;
+        }
+    }
+#endif
+
  end:
     BIO_free(key);
     if (pkey == NULL) {
@@ -863,6 +873,14 @@ EVP_PKEY *load_pubkey(const char *file, int format, int maybe_stdin,
         pkey = b2i_PublicKey_bio(key);
 #endif
     }
+#ifndef OPENSSL_NO_SM2
+    if (pkey && EVP_PKEY_is_sm2(pkey)) {
+        if (!EVP_PKEY_set_alias_type(pkey, EVP_PKEY_SM2)) {
+            BIO_printf(bio_err, "failed to set sm2 alias type\n");
+            goto end;
+        }
+    }
+#endif
  end:
     BIO_free(key);
     if (pkey == NULL)
@@ -1284,21 +1302,76 @@ static ENGINE *try_load_engine(const char *engine)
     }
     return e;
 }
+
+static int engine_meth_cb(const char *elem, int len, void *arg)
+{
+    unsigned int *pmeth = arg;
+    if (elem == NULL)
+        return 0;
+
+    if (strncasecmp(elem, "rsa", 3) == 0) {
+        *pmeth |= ENGINE_METHOD_RSA;
+    } else if (strncasecmp(elem, "dsa", 3) == 0) {
+        *pmeth |= ENGINE_METHOD_DSA;
+    } else if (strncasecmp(elem, "dh", 2) == 0) {
+        *pmeth |= ENGINE_METHOD_DH;
+    }  else if (strncasecmp(elem, "rand", 4) == 0) {
+        *pmeth |= ENGINE_METHOD_RAND;
+    } else if (strncasecmp(elem, "ciphers", 7) == 0) {
+        *pmeth |= ENGINE_METHOD_CIPHERS;
+    } else if (strncasecmp(elem, "digests", 7) == 0) {
+        *pmeth |= ENGINE_METHOD_DIGESTS;
+    } else if (strncasecmp(elem, "pkey_meths", 10) == 0) {
+        *pmeth |= ENGINE_METHOD_PKEY_METHS;
+    } else if (strncasecmp(elem, "pkey_asn1_meths", 15) == 0) {
+        *pmeth |= ENGINE_METHOD_PKEY_ASN1_METHS;
+    } else if (strncasecmp(elem, "ec", 2) == 0) {
+        *pmeth |= ENGINE_METHOD_EC;
+    } else {
+        BIO_printf(bio_err, "invalid engine method\n");
+        return 0;
+    }
+
+    return 1;
+}
 #endif
 
 ENGINE *setup_engine(const char *engine, int debug)
 {
     ENGINE *e = NULL;
-
 #ifndef OPENSSL_NO_ENGINE
+    char *p;
+    char *id = NULL;
+    const char *eng = engine;
+    unsigned int meth = ENGINE_METHOD_NONE;
+
     if (engine != NULL) {
         if (strcmp(engine, "auto") == 0) {
             BIO_printf(bio_err, "enabling auto ENGINE support\n");
             ENGINE_register_all_complete();
             return NULL;
         }
-        if ((e = ENGINE_by_id(engine)) == NULL
-            && (e = try_load_engine(engine)) == NULL) {
+
+        p = strstr(engine, ":");
+        if (p) {
+            CONF_parse_list(p + 1, ',', 1, engine_meth_cb, &meth);
+            id = OPENSSL_zalloc(p - engine + 1);
+            if (!id) {
+                BIO_printf(bio_err, "failed to malloc\n");
+                return NULL;
+            }
+
+            strncpy(id, engine, p - engine);
+            eng = id;
+        }
+
+        if (meth == ENGINE_METHOD_NONE) {
+            meth = ENGINE_METHOD_ALL;
+        }
+
+        if ((e = ENGINE_by_id(eng)) == NULL
+            && (e = try_load_engine(eng)) == NULL) {
+            OPENSSL_free(id);
             BIO_printf(bio_err, "invalid engine \"%s\"\n", engine);
             ERR_print_errors(bio_err);
             return NULL;
@@ -1307,7 +1380,8 @@ ENGINE *setup_engine(const char *engine, int debug)
             ENGINE_ctrl(e, ENGINE_CTRL_SET_LOGSTREAM, 0, bio_err, 0);
         }
         ENGINE_ctrl_cmd(e, "SET_USER_INTERFACE", 0, ui_method, 0, 1);
-        if (!ENGINE_set_default(e, ENGINE_METHOD_ALL)) {
+        if (!ENGINE_set_default(e, meth)) {
+            OPENSSL_free(id);
             BIO_printf(bio_err, "can't use that engine\n");
             ERR_print_errors(bio_err);
             ENGINE_free(e);
@@ -1316,6 +1390,8 @@ ENGINE *setup_engine(const char *engine, int debug)
 
         BIO_printf(bio_err, "engine \"%s\" set.\n", ENGINE_get_id(e));
     }
+
+    OPENSSL_free(id);
 #endif
     return e;
 }

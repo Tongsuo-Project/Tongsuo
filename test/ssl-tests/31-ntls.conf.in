@@ -9,15 +9,15 @@ our @tests = (
     {
         name => "test cipher ECC-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only",
         server => {
-            "EncCertificate" => test_pem("SE.cert.pem"),
-            "EncPrivateKey" => test_pem("SE.key.pem"),
-            "SignCertificate" => test_pem("SS.cert.pem"),
-            "SignPrivateKey" => test_pem("SS.key.pem"),
+            "SignCertificate" => test_run("test_sign_sm2", "server_sign.crt"),
+            "SignPrivateKey" => test_run("test_sign_sm2", "server_sign.key"),
+            "EncCertificate" => test_run("test_sign_sm2", "server_enc.crt"),
+            "EncPrivateKey" => test_run("test_sign_sm2", "server_enc.key"),
             "Enable_ntls" => "on",
         },
         client => {
             "CipherString" => "ECC-SM2-SM4-CBC-SM3",
-            "VerifyCAFile" => test_pem("CA.cert.pem"),
+            "VerifyCAFile" => test_run("test_sign_sm2", "chain-ca.crt"),
             "Enable_ntls" => "on",
         },
         test   => {
@@ -31,15 +31,15 @@ our @tests = (
     {
         name => "test cipher ECC-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only",
         server => {
-            "EncCertificate" => test_pem("SE.cert.pem"),
-            "EncPrivateKey" => test_pem("SE.key.pem"),
-            "SignCertificate" => test_pem("SS.cert.pem"),
-            "SignPrivateKey" => test_pem("SS.key.pem"),
+            "SignCertificate" => test_run("test_sign_sm2", "server_sign.crt"),
+            "SignPrivateKey" => test_run("test_sign_sm2", "server_sign.key"),
+            "EncCertificate" => test_run("test_sign_sm2", "server_enc.crt"),
+            "EncPrivateKey" => test_run("test_sign_sm2", "server_enc.key"),
             "Enable_ntls" => "on",
         },
         client => {
             "CipherString" => "ECC-SM2-SM4-GCM-SM3",
-            "VerifyCAFile" => test_pem("CA.cert.pem"),
+            "VerifyCAFile" => test_run("test_sign_sm2", "chain-ca.crt"),
             "Enable_ntls" => "on",
         },
         test   => {
@@ -53,20 +53,20 @@ our @tests = (
     {
         name => "test cipher ECDHE-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode",
         server => {
-            "EncCertificate" => test_pem("SE.cert.pem"),
-            "EncPrivateKey" => test_pem("SE.key.pem"),
-            "SignCertificate" => test_pem("SS.cert.pem"),
-            "SignPrivateKey" => test_pem("SS.key.pem"),
-            "VerifyCAFile" => test_pem("CA.cert.pem"),
+            "SignCertificate" => test_run("test_sign_sm2", "server_sign.crt"),
+            "SignPrivateKey" => test_run("test_sign_sm2", "server_sign.key"),
+            "EncCertificate" => test_run("test_sign_sm2", "server_enc.crt"),
+            "EncPrivateKey" => test_run("test_sign_sm2", "server_enc.key"),
+            "VerifyCAFile" => test_run("test_sign_sm2", "chain-ca.crt"),
             "Enable_ntls" => "on",
         },
         client => {
-            "SignCertificate" => test_pem("CS.cert.pem"),
-            "SignPrivateKey" => test_pem("CS.key.pem"),
-            "EncCertificate" => test_pem("CE.cert.pem"),
-            "EncPrivateKey" => test_pem("CE.key.pem"),
+            "SignCertificate" => test_run("test_sign_sm2", "client_sign.crt"),
+            "SignPrivateKey" => test_run("test_sign_sm2", "client_sign.key"),
+            "EncCertificate" => test_run("test_sign_sm2", "client_enc.crt"),
+            "EncPrivateKey" => test_run("test_sign_sm2", "client_enc.key"),
             "CipherString" => "ECDHE-SM2-SM4-CBC-SM3",
-            "VerifyCAFile" => test_pem("CA.cert.pem"),
+            "VerifyCAFile" => test_run("test_sign_sm2", "chain-ca.crt"),
             "Enable_ntls" => "on",
         },
         test   => {
@@ -80,20 +80,20 @@ our @tests = (
     {
         name => "test cipher ECDHE-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode",
         server => {
-            "EncCertificate" => test_pem("SE.cert.pem"),
-            "EncPrivateKey" => test_pem("SE.key.pem"),
-            "SignCertificate" => test_pem("SS.cert.pem"),
-            "SignPrivateKey" => test_pem("SS.key.pem"),
-            "VerifyCAFile" => test_pem("CA.cert.pem"),
+            "SignCertificate" => test_run("test_sign_sm2", "server_sign.crt"),
+            "SignPrivateKey" => test_run("test_sign_sm2", "server_sign.key"),
+            "EncCertificate" => test_run("test_sign_sm2", "server_enc.crt"),
+            "EncPrivateKey" => test_run("test_sign_sm2", "server_enc.key"),
+            "VerifyCAFile" => test_run("test_sign_sm2", "chain-ca.crt"),
             "Enable_ntls" => "on",
         },
         client => {
-            "SignCertificate" => test_pem("CS.cert.pem"),
-            "SignPrivateKey" => test_pem("CS.key.pem"),
-            "EncCertificate" => test_pem("CE.cert.pem"),
-            "EncPrivateKey" => test_pem("CE.key.pem"),
+            "SignCertificate" => test_run("test_sign_sm2", "client_sign.crt"),
+            "SignPrivateKey" => test_run("test_sign_sm2", "client_sign.key"),
+            "EncCertificate" => test_run("test_sign_sm2", "client_enc.crt"),
+            "EncPrivateKey" => test_run("test_sign_sm2", "client_enc.key"),
             "CipherString" => "ECDHE-SM2-SM4-GCM-SM3",
-            "VerifyCAFile" => test_pem("CA.cert.pem"),
+            "VerifyCAFile" => test_run("test_sign_sm2", "chain-ca.crt"),
             "Enable_ntls" => "on",
         },
         test   => {

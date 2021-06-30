@@ -1348,6 +1348,13 @@ static int ssl_set_cert_idx(CERT *c, X509 *x, int i)
         return 0;
     }
 
+    if (EVP_PKEY_is_sm2(pkey)) {
+        if (!EVP_PKEY_set_alias_type(pkey, EVP_PKEY_SM2)) {
+            SSLerr(SSL_F_SSL_SET_CERT_IDX, SSL_R_UNKNOWN_CERTIFICATE_TYPE);
+            return 0;
+        }
+    }
+
     if (c->pkeys[i].privatekey != NULL) {
         /*
          * The return code from EVP_PKEY_copy_parameters is deliberately
@@ -1379,6 +1386,13 @@ static int ssl_set_cert_idx(CERT *c, X509 *x, int i)
 
 static int ssl_set_pkey_idx(CERT *c, EVP_PKEY *pkey, int i)
 {
+    if (EVP_PKEY_is_sm2(pkey)) {
+        if (!EVP_PKEY_set_alias_type(pkey, EVP_PKEY_SM2)) {
+            SSLerr(SSL_F_SSL_SET_PKEY_IDX, SSL_R_UNKNOWN_CERTIFICATE_TYPE);
+            return 0;
+        }
+    }
+
     if (c->pkeys[i].x509 != NULL) {
         EVP_PKEY *pktmp;
         pktmp = X509_get0_pubkey(c->pkeys[i].x509);
@@ -1521,8 +1535,9 @@ int SSL_CTX_use_enc_certificate(SSL_CTX *ctx, X509 *x)
         return 0;
     }
 
-    /* an SM2 certificate is load as an EC cert */
-    if (EVP_PKEY_id(pkey) != EVP_PKEY_EC) {
+    /* an SM2 certificate maybe load as an EC cert */
+    if (EVP_PKEY_id(pkey) != EVP_PKEY_SM2
+        && EVP_PKEY_id(pkey) != EVP_PKEY_EC) {
         SSLerr(SSL_F_SSL_CTX_USE_ENC_CERTIFICATE,
                ERR_R_SHOULD_NOT_HAVE_BEEN_CALLED);
         return 0;
@@ -1612,8 +1627,9 @@ int SSL_CTX_use_sign_certificate(SSL_CTX *ctx, X509 *x)
         return 0;
     }
 
-    /* an SM2 certificate is load as an EC cert */
-    if (EVP_PKEY_id(pkey) != EVP_PKEY_EC) {
+    /* an SM2 certificate maybe load as an EC cert */
+    if (EVP_PKEY_id(pkey) != EVP_PKEY_SM2
+        && EVP_PKEY_id(pkey) != EVP_PKEY_EC) {
         SSLerr(SSL_F_SSL_CTX_USE_SIGN_CERTIFICATE,
                ERR_R_SHOULD_NOT_HAVE_BEEN_CALLED);
         return 0;
