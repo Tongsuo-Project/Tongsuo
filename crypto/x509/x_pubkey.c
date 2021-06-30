@@ -129,7 +129,14 @@ static int x509_pubkey_decode(EVP_PKEY **ppkey, X509_PUBKEY *key)
         X509err(X509_F_X509_PUBKEY_DECODE, X509_R_METHOD_NOT_SUPPORTED);
         goto error;
     }
-
+#ifndef OPENSSL_NO_SM2
+    if (EVP_PKEY_is_sm2(pkey)) {
+        if (!EVP_PKEY_set_alias_type(pkey, EVP_PKEY_SM2)) {
+            X509err(X509_F_X509_PUBKEY_DECODE, X509_R_UNSUPPORTED_ALGORITHM);
+            goto error;
+        }
+    }
+#endif
     *ppkey = pkey;
     return 1;
 
