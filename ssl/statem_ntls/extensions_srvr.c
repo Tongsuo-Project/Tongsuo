@@ -213,25 +213,7 @@ int tls_parse_ctos_maxfragmentlen_ntls(SSL *s, PACKET *pkt, unsigned int context
 int tls_parse_ctos_ec_pt_formats_ntls(SSL *s, PACKET *pkt, unsigned int context,
                                  X509 *x, size_t chainidx)
 {
-    PACKET ec_point_format_list;
-
-    if (!PACKET_as_length_prefixed_1(pkt, &ec_point_format_list)
-        || PACKET_remaining(&ec_point_format_list) == 0) {
-        SSLfatal_ntls(s, SSL_AD_DECODE_ERROR, SSL_F_TLS_PARSE_CTOS_EC_PT_FORMATS_NTLS,
-                 SSL_R_BAD_EXTENSION);
-        return 0;
-    }
-
-    if (!s->hit) {
-        if (!PACKET_memdup(&ec_point_format_list,
-                           &s->ext.peer_ecpointformats,
-                           &s->ext.peer_ecpointformats_len)) {
-            SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                     SSL_F_TLS_PARSE_CTOS_EC_PT_FORMATS_NTLS, ERR_R_INTERNAL_ERROR);
-            return 0;
-        }
-    }
-
+    /* Ignore ec_point_formats */
     return 1;
 }
 # endif                          /* OPENSSL_NO_EC */
@@ -254,42 +236,14 @@ int tls_parse_ctos_session_ticket_ntls(SSL *s, PACKET *pkt, unsigned int context
 int tls_parse_ctos_sig_algs_cert_ntls(SSL *s, PACKET *pkt, unsigned int context,
                                  X509 *x, size_t chainidx)
 {
-    PACKET supported_sig_algs;
-
-    if (!PACKET_as_length_prefixed_2(pkt, &supported_sig_algs)
-            || PACKET_remaining(&supported_sig_algs) == 0) {
-        SSLfatal_ntls(s, SSL_AD_DECODE_ERROR,
-                 SSL_F_TLS_PARSE_CTOS_SIG_ALGS_CERT_NTLS, SSL_R_BAD_EXTENSION);
-        return 0;
-    }
-
-    if (!s->hit && !tls1_save_sigalgs(s, &supported_sig_algs, 1)) {
-        SSLfatal_ntls(s, SSL_AD_DECODE_ERROR,
-                 SSL_F_TLS_PARSE_CTOS_SIG_ALGS_CERT_NTLS, SSL_R_BAD_EXTENSION);
-        return 0;
-    }
-
+    /* Ignore signature_algorithms_cert */
     return 1;
 }
 
 int tls_parse_ctos_sig_algs_ntls(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
                             size_t chainidx)
 {
-    PACKET supported_sig_algs;
-
-    if (!PACKET_as_length_prefixed_2(pkt, &supported_sig_algs)
-            || PACKET_remaining(&supported_sig_algs) == 0) {
-        SSLfatal_ntls(s, SSL_AD_DECODE_ERROR,
-                 SSL_F_TLS_PARSE_CTOS_SIG_ALGS_NTLS, SSL_R_BAD_EXTENSION);
-        return 0;
-    }
-
-    if (!s->hit && !tls1_save_sigalgs(s, &supported_sig_algs, 0)) {
-        SSLfatal_ntls(s, SSL_AD_DECODE_ERROR,
-                 SSL_F_TLS_PARSE_CTOS_SIG_ALGS_NTLS, SSL_R_BAD_EXTENSION);
-        return 0;
-    }
-
+    /* Ignore signature_algorithms */
     return 1;
 }
 
@@ -537,9 +491,7 @@ int tls_parse_ctos_use_srtp_ntls(SSL *s, PACKET *pkt, unsigned int context, X509
 int tls_parse_ctos_etm_ntls(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
                        size_t chainidx)
 {
-    if (!(s->options & SSL_OP_NO_ENCRYPT_THEN_MAC))
-        s->ext.use_etm = 1;
-
+    /* Ignore encrypt-then-MAC */
     return 1;
 }
 
@@ -919,31 +871,7 @@ int tls_parse_ctos_cookie_ntls(SSL *s, PACKET *pkt, unsigned int context, X509 *
 int tls_parse_ctos_supported_groups_ntls(SSL *s, PACKET *pkt, unsigned int context,
                                     X509 *x, size_t chainidx)
 {
-    PACKET supported_groups_list;
-
-    /* Each group is 2 bytes and we must have at least 1. */
-    if (!PACKET_as_length_prefixed_2(pkt, &supported_groups_list)
-            || PACKET_remaining(&supported_groups_list) == 0
-            || (PACKET_remaining(&supported_groups_list) % 2) != 0) {
-        SSLfatal_ntls(s, SSL_AD_DECODE_ERROR,
-                 SSL_F_TLS_PARSE_CTOS_SUPPORTED_GROUPS_NTLS, SSL_R_BAD_EXTENSION);
-        return 0;
-    }
-
-    if (!s->hit) {
-        OPENSSL_free(s->ext.peer_supportedgroups);
-        s->ext.peer_supportedgroups = NULL;
-        s->ext.peer_supportedgroups_len = 0;
-        if (!tls1_save_u16(&supported_groups_list,
-                           &s->ext.peer_supportedgroups,
-                           &s->ext.peer_supportedgroups_len)) {
-            SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                     SSL_F_TLS_PARSE_CTOS_SUPPORTED_GROUPS_NTLS,
-                     ERR_R_INTERNAL_ERROR);
-            return 0;
-        }
-    }
-
+    /* Ignore supported_groups */
     return 1;
 }
 # endif
@@ -951,15 +879,7 @@ int tls_parse_ctos_supported_groups_ntls(SSL *s, PACKET *pkt, unsigned int conte
 int tls_parse_ctos_ems_ntls(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
                        size_t chainidx)
 {
-    /* The extension must always be empty */
-    if (PACKET_remaining(pkt) != 0) {
-        SSLfatal_ntls(s, SSL_AD_DECODE_ERROR,
-                 SSL_F_TLS_PARSE_CTOS_EMS_NTLS, SSL_R_BAD_EXTENSION);
-        return 0;
-    }
-
-    s->s3->flags |= TLS1_FLAGS_RECEIVED_EXTMS;
-
+    /* Ignore extended_master_secret */
     return 1;
 }
 
@@ -1289,27 +1209,8 @@ EXT_RETURN tls_construct_stoc_ec_pt_formats_ntls(SSL *s, WPACKET *pkt,
                                             unsigned int context, X509 *x,
                                             size_t chainidx)
 {
-    unsigned long alg_k = s->s3->tmp.new_cipher->algorithm_mkey;
-    unsigned long alg_a = s->s3->tmp.new_cipher->algorithm_auth;
-    int using_ecc = ((alg_k & SSL_kECDHE) || (alg_a & SSL_aECDSA))
-                    && (s->ext.peer_ecpointformats != NULL);
-    const unsigned char *plist;
-    size_t plistlen;
-
-    if (!using_ecc)
-        return EXT_RETURN_NOT_SENT;
-
-    tls1_get_formatlist(s, &plist, &plistlen);
-    if (!WPACKET_put_bytes_u16(pkt, TLSEXT_TYPE_ec_point_formats)
-            || !WPACKET_start_sub_packet_u16(pkt)
-            || !WPACKET_sub_memcpy_u8(pkt, plist, plistlen)
-            || !WPACKET_close(pkt)) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                 SSL_F_TLS_CONSTRUCT_STOC_EC_PT_FORMATS_NTLS, ERR_R_INTERNAL_ERROR);
-        return EXT_RETURN_FAIL;
-    }
-
-    return EXT_RETURN_SENT;
+    /* No ec_point_formats */
+    return EXT_RETURN_NOT_SENT;
 }
 # endif
 
@@ -1318,64 +1219,8 @@ EXT_RETURN tls_construct_stoc_supported_groups_ntls(SSL *s, WPACKET *pkt,
                                                unsigned int context, X509 *x,
                                                size_t chainidx)
 {
-    const uint16_t *groups;
-    size_t numgroups, i, first = 1;
-
-    /* s->s3->group_id is non zero if we accepted a key_share */
-    if (s->s3->group_id == 0)
-        return EXT_RETURN_NOT_SENT;
-
-    /* Get our list of supported groups */
-    tls1_get_supported_groups(s, &groups, &numgroups);
-    if (numgroups == 0) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                 SSL_F_TLS_CONSTRUCT_STOC_SUPPORTED_GROUPS_NTLS, ERR_R_INTERNAL_ERROR);
-        return EXT_RETURN_FAIL;
-    }
-
-    /* Copy group ID if supported */
-    for (i = 0; i < numgroups; i++) {
-        uint16_t group = groups[i];
-
-        if (tls_curve_allowed(s, group, SSL_SECOP_CURVE_SUPPORTED)) {
-            if (first) {
-                /*
-                 * Check if the client is already using our preferred group. If
-                 * so we don't need to add this extension
-                 */
-                if (s->s3->group_id == group)
-                    return EXT_RETURN_NOT_SENT;
-
-                /* Add extension header */
-                if (!WPACKET_put_bytes_u16(pkt, TLSEXT_TYPE_supported_groups)
-                           /* Sub-packet for supported_groups extension */
-                        || !WPACKET_start_sub_packet_u16(pkt)
-                        || !WPACKET_start_sub_packet_u16(pkt)) {
-                    SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                             SSL_F_TLS_CONSTRUCT_STOC_SUPPORTED_GROUPS_NTLS,
-                             ERR_R_INTERNAL_ERROR);
-                    return EXT_RETURN_FAIL;
-                }
-
-                first = 0;
-            }
-            if (!WPACKET_put_bytes_u16(pkt, group)) {
-                    SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                             SSL_F_TLS_CONSTRUCT_STOC_SUPPORTED_GROUPS_NTLS,
-                             ERR_R_INTERNAL_ERROR);
-                    return EXT_RETURN_FAIL;
-                }
-        }
-    }
-
-    if (!WPACKET_close(pkt) || !WPACKET_close(pkt)) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                 SSL_F_TLS_CONSTRUCT_STOC_SUPPORTED_GROUPS_NTLS,
-                 ERR_R_INTERNAL_ERROR);
-        return EXT_RETURN_FAIL;
-    }
-
-    return EXT_RETURN_SENT;
+    /* No supported_groups */
+    return EXT_RETURN_NOT_SENT;
 }
 # endif
 
@@ -1511,69 +1356,23 @@ EXT_RETURN tls_construct_stoc_use_srtp_ntls(SSL *s, WPACKET *pkt,
 EXT_RETURN tls_construct_stoc_etm_ntls(SSL *s, WPACKET *pkt, unsigned int context,
                                   X509 *x, size_t chainidx)
 {
-    if (!s->ext.use_etm)
-        return EXT_RETURN_NOT_SENT;
-
-    /*
-     * Don't use encrypt_then_mac if AEAD or RC4 might want to disable
-     * for other cases too.
-     */
-    if (s->s3->tmp.new_cipher->algorithm_mac == SSL_AEAD
-        || s->s3->tmp.new_cipher->algorithm_enc == SSL_RC4
-        || s->s3->tmp.new_cipher->algorithm_enc == SSL_eGOST2814789CNT
-        || s->s3->tmp.new_cipher->algorithm_enc == SSL_eGOST2814789CNT12) {
-        s->ext.use_etm = 0;
-        return EXT_RETURN_NOT_SENT;
-    }
-
-    if (!WPACKET_put_bytes_u16(pkt, TLSEXT_TYPE_encrypt_then_mac)
-            || !WPACKET_put_bytes_u16(pkt, 0)) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_STOC_ETM_NTLS,
-                 ERR_R_INTERNAL_ERROR);
-        return EXT_RETURN_FAIL;
-    }
-
-    return EXT_RETURN_SENT;
+    /* No encrypt-then-MAC */
+    return EXT_RETURN_NOT_SENT;
 }
 
 EXT_RETURN tls_construct_stoc_ems_ntls(SSL *s, WPACKET *pkt, unsigned int context,
                                   X509 *x, size_t chainidx)
 {
-    if ((s->s3->flags & TLS1_FLAGS_RECEIVED_EXTMS) == 0)
-        return EXT_RETURN_NOT_SENT;
-
-    if (!WPACKET_put_bytes_u16(pkt, TLSEXT_TYPE_extended_master_secret)
-            || !WPACKET_put_bytes_u16(pkt, 0)) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_STOC_EMS_NTLS,
-                 ERR_R_INTERNAL_ERROR);
-        return EXT_RETURN_FAIL;
-    }
-
-    return EXT_RETURN_SENT;
+    /* No extended_master_secret */
+    return EXT_RETURN_NOT_SENT;
 }
 
 EXT_RETURN tls_construct_stoc_supported_versions_ntls(SSL *s, WPACKET *pkt,
                                                  unsigned int context, X509 *x,
                                                  size_t chainidx)
 {
-    {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                 SSL_F_TLS_CONSTRUCT_STOC_SUPPORTED_VERSIONS_NTLS,
-                 ERR_R_INTERNAL_ERROR);
-        return EXT_RETURN_FAIL;
-    }
-
-    if (!WPACKET_put_bytes_u16(pkt, TLSEXT_TYPE_supported_versions)
-            || !WPACKET_start_sub_packet_u16(pkt)
-            || !WPACKET_put_bytes_u16(pkt, s->version)
-            || !WPACKET_close(pkt)) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                 SSL_F_TLS_CONSTRUCT_STOC_SUPPORTED_VERSIONS_NTLS,
-                 ERR_R_INTERNAL_ERROR);
-        return EXT_RETURN_FAIL;
-    }
-
-    return EXT_RETURN_SENT;
+    /* No supported_versions */
+    return EXT_RETURN_NOT_SENT;
 }
 
 EXT_RETURN tls_construct_stoc_key_share_ntls(SSL *s, WPACKET *pkt,

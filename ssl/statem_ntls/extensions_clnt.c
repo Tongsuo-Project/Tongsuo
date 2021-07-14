@@ -83,107 +83,20 @@ EXT_RETURN tls_construct_ctos_maxfragmentlen_ntls(SSL *s, WPACKET *pkt,
 }
 
 # ifndef OPENSSL_NO_EC
-static int use_ecc(SSL *s)
-{
-    int i, end, ret = 0;
-    unsigned long alg_k, alg_a;
-    STACK_OF(SSL_CIPHER) *cipher_stack = NULL;
-
-    /* See if we support any ECC ciphersuites */
-    if (s->version == SSL3_VERSION)
-        return 0;
-
-    cipher_stack = SSL_get1_supported_ciphers(s);
-    end = sk_SSL_CIPHER_num(cipher_stack);
-    for (i = 0; i < end; i++) {
-        const SSL_CIPHER *c = sk_SSL_CIPHER_value(cipher_stack, i);
-
-        alg_k = c->algorithm_mkey;
-        alg_a = c->algorithm_auth;
-        if ((alg_k & (SSL_kECDHE | SSL_kECDHEPSK))
-                || (alg_a & SSL_aECDSA)
-                || c->min_tls >= TLS1_3_VERSION) {
-            ret = 1;
-            break;
-        }
-    }
-
-    sk_SSL_CIPHER_free(cipher_stack);
-    return ret;
-}
-
 EXT_RETURN tls_construct_ctos_ec_pt_formats_ntls(SSL *s, WPACKET *pkt,
                                             unsigned int context, X509 *x,
                                             size_t chainidx)
 {
-    const unsigned char *pformats;
-    size_t num_formats;
-
-    if (!use_ecc(s))
-        return EXT_RETURN_NOT_SENT;
-
-    /* Add TLS extension ECPointFormats to the ClientHello message */
-    tls1_get_formatlist(s, &pformats, &num_formats);
-
-    if (!WPACKET_put_bytes_u16(pkt, TLSEXT_TYPE_ec_point_formats)
-               /* Sub-packet for formats extension */
-            || !WPACKET_start_sub_packet_u16(pkt)
-            || !WPACKET_sub_memcpy_u8(pkt, pformats, num_formats)
-            || !WPACKET_close(pkt)) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                 SSL_F_TLS_CONSTRUCT_CTOS_EC_PT_FORMATS_NTLS, ERR_R_INTERNAL_ERROR);
-        return EXT_RETURN_FAIL;
-    }
-
-    return EXT_RETURN_SENT;
+    /* No ec_point_formats */
+    return EXT_RETURN_NOT_SENT;
 }
 
 EXT_RETURN tls_construct_ctos_supported_groups_ntls(SSL *s, WPACKET *pkt,
                                                unsigned int context, X509 *x,
                                                size_t chainidx)
 {
-    const uint16_t *pgroups = NULL;
-    size_t num_groups = 0, i;
-
-    if (!use_ecc(s))
-        return EXT_RETURN_NOT_SENT;
-
-    /*
-     * Add TLS extension supported_groups to the ClientHello message
-     */
-    /* TODO(TLS1.3): Add support for DHE groups */
-    tls1_get_supported_groups(s, &pgroups, &num_groups);
-
-    if (!WPACKET_put_bytes_u16(pkt, TLSEXT_TYPE_supported_groups)
-               /* Sub-packet for supported_groups extension */
-            || !WPACKET_start_sub_packet_u16(pkt)
-            || !WPACKET_start_sub_packet_u16(pkt)) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                 SSL_F_TLS_CONSTRUCT_CTOS_SUPPORTED_GROUPS_NTLS,
-                 ERR_R_INTERNAL_ERROR);
-        return EXT_RETURN_FAIL;
-    }
-    /* Copy curve ID if supported */
-    for (i = 0; i < num_groups; i++) {
-        uint16_t ctmp = pgroups[i];
-
-        if (tls_curve_allowed(s, ctmp, SSL_SECOP_CURVE_SUPPORTED)) {
-            if (!WPACKET_put_bytes_u16(pkt, ctmp)) {
-                    SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                             SSL_F_TLS_CONSTRUCT_CTOS_SUPPORTED_GROUPS_NTLS,
-                             ERR_R_INTERNAL_ERROR);
-                    return EXT_RETURN_FAIL;
-                }
-        }
-    }
-    if (!WPACKET_close(pkt) || !WPACKET_close(pkt)) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                 SSL_F_TLS_CONSTRUCT_CTOS_SUPPORTED_GROUPS_NTLS,
-                 ERR_R_INTERNAL_ERROR);
-        return EXT_RETURN_FAIL;
-    }
-
-    return EXT_RETURN_SENT;
+    /* No supported_groups */
+    return EXT_RETURN_NOT_SENT;
 }
 # endif
 
@@ -235,27 +148,8 @@ EXT_RETURN tls_construct_ctos_sig_algs_ntls(SSL *s, WPACKET *pkt,
                                        unsigned int context, X509 *x,
                                        size_t chainidx)
 {
-    size_t salglen;
-    const uint16_t *salg;
-
-    if (!SSL_CLIENT_USE_SIGALGS_NTLS(s))
-        return EXT_RETURN_NOT_SENT;
-
-    salglen = tls12_get_psigalgs(s, 1, &salg);
-    if (!WPACKET_put_bytes_u16(pkt, TLSEXT_TYPE_signature_algorithms)
-               /* Sub-packet for sig-algs extension */
-            || !WPACKET_start_sub_packet_u16(pkt)
-               /* Sub-packet for the actual list */
-            || !WPACKET_start_sub_packet_u16(pkt)
-            || !tls12_copy_sigalgs(s, pkt, salg, salglen)
-            || !WPACKET_close(pkt)
-            || !WPACKET_close(pkt)) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_CTOS_SIG_ALGS_NTLS,
-                 ERR_R_INTERNAL_ERROR);
-        return EXT_RETURN_FAIL;
-    }
-
-    return EXT_RETURN_SENT;
+    /* No signature_algorithms */
+    return EXT_RETURN_NOT_SENT;
 }
 
 # ifndef OPENSSL_NO_OCSP
@@ -426,17 +320,8 @@ EXT_RETURN tls_construct_ctos_use_srtp_ntls(SSL *s, WPACKET *pkt,
 EXT_RETURN tls_construct_ctos_etm_ntls(SSL *s, WPACKET *pkt, unsigned int context,
                                   X509 *x, size_t chainidx)
 {
-    if (s->options & SSL_OP_NO_ENCRYPT_THEN_MAC)
-        return EXT_RETURN_NOT_SENT;
-
-    if (!WPACKET_put_bytes_u16(pkt, TLSEXT_TYPE_encrypt_then_mac)
-            || !WPACKET_put_bytes_u16(pkt, 0)) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_CTOS_ETM_NTLS,
-                 ERR_R_INTERNAL_ERROR);
-        return EXT_RETURN_FAIL;
-    }
-
-    return EXT_RETURN_SENT;
+    /* No encrypt-then-MAC */
+    return EXT_RETURN_NOT_SENT;
 }
 
 # ifndef OPENSSL_NO_CT
@@ -464,65 +349,16 @@ EXT_RETURN tls_construct_ctos_sct_ntls(SSL *s, WPACKET *pkt, unsigned int contex
 EXT_RETURN tls_construct_ctos_ems_ntls(SSL *s, WPACKET *pkt, unsigned int context,
                                   X509 *x, size_t chainidx)
 {
-    if (!WPACKET_put_bytes_u16(pkt, TLSEXT_TYPE_extended_master_secret)
-            || !WPACKET_put_bytes_u16(pkt, 0)) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_CTOS_EMS_NTLS,
-                 ERR_R_INTERNAL_ERROR);
-        return EXT_RETURN_FAIL;
-    }
-
-    return EXT_RETURN_SENT;
+    /* No extended_master_secret */
+    return EXT_RETURN_NOT_SENT;
 }
 
 EXT_RETURN tls_construct_ctos_supported_versions_ntls(SSL *s, WPACKET *pkt,
                                                  unsigned int context, X509 *x,
                                                  size_t chainidx)
 {
-    int currv, min_version, max_version, reason;
-
-    reason = ssl_get_min_max_version_ntls(s, &min_version, &max_version, NULL);
-    if (reason != 0) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                 SSL_F_TLS_CONSTRUCT_CTOS_SUPPORTED_VERSIONS_NTLS, reason);
-        return EXT_RETURN_FAIL;
-    }
-
-    if (min_version == NTLS_VERSION) {
-        min_version = SSL3_VERSION;
-    }
-
-    /*
-     * Don't include this if we can't negotiate TLSv1.3. We can do a straight
-     * comparison here because we will never be called in DTLS.
-     */
-    if (max_version < TLS1_3_VERSION)
-        return EXT_RETURN_NOT_SENT;
-
-    if (!WPACKET_put_bytes_u16(pkt, TLSEXT_TYPE_supported_versions)
-            || !WPACKET_start_sub_packet_u16(pkt)
-            || !WPACKET_start_sub_packet_u8(pkt)) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                 SSL_F_TLS_CONSTRUCT_CTOS_SUPPORTED_VERSIONS_NTLS,
-                 ERR_R_INTERNAL_ERROR);
-        return EXT_RETURN_FAIL;
-    }
-
-    for (currv = max_version; currv >= min_version; currv--) {
-        if (!WPACKET_put_bytes_u16(pkt, currv)) {
-            SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                     SSL_F_TLS_CONSTRUCT_CTOS_SUPPORTED_VERSIONS_NTLS,
-                     ERR_R_INTERNAL_ERROR);
-            return EXT_RETURN_FAIL;
-        }
-    }
-    if (!WPACKET_close(pkt) || !WPACKET_close(pkt)) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                 SSL_F_TLS_CONSTRUCT_CTOS_SUPPORTED_VERSIONS_NTLS,
-                 ERR_R_INTERNAL_ERROR);
-        return EXT_RETURN_FAIL;
-    }
-
-    return EXT_RETURN_SENT;
+    /* No supported_versions */
+    return EXT_RETURN_NOT_SENT;
 }
 
 /*
@@ -1272,42 +1108,7 @@ int tls_parse_stoc_server_name_ntls(SSL *s, PACKET *pkt, unsigned int context,
 int tls_parse_stoc_ec_pt_formats_ntls(SSL *s, PACKET *pkt, unsigned int context,
                                  X509 *x, size_t chainidx)
 {
-    size_t ecpointformats_len;
-    PACKET ecptformatlist;
-
-    if (!PACKET_as_length_prefixed_1(pkt, &ecptformatlist)) {
-        SSLfatal_ntls(s, SSL_AD_DECODE_ERROR, SSL_F_TLS_PARSE_STOC_EC_PT_FORMATS_NTLS,
-                 SSL_R_BAD_EXTENSION);
-        return 0;
-    }
-    if (!s->hit) {
-        ecpointformats_len = PACKET_remaining(&ecptformatlist);
-        if (ecpointformats_len == 0) {
-            SSLfatal_ntls(s, SSL_AD_DECODE_ERROR,
-                     SSL_F_TLS_PARSE_STOC_EC_PT_FORMATS_NTLS, SSL_R_BAD_LENGTH);
-            return 0;
-        }
-
-        s->ext.peer_ecpointformats_len = 0;
-        OPENSSL_free(s->ext.peer_ecpointformats);
-        s->ext.peer_ecpointformats = OPENSSL_malloc(ecpointformats_len);
-        if (s->ext.peer_ecpointformats == NULL) {
-            SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                     SSL_F_TLS_PARSE_STOC_EC_PT_FORMATS_NTLS, ERR_R_INTERNAL_ERROR);
-            return 0;
-        }
-
-        s->ext.peer_ecpointformats_len = ecpointformats_len;
-
-        if (!PACKET_copy_bytes(&ecptformatlist,
-                               s->ext.peer_ecpointformats,
-                               ecpointformats_len)) {
-            SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                     SSL_F_TLS_PARSE_STOC_EC_PT_FORMATS_NTLS, ERR_R_INTERNAL_ERROR);
-            return 0;
-        }
-    }
-
+    /* Ignore ec_point_formats */
     return 1;
 }
 # endif
@@ -1634,56 +1435,21 @@ int tls_parse_stoc_use_srtp_ntls(SSL *s, PACKET *pkt, unsigned int context, X509
 int tls_parse_stoc_etm_ntls(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
                        size_t chainidx)
 {
-    /* Ignore if inappropriate ciphersuite */
-    if (!(s->options & SSL_OP_NO_ENCRYPT_THEN_MAC)
-            && s->s3->tmp.new_cipher->algorithm_mac != SSL_AEAD
-            && s->s3->tmp.new_cipher->algorithm_enc != SSL_RC4)
-        s->ext.use_etm = 1;
-
+    /* Ignore encrypt-then-MAC */
     return 1;
 }
 
 int tls_parse_stoc_ems_ntls(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
                        size_t chainidx)
 {
-    s->s3->flags |= TLS1_FLAGS_RECEIVED_EXTMS;
-    if (!s->hit)
-        s->session->flags |= SSL_SESS_FLAG_EXTMS;
-
+    /* Ignore extended_master_secret */
     return 1;
 }
 
 int tls_parse_stoc_supported_versions_ntls(SSL *s, PACKET *pkt, unsigned int context,
                                       X509 *x, size_t chainidx)
 {
-    unsigned int version;
-
-    if (!PACKET_get_net_2(pkt, &version)
-            || PACKET_remaining(pkt) != 0) {
-        SSLfatal_ntls(s, SSL_AD_DECODE_ERROR,
-                 SSL_F_TLS_PARSE_STOC_SUPPORTED_VERSIONS_NTLS,
-                 SSL_R_LENGTH_MISMATCH);
-        return 0;
-    }
-
-    /*
-     * The only protocol version we support which is valid in this extension in
-     * a ServerHello is TLSv1.3 therefore we shouldn't be getting anything else.
-     */
-    if (version != TLS1_3_VERSION) {
-        SSLfatal_ntls(s, SSL_AD_ILLEGAL_PARAMETER,
-                 SSL_F_TLS_PARSE_STOC_SUPPORTED_VERSIONS_NTLS,
-                 SSL_R_BAD_PROTOCOL_VERSION_NUMBER);
-        return 0;
-    }
-
-    /* We ignore this extension for HRRs except to sanity check it */
-    if (context == SSL_EXT_TLS1_3_HELLO_RETRY_REQUEST)
-        return 1;
-
-    /* We just set it here. We validate it in ssl_choose_client_version_ntls */
-    s->version = version;
-
+    /* Ignore supported_versions */
     return 1;
 }
 
