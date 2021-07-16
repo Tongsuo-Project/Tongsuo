@@ -29,11 +29,12 @@ my $cmd = "openssl";
 
 my $ciphersstatus = undef;
 my @ciphers =
-          map { split /\s+/ }
+    grep(! /^$|^[^-]/,
+        (map { split /\s+/ }
           run(app([$cmd, "enc", "-ciphers"]),
-              capture => 1, statusvar => \$ciphersstatus);
+              capture => 1, statusvar => \$ciphersstatus)));
 
-plan tests => 2 + scalar @ciphers;
+plan tests => 3 + scalar @ciphers;
 
 SKIP: {
     skip "Problems getting ciphers...", 1 + scalar(@ciphers)
