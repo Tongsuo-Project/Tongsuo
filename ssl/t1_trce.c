@@ -67,7 +67,10 @@ static const ssl_trace_tbl ssl_version_tbl[] = {
     {TLS1_3_VERSION, "TLS 1.3"},
     {DTLS1_VERSION, "DTLS 1.0"},
     {DTLS1_2_VERSION, "DTLS 1.2"},
-    {DTLS1_BAD_VER, "DTLS 1.0 (bad)"}
+    {DTLS1_BAD_VER, "DTLS 1.0 (bad)"},
+#ifndef OPENSSL_NO_NTLS
+    {NTLS_VERSION, "NTLS"},
+#endif
 };
 
 static const ssl_trace_tbl ssl_content_tbl[] = {
@@ -443,6 +446,17 @@ static const ssl_trace_tbl ssl_ciphers_tbl[] = {
     {0xFEFF, "SSL_RSA_FIPS_WITH_3DES_EDE_CBC_SHA"},
     {0xFF85, "GOST2012-GOST8912-GOST8912"},
     {0xFF87, "GOST2012-NULL-GOST12"},
+# if (!defined OPENSSL_NO_SM2) && (!defined OPENSSL_NO_SM3) \
+     && (!defined OPENSSL_NO_SM4)
+    {0x00C6, "TLS_SM4_GCM_SM3"},
+    {0x00C7, "TLS_SM4_CCM_SM3"},
+#if (!defined OPENSSL_NO_NTLS)
+    {0xE011, "ECDHE-SM2-SM4-CBC-SM3"},
+    {0xE051, "ECDHE-SM2-SM4-GCM-SM3"},
+    {0xE013, "ECC-SM2-SM4-CBC-SM3"},
+    {0xE053, "ECC-SM2-SM4-GCM-SM3"},
+#endif
+#endif
 };
 
 /* Compression methods */
@@ -528,7 +542,8 @@ static const ssl_trace_tbl ssl_groups_tbl[] = {
     {259, "ffdhe6144"},
     {260, "ffdhe8192"},
     {0xFF01, "arbitrary_explicit_prime_curves"},
-    {0xFF02, "arbitrary_explicit_char2_curves"}
+    {0xFF02, "arbitrary_explicit_char2_curves"},
+    {41, "curveSM2"},
 };
 
 static const ssl_trace_tbl ssl_point_tbl[] = {
@@ -572,6 +587,7 @@ static const ssl_trace_tbl ssl_sigalg_tbl[] = {
     {TLSEXT_SIGALG_gostr34102012_256_gostr34112012_256, "gost2012_256"},
     {TLSEXT_SIGALG_gostr34102012_512_gostr34112012_512, "gost2012_512"},
     {TLSEXT_SIGALG_gostr34102001_gostr3411, "gost2001_gost94"},
+    {TLSEXT_SIGALG_sm2sig_sm3, "sm2sig_sm3"},
 };
 
 static const ssl_trace_tbl ssl_ctype_tbl[] = {
@@ -1072,6 +1088,17 @@ static int ssl_get_keyex(const char **pname, const SSL *ssl)
         *pname = "GOST";
         return SSL_kGOST;
     }
+# if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
+     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+    if (alg_k & SSL_kSM2) {
+        *pname = "SM2";
+        return SSL_kSM2;
+    }
+    if (alg_k & SSL_kSM2DHE) {
+        *pname = "SM2DHE";
+        return SSL_kSM2DHE;
+    }
+# endif
     *pname = "UNKNOWN";
     return 0;
 }
@@ -1114,7 +1141,22 @@ static int ssl_print_client_keyex(BIO *bio, int indent, const SSL *ssl,
         if (!ssl_print_hexbuf(bio, indent + 2, "ecdh_Yc", 1, &msg, &msglen))
             return 0;
         break;
-
+# if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
+     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+    case SSL_kSM2:
+        if (!ssl_print_hexbuf(bio, indent + 2,
+                              "EncryptedPreMasterSecret", 2, &msg, &msglen))
+            return 0;
+        break;
+    case SSL_kSM2DHE:
+        ssl_print_hex(bio, indent + 2, "ECParameters", msg, 3);
+        msg += 3;
+        msglen -= 3;
+        if (!ssl_print_hexbuf(bio, indent + 2,
+                              "sm2dh_Yc", 1, &msg, &msglen))
+            return 0;
+        break;
+# endif
     }
 
     return !msglen;
@@ -1156,6 +1198,10 @@ static int ssl_print_server_keyex(BIO *bio, int indent, const SSL *ssl,
 # ifndef OPENSSL_NO_EC
     case SSL_kECDHE:
     case SSL_kECDHEPSK:
+# if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
+     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+    case SSL_kSM2DHE:
+# endif
         if (msglen < 1)
             return 0;
         BIO_indent(bio, indent + 2, 80);
