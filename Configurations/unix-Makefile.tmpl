@@ -278,6 +278,10 @@ MANDIR=$(INSTALLTOP)/share/man
 DOCDIR=$(INSTALLTOP)/share/doc/$(BASENAME)
 HTMLDIR=$(DOCDIR)/html
 
+{- output_off() if $config{system_ciphers_file} eq ""; "" -}
+SYSTEM_CIPHERS_FILE_DEFINE=-DSYSTEM_CIPHERS_FILE="\"{- $config{system_ciphers_file} -}\""
+{- output_on() if $config{system_ciphers_file} eq ""; "" -}
+
 # MANSUFFIX is for the benefit of anyone who may want to have a suffix
 # appended after the manpage file section number.  "ssl" is popular,
 # resulting in files such as config.5ssl rather than config.5.
@@ -301,6 +305,7 @@ CC=$(CROSS_COMPILE){- $config{CC} -}
 CXX={- $config{CXX} ? "\$(CROSS_COMPILE)$config{CXX}" : '' -}
 CPPFLAGS={- our $cppflags1 = join(" ",
                                   (map { "-D".$_} @{$config{CPPDEFINES}}),
+                                  "\$(SYSTEM_CIPHERS_FILE_DEFINE)",
                                   (map { "-I".$_} @{$config{CPPINCLUDES}}),
                                   @{$config{CPPFLAGS}}) -}
 CFLAGS={- join(' ', @{$config{CFLAGS}}) -}

@@ -182,6 +182,15 @@ As of OpenSSL 1.0.0, the B<ALL> cipher suites are sensibly ordered by default.
 
 The cipher suites not enabled by B<ALL>, currently B<eNULL>.
 
+=item B<PROFILE=SYSTEM>
+
+The list of enabled cipher suites will be loaded from the system crypto policy
+configuration file B</etc/crypto-policies/back-ends/openssl.config>.
+See also L<update-crypto-policies(8)>.
+This is the default behavior unless an application explicitly sets a cipher
+list. If used in a cipher list configuration value this string must be at the
+beginning of the cipher list, otherwise it will not be recognized.
+
 =item B<HIGH>
 
 "High" encryption cipher suites. This currently means those with key lengths

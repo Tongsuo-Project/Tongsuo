@@ -24,7 +24,7 @@ use OpenSSL::Glob;
 my $orig_death_handler = $SIG{__DIE__};
 $SIG{__DIE__} = \&death_handler;
 
-my $usage="Usage: Configure [no-<cipher> ...] [enable-<cipher> ...] [-Dxxx] [-lxxx] [-Lxxx] [-fxxx] [-Kxxx] [no-hw-xxx|no-hw] [[no-]threads] [[no-]shared] [[no-]zlib|zlib-dynamic] [no-asm] [no-egd] [sctp] [386] [--prefix=DIR] [--openssldir=OPENSSLDIR] [--with-xxx[=vvv]] [--config=FILE] os/compiler[:flags]\n";
+my $usage="Usage: Configure [no-<cipher> ...] [enable-<cipher> ...] [-Dxxx] [-lxxx] [-Lxxx] [-fxxx] [-Kxxx] [no-hw-xxx|no-hw] [[no-]threads] [[no-]shared] [[no-]zlib|zlib-dynamic] [no-asm] [no-egd] [sctp] [386] [--prefix=DIR] [--openssldir=OPENSSLDIR] [--system-ciphers-file=SYSTEMCIPHERFILE] [--with-xxx[=vvv]] [--config=FILE] os/compiler[:flags]\n";
 
 # Options:
 #
@@ -40,6 +40,9 @@ my $usage="Usage: Configure [no-<cipher> ...] [enable-<cipher> ...] [-Dxxx] [-lx
 #               given with --prefix.
 #               This becomes the value of OPENSSLDIR in Makefile and in C.
 #               (Default: PREFIX/ssl)
+#
+# --system-ciphers-file  A file to read cipher string from when the PROFILE=SYSTEM
+#               cipher is specified (default).
 #
 # --cross-compile-prefix Add specified prefix to binutils components.
 #
@@ -314,6 +317,7 @@ $config{prefix}="";
 $config{openssldir}="";
 $config{processor}="";
 $config{libdir}="";
+$config{system_ciphers_file}="";
 my $auto_threads=1;    # enable threads automatically? true by default
 my $default_ranlib;
 
@@ -888,6 +892,10 @@ while (@argvcopy)
                             push @seed_sources, $x;
                             }
                         }
+                elsif (/^--system-ciphers-file=(.*)$/)
+                        {
+                            $config{system_ciphers_file}=$1;
+                        }
                 elsif (/^--cross-compile-prefix=(.*)$/)
                         {
                         $user{CROSS_COMPILE}=$1;
@@ -1095,6 +1103,8 @@ if ($target eq "HASH") {
     }
     exit 0;
 }
+
+chop $config{system_ciphers_file} if $config{system_ciphers_file} =~ /\/$/;
 
 print "Configuring OpenSSL version $config{version} ($config{version_num}) ";
 print "for $target\n";
