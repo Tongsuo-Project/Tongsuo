@@ -9,6 +9,8 @@
  * https://www.openssl.org/source/license.html
  */
 
+/* for secure_getenv */
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <ctype.h>
 #include <openssl/objects.h>
@@ -1450,6 +1452,53 @@ int SSL_set_ciphersuites(SSL *s, const char *str)
     return ret;
 }
 
+#ifdef SYSTEM_CIPHERS_FILE
+static char *load_system_str(const char *suffix)
+{
+    FILE *fp;
+    char buf[1024];
+    char *new_rules;
+    const char *ciphers_path;
+    unsigned len, slen;
+
+    if ((ciphers_path = secure_getenv("OPENSSL_SYSTEM_CIPHERS_OVERRIDE")) == NULL)
+        ciphers_path = SYSTEM_CIPHERS_FILE;
+    fp = fopen(ciphers_path, "r");
+    if (fp == NULL || fgets(buf, sizeof(buf), fp) == NULL) {
+        /* cannot open or file is empty */
+        snprintf(buf, sizeof(buf), "%s", SSL_DEFAULT_CIPHER_LIST);
+    }
+
+    if (fp)
+        fclose(fp);
+
+    slen = strlen(suffix);
+    len = strlen(buf);
+
+    if (buf[len - 1] == '\n') {
+        len--;
+        buf[len] = 0;
+    }
+    if (buf[len - 1] == '\r') {
+        len--;
+        buf[len] = 0;
+    }
+
+    new_rules = OPENSSL_malloc(len + slen + 1);
+    if (new_rules == 0)
+        return NULL;
+
+    memcpy(new_rules, buf, len);
+    if (slen > 0) {
+        memcpy(&new_rules[len], suffix, slen);
+        len += slen;
+    }
+    new_rules[len] = 0;
+
+    return new_rules;
+}
+#endif
+
 STACK_OF(SSL_CIPHER) *ssl_create_cipher_list(const SSL_METHOD *ssl_method,
                                              STACK_OF(SSL_CIPHER) *tls13_ciphersuites,
                                              STACK_OF(SSL_CIPHER) **cipher_list,
@@ -1463,15 +1512,25 @@ STACK_OF(SSL_CIPHER) *ssl_create_cipher_list(const SSL_METHOD *ssl_method,
     const char *rule_p;
     CIPHER_ORDER *co_list = NULL, *head = NULL, *tail = NULL, *curr;
     const SSL_CIPHER **ca_list = NULL;
+#ifdef SYSTEM_CIPHERS_FILE
+    char *new_rules = NULL;
+
+    if (rule_str != NULL && strncmp(rule_str, "PROFILE=SYSTEM", 14) == 0) {
+        char *p = rule_str + 14;
+    
+        new_rules = load_system_str(p);
+        rule_str = new_rules;
+    }
+#endif
 
     /*
      * Return with error if nothing to do.
      */
     if (rule_str == NULL || cipher_list == NULL || cipher_list_by_id == NULL)
-        return NULL;
+        goto err;
 #ifndef OPENSSL_NO_EC
     if (!check_suiteb_cipher_list(ssl_method, c, &rule_str))
-        return NULL;
+        goto err;
 #endif
 
     /*
@@ -1494,7 +1553,7 @@ STACK_OF(SSL_CIPHER) *ssl_create_cipher_list(const SSL_METHOD *ssl_method,
     co_list = OPENSSL_malloc(sizeof(*co_list) * num_of_ciphers);
     if (co_list == NULL) {
         SSLerr(SSL_F_SSL_CREATE_CIPHER_LIST, ERR_R_MALLOC_FAILURE);
-        return NULL;          /* Failure */
+        goto err;
     }
 
     ssl_cipher_collect_ciphers(ssl_method, num_of_ciphers,
@@ -1560,8 +1619,7 @@ STACK_OF(SSL_CIPHER) *ssl_create_cipher_list(const SSL_METHOD *ssl_method,
      * in force within each class
      */
     if (!ssl_cipher_strength_sort(&head, &tail)) {
-        OPENSSL_free(co_list);
-        return NULL;
+        goto err;
     }
 
     /*
@@ -1606,9 +1664,8 @@ STACK_OF(SSL_CIPHER) *ssl_create_cipher_list(const SSL_METHOD *ssl_method,
     num_of_alias_max = num_of_ciphers + num_of_group_aliases + 1;
     ca_list = OPENSSL_malloc(sizeof(*ca_list) * num_of_alias_max);
     if (ca_list == NULL) {
-        OPENSSL_free(co_list);
         SSLerr(SSL_F_SSL_CREATE_CIPHER_LIST, ERR_R_MALLOC_FAILURE);
-        return NULL;          /* Failure */
+        goto err;
     }
     ssl_cipher_collect_aliases(ca_list, num_of_group_aliases,
                                disabled_mkey, disabled_auth, disabled_enc,
@@ -1634,8 +1691,7 @@ STACK_OF(SSL_CIPHER) *ssl_create_cipher_list(const SSL_METHOD *ssl_method,
     OPENSSL_free(ca_list);      /* Not needed anymore */
 
     if (!ok) {                  /* Rule processing failure */
-        OPENSSL_free(co_list);
-        return NULL;
+        goto err;
     }
 
     /*
@@ -1643,14 +1699,18 @@ STACK_OF(SSL_CIPHER) *ssl_create_cipher_list(const SSL_METHOD *ssl_method,
      * if we cannot get one.
      */
     if ((cipherstack = sk_SSL_CIPHER_new_null()) == NULL) {
-        OPENSSL_free(co_list);
-        return NULL;
+        goto err;
     }
+
+#ifdef SYSTEM_CIPHERS_FILE
+    OPENSSL_free(new_rules);    /* Not needed anymore */
+#endif
 
     /* Add TLSv1.3 ciphers first - we always prefer those if possible */
     for (i = 0; i < sk_SSL_CIPHER_num(tls13_ciphersuites); i++) {
         if (!sk_SSL_CIPHER_push(cipherstack,
                                 sk_SSL_CIPHER_value(tls13_ciphersuites, i))) {
+            OPENSSL_free(co_list);
             sk_SSL_CIPHER_free(cipherstack);
             return NULL;
         }
@@ -1682,6 +1742,14 @@ STACK_OF(SSL_CIPHER) *ssl_create_cipher_list(const SSL_METHOD *ssl_method,
     *cipher_list = cipherstack;
 
     return cipherstack;
+
+err:
+    OPENSSL_free(co_list);
+#ifdef SYSTEM_CIPHERS_FILE
+    OPENSSL_free(new_rules);
+#endif
+    return NULL;
+  
 }
 
 char *SSL_CIPHER_description(const SSL_CIPHER *cipher, char *buf, int len)

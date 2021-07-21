@@ -257,7 +257,9 @@ end:
 
 int setup_tests(void)
 {
+#ifndef SYSTEM_CIPHERS_FILE
     ADD_TEST(test_default_cipherlist_implicit);
+#endif
     ADD_TEST(test_default_cipherlist_explicit);
     ADD_TEST(test_default_cipherlist_clear);
     return 1;
