@@ -206,6 +206,11 @@ extern "C" {
  * throwing out anonymous and unencrypted ciphersuites! (The latter are not
  * actually enabled by ALL, but "ALL:RSA" would enable some of them.)
  */
+# ifdef SYSTEM_CIPHERS_FILE
+#  define SSL_SYSTEM_DEFAULT_CIPHER_LIST "PROFILE=SYSTEM"
+# else
+#  define SSL_SYSTEM_DEFAULT_CIPHER_LIST SSL_DEFAULT_CIPHER_LIST
+# endif
 
 /* Used in SSL_set_shutdown()/SSL_get_shutdown(); */
 # define SSL_SENT_SHUTDOWN       1
