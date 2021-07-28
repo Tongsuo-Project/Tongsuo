@@ -3211,40 +3211,6 @@ static SSL_CIPHER ssl3_ciphers[] = {
 #endif /* OPENSSL_NO_ARIA */
 #if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
      && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-     /* BEGIN GM/T 0024-2014 cipher suites */
-    {
-     1,
-     NTLS_TXT_SM2DHE_WITH_SM4_SM3,
-     NULL,
-     NTLS_CK_ECDHE_SM2_SM4_CBC_SM3,
-     SSL_kSM2DHE,
-     SSL_aSM2,
-     SSL_SM4,
-     SSL_SM3,
-     NTLS_VERSION, NTLS_VERSION,
-     0, 0,
-     SSL_HIGH,
-     SSL_HANDSHAKE_MAC_SM3 | TLS1_PRF_SM3,
-     128,
-     128,
-     },
-    {
-     1,
-     NTLS_TXT_SM2_WITH_SM4_SM3,
-     NULL,
-     NTLS_CK_ECC_SM2_SM4_CBC_SM3,
-     SSL_kSM2,
-     SSL_aSM2,
-     SSL_SM4,
-     SSL_SM3,
-     NTLS_VERSION, NTLS_VERSION,
-     0, 0,
-     SSL_HIGH,
-     SSL_HANDSHAKE_MAC_SM3 | TLS1_PRF_SM3,
-     128,
-     128,
-     },
-     /* END GM/T 0024-2014 cipher suites */
     {
      1,
      NTLS_TXT_ECDHE_SM2_SM4_CBC_SM3,

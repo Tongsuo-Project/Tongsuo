@@ -253,6 +253,12 @@ static const SSL_CIPHER cipher_aliases[] = {
      && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
     {0, SSL_TXT_kSM2, NULL, 0, SSL_kSM2},
     {0, SSL_TXT_kSM2DHE, NULL, 0, SSL_kSM2DHE},
+    {0, NTLS_TXT_SM2DHE_WITH_SM4_SM3, NULL, 0, SSL_kSM2DHE, SSL_aSM2, SSL_SM4,
+     SSL_SM3, NTLS_VERSION, NTLS_VERSION, 0, 0, SSL_HIGH,
+     SSL_HANDSHAKE_MAC_SM3 | TLS1_PRF_SM3, 128, 128},
+    {0, NTLS_TXT_SM2_WITH_SM4_SM3, NULL, 0, SSL_kSM2, SSL_aSM2, SSL_SM4,
+     SSL_SM3, NTLS_VERSION, NTLS_VERSION, 0, 0, SSL_HIGH,
+     SSL_HANDSHAKE_MAC_SM3 | TLS1_PRF_SM3, 128, 128},
 #endif
 
     /* server authentication aliases */
