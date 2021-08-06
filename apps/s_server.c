@@ -1785,6 +1785,45 @@ int s_server_main(int argc, char *argv[])
     if (nocert == 0) {
 #if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
      && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+        /* XXX: don't support cert-key bundle at current stage */
+        if (s_enc_key_file) {
+            s_enc_key = load_key(s_enc_key_file, s_enc_key_format, 0, pass, engine,
+                                 "NTLS server encryption certificate private key file");
+            if (s_enc_key == NULL) {
+                ERR_print_errors(bio_err);
+                goto end;
+            }
+        }
+
+        if (s_enc_cert_file) {
+            s_enc_cert = load_cert(s_enc_cert_file, FORMAT_PEM,
+                                   "NTLS server encryption certificate file");
+            if (s_enc_cert == NULL) {
+                ERR_print_errors(bio_err);
+                goto end;
+            }
+        }
+
+        if (s_sign_key_file) {
+            s_sign_key = load_key(s_sign_key_file, s_sign_key_format, 0, pass, engine,
+                                  "NTLS server signing certificate private key file");
+            if (s_sign_key == NULL) {
+                ERR_print_errors(bio_err);
+                goto end;
+            }
+        }
+
+        if (s_sign_cert_file) {
+            s_sign_cert = load_cert(s_sign_cert_file, FORMAT_PEM,
+                                    "NTLS server signing certificate file");
+            if (s_sign_cert == NULL) {
+                ERR_print_errors(bio_err);
+                goto end;
+            }
+        }
+#endif
+#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
+     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
         if (s_sign_cert_file != NULL && !strcmp(s_cert_file, TEST_CERT)) {
             /* Don't try to load the default cert if NTLS certs are load */
             goto skip;
@@ -1824,7 +1863,10 @@ int s_server_main(int argc, char *argv[])
             }
         }
 #endif
-
+#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
+     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+skip:
+#endif
         if (s_chain_file != NULL) {
             if (!load_certs(s_chain_file, &s_chain, FORMAT_PEM, NULL,
                             "server certificate chain"))
@@ -1848,10 +1890,6 @@ int s_server_main(int argc, char *argv[])
             }
         }
     }
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-skip:
-#endif
 #if !defined(OPENSSL_NO_NEXTPROTONEG)
     if (next_proto_neg_in) {
         next_proto.data = next_protos_parse(&next_proto.len, next_proto_neg_in);
@@ -1910,45 +1948,6 @@ skip:
 
     }
 
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-    /* XXX: don't support cert-key bundle at current stage */
-    if (s_enc_key_file) {
-        s_enc_key = load_key(s_enc_key_file, s_enc_key_format, 0, pass, engine,
-                             "NTLS server encryption certificate private key file");
-        if (s_enc_key == NULL) {
-            ERR_print_errors(bio_err);
-            goto end;
-        }
-    }
-
-    if (s_enc_cert_file) {
-        s_enc_cert = load_cert(s_enc_cert_file, FORMAT_PEM,
-                               "NTLS server encryption certificate file");
-        if (s_enc_cert == NULL) {
-            ERR_print_errors(bio_err);
-            goto end;
-        }
-    }
-
-    if (s_sign_key_file) {
-        s_sign_key = load_key(s_sign_key_file, s_sign_key_format, 0, pass, engine,
-                              "NTLS server signing certificate private key file");
-        if (s_sign_key == NULL) {
-            ERR_print_errors(bio_err);
-            goto end;
-        }
-    }
-
-    if (s_sign_cert_file) {
-        s_sign_cert = load_cert(s_sign_cert_file, FORMAT_PEM,
-                                "NTLS server signing certificate file");
-        if (s_sign_cert == NULL) {
-            ERR_print_errors(bio_err);
-            goto end;
-        }
-    }
-#endif
 
     if (bio_s_out == NULL) {
         if (s_quiet && !s_debug) {
@@ -2237,12 +2236,11 @@ skip:
 
 #if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
      && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-    /* FIXME: this is not perfect... */
-    if (!set_enc_cert_key_stuff(ctx, s_enc_cert, s_enc_key, NULL, 0))
-            goto end;
-
     if (!set_sign_cert_key_stuff(ctx, s_sign_cert, s_sign_key, NULL, 0))
-            goto end;
+        goto end;
+
+    if (!set_enc_cert_key_stuff(ctx, s_enc_cert, s_enc_key, s_chain, build_chain))
+        goto end;
 #endif
 
     if (s_serverinfo_file != NULL
