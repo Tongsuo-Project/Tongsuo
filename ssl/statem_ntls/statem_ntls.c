@@ -24,38 +24,6 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-# if !(defined(OPENSSL_NO_KEYLESS) && defined(OPENSSL_NO_LURK))
-static int ntls_i2d_pkey(int (*i2d) (EVP_PKEY *, unsigned char **),
-                         EVP_PKEY *pkey_in, unsigned char **str_out, int *len_out)
-{
-    int dsize;
-    unsigned char *idx;
-
-    if ((dsize = i2d(pkey_in, NULL)) < 0) {
-        SSLerr(SSL_F_NTLS_I2D_PKEY, ERR_R_INTERNAL_ERROR);
-        return 0;
-    }
-
-    /* dsize + 8 bytes are needed */
-    /* actually it needs the cipher block size extra... */
-    *str_out = OPENSSL_malloc((unsigned int)dsize + 20);
-    idx = *str_out;
-    if (*str_out == NULL) {
-        SSLerr(SSL_F_NTLS_I2D_PKEY, ERR_R_INTERNAL_ERROR);
-        return 0;
-    }
-
-    *len_out = i2d(pkey_in, &idx);
-    if (*len_out <= 0) {
-        OPENSSL_free(str_out);
-        SSLerr(SSL_F_NTLS_I2D_PKEY, ERR_R_INTERNAL_ERROR);
-        return 0;
-    }
-
-    return 1;
-}
-# endif
-
 int ntls_sm2_derive_ntls(SSL *s, EVP_PKEY *tmp_priv, EVP_PKEY *peer_tmp_pub)
 {
     int ret = 0, idx = 1;
@@ -78,15 +46,6 @@ int ntls_sm2_derive_ntls(SSL *s, EVP_PKEY *tmp_priv, EVP_PKEY *peer_tmp_pub)
     unsigned char *pms = NULL;
     size_t pmslen = SSL_MAX_MASTER_KEY_LENGTH;
 
-#ifndef OPENSSL_NO_KEYLESS
-    if (s->keyless_ntls && s->keyless_again)
-        goto keyless_recover;
-#endif
-#ifndef OPENSSL_NO_LURK
-    if (s->lurk_ntls && s->lurk_again)
-        goto lurk_recover;
-#endif
-
     if (!(peer_tmp_pub_ec = EVP_PKEY_get0_EC_KEY(peer_tmp_pub))) {
         SSLerr(SSL_F_NTLS_SM2_DERIVE_NTLS, ERR_R_INTERNAL_ERROR);
         return 0;
@@ -96,25 +55,16 @@ int ntls_sm2_derive_ntls(SSL *s, EVP_PKEY *tmp_priv, EVP_PKEY *peer_tmp_pub)
         SSLerr(SSL_F_NTLS_SM2_DERIVE_NTLS, ERR_R_INTERNAL_ERROR);
         return 0;
     }
-    if (1
-#ifndef OPENSSL_NO_KEYLESS
-        && !s->keyless_ntls
-#endif
-#ifndef OPENSSL_NO_LURK
-        && !s->lurk_ntls
-#endif
-       )
-    {
-        /* SM2 requires to use the private key in encryption certificate */
-        if (!(cert_priv = s->cert->pkeys[SSL_PKEY_SM2_ENC].privatekey)) {
-            SSLerr(SSL_F_NTLS_SM2_DERIVE_NTLS, ERR_R_INTERNAL_ERROR);
-            return 0;
-        }
 
-        if (!(cert_priv_ec = EVP_PKEY_get0_EC_KEY(cert_priv))) {
-            SSLerr(SSL_F_NTLS_SM2_DERIVE_NTLS, ERR_R_INTERNAL_ERROR);
-            return 0;
-        }
+    /* SM2 requires to use the private key in encryption certificate */
+    if (!(cert_priv = s->cert->pkeys[SSL_PKEY_SM2_ENC].privatekey)) {
+        SSLerr(SSL_F_NTLS_SM2_DERIVE_NTLS, ERR_R_INTERNAL_ERROR);
+        return 0;
+    }
+
+    if (!(cert_priv_ec = EVP_PKEY_get0_EC_KEY(cert_priv))) {
+        SSLerr(SSL_F_NTLS_SM2_DERIVE_NTLS, ERR_R_INTERNAL_ERROR);
+        return 0;
     }
     /*
      * XXX:
@@ -150,175 +100,21 @@ int ntls_sm2_derive_ntls(SSL *s, EVP_PKEY *tmp_priv, EVP_PKEY *peer_tmp_pub)
         return 0;
     }
 
-#if !(defined(OPENSSL_NO_KEYLESS) && defined(OPENSSL_NO_LURK))
-    if (0
-# ifndef OPENSSL_NO_KEYLESS
-        || s->keyless_ntls
-# endif
-# ifndef OPENSSL_NO_LURK
-        || s->lurk_ntls
-# endif
-       )
-    {
-        unsigned char *tmp_priv_char, *peer_tmp_pub_char, *peer_cert_pub_char;
-        unsigned char *tmp_buf, *buf_index;
-        int     tmp_priv_len, peer_tmp_pub_len, peer_cert_pub_len;
-        uint32_t  prefix_len;
-        uint32_t  len_net;
-        int keyless_ret  = 0;
+    if ((pms = OPENSSL_malloc(pmslen)) == NULL) {
+        SSLerr(SSL_F_NTLS_SM2_DERIVE_NTLS, ERR_R_INTERNAL_ERROR);
+        return 0;
+    }
 
-
-        if (ntls_i2d_pkey(i2d_PrivateKey,
-                          tmp_priv, &tmp_priv_char, &tmp_priv_len) <=0 ) {
-            SSLerr(SSL_F_NTLS_SM2_DERIVE_NTLS, ERR_R_INTERNAL_ERROR);
-            return 0;
-        }
-
-        if (ntls_i2d_pkey(i2d_PUBKEY,peer_tmp_pub,
-                          &peer_tmp_pub_char, &peer_tmp_pub_len) <=0 ) {
-            SSLerr(SSL_F_NTLS_SM2_DERIVE_NTLS, ERR_R_INTERNAL_ERROR);
-            OPENSSL_free(tmp_priv_char);
-            return 0;
-        }
-
-        if (ntls_i2d_pkey(i2d_PUBKEY,peer_cert_pub,
-                          &peer_cert_pub_char, &peer_cert_pub_len) <=0 ) {
-            SSLerr(SSL_F_NTLS_SM2_DERIVE_NTLS, ERR_R_INTERNAL_ERROR);
-            OPENSSL_free(tmp_priv_char);
-            OPENSSL_free(peer_tmp_pub_char);
-            return 0;
-        }
-
-        /*
-         * package format
-         * --------------------------------------------------
-         * tmp_priv_char (4byte) | data (tmp_priv_len bytes)| ...
-         * --------------------------------------------------
-         * ----------------------------------------------------------
-         * peer_tmp_pub_char (4byte) | data (peer_tmp_pub_len bytes)| ...
-         * ----------------------------------------------------------
-         * ------------------------------------------------------------
-         * peer_cert_pub_char (4byte) | data (peer_cert_pub_len bytes)|
-         * ------------------------------------------------------------
-         */
-        prefix_len = 4;
-
-        tmp_buf = (unsigned char *)OPENSSL_malloc(prefix_len + tmp_priv_len +
-                                                  prefix_len + peer_tmp_pub_len +
-                                                  prefix_len + peer_cert_pub_len);
-        if (tmp_buf == NULL) {
-            SSLerr(SSL_F_NTLS_SM2_DERIVE_NTLS, ERR_R_INTERNAL_ERROR);
-            OPENSSL_free(tmp_priv_char);
-            OPENSSL_free(peer_tmp_pub_char);
-            OPENSSL_free(peer_cert_pub_char);
-            return 0;
-        }
-        buf_index = tmp_buf;
-        len_net = htonl(tmp_priv_len);
-        memcpy(buf_index, &len_net, prefix_len);
-        buf_index += prefix_len;
-        memcpy(buf_index, tmp_priv_char, tmp_priv_len);
-        buf_index += tmp_priv_len;
-        len_net = htonl(peer_tmp_pub_len);
-        memcpy(buf_index, &len_net, prefix_len);
-        buf_index += prefix_len;
-        memcpy(buf_index, peer_tmp_pub_char, peer_tmp_pub_len);
-        buf_index += peer_tmp_pub_len;
-        len_net = htonl(peer_cert_pub_len);
-        memcpy(buf_index, &len_net, prefix_len);
-        buf_index += prefix_len;
-        memcpy(buf_index, peer_cert_pub_char, peer_cert_pub_len);
-        OPENSSL_free(tmp_priv_char);
-        OPENSSL_free(peer_tmp_pub_char);
-        OPENSSL_free(peer_cert_pub_char);
-
-# ifndef OPENSSL_NO_KEYLESS
-        if (s->keyless_ntls) {
-            s->keyless_callback_param.data = tmp_buf;
-            s->keyless_callback_param.len = tmp_priv_len + peer_tmp_pub_len
-                                            + peer_cert_pub_len + 3 * prefix_len;
-            s->keyless_callback_param.type = SSL_KEYLESS_TYPE_SM2DHE_GEN_MASTER_KEY;
-            s->keyless_callback_param.cert_tag = SSL_ENC_CERT;
-
-            keyless_ret = s->keyless_callback(s, &s->keyless_callback_param);
-
-            OPENSSL_free(tmp_buf);
-            if (keyless_ret == 1) {
-                /* again or done */
-                s->keyless_again = 1;
-                return 0;
-            } else if (keyless_ret == 0) {
-keyless_recover:
-                pmslen = s->keyless_result_len;
-                if ((pms = OPENSSL_malloc(pmslen)) == NULL) {
-                    SSLerr(SSL_F_NTLS_SM2_DERIVE_NTLS, ERR_R_INTERNAL_ERROR);
-                    return 0;
-                }
-                memcpy(pms, s->keyless_result, s->keyless_result_len);
-
-                if (s->keyless_again)
-                    s->keyless_again = 0;
-            } else {
-                SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_SM2_DERIVE_NTLS,
-                            SSL_R_KEYLESS_ERROR);
-                goto end;
-            }
-        } else
-# endif
-# ifndef OPENSSL_NO_LURK
-        if (s->lurk) {
-            s->lurk_callback_param.data = tmp_buf;
-            s->lurk_callback_param.len = tmp_priv_len + peer_tmp_pub_len
-                                            + peer_cert_pub_len + 3 * prefix_len;
-            s->lurk_callback_param.type = SSL_LURK_QUERY_SM2DHE_GEN_MASTER_KEY;
-            s->lurk_callback_param.cert_tag = SSL_ENC_CERT;
-
-            keyless_ret = s->lurk_callback(s, &s->lurk_callback_param);
-            OPENSSL_free(tmp_buf);
-            if (keyless_ret == 1) {
-                /* again or done */
-                s->lurk_again = 1;
-                return 0;
-            } else if (keyless_ret == 0) {
-lurk_recover:
-                pmslen = s->lurk_result_len;
-                if ((pms = OPENSSL_malloc(pmslen)) == NULL) {
-                    SSLerr(SSL_F_NTLS_SM2_DERIVE_NTLS, ERR_R_INTERNAL_ERROR);
-                    return 0;
-                }
-                memcpy(pms, s->lurk_result, s->lurk_result_len);
-
-                if (s->lurk_again)
-                    s->lurk_again = 0;
-            } else {
-                SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_SM2_DERIVE_NTLS,
-                            SSL_R_KEYLESS_ERROR);
-                goto end;
-            }
-        }
-# else
-        {
-        }
-# endif
-    } else
-#endif
-    {
-        if ((pms = OPENSSL_malloc(pmslen)) == NULL) {
-            SSLerr(SSL_F_NTLS_SM2_DERIVE_NTLS, ERR_R_INTERNAL_ERROR);
-            return 0;
-        }
-
-        if (!SM2_compute_key(pms, pmslen, s->server,
-                             peer_id, strlen(peer_id),
-                             id, strlen(id),
-                             /* peer and self ecdh temp key */
-                             peer_tmp_pub_ec, tmp_priv_ec,
-                             /* peer and self certificate key */
-                             peer_cert_pub_ec, cert_priv_ec,
-                             EVP_sm3())) {
-            SSLerr(SSL_F_NTLS_SM2_DERIVE_NTLS, ERR_R_INTERNAL_ERROR);
-            goto end;
-        }
+    if (!SM2_compute_key(pms, pmslen, s->server,
+                         peer_id, strlen(peer_id),
+                         id, strlen(id),
+                         /* peer and self ecdh temp key */
+                         peer_tmp_pub_ec, tmp_priv_ec,
+                         /* peer and self certificate key */
+                         peer_cert_pub_ec, cert_priv_ec,
+                         EVP_sm3())) {
+        SSLerr(SSL_F_NTLS_SM2_DERIVE_NTLS, ERR_R_INTERNAL_ERROR);
+        goto end;
     }
 
     if (s->server) {
@@ -451,28 +247,6 @@ int SSL_connection_is_ntls(SSL *s, int is_server)
      */
     if (s->version == NTLS1_1_VERSION)
         return 1;
-# ifndef OPENSSL_NO_KEYLESS
-    /*
-     * keyless processing has choosed verison before
-     */
-    if ((s->keyless || s->keyless_ntls) && s->keyless_again) {
-        if (s->version == NTLS1_1_VERSION)
-            return 1;
-        else
-            return 0;
-    }
-# endif
-# ifndef OPENSSL_NO_LURK
-    /*
-     * keyless processing has choosed verison before
-     */
-    if (s->lurk && s->lurk_ntls && s->lurk_again) {
-        if (s->version == NTLS1_1_VERSION)
-            return 1;
-        else
-            return 0;
-    }
-# endif
 
     if (is_server) {
         /* After receiving client hello and before choosing server version,
