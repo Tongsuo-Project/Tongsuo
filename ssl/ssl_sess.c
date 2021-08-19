@@ -167,15 +167,6 @@ SSL_SESSION *ssl_session_dup(SSL_SESSION *src, int ticket)
         dest->peer = src->peer;
     }
 
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-    if (src->peer_extra != NULL) {
-        if (!X509_up_ref(src->peer_extra))
-            goto err;
-        dest->peer_extra = src->peer_extra;
-    }
-#endif
-
     if (src->peer_chain != NULL) {
         dest->peer_chain = X509_chain_up_ref(src->peer_chain);
         if (dest->peer_chain == NULL)
@@ -866,10 +857,6 @@ void SSL_SESSION_free(SSL_SESSION *ss)
     OPENSSL_cleanse(ss->master_key, sizeof(ss->master_key));
     OPENSSL_cleanse(ss->session_id, sizeof(ss->session_id));
     X509_free(ss->peer);
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-    X509_free(ss->peer_extra);
-#endif
 #ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
     DC_free(ss->peer_dc);
 #endif
