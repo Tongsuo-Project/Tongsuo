@@ -18,4 +18,4 @@ RUN apt-get update && apt-get install -y make
 COPY . $SRC/BabaSSL
 WORKDIR BabaSSL 
 
-COPY fuzzer-build-integration/build.sh fuzzer-build-integration/*.options $SRC/
+COPY .clusterfuzzlite/build.sh .clusterfuzzlite/*.options $SRC/
