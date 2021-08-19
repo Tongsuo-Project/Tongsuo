@@ -8,13 +8,11 @@ jobs:
       uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@master
       with:
         dry-run: false
-        build-integration-path: fuzzer-build-integration
     - name: Run Fuzzers
       uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@master
       with:
         fuzz-seconds: 600
         dry-run: false
-        build-integration-path: fuzzer-build-integration
     - name: Upload Crash
       uses: actions/upload-artifact@v1
       if: failure()
