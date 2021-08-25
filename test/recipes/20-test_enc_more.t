@@ -15,47 +15,57 @@ use File::Spec::Functions qw/catfile/;
 use File::Copy;
 use File::Compare qw/compare_text/;
 use File::Basename;
-use OpenSSL::Test qw/:DEFAULT srctop_file/;
+use OpenSSL::Test qw/:DEFAULT srctop_file data_file/;
 
-setup("test_evp_more");
+setup("test_enc_more");
 
 my $testsrc = srctop_file("test", "recipes", basename($0));
 
-my $cipherlist = undef;
 my $plaintext = catfile(".", "testdatafile");
+my $test_plain = data_file("plain_for_wrap.txt");
+my $wrap_plaintext = catfile(".", "plain_for_wrap");
 my $fail = "";
 my $cmd = "openssl";
 
 my $ciphersstatus = undef;
 my @ciphers =
-    grep(! /wrap|^$|^[^-]/,
-         (map { split /\s+/ }
+    grep(! /^$|^[^-]/,
+        (map { split /\s+/ }
           run(app([$cmd, "enc", "-ciphers"]),
               capture => 1, statusvar => \$ciphersstatus)));
 
-plan tests => 2 + scalar @ciphers;
+plan tests => 3 + scalar @ciphers;
 
 SKIP: {
     skip "Problems getting ciphers...", 1 + scalar(@ciphers)
         unless ok($ciphersstatus, "Running 'openssl enc -ciphers'");
-    unless (ok(copy($testsrc, $plaintext), "Copying $testsrc to $plaintext")) {
+    unless (ok(copy($testsrc, $plaintext), "Copying $testsrc to $plaintext")
+        && ok(copy($test_plain, $wrap_plaintext),
+              "Copying $test_plain to $wrap_plaintext")) {
         diag($!);
         skip "Not initialized, skipping...", scalar(@ciphers);
     }
 
     foreach my $cipher (@ciphers) {
+        my $plain;
+        if ($cipher =~ /wrap|^$|^[^-]/) {
+            $plain = $wrap_plaintext;
+        } else {
+            $plain = $plaintext;
+        }
         my $ciphername = substr $cipher, 1;
-        my $cipherfile = "$plaintext.$ciphername.cipher";
-        my $clearfile = "$plaintext.$ciphername.clear";
+        my $cipherfile = "$plain.$ciphername.cipher";
+        my $clearfile = "$plain.$ciphername.clear";
         my @common = ( $cmd, "enc", "$cipher", "-k", "test" );
 
-        ok(run(app([@common, "-e", "-in", $plaintext, "-out", $cipherfile]))
-           && compare_text($plaintext, $cipherfile) != 0
+        ok(run(app([@common, "-e", "-in", $plain, "-out", $cipherfile]))
+           && compare_text($plain, $cipherfile) != 0
            && run(app([@common, "-d", "-in", $cipherfile, "-out", $clearfile]))
-           && compare_text($plaintext, $clearfile) == 0
+           && compare_text($plain, $clearfile) == 0
            , $ciphername);
         unlink $cipherfile, $clearfile;
     }
 }
 
 unlink $plaintext;
+unlink $wrap_plaintext;
