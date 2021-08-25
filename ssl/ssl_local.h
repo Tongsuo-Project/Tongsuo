@@ -600,11 +600,6 @@ struct ssl_session_st {
     int peer_type;
     /* Certificate chain peer sent. */
     STACK_OF(X509) *peer_chain;
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-    X509 *peer_extra;
-    char *peer_identity;
-#endif
     /*
      * when app_verify_callback accepts a session where the peer's
      * certificate is not ok, we must remember the error for session reuse:

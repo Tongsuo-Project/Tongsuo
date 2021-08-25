@@ -43,10 +43,6 @@ typedef struct {
     ASN1_OCTET_STRING *alpn_selected;
     uint32_t tlsext_max_fragment_len_mode;
     ASN1_OCTET_STRING *ticket_appdata;
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-    X509 *peer_extra;
-#endif
 #ifndef OPENSSL_NO_QUIC
     uint32_t is_quic;
     ASN1_OCTET_STRING *quic_early_data_context;
@@ -82,10 +78,6 @@ ASN1_SEQUENCE(SSL_SESSION_ASN1) = {
     ASN1_EXP_OPT(SSL_SESSION_ASN1, alpn_selected, ASN1_OCTET_STRING, 16),
     ASN1_EXP_OPT_EMBED(SSL_SESSION_ASN1, tlsext_max_fragment_len_mode, ZUINT32, 17),
     ASN1_EXP_OPT(SSL_SESSION_ASN1, ticket_appdata, ASN1_OCTET_STRING, 18),
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-    ASN1_EXP_OPT(SSL_SESSION_ASN1, peer_extra, X509, 19),
-#endif
 #ifndef OPENSSL_NO_QUIC
     ASN1_EXP_OPT_EMBED(SSL_SESSION_ASN1, is_quic, ZUINT32, 20),
     ASN1_EXP_OPT(SSL_SESSION_ASN1, quic_early_data_context, ASN1_OCTET_STRING, 21),
@@ -217,10 +209,6 @@ int i2d_SSL_SESSION(SSL_SESSION *in, unsigned char **pp)
     else
         ssl_session_oinit(&as.ticket_appdata, &ticket_appdata,
                           in->ticket_appdata, in->ticket_appdata_len);
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-    as.peer_extra = in->peer_extra;
-#endif
 
 #ifndef OPENSSL_NO_QUIC
     as.is_quic = in->is_quic;
@@ -413,13 +401,6 @@ SSL_SESSION *d2i_SSL_SESSION(SSL_SESSION **a, const unsigned char **pp,
         ret->ticket_appdata = NULL;
         ret->ticket_appdata_len = 0;
     }
-
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-    X509_free(ret->peer_extra);
-    ret->peer_extra = as->peer_extra;
-    as->peer_extra = NULL;
-#endif
 
 #ifndef OPENSSL_NO_QUIC
     ret->is_quic = as->is_quic;
