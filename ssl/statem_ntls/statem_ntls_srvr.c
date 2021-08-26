@@ -133,7 +133,7 @@ static int ntls_construct_ske_sm2dhe(SSL *s, WPACKET *pkt)
         goto err;
     }
 
-    if (!EVP_PKEY_set_alias_type(pkey, EVP_PKEY_SM2)) {
+    if (EVP_PKEY_id(pkey) != EVP_PKEY_SM2) {
         SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
                  SSL_F_NTLS_CONSTRUCT_SKE_SM2DHE, ERR_R_EVP_LIB);
         goto err;
@@ -272,7 +272,7 @@ static int ntls_construct_ske_sm2(SSL *s, WPACKET *pkt)
         goto end;
     }
 
-    if (!EVP_PKEY_set_alias_type(pkey, EVP_PKEY_SM2)) {
+    if (EVP_PKEY_id(pkey) != EVP_PKEY_SM2) {
         SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
                  SSL_F_NTLS_CONSTRUCT_SKE_SM2, ERR_R_EVP_LIB);
         goto end;
