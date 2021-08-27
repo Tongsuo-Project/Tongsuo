@@ -108,8 +108,8 @@ extern "C" {
  * 1.9.5          0x1090500f
  */
 
-# define BABASSL_VERSION_NUMBER  0x8020100fL
-# define BABASSL_VERSION_TEXT    "BabaSSL 8.2.1"
+# define BABASSL_VERSION_NUMBER  0x80202000L
+# define BABASSL_VERSION_TEXT    "BabaSSL 8.2.2-dev"
 
 #ifdef  __cplusplus
 }
