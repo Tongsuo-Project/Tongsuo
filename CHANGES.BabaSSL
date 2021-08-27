@@ -5,9 +5,17 @@
  This is a high-level summary of the most important changes.
  For a full list of changes, see the git commit log.
 
- Changes between 8.2.0 and 8.3.0 [xx XXX xxxx]
+ Changes between 8.2.1 and 8.2.2 [xx XXX xxxx]
 
   *)
+
+ Changes between 8.2.0 and 8.2.1 [27 Aug 2021]
+
+  *) Fix CVE-2021-3711
+
+  *) Fix CVE-2021-3712
+
+  *) Fix duplicated ciphers in NTLS ClientHello message
 
  Changes between 8.1.3 and 8.2.0 [19 May 2021]
 
