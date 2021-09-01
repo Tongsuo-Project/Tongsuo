@@ -1005,39 +1005,7 @@ static int final_server_name(SSL *s, unsigned int context, int sent)
 # ifndef OPENSSL_NO_EC
 static int final_ec_pt_formats(SSL *s, unsigned int context, int sent)
 {
-    unsigned long alg_k, alg_a;
-
-    if (s->server)
-        return 1;
-
-    alg_k = s->s3->tmp.new_cipher->algorithm_mkey;
-    alg_a = s->s3->tmp.new_cipher->algorithm_auth;
-
-    /*
-     * If we are client and using an elliptic curve cryptography cipher
-     * suite, then if server returns an EC point formats lists extension it
-     * must contain uncompressed.
-     */
-    if (s->ext.ecpointformats != NULL
-            && s->ext.ecpointformats_len > 0
-            && s->ext.peer_ecpointformats != NULL
-            && s->ext.peer_ecpointformats_len > 0
-            && ((alg_k & SSL_kECDHE) || (alg_a & SSL_aECDSA))) {
-        /* we are using an ECC cipher */
-        size_t i;
-        unsigned char *list = s->ext.peer_ecpointformats;
-
-        for (i = 0; i < s->ext.peer_ecpointformats_len; i++) {
-            if (*list++ == TLSEXT_ECPOINTFORMAT_uncompressed)
-                break;
-        }
-        if (i == s->ext.peer_ecpointformats_len) {
-            SSLfatal_ntls(s, SSL_AD_ILLEGAL_PARAMETER, SSL_F_FINAL_EC_PT_FORMATS,
-                     SSL_R_TLS_INVALID_ECPOINTFORMAT_LIST);
-            return 0;
-        }
-    }
-
+    /* Ignore ec_point_formats */
     return 1;
 }
 # endif
@@ -1144,19 +1112,7 @@ static int init_ems(SSL *s, unsigned int context)
 
 static int final_ems(SSL *s, unsigned int context, int sent)
 {
-    if (!s->server && s->hit) {
-        /*
-         * Check extended master secret extension is consistent with
-         * original session.
-         */
-        if (!(s->s3->flags & TLS1_FLAGS_RECEIVED_EXTMS) !=
-            !(s->session->flags & SSL_SESS_FLAG_EXTMS)) {
-            SSLfatal_ntls(s, SSL_AD_HANDSHAKE_FAILURE, SSL_F_FINAL_EMS,
-                     SSL_R_INCONSISTENT_EXTMS);
-            return 0;
-        }
-    }
-
+    /* Ignore extended_master_secret */
     return 1;
 }
 
