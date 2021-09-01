@@ -446,16 +446,16 @@ static const ssl_trace_tbl ssl_ciphers_tbl[] = {
     {0xFEFF, "SSL_RSA_FIPS_WITH_3DES_EDE_CBC_SHA"},
     {0xFF85, "GOST2012-GOST8912-GOST8912"},
     {0xFF87, "GOST2012-NULL-GOST12"},
-# if (!defined OPENSSL_NO_SM2) && (!defined OPENSSL_NO_SM3) \
+#if (!defined OPENSSL_NO_SM2) && (!defined OPENSSL_NO_SM3) \
      && (!defined OPENSSL_NO_SM4)
     {0x00C6, "TLS_SM4_GCM_SM3"},
     {0x00C7, "TLS_SM4_CCM_SM3"},
-#if (!defined OPENSSL_NO_NTLS)
+# if (!defined OPENSSL_NO_NTLS)
     {0xE011, "ECDHE-SM2-SM4-CBC-SM3"},
     {0xE051, "ECDHE-SM2-SM4-GCM-SM3"},
     {0xE013, "ECC-SM2-SM4-CBC-SM3"},
     {0xE053, "ECC-SM2-SM4-GCM-SM3"},
-#endif
+# endif
 #endif
 };
 
