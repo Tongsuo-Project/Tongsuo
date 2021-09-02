@@ -761,6 +761,9 @@ typedef enum OPTION_choice {
     OPT_SRTP_PROFILES, OPT_KEYMATEXPORT, OPT_KEYMATEXPORTLEN,
     OPT_KEYLOG_FILE, OPT_MAX_EARLY, OPT_RECV_MAX_EARLY, OPT_EARLY_DATA,
     OPT_S_NUM_TICKETS, OPT_ANTI_REPLAY, OPT_NO_ANTI_REPLAY, OPT_SCTP_LABEL_BUG,
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+    OPT_CERT_COMP,
+#endif
     OPT_R_ENUM,
     OPT_S_ENUM,
     OPT_V_ENUM,
@@ -1002,6 +1005,9 @@ const OPTIONS s_server_options[] = {
      "The number of TLSv1.3 session tickets that a server will automatically  issue" },
     {"anti_replay", OPT_ANTI_REPLAY, '-', "Switch on anti-replay protection (default)"},
     {"no_anti_replay", OPT_NO_ANTI_REPLAY, '-', "Switch off anti-replay protection"},
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+    {"cert_comp", OPT_CERT_COMP, 's', "Enable TLS cert compression with the algorithm"},
+#endif
     {NULL, OPT_EOF, 0, NULL}
 };
 
@@ -1116,6 +1122,9 @@ int s_server_main(int argc, char *argv[])
     int enable_verify_peer_by_dc = 0;
     const char *s_delegated_credential_file = NULL;
     const char *s_delegated_credential_pkey_file = NULL;
+#endif
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+    const char *cert_comp = NULL;
 #endif
 
     /* Init of few remaining global variables */
@@ -1716,6 +1725,11 @@ int s_server_main(int argc, char *argv[])
             if (max_early_data == -1)
                 max_early_data = SSL3_RT_MAX_PLAIN_LENGTH;
             break;
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+        case OPT_CERT_COMP:
+            cert_comp = opt_arg();
+            break;
+#endif
         }
     }
     argc = opt_num_rest();
@@ -2376,6 +2390,23 @@ skip:
         SSL_CTX_set_max_early_data(ctx, max_early_data);
     if (recv_max_early_data >= 0)
         SSL_CTX_set_recv_max_early_data(ctx, recv_max_early_data);
+
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+    if (cert_comp) {
+#if defined(ZLIB) && !defined(ZLIB_SHARED)
+        if (strncmp(cert_comp, "zlib", 4) == 0) {
+            SSL_CTX_add_cert_compression_alg(ctx, TLSEXT_cert_compression_zlib,
+                                             zlib_compress, zlib_decompress);
+        } else
+#endif
+        {
+            BIO_printf(bio_err,
+                       "cert compression algorithm %s not supported\n",
+                       cert_comp);
+            goto end;
+        }
+    }
+#endif
 
     if (rev)
         server_cb = rev_body;

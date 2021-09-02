@@ -601,3 +601,7 @@ SSL_use_dc_PrivateKey_file              20023	1_1_1h	EXIST::FUNCTION:DELEGATED_C
 SSL_CTX_use_dc_PrivateKey_file          20024	1_1_1h	EXIST::FUNCTION:DELEGATED_CREDENTIAL
 DC_sign                                 20025	1_1_1h	EXIST::FUNCTION:DELEGATED_CREDENTIAL
 DC_print                                20026	1_1_1h	EXIST::FUNCTION:DELEGATED_CREDENTIAL
+SSL_add_cert_compression_alg            20027	1_1_1h	EXIST::FUNCTION:CERT_COMPRESSION
+SSL_CTX_add_cert_compression_alg        20028	1_1_1h	EXIST::FUNCTION:CERT_COMPRESSION
+SSL_get_cert_compression_compress_id    20029	1_1_1h	EXIST::FUNCTION:CERT_COMPRESSION
+SSL_get_cert_compression_decompress_id  20030	1_1_1h	EXIST::FUNCTION:CERT_COMPRESSION

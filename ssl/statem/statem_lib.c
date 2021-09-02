@@ -2584,3 +2584,208 @@ int tls13_restore_handshake_digest_for_pha(SSL *s)
     }
     return 1;
 }
+
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+int tls_construct_compressed_certificate(SSL *s, WPACKET *pkt,
+                                         confunc_f confunc)
+{
+    SSL_cert_compress_cb_fn compress_fn = NULL;
+    unsigned char *compressed_msg = NULL;
+    size_t compressed_size;
+    size_t uncompressed_length;
+    WPACKET inpkt;
+    BUF_MEM *buf = NULL;
+    int i;
+
+    if ((buf = BUF_MEM_new()) == NULL) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR,
+                 SSL_F_TLS_CONSTRUCT_COMPRESSED_CERTIFICATE,
+                 ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+
+    if (!BUF_MEM_grow(buf, SSL3_RT_MAX_PLAIN_LENGTH)) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR,
+                 SSL_F_TLS_CONSTRUCT_COMPRESSED_CERTIFICATE,
+                 ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+
+    if (!WPACKET_init(&inpkt, buf)) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR,
+                 SSL_F_TLS_CONSTRUCT_COMPRESSED_CERTIFICATE,
+                 ERR_R_INTERNAL_ERROR);
+        goto err;
+    }
+
+    if (!confunc(s, &inpkt)) {
+        WPACKET_cleanup(&inpkt);
+        /* SSLfatal() already called */
+        goto err;
+    }
+
+    if (!WPACKET_get_length(&inpkt, &uncompressed_length)
+        || !WPACKET_finish(&inpkt)) {
+        WPACKET_cleanup(&inpkt);
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR,
+                 SSL_F_TLS_CONSTRUCT_COMPRESSED_CERTIFICATE,
+                 ERR_R_INTERNAL_ERROR);
+        goto err;
+    }
+
+    for (i = 0; i < sk_CERT_COMP_num(s->cert_comp_algs); i++) {
+        CERT_COMP *comp = sk_CERT_COMP_value(s->cert_comp_algs, i);
+
+        if (comp->alg_id == s->cert_comp_compress_id
+            && comp->compress) {
+            compress_fn = comp->compress;
+            break;
+        }
+    }
+
+    if (!compress_fn) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR,
+                 SSL_F_TLS_CONSTRUCT_COMPRESSED_CERTIFICATE,
+                 ERR_R_INTERNAL_ERROR);
+        goto err;
+    }
+
+    /* get compressed_size */
+    if (!compress_fn(s, (const unsigned char *)buf->data, uncompressed_length,
+                     NULL, &compressed_size)) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR,
+                 SSL_F_TLS_CONSTRUCT_COMPRESSED_CERTIFICATE,
+                 ERR_R_INTERNAL_ERROR);
+        goto err;
+    }
+
+    compressed_msg = OPENSSL_malloc(compressed_size);
+    if (!compressed_msg) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR,
+                 SSL_F_TLS_CONSTRUCT_COMPRESSED_CERTIFICATE,
+                 ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+
+    if (!compress_fn(s, (const unsigned char *)buf->data, uncompressed_length,
+                     compressed_msg, &compressed_size)) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR,
+                 SSL_F_TLS_CONSTRUCT_COMPRESSED_CERTIFICATE,
+                 ERR_R_INTERNAL_ERROR);
+        goto err;
+    }
+
+    if (!WPACKET_put_bytes_u16(pkt, s->cert_comp_compress_id)
+        || !WPACKET_put_bytes_u24(pkt, uncompressed_length)
+        || !WPACKET_sub_memcpy_u24(pkt, compressed_msg, compressed_size)) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR,
+                 SSL_F_TLS_CONSTRUCT_COMPRESSED_CERTIFICATE,
+                 ERR_R_INTERNAL_ERROR);
+        goto err;
+    }
+
+    BUF_MEM_free(buf);
+    OPENSSL_free(compressed_msg);
+
+    return 1;
+err:
+    if (buf)
+        BUF_MEM_free(buf);
+
+    if (compressed_msg)
+        OPENSSL_free(compressed_msg);
+
+    return 0;
+}
+
+MSG_PROCESS_RETURN tls_process_compressed_certificate(SSL *s,
+                                                      PACKET *pkt,
+                                                      profunc_f profunc)
+{
+    SSL_cert_decompress_cb_fn decompress_fn = NULL;
+    MSG_PROCESS_RETURN ret;
+    unsigned char *out = NULL;
+    unsigned int alg_id;
+    size_t msg_len;
+    size_t uncompressed_len;
+    PACKET subpkt;
+    int i;
+
+    if (!s->cert_comp_algs) {
+        SSLfatal(s, SSL_AD_BAD_CERTIFICATE,
+                 SSL_F_TLS_PROCESS_COMPRESSED_CERTIFICATE,
+                 SSL_R_BAD_PACKET);
+        goto err;
+    }
+
+    if (!PACKET_get_net_2(pkt, &alg_id)
+        || !PACKET_get_net_3(pkt, &uncompressed_len)
+        || !PACKET_get_net_3_len(pkt, &msg_len)
+        || !PACKET_get_sub_packet(pkt, &subpkt, msg_len)
+        || PACKET_remaining(pkt) != 0) {
+        SSLfatal(s, SSL_AD_DECODE_ERROR,
+                 SSL_F_TLS_PROCESS_COMPRESSED_CERTIFICATE,
+                 SSL_R_BAD_PACKET);
+        goto err;
+    }
+
+    if (uncompressed_len > s->max_cert_list) {
+        SSLfatal(s, SSL_AD_BAD_CERTIFICATE,
+                 SSL_F_TLS_PROCESS_COMPRESSED_CERTIFICATE,
+                 SSL_R_LENGTH_LONG);
+        goto err;
+    }
+
+    for (i = 0; i < sk_CERT_COMP_num(s->cert_comp_algs); i++) {
+        CERT_COMP *comp = sk_CERT_COMP_value(s->cert_comp_algs, i);
+
+        if ((comp->alg_id == alg_id) && comp->decompress) {
+            decompress_fn = comp->decompress;
+            break;
+        }
+    }
+
+    if (!decompress_fn) {
+        SSLfatal(s, SSL_AD_DECODE_ERROR,
+                 SSL_F_TLS_PROCESS_COMPRESSED_CERTIFICATE,
+                 SSL_R_BAD_PACKET);
+        goto err;
+    }
+
+    s->cert_comp_decompress_id = alg_id;
+
+    out = OPENSSL_malloc(uncompressed_len);
+    if (!out) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR,
+                 SSL_F_TLS_PROCESS_COMPRESSED_CERTIFICATE,
+                 ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+
+    if (!decompress_fn(s, PACKET_data(&subpkt), msg_len,
+                       out, uncompressed_len)) {
+        SSLfatal(s, SSL_AD_DECODE_ERROR,
+                 SSL_F_TLS_PROCESS_COMPRESSED_CERTIFICATE,
+                 SSL_R_BAD_PACKET);
+        goto err;
+    }
+
+    if (!PACKET_buf_init(&subpkt, out, uncompressed_len)) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR,
+                 SSL_F_TLS_PROCESS_COMPRESSED_CERTIFICATE,
+                 ERR_R_INTERNAL_ERROR);
+        goto err;
+    }
+
+    ret = profunc(s, &subpkt);
+
+    OPENSSL_free(out);
+
+    return ret;
+err:
+    if (out)
+        OPENSSL_free(out);
+
+    return MSG_PROCESS_ERROR;
+}
+#endif

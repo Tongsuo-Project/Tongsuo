@@ -28,6 +28,11 @@
 
 const char SSL_version_str[] = OPENSSL_VERSION_TEXT;
 
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+static CERT_COMP *CERT_COMP_copy(const CERT_COMP *p);
+static void CERT_COMP_free(CERT_COMP *p);
+#endif
+
 static int ssl_undefined_function_1(SSL *ssl, SSL3_RECORD *r, size_t s, int t)
 {
     (void)r;
@@ -871,6 +876,16 @@ SSL *SSL_new(SSL_CTX *ctx)
                                         ctx->ct_validation_callback_arg))
         goto err;
 #endif
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+    if (ctx->cert_comp_algs) {
+        s->cert_comp_algs = sk_CERT_COMP_deep_copy(ctx->cert_comp_algs,
+                                                   CERT_COMP_copy,
+                                                   CERT_COMP_free);
+
+        if (s->cert_comp_algs == NULL)
+            goto err;
+    }
+#endif
 
     return s;
  err:
@@ -1275,7 +1290,9 @@ void SSL_free(SSL *s)
 #ifndef OPENSSL_NO_SRTP
     sk_SRTP_PROTECTION_PROFILE_free(s->srtp_profiles);
 #endif
-
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+    sk_CERT_COMP_pop_free(s->cert_comp_algs, CERT_COMP_free);
+#endif
     CRYPTO_THREAD_lock_free(s->lock);
 
     OPENSSL_free(s);
@@ -3300,7 +3317,9 @@ void SSL_CTX_free(SSL_CTX *a)
 #endif
     OPENSSL_free(a->ext.alpn);
     OPENSSL_secure_free(a->ext.secure);
-
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+    sk_CERT_COMP_pop_free(a->cert_comp_algs, CERT_COMP_free);
+#endif
     CRYPTO_THREAD_lock_free(a->lock);
 
     OPENSSL_free(a);
@@ -4440,6 +4459,15 @@ SSL_CTX *SSL_CTX_dup(SSL_CTX *ctx)
 #ifndef OPENSSL_NO_NTLS
     /* Tag of NTLS */
     ret->enable_ntls = ctx->enable_ntls;
+#endif
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+    if (ctx->cert_comp_algs) {
+        ret->cert_comp_algs = sk_CERT_COMP_deep_copy(ctx->cert_comp_algs,
+                                                     CERT_COMP_copy,
+                                                     CERT_COMP_free);
+        if (ret->cert_comp_algs == NULL)
+            goto err;
+    }
 #endif
 
     return (ret);
@@ -6687,3 +6715,18 @@ void BABASSL_debug(SSL *s, unsigned char *str, int len)
     printf("\n");
     printf("%d\n", len);
 }
+
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+static CERT_COMP *CERT_COMP_copy(const CERT_COMP *p)
+{
+    return OPENSSL_memdup(p, sizeof(*p));
+}
+
+static void CERT_COMP_free(CERT_COMP *p)
+{
+    if (!p)
+        return;
+
+    OPENSSL_free(p);
+}
+#endif

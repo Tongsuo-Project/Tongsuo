@@ -187,6 +187,7 @@ int ERR_load_SSL_strings(void);
 # define SSL_F_SSL3_WRITE_BYTES                           158
 # define SSL_F_SSL3_WRITE_PENDING                         159
 # define SSL_F_SSL_ADD_CERT_CHAIN                         316
+# define SSL_F_SSL_ADD_CERT_COMPRESSION_ALG               871
 # define SSL_F_SSL_ADD_CERT_TO_BUF                        319
 # define SSL_F_SSL_ADD_CERT_TO_WPACKET                    493
 # define SSL_F_SSL_ADD_CERT_TO_WPACKET_NTLS               706
@@ -203,6 +204,7 @@ int ERR_load_SSL_strings(void);
 # define SSL_F_SSL_BYTES_TO_CIPHER_LIST                   161
 # define SSL_F_SSL_CACHE_CIPHERLIST                       520
 # define SSL_F_SSL_CERT_ADD0_CHAIN_CERT                   346
+# define SSL_F_SSL_CERT_ADD_COMPRESSION_ALG               874
 # define SSL_F_SSL_CERT_DUP                               221
 # define SSL_F_SSL_CERT_NEW                               162
 # define SSL_F_SSL_CERT_SET0_CHAIN                        340
@@ -223,6 +225,7 @@ int ERR_load_SSL_strings(void);
 # define SSL_F_SSL_CONNECTION_IS_NTLS                     708
 # define SSL_F_SSL_CREATE_CIPHER_LIST                     166
 # define SSL_F_SSL_CTRL                                   232
+# define SSL_F_SSL_CTX_ADD_CERT_COMPRESSION_ALG           872
 # define SSL_F_SSL_CTX_CHECK_PRIVATE_KEY                  168
 # define SSL_F_SSL_CTX_DUP                                833
 # define SSL_F_SSL_CTX_ENABLE_CT                          398
@@ -414,6 +417,8 @@ int ERR_load_SSL_strings(void);
 # define SSL_F_TLS_CONSTRUCT_CLIENT_KEY_EXCHANGE          488
 # define SSL_F_TLS_CONSTRUCT_CLIENT_KEY_EXCHANGE_NTLS     720
 # define SSL_F_TLS_CONSTRUCT_CLIENT_VERIFY                489
+# define SSL_F_TLS_CONSTRUCT_COMPRESSED_CERTIFICATE       876
+# define SSL_F_TLS_CONSTRUCT_COMPRESS_CERT                870
 # define SSL_F_TLS_CONSTRUCT_CTOS_ALPN                    466
 # define SSL_F_TLS_CONSTRUCT_CTOS_ALPN_NTLS               721
 # define SSL_F_TLS_CONSTRUCT_CTOS_CERTIFICATE             355
@@ -546,6 +551,7 @@ int ERR_load_SSL_strings(void);
 # define SSL_F_TLS_HANDLE_STATUS_REQUEST                  563
 # define SSL_F_TLS_PARSE_CERTIFICATE_AUTHORITIES          566
 # define SSL_F_TLS_PARSE_CLIENTHELLO_TLSEXT               449
+# define SSL_F_TLS_PARSE_COMPRESS_CERT                    875
 # define SSL_F_TLS_PARSE_CTOS_ALPN                        567
 # define SSL_F_TLS_PARSE_CTOS_ALPN_NTLS                   774
 # define SSL_F_TLS_PARSE_CTOS_COOKIE                      614
@@ -650,6 +656,7 @@ int ERR_load_SSL_strings(void);
 # define SSL_F_TLS_PROCESS_CLIENT_HELLO_NTLS              816
 # define SSL_F_TLS_PROCESS_CLIENT_KEY_EXCHANGE            382
 # define SSL_F_TLS_PROCESS_CLIENT_KEY_EXCHANGE_NTLS       817
+# define SSL_F_TLS_PROCESS_COMPRESSED_CERTIFICATE         877
 # define SSL_F_TLS_PROCESS_DC_REQUEST                     868
 # define SSL_F_TLS_PROCESS_ENCRYPTED_EXTENSIONS           444
 # define SSL_F_TLS_PROCESS_END_OF_EARLY_DATA              537
@@ -830,6 +837,7 @@ int ERR_load_SSL_strings(void);
 # define SSL_R_INVALID_SRP_USERNAME                       357
 # define SSL_R_INVALID_STATUS_RESPONSE                    328
 # define SSL_R_INVALID_TICKET_KEYS_LENGTH                 325
+# define SSL_R_LENGTH_LONG                                295
 # define SSL_R_LENGTH_MISMATCH                            159
 # define SSL_R_LENGTH_TOO_LONG                            404
 # define SSL_R_LENGTH_TOO_SHORT                           160
