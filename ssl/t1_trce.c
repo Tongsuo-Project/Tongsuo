@@ -97,6 +97,7 @@ static const ssl_trace_tbl ssl_handshake_tbl[] = {
     {SSL3_MT_CERTIFICATE_STATUS, "CertificateStatus"},
     {SSL3_MT_SUPPLEMENTAL_DATA, "SupplementalData"},
     {SSL3_MT_KEY_UPDATE, "KeyUpdate"},
+    {SSL3_MT_COMPRESSED_CERTIFICATE, "CompressedCertificate"},
 # ifndef OPENSSL_NO_NEXTPROTONEG
     {SSL3_MT_NEXT_PROTO, "NextProto"},
 # endif
@@ -475,6 +476,7 @@ static const ssl_trace_tbl ssl_exts_tbl[] = {
     {TLSEXT_TYPE_padding, "padding"},
     {TLSEXT_TYPE_encrypt_then_mac, "encrypt_then_mac"},
     {TLSEXT_TYPE_extended_master_secret, "extended_master_secret"},
+    {TLSEXT_TYPE_compress_certificate, "compress_certificate"},
     {TLSEXT_TYPE_session_ticket, "session_ticket"},
     {TLSEXT_TYPE_psk, "psk"},
     {TLSEXT_TYPE_early_data, "early_data"},
@@ -595,6 +597,12 @@ static const ssl_trace_tbl ssl_psk_kex_modes_tbl[] = {
 static const ssl_trace_tbl ssl_key_update_tbl[] = {
     {SSL_KEY_UPDATE_NOT_REQUESTED, "update_not_requested"},
     {SSL_KEY_UPDATE_REQUESTED, "update_requested"}
+};
+
+static const ssl_trace_tbl ssl_cert_compression_tbl[] = {
+        {0, "zlib"},
+        {1, "brotli"},
+        {2, "zstd"}
 };
 
 static void ssl_print_hex(BIO *bio, int indent, const char *name,
@@ -869,7 +877,14 @@ static int ssl_print_extension(BIO *bio, int indent, int server,
         BIO_indent(bio, indent + 2, 80);
         BIO_printf(bio, "max_early_data=%u\n", max_early_data);
         break;
-
+    case TLSEXT_TYPE_compress_certificate:
+        if (extlen < 1)
+            return 0;
+        xlen = ext[0];
+        if (extlen != xlen + 1)
+            return 0;
+        return ssl_trace_list(bio, indent + 2, ext + 1, xlen, 2,
+                              ssl_cert_compression_tbl);
     default:
         BIO_dump_indent(bio, (const char *)ext, extlen, indent + 2);
     }
@@ -1225,6 +1240,56 @@ static int ssl_print_certificate(BIO *bio, int indent,
     return 1;
 }
 
+static int ssl_print_compressed_certificate(BIO *bio, const SSL *ssl,
+                                            int server, int indent,
+                                            const unsigned char *msg,
+                                            size_t msglen)
+{
+    uint16_t algorithm;
+    unsigned int uncompressed_length;
+    uint32_t clen;
+
+    if (msglen < 2)
+        return 0;
+
+    algorithm = (msg[0] << 8) | msg[1];
+
+    BIO_indent(bio, indent, 80);
+    BIO_printf(bio, "algorithm: %u\n", algorithm);
+
+    msg += 2;
+    msglen -= 2;
+
+    if (msglen < 3)
+        return 0;
+
+    uncompressed_length = (msg[0] << 16) | (msg[1] << 8) | msg[2];
+
+    BIO_indent(bio, indent, 80);
+    BIO_printf(bio, "uncompressed_length: %u\n", uncompressed_length);
+
+    msg += 3;
+    msglen -= 3;
+
+    if (msglen < 3)
+        return 0;
+
+    clen = (msg[0] << 16) | (msg[1] << 8) | msg[2];
+
+    BIO_indent(bio, indent, 80);
+    BIO_printf(bio, "compressed_certificate_message, length=%u\n", clen);
+
+    msg += 3;
+    msglen -= 3;
+
+    if (msglen != clen)
+        return 0;
+
+    ssl_print_hex(bio, indent + 2, "value", msg, msglen);
+
+    return 1;
+}
+
 static int ssl_print_certificates(BIO *bio, const SSL *ssl, int server,
                                   int indent, const unsigned char *msg,
                                   size_t msglen)
@@ -1445,6 +1510,12 @@ static int ssl_print_handshake(BIO *bio, const SSL *ssl, int server,
 
     case SSL3_MT_CERTIFICATE:
         if (!ssl_print_certificates(bio, ssl, server, indent + 2, msg, msglen))
+            return 0;
+        break;
+
+    case SSL3_MT_COMPRESSED_CERTIFICATE:
+        if (!ssl_print_compressed_certificate(bio, ssl, server, indent + 2,
+                                              msg, msglen))
             return 0;
         break;
 

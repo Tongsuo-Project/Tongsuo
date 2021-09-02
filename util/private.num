@@ -93,6 +93,8 @@ pem_password_cb                         datatype
 ssl_ct_validation_cb                    datatype
 OSSL_ENCRYPTION_LEVEL                   datatype
 SSL_QUIC_METHOD                         datatype
+SSL_cert_compress_cb_fn                 datatype
+SSL_cert_decompress_cb_fn               datatype
 #
 BIO_append_filename                     define
 BIO_destroy_bio_pair                    define

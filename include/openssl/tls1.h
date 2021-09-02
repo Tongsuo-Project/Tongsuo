@@ -131,6 +131,9 @@ extern "C" {
 /* ExtensionType value from RFC7627 */
 # define TLSEXT_TYPE_extended_master_secret      23
 
+/* ExtensionType value from RFC8879 */
+# define TLSEXT_TYPE_compress_certificate   27
+
 /* ExtensionType value from draft-ietf-tls-subcerts-07 */
 # define TLSEXT_TYPE_delegated_credential        34
 
@@ -232,6 +235,10 @@ extern "C" {
 # define TLSEXT_max_fragment_length_1024        2
 # define TLSEXT_max_fragment_length_2048        3
 # define TLSEXT_max_fragment_length_4096        4
+/* TLS Certificate Compression Algorithm IDs from RFC8879 */
+#define TLSEXT_cert_compression_zlib            1
+#define TLSEXT_cert_compression_brotli          2
+#define TLSEXT_cert_compression_zstd            3
 
 int SSL_CTX_set_tlsext_max_fragment_length(SSL_CTX *ctx, uint8_t mode);
 int SSL_set_tlsext_max_fragment_length(SSL *ssl, uint8_t mode);
