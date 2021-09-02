@@ -48,15 +48,11 @@ int ssl3_do_write_ntls(SSL *s, int type)
         /*
          * should not be done for 'Hello Request's, but in that case we'll
          * ignore the result anyway
-         * TLS1.3 KeyUpdate and NewSessionTicket do not need to be added
          */
-        if ((s->statem.hand_state != TLS_ST_SW_SESSION_TICKET
-                                 && s->statem.hand_state != TLS_ST_CW_KEY_UPDATE
-                                 && s->statem.hand_state != TLS_ST_SW_KEY_UPDATE))
-            if (!ssl3_finish_mac(s,
-                                 (unsigned char *)&s->init_buf->data[s->init_off],
-                                 written))
-                return -1;
+        if (!ssl3_finish_mac(s,
+                             (unsigned char *)&s->init_buf->data[s->init_off],
+                             written))
+            return -1;
     if (written == s->init_num) {
         if (s->msg_callback)
             s->msg_callback(1, s->version, type, s->init_buf->data,
