@@ -2732,7 +2732,7 @@ MSG_PROCESS_RETURN tls_process_compressed_certificate(SSL *s,
     if (uncompressed_len > s->max_cert_list) {
         SSLfatal(s, SSL_AD_BAD_CERTIFICATE,
                  SSL_F_TLS_PROCESS_COMPRESSED_CERTIFICATE,
-                 SSL_R_LENGTH_LONG);
+                 SSL_R_LENGTH_TOO_LONG);
         goto err;
     }
 
