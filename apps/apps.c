@@ -39,9 +39,9 @@
 # include <openssl/rsa.h>
 #endif
 #ifndef OPENSSL_NO_CERT_COMPRESSION
-#if defined(ZLIB) && !defined(ZLIB_SHARED)
-# include <zlib.h>
-#endif
+# if defined(ZLIB) && !defined(ZLIB_SHARED)
+#  include <zlib.h>
+# endif
 #endif
 #include <openssl/bn.h>
 #include <openssl/ssl.h>
@@ -2860,7 +2860,7 @@ void make_uppercase(char *string)
 }
 
 #ifndef OPENSSL_NO_CERT_COMPRESSION
-#if defined(ZLIB) && !defined(ZLIB_SHARED)
+# if defined(ZLIB) && !defined(ZLIB_SHARED)
 int zlib_compress(SSL *s,
                   const unsigned char *in, size_t inlen,
                   unsigned char *out, size_t *outlen)
@@ -2891,5 +2891,5 @@ int zlib_decompress(SSL *s,
 
     return 1;
 }
-#endif
+# endif
 #endif

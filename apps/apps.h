@@ -630,14 +630,14 @@ typedef struct verify_options_st {
 extern VERIFY_CB_ARGS verify_args;
 
 #ifndef OPENSSL_NO_CERT_COMPRESSION
-#if defined(ZLIB) && !defined(ZLIB_SHARED)
+# if defined(ZLIB) && !defined(ZLIB_SHARED)
 int zlib_compress(SSL *s,
                   const unsigned char *in, size_t inlen,
                   unsigned char *out, size_t *outlen);
 int zlib_decompress(SSL *s,
                     const unsigned char *in, size_t inlen,
                     unsigned char *out, size_t outlen);
-#endif
+# endif
 #endif
 
 #endif

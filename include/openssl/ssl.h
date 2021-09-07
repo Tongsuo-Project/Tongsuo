@@ -2841,7 +2841,7 @@ __owur int SSL_use_sign_PrivateKey_file(SSL *ssl, const char *file, int type);
 #  endif
 # endif
 
-#ifndef OPENSSL_NO_CERT_COMPRESSION
+# ifndef OPENSSL_NO_CERT_COMPRESSION
 typedef int (*SSL_cert_compress_cb_fn)(SSL *s,
                     const unsigned char *in, size_t inlen,
                     unsigned char *out, size_t *outlen);
@@ -2857,7 +2857,7 @@ int SSL_add_cert_compression_alg(SSL *s, int alg_id,
 int SSL_CTX_add_cert_compression_alg(SSL_CTX *ctx, int alg_id,
                                      SSL_cert_compress_cb_fn compress,
                                      SSL_cert_decompress_cb_fn decompress);
-#endif
+# endif
 
 # ifdef  __cplusplus
 }

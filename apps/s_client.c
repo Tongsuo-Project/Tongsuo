@@ -2206,12 +2206,12 @@ int s_client_main(int argc, char **argv)
 
 #ifndef OPENSSL_NO_CERT_COMPRESSION
     if (cert_comp) {
-#if defined(ZLIB) && !defined(ZLIB_SHARED)
+# if defined(ZLIB) && !defined(ZLIB_SHARED)
         if (strncmp(cert_comp, "zlib", 4) == 0) {
             SSL_CTX_add_cert_compression_alg(ctx, TLSEXT_cert_compression_zlib,
                                              zlib_compress, zlib_decompress);
         } else
-#endif
+# endif
         {
             BIO_printf(bio_err,
                        "cert compression algorithm %s not supported\n",
