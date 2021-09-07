@@ -465,7 +465,7 @@ typedef enum {
     SSL_PHA_REQUESTED        /* request received by client, or sent by server */
 } SSL_PHA_STATE;
 
-#ifndef OPENSSL_NO_CERT_COMPRESSION
+# ifndef OPENSSL_NO_CERT_COMPRESSION
 typedef struct cert_comp_st {
     unsigned int alg_id;
     SSL_cert_compress_cb_fn compress;
@@ -473,7 +473,7 @@ typedef struct cert_comp_st {
 } CERT_COMP;
 
 DEFINE_STACK_OF(CERT_COMP)
-#endif
+# endif
 
 /* CipherSuite length. SSLv3 and all TLS versions. */
 # define TLS_CIPHER_LEN 2
