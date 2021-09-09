@@ -94,12 +94,12 @@ int ERR_load_SSL_strings(void);
 # define SSL_F_NTLS_CONSTRUCT_CLIENT_CERTIFICATE_NTLS     674
 # define SSL_F_NTLS_CONSTRUCT_CLIENT_KEY_EXCHANGE         644
 # define SSL_F_NTLS_CONSTRUCT_CLIENT_KEY_EXCHANGE_NTLS    675
+# define SSL_F_NTLS_CONSTRUCT_SERVER_CERTIFICATE_NTLS     834
 # define SSL_F_NTLS_CONSTRUCT_SERVER_KEY_EXCHANGE         645
 # define SSL_F_NTLS_CONSTRUCT_SERVER_KEY_EXCHANGE_NTLS    676
 # define SSL_F_NTLS_CONSTRUCT_SKE_RSA                     646
 # define SSL_F_NTLS_CONSTRUCT_SKE_SM2                     647
 # define SSL_F_NTLS_CONSTRUCT_SKE_SM2DHE                  648
-# define SSL_F_NTLS_I2D_PKEY                              834
 # define SSL_F_NTLS_OUTPUT_CERT_CHAIN                     649
 # define SSL_F_NTLS_OUTPUT_CERT_CHAIN_NTLS                677
 # define SSL_F_NTLS_PROCESS_CERT_VERIFY                   650
