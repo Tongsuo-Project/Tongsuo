@@ -391,15 +391,8 @@
  * Determine if a client should send signature algorithms extension:
  * as with TLS1.2 cipher we can't rely on method flags.
  */
-
-# if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-#  define SSL_CLIENT_USE_SIGALGS(s)        \
-     (SSL_CLIENT_USE_TLS1_2_CIPHERS(s) || (s->client_version == NTLS_VERSION))
-# else
 #  define SSL_CLIENT_USE_SIGALGS(s)        \
      SSL_CLIENT_USE_TLS1_2_CIPHERS(s)
-#endif
 
 # define IS_MAX_FRAGMENT_LENGTH_EXT_VALID(value) \
     (((value) >= TLSEXT_max_fragment_length_512) && \
@@ -433,15 +426,6 @@
 # endif
 
 
-/*
- *optimize later
- *This is the default ID for NTLS context
- */
-# if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-#  define SM2_DEFAULT_ID "1234567812345678"
-#  define SM2_DEFAULT_ID_LEN (sizeof(SM2_DEFAULT_ID) - 1)
-# endif
 /*-
  * SSL_kRSA <- RSA_ENC
  * SSL_kDH  <- DH_ENC & (RSA_ENC | RSA_SIGN | DSA_SIGN)
@@ -2310,12 +2294,12 @@ __owur const SSL_METHOD *dtls_bad_ver_client_method(void);
 __owur const SSL_METHOD *dtlsv1_2_method(void);
 __owur const SSL_METHOD *dtlsv1_2_server_method(void);
 __owur const SSL_METHOD *dtlsv1_2_client_method(void);
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
+# if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
      && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
 __owur const SSL_METHOD *ntls_method(void);
 __owur const SSL_METHOD *ntls_server_method(void);
 __owur const SSL_METHOD *ntls_client_method(void);
-#endif
+# endif
 
 extern const SSL3_ENC_METHOD TLSv1_enc_data;
 extern const SSL3_ENC_METHOD TLSv1_1_enc_data;
@@ -2324,10 +2308,10 @@ extern const SSL3_ENC_METHOD TLSv1_3_enc_data;
 extern const SSL3_ENC_METHOD SSLv3_enc_data;
 extern const SSL3_ENC_METHOD DTLSv1_enc_data;
 extern const SSL3_ENC_METHOD DTLSv1_2_enc_data;
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
+# if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
      && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
 extern const SSL3_ENC_METHOD NTLS_enc_data;
-#endif
+# endif
 
 /*
  * Flags for SSL methods

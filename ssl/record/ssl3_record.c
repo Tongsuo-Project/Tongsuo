@@ -322,7 +322,8 @@ int ssl3_get_record(SSL *s)
 
 #if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
      && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-                if (version == NTLS_VERSION) {
+                if (s->enable_ntls == 1
+                    && version == NTLS_VERSION) {
                     /* do nothing */
                 } else
 #endif
