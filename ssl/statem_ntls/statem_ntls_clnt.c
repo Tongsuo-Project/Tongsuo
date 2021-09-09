@@ -793,7 +793,7 @@ int ntls_construct_cert_verify_ntls(SSL *s, WPACKET *pkt)
     }
 
     /* The only valid EC pkey in NTLS is SM2 */
-    if (EVP_PKEY_set_alias_type(pkey, EVP_PKEY_SM2) <= 0) {
+    if (EVP_PKEY_id(pkey) != EVP_PKEY_SM2) {
         SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_CONSTRUCT_CERT_VERIFY_NTLS,
                 ERR_R_EVP_LIB);
         goto err;
