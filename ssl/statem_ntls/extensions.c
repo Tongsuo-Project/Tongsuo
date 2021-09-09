@@ -140,7 +140,7 @@ static const EXTENSION_DEFINITION ext_defs[] = {
         tls_construct_stoc_maxfragmentlen_ntls, tls_construct_ctos_maxfragmentlen_ntls,
         final_maxfragmentlen
     },
-    INVALID_EXTENSION,
+    INVALID_EXTENSION,  /* TLSEXT_IDX_srp */
 # ifndef OPENSSL_NO_EC
     {
         TLSEXT_TYPE_ec_point_formats,
@@ -263,6 +263,7 @@ static const EXTENSION_DEFINITION ext_defs[] = {
 # else
     INVALID_EXTENSION,
 # endif
+    INVALID_EXTENSION,  /* TLSEXT_IDX_delegated_credential */
     {
         TLSEXT_TYPE_extended_master_secret,
         SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS1_2_SERVER_HELLO
@@ -324,6 +325,8 @@ static const EXTENSION_DEFINITION ext_defs[] = {
         tls_construct_stoc_key_share_ntls, tls_construct_ctos_key_share_ntls,
         final_key_share
     },
+# else
+    INVALID_EXTENSION,
 # endif
     {
         /* Must be after key_share */
@@ -361,6 +364,9 @@ static const EXTENSION_DEFINITION ext_defs[] = {
         tls_construct_certificate_authorities,
         tls_construct_certificate_authorities, NULL,
     },
+    INVALID_EXTENSION,  /* TLSEXT_IDX_quic_transport_params_draft */
+    INVALID_EXTENSION,  /* TLSEXT_IDX_quic_transport_params */
+    INVALID_EXTENSION,  /* TLSEXT_IDX_compress_certificate */
     {
         /* Must be immediately before pre_shared_key */
         TLSEXT_TYPE_padding,
