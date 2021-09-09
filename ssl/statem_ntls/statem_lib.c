@@ -48,15 +48,11 @@ int ssl3_do_write_ntls(SSL *s, int type)
         /*
          * should not be done for 'Hello Request's, but in that case we'll
          * ignore the result anyway
-         * TLS1.3 KeyUpdate and NewSessionTicket do not need to be added
          */
-        if ((s->statem.hand_state != TLS_ST_SW_SESSION_TICKET
-                                 && s->statem.hand_state != TLS_ST_CW_KEY_UPDATE
-                                 && s->statem.hand_state != TLS_ST_SW_KEY_UPDATE))
-            if (!ssl3_finish_mac(s,
-                                 (unsigned char *)&s->init_buf->data[s->init_off],
-                                 written))
-                return -1;
+        if (!ssl3_finish_mac(s,
+                             (unsigned char *)&s->init_buf->data[s->init_off],
+                             written))
+            return -1;
     if (written == s->init_num) {
         if (s->msg_callback)
             s->msg_callback(1, s->version, type, s->init_buf->data,
@@ -1041,24 +1037,18 @@ int tls_get_message_body_ntls(SSL *s, size_t *len)
         /*
          * We defer feeding in the HRR until later. We'll do it as part of
          * processing the message
-         * The TLsv1.3 handshake transcript stops at the ClientFinished
-         * message.
          */
 # define SERVER_HELLO_RANDOM_OFFSET  (SSL3_HM_HEADER_LENGTH + 2)
-        /* KeyUpdate and NewSessionTicket do not need to be added */
-        if ((s->s3->tmp.message_type != SSL3_MT_NEWSESSION_TICKET
-                && s->s3->tmp.message_type != SSL3_MT_KEY_UPDATE)) {
-            if (s->s3->tmp.message_type != SSL3_MT_SERVER_HELLO
-                    || s->init_num < SERVER_HELLO_RANDOM_OFFSET + SSL3_RANDOM_SIZE
-                    || memcmp(hrrrandom_ntls,
-                              s->init_buf->data + SERVER_HELLO_RANDOM_OFFSET,
-                              SSL3_RANDOM_SIZE) != 0) {
-                if (!ssl3_finish_mac(s, (unsigned char *)s->init_buf->data,
-                                     s->init_num + SSL3_HM_HEADER_LENGTH)) {
-                    /* SSLfatal_ntls() already called */
-                    *len = 0;
-                    return 0;
-                }
+        if (s->s3->tmp.message_type != SSL3_MT_SERVER_HELLO
+                || s->init_num < SERVER_HELLO_RANDOM_OFFSET + SSL3_RANDOM_SIZE
+                || memcmp(hrrrandom_ntls,
+                          s->init_buf->data + SERVER_HELLO_RANDOM_OFFSET,
+                          SSL3_RANDOM_SIZE) != 0) {
+            if (!ssl3_finish_mac(s, (unsigned char *)s->init_buf->data,
+                                 s->init_num + SSL3_HM_HEADER_LENGTH)) {
+                /* SSLfatal_ntls() already called */
+                *len = 0;
+                return 0;
             }
         }
         if (s->msg_callback)
