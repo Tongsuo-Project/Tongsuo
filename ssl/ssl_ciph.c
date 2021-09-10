@@ -457,10 +457,6 @@ int ssl_load_ciphers(void)
     disabled_mkey_mask |= SSL_kSRP;
 #endif
 #ifdef OPENSSL_NO_SM2
-# if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-    disabled_mkey_mask |= SSL_kSM2 | SSL_kSM2DHE;
-# endif
     disabled_auth_mask |= SSL_aSM2;
 #endif
 

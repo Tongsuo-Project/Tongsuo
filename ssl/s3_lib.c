@@ -4350,13 +4350,6 @@ const SSL_CIPHER *ssl3_choose_cipher(SSL *s, STACK_OF(SSL_CIPHER) *clnt,
     } else {
         tls1_set_cert_validity(s);
         ssl_set_masks(s);
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-        if (SSL_IS_NTLS(s)) {
-            /* FIXME: this actually skips check for NTLS */
-            s->s3->tmp.mask_a |= SSL_aSM2;
-        }
-#endif
     }
 
 #ifndef OPENSSL_NO_CHACHA

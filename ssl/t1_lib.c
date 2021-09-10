@@ -2365,19 +2365,6 @@ int tls1_check_chain(SSL *s, X509 *x, EVP_PKEY *pk, STACK_OF(X509) *chain,
                 default_nid = NID_id_tc26_signwithdigest_gost3410_2012_512;
                 break;
 
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-            case SSL_PKEY_SM2_ENC:
-                rsign = TLSEXT_signature_sm2;
-                default_nid = NID_SM2_with_SM3;
-                break;
-
-            case SSL_PKEY_SM2_SIGN:
-                rsign = TLSEXT_signature_sm2;
-                default_nid = NID_SM2_with_SM3;
-                break;
-#endif
-
             default:
                 default_nid = -1;
                 break;

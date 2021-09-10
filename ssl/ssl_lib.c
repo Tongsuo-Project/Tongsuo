@@ -3428,7 +3428,7 @@ void ssl_set_masks(SSL *s)
 #if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
      && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
     sm2_enc = pvalid[SSL_PKEY_SM2_ENC] & CERT_PKEY_VALID;
-    sm2_sign = pvalid[SSL_PKEY_SM2_SIGN] & CERT_PKEY_SIGN;
+    sm2_sign = pvalid[SSL_PKEY_SM2_SIGN] & CERT_PKEY_VALID;
 #endif
     mask_k = 0;
     mask_a = 0;
@@ -3519,8 +3519,6 @@ void ssl_set_masks(SSL *s)
     mask_k |= SSL_kSM2;
     mask_k |= SSL_kSM2DHE;
 #endif
-
-
 
 #ifndef OPENSSL_NO_EC
     mask_k |= SSL_kECDHE;

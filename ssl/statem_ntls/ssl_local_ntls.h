@@ -5,11 +5,8 @@
 #ifndef OSSL_SSL_LOCAL_NTLS_H
 # define OSSL_SSL_LOCAL_NTLS_H
 
-
 # include "../ssl_local.h"
 # include "statem.h"
-
-# define SSL_IS_NTLS(s) (s->version == NTLS_VERSION)
 
 # define SSL_CLIENT_USE_SIGALGS_NTLS(s)        \
      (SSL_CLIENT_USE_TLS1_2_CIPHERS(s) || (s->client_version == NTLS_VERSION))
@@ -21,11 +18,6 @@
 # define SM2_DEFAULT_ID "1234567812345678"
 # define SM2_DEFAULT_ID_LEN (sizeof(SM2_DEFAULT_ID) - 1)
 
-__owur const SSL_METHOD *ntls_method(void);
-__owur const SSL_METHOD *ntls_server_method(void);
-__owur const SSL_METHOD *ntls_client_method(void);
-
-extern const SSL3_ENC_METHOD NTLS_enc_data;
 __owur int ssl_x509err2alert_ntls(int type);
 __owur int ssl3_do_write_ntls(SSL *s, int type);
 __owur unsigned long ssl3_output_cert_chain_ntls(SSL *s, WPACKET *pkt,

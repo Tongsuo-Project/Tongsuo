@@ -972,7 +972,7 @@ static int ssl_security_default_callback(const SSL *s, const SSL_CTX *ctx,
         if (!SSL_IS_DTLS(s)) {
 #if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
      && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-            /* NTLS only for level 4 and above */
+            /* NTLS v1.1 not allowed at level 3 */
             if (nid == NTLS_VERSION && level >= 3)
                 return 0;
 #endif
