@@ -6724,7 +6724,7 @@ static CERT_COMP *CERT_COMP_copy(const CERT_COMP *p)
 
 static void CERT_COMP_free(CERT_COMP *p)
 {
-    if (!p)
+    if (p == NULL)
         return;
 
     OPENSSL_free(p);

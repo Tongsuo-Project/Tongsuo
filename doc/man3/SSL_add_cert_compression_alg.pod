@@ -36,7 +36,7 @@ the byte length of the buffer B<in>. B<*outlen> is the total size of the buffer
 B<out>. Upon exit, B<*outlen> is the actual size of the compressed buffer
 B<out>. Note that if B<out> is NULL, it only computes the length of the
 compressed buffer B<out> and write it to B<*outlen>. It returns 1 on success
-and 0 on error.
+or 0 on error.
 
 B<SSL_cert_decompress_cb_fn> is a pointer to a function that performs
 decompression. The compressed data is passed as B<in> with length B<inlen>

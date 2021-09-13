@@ -132,7 +132,7 @@ extern "C" {
 # define TLSEXT_TYPE_extended_master_secret      23
 
 /* ExtensionType value from RFC8879 */
-# define TLSEXT_TYPE_compress_certificate   27
+# define TLSEXT_TYPE_compress_certificate        27
 
 /* ExtensionType value from draft-ietf-tls-subcerts-07 */
 # define TLSEXT_TYPE_delegated_credential        34
