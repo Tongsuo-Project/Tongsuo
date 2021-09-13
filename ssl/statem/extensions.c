@@ -1955,7 +1955,7 @@ EXT_RETURN tls_construct_compress_cert(SSL *s, WPACKET *pkt,
     int i;
     int first = 1;
 
-    if (!s->cert_comp_algs) {
+    if (s->cert_comp_algs == NULL) {
         return EXT_RETURN_NOT_SENT;
     }
 

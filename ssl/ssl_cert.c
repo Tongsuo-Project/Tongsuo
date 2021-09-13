@@ -1089,10 +1089,10 @@ int SSL_add_cert_compression_alg(SSL *s, int alg_id,
                                  SSL_cert_compress_cb_fn compress,
                                  SSL_cert_decompress_cb_fn decompress)
 {
-    if (!s->cert_comp_algs) {
+    if (s->cert_comp_algs == NULL) {
         s->cert_comp_algs = sk_CERT_COMP_new_null();
 
-        if (!s->cert_comp_algs) {
+        if (s->cert_comp_algs == NULL) {
             SSLerr(SSL_F_SSL_ADD_CERT_COMPRESSION_ALG, ERR_R_MALLOC_FAILURE);
             return 0;
         }
@@ -1105,10 +1105,10 @@ int SSL_CTX_add_cert_compression_alg(SSL_CTX *ctx, int alg_id,
                                      SSL_cert_compress_cb_fn compress,
                                      SSL_cert_decompress_cb_fn decompress)
 {
-    if (!ctx->cert_comp_algs) {
+    if (ctx->cert_comp_algs == NULL) {
         ctx->cert_comp_algs = sk_CERT_COMP_new_null();
 
-        if (!ctx->cert_comp_algs) {
+        if (ctx->cert_comp_algs == NULL) {
             SSLerr(SSL_F_SSL_CTX_ADD_CERT_COMPRESSION_ALG,
                    ERR_R_MALLOC_FAILURE);
             return 0;

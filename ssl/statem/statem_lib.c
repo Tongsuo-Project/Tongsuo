@@ -2601,7 +2601,7 @@ int tls_construct_compressed_certificate(SSL *s, WPACKET *pkt,
         SSLfatal(s, SSL_AD_INTERNAL_ERROR,
                  SSL_F_TLS_CONSTRUCT_COMPRESSED_CERTIFICATE,
                  ERR_R_MALLOC_FAILURE);
-        goto err;
+        return 0;
     }
 
     if (!BUF_MEM_grow(buf, SSL3_RT_MAX_PLAIN_LENGTH)) {
@@ -2643,7 +2643,7 @@ int tls_construct_compressed_certificate(SSL *s, WPACKET *pkt,
         }
     }
 
-    if (!compress_fn) {
+    if (compress_fn == NULL) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR,
                  SSL_F_TLS_CONSTRUCT_COMPRESSED_CERTIFICATE,
                  ERR_R_INTERNAL_ERROR);
@@ -2660,7 +2660,7 @@ int tls_construct_compressed_certificate(SSL *s, WPACKET *pkt,
     }
 
     compressed_msg = OPENSSL_malloc(compressed_size);
-    if (!compressed_msg) {
+    if (compressed_msg == NULL) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR,
                  SSL_F_TLS_CONSTRUCT_COMPRESSED_CERTIFICATE,
                  ERR_R_MALLOC_FAILURE);
@@ -2689,10 +2689,9 @@ int tls_construct_compressed_certificate(SSL *s, WPACKET *pkt,
 
     return 1;
 err:
-    if (buf)
-        BUF_MEM_free(buf);
+    BUF_MEM_free(buf);
 
-    if (compressed_msg)
+    if (compressed_msg != NULL)
         OPENSSL_free(compressed_msg);
 
     return 0;
@@ -2711,7 +2710,7 @@ MSG_PROCESS_RETURN tls_process_compressed_certificate(SSL *s,
     PACKET subpkt;
     int i;
 
-    if (!s->cert_comp_algs) {
+    if (s->cert_comp_algs == NULL) {
         SSLfatal(s, SSL_AD_BAD_CERTIFICATE,
                  SSL_F_TLS_PROCESS_COMPRESSED_CERTIFICATE,
                  SSL_R_BAD_PACKET);
@@ -2745,7 +2744,7 @@ MSG_PROCESS_RETURN tls_process_compressed_certificate(SSL *s,
         }
     }
 
-    if (!decompress_fn) {
+    if (decompress_fn == NULL) {
         SSLfatal(s, SSL_AD_DECODE_ERROR,
                  SSL_F_TLS_PROCESS_COMPRESSED_CERTIFICATE,
                  SSL_R_BAD_PACKET);
@@ -2755,7 +2754,7 @@ MSG_PROCESS_RETURN tls_process_compressed_certificate(SSL *s,
     s->cert_comp_decompress_id = alg_id;
 
     out = OPENSSL_malloc(uncompressed_len);
-    if (!out) {
+    if (out == NULL) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR,
                  SSL_F_TLS_PROCESS_COMPRESSED_CERTIFICATE,
                  ERR_R_MALLOC_FAILURE);
@@ -2783,7 +2782,7 @@ MSG_PROCESS_RETURN tls_process_compressed_certificate(SSL *s,
 
     return ret;
 err:
-    if (out)
+    if (out != NULL)
         OPENSSL_free(out);
 
     return MSG_PROCESS_ERROR;

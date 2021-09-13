@@ -2392,7 +2392,7 @@ skip:
         SSL_CTX_set_recv_max_early_data(ctx, recv_max_early_data);
 
 #ifndef OPENSSL_NO_CERT_COMPRESSION
-    if (cert_comp) {
+    if (cert_comp != NULL) {
 #if defined(ZLIB) && !defined(ZLIB_SHARED)
         if (strncmp(cert_comp, "zlib", 4) == 0) {
             SSL_CTX_add_cert_compression_alg(ctx, TLSEXT_cert_compression_zlib,
