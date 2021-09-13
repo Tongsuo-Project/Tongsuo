@@ -1066,7 +1066,7 @@ static int ssl_cert_add_compression_alg(STACK_OF(CERT_COMP) *cert_comp_algs,
     CERT_COMP *comp = NULL;
 
     comp = OPENSSL_malloc(sizeof(*comp));
-    if (!comp) {
+    if (comp == NULL) {
         SSLerr(SSL_F_SSL_CERT_ADD_COMPRESSION_ALG, ERR_R_MALLOC_FAILURE);
         return 0;
     }

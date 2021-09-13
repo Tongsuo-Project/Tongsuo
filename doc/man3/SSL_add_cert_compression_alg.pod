@@ -30,7 +30,7 @@ SSL_get_cert_compression_compress_id, SSL_get_cert_compression_decompress_id
 
 =head1 DESCRIPTION
 
-SSL_cert_compress_cb_fn is a pointer to a function that performs compression.
+B<SSL_cert_compress_cb_fn> is a pointer to a function that performs compression.
 It must write the compressed representation of B<in> to B<out>. B<inlen> is
 the byte length of the buffer B<in>. B<*outlen> is the total size of the buffer
 B<out>. Upon exit, B<*outlen> is the actual size of the compressed buffer
@@ -38,7 +38,7 @@ B<out>. Note that if B<out> is NULL, it only computes the length of the
 compressed buffer B<out> and write it to B<*outlen>. It returns 1 on success
 and 0 on error.
 
-SSL_cert_decompress_cb_fn is a pointer to a function that performs
+B<SSL_cert_decompress_cb_fn> is a pointer to a function that performs
 decompression. The compressed data is passed as B<in> with length B<inlen>
 and the decompressed result must be exactly B<outlen> bytes long. It returns
 1 on success, in which case B<*out> must be set to the result of decompressing
