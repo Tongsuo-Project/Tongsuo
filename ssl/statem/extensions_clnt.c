@@ -832,6 +832,7 @@ EXT_RETURN tls_construct_ctos_early_data(SSL *s, WPACKET *pkt,
         OPENSSL_free(s->psksession_id);
         s->psksession_id = OPENSSL_memdup(id, idlen);
         if (s->psksession_id == NULL) {
+            s->psksession_id_len = 0;
             SSLfatal(s, SSL_AD_INTERNAL_ERROR,
                      SSL_F_TLS_CONSTRUCT_CTOS_EARLY_DATA, ERR_R_INTERNAL_ERROR);
             return EXT_RETURN_FAIL;
@@ -1433,6 +1434,7 @@ int tls_parse_stoc_ec_pt_formats(SSL *s, PACKET *pkt, unsigned int context,
         OPENSSL_free(s->ext.peer_ecpointformats);
         s->ext.peer_ecpointformats = OPENSSL_malloc(ecpointformats_len);
         if (s->ext.peer_ecpointformats == NULL) {
+            s->ext.peer_ecpointformats_len = 0;
             SSLfatal(s, SSL_AD_INTERNAL_ERROR,
                      SSL_F_TLS_PARSE_STOC_EC_PT_FORMATS, ERR_R_INTERNAL_ERROR);
             return 0;
@@ -1550,8 +1552,13 @@ int tls_parse_stoc_sct(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
         s->ext.scts_len = (uint16_t)size;
         if (size > 0) {
             s->ext.scts = OPENSSL_malloc(size);
-            if (s->ext.scts == NULL
-                    || !PACKET_copy_bytes(pkt, s->ext.scts, size)) {
+            if (s->ext.scts == NULL) {
+                s->ext.scts_len = 0;
+                SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PARSE_STOC_SCT,
+                         ERR_R_MALLOC_FAILURE);
+                return 0;
+            }
+            if (!PACKET_copy_bytes(pkt, s->ext.scts, size)) {
                 SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PARSE_STOC_SCT,
                          ERR_R_INTERNAL_ERROR);
                 return 0;
@@ -1664,6 +1671,7 @@ int tls_parse_stoc_npn(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
     OPENSSL_free(s->ext.npn);
     s->ext.npn = OPENSSL_malloc(selected_len);
     if (s->ext.npn == NULL) {
+        s->ext.npn_len = 0;
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PARSE_STOC_NPN,
                  ERR_R_INTERNAL_ERROR);
         return 0;
@@ -1704,6 +1712,7 @@ int tls_parse_stoc_alpn(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
     OPENSSL_free(s->s3->alpn_selected);
     s->s3->alpn_selected = OPENSSL_malloc(len);
     if (s->s3->alpn_selected == NULL) {
+        s->s3->alpn_selected_len = 0;
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PARSE_STOC_ALPN,
                  ERR_R_INTERNAL_ERROR);
         return 0;
@@ -1735,6 +1744,7 @@ int tls_parse_stoc_alpn(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
         s->session->ext.alpn_selected =
             OPENSSL_memdup(s->s3->alpn_selected, s->s3->alpn_selected_len);
         if (s->session->ext.alpn_selected == NULL) {
+            s->session->ext.alpn_selected_len = 0;
             SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PARSE_STOC_ALPN,
                      ERR_R_INTERNAL_ERROR);
             return 0;
