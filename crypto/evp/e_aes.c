@@ -28,6 +28,7 @@ typedef struct {
     union {
         cbc128_f cbc;
         ctr128_f ctr;
+        ecb128_f ecb;
     } stream;
 } EVP_AES_KEY;
 
@@ -200,6 +201,9 @@ extern unsigned int OPENSSL_ia32cap_P[];
  */
 # define AESNI_CAPABLE   (OPENSSL_ia32cap_P[1]&(1<<(57-32)))
 
+#  define AES_GCM_ENC_BYTES 32
+#  define AES_GCM_DEC_BYTES 16
+
 int aesni_set_encrypt_key(const unsigned char *userKey, int bits,
                           AES_KEY *key);
 int aesni_set_decrypt_key(const unsigned char *userKey, int bits,
@@ -254,14 +258,15 @@ size_t aesni_gcm_encrypt(const unsigned char *in,
                          unsigned char *out,
                          size_t len,
                          const void *key, unsigned char ivec[16], u64 *Xi);
-#  define AES_gcm_encrypt aesni_gcm_encrypt
 size_t aesni_gcm_decrypt(const unsigned char *in,
                          unsigned char *out,
                          size_t len,
                          const void *key, unsigned char ivec[16], u64 *Xi);
-#  define AES_gcm_decrypt aesni_gcm_decrypt
 void gcm_ghash_avx(u64 Xi[2], const u128 Htable[16], const u8 *in,
                    size_t len);
+
+#  define AES_gcm_encrypt aesni_gcm_encrypt
+#  define AES_gcm_decrypt aesni_gcm_decrypt
 #  define AES_GCM_ASM(gctx)       (gctx->ctr==aesni_ctr32_encrypt_blocks && \
                                  gctx->gcm.ghash==gcm_ghash_avx)
 #  define AES_GCM_ASM2(gctx)      (gctx->gcm.block==(block128_f)aesni_encrypt && \
@@ -2569,7 +2574,78 @@ const EVP_CIPHER *EVP_aes_##keylen##_##mode(void) \
 #  define HWAES_encrypt aes_v8_encrypt
 #  define HWAES_decrypt aes_v8_decrypt
 #  define HWAES_cbc_encrypt aes_v8_cbc_encrypt
+#  define HWAES_ecb_encrypt aes_v8_ecb_encrypt
+#  if __ARM_MAX_ARCH__>=8
+#   define HWAES_xts_encrypt aes_v8_xts_encrypt
+#   define HWAES_xts_decrypt aes_v8_xts_decrypt
+#  endif
 #  define HWAES_ctr32_encrypt_blocks aes_v8_ctr32_encrypt_blocks
+#  define AES_PMULL_CAPABLE ((OPENSSL_armcap_P & ARMV8_PMULL) && (OPENSSL_armcap_P & ARMV8_AES))
+#  define AES_GCM_ENC_BYTES 512
+#  define AES_GCM_DEC_BYTES 512
+#  if __ARM_MAX_ARCH__>=8
+#   define AES_gcm_encrypt armv8_aes_gcm_encrypt
+#   define AES_gcm_decrypt armv8_aes_gcm_decrypt
+#   define AES_GCM_ASM(gctx) ((gctx)->ctr==aes_v8_ctr32_encrypt_blocks && \
+                              (gctx)->gcm.ghash==gcm_ghash_v8)
+size_t aes_gcm_enc_128_kernel(const uint8_t * plaintext, uint64_t plaintext_length, uint8_t * ciphertext,
+                              uint64_t *Xi, unsigned char ivec[16], const void *key);
+size_t aes_gcm_enc_192_kernel(const uint8_t * plaintext, uint64_t plaintext_length, uint8_t * ciphertext,
+                              uint64_t *Xi, unsigned char ivec[16], const void *key);
+size_t aes_gcm_enc_256_kernel(const uint8_t * plaintext, uint64_t plaintext_length, uint8_t * ciphertext,
+                              uint64_t *Xi, unsigned char ivec[16], const void *key);
+size_t aes_gcm_dec_128_kernel(const uint8_t * ciphertext, uint64_t plaintext_length, uint8_t * plaintext,
+                              uint64_t *Xi, unsigned char ivec[16], const void *key);
+size_t aes_gcm_dec_192_kernel(const uint8_t * ciphertext, uint64_t plaintext_length, uint8_t * plaintext,
+                              uint64_t *Xi, unsigned char ivec[16], const void *key);
+size_t aes_gcm_dec_256_kernel(const uint8_t * ciphertext, uint64_t plaintext_length, uint8_t * plaintext,
+                              uint64_t *Xi, unsigned char ivec[16], const void *key);
+static size_t armv8_aes_gcm_encrypt(const unsigned char *in, unsigned char *out,
+                                    size_t len, const void *key,
+                                    unsigned char ivec[16], u64 *Xi)
+{
+    size_t align_bytes = 0;
+    align_bytes = len - len % 16;
+
+    AES_KEY *aes_key = (AES_KEY *)key;
+
+    switch(aes_key->rounds) {
+        case 10:
+            aes_gcm_enc_128_kernel(in, align_bytes * 8, out, (uint64_t *)Xi, ivec, key);
+            break;
+        case 12:
+            aes_gcm_enc_192_kernel(in, align_bytes * 8, out, (uint64_t *)Xi, ivec, key);
+            break;
+        case 14:
+            aes_gcm_enc_256_kernel(in, align_bytes * 8, out, (uint64_t *)Xi, ivec, key);
+            break;
+    }
+    return align_bytes;
+}
+static size_t armv8_aes_gcm_decrypt(const unsigned char *in, unsigned char *out,
+                                    size_t len, const void *key,
+                                    unsigned char ivec[16], u64 *Xi)
+{
+    size_t align_bytes = 0;
+    align_bytes = len - len % 16;
+
+    AES_KEY *aes_key = (AES_KEY *)key;
+
+    switch(aes_key->rounds) {
+        case 10:
+            aes_gcm_dec_128_kernel(in, align_bytes * 8, out, (uint64_t *)Xi, ivec, key);
+            break;
+        case 12:
+            aes_gcm_dec_192_kernel(in, align_bytes * 8, out, (uint64_t *)Xi, ivec, key);
+            break;
+        case 14:
+            aes_gcm_dec_256_kernel(in, align_bytes * 8, out, (uint64_t *)Xi, ivec, key);
+            break;
+    }
+    return align_bytes;
+}
+void gcm_ghash_v8(u64 Xi[2],const u128 Htable[16],const u8 *inp, size_t len);
+#  endif
 # endif
 #endif
 
@@ -2585,8 +2661,11 @@ void HWAES_decrypt(const unsigned char *in, unsigned char *out,
 void HWAES_cbc_encrypt(const unsigned char *in, unsigned char *out,
                        size_t length, const AES_KEY *key,
                        unsigned char *ivec, const int enc);
+void HWAES_ecb_encrypt(const unsigned char *in, unsigned char *out,
+                       size_t length, const AES_KEY *key,
+                       const int enc);
 void HWAES_ctr32_encrypt_blocks(const unsigned char *in, unsigned char *out,
-                                size_t len, const AES_KEY *key,
+                                size_t len, const void *key,
                                 const unsigned char ivec[16]);
 void HWAES_xts_encrypt(const unsigned char *inp, unsigned char *out,
                        size_t len, const AES_KEY *key1,
@@ -2624,6 +2703,10 @@ static int aes_init_key(EVP_CIPHER_CTX *ctx, const unsigned char *key,
 # ifdef HWAES_cbc_encrypt
             if (mode == EVP_CIPH_CBC_MODE)
                 dat->stream.cbc = (cbc128_f) HWAES_cbc_encrypt;
+# endif
+# ifdef HWAES_ecb_encrypt
+            if (mode == EVP_CIPH_ECB_MODE)
+                dat->stream.ecb = (ecb128_f) HWAES_ecb_encrypt;
 # endif
         } else
 #endif
@@ -2663,6 +2746,11 @@ static int aes_init_key(EVP_CIPHER_CTX *ctx, const unsigned char *key,
 # ifdef HWAES_cbc_encrypt
         if (mode == EVP_CIPH_CBC_MODE)
             dat->stream.cbc = (cbc128_f) HWAES_cbc_encrypt;
+        else
+# endif
+# ifdef HWAES_ecb_encrypt
+        if (mode == EVP_CIPH_ECB_MODE)
+            dat->stream.ecb = (ecb128_f) HWAES_ecb_encrypt;
         else
 # endif
 # ifdef HWAES_ctr32_encrypt_blocks
@@ -2739,9 +2827,13 @@ static int aes_ecb_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
     if (len < bl)
         return 1;
 
-    for (i = 0, len -= bl; i <= len; i += bl)
-        (*dat->block) (in + i, out + i, &dat->ks);
-
+    if (dat->stream.ecb) {
+        (*dat->stream.ecb) (in, out, len, &dat->ks,
+                            EVP_CIPHER_CTX_encrypting(ctx));
+    } else {
+        for (i = 0, len -= bl; i <= len; i += bl)
+            (*dat->block) (in + i, out + i, &dat->ks);
+    }
     return 1;
 }
 
@@ -3103,7 +3195,7 @@ static int aes_gcm_tls_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
         if (gctx->ctr) {
             size_t bulk = 0;
 #if defined(AES_GCM_ASM)
-            if (len >= 32 && AES_GCM_ASM(gctx)) {
+            if (len >= AES_GCM_ENC_BYTES && AES_GCM_ASM(gctx)) {
                 if (CRYPTO_gcm128_encrypt(&gctx->gcm, NULL, NULL, 0))
                     return -1;
 
@@ -3121,7 +3213,7 @@ static int aes_gcm_tls_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
         } else {
             size_t bulk = 0;
 #if defined(AES_GCM_ASM2)
-            if (len >= 32 && AES_GCM_ASM2(gctx)) {
+            if (len >= AES_GCM_ENC_BYTES && AES_GCM_ASM2(gctx)) {
                 if (CRYPTO_gcm128_encrypt(&gctx->gcm, NULL, NULL, 0))
                     return -1;
 
@@ -3144,7 +3236,7 @@ static int aes_gcm_tls_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
         if (gctx->ctr) {
             size_t bulk = 0;
 #if defined(AES_GCM_ASM)
-            if (len >= 16 && AES_GCM_ASM(gctx)) {
+            if (len >= AES_GCM_DEC_BYTES && AES_GCM_ASM(gctx)) {
                 if (CRYPTO_gcm128_decrypt(&gctx->gcm, NULL, NULL, 0))
                     return -1;
 
@@ -3162,7 +3254,7 @@ static int aes_gcm_tls_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
         } else {
             size_t bulk = 0;
 #if defined(AES_GCM_ASM2)
-            if (len >= 16 && AES_GCM_ASM2(gctx)) {
+            if (len >= AES_GCM_DEC_BYTES && AES_GCM_ASM2(gctx)) {
                 if (CRYPTO_gcm128_decrypt(&gctx->gcm, NULL, NULL, 0))
                     return -1;
 
@@ -3213,7 +3305,7 @@ static int aes_gcm_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
             if (gctx->ctr) {
                 size_t bulk = 0;
 #if defined(AES_GCM_ASM)
-                if (len >= 32 && AES_GCM_ASM(gctx)) {
+                if (len >= AES_GCM_ENC_BYTES && AES_GCM_ASM(gctx)) {
                     size_t res = (16 - gctx->gcm.mres) % 16;
 
                     if (CRYPTO_gcm128_encrypt(&gctx->gcm, in, out, res))
@@ -3235,7 +3327,7 @@ static int aes_gcm_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
             } else {
                 size_t bulk = 0;
 #if defined(AES_GCM_ASM2)
-                if (len >= 32 && AES_GCM_ASM2(gctx)) {
+                if (len >= AES_GCM_ENC_BYTES && AES_GCM_ASM2(gctx)) {
                     size_t res = (16 - gctx->gcm.mres) % 16;
 
                     if (CRYPTO_gcm128_encrypt(&gctx->gcm, in, out, res))
@@ -3257,7 +3349,7 @@ static int aes_gcm_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
             if (gctx->ctr) {
                 size_t bulk = 0;
 #if defined(AES_GCM_ASM)
-                if (len >= 16 && AES_GCM_ASM(gctx)) {
+                if (len >= AES_GCM_DEC_BYTES && AES_GCM_ASM(gctx)) {
                     size_t res = (16 - gctx->gcm.mres) % 16;
 
                     if (CRYPTO_gcm128_decrypt(&gctx->gcm, in, out, res))
@@ -3279,7 +3371,7 @@ static int aes_gcm_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
             } else {
                 size_t bulk = 0;
 #if defined(AES_GCM_ASM2)
-                if (len >= 16 && AES_GCM_ASM2(gctx)) {
+                if (len >= AES_GCM_DEC_BYTES && AES_GCM_ASM2(gctx)) {
                     size_t res = (16 - gctx->gcm.mres) % 16;
 
                     if (CRYPTO_gcm128_decrypt(&gctx->gcm, in, out, res))
