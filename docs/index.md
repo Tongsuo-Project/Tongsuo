@@ -1,51 +1,44 @@
-# 概述
+## 概述
 
-BabaSSL是一个现代的密码学和通信安全协议的基础库。BabaSSL诞生于阿里巴巴集团和蚂蚁集团内部。
+BabaSSL是一个现代的密码学和通信安全协议的基础库。BabaSSL诞生于阿里巴巴集团和蚂蚁集团内部。BabaSSL提供如下主要的功能特性：
 
-# 特性
-
-BabaSSL提供如下主要的功能特性：
   * 支持[RFC 8998](https://datatracker.ietf.org/doc/html/rfc8998)，即TLS 1.3 + 国密单证书
   * 支持GB/T 38636-2020 TLCP标准，即双证书国密通信协议
   * 支持[QUIC](https://datatracker.ietf.org/doc/html/rfc9000) API
   * 支持Delegated Credentials功能，基于[draft-ietf-tls-subcerts-10](https://www.ietf.org/archive/id/draft-ietf-tls-subcerts-10.txt)
+  * 支持[RFC 8879](https://datatracker.ietf.org/doc/rfc8879/)，即证书压缩
   * ……
 
-# 文档
+## 教程和API文档
 
-BabaSSL的相关文档组织在[Github Wiki](https://github.com/BabaSSL/BabaSSL/wiki)和[BabaSSL官方网站](https://babassl.github.io/)上。
+### 教程
 
-# 报告安全缺陷
+除了传统的API使用说明之外，我们还提供了具体功能的使用教程，以方便用户更好的使用BabaSSL
 
-我们使用蚂蚁集团的威胁搜集系统，请访问如下地址进行安全缺陷的报告：
+#### 商用密码教程
 
- * https://security.alipay.com/
+* [NTLS使用手册](Tutorial/SM/ntls.md)
+* [TLS1.3 + 国密单证书(RFC8998)](Tutorial/SM/8998.md)
+* [BabaSSL签发SM2证书](Tutorial/SM/sm2-gen.md)
+* [BabaSSL签发SM2双证书](Tutorial/SM/dual-sm2-gen.md)
+
+#### Delegated Credentials教程
+
+* [Delegated Credentials代码示例](Tutorial/DC/sample.md)
+
+### man手册
+
+BabaSSL的API可以通过传统的man手册的方式查看
+
+* [man1](API/man1.md)
+* [man3](API/man3.md)
+* [man5](API/man5.md)
+* [man7](API/man7.md)
+
+## 报告安全缺陷
+
+我们使用蚂蚁集团的威胁报告系统，请访问如下地址进行安全缺陷的报告：
+
+ * [https://security.alipay.com/](https://security.alipay.com)
 
 注意：对于非安全相关的Bug，请使用Github Issues进行提交。
-
----
-
-# Overview
-
-BabaSSL is a modern cryptographic and secure protocol library developed by the amazing people in Alibaba Digital Economy.
-
-# Feature
-
-BabaSSL provides the following major features:
-  * Support [RFC 8998](https://datatracker.ietf.org/doc/html/rfc8998), Chinese SM cipher suites in TLS 1.3 protocol
-  * Support NTLS (formal GM dual-certificate protocol) handshake processing, according to GB/T 38636-2020 TLCP
-  * [QUIC](https://datatracker.ietf.org/doc/html/rfc9000) API support
-  * Support delegated credentials, according to [draft-ietf-tls-subcerts-10](https://www.ietf.org/archive/id/draft-ietf-tls-subcerts-10.txt)
-  * ...
-
-# Documentation
-
-Docs of BabaSSL are organized at two major places, [Github Wiki](https://github.com/BabaSSL/BabaSSL/wiki) and [BabaSSL Official Website](https://babassl.github.io/).
-
-# Reporting Security Bugs
-
-We use the following website for security bugs reporting:
-
-  * https://security.alipay.com/
-
-Note: for other non-security related bugs, please use Github Issues instead.

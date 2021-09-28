@@ -1,0 +1,220 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>SSL_CTX_set_quic_method</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:brew@mojave-2.local" />
+</head>
+
+<body>
+
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a>
+    <ul>
+      <li><a href="#OSSL_ENCRYPTION_LEVEL">OSSL_ENCRYPTION_LEVEL</a></li>
+      <li><a href="#SSL_QUIC_METHOD">SSL_QUIC_METHOD</a></li>
+    </ul>
+  </li>
+  <li><a href="#RETURN-VALUES">RETURN VALUES</a></li>
+  <li><a href="#SEE-ALSO">SEE ALSO</a></li>
+  <li><a href="#HISTORY">HISTORY</a></li>
+  <li><a href="#COPYRIGHT">COPYRIGHT</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>SSL_QUIC_METHOD, OSSL_ENCRYPTION_LEVEL, SSL_CTX_set_quic_method, SSL_set_quic_method, SSL_set_quic_transport_params, SSL_get_peer_quic_transport_params, SSL_quic_max_handshake_flight_len, SSL_quic_read_level, SSL_quic_write_level, SSL_provide_quic_data, SSL_process_quic_post_handshake, SSL_is_quic, SSL_get_peer_quic_transport_version, SSL_get_quic_transport_version, SSL_set_quic_transport_version, SSL_set_quic_use_legacy_codepoint, SSL_set_quic_early_data_enabled, SSL_set_quic_early_data_context - QUIC support</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS</h1>
+
+<pre><code> #include &lt;openssl/ssl.h&gt;
+
+ typedef struct ssl_quic_method_st SSL_QUIC_METHOD;
+ typedef enum ssl_encryption_level_t OSSL_ENCRYPTION_LEVEL;
+
+ int SSL_CTX_set_quic_method(SSL_CTX *ctx, const SSL_QUIC_METHOD *quic_method);
+ int SSL_set_quic_method(SSL *ssl, const SSL_QUIC_METHOD *quic_method);
+ int SSL_set_quic_transport_params(SSL *ssl,
+                                   const uint8_t *params,
+                                   size_t params_len);
+ void SSL_get_peer_quic_transport_params(const SSL *ssl,
+                                         const uint8_t **out_params,
+                                         size_t *out_params_len);
+ size_t SSL_quic_max_handshake_flight_len(const SSL *ssl, OSSL_ENCRYPTION_LEVEL level);
+ OSSL_ENCRYPTION_LEVEL SSL_quic_read_level(const SSL *ssl);
+ OSSL_ENCRYPTION_LEVEL SSL_quic_write_level(const SSL *ssl);
+ int SSL_provide_quic_data(SSL *ssl, OSSL_ENCRYPTION_LEVEL level,
+                           const uint8_t *data, size_t len);
+ int SSL_process_quic_post_handshake(SSL *ssl);
+ int SSL_is_quic(SSL *ssl);
+
+ void SSL_set_quic_use_legacy_codepoint(SSL *ssl, int use_legacy);
+ void SSL_set_quic_transport_version(SSL *ssl, int version);
+ int SSL_get_quic_transport_version(const SSL *ssl);
+ int SSL_get_peer_quic_transport_version(const SSL *ssl);
+ void SSL_set_quic_early_data_enabled(SSL *ssl, int enabled);
+ int SSL_set_quic_early_data_context(SSL *ssl,
+                                     const uint8_t *context,
+                                     size_t context_len);</code></pre>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>SSL_CTX_set_quic_method() and SSL_set_quic_method() configures the QUIC methods. This should only be configured with a minimum version of TLS 1.3. <b>quic_method</b> must remain valid for the lifetime of <b>ctx</b> or <b>ssl</b>. Calling this disables the SSL_OP_ENABLE_MIDDLEBOX_COMPAT option, which is not required for QUIC.</p>
+
+<p>SSL_set_quic_transport_params() configures <b>ssl</b> to send <b>params</b> (of length <b>params_len</b>) in the quic_transport_parameters extension in either the ClientHello or EncryptedExtensions handshake message. This extension will only be sent if the TLS version is at least 1.3, and for a server, only if the client sent the extension. The buffer pointed to by <b>params</b> only need be valid for the duration of the call to this function.</p>
+
+<p>SSL_get_peer_quic_transport_params() provides the caller with the value of the quic_transport_parameters extension sent by the peer. A pointer to the buffer containing the TransportParameters will be put in <b>*out_params</b>, and its length in <b>*out_params_len</b>. This buffer will be valid for the lifetime of the <b>ssl</b>. If no params were received from the peer, <b>*out_params_len</b> will be 0.</p>
+
+<p>SSL_quic_max_handshake_flight_len() returns the maximum number of bytes that may be received at the given encryption level. This function should be used to limit buffering in the QUIC implementation.</p>
+
+<p>See https://tools.ietf.org/html/draft-ietf-quic-transport-27#section-4.</p>
+
+<p>SSL_quic_read_level() returns the current read encryption level.</p>
+
+<p>SSL_quic_write_level() returns the current write encryption level.</p>
+
+<p>SSL_provide_quic_data() is used to provide data from QUIC CRYPTO frames to the state machine, at a particular encryption level <b>level</b>. It is an error to call this function outside of the handshake or with an encryption level other than the current read level. The application must buffer and consolidate any frames with less than four bytes of content. It returns one on success and zero on error.</p>
+
+<p>SSL_process_quic_post_handshake() processes any data that QUIC has provided after the handshake has completed. This includes NewSessionTicket messages sent by the server.</p>
+
+<p>SSL_is_quic() indicates whether a connection uses QUIC. A given <b>SSL</b> or <b>SSL_CTX</b> can only be used with QUIC or TLS, but not both.</p>
+
+<p>SSL_set_quic_use_legacy_codepoint() specifies the legacy extension codepoint in manner compatible with some versions of BoringSSL.</p>
+
+<p>SSL_set_quic_transport_version() specifies the quic transport version that allows for backwards and forwards compatibility. If set to 0 (default) the server will use the highest version the client sent. If set to 0 (default) the client will send both extensions.</p>
+
+<p>SSL_get_quic_transport_version() returns the value set by SSL_set_quic_transport_version().</p>
+
+<p>SSL_get_peer_quic_transport_version() returns the version the that was negotiated.</p>
+
+<p>SSL_set_quic_early_data_enabled() enables QUIC early data if a nonzero value is passed. Clients must set a resumed session before calling this function. Servers must additionally call SSL_CTX_set_max_early_data() or SSL_set_max_early_data() with 0xffffffffu as the argument, so that any issued session tickets indicate that server is able to accept early data.</p>
+
+<p>SSL_set_quic_early_data_context configures a context string in QUIC servers for accepting early data. If a resumption connection offers early data, the server will check if the value matches that of the connection which minted the ticket. If not, resumption still succeeds but early data is rejected. This should include all QUIC Transport Parameters except ones specified that the client MUST NOT remember. This should also include any application protocol-specific state. For HTTP/3, this should be the serialized server SETTINGS frame and the QUIC Transport Parameters (except the stateless reset token). This function may be called before SSL_do_handshake or during server certificate selection. =head1 NOTES</p>
+
+<p>These APIs are implementations of BoringSSL&#39;s QUIC APIs.</p>
+
+<p>QUIC acts as an underlying transport for the TLS 1.3 handshake. The following functions allow a QUIC implementation to serve as the underlying transport as described in draft-ietf-quic-tls.</p>
+
+<p>When configured for QUIC, SSL_do_handshake() will drive the handshake as before, but it will not use the configured <b>BIO</b>. It will call functions from the configured <b>SSL_QUIC_METHOD</b> to configure secrets and send data. If data is needed from the peer, it will return <b>SSL_ERROR_WANT_READ</b>. When received, the caller should call SSL_provide_quic_data() and then SSL_do_handshake() to continue the handshake. After the handshake is complete, the caller should call SSL_provide_quic_data() for any post-handshake data, followed by SSL_process_quic_post_handshake() to process it. It is an error to call SSL_read()/SSL_read_ex() and SSL_write()/SSL_write_ex() in QUIC.</p>
+
+<p>Note that secrets for an encryption level may be available to QUIC before the level is active in TLS. Callers should use SSL_quic_read_level() to determine the active read level for SSL_provide_quic_data(). SSL_do_handshake() will pass the active write level to add_handshake_data() when writing data. Callers can use SSL_quic_write_level() to query the active write level when generating their own errors.</p>
+
+<p>See https://tools.ietf.org/html/draft-ietf-quic-tls-27#section-4.1 for more details.</p>
+
+<p>To avoid DoS attacks, the QUIC implementation must limit the amount of data being queued up. The implementation can call SSL_quic_max_handshake_flight_len() to get the maximum buffer length at each encryption level.</p>
+
+<p>draft-ietf-quic-tls defines a new TLS extension &quot;quic_transport_parameters&quot; used by QUIC for each endpoint to unilaterally declare its supported transport parameters. The contents of the extension are specified in https://tools.ietf.org/html/draft-ietf-quic-transport-27#section-18 (as a sequence of tag/length/value parameters) along with the interpretation of the various parameters and the rules for their processing.</p>
+
+<p>OpenSSL handles this extension as an opaque byte string. The caller is responsible for serializing and parsing it.</p>
+
+<h2 id="OSSL_ENCRYPTION_LEVEL">OSSL_ENCRYPTION_LEVEL</h2>
+
+<p><b>OSSL_ENCRYPTION_LEVEL</b> (<b>enum ssl_encryption_level_t</b>) represents the encryption levels:</p>
+
+<dl>
+
+<dt id="ssl_encryption_initial">ssl_encryption_initial</dt>
+<dd>
+
+<p>The initial encryption level that is used for client and server hellos.</p>
+
+</dd>
+<dt id="ssl_encryption_early_data">ssl_encryption_early_data</dt>
+<dd>
+
+<p>The encryption level for early data. This is a write-level for the client and a read-level for the server.</p>
+
+</dd>
+<dt id="ssl_encryption_handshake">ssl_encryption_handshake</dt>
+<dd>
+
+<p>The encryption level for the remainder of the handshake.</p>
+
+</dd>
+<dt id="ssl_encryption_application">ssl_encryption_application</dt>
+<dd>
+
+<p>The encryption level for the application data.</p>
+
+</dd>
+</dl>
+
+<h2 id="SSL_QUIC_METHOD">SSL_QUIC_METHOD</h2>
+
+<p>The <b>SSL_QUIC_METHOD</b> (<b>struct ssl_quic_method_st</b>) describes the QUIC methods.</p>
+
+<pre><code> struct ssl_quic_method_st {
+     int (*set_read_secret)(SSL *ssl, enum ssl_encryption_level_t level,
+                            const SSL_CIPHER *cipher, const uint8_t *secret,
+                            size_t secret_len);
+     int (*set_write_secret)(SSL *ssl, enum ssl_encryption_level_t level,
+                             const SSL_CIPHER *cipher, const uint8_t *secret,
+                             size_t secret_len);
+     int (*add_handshake_data)(SSL *ssl, enum ssl_encryption_level_t level,
+                               const uint8_t *data, size_t len);
+     int (*flush_flight)(SSL *ssl);
+     int (*send_alert)(SSL *ssl, enum ssl_encryption_level_t level, uint8_t alert);
+ };
+ typedef struct ssl_quic_method_st SSL_QUIC_METHOD;</code></pre>
+
+<p>set_read_secret() configures the read secret and cipher suite for the given encryption level. It returns one on success and zero to terminate the handshake with an error. It will be called at most once per encryption level.</p>
+
+<p>BoringSSL will not release read keys before QUIC may use them. Once a level has been initialized, QUIC may begin processing data from it. Handshake data should be passed to <b>SSL_provide_quic_data</b> and application data (if <b>level</b> is <b>ssl_encryption_early_data</b> or <b>ssl_encryption_application</b>) may be processed according to the rules of the QUIC protocol.</p>
+
+<p>QUIC ACKs packets at the same encryption level they were received at, except that client <b>ssl_encryption_early_data</b> (0-RTT) packets trigger server <b>ssl_encryption_application</b> (1-RTT) ACKs. BoringSSL will always install ACK-writing keys with <b>set_write_secret</b> before the packet-reading keys with <b>set_read_secret</b>. This ensures the caller can always ACK any packet it decrypts. Note this means the server installs 1-RTT write keys before 0-RTT read keys.</p>
+
+<p>The converse is not true. An encryption level may be configured with write secrets a roundtrip before the corresponding secrets for reading ACKs is available.</p>
+
+<p>set_write_secret behaves like <b>set_read_secret</b> but configures the write secret and cipher suite for the given encryption level. It will be called at most once per encryption level.</p>
+
+<p>BoringSSL will not release write keys before QUIC may use them. If <b>level</b> is <b>ssl_encryption_early_data</b> or <b>ssl_encryption_application</b>, QUIC may begin sending application data at <b>level</b>. However, note that BoringSSL configures server <b>ssl_encryption_application</b> write keys before the client Finished. This allows QUIC to send half-RTT data, but the handshake is not confirmed at this point and, if requesting client certificates, the client is not yet authenticated.</p>
+
+<p>See <b>set_read_secret</b> for additional invariants between packets and their ACKs.</p>
+
+<p>Note that, on 0-RTT reject, the <b>ssl_encryption_early_data</b> write secret may use a different cipher suite from the other keys.</p>
+
+<p>add_handshake_data() adds handshake data to the current flight at the given encryption level. It returns one on success and zero on error.</p>
+
+<p>OpenSSL will pack data from a single encryption level together, but a single handshake flight may include multiple encryption levels. Callers should defer writing data to the network until flush_flight() to better pack QUIC packets into transport datagrams.</p>
+
+<p>flush_flight() is called when the current flight is complete and should be written to the transport. Note a flight may contain data at several encryption levels.</p>
+
+<p>send_alert() sends a fatal alert at the specified encryption level.</p>
+
+<p>All QUIC methods return 1 on success and 0 on error.</p>
+
+<h1 id="RETURN-VALUES">RETURN VALUES</h1>
+
+<p>SSL_CTX_set_quic_method(), SSL_set_quic_method(), SSL_set_quic_transport_params(), SSL_process_quic_post_handshake(), and SSL_set_quic_early_data_context() return 1 on success, and 0 on error.</p>
+
+<p>SSL_quic_read_level() and SSL_quic_write_level() return the current encryption level as an <b>OSSL_ENCRYPTION_LEVEL</b> (<b>enum ssl_encryption_level_t</b>).</p>
+
+<p>SSL_quic_max_handshake_flight_len() returns the maximum length in bytes of a flight for a given encryption level.</p>
+
+<p>SSL_is_quic() returns 1 if QUIC is being used, 0 if not.</p>
+
+<h1 id="SEE-ALSO">SEE ALSO</h1>
+
+<p><a href="../man7/ssl.html">ssl(7)</a>, <a href="../man3/SSL_CIPHER_get_prf_nid.html">SSL_CIPHER_get_prf_nid(3)</a>, <a href="../man3/SSL_do_handshake.html">SSL_do_handshake(3)</a></p>
+
+<h1 id="HISTORY">HISTORY</h1>
+
+<p>These functions were added in OpenSSL 3.0.0.</p>
+
+<h1 id="COPYRIGHT">COPYRIGHT</h1>
+
+<p>Copyright 2019 The OpenSSL Project Authors. All Rights Reserved.</p>
+
+<p>Licensed under the Apache License 2.0 (the &quot;License&quot;). You may not use this file except in compliance with the License. You can obtain a copy in the file LICENSE in the source distribution or at <a href="https://www.openssl.org/source/license.html">https://www.openssl.org/source/license.html</a>.</p>
+
+
+</body>
+
+</html>
+
+
