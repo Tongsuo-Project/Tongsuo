@@ -3,7 +3,8 @@ name: Notify CI
 on:
   push:
     branches:
-      master
+      - master
+      - 8.2-stable
 
 jobs:
   check_update:
@@ -16,5 +17,5 @@ jobs:
           repo: BabaSSL/babassl.github.io
           token: ${{ secrets.BUILD_DOCS_TOKEN }}
           inputs: '{ "name": "build docs"}'
-          ref: refs/heads/master
+          ref: ${{ github.event.pull_request.head.ref }}
 
