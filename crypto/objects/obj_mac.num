@@ -1200,9 +1200,9 @@ kx_sm2dhe		1199
 auth_sm2		1200
 delegation_usage		1201
 zuc		1202
-zuc_128_eea3		1203
-zuc_128_eia3		1204
 sshkdf		1203
-kbkdf          1204
-krb5kdf                1205
-sskdf          1206
+kbkdf		1204
+krb5kdf		1205
+sskdf		1206
+zuc_128_eea3		1207
+zuc_128_eia3		1208

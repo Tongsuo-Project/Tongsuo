@@ -2290,12 +2290,12 @@ static const ASN1_OBJECT nid_objs[NUM_NID] = {
     {"AuthSM2", "auth-sm2", NID_auth_sm2},
     {"delegationUsage", "X509v3 Delegation Usage", NID_delegation_usage, 9, &so[7785]},
     {"ZUC", "zuc", NID_zuc, 8, &so[7794]},
-    {"ZUC-128-EEA3", "zuc-128-eea3", NID_zuc_128_eea3, 8, &so[7802]},
-    {"ZUC-128-EIA3", "zuc-128-eia3", NID_zuc_128_eia3, 8, &so[7810]},
     {"SSHKDF", "sshkdf", NID_sshkdf},
     {"KBKDF", "kbkdf", NID_kbkdf},
     {"KRB5KDF", "krb5kdf", NID_krb5kdf},
     {"SSKDF", "sskdf", NID_sskdf},
+    {"ZUC-128-EEA3", "zuc-128-eea3", NID_zuc_128_eea3, 8, &so[7802]},
+    {"ZUC-128-EIA3", "zuc-128-eia3", NID_zuc_128_eia3, 8, &so[7810]},
 };
 
 #define NUM_SN 1200
@@ -2601,8 +2601,8 @@ static const unsigned int sn_objs[NUM_SN] = {
      185,    /* "X9cm" */
      125,    /* "ZLIB" */
     1202,    /* "ZUC" */
-    1203,    /* "ZUC-128-EEA3" */
-    1204,    /* "ZUC-128-EIA3" */
+    1207,    /* "ZUC-128-EEA3" */
+    1208,    /* "ZUC-128-EIA3" */
      478,    /* "aRecord" */
      289,    /* "aaControls" */
      287,    /* "ac-auditEntity" */
@@ -4298,8 +4298,8 @@ static const unsigned int ln_objs[NUM_LN] = {
      957,    /* "jurisdictionCountryName" */
      955,    /* "jurisdictionLocalityName" */
      956,    /* "jurisdictionStateOrProvinceName" */
-     150,    /* "keyBag" */
     1204,    /* "kbkdf" */
+     150,    /* "keyBag" */
      773,    /* "kisa" */
     1205,    /* "krb5kdf" */
     1063,    /* "kx-any" */
@@ -4702,8 +4702,8 @@ static const unsigned int ln_objs[NUM_LN] = {
      160,    /* "x509Crl" */
      125,    /* "zlib compression" */
     1202,    /* "zuc" */
-    1203,    /* "zuc-128-eea3" */
-    1204,    /* "zuc-128-eia3" */
+    1207,    /* "zuc-128-eea3" */
+    1208,    /* "zuc-128-eia3" */
 };
 
 #define NUM_OBJ 1078
@@ -5180,8 +5180,8 @@ static const unsigned int obj_objs[NUM_OBJ] = {
     1143,    /* OBJ_sm3                          1 2 156 10197 1 401 */
     1197,    /* OBJ_SM2_with_SM3                 1 2 156 10197 1 501 */
     1144,    /* OBJ_sm3WithRSAEncryption         1 2 156 10197 1 504 */
-    1203,    /* OBJ_zuc_128_eea3                 1 2 156 10197 1 801 */
-    1204,    /* OBJ_zuc_128_eia3                 1 2 156 10197 1 802 */
+    1207,    /* OBJ_zuc_128_eea3                 1 2 156 10197 1 801 */
+    1208,    /* OBJ_zuc_128_eia3                 1 2 156 10197 1 802 */
      776,    /* OBJ_seed_ecb                     1 2 410 200004 1 3 */
      777,    /* OBJ_seed_cbc                     1 2 410 200004 1 4 */
      779,    /* OBJ_seed_cfb128                  1 2 410 200004 1 5 */
