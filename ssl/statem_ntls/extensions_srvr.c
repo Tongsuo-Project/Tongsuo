@@ -33,41 +33,6 @@
                          + SSL_MAX_SSL_SESSION_ID_LENGTH + 2 + 1 + 2 + 6 + 4 \
                          + MAX_COOKIE_SIZE)
 
-/*
- * Parse the client's renegotiation binding and abort if it's not right
- */
-int tls_parse_ctos_renegotiate_ntls(SSL *s, PACKET *pkt, unsigned int context,
-                               X509 *x, size_t chainidx)
-{
-    unsigned int ilen;
-    const unsigned char *data;
-
-    /* Parse the length byte */
-    if (!PACKET_get_1(pkt, &ilen)
-        || !PACKET_get_bytes(pkt, &data, ilen)) {
-        SSLfatal_ntls(s, SSL_AD_DECODE_ERROR, SSL_F_TLS_PARSE_CTOS_RENEGOTIATE_NTLS,
-                 SSL_R_RENEGOTIATION_ENCODING_ERR);
-        return 0;
-    }
-
-    /* Check that the extension matches */
-    if (ilen != s->s3->previous_client_finished_len) {
-        SSLfatal_ntls(s, SSL_AD_HANDSHAKE_FAILURE, SSL_F_TLS_PARSE_CTOS_RENEGOTIATE_NTLS,
-                 SSL_R_RENEGOTIATION_MISMATCH);
-        return 0;
-    }
-
-    if (memcmp(data, s->s3->previous_client_finished,
-               s->s3->previous_client_finished_len)) {
-        SSLfatal_ntls(s, SSL_AD_HANDSHAKE_FAILURE, SSL_F_TLS_PARSE_CTOS_RENEGOTIATE_NTLS,
-                 SSL_R_RENEGOTIATION_MISMATCH);
-        return 0;
-    }
-
-    s->s3->send_connection_binding = 1;
-
-    return 1;
-}
 
 /*-
  * The servername extension is treated as follows:
@@ -1132,34 +1097,6 @@ int tls_parse_ctos_post_handshake_auth_ntls(SSL *s, PACKET *pkt, unsigned int co
     s->post_handshake_auth = SSL_PHA_EXT_RECEIVED;
 
     return 1;
-}
-
-/*
- * Add the server's renegotiation binding
- */
-EXT_RETURN tls_construct_stoc_renegotiate_ntls(SSL *s, WPACKET *pkt,
-                                          unsigned int context, X509 *x,
-                                          size_t chainidx)
-{
-    if (!s->s3->send_connection_binding)
-        return EXT_RETURN_NOT_SENT;
-
-    /* Still add this even if SSL_OP_NO_RENEGOTIATION is set */
-    if (!WPACKET_put_bytes_u16(pkt, TLSEXT_TYPE_renegotiate)
-            || !WPACKET_start_sub_packet_u16(pkt)
-            || !WPACKET_start_sub_packet_u8(pkt)
-            || !WPACKET_memcpy(pkt, s->s3->previous_client_finished,
-                               s->s3->previous_client_finished_len)
-            || !WPACKET_memcpy(pkt, s->s3->previous_server_finished,
-                               s->s3->previous_server_finished_len)
-            || !WPACKET_close(pkt)
-            || !WPACKET_close(pkt)) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_STOC_RENEGOTIATE_NTLS,
-                 ERR_R_INTERNAL_ERROR);
-        return EXT_RETURN_FAIL;
-    }
-
-    return EXT_RETURN_SENT;
 }
 
 EXT_RETURN tls_construct_stoc_server_name_ntls(SSL *s, WPACKET *pkt,

@@ -483,6 +483,13 @@ static int test_handshake(int idx)
         if (!TEST_ptr(server_ctx)) {
             goto err;
         }
+
+        if (test_ctx->extra.server.servername_callback !=
+            SSL_TEST_SERVERNAME_CB_NONE) {
+            if (!TEST_ptr(server2_ctx = SSL_CTX_new(NTLS_server_method())))
+                goto err;
+        }
+
         client_ctx = SSL_CTX_new(NTLS_client_method());
         if (!TEST_ptr(client_ctx)) {
             goto err;
