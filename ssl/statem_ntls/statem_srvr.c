@@ -408,26 +408,6 @@ WORK_STATE ossl_statem_server_pre_work_ntls(SSL *s, WORK_STATE wst)
     return WORK_FINISHED_CONTINUE;
 }
 
-static ossl_inline int conn_is_closed(void)
-{
-    switch (get_last_sys_error()) {
-# if defined(EPIPE)
-    case EPIPE:
-        return 1;
-# endif
-# if defined(ECONNRESET)
-    case ECONNRESET:
-        return 1;
-# endif
-# if defined(WSAECONNRESET)
-    case WSAECONNRESET:
-        return 1;
-# endif
-    default:
-        return 0;
-    }
-}
-
 /*
  * Perform any work that needs to be done after sending a message from the
  * server to the client.
