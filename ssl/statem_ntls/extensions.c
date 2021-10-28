@@ -12,7 +12,6 @@
 
 # if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
      && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-static int final_renegotiate(SSL *s, unsigned int context, int sent);
 static int init_server_name(SSL *s, unsigned int context);
 static int final_server_name(SSL *s, unsigned int context, int sent);
 # ifndef OPENSSL_NO_EC
@@ -115,14 +114,7 @@ typedef struct extensions_definition_st {
  */
 # define INVALID_EXTENSION { 0x10000, 0, NULL, NULL, NULL, NULL, NULL, NULL }
 static const EXTENSION_DEFINITION ext_defs[] = {
-    {
-        TLSEXT_TYPE_renegotiate,
-        SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS1_2_SERVER_HELLO
-        | SSL_EXT_SSL3_ALLOWED | SSL_EXT_TLS1_2_AND_BELOW_ONLY,
-        NULL, tls_parse_ctos_renegotiate_ntls, tls_parse_stoc_renegotiate_ntls,
-        tls_construct_stoc_renegotiate_ntls, tls_construct_ctos_renegotiate_ntls,
-        final_renegotiate
-    },
+    INVALID_EXTENSION,  /* TLSEXT_IDX_renegotiate */
     {
         TLSEXT_TYPE_server_name,
         SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS1_2_SERVER_HELLO
@@ -864,37 +856,6 @@ int tls_construct_extensions_ntls(SSL *s, WPACKET *pkt, unsigned int context,
  * finalisers |sent| is set to 1 if we saw the extension during parsing, and 0
  * otherwise. These functions return 1 on success or 0 on failure.
  */
-
-static int final_renegotiate(SSL *s, unsigned int context, int sent)
-{
-    if (!s->server) {
-        /*
-         * Check if we can connect to a server that doesn't support safe
-         * renegotiation
-         */
-        if (!(s->options & SSL_OP_LEGACY_SERVER_CONNECT)
-                && !(s->options & SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION)
-                && !sent) {
-            SSLfatal_ntls(s, SSL_AD_HANDSHAKE_FAILURE, SSL_F_FINAL_RENEGOTIATE,
-                     SSL_R_UNSAFE_LEGACY_RENEGOTIATION_DISABLED);
-            return 0;
-        }
-
-        return 1;
-    }
-
-    /* Need RI if renegotiating */
-    if (s->renegotiate
-            && !(s->options & SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION)
-            && !sent) {
-        SSLfatal_ntls(s, SSL_AD_HANDSHAKE_FAILURE, SSL_F_FINAL_RENEGOTIATE,
-                 SSL_R_UNSAFE_LEGACY_RENEGOTIATION_DISABLED);
-        return 0;
-    }
-
-
-    return 1;
-}
 
 static int init_server_name(SSL *s, unsigned int context)
 {
