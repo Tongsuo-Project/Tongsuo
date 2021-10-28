@@ -191,8 +191,6 @@ __owur int tls_psk_do_binder_ntls(SSL *s, const EVP_MD *md,
                              SSL_SESSION *sess, int sign, int external);
 
 /* Server Extension processing */
-int tls_parse_ctos_renegotiate_ntls(SSL *s, PACKET *pkt, unsigned int context,
-                               X509 *x, size_t chainidx);
 int tls_parse_ctos_server_name_ntls(SSL *s, PACKET *pkt, unsigned int context,
                                X509 *x, size_t chainidx);
 int tls_parse_ctos_maxfragmentlen_ntls(SSL *s, PACKET *pkt, unsigned int context,
@@ -239,10 +237,6 @@ int tls_parse_ctos_psk_ntls(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
                        size_t chainidx);
 int tls_parse_ctos_post_handshake_auth_ntls(SSL *, PACKET *pkt, unsigned int context,
                                        X509 *x, size_t chainidx);
-
-EXT_RETURN tls_construct_stoc_renegotiate_ntls(SSL *s, WPACKET *pkt,
-                                          unsigned int context, X509 *x,
-                                          size_t chainidx);
 EXT_RETURN tls_construct_stoc_server_name_ntls(SSL *s, WPACKET *pkt,
                                           unsigned int context, X509 *x,
                                           size_t chainidx);
@@ -303,8 +297,6 @@ EXT_RETURN tls_construct_stoc_psk_ntls(SSL *s, WPACKET *pkt, unsigned int contex
                                   X509 *x, size_t chainidx);
 
 /* Client Extension processing */
-EXT_RETURN tls_construct_ctos_renegotiate_ntls(SSL *s, WPACKET *pkt, unsigned int context,
-                                   X509 *x, size_t chainidx);
 EXT_RETURN tls_construct_ctos_server_name_ntls(SSL *s, WPACKET *pkt, unsigned int context,
                                    X509 *x, size_t chainidx);
 EXT_RETURN tls_construct_ctos_maxfragmentlen_ntls(SSL *s, WPACKET *pkt, unsigned int context,
@@ -369,8 +361,6 @@ EXT_RETURN tls_construct_ctos_psk_ntls(SSL *s, WPACKET *pkt, unsigned int contex
 EXT_RETURN tls_construct_ctos_post_handshake_auth_ntls(SSL *s, WPACKET *pkt, unsigned int context,
                                                   X509 *x, size_t chainidx);
 
-int tls_parse_stoc_renegotiate_ntls(SSL *s, PACKET *pkt, unsigned int context,
-                                   X509 *x, size_t chainidx);
 int tls_parse_stoc_server_name_ntls(SSL *s, PACKET *pkt, unsigned int context,
                                X509 *x, size_t chainidx);
 int tls_parse_stoc_early_data_ntls(SSL *s, PACKET *pkt, unsigned int context,

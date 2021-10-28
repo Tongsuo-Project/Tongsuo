@@ -9,27 +9,6 @@
 
 #if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
      && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-EXT_RETURN tls_construct_ctos_renegotiate_ntls(SSL *s, WPACKET *pkt,
-                                          unsigned int context, X509 *x,
-                                          size_t chainidx)
-{
-    /* Add RI if renegotiating */
-    if (!s->renegotiate)
-        return EXT_RETURN_NOT_SENT;
-
-    if (!WPACKET_put_bytes_u16(pkt, TLSEXT_TYPE_renegotiate)
-            || !WPACKET_start_sub_packet_u16(pkt)
-            || !WPACKET_sub_memcpy_u8(pkt, s->s3->previous_client_finished,
-                               s->s3->previous_client_finished_len)
-            || !WPACKET_close(pkt)) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_CTOS_RENEGOTIATE_NTLS,
-                 ERR_R_INTERNAL_ERROR);
-        return EXT_RETURN_FAIL;
-    }
-
-    return EXT_RETURN_SENT;
-}
-
 EXT_RETURN tls_construct_ctos_server_name_ntls(SSL *s, WPACKET *pkt,
                                           unsigned int context, X509 *x,
                                           size_t chainidx)
@@ -1129,69 +1108,6 @@ EXT_RETURN tls_construct_ctos_post_handshake_auth_ntls(SSL *s, WPACKET *pkt,
 # else
     return EXT_RETURN_NOT_SENT;
 # endif
-}
-
-
-/*
- * Parse the server's renegotiation binding and abort if it's not right
- */
-int tls_parse_stoc_renegotiate_ntls(SSL *s, PACKET *pkt, unsigned int context,
-                               X509 *x, size_t chainidx)
-{
-    size_t expected_len = s->s3->previous_client_finished_len
-        + s->s3->previous_server_finished_len;
-    size_t ilen;
-    const unsigned char *data;
-
-    /* Check for logic errors */
-    if (!ossl_assert(expected_len == 0
-                     || s->s3->previous_client_finished_len != 0)
-        || !ossl_assert(expected_len == 0
-                        || s->s3->previous_server_finished_len != 0)) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PARSE_STOC_RENEGOTIATE_NTLS,
-                 ERR_R_INTERNAL_ERROR);
-        return 0;
-    }
-
-    /* Parse the length byte */
-    if (!PACKET_get_1_len(pkt, &ilen)) {
-        SSLfatal_ntls(s, SSL_AD_DECODE_ERROR, SSL_F_TLS_PARSE_STOC_RENEGOTIATE_NTLS,
-                 SSL_R_RENEGOTIATION_ENCODING_ERR);
-        return 0;
-    }
-
-    /* Consistency check */
-    if (PACKET_remaining(pkt) != ilen) {
-        SSLfatal_ntls(s, SSL_AD_DECODE_ERROR, SSL_F_TLS_PARSE_STOC_RENEGOTIATE_NTLS,
-                 SSL_R_RENEGOTIATION_ENCODING_ERR);
-        return 0;
-    }
-
-    /* Check that the extension matches */
-    if (ilen != expected_len) {
-        SSLfatal_ntls(s, SSL_AD_ILLEGAL_PARAMETER, SSL_F_TLS_PARSE_STOC_RENEGOTIATE_NTLS,
-                 SSL_R_RENEGOTIATION_MISMATCH);
-        return 0;
-    }
-
-    if (!PACKET_get_bytes(pkt, &data, s->s3->previous_client_finished_len)
-        || memcmp(data, s->s3->previous_client_finished,
-                  s->s3->previous_client_finished_len) != 0) {
-        SSLfatal_ntls(s, SSL_AD_ILLEGAL_PARAMETER, SSL_F_TLS_PARSE_STOC_RENEGOTIATE_NTLS,
-                 SSL_R_RENEGOTIATION_MISMATCH);
-        return 0;
-    }
-
-    if (!PACKET_get_bytes(pkt, &data, s->s3->previous_server_finished_len)
-        || memcmp(data, s->s3->previous_server_finished,
-                  s->s3->previous_server_finished_len) != 0) {
-        SSLfatal_ntls(s, SSL_AD_ILLEGAL_PARAMETER, SSL_F_TLS_PARSE_STOC_RENEGOTIATE_NTLS,
-                 SSL_R_RENEGOTIATION_MISMATCH);
-        return 0;
-    }
-    s->s3->send_connection_binding = 1;
-
-    return 1;
 }
 
 /* Parse the server's max fragment len extension packet */
