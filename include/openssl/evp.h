@@ -62,6 +62,7 @@
 # define EVP_PKEY_ED25519 NID_ED25519
 # define EVP_PKEY_X448 NID_X448
 # define EVP_PKEY_ED448 NID_ED448
+# define EVP_PKEY_EIA3 NID_zuc_128_eia3
 
 #ifdef  __cplusplus
 extern "C" {
@@ -433,6 +434,12 @@ typedef int (EVP_PBE_KEYGEN) (EVP_CIPHER_CTX *ctx, const char *pass,
 #  define EVP_PKEY_assign_POLY1305(pkey,polykey) EVP_PKEY_assign((pkey),EVP_PKEY_POLY1305,\
                                         (char *)(polykey))
 # endif
+
+# ifndef OPENSSL_NO_ZUC
+#  define EVP_PKEY_assign_EIA3(pkey,eia3key) EVP_PKEY_assign((pkey),EVP_PKEY_EIA3,\
+                                        (char *)(eia3key))
+# endif
+
 
 /* Add some extra combinations */
 # define EVP_get_digestbynid(a) EVP_get_digestbyname(OBJ_nid2sn(a))
@@ -1044,6 +1051,9 @@ struct ec_key_st *EVP_PKEY_get1_EC_KEY(EVP_PKEY *pkey);
 # endif
 # ifndef OPENSSL_NO_SM2
 int EVP_PKEY_is_sm2(EVP_PKEY *pkey);
+# endif
+# ifndef OPENSSL_NO_ZUC
+const unsigned char *EVP_PKEY_get0_eia3(const EVP_PKEY *pkey, size_t *len);
 # endif
 
 EVP_PKEY *EVP_PKEY_new(void);

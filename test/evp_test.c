@@ -901,6 +901,13 @@ static int mac_test_init(EVP_TEST *t, const char *alg)
         t->skip = 1;
         return 1;
 #endif
+    } else if (strcmp(alg, "EIA3") == 0) {
+#ifndef OPENSSL_NO_ZUC
+        type = EVP_PKEY_EIA3;
+#else
+        t->skip = 1;
+        return 1;
+#endif
     } else if (strcmp(alg, "SipHash") == 0) {
 #ifndef OPENSSL_NO_SIPHASH
         type = EVP_PKEY_SIPHASH;

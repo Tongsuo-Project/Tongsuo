@@ -558,6 +558,20 @@ int EVP_PKEY_is_sm2(EVP_PKEY *pkey)
 
 #endif
 
+#ifndef OPENSSL_NO_ZUC
+const unsigned char *EVP_PKEY_get0_eia3(const EVP_PKEY *pkey, size_t *len)
+{
+    ASN1_OCTET_STRING *os = NULL;
+    if (pkey->type != EVP_PKEY_EIA3) {
+        EVPerr(EVP_F_EVP_PKEY_GET0_EIA3, EVP_R_EXPECTING_A_EIA3_KEY);
+        return NULL;
+    }
+    os = EVP_PKEY_get0(pkey);
+    *len = os->length;
+    return os->data;
+}
+#endif
+
 #ifndef OPENSSL_NO_DH
 
 int EVP_PKEY_set1_DH(EVP_PKEY *pkey, DH *key)
