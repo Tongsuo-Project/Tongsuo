@@ -20,7 +20,7 @@ static ossl_inline uint32_t GET_WORD(uint8_t *data, uint32_t i)
 {
     uint32_t word = 0, ti, j = i / 8;
 
-    ti  = i % 8;
+    ti = i % 8;
     if (ti == 0) {
         word = (uint32_t)data[j] << 24;
         word |= ((uint32_t)data[j + 1] << 16);
@@ -41,7 +41,12 @@ static ossl_inline uint8_t GET_BIT(const unsigned char *data, uint32_t i)
 	return (data[i / 8] & (1 << (7 - (i % 8)))) ? 1 : 0;
 }
 
-int EIA3_Init(EIA3_CTX *ctx, const unsigned char *key, const unsigned char *iv)
+size_t EIA3_ctx_size(void)
+{
+    return sizeof(struct eia3_context);
+}
+
+int EIA3_Init(EIA3_CTX *ctx, const unsigned char key[EVP_ZUC_KEY_SIZE], const unsigned char iv[5])
 {
     ZUC_KEY *zk = &ctx->zk;
     uint32_t count = 0;
@@ -101,11 +106,9 @@ int EIA3_Update(EIA3_CTX *ctx, const unsigned char *inp, size_t len)
     if (zk->L > 0 && !ZUC_generate_keystream(zk))
         return 0;
 
-    for (i = 0; i < length; i++) {
-        if (GET_BIT(inp, i)) {
+    for (i = 0; i < length; i++)
+        if (GET_BIT(inp, i))
             ctx->T ^= GET_WORD(zk->keystream, ctx->length + i);
-        }
-    }
 
     ctx->length += length;
     ctx->num += len;
@@ -113,7 +116,7 @@ int EIA3_Update(EIA3_CTX *ctx, const unsigned char *inp, size_t len)
     return 1;
 }
 
-void EIA3_Final(EIA3_CTX *ctx, unsigned char out[4])
+void EIA3_Final(EIA3_CTX *ctx, unsigned char out[EIA3_DIGEST_SIZE])
 {
     size_t L = (ctx->length + 64 + 31) / 32;
     uint32_t mac;

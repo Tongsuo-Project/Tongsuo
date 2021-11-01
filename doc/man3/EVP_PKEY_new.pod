@@ -50,12 +50,12 @@ EVP_PKEY_new_raw_private_key() allocates a new B<EVP_PKEY>. If B<e> is non-NULL
 then the new B<EVP_PKEY> structure is associated with the engine B<e>. The
 B<type> argument indicates what kind of key this is. The value should be a NID
 for a public key algorithm that supports raw private keys, i.e. one of
-B<EVP_PKEY_HMAC>, B<EVP_PKEY_POLY1305>, B<EVP_PKEY_SIPHASH>, B<EVP_PKEY_X25519>,
-B<EVP_PKEY_ED25519>, B<EVP_PKEY_X448> or B<EVP_PKEY_ED448>. B<key> points to the
-raw private key data for this B<EVP_PKEY> which should be of length B<keylen>.
-The length should be appropriate for the type of the key. The public key data
-will be automatically derived from the given private key data (if appropriate
-for the algorithm type).
+B<EVP_PKEY_HMAC>, B<EVP_PKEY_POLY1305>, B<EVP_PKEY_EIA3>, B<EVP_PKEY_SIPHASH>,
+B<EVP_PKEY_X25519>, B<EVP_PKEY_ED25519>, B<EVP_PKEY_X448> or B<EVP_PKEY_ED448>.
+B<key> points to the raw private key data for this B<EVP_PKEY> which should be
+of length B<keylen>. The length should be appropriate for the type of the key.
+The public key data will be automatically derived from the given private key
+data (if appropriate for the algorithm type).
 
 EVP_PKEY_new_raw_public_key() works in the same way as
 EVP_PKEY_new_raw_private_key() except that B<key> points to the raw public key
@@ -78,8 +78,9 @@ actually written. If the buffer B<priv> is NULL then B<*len> is populated with
 the number of bytes required to hold the key. The calling application is
 responsible for ensuring that the buffer is large enough to receive the private
 key data. This function only works for algorithms that support raw private keys.
-Currently this is: B<EVP_PKEY_HMAC>, B<EVP_PKEY_POLY1305>, B<EVP_PKEY_SIPHASH>,
-B<EVP_PKEY_X25519>, B<EVP_PKEY_ED25519>, B<EVP_PKEY_X448> or B<EVP_PKEY_ED448>.
+Currently this is: B<EVP_PKEY_HMAC>, B<EVP_PKEY_POLY1305>, B<EVP_PKEY_EIA3>,
+B<EVP_PKEY_SIPHASH>, B<EVP_PKEY_X25519>, B<EVP_PKEY_ED25519>, B<EVP_PKEY_X448>
+or B<EVP_PKEY_ED448>.
 
 EVP_PKEY_get_raw_public_key() fills the buffer provided by B<pub> with raw
 public key data. The size of the B<pub> buffer should be in B<*len> on entry

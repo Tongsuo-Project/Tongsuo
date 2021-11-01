@@ -9,9 +9,9 @@
 
 #ifndef OPENSSL_NO_ZUC
 
-#include <stdlib.h>
-#include <string.h>
-#include <openssl/crypto.h>
+# include <stdlib.h>
+# include <string.h>
+# include <openssl/crypto.h>
 
 # include "crypto/zuc.h"
 

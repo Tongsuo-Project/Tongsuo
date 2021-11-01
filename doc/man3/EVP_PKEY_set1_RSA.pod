@@ -7,9 +7,10 @@ EVP_PKEY_get1_RSA, EVP_PKEY_get1_DSA, EVP_PKEY_get1_DH, EVP_PKEY_get1_EC_KEY,
 EVP_PKEY_get0_RSA, EVP_PKEY_get0_DSA, EVP_PKEY_get0_DH, EVP_PKEY_get0_EC_KEY,
 EVP_PKEY_assign_RSA, EVP_PKEY_assign_DSA, EVP_PKEY_assign_DH,
 EVP_PKEY_assign_EC_KEY, EVP_PKEY_assign_POLY1305, EVP_PKEY_assign_SIPHASH,
-EVP_PKEY_get0_hmac, EVP_PKEY_get0_poly1305, EVP_PKEY_get0_siphash,
-EVP_PKEY_type, EVP_PKEY_id, EVP_PKEY_base_id, EVP_PKEY_set_alias_type,
-EVP_PKEY_set1_engine, EVP_PKEY_get0_engine - EVP_PKEY assignment functions
+EVP_PKEY_get0_hmac, EVP_PKEY_get0_poly1305, EVP_PKEY_get0_eia3,
+EVP_PKEY_get0_siphash, EVP_PKEY_type, EVP_PKEY_id, EVP_PKEY_base_id,
+EVP_PKEY_set_alias_type, EVP_PKEY_set1_engine, EVP_PKEY_get0_engine - EVP_PKEY
+assignment functions
 
 =head1 SYNOPSIS
 
@@ -27,6 +28,7 @@ EVP_PKEY_set1_engine, EVP_PKEY_get0_engine - EVP_PKEY assignment functions
 
  const unsigned char *EVP_PKEY_get0_hmac(const EVP_PKEY *pkey, size_t *len);
  const unsigned char *EVP_PKEY_get0_poly1305(const EVP_PKEY *pkey, size_t *len);
+ const unsigned char *EVP_PKEY_get0_eia3(const EVP_PKEY *pkey, size_t *len);
  const unsigned char *EVP_PKEY_get0_siphash(const EVP_PKEY *pkey, size_t *len);
  RSA *EVP_PKEY_get0_RSA(EVP_PKEY *pkey);
  DSA *EVP_PKEY_get0_DSA(EVP_PKEY *pkey);
@@ -57,11 +59,12 @@ EVP_PKEY_get1_RSA(), EVP_PKEY_get1_DSA(), EVP_PKEY_get1_DH() and
 EVP_PKEY_get1_EC_KEY() return the referenced key in B<pkey> or
 B<NULL> if the key is not of the correct type.
 
-EVP_PKEY_get0_hmac(), EVP_PKEY_get0_poly1305(), EVP_PKEY_get0_siphash(),
-EVP_PKEY_get0_RSA(), EVP_PKEY_get0_DSA(), EVP_PKEY_get0_DH()
-and EVP_PKEY_get0_EC_KEY() also return the referenced key in B<pkey> or B<NULL>
-if the key is not of the correct type but the reference count of the
-returned key is B<not> incremented and so must not be freed up after use.
+EVP_PKEY_get0_hmac(), EVP_PKEY_get0_poly1305(), EVP_PKEY_get0_eia3(),
+EVP_PKEY_get0_siphash(), EVP_PKEY_get0_RSA(), EVP_PKEY_get0_DSA(),
+EVP_PKEY_get0_DH() and EVP_PKEY_get0_EC_KEY() also return the referenced key
+in B<pkey> or B<NULL> if the key is not of the correct type but the reference
+count of the returned key is B<not> incremented and so must not be freed up
+after use.
 
 EVP_PKEY_assign_RSA(), EVP_PKEY_assign_DSA(), EVP_PKEY_assign_DH(),
 EVP_PKEY_assign_EC_KEY(), EVP_PKEY_assign_POLY1305() and

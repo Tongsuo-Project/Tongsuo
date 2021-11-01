@@ -92,7 +92,7 @@ const EVP_PKEY_ASN1_METHOD eia3_asn1_meth = {
     0,
 
     "EIA3",
-    "OpenSSL EIA3 method",
+    "ZUC 128-EIA3 method",
 
     0, 0, eia3_pkey_public_cmp, 0,
 

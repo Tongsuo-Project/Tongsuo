@@ -114,6 +114,7 @@ static int eia3_signctx_init(EVP_PKEY_CTX *ctx, EVP_MD_CTX *mctx)
 
     return EIA3_Init(&pctx->ctx, key->data, NULL);
 }
+
 static int eia3_signctx(EVP_PKEY_CTX *ctx, unsigned char *sig, size_t *siglen,
                             EVP_MD_CTX *mctx)
 {

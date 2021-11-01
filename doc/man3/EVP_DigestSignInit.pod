@@ -41,7 +41,7 @@ has already been assigned one via L<EVP_MD_CTX_set_pkey_ctx(3)>. See also L<SM2(
 Only EVP_PKEY types that support signing can be used with these functions. This
 includes MAC algorithms where the MAC generation is considered as a form of
 "signing". Built-in EVP_PKEY types supported by these functions are CMAC,
-Poly1305, DSA, ECDSA, HMAC, RSA, SipHash, Ed25519 and Ed448.
+Poly1305, EIA3, DSA, ECDSA, HMAC, RSA, SipHash, Ed25519 and Ed448.
 
 Not all digests can be used for all key types. The following combinations apply.
 
@@ -76,7 +76,7 @@ Support no digests (the digest B<type> must be NULL)
 
 Supports any digest
 
-=item CMAC, Poly1305 and SipHash
+=item CMAC, Poly1305, EIA3 and SipHash
 
 Will ignore any digest provided.
 
