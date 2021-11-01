@@ -13,7 +13,7 @@
 %global IMPORTNAME %{DOMAIN}/%{ORG}/%{PROJECT}
 
 Name:           babassl
-Version:        8.2.0
+Version:        8.3.0
 Release:        %{base_release}%{?dist}
 Summary:        A Brisk and Better Assured Cryptographic Toolkit
 Group:          System Environment/Libraries
