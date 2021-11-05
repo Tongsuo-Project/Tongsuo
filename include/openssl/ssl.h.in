@@ -209,7 +209,7 @@ extern "C" {
 # ifdef SYSTEM_CIPHERS_FILE
 #  define SSL_SYSTEM_DEFAULT_CIPHER_LIST "PROFILE=SYSTEM"
 # else
-#  define SSL_SYSTEM_DEFAULT_CIPHER_LIST SSL_DEFAULT_CIPHER_LIST
+#  define SSL_SYSTEM_DEFAULT_CIPHER_LIST OSSL_default_cipher_list()
 # endif
 
 /* Used in SSL_set_shutdown()/SSL_get_shutdown(); */
