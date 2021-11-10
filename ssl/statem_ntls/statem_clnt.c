@@ -1300,7 +1300,7 @@ static MSG_PROCESS_RETURN tls_process_as_hello_retry_request(SSL *s,
 
 MSG_PROCESS_RETURN tls_process_server_certificate_ntls(SSL *s, PACKET *pkt)
 {
-    int i;
+    int i, j;
     MSG_PROCESS_RETURN ret = MSG_PROCESS_ERROR;
     unsigned long cert_list_len, cert_len;
     X509 *x = NULL;
@@ -1392,33 +1392,50 @@ MSG_PROCESS_RETURN tls_process_server_certificate_ntls(SSL *s, PACKET *pkt)
 
 # endif
 
+    if (sk_X509_num(sk) >= 2) {
+        for (j = 0; j < 2; j++) {
+            if (j == 0)
+                sk_X509_push(sk, sk_X509_shift(sk));
+            if (j == 1)
+                sk_X509_unshift(sk, sk_X509_pop(sk));
 
-    i = ssl_verify_cert_chain(s, sk);
-    /*
-     * The documented interface is that SSL_VERIFY_PEER should be set in order
-     * for client side verification of the server certificate to take place.
-     * However, historically the code has only checked that *any* flag is set
-     * to cause server verification to take place. Use of the other flags makes
-     * no sense in client mode. An attempt to clean up the semantics was
-     * reverted because at least one application *only* set
-     * SSL_VERIFY_FAIL_IF_NO_PEER_CERT. Prior to the clean up this still caused
-     * server verification to take place, after the clean up it silently did
-     * nothing. SSL_CTX_set_verify()/SSL_set_verify() cannot validate the flags
-     * sent to them because they are void functions. Therefore, we now use the
-     * (less clean) historic behaviour of performing validation if any flag is
-     * set. The *documented* interface remains the same.
-     */
-    if (s->verify_mode != SSL_VERIFY_NONE && i <= 0) {
-        SSLfatal_ntls(s, ssl_x509err2alert_ntls(s->verify_result),
-                 SSL_F_TLS_PROCESS_SERVER_CERTIFICATE_NTLS,
-                 SSL_R_CERTIFICATE_VERIFY_FAILED);
-        goto err;
-    }
-    ERR_clear_error();          /* but we keep s->verify_result */
-    if (i > 1) {
-        SSLfatal_ntls(s, SSL_AD_HANDSHAKE_FAILURE,
-                 SSL_F_TLS_PROCESS_SERVER_CERTIFICATE_NTLS, i);
-        goto err;
+            i = ssl_verify_cert_chain(s, sk);
+
+            /*
+             * The documented interface is that SSL_VERIFY_PEER should be set in order
+             * for client side verification of the server certificate to take place.
+             * However, historically the code has only checked that *any* flag is set
+             * to cause server verification to take place. Use of the other flags makes
+             * no sense in client mode. An attempt to clean up the semantics was
+             * reverted because at least one application *only* set
+             * SSL_VERIFY_FAIL_IF_NO_PEER_CERT. Prior to the clean up this still caused
+             * server verification to take place, after the clean up it silently did
+             * nothing. SSL_CTX_set_verify()/SSL_set_verify() cannot validate the flags
+             * sent to them because they are void functions. Therefore, we now use the
+             * (less clean) historic behaviour of performing validation if any flag is
+             * set. The *documented* interface remains the same.
+             */
+            if (s->verify_mode != SSL_VERIFY_NONE && i <= 0) {
+                SSLfatal_ntls(s, ssl_x509err2alert_ntls(s->verify_result),
+                              SSL_F_TLS_PROCESS_SERVER_CERTIFICATE_NTLS,
+                              SSL_R_CERTIFICATE_VERIFY_FAILED);
+                goto err;
+            }
+
+            ERR_clear_error();          /* but we keep s->verify_result */
+            if (i > 1) {
+                SSLfatal_ntls(s, SSL_AD_HANDSHAKE_FAILURE,
+                              SSL_F_TLS_PROCESS_SERVER_CERTIFICATE_NTLS, i);
+                goto err;
+            }
+        }
+    } else {
+        if (s->verify_mode != SSL_VERIFY_NONE) {
+            SSLfatal_ntls(s, ssl_x509err2alert_ntls(s->verify_result),
+                          SSL_F_TLS_PROCESS_SERVER_CERTIFICATE_NTLS,
+                          SSL_R_CERTIFICATE_VERIFY_FAILED);
+            goto err;
+        }
     }
 
     s->session->peer_chain = sk;
