@@ -118,6 +118,66 @@ our @tests = (
             "ExpectedResult" => "ServerFail",
         },
     },
+
+    {
+        name => "test server encryption certificate expired",
+        server => {
+            "SignCertificate" => test_run("test_sign_sm2", "server_sign.crt"),
+            "SignPrivateKey" => test_run("test_sign_sm2", "server_sign.key"),
+            "EncCertificate" => test_run("test_sign_sm2", "server_enc_expire.crt"),
+            "EncPrivateKey" => test_run("test_sign_sm2", "server_enc.key"),
+            "Enable_ntls" => "on",
+        },
+        client => {
+            "VerifyCAFile" => test_run("test_sign_sm2", "chain-ca.crt"),
+            "Enable_ntls" => "on",
+        },
+        test   => {
+            "Method" => "NTLS",
+            "ExpectedResult" => "ClientFail",
+            "ExpectedClientAlert" => "CertificateExpired",
+        },
+    },
+
+    {
+        name => "test server sign certificate expired",
+        server => {
+            "SignCertificate" => test_run("test_sign_sm2", "server_sign_expire.crt"),
+            "SignPrivateKey" => test_run("test_sign_sm2", "server_sign.key"),
+            "EncCertificate" => test_run("test_sign_sm2", "server_enc.crt"),
+            "EncPrivateKey" => test_run("test_sign_sm2", "server_enc.key"),
+            "Enable_ntls" => "on",
+        },
+        client => {
+            "VerifyCAFile" => test_run("test_sign_sm2", "chain-ca.crt"),
+            "Enable_ntls" => "on",
+        },
+        test   => {
+            "Method" => "NTLS",
+            "ExpectedResult" => "ClientFail",
+            "ExpectedClientAlert" => "CertificateExpired",
+        },
+    },
+
+    {
+        name => "test server certificates expired",
+        server => {
+            "SignCertificate" => test_run("test_sign_sm2", "server_sign_expire.crt"),
+            "SignPrivateKey" => test_run("test_sign_sm2", "server_sign.key"),
+            "EncCertificate" => test_run("test_sign_sm2", "server_enc_expire.crt"),
+            "EncPrivateKey" => test_run("test_sign_sm2", "server_enc.key"),
+            "Enable_ntls" => "on",
+        },
+        client => {
+            "VerifyCAFile" => test_run("test_sign_sm2", "chain-ca.crt"),
+            "Enable_ntls" => "on",
+        },
+        test   => {
+            "Method" => "NTLS",
+            "ExpectedResult" => "ClientFail",
+            "ExpectedClientAlert" => "CertificateExpired",
+        },
+    },
 );
 
 push @tests unless disabled("ntls") || disabled("sm2") || disabled("sm3") || disabled("sm4");
