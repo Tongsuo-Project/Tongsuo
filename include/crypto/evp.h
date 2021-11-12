@@ -131,6 +131,7 @@ extern const EVP_PKEY_METHOD tls1_prf_pkey_meth;
 extern const EVP_PKEY_METHOD hkdf_pkey_meth;
 extern const EVP_PKEY_METHOD poly1305_pkey_meth;
 extern const EVP_PKEY_METHOD siphash_pkey_meth;
+extern const EVP_PKEY_METHOD eia3_pkey_meth;
 
 /* struct evp_kdf_impl_st is defined by the implementation */
 typedef struct evp_kdf_impl_st EVP_KDF_IMPL;

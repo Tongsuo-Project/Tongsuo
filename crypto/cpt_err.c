@@ -44,6 +44,7 @@ static const ERR_STRING_DATA CRYPTO_str_functs[] = {
     {ERR_PACK(ERR_LIB_CRYPTO, CRYPTO_F_OPENSSL_SK_DEEP_COPY, 0),
      "OPENSSL_sk_deep_copy"},
     {ERR_PACK(ERR_LIB_CRYPTO, CRYPTO_F_OPENSSL_SK_DUP, 0), "OPENSSL_sk_dup"},
+    {ERR_PACK(ERR_LIB_CRYPTO, CRYPTO_F_PKEY_EIA3_INIT, 0), "pkey_eia3_init"},
     {ERR_PACK(ERR_LIB_CRYPTO, CRYPTO_F_PKEY_HMAC_INIT, 0), "pkey_hmac_init"},
     {ERR_PACK(ERR_LIB_CRYPTO, CRYPTO_F_PKEY_POLY1305_INIT, 0),
      "pkey_poly1305_init"},

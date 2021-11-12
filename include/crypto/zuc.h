@@ -14,6 +14,7 @@
 # endif
 
 #define EVP_ZUC_KEY_SIZE 16
+#define EIA3_DIGEST_SIZE 4
 
 typedef struct ZUC_KEY_st {
     /* Linear Feedback Shift Register cells */
@@ -36,8 +37,15 @@ typedef struct ZUC_KEY_st {
     int inited;
 } ZUC_KEY;
 
+typedef struct eia3_context EIA3_CTX;
+
 void ZUC_init(ZUC_KEY *zk);
 int ZUC_generate_keystream(ZUC_KEY *zk);
 void ZUC_destroy_keystream(ZUC_KEY *zk);
+
+size_t EIA3_ctx_size(void);
+int EIA3_Init(EIA3_CTX *ctx, const unsigned char key[EVP_ZUC_KEY_SIZE], const unsigned char iv[5]);
+int EIA3_Update(EIA3_CTX *ctx, const unsigned char *inp, size_t len);
+void EIA3_Final(EIA3_CTX *ctx, unsigned char out[EIA3_DIGEST_SIZE]);
 
 #endif

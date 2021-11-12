@@ -57,5 +57,8 @@ static const EVP_PKEY_ASN1_METHOD *standard_methods[] = {
 #ifndef OPENSSL_NO_SM2
     &sm2_asn1_meth,
 #endif
+#ifndef OPENSSL_NO_ZUC
+    &eia3_asn1_meth,
+#endif
 };
 

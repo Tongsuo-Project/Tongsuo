@@ -67,6 +67,9 @@ static const EVP_PKEY_METHOD *standard_methods[] = {
 #ifndef OPENSSL_NO_SM2
     &sm2_pkey_meth,
 #endif
+#ifndef OPENSSL_NO_ZUC
+    &eia3_pkey_meth,
+#endif
 };
 
 DECLARE_OBJ_BSEARCH_CMP_FN(const EVP_PKEY_METHOD *, const EVP_PKEY_METHOD *,
