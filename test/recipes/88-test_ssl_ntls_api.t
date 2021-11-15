@@ -9,10 +9,12 @@ use File::Temp qw(tempfile);
 
 setup("test_ssl_ntls_api");
 
+use File::Spec::Functions qw/catfile/;
+
 plan tests => 1;
 
 ok(run(test(["ssl_ntls_api_test",
-             srctop_file("test", "certs", "SS.cert.pem"),
-             srctop_file("test", "certs", "SS.key.pem"),
-             srctop_file("test", "certs", "SE.cert.pem"),
-             srctop_file("test", "certs", "SE.key.pem")])));
+    catfile(".", "test_sign_sm2", "server_sign.crt"),
+    catfile(".", "test_sign_sm2", "server_sign.key"),
+    catfile(".", "test_sign_sm2", "server_enc.crt"),
+    catfile(".", "test_sign_sm2", "server_enc.key")])));
