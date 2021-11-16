@@ -494,6 +494,15 @@ static int test_handshake(int idx)
         if (!TEST_ptr(client_ctx)) {
             goto err;
         }
+
+        if (test_ctx->handshake_mode == SSL_TEST_HANDSHAKE_RESUME) {
+            resume_server_ctx = SSL_CTX_new(NTLS_server_method());
+            resume_client_ctx = SSL_CTX_new(NTLS_client_method());
+
+            if (!TEST_ptr(resume_server_ctx)
+                || !TEST_ptr(resume_client_ctx))
+                goto err;
+        }
     }
 #endif
     if (test_ctx->method == SSL_TEST_METHOD_TLS) {
