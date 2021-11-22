@@ -201,9 +201,10 @@ int SM2_compute_key(void *out, size_t outlen, int server,
         goto err;
     }
 
-    /* client side digest z is always put in a head... */
-    if (!server) {
-        len = EVP_MD_size(md);
+    len = EVP_MD_size(md);
+
+    /* Z_A || Z_B, server is initiator(Z_A), client is responder(Z_B) */
+    if (server) {
         if (!sm2_compute_z_digest((uint8_t *)(buf + idx), md,
                                   (const uint8_t *)self_uid,
                                   self_uid_len, self_eckey)) {
@@ -214,7 +215,6 @@ int SM2_compute_key(void *out, size_t outlen, int server,
         idx += len;
     }
 
-    len = EVP_MD_size(md);
     if (!sm2_compute_z_digest((uint8_t *)(buf + idx), md,
                               (const uint8_t *)peer_uid, peer_uid_len,
                               peer_pub_key)) {
@@ -223,8 +223,7 @@ int SM2_compute_key(void *out, size_t outlen, int server,
     }
     idx += len;
 
-    if (server) {
-        len = EVP_MD_size(md);
+    if (!server) {
         if (!sm2_compute_z_digest((uint8_t *)(buf + idx), md,
                                   (const uint8_t *)self_uid,
                                   self_uid_len, self_eckey)) {
