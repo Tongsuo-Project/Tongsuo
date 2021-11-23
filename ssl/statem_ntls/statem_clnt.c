@@ -601,7 +601,7 @@ int ossl_statem_client_construct_message_ntls(SSL *s, WPACKET *pkt,
         break;
 
     case TLS_ST_CW_CERT:
-        *confunc = ntls_construct_client_certificate_ntls;
+        *confunc = tls_construct_client_certificate_ntls;
         *mt = SSL3_MT_CERTIFICATE;
         break;
 
@@ -2590,10 +2590,10 @@ int tls_client_key_exchange_post_work_ntls(SSL *s)
  * cert exists, if we have a suitable digest for TLS 1.2 if static DH client
  * certificates can be used and optionally checks suitability for Suite B.
  */
-static int ssl3_check_client_certificate(SSL *s)
+static int ssl3_check_client_certificate_ntls(SSL *s)
 {
-    /* If no suitable signature algorithm can't use certificate */
-    if (!tls_choose_sigalg(s, 0) || s->s3->tmp.sigalg == NULL)
+    if (!ssl_has_cert(s, SSL_PKEY_SM2_SIGN) ||
+        !ssl_has_cert(s, SSL_PKEY_SM2_ENC))
         return 0;
     /*
      * If strict mode check suitability of chain before using it. This also
@@ -2627,7 +2627,7 @@ WORK_STATE tls_prepare_client_certificate_ntls(SSL *s, WORK_STATE wst)
             }
             s->rwstate = SSL_NOTHING;
         }
-        if (ssl3_check_client_certificate(s)) {
+        if (ssl3_check_client_certificate_ntls(s)) {
             if (s->post_handshake_auth == SSL_PHA_REQUESTED) {
                 return WORK_FINISHED_STOP;
             }
@@ -2661,8 +2661,15 @@ WORK_STATE tls_prepare_client_certificate_ntls(SSL *s, WORK_STATE wst)
 
         X509_free(x509);
         EVP_PKEY_free(pkey);
-        if (i && !ssl3_check_client_certificate(s))
+        if (i && !ssl3_check_client_certificate_ntls(s))
             i = 0;
+        if (i == 0) {
+            s->s3->tmp.cert_req = 2;
+            if (!ssl3_digest_cached_records(s, 0)) {
+                /* SSLfatal_ntls() already called */
+                return WORK_ERROR;
+            }
+        }
 
         if (s->post_handshake_auth == SSL_PHA_REQUESTED)
             return WORK_FINISHED_STOP;
@@ -2678,8 +2685,10 @@ WORK_STATE tls_prepare_client_certificate_ntls(SSL *s, WORK_STATE wst)
 int tls_construct_client_certificate_ntls(SSL *s, WPACKET *pkt)
 {
     if (!ssl3_output_cert_chain_ntls(s, pkt,
-                                (s->s3->tmp.cert_req == 2) ? NULL
-                                                           : s->cert->key)) {
+        (s->s3->tmp.cert_req == 2) ? NULL
+                    : &s->cert->pkeys[SSL_PKEY_SM2_SIGN],
+        (s->s3->tmp.cert_req == 2) ? NULL
+                    : &s->cert->pkeys[SSL_PKEY_SM2_ENC])) {
         /* SSLfatal_ntls() already called */
         return 0;
     }

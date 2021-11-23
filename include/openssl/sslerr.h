@@ -91,17 +91,14 @@ int ERR_load_SSL_strings(void);
 # define SSL_F_NTLS_CONSTRUCT_CKE_SM2                     641
 # define SSL_F_NTLS_CONSTRUCT_CKE_SM2DHE                  642
 # define SSL_F_NTLS_CONSTRUCT_CLIENT_CERTIFICATE          643
-# define SSL_F_NTLS_CONSTRUCT_CLIENT_CERTIFICATE_NTLS     674
 # define SSL_F_NTLS_CONSTRUCT_CLIENT_KEY_EXCHANGE         644
 # define SSL_F_NTLS_CONSTRUCT_CLIENT_KEY_EXCHANGE_NTLS    675
-# define SSL_F_NTLS_CONSTRUCT_SERVER_CERTIFICATE_NTLS     834
 # define SSL_F_NTLS_CONSTRUCT_SERVER_KEY_EXCHANGE         645
 # define SSL_F_NTLS_CONSTRUCT_SERVER_KEY_EXCHANGE_NTLS    676
 # define SSL_F_NTLS_CONSTRUCT_SKE_RSA                     646
 # define SSL_F_NTLS_CONSTRUCT_SKE_SM2                     647
 # define SSL_F_NTLS_CONSTRUCT_SKE_SM2DHE                  648
 # define SSL_F_NTLS_OUTPUT_CERT_CHAIN                     649
-# define SSL_F_NTLS_OUTPUT_CERT_CHAIN_NTLS                677
 # define SSL_F_NTLS_PROCESS_CERT_VERIFY                   650
 # define SSL_F_NTLS_PROCESS_CERT_VERIFY_NTLS              678
 # define SSL_F_NTLS_PROCESS_CKE_RSA                       651
@@ -109,7 +106,7 @@ int ERR_load_SSL_strings(void);
 # define SSL_F_NTLS_PROCESS_CKE_SM2DHE                    653
 # define SSL_F_NTLS_PROCESS_CLIENT_KEY_EXCHANGE           654
 # define SSL_F_NTLS_PROCESS_CLIENT_KEY_EXCHANGE_NTLS      679
-# define SSL_F_NTLS_PROCESS_CV_SM2DHE                     655
+# define SSL_F_NTLS_PROCESS_CV_SM2                        655
 # define SSL_F_NTLS_PROCESS_SERVER_KEY_EXCHANGE           656
 # define SSL_F_NTLS_PROCESS_SERVER_KEY_EXCHANGE_NTLS      680
 # define SSL_F_NTLS_PROCESS_SKE_RSA                       657
@@ -187,6 +184,7 @@ int ERR_load_SSL_strings(void);
 # define SSL_F_SSL3_WRITE_BYTES                           158
 # define SSL_F_SSL3_WRITE_PENDING                         159
 # define SSL_F_SSL_ADD_CERT_CHAIN                         316
+# define SSL_F_SSL_ADD_CERT_CHAIN_NTLS                    677
 # define SSL_F_SSL_ADD_CERT_COMPRESSION_ALG               871
 # define SSL_F_SSL_ADD_CERT_TO_BUF                        319
 # define SSL_F_SSL_ADD_CERT_TO_WPACKET                    493

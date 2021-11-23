@@ -441,33 +441,6 @@ MSG_PROCESS_RETURN ntls_process_server_key_exchange_ntls(SSL *s, PACKET *pkt)
     return MSG_PROCESS_ERROR;
 }
 
-int ntls_construct_client_certificate_ntls(SSL *s, WPACKET *pkt)
-{
-    unsigned long alg_a = s->s3->tmp.new_cipher->algorithm_auth;
-
-    if (alg_a & SSL_aSM2) {
-        if (!ntls_output_cert_chain_ntls(s, pkt, SSL_PKEY_SM2_SIGN, SSL_PKEY_SM2_ENC)) {
-            /* SSLfatal_ntls() already called */
-            goto err;
-        }
-    } else if (alg_a & SSL_aRSA) {
-        /* FIXME: RSA should also has two certificate types */
-        if (!ntls_output_cert_chain_ntls(s, pkt, SSL_PKEY_RSA, SSL_PKEY_RSA)) {
-            /* SSLfatal_ntls() already called */
-            goto err;
-        }
-    } else {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                 SSL_F_NTLS_CONSTRUCT_CLIENT_CERTIFICATE_NTLS,
-                 ERR_R_INTERNAL_ERROR);
-        goto err;
-    }
-
-    return 1;
- err:
-    return 0;
-}
-
 static int ntls_construct_cke_sm2dhe(SSL *s, WPACKET *pkt)
 {
     int ret = 0;

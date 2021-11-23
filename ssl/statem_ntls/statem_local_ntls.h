@@ -69,7 +69,6 @@ const STACK_OF(X509_NAME) *get_ca_names_ntls(SSL *s);
 int construct_ca_names_ntls(SSL *s, const STACK_OF(X509_NAME) *ca_sk, WPACKET *pkt);
 size_t construct_key_exchange_tbs_ntls(SSL *s, unsigned char **ptbs,
                                   const void *param, size_t paramlen);
-int ssl_add_cert_to_wpacket_ntls(SSL *s, WPACKET *pkt, X509 *x, int chain);
 
 /*
  * TLS/DTLS client state machine functions
@@ -414,20 +413,17 @@ int tls13_restore_handshake_digest_for_pha_ntls(SSL *s);
 /* NTLS stuffs */
 
 /* server side functions */
-__owur int ntls_construct_server_certificate_ntls(SSL *s, WPACKET *pkt);
 __owur int ntls_construct_server_key_exchange_ntls(SSL *s, WPACKET *pkt);
 __owur MSG_PROCESS_RETURN ntls_process_client_key_exchange_ntls(SSL *s, PACKET *pkt);
 __owur MSG_PROCESS_RETURN ntls_process_cert_verify_ntls(SSL *s, PACKET *pkt);
 
 /* client side functions */
-__owur int ntls_construct_client_certificate_ntls(SSL *s, WPACKET *pkt);
 __owur int ntls_construct_client_key_exchange_ntls(SSL *s, WPACKET *pkt);
 __owur int ntls_construct_cert_verify_ntls(SSL *s, WPACKET *pkt);
 __owur MSG_PROCESS_RETURN ntls_process_server_key_exchange_ntls(SSL *s, PACKET *pkt);
 
 /* common functions */
 int ntls_sm2_derive_ntls(SSL *s, EVP_PKEY *privkey, EVP_PKEY *pubkey);
-int ntls_output_cert_chain_ntls(SSL *s, WPACKET *pkt, int a_idx, int k_idx);
 
 /* from statem.h move here */
 

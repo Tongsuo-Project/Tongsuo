@@ -20,29 +20,6 @@
 
 #if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
      && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-int ntls_construct_server_certificate_ntls(SSL *s, WPACKET *pkt)
-{
-    unsigned long alg_a = s->s3->tmp.new_cipher->algorithm_auth;
-
-    if (alg_a & SSL_aSM2) {
-        if (!ntls_output_cert_chain_ntls(s, pkt, SSL_PKEY_SM2_SIGN, SSL_PKEY_SM2_ENC))
-            goto err;
-    } else if (alg_a & SSL_aRSA) {
-        if (!ntls_output_cert_chain_ntls(s, pkt, SSL_PKEY_RSA, SSL_PKEY_RSA))
-            goto err;
-    } else {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                 SSL_F_NTLS_CONSTRUCT_SERVER_CERTIFICATE_NTLS, ERR_R_INTERNAL_ERROR);
-        goto err;
-    }
-
-    return 1;
-
- err:
-    /* SSLfatal_ntls() already called */
-    return 0;
-}
-
 static int ntls_construct_ske_sm2dhe(SSL *s, WPACKET *pkt)
 {
     int ret = 0;
@@ -823,7 +800,7 @@ MSG_PROCESS_RETURN ntls_process_client_key_exchange_ntls(SSL *s, PACKET *pkt)
     return MSG_PROCESS_ERROR;
 }
 
-static int ntls_process_cv_sm2dhe(SSL *s, PACKET *pkt)
+static int ntls_process_cv_sm2(SSL *s, PACKET *pkt)
 {
     EVP_PKEY *pkey = NULL;
     const unsigned char *data;
@@ -840,8 +817,8 @@ static int ntls_process_cv_sm2dhe(SSL *s, PACKET *pkt)
     size_t outlen = 0;
 
     if (mctx == NULL || mctx2 == NULL) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_PROCESS_CV_SM2DHE,
-                 ERR_R_MALLOC_FAILURE);
+        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_PROCESS_CV_SM2,
+                      ERR_R_MALLOC_FAILURE);
         goto err;
     }
 
@@ -852,59 +829,54 @@ static int ntls_process_cv_sm2dhe(SSL *s, PACKET *pkt)
     peer = s->session->peer;
     pkey = X509_get0_pubkey(peer);
     if (pkey == NULL) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_PROCESS_CV_SM2DHE,
-                 ERR_R_INTERNAL_ERROR);
+        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_PROCESS_CV_SM2,
+                      ERR_R_INTERNAL_ERROR);
         goto err;
     }
 
     if (ssl_cert_lookup_by_pkey(pkey, NULL) == NULL) {
-        SSLfatal_ntls(s, SSL_AD_ILLEGAL_PARAMETER, SSL_F_NTLS_PROCESS_CV_SM2DHE,
-                 SSL_R_SIGNATURE_FOR_NON_SIGNING_CERTIFICATE);
+        SSLfatal_ntls(s, SSL_AD_ILLEGAL_PARAMETER, SSL_F_NTLS_PROCESS_CV_SM2,
+                      SSL_R_SIGNATURE_FOR_NON_SIGNING_CERTIFICATE);
         goto err;
     }
 
     /*
-     * SM2DHE uses no SIGALG bytes, and we don't need to decide peer sigalg
+     * SM2 uses no SIGALG bytes, and we don't need to decide peer sigalg
      * because in NTLS SM2, hash algorithm is fixed to SM3
      */
     md = EVP_sm3();
 
     /* The only valid EC pkey in NTLS is SM2 */
     if (EVP_PKEY_set_alias_type(pkey, EVP_PKEY_SM2) <= 0) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_PROCESS_CV_SM2DHE,
-                ERR_R_EVP_LIB);
+        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_PROCESS_CV_SM2,
+                      ERR_R_EVP_LIB);
         goto err;
     }
 
-#ifdef SSL_DEBUG
-    if (SSL_USE_SIGALGS(s))
-        fprintf(stderr, "USING TLSv1.2 HASH %s\n", EVP_MD_name(md));
-#endif
-
     if (!PACKET_get_net_2(pkt, &len)) {
-        SSLfatal_ntls(s, SSL_AD_DECODE_ERROR, SSL_F_NTLS_PROCESS_CV_SM2DHE,
-                 SSL_R_LENGTH_MISMATCH);
+        SSLfatal_ntls(s, SSL_AD_DECODE_ERROR, SSL_F_NTLS_PROCESS_CV_SM2,
+                      SSL_R_LENGTH_MISMATCH);
         goto err;
     }
 
     j = EVP_PKEY_size(pkey);
     if (((int)len > j) || ((int)PACKET_remaining(pkt) > j)
         || (PACKET_remaining(pkt) == 0)) {
-        SSLfatal_ntls(s, SSL_AD_DECODE_ERROR, SSL_F_NTLS_PROCESS_CV_SM2DHE,
-                 SSL_R_WRONG_SIGNATURE_SIZE);
+        SSLfatal_ntls(s, SSL_AD_DECODE_ERROR, SSL_F_NTLS_PROCESS_CV_SM2,
+                      SSL_R_WRONG_SIGNATURE_SIZE);
         goto err;
     }
 
     if (!PACKET_get_bytes(pkt, &data, len)) {
-        SSLfatal_ntls(s, SSL_AD_DECODE_ERROR, SSL_F_NTLS_PROCESS_CV_SM2DHE,
-                 SSL_R_LENGTH_MISMATCH);
+        SSLfatal_ntls(s, SSL_AD_DECODE_ERROR, SSL_F_NTLS_PROCESS_CV_SM2,
+                      SSL_R_LENGTH_MISMATCH);
         goto err;
     }
 
     hdatalen = BIO_get_mem_data(s->s3->handshake_buffer, &hdata);
     if (hdatalen <= 0) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_PROCESS_CV_SM2DHE,
-                 ERR_R_INTERNAL_ERROR);
+        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_PROCESS_CV_SM2,
+                      ERR_R_INTERNAL_ERROR);
         goto err;
     }
 
@@ -916,8 +888,8 @@ static int ntls_process_cv_sm2dhe(SSL *s, PACKET *pkt)
     if (!EVP_DigestInit_ex(mctx2, md, NULL)
             || !EVP_DigestUpdate(mctx2, hdata, hdatalen)
             || !EVP_DigestFinal(mctx2, out, (unsigned int *)&outlen)) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_PROCESS_CV_SM2DHE,
-                 ERR_R_EVP_LIB);
+        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_PROCESS_CV_SM2,
+                      ERR_R_EVP_LIB);
         goto err;
     }
 
@@ -928,29 +900,29 @@ static int ntls_process_cv_sm2dhe(SSL *s, PACKET *pkt)
 
     pctx = EVP_PKEY_CTX_new(pkey, NULL);
     if (pctx == NULL) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_PROCESS_CV_SM2DHE,
-                 ERR_R_MALLOC_FAILURE);
+        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_PROCESS_CV_SM2,
+                      ERR_R_MALLOC_FAILURE);
         goto err;
     }
 
     if (EVP_PKEY_CTX_set1_id(pctx, SM2_DEFAULT_ID, SM2_DEFAULT_ID_LEN) <= 0) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_PROCESS_CV_SM2DHE,
-                 ERR_R_EVP_LIB);
+        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_PROCESS_CV_SM2,
+                      ERR_R_EVP_LIB);
         goto err;
     }
 
     EVP_MD_CTX_set_pkey_ctx(mctx, pctx);
 
     if (EVP_DigestVerifyInit(mctx, NULL, md, NULL, pkey) <= 0) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_PROCESS_CV_SM2DHE,
-                 ERR_R_EVP_LIB);
+        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_PROCESS_CV_SM2,
+                      ERR_R_EVP_LIB);
         goto err;
     }
 
     ret = EVP_DigestVerify(mctx, data, len, out, outlen);
     if (ret <= 0) {
-        SSLfatal_ntls(s, SSL_AD_DECRYPT_ERROR, SSL_F_NTLS_PROCESS_CV_SM2DHE,
-                 SSL_R_BAD_SIGNATURE);
+        SSLfatal_ntls(s, SSL_AD_DECRYPT_ERROR, SSL_F_NTLS_PROCESS_CV_SM2,
+                      SSL_R_BAD_SIGNATURE);
         goto err;
     }
 
@@ -967,8 +939,8 @@ MSG_PROCESS_RETURN ntls_process_cert_verify_ntls(SSL *s, PACKET *pkt)
     MSG_PROCESS_RETURN ret = MSG_PROCESS_ERROR;
     unsigned long alg_k = s->s3->tmp.new_cipher->algorithm_mkey;
 
-    if (alg_k & SSL_kSM2DHE) {
-        if (!ntls_process_cv_sm2dhe(s, pkt)) {
+    if ((alg_k & SSL_kSM2) || (alg_k & SSL_kSM2DHE)) {
+        if (!ntls_process_cv_sm2(s, pkt)) {
             /* SSLfatal_ntls() already called */
             goto err;
         }
