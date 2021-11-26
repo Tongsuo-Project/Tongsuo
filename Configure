@@ -327,7 +327,7 @@ $config{dirs} = [ "crypto", "ssl", "engines", "apps", "test", "util", "tools", "
 $config{sdirs} = [
     "objects",
     "md2", "md4", "md5", "sha", "mdc2", "hmac", "ripemd", "whrlpool", "poly1305", "blake2", "siphash", "sm3",
-    "des", "aes", "rc2", "rc4", "rc5", "idea", "aria", "bf", "cast", "camellia", "seed", "sm4", "chacha", "zuc", "eia3", "modes",
+    "des", "aes", "rc2", "rc4", "rc5", "idea", "bf", "cast", "camellia", "seed", "sm4", "chacha", "zuc", "eia3", "modes",
     "bn", "ec", "rsa", "dsa", "dh", "sm2", "dso", "engine",
     "buffer", "bio", "stack", "lhash", "rand", "err",
     "evp", "asn1", "pem", "x509", "x509v3", "conf", "txt_db", "pkcs7", "pkcs12", "comp", "ocsp", "ui",
@@ -346,7 +346,6 @@ my @dtls = qw(dtls1 dtls1_2);
 
 my @disablables = (
     "afalgeng",
-    "aria",
     "asan",
     "asm",
     "async",
