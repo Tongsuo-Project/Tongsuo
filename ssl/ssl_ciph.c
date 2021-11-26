@@ -43,16 +43,14 @@
 #define SSL_ENC_AES256CCM8_IDX  17
 #define SSL_ENC_GOST8912_IDX    18
 #define SSL_ENC_CHACHA_IDX      19
-#define SSL_ENC_ARIA128GCM_IDX  20
-#define SSL_ENC_ARIA256GCM_IDX  21
-#define SSL_ENC_SM4_GCM_IDX     22
-#define SSL_ENC_SM4_CCM_IDX     23
+#define SSL_ENC_SM4_GCM_IDX     20
+#define SSL_ENC_SM4_CCM_IDX     21
 #if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
      && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-# define SSL_ENC_SM4_IDX        24
-# define SSL_ENC_NUM_IDX        25
+# define SSL_ENC_SM4_IDX        22
+# define SSL_ENC_NUM_IDX        23
 #else
-# define SSL_ENC_NUM_IDX        24
+# define SSL_ENC_NUM_IDX        22
 #endif
 
 /* NB: make sure indices in these tables match values above */
@@ -84,13 +82,11 @@ static const ssl_cipher_table ssl_cipher_table_cipher[SSL_ENC_NUM_IDX] = {
     {SSL_AES256CCM8, NID_aes_256_ccm}, /* SSL_ENC_AES256CCM8_IDX 17 */
     {SSL_eGOST2814789CNT12, NID_gost89_cnt_12}, /* SSL_ENC_GOST8912_IDX 18 */
     {SSL_CHACHA20POLY1305, NID_chacha20_poly1305}, /* SSL_ENC_CHACHA_IDX 19 */
-    {SSL_ARIA128GCM, NID_aria_128_gcm}, /* SSL_ENC_ARIA128GCM_IDX 20 */
-    {SSL_ARIA256GCM, NID_aria_256_gcm}, /* SSL_ENC_ARIA256GCM_IDX 21 */
-    {SSL_SM4GCM, NID_sm4_gcm}, /* SSL_ENC_SM4GCM_IDX 22 */
-    {SSL_SM4CCM, NID_sm4_ccm}, /* SSL_ENC_SM4CCM_IDX 23 */
+    {SSL_SM4GCM, NID_sm4_gcm}, /* SSL_ENC_SM4GCM_IDX 20 */
+    {SSL_SM4CCM, NID_sm4_ccm}, /* SSL_ENC_SM4CCM_IDX 21 */
 #if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
      && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-    {SSL_SM4, NID_sm4_cbc}     /* SSL_ENC_SM4_IDX 24 */
+    {SSL_SM4, NID_sm4_cbc}     /* SSL_ENC_SM4_IDX 22 */
 #endif
 };
 
@@ -311,10 +307,6 @@ static const SSL_CIPHER cipher_aliases[] = {
     {0, SSL_TXT_CAMELLIA, NULL, 0, 0, 0, SSL_CAMELLIA},
     {0, SSL_TXT_CHACHA20, NULL, 0, 0, 0, SSL_CHACHA20},
 
-    {0, SSL_TXT_ARIA, NULL, 0, 0, 0, SSL_ARIA},
-    {0, SSL_TXT_ARIA_GCM, NULL, 0, 0, 0, SSL_ARIA128GCM | SSL_ARIA256GCM},
-    {0, SSL_TXT_ARIA128, NULL, 0, 0, 0, SSL_ARIA128GCM},
-    {0, SSL_TXT_ARIA256, NULL, 0, 0, 0, SSL_ARIA256GCM},
 #if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
      && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
     {0, SSL_TXT_SM4, NULL, 0, 0, 0, SSL_SM4},
@@ -1906,12 +1898,6 @@ char *SSL_CIPHER_description(const SSL_CIPHER *cipher, char *buf, int len)
     case SSL_CAMELLIA256:
         enc = "Camellia(256)";
         break;
-    case SSL_ARIA128GCM:
-        enc = "ARIAGCM(128)";
-        break;
-    case SSL_ARIA256GCM:
-        enc = "ARIAGCM(256)";
-        break;
     case SSL_SEED:
         enc = "SEED(128)";
         break;
@@ -2255,7 +2241,7 @@ int ssl_cipher_get_overhead(const SSL_CIPHER *c, size_t *mac_overhead,
 
     /* Some hard-coded numbers for the CCM/Poly1305 MAC overhead
      * because there are no handy #defines for those. */
-    if (c->algorithm_enc & (SSL_AESGCM | SSL_ARIAGCM)) {
+    if (c->algorithm_enc & SSL_AESGCM) {
         out = EVP_GCM_TLS_EXPLICIT_IV_LEN + EVP_GCM_TLS_TAG_LEN;
     } else if (c->algorithm_enc & (SSL_AES128CCM | SSL_AES256CCM)) {
         out = EVP_CCM_TLS_EXPLICIT_IV_LEN + 16;
