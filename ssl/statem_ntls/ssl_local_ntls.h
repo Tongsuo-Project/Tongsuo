@@ -21,7 +21,8 @@
 __owur int ssl_x509err2alert_ntls(int type);
 __owur int ssl3_do_write_ntls(SSL *s, int type);
 __owur unsigned long ssl3_output_cert_chain_ntls(SSL *s, WPACKET *pkt,
-                                            CERT_PKEY *cpk);
+                                                 CERT_PKEY *a_cpk,
+                                                 CERT_PKEY *k_cpk);
 __owur int tls_close_construct_packet_ntls(SSL *s, WPACKET *pkt, int htype);
 __owur int tls_setup_handshake_ntls(SSL *s);
 

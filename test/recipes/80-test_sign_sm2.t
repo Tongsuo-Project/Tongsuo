@@ -13,7 +13,7 @@ setup($test_name);
 plan skip_all => "sm2 is not supported by this OpenSSL build"
     if disabled("sm2") || disabled("sm3") || disabled("sm4");
 
-plan tests => 18;
+plan tests => 20;
 
 my $CADIR = catdir(".", "ca");
 my $SUBCADIR = catdir(".", "subca");
@@ -183,6 +183,18 @@ ok(run(app(["openssl", "ca",
     "-md", "sm3",
     "-batch"])));
 
+ok(run(app(["openssl", "ca",
+    "-config", data_file("subca.cnf"),
+    "-extensions", "sign_req",
+    "-startdate", "20000101000000Z",
+    "-enddate", "20010101000000Z",
+    "-in", catfile(".", $test_name, "client_sign.csr"),
+    "-notext", "-out", catfile(".", $test_name, "client_sign_expire.crt"),
+    "-cert", catfile(".", $test_name, "subca.crt"),
+    "-keyfile", catfile(".", $test_name, "subca.key"),
+    "-md", "sm3",
+    "-batch"])));
+
 ok(run(app(["openssl", "req",
     "-config", data_file("subca.cnf"),
     "-newkey", "ec:" . catfile(".", $test_name, "client_sm2.param"),
@@ -197,6 +209,18 @@ ok(run(app(["openssl", "ca",
     "-days", "365",
     "-in", catfile(".", $test_name, "client_enc.csr"),
     "-notext", "-out", catfile(".", $test_name, "client_enc.crt"),
+    "-cert", catfile(".", $test_name, "subca.crt"),
+    "-keyfile", catfile(".", $test_name, "subca.key"),
+    "-md", "sm3",
+    "-batch"])));
+
+ok(run(app(["openssl", "ca",
+    "-config", data_file("subca.cnf"),
+    "-extensions", "enc_req",
+    "-startdate", "20000101000000Z",
+    "-enddate", "20010101000000Z",
+    "-in", catfile(".", $test_name, "client_enc.csr"),
+    "-notext", "-out", catfile(".", $test_name, "client_enc_expire.crt"),
     "-cert", catfile(".", $test_name, "subca.crt"),
     "-keyfile", catfile(".", $test_name, "subca.key"),
     "-md", "sm3",

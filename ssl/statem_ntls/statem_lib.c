@@ -16,6 +16,7 @@
 
 #if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
      && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+static int ssl_add_cert_to_wpacket_ntls(SSL *s, WPACKET *pkt, X509 *x);
 /*
  * Map error codes to TLS/SSL alart types.
  */
@@ -642,21 +643,23 @@ int tls_construct_change_cipher_spec_ntls(SSL *s, WPACKET *pkt)
 }
 
 /* Add a certificate to the WPACKET */
-int ssl_add_cert_to_wpacket_ntls(SSL *s, WPACKET *pkt, X509 *x, int chain)
+static int ssl_add_cert_to_wpacket_ntls(SSL *s, WPACKET *pkt, X509 *x)
 {
     int len;
     unsigned char *outbytes;
 
     len = i2d_X509(x, NULL);
     if (len < 0) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_SSL_ADD_CERT_TO_WPACKET_NTLS,
-                 ERR_R_BUF_LIB);
+        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
+                      SSL_F_SSL_ADD_CERT_TO_WPACKET_NTLS,
+                      ERR_R_BUF_LIB);
         return 0;
     }
     if (!WPACKET_sub_allocate_bytes_u24(pkt, len, &outbytes)
             || i2d_X509(x, &outbytes) != len) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_SSL_ADD_CERT_TO_WPACKET_NTLS,
-                 ERR_R_INTERNAL_ERROR);
+        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
+                      SSL_F_SSL_ADD_CERT_TO_WPACKET_NTLS,
+                      ERR_R_INTERNAL_ERROR);
         return 0;
     }
 
@@ -664,7 +667,8 @@ int ssl_add_cert_to_wpacket_ntls(SSL *s, WPACKET *pkt, X509 *x, int chain)
 }
 
 /* Add certificate chain to provided WPACKET */
-static int ssl_add_cert_chain(SSL *s, WPACKET *pkt, CERT_PKEY *cpk)
+static int ssl_add_cert_chain_ntls(SSL *s, WPACKET *pkt,
+                                   CERT_PKEY *a_cpk, CERT_PKEY *k_cpk)
 {
     int i, chain_count;
     X509 *x;
@@ -672,16 +676,14 @@ static int ssl_add_cert_chain(SSL *s, WPACKET *pkt, CERT_PKEY *cpk)
     STACK_OF(X509) *chain = NULL;
     X509_STORE *chain_store;
 
-    if (cpk == NULL || cpk->x509 == NULL)
+    if (a_cpk == NULL || a_cpk->x509 == NULL
+        || k_cpk == NULL || k_cpk->x509 == NULL)
         return 1;
 
-    x = cpk->x509;
-
-    /*
-     * If we have a certificate specific chain use it, else use parent ctx.
-     */
-    if (cpk->chain != NULL)
-        extra_certs = cpk->chain;
+    if (a_cpk->chain != NULL)
+        extra_certs = a_cpk->chain;
+    else if (k_cpk->chain != NULL)
+        extra_certs = k_cpk->chain;
     else
         extra_certs = s->ctx->extra_certs;
 
@@ -696,14 +698,18 @@ static int ssl_add_cert_chain(SSL *s, WPACKET *pkt, CERT_PKEY *cpk)
         X509_STORE_CTX *xs_ctx = X509_STORE_CTX_new();
 
         if (xs_ctx == NULL) {
-            SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_SSL_ADD_CERT_CHAIN,
-                     ERR_R_MALLOC_FAILURE);
+            SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
+                          SSL_F_SSL_ADD_CERT_CHAIN_NTLS,
+                          ERR_R_MALLOC_FAILURE);
             return 0;
         }
-        if (!X509_STORE_CTX_init(xs_ctx, chain_store, x, NULL)) {
+
+        if (!X509_STORE_CTX_init(xs_ctx, chain_store,
+                                 a_cpk->x509, NULL)) {
             X509_STORE_CTX_free(xs_ctx);
-            SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_SSL_ADD_CERT_CHAIN,
-                     ERR_R_X509_LIB);
+            SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
+                          SSL_F_SSL_ADD_CERT_CHAIN_NTLS,
+                          ERR_R_X509_LIB);
             return 0;
         }
         /*
@@ -713,85 +719,91 @@ static int ssl_add_cert_chain(SSL *s, WPACKET *pkt, CERT_PKEY *cpk)
          * the cert - we're just building as much of the chain as we can
          */
         (void)X509_verify_cert(xs_ctx);
-        /* Don't leave errors in the queue */
         ERR_clear_error();
         chain = X509_STORE_CTX_get0_chain(xs_ctx);
         i = ssl_security_cert_chain(s, chain, NULL, 0);
         if (i != 1) {
-# if 0
-            /* Dummy error calls so mkerr generates them */
-            SSLerr(SSL_F_SSL_ADD_CERT_CHAIN, SSL_R_EE_KEY_TOO_SMALL);
-            SSLerr(SSL_F_SSL_ADD_CERT_CHAIN, SSL_R_CA_KEY_TOO_SMALL);
-            SSLerr(SSL_F_SSL_ADD_CERT_CHAIN, SSL_R_CA_MD_TOO_WEAK);
-# endif
             X509_STORE_CTX_free(xs_ctx);
-            SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_SSL_ADD_CERT_CHAIN, i);
+            SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
+                          SSL_F_SSL_ADD_CERT_CHAIN_NTLS, i);
             return 0;
         }
-        chain_count = sk_X509_num(chain);
-        for (i = 0; i < chain_count; i++) {
-            x = sk_X509_value(chain, i);
 
-            if (!ssl_add_cert_to_wpacket_ntls(s, pkt, x, i)) {
+        /* add sign certificate */
+        if (!ssl_add_cert_to_wpacket_ntls(s, pkt, a_cpk->x509)) {
+            /* SSLfatal_ntls() already called */
+            X509_STORE_CTX_free(xs_ctx);
+            return 0;
+        }
+
+        /* add encryption certificate */
+        if (!ssl_add_cert_to_wpacket_ntls(s, pkt, k_cpk->x509)) {
+            /* SSLfatal_ntls() already called */
+            X509_STORE_CTX_free(xs_ctx);
+            return 0;
+        }
+
+        chain_count = sk_X509_num(chain);
+        for (i = 1; i < chain_count; i++) {
+            x = sk_X509_value(chain, i);
+            if (!ssl_add_cert_to_wpacket_ntls(s, pkt, x)) {
                 /* SSLfatal_ntls() already called */
                 X509_STORE_CTX_free(xs_ctx);
                 return 0;
             }
-
-            /* XXX: NTLS hook point... */
-            if (i == 0) {
-                /* check for NTLS */
-                if (!(X509_get_key_usage(x) & X509v3_KU_DIGITAL_SIGNATURE)) {
-                    SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                                SSL_F_SSL_ADD_CERT_CHAIN, ERR_R_X509_LIB);
-                    X509_STORE_CTX_free(xs_ctx);
-                    return 0;
-                }
-                x = s->cert->pkeys[SSL_PKEY_SM2_ENC].x509;
-                if (!ssl_add_cert_to_wpacket_ntls(s, pkt, x, i)) {
-                    /* SSLfatal_ntls() already called */
-                    X509_STORE_CTX_free(xs_ctx);
-                    return 0;
-                }
-            }
-
         }
         X509_STORE_CTX_free(xs_ctx);
     } else {
-        i = ssl_security_cert_chain(s, extra_certs, x, 0);
+        i = ssl_security_cert_chain(s, extra_certs, a_cpk->x509, 0);
         if (i != 1) {
-            SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_SSL_ADD_CERT_CHAIN, i);
+            SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
+                          SSL_F_SSL_ADD_CERT_CHAIN_NTLS, i);
             return 0;
         }
-        if (!ssl_add_cert_to_wpacket_ntls(s, pkt, x, 0)) {
+
+        /* add sign certificate */
+        if (!ssl_add_cert_to_wpacket_ntls(s, pkt, a_cpk->x509)) {
             /* SSLfatal_ntls() already called */
             return 0;
         }
+
+        /* add encryption certificate */
+        if (!ssl_add_cert_to_wpacket_ntls(s, pkt, k_cpk->x509)) {
+            /* SSLfatal_ntls() already called */
+            return 0;
+        }
+
+        /* output the following chain */
         for (i = 0; i < sk_X509_num(extra_certs); i++) {
             x = sk_X509_value(extra_certs, i);
-            if (!ssl_add_cert_to_wpacket_ntls(s, pkt, x, i + 1)) {
+            if (!ssl_add_cert_to_wpacket_ntls(s, pkt, x)) {
                 /* SSLfatal_ntls() already called */
                 return 0;
             }
         }
     }
+
     return 1;
 }
 
-unsigned long ssl3_output_cert_chain_ntls(SSL *s, WPACKET *pkt, CERT_PKEY *cpk)
+unsigned long ssl3_output_cert_chain_ntls(SSL *s, WPACKET *pkt,
+                                          CERT_PKEY *a_cpk,
+                                          CERT_PKEY *k_cpk)
 {
     if (!WPACKET_start_sub_packet_u24(pkt)) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_SSL3_OUTPUT_CERT_CHAIN_NTLS,
-                 ERR_R_INTERNAL_ERROR);
+        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
+                      SSL_F_SSL3_OUTPUT_CERT_CHAIN_NTLS,
+                      ERR_R_INTERNAL_ERROR);
         return 0;
     }
 
-    if (!ssl_add_cert_chain(s, pkt, cpk))
+    if (!ssl_add_cert_chain_ntls(s, pkt, a_cpk, k_cpk))
         return 0;
 
     if (!WPACKET_close(pkt)) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_SSL3_OUTPUT_CERT_CHAIN_NTLS,
-                 ERR_R_INTERNAL_ERROR);
+        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
+                      SSL_F_SSL3_OUTPUT_CERT_CHAIN_NTLS,
+                      ERR_R_INTERNAL_ERROR);
         return 0;
     }
 

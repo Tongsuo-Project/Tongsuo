@@ -524,7 +524,7 @@ int ossl_statem_server_construct_message_ntls(SSL *s, WPACKET *pkt,
         break;
 
     case TLS_ST_SW_CERT:
-        *confunc = ntls_construct_server_certificate_ntls;
+        *confunc = tls_construct_server_certificate_ntls;
         *mt = SSL3_MT_CERTIFICATE;
         break;
 
@@ -2547,7 +2547,7 @@ WORK_STATE tls_post_process_client_key_exchange_ntls(SSL *s, WORK_STATE wst)
 
 MSG_PROCESS_RETURN tls_process_client_certificate_ntls(SSL *s, PACKET *pkt)
 {
-    int i;
+    int i, j;
     MSG_PROCESS_RETURN ret = MSG_PROCESS_ERROR;
     X509 *x = NULL;
     unsigned long l;
@@ -2613,57 +2613,68 @@ MSG_PROCESS_RETURN tls_process_client_certificate_ntls(SSL *s, PACKET *pkt)
         /* TLS does not mind 0 certs returned */
         if (s->version == SSL3_VERSION) {
             SSLfatal_ntls(s, SSL_AD_HANDSHAKE_FAILURE,
-                     SSL_F_TLS_PROCESS_CLIENT_CERTIFICATE_NTLS,
-                     SSL_R_NO_CERTIFICATES_RETURNED);
+                          SSL_F_TLS_PROCESS_CLIENT_CERTIFICATE_NTLS,
+                          SSL_R_NO_CERTIFICATES_RETURNED);
             goto err;
         }
+
+        /*for ECDHE-SM2, certificates are required */
+        const SSL_CIPHER *cipher = s->s3->tmp.new_cipher;
+        if (cipher->id == NTLS_CK_ECDHE_SM2_SM4_CBC_SM3
+            || cipher->id == NTLS_CK_ECDHE_SM2_SM4_GCM_SM3) {
+            SSLfatal_ntls(s, SSL_AD_CERTIFICATE_REQUIRED,
+                          SSL_F_TLS_PROCESS_CLIENT_CERTIFICATE_NTLS,
+                          SSL_R_PEER_DID_NOT_RETURN_A_CERTIFICATE);
+            goto err;
+        }
+
         /* Fail for TLS only if we required a certificate */
         else if ((s->verify_mode & SSL_VERIFY_PEER) &&
                  (s->verify_mode & SSL_VERIFY_FAIL_IF_NO_PEER_CERT)) {
             SSLfatal_ntls(s, SSL_AD_CERTIFICATE_REQUIRED,
-                     SSL_F_TLS_PROCESS_CLIENT_CERTIFICATE_NTLS,
-                     SSL_R_PEER_DID_NOT_RETURN_A_CERTIFICATE);
+                          SSL_F_TLS_PROCESS_CLIENT_CERTIFICATE_NTLS,
+                          SSL_R_PEER_DID_NOT_RETURN_A_CERTIFICATE);
             goto err;
         }
+
         /* No client certificate so digest cached records */
         if (s->s3->handshake_buffer && !ssl3_digest_cached_records(s, 0)) {
             /* SSLfatal_ntls() already called */
             goto err;
         }
+    } else if (sk_X509_num(sk) < 2) {
+        SSLfatal_ntls(s, SSL_AD_CERTIFICATE_REQUIRED,
+                      SSL_F_TLS_PROCESS_CLIENT_CERTIFICATE_NTLS,
+                      SSL_R_PEER_DID_NOT_RETURN_A_CERTIFICATE);
+        goto err;
     } else {
-        EVP_PKEY *pkey;
-        i = ssl_verify_cert_chain(s, sk);
+        for (j = 0; j < 2; j++) {
+            if (j == 0)
+                sk_X509_push(sk, sk_X509_shift(sk));
+            if (j == 1)
+                sk_X509_unshift(sk, sk_X509_pop(sk));
 
-        /*
-         * for ECDHE-SM2, we don't have a standard to verify cert
-         * so we choose to ignore verify result for temp
-         */
-        if (i <= 0) {
-            const char *cipher_name = (s->s3->tmp.new_cipher)->name;
-            if (strcmp(cipher_name, NTLS_TXT_SM2DHE_WITH_SM4_SM3) == 0 ||
-                strcmp(cipher_name, NTLS_TXT_ECDHE_SM2_SM4_CBC_SM3) == 0 ||
-                strcmp(cipher_name, NTLS_TXT_ECDHE_SM2_SM4_GCM_SM3) == 0) {
-                i = 1;
+            i = ssl_verify_cert_chain(s, sk);
+
+            if (i <= 0) {
+                SSLfatal_ntls(s, ssl_x509err2alert_ntls(s->verify_result),
+                              SSL_F_TLS_PROCESS_CLIENT_CERTIFICATE_NTLS,
+                              SSL_R_CERTIFICATE_VERIFY_FAILED);
+                goto err;
             }
-        }
 
-        if (i <= 0) {
-            SSLfatal_ntls(s, ssl_x509err2alert_ntls(s->verify_result),
-                     SSL_F_TLS_PROCESS_CLIENT_CERTIFICATE_NTLS,
-                     SSL_R_CERTIFICATE_VERIFY_FAILED);
-            goto err;
-        }
-        if (i > 1) {
-            SSLfatal_ntls(s, SSL_AD_HANDSHAKE_FAILURE,
-                     SSL_F_TLS_PROCESS_CLIENT_CERTIFICATE_NTLS, i);
-            goto err;
-        }
-        pkey = X509_get0_pubkey(sk_X509_value(sk, 0));
-        if (pkey == NULL) {
-            SSLfatal_ntls(s, SSL_AD_HANDSHAKE_FAILURE,
-                     SSL_F_TLS_PROCESS_CLIENT_CERTIFICATE_NTLS,
-                     SSL_R_UNKNOWN_CERTIFICATE_TYPE);
-            goto err;
+            if (i > 1) {
+                SSLfatal_ntls(s, SSL_AD_HANDSHAKE_FAILURE,
+                              SSL_F_TLS_PROCESS_CLIENT_CERTIFICATE_NTLS, i);
+                goto err;
+            }
+
+            if (X509_get0_pubkey(sk_X509_value(sk, 0)) == NULL) {
+                SSLfatal_ntls(s, SSL_AD_HANDSHAKE_FAILURE,
+                              SSL_F_TLS_PROCESS_CLIENT_CERTIFICATE_NTLS,
+                              SSL_R_UNKNOWN_CERTIFICATE_TYPE);
+                goto err;
+            }
         }
     }
 
@@ -2716,15 +2727,9 @@ MSG_PROCESS_RETURN tls_process_client_certificate_ntls(SSL *s, PACKET *pkt)
 
 int tls_construct_server_certificate_ntls(SSL *s, WPACKET *pkt)
 {
-    CERT_PKEY *cpk = s->s3->tmp.cert;
-
-    if (cpk == NULL) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                 SSL_F_TLS_CONSTRUCT_SERVER_CERTIFICATE_NTLS, ERR_R_INTERNAL_ERROR);
-        return 0;
-    }
-
-    if (!ssl3_output_cert_chain_ntls(s, pkt, cpk)) {
+    if (!ssl3_output_cert_chain_ntls(s, pkt,
+                                     &s->cert->pkeys[SSL_PKEY_SM2_SIGN],
+                                     &s->cert->pkeys[SSL_PKEY_SM2_ENC])) {
         /* SSLfatal_ntls() already called */
         return 0;
     }
