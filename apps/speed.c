@@ -3651,7 +3651,7 @@ int speed_main(int argc, char **argv)
         }
 
         if (mr)
-            printf("+F6:%u:%u:%s:%f:%f\n",
+            printf("+F7:%u:%u:%s:%f:%f\n",
                    k, test_sm2_curves[k].bits, test_sm2_curves[k].name,
                    sm2_results[k][0], sm2_results[k][1]);
         else
@@ -3935,6 +3935,7 @@ static int do_multi(int multi, int size_num)
 
                 p = buf + 4;
                 k = atoi(sstrsep(&p, sep));
+                sstrsep(&p, sep);
                 sstrsep(&p, sep);
 
                 d = atof(sstrsep(&p, sep));
