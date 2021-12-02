@@ -3443,7 +3443,7 @@ int speed_main(int argc, char **argv)
                 d = Time_F(STOP);
 
                 BIO_printf(bio_err,
-                           mr ? "+R8:%ld:%u:%s:%.2f\n" :
+                           mr ? "+R10:%ld:%u:%s:%.2f\n" :
                            "%ld %u bits %s signs in %.2fs \n",
                            count, test_sm2_curves[testnum].bits,
                            test_sm2_curves[testnum].name, d);
@@ -3472,7 +3472,7 @@ int speed_main(int argc, char **argv)
                 count = run_benchmark(async_jobs, SM2_verify_loop, loopargs);
                 d = Time_F(STOP);
                 BIO_printf(bio_err,
-                           mr ? "+R9:%ld:%u:%s:%.2f\n"
+                           mr ? "+R11:%ld:%u:%s:%.2f\n"
                            : "%ld %u bits %s verify in %.2fs\n",
                            count, test_sm2_curves[testnum].bits,
                            test_sm2_curves[testnum].name, d);
