@@ -381,6 +381,7 @@ my @disablables = (
     "ecdh",
     "ecdsa",
     "ec_nistp_64_gcc_128",
+    "ec_elgamal",
     "egd",
     "engine",
     "err",

@@ -4648,3 +4648,14 @@ EVP_KDF_vctrl                           6594	1_1_1b	EXIST::FUNCTION:
 EVP_KDF_ctrl_str                        6595	1_1_1b	EXIST::FUNCTION:
 EVP_KDF_size                            6596	1_1_1b	EXIST::FUNCTION:
 EVP_KDF_derive                          6597	1_1_1b	EXIST::FUNCTION:
+EC_ELGAMAL_encrypt                      6598	1_1_1h	EXIST::FUNCTION:EC,EC_ELGAMAL
+EC_ELGAMAL_CIPHERTEXT_free              6599	1_1_1h	EXIST::FUNCTION:EC,EC_ELGAMAL
+EC_ELGAMAL_CIPHERTEXT_encode            6600	1_1_1h	EXIST::FUNCTION:EC,EC_ELGAMAL
+EC_ELGAMAL_sub                          6601	1_1_1h	EXIST::FUNCTION:EC,EC_ELGAMAL
+EC_ELGAMAL_CTX_free                     6602	1_1_1h	EXIST::FUNCTION:EC,EC_ELGAMAL
+EC_ELGAMAL_add                          6603	1_1_1h	EXIST::FUNCTION:EC,EC_ELGAMAL
+EC_ELGAMAL_CIPHERTEXT_new               6604	1_1_1h	EXIST::FUNCTION:EC,EC_ELGAMAL
+EC_ELGAMAL_mul                          6605	1_1_1h	EXIST::FUNCTION:EC,EC_ELGAMAL
+EC_ELGAMAL_CIPHERTEXT_decode            6606	1_1_1h	EXIST::FUNCTION:EC,EC_ELGAMAL
+EC_ELGAMAL_CTX_new                      6607	1_1_1h	EXIST::FUNCTION:EC,EC_ELGAMAL
+EC_ELGAMAL_decrypt                      6608	1_1_1h	EXIST::FUNCTION:EC,EC_ELGAMAL
