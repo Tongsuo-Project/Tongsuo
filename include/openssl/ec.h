@@ -1481,8 +1481,8 @@ void BABAEC_POINT_get_coordinates(const EC_POINT *ec_point, const BIGNUM **x,
 /********************************************************************/
 /*           EC_ELGAMAL for curves over GF(p)                       */
 /********************************************************************/
-#  define EC_ELGAMAL_MAX_BITS               32
-#  define EC_ELGAMAL_BSGS_HASH_TABLE_SIZE   (1L << 16)
+#  define EC_ELGAMAL_MAX_BITS                       32
+#  define EC_ELGAMAL_BSGS_HASH_TABLE_DEFAULT_SIZE   (1L << 16)
 
 typedef struct ec_elgamal_ctx_st EC_ELGAMAL_CTX;
 typedef struct ec_elgamal_ciphertext_st EC_ELGAMAL_CIPHERTEXT;

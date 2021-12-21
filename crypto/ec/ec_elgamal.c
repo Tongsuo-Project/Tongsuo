@@ -100,7 +100,7 @@ static int EC_ELGAMAL_discrete_log_bsgs(EC_ELGAMAL_CTX *ctx, uint32_t *r,
     EC_ELGAMAL_BSGS_HASH_TABLE *table = ctx->bsgs_hash_table;
 
     if ((P = EC_POINT_dup(M, ctx->key->group)) == NULL)
-		goto err;
+        goto err;
 
     while (i <= max) {
         entry = EC_ELGAMAL_BSGS_ENTRY_new(ctx, P, i);
@@ -114,22 +114,22 @@ static int EC_ELGAMAL_discrete_log_bsgs(EC_ELGAMAL_CTX *ctx, uint32_t *r,
             break;
         }
         if (!EC_POINT_add(ctx->key->group, P, P, table->mG_neg, NULL))
-			goto err;
+            goto err;
 
         EC_ELGAMAL_BSGS_ENTRY_free(entry);
         i++;
     }
 
     if (i > max)
-		goto err;
+        goto err;
 
     EC_POINT_free(P);
-    return 1;
+    return (int)i;
 
 err:
     EC_ELGAMAL_BSGS_ENTRY_free(entry);
     EC_POINT_free(P);
-	return 0;
+    return 0;
 }
 
 /** Creates a new EC_ELGAMAL_BSGS_ENTRY object

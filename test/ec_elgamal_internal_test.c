@@ -71,7 +71,7 @@ static uint32_t ec_elgamal_decrypt(const char *key_file,
     if (!TEST_ptr(eckey = PEM_read_ECPrivateKey(f, NULL, NULL, NULL)))
         goto err;
 
-    if (!TEST_ptr(ctx = EC_ELGAMAL_CTX_new(eckey, 1L << 16)))
+    if (!TEST_ptr(ctx = EC_ELGAMAL_CTX_new(eckey, EC_ELGAMAL_BSGS_HASH_TABLE_DEFAULT_SIZE)))
         goto err;
 
     if (!TEST_ptr(c = EC_ELGAMAL_CIPHERTEXT_new(ctx)))
@@ -251,9 +251,9 @@ err:
     return ret;
 }
 
-static int ec_elgamal_tests(void)
+static int ec_elgamal_test(int curve_id)
 {
-    TEST_info("Testing encrypt/descrypt of EC-ElGamal\n");
+    TEST_info("Testing encrypt/descrypt of EC-ElGamal for curve_id: %d\n", curve_id);
 
     int ret = 0;
     FILE *f;
@@ -262,7 +262,7 @@ static int ec_elgamal_tests(void)
     unsigned char *buf = NULL, *buf1 = NULL, *buf2 = NULL;
     size_t size, size1, size2;
 
-    if (!TEST_ptr(eckey = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1)))
+    if (!TEST_ptr(eckey = EC_KEY_new_by_curve_name(curve_id)))
         goto err;
 
     if (!TEST_true(EC_KEY_generate_key(eckey)))
@@ -329,6 +329,17 @@ err:
     EC_KEY_free(eckey);
 
     return ret;
+}
+
+static int ec_elgamal_tests(void)
+{
+    if (!TEST_true(ec_elgamal_test(NID_X9_62_prime256v1)))
+        return 0;
+
+    if (!TEST_true(ec_elgamal_test(NID_sm2)))
+        return 0;
+
+    return 1;
 }
 
 int setup_tests(void)
