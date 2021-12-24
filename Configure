@@ -1468,6 +1468,9 @@ unless ($disabled{asm}) {
     if ($target{poly1305_asm_src} ne "") {
         push @{$config{lib_defines}}, "POLY1305_ASM";
     }
+    if ($target{sm3_asm_src}) {
+        push @{$config{lib_defines}}, "SM3_ASM";
+    }
 }
 
 my %predefined_C = compiler_predefined($config{CROSS_COMPILE}.$config{CC});
@@ -3398,6 +3401,7 @@ sub print_table_entry
         "padlock_asm_src",
         "chacha_asm_src",
         "poly1035_asm_src",
+        "sm3_asm_src",
         "thread_scheme",
         "perlasm_scheme",
         "dso_scheme",
