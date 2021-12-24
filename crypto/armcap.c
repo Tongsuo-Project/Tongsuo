@@ -52,6 +52,7 @@ void _armv8_sha1_probe(void);
 void _armv8_sha256_probe(void);
 void _armv8_pmull_probe(void);
 # ifdef __aarch64__
+void _armv8_sm3_probe(void);
 void _armv8_sha512_probe(void);
 unsigned int _armv8_cpuid_probe(void);
 # endif
@@ -137,6 +138,7 @@ static unsigned long getauxval(unsigned long key)
 #  define HWCAP_CE_SHA1          (1 << 5)
 #  define HWCAP_CE_SHA256        (1 << 6)
 #  define HWCAP_CPUID            (1 << 11)
+#  define HWCAP_CE_SM3           (1 << 18)
 #  define HWCAP_CE_SHA512        (1 << 21)
 # endif
 
@@ -210,6 +212,9 @@ void OPENSSL_cpuid_setup(void)
 
         if (hwcap & HWCAP_CPUID)
             OPENSSL_armcap_P |= ARMV8_CPUID;
+
+        if (hwcap & HWCAP_CE_SM3)
+            OPENSSL_armcap_P |= ARMV8_SM3;
 #  endif
     }
 # endif
@@ -252,6 +257,11 @@ void OPENSSL_cpuid_setup(void)
         if (sigsetjmp(ill_jmp, 1) == 0) {
             _armv8_sha512_probe();
             OPENSSL_armcap_P |= ARMV8_SHA512;
+        }
+
+        if (sigsetjmp(ill_jmp, 1) == 0) {
+            _armv8_sm3_probe();
+            OPENSSL_armcap_P |= ARMV8_SM3;
         }
 #  endif
     }
