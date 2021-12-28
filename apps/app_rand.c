@@ -12,6 +12,7 @@
 #include <openssl/err.h>
 #include <openssl/rand.h>
 #include <openssl/conf.h>
+#include <openssl/rand_drbg.h>
 
 static char *save_rand_file;
 
@@ -87,6 +88,9 @@ int opt_rand(int opt)
     case OPT_R_WRITERAND:
         OPENSSL_free(save_rand_file);
         save_rand_file = OPENSSL_strdup(opt_arg());
+        break;
+    case OPT_R_DRBG_TYPE:
+        return RAND_DRBG_set_defaults(OBJ_txt2nid(opt_arg()), 0);
         break;
     }
     return 1;

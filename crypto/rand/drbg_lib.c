@@ -136,6 +136,18 @@ int RAND_DRBG_set(RAND_DRBG *drbg, int type, unsigned int flags)
     case NID_aes_256_ctr:
         ret = drbg_ctr_init(drbg);
         break;
+    case NID_sha1:
+    case NID_sha224:
+    case NID_sha256:
+    case NID_sha384:
+    case NID_sha512:
+    case NID_sha512_224:
+    case NID_sha512_256:
+#ifndef OPENSSL_NO_SM3
+    case NID_sm3:
+#endif
+        ret = drbg_hash_init(drbg);
+        break;
     }
 
     if (ret == 0) {
@@ -161,6 +173,16 @@ int RAND_DRBG_set_defaults(int type, unsigned int flags)
     case NID_aes_128_ctr:
     case NID_aes_192_ctr:
     case NID_aes_256_ctr:
+    case NID_sha1:
+    case NID_sha224:
+    case NID_sha256:
+    case NID_sha384:
+    case NID_sha512:
+    case NID_sha512_224:
+    case NID_sha512_256:
+#ifndef OPENSSL_NO_SM3
+    case NID_sm3:
+#endif
         break;
     }
 
