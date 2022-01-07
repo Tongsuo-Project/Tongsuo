@@ -71,6 +71,10 @@ my %conf_dependent_tests = (
   "25-cipher.conf" => disabled("poly1305") || disabled("chacha"),
   "27-ticket-appdata.conf" => !$is_default_tls,
   "28-seclevel.conf" => disabled("tls1_2") || $no_ec,
+  "31-ntls.conf" => disabled("ntls"),
+  "38-delegated-credential.conf" => disabled("delegated-credential") || disabled("ec"),
+  "39-ntls-sni-ticket.conf" => disabled("ntls"),
+  "41-ntls-alpn.conf" => disabled("ntls"),
 );
 
 # Add your test here if it should be skipped for some compile-time
@@ -105,7 +109,7 @@ my %skip = (
   "26-tls13_client_auth.conf" => disabled("tls1_3"),
   "29-dtls-sctp-label-bug.conf" => disabled("sctp") || disabled("sock"),
   "30-tls13-sm.conf" => disabled("sm2") || disabled("sm3") || disabled("sm4"),
-  "31-ntls.conf" => disabled("ntls") || disabled("sm2") || disabled("sm3") || disabled("sm4"),
+  "31-ntls.conf" => disabled("ntls"),
   "38-delegated-credential.conf" => disabled("delegated-credential") || disabled("ec"),
   "39-ntls-sni-ticket.conf" => disabled("ntls"),
   "41-ntls-alpn.conf" => disabled("ntls"),
