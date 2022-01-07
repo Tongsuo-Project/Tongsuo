@@ -15,7 +15,13 @@ use File::Spec::Functions qw/catfile/;
 sub test_run
 {
     my $dir_sep = $^O ne "VMS" ? "/" : "";
-    return "\${ENV::TEST_RUNS_DIR}" . $dir_sep . catfile(@_)
+    my $ret = "\${ENV::TEST_RUNS_DIR}";
+
+    foreach (@_) {
+        $ret = $ret . $dir_sep . $_;
+    }
+
+    return $ret;
 }
 
 sub test_pem

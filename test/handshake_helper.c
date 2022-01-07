@@ -25,10 +25,6 @@
 #include <netinet/sctp.h>
 #endif
 
-#ifndef OPENSSL_NO_NTLS
-#include <arpa/inet.h>
-#endif
-
 HANDSHAKE_RESULT *HANDSHAKE_RESULT_new(void)
 {
     HANDSHAKE_RESULT *ret;
