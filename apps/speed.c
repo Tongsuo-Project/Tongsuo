@@ -268,7 +268,7 @@ enum {
     D_CBC_RC2, D_CBC_RC5, D_CBC_BF, D_CBC_CAST,
     D_CBC_128_AES, D_CBC_192_AES, D_CBC_256_AES,
     D_CBC_128_CML, D_CBC_192_CML, D_CBC_256_CML,
-    D_EVP, D_GHASH, D_RAND, D_EVP_CMAC, ALGOR_NUM
+    D_EVP, D_GHASH, D_RAND, D_EVP_CMAC, D_SM3, D_CBC_SM4, ALGOR_NUM
 };
 /* name of algorithms to test. MUST BE KEEP IN SYNC with above enum ! */
 static const char *names[ALGOR_NUM] = {
@@ -278,7 +278,7 @@ static const char *names[ALGOR_NUM] = {
     "rc2-cbc", "rc5-cbc", "blowfish", "cast-cbc",
     "aes-128-cbc", "aes-192-cbc", "aes-256-cbc",
     "camellia-128-cbc", "camellia-192-cbc", "camellia-256-cbc",
-    "evp", "ghash", "rand", "cmac"
+    "evp", "ghash", "rand", "cmac", "sm3", "sm4"
 };
 
 /* list of configured algorithm (remaining), with some few alias */
@@ -319,7 +319,14 @@ static const OPT_PAIR doit_choices[] = {
     {"cast", D_CBC_CAST},
     {"cast5", D_CBC_CAST},
     {"ghash", D_GHASH},
-    {"rand", D_RAND}
+    {"rand", D_RAND},
+#ifndef OPENSSL_NO_SM3
+    {"sm3", D_SM3},
+#endif
+#ifndef OPENSSL_NO_SM4
+    {"sm4-cbc", D_CBC_SM4},
+    {"sm4", D_CBC_SM4},
+#endif
 };
 
 static double results[ALGOR_NUM][SIZE_NUM];
@@ -636,6 +643,13 @@ static int EVP_Digest_RMD160_loop(void *args)
 {
     return EVP_Digest_loop("ripemd160", D_RMD160, args);
 }
+
+#ifndef OPENSSL_NO_SM3
+static int EVP_Digest_SM3_loop(void *args)
+{
+    return EVP_Digest_loop("sm3", D_SM3, args);
+}
+#endif
 
 static int algindex;
 
@@ -1976,6 +1990,19 @@ int speed_main(int argc, char **argv)
         }
     }
 
+#ifndef OPENSSL_NO_SM3
+    if (doit[D_SM3]) {
+        for (testnum = 0; testnum < size_num; testnum++) {
+            print_message(names[D_SM3], c[D_SM3][testnum],
+                          lengths[testnum], seconds.sym);
+            Time_F(START);
+            count = run_benchmark(async_jobs, EVP_Digest_SM3_loop, loopargs);
+            d = Time_F(STOP);
+            print_result(D_SM3, testnum, count, d);
+        }
+    }
+#endif
+
     if (doit[D_HMAC]) {
         static const char hmac_key[] = "This is a key...";
         int len = strlen(hmac_key);
@@ -2006,6 +2033,7 @@ int speed_main(int argc, char **argv)
             if (!EVP_MAC_CTX_set_params(loopargs[i].mctx, params))
                 goto end;
         }
+
         for (testnum = 0; testnum < size_num; testnum++) {
             print_message(names[D_HMAC], c[D_HMAC][testnum], lengths[testnum],
                           seconds.sym);
@@ -2141,6 +2169,32 @@ int speed_main(int argc, char **argv)
                 EVP_CIPHER_CTX_free(loopargs[i].ctx);
         }
     }
+
+#ifndef OPENSSL_NO_SM4
+    if (doit[D_CBC_SM4]) {
+        int st = 1;
+
+        keylen = 16;
+        for (i = 0; st && i < loopargs_len; i++) {
+            loopargs[i].ctx = init_evp_cipher_ctx(names[D_CBC_SM4],
+                                                  key32, keylen);
+            st = loopargs[i].ctx != NULL;
+        }
+
+        for (testnum = 0; st && testnum < size_num; testnum++) {
+            print_message(names[D_CBC_SM4], c[D_CBC_SM4][testnum],
+                          lengths[testnum], seconds.sym);
+            Time_F(START);
+            count =
+                run_benchmark(async_jobs, EVP_Cipher_loop, loopargs);
+            d = Time_F(STOP);
+            print_result(D_CBC_SM4, testnum, count, d);
+        }
+        for (i = 0; i < loopargs_len; i++)
+            EVP_CIPHER_CTX_free(loopargs[i].ctx);
+    }
+#endif
+
     if (doit[D_GHASH]) {
         static const char gmac_iv[] = "0123456789ab";
         OSSL_PARAM params[3];
