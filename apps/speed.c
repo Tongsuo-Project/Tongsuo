@@ -98,6 +98,12 @@
 #ifndef OPENSSL_NO_EC
 # include <openssl/ec.h>
 #endif
+#ifndef OPENSSL_NO_SM3
+# include <crypto/sm3.h>
+#endif
+#ifndef OPENSSL_NO_SM4
+# include <crypto/sm4.h>
+#endif
 #include <openssl/modes.h>
 
 #ifndef HAVE_FORK
@@ -375,6 +381,8 @@ const OPTIONS speed_options[] = {
 #define D_IGE_256_AES   28
 #define D_GHASH         29
 #define D_RAND          30
+#define D_SM3           31
+#define D_CBC_SM4       32
 /* name of algorithms to test */
 static const char *names[] = {
     "md2", "mdc2", "md4", "md5", "hmac(md5)", "sha1", "rmd160", "rc4",
@@ -384,7 +392,7 @@ static const char *names[] = {
     "camellia-128 cbc", "camellia-192 cbc", "camellia-256 cbc",
     "evp", "sha256", "sha512", "whirlpool",
     "aes-128 ige", "aes-192 ige", "aes-256 ige", "ghash",
-    "rand"
+    "rand", "sm3", "sm4"
 };
 #define ALGOR_NUM       OSSL_NELEM(names)
 
@@ -454,7 +462,14 @@ static const OPT_PAIR doit_choices[] = {
     {"cast5", D_CBC_CAST},
 #endif
     {"ghash", D_GHASH},
-    {"rand", D_RAND}
+    {"rand", D_RAND},
+#ifndef OPENSSL_NO_SM3
+    {"sm3", D_SM3},
+#endif
+#ifndef OPENSSL_NO_SM4
+    {"sm4-cbc", D_CBC_SM4},
+    {"sm4", D_CBC_SM4},
+#endif
 };
 
 static double results[ALGOR_NUM][OSSL_NELEM(lengths_list)];
@@ -801,6 +816,22 @@ static int EVP_Digest_RMD160_loop(void *args)
 }
 #endif
 
+#ifndef OPENSSL_NO_SM3
+static int EVP_Digest_SM3_loop(void *args)
+{
+    loopargs_t *tempargs = *(loopargs_t **) args;
+    unsigned char *buf = tempargs->buf;
+    unsigned char sm3[SM3_DIGEST_LENGTH];
+    int count;
+    for (count = 0; COND(c[D_SM3][testnum]); count++) {
+        if (!EVP_Digest(buf, (size_t)lengths[testnum], &(sm3[0]),
+                        NULL, EVP_sm3(), NULL))
+            return -1;
+    }
+    return count;
+}
+#endif
+
 #ifndef OPENSSL_NO_RC4
 static RC4_KEY rc4_ks;
 static int RC4_loop(void *args)
@@ -914,6 +945,26 @@ static int AES_ige_256_encrypt_loop(void *args)
                         (size_t)lengths[testnum], &aes_ks3, iv, AES_ENCRYPT);
     return count;
 }
+
+#ifndef OPENSSL_NO_SM4
+static int EVP_Update_SM4_loop(void *args)
+{
+    loopargs_t *tempargs = *(loopargs_t **) args;
+    unsigned char *buf = tempargs->buf;
+    EVP_CIPHER_CTX *ctx = tempargs->ctx;
+    int count, outl;
+    static const unsigned char key16[16] = {
+        0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0,
+        0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12
+    };
+    for (count = 0; COND(c[D_CBC_SM4][testnum]); count++) {
+        EVP_EncryptInit_ex(ctx, EVP_sm4_cbc(), NULL, key16, iv);
+        EVP_EncryptUpdate(ctx, buf, &outl, buf, lengths[testnum]);
+        EVP_EncryptFinal_ex(ctx, buf, &outl);
+    }
+    return count;
+}
+#endif
 
 static int CRYPTO_gcm128_aad_loop(void *args)
 {
@@ -2073,6 +2124,8 @@ int speed_main(int argc, char **argv)
     c[D_IGE_256_AES][0] = count;
     c[D_GHASH][0] = count;
     c[D_RAND][0] = count;
+    c[D_SM3][0] = count;
+    c[D_CBC_SM4][0] = count;
 
     for (i = 1; i < size_num; i++) {
         long l0, l1;
@@ -2092,6 +2145,7 @@ int speed_main(int argc, char **argv)
         c[D_WHIRLPOOL][i] = c[D_WHIRLPOOL][0] * 4 * l0 / l1;
         c[D_GHASH][i] = c[D_GHASH][0] * 4 * l0 / l1;
         c[D_RAND][i] = c[D_RAND][0] * 4 * l0 / l1;
+        c[D_SM3][i] = c[D_SM3][0] * 4 * l0 / l1;
 
         l0 = (long)lengths[i - 1];
 
@@ -2113,6 +2167,7 @@ int speed_main(int argc, char **argv)
         c[D_IGE_128_AES][i] = c[D_IGE_128_AES][i - 1] * l0 / l1;
         c[D_IGE_192_AES][i] = c[D_IGE_192_AES][i - 1] * l0 / l1;
         c[D_IGE_256_AES][i] = c[D_IGE_256_AES][i - 1] * l0 / l1;
+        c[D_CBC_SM4][i] = c[D_CBC_SM4][i - 1] * l0 / l1;
     }
 
 #  ifndef OPENSSL_NO_RSA
@@ -2404,6 +2459,20 @@ int speed_main(int argc, char **argv)
         }
     }
 #endif
+
+#ifndef OPENSSL_NO_SM3
+    if (doit[D_SM3]) {
+        for (testnum = 0; testnum < size_num; testnum++) {
+            print_message(names[D_SM3], c[D_SM3][testnum],
+                          lengths[testnum], seconds.sym);
+            Time_F(START);
+            count = run_benchmark(async_jobs, EVP_Digest_SM3_loop, loopargs);
+            d = Time_F(STOP);
+            print_result(D_SM3, testnum, count, d);
+        }
+    }
+#endif
+
 #ifndef OPENSSL_NO_RC4
     if (doit[D_RC4]) {
         for (testnum = 0; testnum < size_num; testnum++) {
@@ -2711,6 +2780,28 @@ int speed_main(int argc, char **argv)
                                  iv, CAST_ENCRYPT);
             d = Time_F(STOP);
             print_result(D_CBC_CAST, testnum, count, d);
+        }
+    }
+#endif
+#ifndef OPENSSL_NO_SM4
+    if (doit[D_CBC_SM4]) {
+        if (async_jobs > 0) {
+            BIO_printf(bio_err, "Async mode is not supported with %s\n",
+                       names[D_CBC_SM4]);
+            doit[D_CBC_SM4] = 0;
+        }
+
+        for (testnum = 0; testnum < size_num && async_init == 0; testnum++) {
+            loopargs[0].ctx = EVP_CIPHER_CTX_new();
+
+            print_message(names[D_CBC_SM4], c[D_CBC_SM4][testnum],
+                          lengths[testnum], seconds.sym);
+            Time_F(START);
+            count = run_benchmark(async_jobs, EVP_Update_SM4_loop, loopargs);
+            d = Time_F(STOP);
+            print_result(D_CBC_SM4, testnum, count, d);
+
+            EVP_CIPHER_CTX_free(loopargs[0].ctx);
         }
     }
 #endif
