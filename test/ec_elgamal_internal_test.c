@@ -18,20 +18,12 @@
 #define EC_PUB_FILE_PATH    "ec-pub.pem"
 #define EC_KEY_FILE_PATH    "ec-key.pem"
 
-static size_t ec_elgamal_encrypt(const char *cert_file,
-                                 unsigned char **out, uint32_t plaintext)
+static size_t ec_elgamal_encrypt(EC_ELGAMAL_CTX *ctx,
+                                 unsigned char **out, int32_t plaintext)
 {
     size_t size, ret = 0;
     unsigned char *buf = NULL;
-    EC_KEY *eckey = NULL;
-    EC_ELGAMAL_CTX *ctx = NULL;
     EC_ELGAMAL_CIPHERTEXT *r = NULL;
-    FILE *f = fopen(cert_file, "rb");
-    if (!TEST_ptr(eckey = PEM_read_EC_PUBKEY(f, NULL, NULL, NULL)))
-        goto err;
-
-    if (!TEST_ptr(ctx = EC_ELGAMAL_CTX_new(eckey, 0)))
-        goto err;
 
     if (!TEST_ptr(r = EC_ELGAMAL_CIPHERTEXT_new(ctx)))
         goto err;
@@ -51,28 +43,15 @@ static size_t ec_elgamal_encrypt(const char *cert_file,
     ret = size;
 
 err:
-    OPENSSL_free(buf);
-    EC_KEY_free(eckey);
     EC_ELGAMAL_CIPHERTEXT_free(r);
-    EC_ELGAMAL_CTX_free(ctx);
-    fclose(f);
     return ret;
 }
 
-static uint32_t ec_elgamal_decrypt(const char *key_file,
+static uint32_t ec_elgamal_decrypt(EC_ELGAMAL_CTX *ctx,
                                    unsigned char *in, size_t size)
 {
-    uint32_t r = 0;
-    EC_KEY *eckey = NULL;
-    EC_ELGAMAL_CTX *ctx = NULL;
+    int32_t r = 0;
     EC_ELGAMAL_CIPHERTEXT *c = NULL;
-    FILE *f = fopen(key_file, "rb");
-
-    if (!TEST_ptr(eckey = PEM_read_ECPrivateKey(f, NULL, NULL, NULL)))
-        goto err;
-
-    if (!TEST_ptr(ctx = EC_ELGAMAL_CTX_new(eckey, EC_ELGAMAL_BSGS_HASH_TABLE_DEFAULT_SIZE)))
-        goto err;
 
     if (!TEST_ptr(c = EC_ELGAMAL_CIPHERTEXT_new(ctx)))
         goto err;
@@ -84,29 +63,17 @@ static uint32_t ec_elgamal_decrypt(const char *key_file,
         goto err;
 
 err:
-    EC_KEY_free(eckey);
     EC_ELGAMAL_CIPHERTEXT_free(c);
-    EC_ELGAMAL_CTX_free(ctx);
-    fclose(f);
     return r;
 }
 
-static size_t ec_elgamal_add(const char *cert_file, unsigned char **out,
+static size_t ec_elgamal_add(EC_ELGAMAL_CTX *ctx, unsigned char **out,
                              unsigned char *in1, size_t in1_size,
                              unsigned char *in2, size_t in2_size)
 {
     size_t size, ret = 0;
     unsigned char *buf = NULL;
-    EC_KEY *eckey = NULL;
-    EC_ELGAMAL_CTX *ctx = NULL;
     EC_ELGAMAL_CIPHERTEXT *r = NULL, *c1 = NULL, *c2 = NULL;
-    FILE *f = fopen(cert_file, "rb");
-
-    if (!TEST_ptr(eckey = PEM_read_EC_PUBKEY(f, NULL, NULL, NULL)))
-        goto err;
-
-    if (!TEST_ptr(ctx = EC_ELGAMAL_CTX_new(eckey, 0)))
-        goto err;
 
     if (!TEST_ptr(r = EC_ELGAMAL_CIPHERTEXT_new(ctx)))
         goto err;
@@ -138,31 +105,19 @@ static size_t ec_elgamal_add(const char *cert_file, unsigned char **out,
     ret = size;
 
 err:
-    EC_KEY_free(eckey);
     EC_ELGAMAL_CIPHERTEXT_free(c1);
     EC_ELGAMAL_CIPHERTEXT_free(c2);
     EC_ELGAMAL_CIPHERTEXT_free(r);
-    EC_ELGAMAL_CTX_free(ctx);
-    fclose(f);
     return ret;
 }
 
-static size_t ec_elgamal_sub(const char *cert_file, unsigned char **out,
+static size_t ec_elgamal_sub(EC_ELGAMAL_CTX *ctx, unsigned char **out,
                              unsigned char *in1, size_t in1_size,
                              unsigned char *in2, size_t in2_size)
 {
     size_t size, ret = 0;
     unsigned char *buf = NULL;
-    EC_KEY *eckey = NULL;
-    EC_ELGAMAL_CTX *ctx = NULL;
     EC_ELGAMAL_CIPHERTEXT *r = NULL, *c1 = NULL, *c2 = NULL;
-    FILE *f = fopen(cert_file, "rb");
-
-    if (!TEST_ptr(eckey = PEM_read_EC_PUBKEY(f, NULL, NULL, NULL)))
-        goto err;
-
-    if (!TEST_ptr(ctx = EC_ELGAMAL_CTX_new(eckey, 0)))
-        goto err;
 
     if (!TEST_ptr(r = EC_ELGAMAL_CIPHERTEXT_new(ctx)))
         goto err;
@@ -194,30 +149,18 @@ static size_t ec_elgamal_sub(const char *cert_file, unsigned char **out,
     ret = size;
 
 err:
-    EC_KEY_free(eckey);
     EC_ELGAMAL_CIPHERTEXT_free(c1);
     EC_ELGAMAL_CIPHERTEXT_free(c2);
     EC_ELGAMAL_CIPHERTEXT_free(r);
-    EC_ELGAMAL_CTX_free(ctx);
-    fclose(f);
     return ret;
 }
 
-static size_t ec_elgamal_mul(const char *cert_file, unsigned char **out,
+static size_t ec_elgamal_mul(EC_ELGAMAL_CTX *ctx, unsigned char **out,
                              unsigned char *in, size_t in_size, uint32_t m)
 {
     size_t size, ret = 0;
     unsigned char *buf = NULL;
-    EC_KEY *eckey = NULL;
-    EC_ELGAMAL_CTX *ctx = NULL;
     EC_ELGAMAL_CIPHERTEXT *r = NULL, *c = NULL;
-    FILE *f = fopen(cert_file, "rb");
-
-    if (!TEST_ptr(eckey = PEM_read_EC_PUBKEY(f, NULL, NULL, NULL)))
-        goto err;
-
-    if (!TEST_ptr(ctx = EC_ELGAMAL_CTX_new(eckey, 0)))
-        goto err;
 
     if (!TEST_ptr(r = EC_ELGAMAL_CIPHERTEXT_new(ctx)))
         goto err;
@@ -243,11 +186,8 @@ static size_t ec_elgamal_mul(const char *cert_file, unsigned char **out,
     ret = size;
 
 err:
-    EC_KEY_free(eckey);
     EC_ELGAMAL_CIPHERTEXT_free(c);
     EC_ELGAMAL_CIPHERTEXT_free(r);
-    EC_ELGAMAL_CTX_free(ctx);
-    fclose(f);
     return ret;
 }
 
@@ -257,10 +197,13 @@ static int ec_elgamal_test(int curve_id)
 
     int ret = 0;
     FILE *f;
-    EC_KEY *eckey;
-    uint32_t p1 = 2000000021, p2 = 500, m = 800, r;
+    EC_KEY *eckey = NULL, *ec_pub_key = NULL, *ec_pri_key = NULL;
+    //uint32_t p1 = 2000000021, p2 = 500, m = 800, r;
+    int32_t p1 = 111111, p2 = 555555, m = 3, r;
     unsigned char *buf = NULL, *buf1 = NULL, *buf2 = NULL;
     size_t size, size1, size2;
+    EC_ELGAMAL_CTX *ectx = NULL, *dctx = NULL;
+    EC_ELGAMAL_DECRYPT_TABLE *dtable = NULL;
 
     if (!TEST_ptr(eckey = EC_KEY_new_by_curve_name(curve_id)))
         goto err;
@@ -275,6 +218,15 @@ static int ec_elgamal_test(int curve_id)
     PEM_write_EC_PUBKEY(f, eckey);
     fclose(f);
 
+    f = fopen(EC_PUB_FILE_PATH, "r");
+    if (!TEST_ptr(ec_pub_key = PEM_read_EC_PUBKEY(f, NULL, NULL, NULL)))
+        goto err;
+
+    fclose(f);
+
+    if (!TEST_ptr(ectx = EC_ELGAMAL_CTX_new(ec_pub_key)))
+        goto err;
+
     /*
      * saving ec secret key to pem file for this test
      */
@@ -282,41 +234,55 @@ static int ec_elgamal_test(int curve_id)
     PEM_write_ECPrivateKey(f, eckey, NULL, NULL, 0, NULL, NULL);
     fclose(f);
 
-    size1 = ec_elgamal_encrypt(EC_PUB_FILE_PATH, &buf1, p1);
+    f = fopen(EC_KEY_FILE_PATH, "r");
+    if (!TEST_ptr(ec_pri_key = PEM_read_ECPrivateKey(f, NULL, NULL, NULL)))
+        goto err;
+
+    fclose(f);
+
+    if (!TEST_ptr(dctx = EC_ELGAMAL_CTX_new(ec_pri_key)))
+        goto err;
+
+    if (!TEST_ptr(dtable = EC_ELGAMAL_DECRYPT_TABLE_new(dctx, 1)))
+        goto err;
+
+    EC_ELGAMAL_CTX_set_decrypt_table(dctx, dtable);
+
+    size1 = ec_elgamal_encrypt(ectx, &buf1, p1);
     if (!TEST_ptr(buf1))
         goto err;
 
-    r = ec_elgamal_decrypt(EC_KEY_FILE_PATH, buf1, size1);
+    r = ec_elgamal_decrypt(dctx, buf1, size1);
     if (!TEST_uint_eq(r, p1))
         goto err;
 
-    size2 = ec_elgamal_encrypt(EC_PUB_FILE_PATH, &buf2, p2);
+    size2 = ec_elgamal_encrypt(ectx, &buf2, p2);
     if (!TEST_ptr(buf2))
         goto err;
 
-    size = ec_elgamal_add(EC_PUB_FILE_PATH, &buf, buf1, size1, buf2, size2);
+    size = ec_elgamal_add(ectx, &buf, buf1, size1, buf2, size2);
     if (!TEST_ptr(buf))
         goto err;
 
-    r = ec_elgamal_decrypt(EC_KEY_FILE_PATH, buf, size);
+    r = ec_elgamal_decrypt(dctx, buf, size);
     if (!TEST_uint_eq(r, p1 + p2))
         goto err;
 
     OPENSSL_free(buf);
-    size = ec_elgamal_sub(EC_PUB_FILE_PATH, &buf, buf1, size1, buf2, size2);
+    size = ec_elgamal_sub(ectx, &buf, buf1, size1, buf2, size2);
     if (!TEST_ptr(buf))
         goto err;
 
-    r = ec_elgamal_decrypt(EC_KEY_FILE_PATH, buf, size);
+    r = ec_elgamal_decrypt(dctx, buf, size);
     if (!TEST_uint_eq(r, p1 - p2))
         goto err;
 
     OPENSSL_free(buf);
-    size = ec_elgamal_mul(EC_PUB_FILE_PATH, &buf, buf2, size2, m);
+    size = ec_elgamal_mul(ectx, &buf, buf2, size2, m);
     if (!TEST_ptr(buf))
         goto err;
 
-    r = ec_elgamal_decrypt(EC_KEY_FILE_PATH, buf, size);
+    r = ec_elgamal_decrypt(dctx, buf, size);
     if (!TEST_uint_eq(r, m * p2))
         goto err;
 
@@ -327,6 +293,11 @@ err:
     OPENSSL_free(buf2);
     OPENSSL_free(buf);
     EC_KEY_free(eckey);
+    EC_KEY_free(ec_pub_key);
+    EC_KEY_free(ec_pri_key);
+
+    EC_ELGAMAL_CTX_free(ectx);
+    EC_ELGAMAL_CTX_free(dctx);
 
     return ret;
 }

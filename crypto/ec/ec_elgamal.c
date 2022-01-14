@@ -10,29 +10,28 @@
 #include "ec_elgamal.h"
 #include <string.h>
 
-static EC_ELGAMAL_BSGS_ENTRY *EC_ELGAMAL_BSGS_ENTRY_new(EC_ELGAMAL_CTX *ctx,
-                                                        EC_POINT *point,
-                                                        uint32_t value);
-static void EC_ELGAMAL_BSGS_ENTRY_free(EC_ELGAMAL_BSGS_ENTRY *entry);
+#define EC_ELGAMAL_MSG_BITS 32
+#define EC_ELGAMAL_ECDLP_BABY_BITS 15
+#define EC_ELGAMAL_ECDLP_GIANT_BITS (EC_ELGAMAL_MSG_BITS-EC_ELGAMAL_ECDLP_BABY_BITS)
 
-static EC_ELGAMAL_BSGS_HASH_TABLE *EC_ELGAMAL_BSGS_HASH_TABLE_new(EC_ELGAMAL_CTX *ctx,
-                                                                  uint32_t size);
-static void EC_ELGAMAL_BSGS_HASH_TABLE_free(EC_ELGAMAL_BSGS_HASH_TABLE *table);
+static EC_ELGAMAL_dec_tbl_entry *EC_ELGAMAL_dec_tbl_entry_new(EC_ELGAMAL_CTX *ctx,
+                                                              EC_POINT *point,
+                                                              int32_t value);
+static void EC_ELGAMAL_dec_tbl_entry_free(EC_ELGAMAL_dec_tbl_entry *entry);
 
-static unsigned long EC_ELGAMAL_BSGS_ENTRY_hash(const EC_ELGAMAL_BSGS_ENTRY *e)
+static unsigned long EC_ELGAMAL_dec_tbl_entry_hash(const EC_ELGAMAL_dec_tbl_entry *e)
 {
     int i = e->key_len;
     unsigned char *p = e->key;
 
-    while (*p == 0 && i-- > 0) {
+    while (*p == 0 && i-- > 0)
         p++;
-    }
 
     return openssl_lh_strcasehash((const char *)p);
 }
 
-static int EC_ELGAMAL_BSGS_ENTRY_cmp(const EC_ELGAMAL_BSGS_ENTRY *a,
-                                     const EC_ELGAMAL_BSGS_ENTRY *b)
+static int EC_ELGAMAL_dec_tbl_entry_cmp(const EC_ELGAMAL_dec_tbl_entry *a,
+                                        const EC_ELGAMAL_dec_tbl_entry *b)
 {
     if (a->key_len != b->key_len)
         return -1;
@@ -46,11 +45,11 @@ static int EC_ELGAMAL_BSGS_ENTRY_cmp(const EC_ELGAMAL_BSGS_ENTRY *a,
  *  \param  M          EC_POINT object
  *  \return 1 on success and 0 otherwise
  */
-static int EC_ELGAMAL_discrete_log_brute(EC_ELGAMAL_CTX *ctx, uint32_t *r,
+static int EC_ELGAMAL_discrete_log_brute(EC_ELGAMAL_CTX *ctx, int32_t *r,
                                          EC_POINT *M)
 {
     int ret = 0;
-    uint64_t i = 1, max = 1L << EC_ELGAMAL_MAX_BITS;
+    int64_t i = 1, max = 1L << EC_ELGAMAL_MAX_BITS;
     const EC_POINT *G;
     EC_POINT *P = NULL;
     BN_CTX *bn_ctx = NULL;
@@ -76,6 +75,9 @@ static int EC_ELGAMAL_discrete_log_brute(EC_ELGAMAL_CTX *ctx, uint32_t *r,
             break;
     }
 
+    if (i >= max)
+        goto err;
+
     *r = i;
     ret = 1;
 
@@ -91,57 +93,96 @@ err:
  *  \param  M          EC_POINT object
  *  \return 1 on success and 0 otherwise
  */
-static int EC_ELGAMAL_discrete_log_bsgs(EC_ELGAMAL_CTX *ctx, uint32_t *r,
+static int EC_ELGAMAL_discrete_log_bsgs(EC_ELGAMAL_CTX *ctx, int32_t *r,
                                         EC_POINT *M)
 {
-    uint64_t i = 0, max = 1L << EC_ELGAMAL_MAX_BITS;
-    EC_POINT *P = NULL;
-    EC_ELGAMAL_BSGS_ENTRY *entry = NULL, *entry_res = NULL;
-    EC_ELGAMAL_BSGS_HASH_TABLE *table = ctx->bsgs_hash_table;
+    int ret = 0;
+    int64_t i, max;
+    EC_POINT *P = NULL, *Q = NULL;
+    const EC_POINT *G = NULL;
+    EC_ELGAMAL_DECRYPT_TABLE *table = ctx->decrypt_table;
+    EC_ELGAMAL_dec_tbl_entry *entry = NULL, *entry_res = NULL;
+    BN_CTX *bn_ctx = NULL;
 
-    if ((P = EC_POINT_dup(M, ctx->key->group)) == NULL)
-        goto err;
+    bn_ctx = BN_CTX_new();
+    if (bn_ctx == NULL)
+        return ret;
 
-    while (i <= max) {
-        entry = EC_ELGAMAL_BSGS_ENTRY_new(ctx, P, i);
+    if (table->decrypt_negative == 1) {
+        G = EC_GROUP_get0_generator(ctx->key->group);
+
+        Q = EC_POINT_new(ctx->key->group);
+        if (Q == NULL)
+            goto err;
+
+        EC_POINT_set_to_infinity(ctx->key->group, Q);
+
+        P = EC_POINT_new(ctx->key->group);
+        if (P == NULL)
+            goto err;
+
+        max = 1L << EC_ELGAMAL_ECDLP_BABY_BITS;
+    } else {
+        if ((P = EC_POINT_dup(M, ctx->key->group)) == NULL)
+            goto err;
+        max = (int64_t)table->size * (int64_t)table->size;
+    }
+
+    for (i = 0; i < max; i++) {
+        if (table->decrypt_negative == 1) {
+            if (!EC_POINT_add(ctx->key->group, Q, Q, G, bn_ctx))
+                goto err;
+
+            if (!EC_POINT_copy(P, Q))
+                goto err;
+
+            if (!EC_POINT_invert(ctx->key->group, P, bn_ctx))
+                goto err;
+
+            if (!EC_POINT_add(ctx->key->group, P, P, M, bn_ctx))
+                goto err;
+        }
+
+        entry = EC_ELGAMAL_dec_tbl_entry_new(ctx, P, i);
         if (entry == NULL)
             goto err;
 
-        entry_res = lh_EC_ELGAMAL_BSGS_ENTRY_retrieve(table->bsgs_entries, entry);
+        entry_res = lh_EC_ELGAMAL_dec_tbl_entry_retrieve(table->entries, entry);
         if (entry_res != NULL) {
-            *r = i * table->size + entry_res->value;
-            EC_ELGAMAL_BSGS_ENTRY_free(entry);
+            ret = 1;
+            if (table->decrypt_negative == 1)
+                *r = (entry_res->value << EC_ELGAMAL_ECDLP_BABY_BITS) + i + 1;
+            else
+                *r = i * table->size + entry_res->value;
             break;
         }
-        if (!EC_POINT_add(ctx->key->group, P, P, table->mG_neg, NULL))
+
+        if (table->decrypt_negative != 1
+            && !EC_POINT_add(ctx->key->group, P, P, table->mG_inv, bn_ctx))
             goto err;
 
-        EC_ELGAMAL_BSGS_ENTRY_free(entry);
-        i++;
+        EC_ELGAMAL_dec_tbl_entry_free(entry);
+        entry = NULL;
     }
 
-    if (i > max)
-        goto err;
-
-    EC_POINT_free(P);
-    return (int)i;
-
 err:
-    EC_ELGAMAL_BSGS_ENTRY_free(entry);
+    BN_CTX_free(bn_ctx);
+    EC_ELGAMAL_dec_tbl_entry_free(entry);
     EC_POINT_free(P);
-    return 0;
+    EC_POINT_free(Q);
+    return ret;
 }
 
-/** Creates a new EC_ELGAMAL_BSGS_ENTRY object
+/** Creates a new EC_ELGAMAL_dec_tbl_entry object
  *  \param  ctx   EC_ELGAMAL_CTX object
  *  \param  point EC_POINT object
- *  \return newly created EC_ELGAMAL_BSGS_ENTRY object or NULL in case of an error
+ *  \return newly created EC_ELGAMAL_dec_tbl_entry object or NULL in case of an error
  */
-static EC_ELGAMAL_BSGS_ENTRY *EC_ELGAMAL_BSGS_ENTRY_new(EC_ELGAMAL_CTX *ctx,
-                                                        EC_POINT *point,
-                                                        uint32_t value)
+static EC_ELGAMAL_dec_tbl_entry *EC_ELGAMAL_dec_tbl_entry_new(EC_ELGAMAL_CTX *ctx,
+                                                              EC_POINT *point,
+                                                              int32_t value)
 {
-    EC_ELGAMAL_BSGS_ENTRY *entry = NULL;
+    EC_ELGAMAL_dec_tbl_entry *entry = NULL;
     size_t point_size = 0, len = 0;
     unsigned char *point_key = NULL;
     BN_CTX *bn_ctx = NULL;
@@ -156,7 +197,7 @@ static EC_ELGAMAL_BSGS_ENTRY *EC_ELGAMAL_BSGS_ENTRY_new(EC_ELGAMAL_CTX *ctx,
     if (point_size <= 0)
         goto err;
 
-    entry = OPENSSL_zalloc(sizeof(EC_ELGAMAL_BSGS_ENTRY));
+    entry = OPENSSL_zalloc(sizeof(*entry));
     if (entry == NULL)
         goto err;
 
@@ -184,10 +225,10 @@ err:
     return NULL;
 }
 
-/** Frees a EC_ELGAMAL_BSGS_ENTRY object
- *  \param  entry  EC_ELGAMAL_BSGS_ENTRY object to be freed
+/** Frees a EC_ELGAMAL_dec_tbl_entry object
+ *  \param  entry  EC_ELGAMAL_dec_tbl_entry object to be freed
  */
-static void EC_ELGAMAL_BSGS_ENTRY_free(EC_ELGAMAL_BSGS_ENTRY *entry)
+static void EC_ELGAMAL_dec_tbl_entry_free(EC_ELGAMAL_dec_tbl_entry *entry)
 {
     if (entry == NULL)
         return;
@@ -196,28 +237,34 @@ static void EC_ELGAMAL_BSGS_ENTRY_free(EC_ELGAMAL_BSGS_ENTRY *entry)
     OPENSSL_free(entry);
 }
 
-/** Creates a new EC_ELGAMAL_BSGS_HASH_TABLE object
- *  \param  ctx   EC_ELGAMAL_CTX object
- *  \param  size  the size of the ecdlp bsgs hash table
- *  \return newly created EC_ELGAMAL_BSGS_HASH_TABLE object or NULL in case of an error
+/** Creates a new EC_ELGAMAL_DECRYPT_TABLE object
+ *  \param  ctx              EC_ELGAMAL_CTX object
+ *  \param  decrypt_negative Whether negative numbers can be decrypted (1 or 0)
+ *  \return newly created EC_ELGAMAL_DECRYPT_TABLE object or NULL in case of an error
  */
-static EC_ELGAMAL_BSGS_HASH_TABLE *EC_ELGAMAL_BSGS_HASH_TABLE_new(EC_ELGAMAL_CTX *ctx,
-                                                                  uint32_t size)
+EC_ELGAMAL_DECRYPT_TABLE *EC_ELGAMAL_DECRYPT_TABLE_new(EC_ELGAMAL_CTX *ctx,
+                                                       int32_t decrypt_negative)
 {
-    EC_ELGAMAL_BSGS_HASH_TABLE *table = NULL;
-    EC_ELGAMAL_BSGS_ENTRY *entry = NULL, *entry_old = NULL;
-    LHASH_OF(EC_ELGAMAL_BSGS_ENTRY) *entries = NULL;
-    EC_POINT *P = NULL, *mG_neg = NULL;
+    EC_ELGAMAL_DECRYPT_TABLE *table = NULL;
+    EC_ELGAMAL_dec_tbl_entry *entry = NULL, *entry_old = NULL;
+    LHASH_OF(EC_ELGAMAL_dec_tbl_entry) *entries = NULL;
+    EC_GROUP *group;
+    EC_POINT *P = NULL, *mG_inv = NULL;
     const EC_POINT *G;
     BIGNUM *bn_size = NULL;
     BN_CTX *bn_ctx = NULL;
-    uint32_t i;
+    int32_t i, size = 1L << (EC_ELGAMAL_ECDLP_GIANT_BITS - 1);
+
+    if (ctx == NULL || ctx->key == NULL)
+        return NULL;
+
+    group = ctx->key->group;
 
     bn_ctx = BN_CTX_new();
     if (bn_ctx == NULL)
         goto err;
 
-    table = OPENSSL_zalloc(sizeof(EC_ELGAMAL_BSGS_HASH_TABLE));
+    table = OPENSSL_zalloc(sizeof(*table));
     if (table == NULL)
         goto err;
 
@@ -227,21 +274,24 @@ static EC_ELGAMAL_BSGS_HASH_TABLE *EC_ELGAMAL_BSGS_HASH_TABLE_new(EC_ELGAMAL_CTX
     if (bn_size == NULL)
         goto err;
     BN_set_word(bn_size,  (BN_ULONG)size);
-    BN_set_negative(bn_size, 1);
+    BN_set_negative(bn_size, 0);
 
-    G = EC_GROUP_get0_generator(ctx->key->group);
+    G = EC_GROUP_get0_generator(group);
 
-    mG_neg = EC_POINT_new(ctx->key->group);
-    if (mG_neg == NULL)
+    mG_inv = EC_POINT_new(group);
+    if (mG_inv == NULL)
         goto err;
 
-    if (!EC_POINT_mul(ctx->key->group, mG_neg, bn_size, NULL, NULL, bn_ctx))
+    if (!EC_POINT_mul(group, mG_inv, bn_size, NULL, NULL, bn_ctx))
         goto err;
 
-    table->mG_neg = mG_neg;
+    if (!EC_POINT_invert(group, mG_inv, bn_ctx))
+        goto err;
 
-    entries = lh_EC_ELGAMAL_BSGS_ENTRY_new(EC_ELGAMAL_BSGS_ENTRY_hash,
-                                           EC_ELGAMAL_BSGS_ENTRY_cmp);
+    table->mG_inv = mG_inv;
+
+    entries = lh_EC_ELGAMAL_dec_tbl_entry_new(EC_ELGAMAL_dec_tbl_entry_hash,
+                                              EC_ELGAMAL_dec_tbl_entry_cmp);
     if (entries == NULL)
         goto err;
 
@@ -249,26 +299,43 @@ static EC_ELGAMAL_BSGS_HASH_TABLE *EC_ELGAMAL_BSGS_HASH_TABLE_new(EC_ELGAMAL_CTX
     if (P == NULL)
         goto err;
 
-    EC_POINT_set_to_infinity(ctx->key->group, P);
-    for (i = 0; i <= size; i++) {
-        entry = EC_ELGAMAL_BSGS_ENTRY_new(ctx, P, i);
+    if (decrypt_negative != 1)
+        EC_POINT_set_to_infinity(group, P);
+
+    for (i = decrypt_negative == 1 ? -size : 0; i < size; i++) {
+        if (decrypt_negative == 1) {
+            BN_set_word(bn_size, (BN_ULONG)((int64_t)i < 0 ? -i : i)
+                                                << EC_ELGAMAL_ECDLP_BABY_BITS);
+            if (!EC_POINT_mul(group, P, bn_size, NULL, NULL, bn_ctx))
+                goto err;
+            if (i < 0) {
+                if (!EC_POINT_invert(group, P, bn_ctx))
+                    goto err;
+            }
+        }
+
+        entry = EC_ELGAMAL_dec_tbl_entry_new(ctx, P, i);
         if (entry == NULL)
             goto err;
 
-        entry_old = lh_EC_ELGAMAL_BSGS_ENTRY_insert(entries, entry);
-        if (lh_EC_ELGAMAL_BSGS_ENTRY_error(entries) && entry_old == NULL)
+        entry_old = lh_EC_ELGAMAL_dec_tbl_entry_insert(entries, entry);
+        if (lh_EC_ELGAMAL_dec_tbl_entry_error(entries) && entry_old == NULL)
             goto err;
 
         if (entry_old != NULL)
-            EC_ELGAMAL_BSGS_ENTRY_free(entry_old);
+            EC_ELGAMAL_dec_tbl_entry_free(entry_old);
 
         entry = NULL;
 
-        if (!EC_POINT_add(ctx->key->group, P, P, G, bn_ctx))
+        if (decrypt_negative != 1 && !EC_POINT_add(group, P, P, G, bn_ctx))
             goto err;
     }
 
-    table->bsgs_entries = entries;
+    table->entries = entries;
+    table->decrypt_negative = decrypt_negative;
+
+    table->references = 1;
+    table->lock = CRYPTO_THREAD_lock_new();
 
     EC_POINT_free(P);
     BN_CTX_free(bn_ctx);
@@ -276,57 +343,68 @@ static EC_ELGAMAL_BSGS_HASH_TABLE *EC_ELGAMAL_BSGS_HASH_TABLE_new(EC_ELGAMAL_CTX
     return table;
 
 err:
-    EC_ELGAMAL_BSGS_ENTRY_free(entry);
-    lh_EC_ELGAMAL_BSGS_ENTRY_doall(entries, EC_ELGAMAL_BSGS_ENTRY_free);
-    lh_EC_ELGAMAL_BSGS_ENTRY_free(entries);
+    EC_ELGAMAL_dec_tbl_entry_free(entry);
+    lh_EC_ELGAMAL_dec_tbl_entry_doall(entries, EC_ELGAMAL_dec_tbl_entry_free);
+    lh_EC_ELGAMAL_dec_tbl_entry_free(entries);
     EC_POINT_free(P);
-    EC_POINT_free(mG_neg);
+    EC_POINT_free(mG_inv);
     OPENSSL_free(table);
     BN_CTX_free(bn_ctx);
     return NULL;
 }
 
-/** Frees a EC_ELGAMAL_BSGS_HASH_TABLE object
- *  \param  table  EC_ELGAMAL_BSGS_HASH_TABLE object to be freed
+/** Frees a EC_ELGAMAL_DECRYPT_TABLE object
+ *  \param  table  EC_ELGAMAL_DECRYPT_TABLE object to be freed
  */
-static void EC_ELGAMAL_BSGS_HASH_TABLE_free(EC_ELGAMAL_BSGS_HASH_TABLE *table)
+void EC_ELGAMAL_DECRYPT_TABLE_free(EC_ELGAMAL_DECRYPT_TABLE *table)
 {
+    int i;
+
     if (table == NULL)
         return;
 
-    lh_EC_ELGAMAL_BSGS_ENTRY_doall(table->bsgs_entries, EC_ELGAMAL_BSGS_ENTRY_free);
+    CRYPTO_DOWN_REF(&table->references, &i, table->lock);
 
-    lh_EC_ELGAMAL_BSGS_ENTRY_free(table->bsgs_entries);
-    EC_POINT_free(table->mG_neg);
+    if (i > 0)
+        return;
+
+    lh_EC_ELGAMAL_dec_tbl_entry_doall(table->entries, EC_ELGAMAL_dec_tbl_entry_free);
+
+    lh_EC_ELGAMAL_dec_tbl_entry_free(table->entries);
+    EC_POINT_free(table->mG_inv);
     OPENSSL_free(table);
+}
+
+/** Sets a EC_ELGAMAL_DECRYPT_TABLE object for decryption.
+ *  \param  ctx   EC_ELGAMAL_CTX object
+ *  \param  table EC_ELGAMAL_DECRYPT_TABLE object
+ */
+void EC_ELGAMAL_CTX_set_decrypt_table(EC_ELGAMAL_CTX *ctx,
+                                      EC_ELGAMAL_DECRYPT_TABLE *table)
+{
+    int i;
+
+    ctx->decrypt_table = table;
+    CRYPTO_UP_REF(&table->references, &i, table->lock);
 }
 
 /** Creates a new EC_ELGAMAL object
  *  \param  key  EC_KEY to use
- *  \param  bsgs_htable_size  Specified the size of the ecdlp bsgs hash table,
- *                            and if set to 0, the bsgs algorithm is not used,
- *                            but the brute algorithm is used
  *  \return newly created EC_ELGAMAL_CTX object or NULL in case of an error
  */
-EC_ELGAMAL_CTX *EC_ELGAMAL_CTX_new(EC_KEY *key, uint32_t bsgs_htable_size)
+EC_ELGAMAL_CTX *EC_ELGAMAL_CTX_new(EC_KEY *key)
 {
     EC_ELGAMAL_CTX *ctx = NULL;
 
     if (key == NULL)
         return NULL;
 
-    ctx = OPENSSL_zalloc(sizeof(EC_ELGAMAL_CTX));
+    ctx = OPENSSL_zalloc(sizeof(*ctx));
     if (ctx == NULL)
         goto err;
 
     EC_KEY_up_ref(key);
     ctx->key = key;
-
-    if (bsgs_htable_size > 0) {
-        ctx->bsgs_hash_table = EC_ELGAMAL_BSGS_HASH_TABLE_new(ctx, bsgs_htable_size);
-        if (ctx->bsgs_hash_table == NULL)
-            goto err;
-    }
 
     return ctx;
 
@@ -344,7 +422,7 @@ void EC_ELGAMAL_CTX_free(EC_ELGAMAL_CTX *ctx)
         return;
 
     EC_KEY_free(ctx->key);
-    EC_ELGAMAL_BSGS_HASH_TABLE_free(ctx->bsgs_hash_table);
+    EC_ELGAMAL_DECRYPT_TABLE_free(ctx->decrypt_table);
     OPENSSL_free(ctx);
 }
 
@@ -357,7 +435,7 @@ EC_ELGAMAL_CIPHERTEXT *EC_ELGAMAL_CIPHERTEXT_new(EC_ELGAMAL_CTX *ctx)
     EC_POINT *C1 = NULL, *C2 = NULL;
     EC_ELGAMAL_CIPHERTEXT *ciphertext;
 
-    ciphertext = OPENSSL_zalloc(sizeof(EC_ELGAMAL_CIPHERTEXT));
+    ciphertext = OPENSSL_zalloc(sizeof(*ciphertext));
     if (ciphertext == NULL)
         return NULL;
 
@@ -507,7 +585,7 @@ err:
  *  \param  plaintext  The plaintext integer to be encrypted
  *  \return 1 on success and 0 otherwise
  */
-int EC_ELGAMAL_encrypt(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r, uint32_t plaintext)
+int EC_ELGAMAL_encrypt(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r, int32_t plaintext)
 {
     int ret = 0;
     BN_CTX *bn_ctx = NULL;
@@ -571,10 +649,10 @@ err:
  *  \param  cihpertext EC_ELGAMAL_CIPHERTEXT object to be decrypted
  *  \return 1 on success and 0 otherwise
  */
-int EC_ELGAMAL_decrypt(EC_ELGAMAL_CTX *ctx, uint32_t *r, EC_ELGAMAL_CIPHERTEXT *ciphertext)
+int EC_ELGAMAL_decrypt(EC_ELGAMAL_CTX *ctx, int32_t *r, EC_ELGAMAL_CIPHERTEXT *ciphertext)
 {
     int ret = 0;
-    uint32_t plaintext;
+    int32_t plaintext;
     EC_POINT *M = NULL;
     BN_CTX *bn_ctx = NULL;
 
@@ -599,7 +677,7 @@ int EC_ELGAMAL_decrypt(EC_ELGAMAL_CTX *ctx, uint32_t *r, EC_ELGAMAL_CIPHERTEXT *
     if (!EC_POINT_add(ctx->key->group, M, ciphertext->C2, M, bn_ctx))
         goto err;
 
-    if (ctx->bsgs_hash_table != NULL) {
+    if (ctx->decrypt_table != NULL) {
         if (!EC_ELGAMAL_discrete_log_bsgs(ctx, &plaintext, M))
             goto err;
     } else {
@@ -664,8 +742,7 @@ int EC_ELGAMAL_sub(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r,
 {
     int ret = 0;
     BN_CTX *bn_ctx = NULL;
-    BIGNUM *bn_1 = NULL;
-    EC_POINT *C2C1_neg = NULL, *C2C2_neg = NULL;
+    EC_POINT *C1_inv = NULL, *C2_inv = NULL;
 
     if (ctx == NULL || ctx->key == NULL || r == NULL || c1 == NULL || c2 == NULL)
         return ret;
@@ -674,35 +751,29 @@ int EC_ELGAMAL_sub(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r,
     if (bn_ctx == NULL)
         goto err;
 
-    if ((C2C1_neg = EC_POINT_dup(c2->C1, ctx->key->group)) == NULL)
+    if ((C1_inv = EC_POINT_dup(c2->C1, ctx->key->group)) == NULL)
         goto err;
 
-    if ((C2C2_neg = EC_POINT_dup(c2->C2, ctx->key->group)) == NULL)
+    if ((C2_inv = EC_POINT_dup(c2->C2, ctx->key->group)) == NULL)
         goto err;
 
-    bn_1 = BN_CTX_get(bn_ctx);
-    if (bn_1 == NULL)
-        goto err;
-    BN_set_word(bn_1,  (BN_ULONG)1);
-    BN_set_negative(bn_1, 1);
-
-    if (!EC_POINT_mul(ctx->key->group, C2C1_neg, NULL, C2C1_neg, bn_1, bn_ctx))
+    if (!EC_POINT_invert(ctx->key->group, C1_inv, bn_ctx))
         goto err;
 
-    if (!EC_POINT_mul(ctx->key->group, C2C2_neg, NULL, C2C2_neg, bn_1, bn_ctx))
+    if (!EC_POINT_invert(ctx->key->group, C2_inv, bn_ctx))
         goto err;
 
-    if (!EC_POINT_add(ctx->key->group, r->C1, c1->C1, C2C1_neg, bn_ctx))
+    if (!EC_POINT_add(ctx->key->group, r->C1, c1->C1, C1_inv, bn_ctx))
         goto err;
 
-    if (!EC_POINT_add(ctx->key->group, r->C2, c1->C2, C2C2_neg, bn_ctx))
+    if (!EC_POINT_add(ctx->key->group, r->C2, c1->C2, C2_inv, bn_ctx))
         goto err;
 
     ret = 1;
 
 err:
-    EC_POINT_free(C2C1_neg);
-    EC_POINT_free(C2C2_neg);
+    EC_POINT_free(C1_inv);
+    EC_POINT_free(C2_inv);
     BN_CTX_free(bn_ctx);
     return ret;
 }
@@ -716,7 +787,7 @@ err:
  *  \return 1 on success and 0 otherwise
  */
 int EC_ELGAMAL_mul(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r,
-                   EC_ELGAMAL_CIPHERTEXT *c, uint32_t m)
+                   EC_ELGAMAL_CIPHERTEXT *c, int32_t m)
 {
     int ret = 0;
     BIGNUM *bn_m;
@@ -732,7 +803,8 @@ int EC_ELGAMAL_mul(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r,
     bn_m = BN_CTX_get(bn_ctx);
     if (bn_m == NULL)
         goto err;
-    BN_set_word(bn_m,  (BN_ULONG)m);
+    BN_set_word(bn_m, (BN_ULONG)(m > 0 ? m : -m));
+    BN_set_negative(bn_m, m < 0 ? 1 : 0);
 
     if (!EC_POINT_mul(ctx->key->group, r->C1, NULL, c->C1, bn_m, bn_ctx))
         goto err;

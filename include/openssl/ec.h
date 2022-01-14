@@ -1482,10 +1482,10 @@ void BABAEC_POINT_get_coordinates(const EC_POINT *ec_point, const BIGNUM **x,
 /*           EC_ELGAMAL for curves over GF(p)                       */
 /********************************************************************/
 #  define EC_ELGAMAL_MAX_BITS                       32
-#  define EC_ELGAMAL_BSGS_HASH_TABLE_DEFAULT_SIZE   (1L << 16)
 
 typedef struct ec_elgamal_ctx_st EC_ELGAMAL_CTX;
 typedef struct ec_elgamal_ciphertext_st EC_ELGAMAL_CIPHERTEXT;
+typedef struct ec_elgamal_decrypt_table_st EC_ELGAMAL_DECRYPT_TABLE;
 
 /********************************************************************/
 /*                   EC_ELGAMAL functions                           */
@@ -1493,17 +1493,34 @@ typedef struct ec_elgamal_ciphertext_st EC_ELGAMAL_CIPHERTEXT;
 
 /** Creates a new EC_ELGAMAL object
  *  \param  key  EC_KEY to use
- *  \param  bsgs_htable_size  The size of the ecdlp bsgs hash table, and if set
- *                            to 0, the bsgs algorithm is not used, but the
- *                            brute algorithm is used
  *  \return newly created EC_ELGAMAL_CTX object or NULL in case of an error
  */
-EC_ELGAMAL_CTX *EC_ELGAMAL_CTX_new(EC_KEY *key, uint32_t bsgs_htable_size);
+EC_ELGAMAL_CTX *EC_ELGAMAL_CTX_new(EC_KEY *key);
 
 /** Frees a EC_ELGAMAL_CTX object
  *  \param  ctx  EC_ELGAMAL_CTX object to be freed
  */
 void EC_ELGAMAL_CTX_free(EC_ELGAMAL_CTX *ctx);
+
+/** Creates a new EC_ELGAMAL_DECRYPT_TABLE object
+ *  \param  ctx              EC_ELGAMAL_CTX object
+ *  \param  decrypt_negative Whether negative numbers can be decrypted (1 or 0)
+ *  \return newly created EC_ELGAMAL_DECRYPT_TABLE object or NULL in case of an error
+ */
+EC_ELGAMAL_DECRYPT_TABLE *EC_ELGAMAL_DECRYPT_TABLE_new(EC_ELGAMAL_CTX *ctx,
+                                                       int32_t decrypt_negative);
+
+/** Frees a EC_ELGAMAL_DECRYPT_TABLE object
+ *  \param  table  EC_ELGAMAL_DECRYPT_TABLE object to be freed
+ */
+void EC_ELGAMAL_DECRYPT_TABLE_free(EC_ELGAMAL_DECRYPT_TABLE *table);
+
+/** Sets a EC_ELGAMAL_DECRYPT_TABLE object for decryption.
+ *  \param  ctx   EC_ELGAMAL_CTX object
+ *  \param  table EC_ELGAMAL_DECRYPT_TABLE object
+ */
+void EC_ELGAMAL_CTX_set_decrypt_table(EC_ELGAMAL_CTX *ctx,
+                                      EC_ELGAMAL_DECRYPT_TABLE *table);
 
 /** Encrypts an Integer with additadive homomorphic EC-ElGamal
  *  \param  ctx        EC_ELGAMAL_CTX object.
@@ -1512,7 +1529,8 @@ void EC_ELGAMAL_CTX_free(EC_ELGAMAL_CTX *ctx);
  *  \param  plaintext  The plaintext integer to be encrypted
  *  \return 1 on success and 0 otherwise
  */
-int EC_ELGAMAL_encrypt(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r, uint32_t plaintext);
+
+int EC_ELGAMAL_encrypt(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r, int32_t plaintext);
 
 /** Decrypts the ciphertext
  *  \param  ctx        EC_ELGAMAL_CTX object
@@ -1520,7 +1538,7 @@ int EC_ELGAMAL_encrypt(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r, uint32_t p
  *  \param  cihpertext EC_ELGAMAL_CIPHERTEXT object to be decrypted
  *  \return 1 on success and 0 otherwise
  */
-int EC_ELGAMAL_decrypt(EC_ELGAMAL_CTX *ctx, uint32_t *r, EC_ELGAMAL_CIPHERTEXT *ciphertext);
+int EC_ELGAMAL_decrypt(EC_ELGAMAL_CTX *ctx, int32_t *r, EC_ELGAMAL_CIPHERTEXT *ciphertext);
 
 /** Adds two EC-Elgamal ciphertext and stores it in r (r = c1 + c2).
  *  \param  ctx        EC_ELGAMAL_CTX object
@@ -1553,7 +1571,7 @@ int EC_ELGAMAL_sub(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r,
  *  \return 1 on success and 0 otherwise
  */
 int EC_ELGAMAL_mul(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r,
-                   EC_ELGAMAL_CIPHERTEXT *c, uint32_t m);
+                   EC_ELGAMAL_CIPHERTEXT *c, int32_t m);
 
 /** Creates a new EC_ELGAMAL_CIPHERTEXT object for EC-ELGAMAL oparations
  *  \param  ctx        EC_ELGAMAL_CTX object

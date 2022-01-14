@@ -30,23 +30,26 @@ struct ec_elgamal_ciphertext_st {
     EC_POINT *C2;
 };
 
-typedef struct ec_elgamal_bsgs_entry_st {
-    int key_len;
+typedef struct ec_elgamal_decrypt_table_entry_st {
+    int32_t value;
+    uint32_t key_len;
     unsigned char *key;
-    uint32_t value;
-} EC_ELGAMAL_BSGS_ENTRY;
+} EC_ELGAMAL_dec_tbl_entry;
 
-DEFINE_LHASH_OF(EC_ELGAMAL_BSGS_ENTRY);
+DEFINE_LHASH_OF(EC_ELGAMAL_dec_tbl_entry);
 
-typedef struct ec_elgamal_bsgs_hash_table_st {
-    uint32_t size;
-    EC_POINT *mG_neg;
-    LHASH_OF(EC_ELGAMAL_BSGS_ENTRY) *bsgs_entries;
-} EC_ELGAMAL_BSGS_HASH_TABLE;
+struct ec_elgamal_decrypt_table_st {
+    CRYPTO_REF_COUNT references;
+    CRYPTO_RWLOCK *lock;
+    int32_t decrypt_negative;
+    int32_t size;
+    EC_POINT *mG_inv;
+    LHASH_OF(EC_ELGAMAL_dec_tbl_entry) *entries;
+};
 
 struct ec_elgamal_ctx_st {
     EC_KEY *key;
-    EC_ELGAMAL_BSGS_HASH_TABLE *bsgs_hash_table;
+    EC_ELGAMAL_DECRYPT_TABLE *decrypt_table;
 };
 
 # ifdef  __cplusplus
