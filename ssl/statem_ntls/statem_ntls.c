@@ -21,8 +21,7 @@
 #if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
      && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
 
-#include <sys/socket.h>
-#include <arpa/inet.h>
+#include "internal/sockets.h"
 
 int ntls_sm2_derive_ntls(SSL *s, EVP_PKEY *tmp_priv, EVP_PKEY *peer_tmp_pub)
 {

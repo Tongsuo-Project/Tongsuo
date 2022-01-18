@@ -2707,7 +2707,7 @@ MSG_PROCESS_RETURN tls_process_compressed_certificate(SSL *s,
     unsigned char *out = NULL;
     unsigned int alg_id;
     size_t msg_len;
-    size_t uncompressed_len;
+    unsigned long uncompressed_len;
     PACKET subpkt;
     int i;
 
