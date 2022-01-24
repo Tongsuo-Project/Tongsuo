@@ -111,6 +111,7 @@ static int test_babassl_api(void)
     SSL_CTX *cctx = NULL, *sctx = NULL, *sctx2 = NULL, *sctx3 = NULL;
     SSL *clientssl = NULL, *serverssl = NULL;
     int testresult = 0;
+    size_t len;
     FILE *fp;
     const EVP_MD                       *md = NULL;
     int                                 rsig;
@@ -234,10 +235,21 @@ static int test_babassl_api(void)
     BABASSL_debug(serverssl, (unsigned char *)"BABASSL_debug",
                   sizeof("BABASSL_debug") - 1);
     fseek(fp, 0, SEEK_END);
-    if(!TEST_int_eq(ftell(fp), 30))
+
+    len = 30;
+#ifdef _WIN32
+    /* \n -> \r\n on Windows */
+    len += 2;
+#endif
+    if(!TEST_int_eq(ftell(fp), len))
         goto end;
     fclose(fp);
-    fp = freopen("/dev/tty", "w", stdout);
+#ifdef OPENSSL_SYS_MSDOS
+# define DEV_TTY "con"
+#else
+# define DEV_TTY "/dev/tty"
+#endif
+    fp = freopen(DEV_TTY, "w", stdout);
     remove("BABASSL_debug.log");
 
 #ifdef SSL_get_master_key
