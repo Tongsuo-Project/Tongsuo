@@ -49,7 +49,7 @@ static int EC_ELGAMAL_discrete_log_brute(EC_ELGAMAL_CTX *ctx, int32_t *r,
                                          EC_POINT *M)
 {
     int ret = 0;
-    int64_t i = 1, max = 1L << EC_ELGAMAL_MAX_BITS;
+    int64_t i = 1, max = 1LL << EC_ELGAMAL_MAX_BITS;
     const EC_POINT *G;
     EC_POINT *P = NULL;
     BN_CTX *bn_ctx = NULL;
@@ -78,7 +78,7 @@ static int EC_ELGAMAL_discrete_log_brute(EC_ELGAMAL_CTX *ctx, int32_t *r,
     if (i >= max)
         goto err;
 
-    *r = i;
+    *r = (int32_t)i;
     ret = 1;
 
 err:
@@ -143,7 +143,7 @@ static int EC_ELGAMAL_discrete_log_bsgs(EC_ELGAMAL_CTX *ctx, int32_t *r,
                 goto err;
         }
 
-        entry = EC_ELGAMAL_dec_tbl_entry_new(ctx, P, i);
+        entry = EC_ELGAMAL_dec_tbl_entry_new(ctx, P, (int32_t)i);
         if (entry == NULL)
             goto err;
 
@@ -151,9 +151,9 @@ static int EC_ELGAMAL_discrete_log_bsgs(EC_ELGAMAL_CTX *ctx, int32_t *r,
         if (entry_res != NULL) {
             ret = 1;
             if (table->decrypt_negative == 1)
-                *r = (entry_res->value << EC_ELGAMAL_ECDLP_BABY_BITS) + i + 1;
+                *r = (int32_t)((entry_res->value << EC_ELGAMAL_ECDLP_BABY_BITS) + i + 1);
             else
-                *r = i * table->size + entry_res->value;
+                *r = (int32_t)(i * table->size + entry_res->value);
             break;
         }
 
