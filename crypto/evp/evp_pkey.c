@@ -49,6 +49,16 @@ EVP_PKEY *EVP_PKCS82PKEY(const PKCS8_PRIV_KEY_INFO *p8)
         goto error;
     }
 
+#ifndef OPENSSL_NO_SM2
+    if (EVP_PKEY_is_sm2(pkey)) {
+        if (!EVP_PKEY_set_alias_type(pkey, EVP_PKEY_SM2)) {
+            EVPerr(EVP_F_EVP_PKCS82PKEY,
+                   EVP_R_UNSUPPORTED_PRIVATE_KEY_ALGORITHM);
+            goto error;
+        }
+    }
+#endif
+
     return pkey;
 
  error:
