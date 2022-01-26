@@ -154,6 +154,7 @@ size_t rand_drbg_get_entropy(RAND_DRBG *drbg,
     }
 
     if (drbg->parent != NULL) {
+        size_t chunk;
         size_t bytes_needed = rand_pool_bytes_needed(pool, 1 /*entropy_factor*/);
         unsigned char *buffer = rand_pool_add_begin(pool, bytes_needed);
 
@@ -169,11 +170,22 @@ size_t rand_drbg_get_entropy(RAND_DRBG *drbg,
              * if locking if drbg->parent->lock == NULL.)
              */
             rand_drbg_lock(drbg->parent);
-            if (RAND_DRBG_generate(drbg->parent,
-                                   buffer, bytes_needed,
-                                   prediction_resistance,
-                                   (unsigned char *)&drbg, sizeof(drbg)) != 0)
-                bytes = bytes_needed;
+
+            for (; bytes_needed > 0; bytes_needed -= chunk, buffer += chunk) {
+                chunk = bytes_needed;
+                if (chunk > drbg->parent->max_request)
+                    chunk = drbg->parent->max_request;
+
+                if (RAND_DRBG_generate(drbg->parent,
+                                       buffer, chunk,
+                                       prediction_resistance,
+                                       (unsigned char *)&drbg,
+                                       sizeof(drbg)) != 1)
+                    break;
+
+                bytes += chunk;
+            }
+
             drbg->reseed_next_counter
                 = tsan_load(&drbg->parent->reseed_prop_counter);
             rand_drbg_unlock(drbg->parent);
