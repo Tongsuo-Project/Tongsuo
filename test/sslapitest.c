@@ -5456,7 +5456,7 @@ static struct {
         "TLS_CHACHA20_POLY1305_SHA256:"
 # if !defined(OPENSSL_NO_SM2) && !defined(OPENSSL_NO_SM3) \
     && !defined(OPENSSL_NO_SM4)
-        "TLS_SM4_CCM_SM3:TLS_SM4_GCM_SM3:"
+        "TLS_SM4_GCM_SM3:TLS_SM4_CCM_SM3:"
 # endif
         "AES256-SHA"
     },

@@ -71,8 +71,8 @@ static const uint32_t default_ciphers_in_order[] = {
 # endif
 # if (!defined OPENSSL_NO_SM2) && (!defined OPENSSL_NO_SM3) \
      && (!defined OPENSSL_NO_SM4)
-    TLS1_3_CK_SM4_CCM_SM3,
     TLS1_3_CK_SM4_GCM_SM3,
+    TLS1_3_CK_SM4_CCM_SM3,
 # endif
 #endif
 #ifndef OPENSSL_NO_TLS1_2

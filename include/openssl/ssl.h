@@ -209,8 +209,8 @@ extern "C" {
 
 # if (!defined OPENSSL_NO_SM2) && (!defined OPENSSL_NO_SM3) \
     && (!defined OPENSSL_NO_SM4)
-#  define SM4_CIPHERSUITES ":TLS_SM4_CCM_SM3" \
-                           ":TLS_SM4_GCM_SM3"
+#  define SM4_CIPHERSUITES ":TLS_SM4_GCM_SM3" \
+                           ":TLS_SM4_CCM_SM3"
 # else
 #  define SM4_CIPHERSUITES ""
 # endif
