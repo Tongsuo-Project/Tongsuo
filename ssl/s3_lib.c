@@ -4253,7 +4253,12 @@ int ssl3_get_req_cert_type(SSL *s, WPACKET *pkt)
         return 0;
 #endif
 #ifndef OPENSSL_NO_DSA
-    if (!(alg_a & SSL_aDSS) && !WPACKET_put_bytes_u8(pkt, SSL3_CT_DSS_SIGN))
+    if (!(alg_a & SSL_aDSS)
+# ifndef OPENSSL_NO_NTLS
+        /* TLCP not define DSS sign */
+        && !SSL_IS_NTLS(s)
+# endif
+        && !WPACKET_put_bytes_u8(pkt, SSL3_CT_DSS_SIGN))
         return 0;
 #endif
 #ifndef OPENSSL_NO_EC
@@ -4261,7 +4266,11 @@ int ssl3_get_req_cert_type(SSL *s, WPACKET *pkt)
      * ECDSA certs can be used with RSA cipher suites too so we don't
      * need to check for SSL_kECDH or SSL_kECDHE
      */
-    if (s->version >= TLS1_VERSION
+    if ((s->version >= TLS1_VERSION
+# if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)
+        || SSL_IS_NTLS(s)
+# endif
+        )
             && !(alg_a & SSL_aECDSA)
             && !WPACKET_put_bytes_u8(pkt, TLS_CT_ECDSA_SIGN))
         return 0;
