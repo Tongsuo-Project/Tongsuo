@@ -223,7 +223,7 @@ extern "C" {
 # define TLSEXT_curve_P_256                              23
 # define TLSEXT_curve_P_384                              24
 
-/* define in draft-yang-tls-tls13-sm-suites-01 */
+/* defined in RFC 8998 */
 # ifndef OPENSSL_NO_SM2
 #  define TLSEXT_curve_SM2                               41
 # endif

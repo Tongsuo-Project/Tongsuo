@@ -30,7 +30,7 @@
 #ifndef OPENSSL_NO_SM2
 /*
  *standard handshake sm2-id and cert verify id is defined
- * in IETF draft-yang-tls-tls13-sm-suites-01
+ * in IETF RFC 8998
  */
 # define HANDSHAKE_SM2_ID "TLSv1.3+GM+Cipher+Suite"
 # define HANDSHAKE_SM2_ID_LEN sizeof(HANDSHAKE_SM2_ID) - 1

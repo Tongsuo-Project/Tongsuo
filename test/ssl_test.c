@@ -391,6 +391,17 @@ static int check_cipher(HANDSHAKE_RESULT *result, SSL_TEST_CTX *test_ctx)
     return 1;
 }
 
+static int check_hrr(HANDSHAKE_RESULT *result, SSL_TEST_CTX *test_ctx)
+{
+    if (test_ctx->expected_hrr == SSL_TEST_HRR_IGNORE)
+        return 1;
+    if (!TEST_int_eq(result->client_hrr, result->server_hrr))
+        return 0;
+    if (!TEST_int_eq(result->client_hrr, test_ctx->expected_hrr))
+        return 0;
+    return 1;
+}
+
 /*
  * This could be further simplified by constructing an expected
  * HANDSHAKE_RESULT, and implementing comparison methods for
@@ -428,6 +439,7 @@ static int check_test(HANDSHAKE_RESULT *result, SSL_TEST_CTX *test_ctx)
         ret &= check_client_dc_usage(result, test_ctx);
         ret &= check_server_dc_usage(result, test_ctx);
 #endif
+        ret &= check_hrr(result, test_ctx);
     }
     return ret;
 }

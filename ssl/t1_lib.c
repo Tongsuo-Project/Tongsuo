@@ -1815,6 +1815,25 @@ int tls12_copy_sigalgs(SSL *s, WPACKET *pkt,
 
         if (!tls12_sigalg_allowed(s, SSL_SECOP_SIGALG_SUPPORTED, lu))
             continue;
+
+#ifndef OPENSSL_NO_SM2
+        /*
+         * RFC 8998 requires that
+         * if the server chooses TLS_SM4_GCM_SM3 or TLS_SM4_CCM_SM3,
+         * the only valid signature algorithm present in
+         * "signature_algorithms" extension MUST be "sm2sig_sm3".
+         */
+        if (SSL_IS_TLS13(s) && s->enable_sm_tls13_strict == 1 && s->server) {
+            const SSL_CIPHER *cipher = s->s3->tmp.new_cipher;
+
+            if (cipher != NULL &&
+                (cipher->id == TLS1_3_CK_SM4_GCM_SM3
+                    || cipher->id == TLS1_3_CK_SM4_CCM_SM3)) {
+                if (lu->sigalg != TLSEXT_SIGALG_sm2sig_sm3)
+                    continue;
+            }
+        }
+#endif
         if (!WPACKET_put_bytes_u16(pkt, *psig))
             return 0;
         /*

@@ -3381,7 +3381,7 @@ int speed_main(int argc, char **argv)
             }
             /*
              * No need to allow user to set an explicit ID here, just use
-             * the one defined in the 'draft-yang-tls-tl13-sm-suites' I-D.
+             * the one defined in the RFC 8998.
              */
             if (EVP_PKEY_CTX_set1_id(sm2_pctx, SM2_ID, SM2_ID_LEN) != 1) {
                 st = 0;

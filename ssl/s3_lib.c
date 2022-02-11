@@ -114,7 +114,7 @@ static SSL_CIPHER tls13_ciphers[] = {
     },
 #if (!defined OPENSSL_NO_SM2) && (!defined OPENSSL_NO_SM3) \
     && (!defined OPENSSL_NO_SM4)
- /* Cipher 0x00C6 and 0x00C7, Reference to draft-yang-tls-sm-suites-01*/
+ /* Cipher 0x00C6 and 0x00C7, Reference to RFC 8998 */
        {
         1,
         TLS1_3_RFC_SM4_GCM_SM3,
@@ -4120,7 +4120,7 @@ retry:
 
 #ifndef OPENSSL_NO_SM2
         /*
-         * draft-yang-tls-tls13-sm-suites-02 demand that server can use
+         * RFC 8998 demand that server can use
          * "TLS_SM4_GCM_SM3" and "TLS_SM4_CCM_SM3" with sm2 cert only
          */
         if (s->enable_sm_tls13_strict) {

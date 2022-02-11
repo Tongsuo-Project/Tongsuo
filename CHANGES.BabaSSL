@@ -35,7 +35,7 @@
 
   *) Fix up problems of CVE-2019-1551
 
-  *) Support TLS1.3-GM ciphersuite, see https://datatracker.ietf.org/doc/draft-yang-tls-tls13-sm-suites/ for more information
+  *) Support TLS1.3-GM cipher suite, see https://datatracker.ietf.org/doc/html/rfc8998 for more information
 
   *) Support global session cache, asynchronous session lookup
 
