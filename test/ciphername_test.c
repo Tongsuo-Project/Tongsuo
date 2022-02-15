@@ -311,6 +311,14 @@ static CIPHER_ID_NAME cipher_names[] = {
     {0x00C7, "TLS_SM4_CCM_SM3"},
     {0xFEFE, "SSL_RSA_FIPS_WITH_DES_CBC_SHA"},
     {0xFEFF, "SSL_RSA_FIPS_WITH_3DES_EDE_CBC_SHA"},
+    {0xE011, "ECDHE_SM4_CBC_SM3"},
+    {0xE051, "ECDHE_SM4_GCM_SM3"},
+    {0xE013, "ECC_SM4_CBC_SM3"},
+    {0xE053, "ECC_SM4_GCM_SM3"},
+    {0xE019, "RSA_SM4_CBC_SM3"},
+    {0xE059, "RSA_SM4_GCM_SM3"},
+    {0xE01C, "RSA_SM4_CBC_SHA256"},
+    {0xE05A, "RSA_SM4_GCM_SHA256"},
 };
 
 static const char *get_std_name_by_id(int id)
@@ -382,12 +390,7 @@ static int test_cipher_name(void)
         if ((id == 0xFF85) || (id == 0xFF87))
             /* skip GOST2012-GOST8912-GOST891 and GOST2012-NULL-GOST12 */
             continue;
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-        if ((id == 0xE011) || (id == 0xE051) || (id == 0xE013) || (id == 0xE053))
-            /* skip GM/T cipher suites who have no standard TLS names  */
-            continue;
-#endif
+
         p = SSL_CIPHER_standard_name(c);
         q = get_std_name_by_id(id);
         if (!TEST_ptr(p)) {

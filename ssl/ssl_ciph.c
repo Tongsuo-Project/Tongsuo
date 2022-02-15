@@ -45,8 +45,7 @@
 #define SSL_ENC_CHACHA_IDX      19
 #define SSL_ENC_SM4_GCM_IDX     20
 #define SSL_ENC_SM4_CCM_IDX     21
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_SM4
 # define SSL_ENC_SM4_IDX        22
 # define SSL_ENC_NUM_IDX        23
 #else
@@ -82,10 +81,9 @@ static const ssl_cipher_table ssl_cipher_table_cipher[SSL_ENC_NUM_IDX] = {
     {SSL_AES256CCM8, NID_aes_256_ccm}, /* SSL_ENC_AES256CCM8_IDX 17 */
     {SSL_eGOST2814789CNT12, NID_gost89_cnt_12}, /* SSL_ENC_GOST8912_IDX 18 */
     {SSL_CHACHA20POLY1305, NID_chacha20_poly1305}, /* SSL_ENC_CHACHA_IDX 19 */
-    {SSL_SM4GCM, NID_sm4_gcm}, /* SSL_ENC_SM4GCM_IDX 20 */
-    {SSL_SM4CCM, NID_sm4_ccm}, /* SSL_ENC_SM4CCM_IDX 21 */
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+    {SSL_SM4GCM, NID_sm4_gcm}, /* SSL_ENC_SM4_GCM_IDX 20 */
+    {SSL_SM4CCM, NID_sm4_ccm}, /* SSL_ENC_SM4_CCM_IDX 21 */
+#ifndef OPENSSL_NO_SM4
     {SSL_SM4, NID_sm4_cbc}     /* SSL_ENC_SM4_IDX 22 */
 #endif
 };
@@ -141,11 +139,8 @@ static const ssl_cipher_table ssl_cipher_table_kx[] = {
     {SSL_kPSK,      NID_kx_psk},
     {SSL_kSRP,      NID_kx_srp},
     {SSL_kGOST,     NID_kx_gost},
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
     {SSL_kSM2,      NID_kx_sm2},
     {SSL_kSM2DHE,   NID_kx_sm2dhe},
-#endif
     {SSL_kANY,      NID_kx_any}
 };
 
@@ -247,8 +242,7 @@ static const SSL_CIPHER cipher_aliases[] = {
     {0, SSL_TXT_kDHEPSK, NULL, 0, SSL_kDHEPSK},
     {0, SSL_TXT_kSRP, NULL, 0, SSL_kSRP},
     {0, SSL_TXT_kGOST, NULL, 0, SSL_kGOST},
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     {0, SSL_TXT_kSM2, NULL, 0, SSL_kSM2},
     {0, SSL_TXT_kSM2DHE, NULL, 0, SSL_kSM2DHE},
     {0, NTLS_TXT_SM2DHE_WITH_SM4_SM3, NULL, 0, SSL_kSM2DHE, SSL_aSM2, SSL_SM4,
@@ -307,10 +301,7 @@ static const SSL_CIPHER cipher_aliases[] = {
     {0, SSL_TXT_CAMELLIA, NULL, 0, 0, 0, SSL_CAMELLIA},
     {0, SSL_TXT_CHACHA20, NULL, 0, 0, 0, SSL_CHACHA20},
 
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
     {0, SSL_TXT_SM4, NULL, 0, 0, 0, SSL_SM4},
-#endif
 
     /* MAC aliases */
     {0, SSL_TXT_MD5, NULL, 0, 0, 0, 0, SSL_MD5},
@@ -328,8 +319,7 @@ static const SSL_CIPHER cipher_aliases[] = {
     {0, SSL_TXT_TLSV1, NULL, 0, 0, 0, 0, 0, TLS1_VERSION},
     {0, "TLSv1.0", NULL, 0, 0, 0, 0, 0, TLS1_VERSION},
     {0, SSL_TXT_TLSV1_2, NULL, 0, 0, 0, 0, 0, TLS1_2_VERSION},
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     {0, SSL_TXT_NTLSV1_1, NULL, 0, 0, 0, 0, 0, NTLS1_1_VERSION},
 #endif
 
@@ -637,11 +627,6 @@ const EVP_MD *ssl_handshake_md(SSL *s)
 
 const EVP_MD *ssl_prf_md(SSL *s)
 {
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-    if (SSL_IS_NTLS(s))
-        return EVP_sm3();
-#endif
     return ssl_md(ssl_get_algorithm2(s) >> TLS1_PRF_DGST_SHIFT);
 }
 
@@ -1796,15 +1781,12 @@ char *SSL_CIPHER_description(const SSL_CIPHER *cipher, char *buf, int len)
     case SSL_kGOST:
         kx = "GOST";
         break;
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
     case SSL_kSM2:
         kx = "SM2";
         break;
     case SSL_kSM2DHE:
         kx = "SM2DHE";
         break;
-#endif
     case SSL_kANY:
         kx = "any";
         break;
@@ -1914,12 +1896,9 @@ char *SSL_CIPHER_description(const SSL_CIPHER *cipher, char *buf, int len)
     case SSL_SM4GCM:
         enc = "SM4-GCM(128)";
         break;
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
     case SSL_SM4:
         enc = "SM4(128)";
         break;
-#endif
     default:
         enc = "unknown";
         break;

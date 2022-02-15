@@ -17,8 +17,7 @@
 #include <openssl/bn.h>
 #include <openssl/md5.h>
 
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
 
 # define TICKET_NONCE_SIZE       8
 
@@ -1290,11 +1289,6 @@ static int tls_early_post_process_client_hello(SSL *s)
 
     if (!s->hit) {
         s->session->compress_meth = 0;
-
-        if (!tls1_set_server_sigalgs(s)) {
-            /* SSLfatal_ntls() already called */
-            goto err;
-        }
     }
 
     sk_SSL_CIPHER_free(ciphers);
@@ -1489,7 +1483,7 @@ WORK_STATE tls_post_process_client_hello_ntls(SSL *s, WORK_STATE wst)
             s->s3->tmp.new_cipher = cipher;
 
             if (!s->hit) {
-                if (!tls_choose_sigalg(s, 1)) {
+                if (!tls_choose_sigalg_ntls(s, 1)) {
                     /* SSLfatal_ntls already called */
                     goto err;
                 }
@@ -2610,14 +2604,6 @@ MSG_PROCESS_RETURN tls_process_client_certificate_ntls(SSL *s, PACKET *pkt)
     }
 
     if (sk_X509_num(sk) <= 0) {
-        /* TLS does not mind 0 certs returned */
-        if (s->version == SSL3_VERSION) {
-            SSLfatal_ntls(s, SSL_AD_HANDSHAKE_FAILURE,
-                          SSL_F_TLS_PROCESS_CLIENT_CERTIFICATE_NTLS,
-                          SSL_R_NO_CERTIFICATES_RETURNED);
-            goto err;
-        }
-
         /*for ECDHE-SM2, certificates are required */
         const SSL_CIPHER *cipher = s->s3->tmp.new_cipher;
         if (cipher->id == NTLS_CK_ECDHE_SM2_SM4_CBC_SM3
@@ -2727,9 +2713,17 @@ MSG_PROCESS_RETURN tls_process_client_certificate_ntls(SSL *s, PACKET *pkt)
 
 int tls_construct_server_certificate_ntls(SSL *s, WPACKET *pkt)
 {
-    if (!ssl3_output_cert_chain_ntls(s, pkt,
-                                     &s->cert->pkeys[SSL_PKEY_SM2_SIGN],
-                                     &s->cert->pkeys[SSL_PKEY_SM2_ENC])) {
+    CERT_PKEY *a_cpk = s->s3->tmp.sign_cert;
+    CERT_PKEY *k_cpk = s->s3->tmp.enc_cert;
+
+    if (a_cpk == NULL || k_cpk == NULL) {
+        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
+                      SSL_F_TLS_CONSTRUCT_SERVER_CERTIFICATE_NTLS,
+                      ERR_R_INTERNAL_ERROR);
+        return 0;
+    }
+
+    if (!ssl3_output_cert_chain_ntls(s, pkt, a_cpk, k_cpk)) {
         /* SSLfatal_ntls() already called */
         return 0;
     }

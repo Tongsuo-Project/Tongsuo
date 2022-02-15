@@ -312,8 +312,7 @@ const char *SSL_alert_desc_string(int value)
         return "BH";
     case TLS1_AD_UNKNOWN_PSK_IDENTITY:
         return "UP";
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     case NTLS_AD_UNSUPPORTED_SITE2SITE:
         return "U2";
     case NTLS_AD_NO_AREA:
@@ -397,8 +396,7 @@ const char *SSL_alert_desc_string_long(int value)
         return "unknown PSK identity";
     case TLS1_AD_NO_APPLICATION_PROTOCOL:
         return "no application protocol";
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     case NTLS_AD_UNSUPPORTED_SITE2SITE:
         return "unsupported site2site";
     case NTLS_AD_NO_AREA:

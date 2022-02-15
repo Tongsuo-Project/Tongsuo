@@ -4590,7 +4590,7 @@ X509_set0_sm2_id                        4543	1_1_1d	EXIST::FUNCTION:SM2
 X509_get0_sm2_id                        4544	1_1_1d	EXIST::FUNCTION:SM2
 SSL_get_ecpoint_XYZ                     4545	1_1_1e	NOEXIST::FUNCTION:
 EVP_PKEY_is_sm2                         4546	1_1_1e	EXIST::FUNCTION:SM2
-SM2_compute_key                         4547	1_1_1e	EXIST::FUNCTION:NTLS,SM2
+SM2_compute_key                         4547	1_1_1e	EXIST::FUNCTION:SM2
 CRYPTO_get_mem_counts                   4548	1_1_1e	EXIST::FUNCTION:CRYPTO_MDEBUG_COUNT
 BABAEC_POINT_get_coordinates            4549	1_1_1e	EXIST::FUNCTION:EC
 BabaSSL_version_num                     4550	1_1_1e	EXIST::FUNCTION:

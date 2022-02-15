@@ -28,8 +28,7 @@ int set_cert_stuff(SSL_CTX *ctx, char *cert_file, char *key_file);
 int set_cert_key_stuff(SSL_CTX *ctx, X509 *cert, EVP_PKEY *key,
                        STACK_OF(X509) *chain, int build_chain);
 int ssl_print_sigalgs(BIO *out, SSL *s);
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
 int set_enc_cert_key_stuff(SSL_CTX *ctx, X509 *cert, EVP_PKEY *key,
                            STACK_OF(X509) *chain, int build_chain);
 int set_sign_cert_key_stuff(SSL_CTX *ctx, X509 *cert, EVP_PKEY *key,

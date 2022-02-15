@@ -31,9 +31,7 @@
 # include <openssl/ct.h>
 # include <openssl/sslerr.h>
 
-# ifndef OPENSSL_NO_NTLS
-#  include <openssl/ntls.h>
-# endif
+# include <openssl/ntls.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -89,11 +87,8 @@ extern "C" {
 /*
  *these cipher add macro because they would use in NTLS only
  */
-# if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
 #  define SSL_TXT_kSM2           "kSM2"
 #  define SSL_TXT_kSM2DHE        "kSM2DHE"
-# endif
 
 # define SSL_TXT_aRSA            "aRSA"
 # define SSL_TXT_aDSS            "aDSS"
@@ -159,8 +154,7 @@ extern "C" {
 # define SSL_TXT_TLSV1           "TLSv1"
 # define SSL_TXT_TLSV1_1         "TLSv1.1"
 # define SSL_TXT_TLSV1_2         "TLSv1.2"
-# if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+# ifndef OPENSSL_NO_NTLS
 #  define SSL_TXT_NTLSV1_1       "NTLSv1.1"
 # endif
 
@@ -433,8 +427,7 @@ typedef int (*SSL_verify_cb)(int preverify_ok, X509_STORE_CTX *x509_ctx);
 # define SSL_OP_NO_DTLSv1                                0x04000000U
 # define SSL_OP_NO_DTLSv1_2                              0x08000000U
 
-# if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+# ifndef OPENSSL_NO_NTLS
 /* Just use a reserved value, don't conflict with OP TLS */
 #  define SSL_OP_NO_NTLS                                 0x00000080U
 # endif
@@ -1256,8 +1249,7 @@ DECLARE_PEM_rw(SSL_SESSION, SSL_SESSION)
 /* fatal */
 # define SSL_AD_INAPPROPRIATE_FALLBACK   TLS1_AD_INAPPROPRIATE_FALLBACK
 # define SSL_AD_NO_APPLICATION_PROTOCOL  TLS1_AD_NO_APPLICATION_PROTOCOL
-# if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+# ifndef OPENSSL_NO_NTLS
 #  define SSL_AD_UNSUPPORTED_SITE2SITE   NTLS_AD_UNSUPPORTED_SITE2SITE
 #  define SSL_AD_NO_AREA                 NTLS_AD_NO_AREA
 #  define SSL_AD_UNSUPPORTED_AREATYPE    NTLS_AD_UNSUPPORTED_AREATYPE
@@ -1829,7 +1821,6 @@ __owur int SSL_CTX_use_RSAPrivateKey_ASN1(SSL_CTX *ctx, const unsigned char *d,
 # endif
 __owur int SSL_CTX_use_PrivateKey(SSL_CTX *ctx, EVP_PKEY *pkey);
 # ifndef OPENSSL_NO_NTLS
-#  ifndef OPENSSL_NO_SM2
 __owur int SSL_CTX_use_enc_PrivateKey(SSL_CTX *ctx, EVP_PKEY *pkey);
 __owur int SSL_CTX_use_sign_PrivateKey(SSL_CTX *ctx, EVP_PKEY *pkey);
 __owur int SSL_CTX_use_enc_PrivateKey_file(SSL_CTX *ctx, const char *file,
@@ -1840,7 +1831,6 @@ void SSL_CTX_enable_ntls(SSL_CTX *ctx);
 void SSL_CTX_disable_ntls(SSL_CTX *ctx);
 void SSL_enable_ntls(SSL *s);
 void SSL_disable_ntls(SSL *s);
-#  endif
 # endif
 
 # ifndef OPENSSL_NO_SM2
@@ -1885,14 +1875,12 @@ __owur int SSL_CTX_use_PrivateKey_ASN1(int pk, SSL_CTX *ctx,
                                        const unsigned char *d, long len);
 __owur int SSL_CTX_use_certificate(SSL_CTX *ctx, X509 *x);
 # ifndef OPENSSL_NO_NTLS
-#  ifndef OPENSSL_NO_SM2
 __owur int SSL_CTX_use_enc_certificate(SSL_CTX *ctx, X509 *x);
 __owur int SSL_CTX_use_sign_certificate(SSL_CTX *ctx, X509 *x);
 __owur int SSL_CTX_use_enc_certificate_file(SSL_CTX *ctx, const char *file,
                                             int type);
 __owur int SSL_CTX_use_sign_certificate_file(SSL_CTX *ctx, const char *file,
                                              int type);
-#  endif
 # endif
 __owur int SSL_CTX_use_certificate_ASN1(SSL_CTX *ctx, int len,
                                         const unsigned char *d);
@@ -2111,15 +2099,9 @@ DEPRECATEDIN_1_1_0(__owur const SSL_METHOD *DTLSv1_2_client_method(void))
  * this form only
  */
 # ifndef OPENSSL_NO_NTLS
-#  ifndef OPENSSL_NO_SM2
-#   ifndef OPENSSL_NO_SM3
-#    ifndef OPENSSL_NO_SM4
 __owur const SSL_METHOD *NTLS_method(void); /* NTLSv1.1 */
 __owur const SSL_METHOD *NTLS_server_method(void); /* NTLSv1.1 */
 __owur const SSL_METHOD *NTLS_client_method(void); /* NTLSv1.1 */
-#    endif
-#   endif
-#  endif
 # endif
 
 __owur const SSL_METHOD *DTLS_method(void); /* DTLS 1.0 and 1.2 */
@@ -2830,7 +2812,6 @@ __owur int SSL_set_quic_early_data_context(SSL *ssl,
 # endif
 
 # ifndef OPENSSL_NO_NTLS
-#  ifndef OPENSSL_NO_SM2
 __owur int SSL_use_sign_certificate(SSL *ssl, X509 *x);
 __owur int SSL_use_sign_certificate_file(SSL *ssl, const char *file, int type);
 __owur int SSL_use_enc_certificate(SSL *ssl, X509 *x);
@@ -2839,7 +2820,6 @@ __owur int SSL_use_enc_PrivateKey(SSL *ssl, EVP_PKEY *pkey);
 __owur int SSL_use_enc_PrivateKey_file(SSL *ssl, const char *file, int type);
 __owur int SSL_use_sign_PrivateKey(SSL *ssl, EVP_PKEY *pkey);
 __owur int SSL_use_sign_PrivateKey_file(SSL *ssl, const char *file, int type);
-#  endif
 # endif
 
 # ifndef OPENSSL_NO_CERT_COMPRESSION

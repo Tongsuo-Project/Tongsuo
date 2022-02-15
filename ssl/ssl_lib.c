@@ -569,8 +569,7 @@ static int ssl_check_allowed_versions(int min_version, int max_version)
             || (min_version <= TLS1_3_VERSION && TLS1_3_VERSION <= max_version)
 #endif
             ) {
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
             if (min_version == NTLS_VERSION || max_version == NTLS_VERSION)
                 return 1;
 #endif
@@ -3432,9 +3431,9 @@ void ssl_set_masks(SSL *s)
 #ifndef OPENSSL_NO_EC
     int have_ecc_cert, ecdsa_ok;
 #endif
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     int sm2_enc, sm2_sign;
+    int ntls_rsa_enc, ntls_rsa_sign;
 #endif
 
     if (c == NULL)
@@ -3452,19 +3451,20 @@ void ssl_set_masks(SSL *s)
 #ifndef OPENSSL_NO_EC
     have_ecc_cert = pvalid[SSL_PKEY_ECC] & CERT_PKEY_VALID;
 #endif
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-    sm2_enc = pvalid[SSL_PKEY_SM2_ENC] & CERT_PKEY_VALID;
+#ifndef OPENSSL_NO_NTLS
     sm2_sign = pvalid[SSL_PKEY_SM2_SIGN] & CERT_PKEY_VALID;
+    sm2_enc = pvalid[SSL_PKEY_SM2_ENC] & CERT_PKEY_VALID;
+    ntls_rsa_sign = pvalid[SSL_PKEY_RSA_SIGN] & CERT_PKEY_VALID;
+    ntls_rsa_enc = pvalid[SSL_PKEY_RSA_ENC] & CERT_PKEY_VALID;
 #endif
     mask_k = 0;
     mask_a = 0;
 
 #ifdef CIPHER_DEBUG
-# if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-    fprintf(stderr, "dht=%d re=%d rs=%d ds=%d ss=%d se=%d\n",
-            dh_tmp, rsa_enc, rsa_sign, dsa_sign, sm2_sign, sm2_enc);
+# ifndef OPENSSL_NO_NTLS
+    fprintf(stderr, "dht=%d re=%d rs=%d ds=%d ss=%d se=%d nre=%d nrs=%d\n",
+            dh_tmp, rsa_enc, rsa_sign, dsa_sign, sm2_sign, sm2_enc,
+            ntls_rsa_enc, ntls_rsa_sign);
 # else
     fprintf(stderr, "dht=%d re=%d rs=%d ds=%d\n",
             dh_tmp, rsa_enc, rsa_sign, dsa_sign);
@@ -3535,16 +3535,18 @@ void ssl_set_masks(SSL *s)
             mask_a |= SSL_aECDSA;
 #endif
 
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     if (sm2_sign)
         mask_a |= SSL_aSM2;
 
     if (sm2_enc)
-        mask_k |= SSL_kSM2;
+        mask_k |= SSL_kSM2 | SSL_kSM2DHE;
 
-    mask_k |= SSL_kSM2;
-    mask_k |= SSL_kSM2DHE;
+    if (ntls_rsa_sign)
+        mask_a |= SSL_aRSA;
+
+    if (ntls_rsa_enc)
+        mask_k |= SSL_kRSA;
 #endif
 
 #ifndef OPENSSL_NO_EC
@@ -3955,8 +3957,7 @@ const char *ssl_protocol_to_string(int version)
     case DTLS1_2_VERSION:
         return "DTLSv1.2";
 
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     case NTLS_VERSION:
         return "NTLSv1.1";
 #endif
@@ -6449,57 +6450,18 @@ X509 *BABASSL_get_use_certificate(const SSL *s)
 #ifndef OPENSSL_NO_NTLS
 X509 *BABASSL_get_sign_certificate_ntls(const SSL *s)
 {
-    CERT *c;
-# if (!defined OPENSSL_NO_SM2) && (!defined OPENSSL_NO_SM3)  \
-     && (!defined OPENSSL_NO_SM4)
-    const SSL_CIPHER *cipher;
-# endif
+    if (s->s3 != NULL && s->s3->tmp.sign_cert != NULL)
+        return s->s3->tmp.sign_cert->x509;
 
-    c = s->cert;
-    if (!s->s3 || !s->s3->tmp.new_cipher)
-        return NULL;
-
-# if (!defined OPENSSL_NO_SM2) && (!defined OPENSSL_NO_SM3)  \
-     && (!defined OPENSSL_NO_SM4)
-
-    cipher = s->s3->tmp.new_cipher;
-
-    if (!(cipher->algorithm_auth & SSL_aSM2) || cipher->max_tls != NTLS_VERSION)
-        return NULL;
-
-    return c->pkeys[SSL_PKEY_SM2_SIGN].x509;
-# else
     return NULL;
-# endif
 }
 
 X509 *BABASSL_get_enc_certificate_ntls(const SSL *s)
 {
-    CERT *c;
-# if (!defined OPENSSL_NO_SM2) && (!defined OPENSSL_NO_SM3)  \
-     && (!defined OPENSSL_NO_SM4)
-    const SSL_CIPHER *cipher;
-# endif
+    if (s->s3 != NULL && s->s3->tmp.enc_cert != NULL)
+        return s->s3->tmp.enc_cert->x509;
 
-    c = s->cert;
-    if (!s->s3 || !s->s3->tmp.new_cipher)
-        return NULL;
-
-# if (!defined OPENSSL_NO_SM2) && (!defined OPENSSL_NO_SM3)  \
-     && (!defined OPENSSL_NO_SM4)
-
-    cipher = s->s3->tmp.new_cipher;
-
-    if (!(cipher->algorithm_auth & SSL_aSM2) || cipher->max_tls != NTLS_VERSION)
-        return NULL;
-
-    if (cipher->algorithm_mkey != SSL_kSM2 && cipher->algorithm_mkey != SSL_kSM2DHE)
-        return NULL;
-
-    return c->pkeys[SSL_PKEY_SM2_ENC].x509;
-# else
     return NULL;
-# endif
 }
 #endif
 

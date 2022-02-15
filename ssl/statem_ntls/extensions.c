@@ -10,8 +10,7 @@
 #include "statem_local_ntls.h"
 #include "internal/cryptlib.h"
 
-# if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+# ifndef OPENSSL_NO_NTLS
 static int init_server_name(SSL *s, unsigned int context);
 static int final_server_name(SSL *s, unsigned int context, int sent);
 # ifndef OPENSSL_NO_EC

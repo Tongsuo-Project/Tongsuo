@@ -178,6 +178,20 @@ jobs:
       - name: check dirty
         run: test $(git status --porcelain | wc -l) -eq "0"
 
+  ntls-without-sm234:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: config
+        run: ./config enable-ntls no-sm2 no-sm3 no-sm4 --strict-warnings && perl configdata.pm --dump
+      - name: make
+        run: make -s -j4
+      - name: make test
+        run: make test
+      - name: make clean
+        run: make clean
+      - name: check dirty
+        run: test $(git status --porcelain | wc -l) -eq "0"
 
   ntls-sanitizers:
     runs-on: ubuntu-latest

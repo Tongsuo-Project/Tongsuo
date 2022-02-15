@@ -224,9 +224,7 @@ extern "C" {
 # define TLSEXT_curve_P_384                              24
 
 /* defined in RFC 8998 */
-# ifndef OPENSSL_NO_SM2
 #  define TLSEXT_curve_SM2                               41
-# endif
 
 /* OpenSSL value to disable maximum fragment length extension */
 # define TLSEXT_max_fragment_length_DISABLED    0

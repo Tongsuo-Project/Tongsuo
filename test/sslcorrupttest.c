@@ -162,14 +162,6 @@ static int setup_cipher_list(void)
     for (j = 0, i = 0; i < sk_SSL_CIPHER_num(sk_ciphers); i++) {
         const SSL_CIPHER *cipher = sk_SSL_CIPHER_value(sk_ciphers, i);
 
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-        /* XXX: skip the two GM/T RSA cipher suites for now */
-        if (SSL_CIPHER_get_protocol_id(cipher) == 0xe019
-                || SSL_CIPHER_get_protocol_id(cipher) == 0xe01a)
-            continue;
-#endif
-
         if (SSL_CIPHER_get_auth_nid(cipher) == NID_auth_rsa)
             cipher_list[j++] = SSL_CIPHER_get_name(cipher);
     }

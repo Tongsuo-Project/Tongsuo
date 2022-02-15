@@ -567,8 +567,7 @@ typedef enum OPTION_choice {
     OPT_4, OPT_6, OPT_HOST, OPT_PORT, OPT_CONNECT, OPT_BIND, OPT_UNIX,
     OPT_XMPPHOST, OPT_VERIFY, OPT_NAMEOPT,
     OPT_CERT, OPT_CRL, OPT_CRL_DOWNLOAD, OPT_SESS_OUT, OPT_SESS_IN,
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     OPT_SIGN_CERT, OPT_SIGN_KEY, OPT_ENC_CERT, OPT_ENC_KEY,
 #endif
     OPT_CERTFORM, OPT_CRLFORM, OPT_VERIFY_RET_ERROR, OPT_VERIFY_QUIET,
@@ -584,8 +583,7 @@ typedef enum OPTION_choice {
 #endif
     OPT_SSL3, OPT_SSL_CONFIG,
     OPT_TLS1_3, OPT_TLS1_2, OPT_TLS1_1, OPT_TLS1, OPT_DTLS, OPT_DTLS1,
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     OPT_NTLS, OPT_ENABLE_NTLS,
 #endif
 #ifndef OPENSSL_NO_SM2
@@ -636,8 +634,7 @@ const OPTIONS s_client_options[] = {
     {"6", OPT_6, '-', "Use IPv6 only"},
 #endif
     {"verify", OPT_VERIFY, 'p', "Turn on peer certificate verification"},
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     {"cert", OPT_CERT, '<',
      "Certificate file or NTLS signing certificate to use, PEM format assumed"},
     {"sign_cert", OPT_SIGN_CERT, '<',
@@ -650,8 +647,7 @@ const OPTIONS s_client_options[] = {
     {"certform", OPT_CERTFORM, 'F',
      "Certificate format (PEM or DER) PEM default"},
     {"nameopt", OPT_NAMEOPT, 's', "Various certificate name options"},
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     {"sign_key", OPT_SIGN_KEY, 's', "NTLS signing private key file to use"},
     {"enc_key", OPT_ENC_KEY, 's', "NTLS encryption private key file to use"},
 #endif
@@ -771,8 +767,7 @@ const OPTIONS s_client_options[] = {
 #ifndef OPENSSL_NO_TLS1_3
     {"tls1_3", OPT_TLS1_3, '-', "Just use TLSv1.3"},
 #endif
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     {"ntls", OPT_NTLS, '-', "Just use NTLS"},
     {"enable_ntls", OPT_ENABLE_NTLS, '-', "enable ntls"},
 #endif
@@ -884,8 +879,7 @@ static const OPT_PAIR services[] = {
  (o == OPT_4 || o == OPT_6 || o == OPT_HOST || o == OPT_PORT || o == OPT_CONNECT)
 #define IS_UNIX_FLAG(o) (o == OPT_UNIX)
 
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
 # define IS_PROT_FLAG(o) \
  (o == OPT_SSL3 || o == OPT_TLS1 || o == OPT_TLS1_1 || o == OPT_TLS1_2 \
   || o == OPT_TLS1_3 || o == OPT_DTLS || o == OPT_DTLS1 || o == OPT_DTLS1_2 || o == OPT_NTLS)
@@ -940,8 +934,7 @@ int s_client_main(int argc, char **argv)
 {
     BIO *sbio;
     EVP_PKEY *key = NULL;
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     EVP_PKEY *enc_key = NULL;
     EVP_PKEY *sign_key = NULL;
 #endif
@@ -949,8 +942,7 @@ int s_client_main(int argc, char **argv)
     SSL_CTX *ctx = NULL;
     STACK_OF(X509) *chain = NULL;
     X509 *cert = NULL;
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     X509 *enc_cert = NULL;
     X509 *sign_cert = NULL;
 #endif
@@ -967,8 +959,7 @@ int s_client_main(int argc, char **argv)
     char *cbuf = NULL, *sbuf = NULL;
     char *mbuf = NULL, *proxystr = NULL, *connectstr = NULL, *bindstr = NULL;
     char *cert_file = NULL, *key_file = NULL, *chain_file = NULL;
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     char *enc_cert_file = NULL, *enc_key_file = NULL;
     char *sign_cert_file = NULL, *sign_key_file = NULL;
     int enable_ntls = 0;
@@ -1193,8 +1184,7 @@ int s_client_main(int argc, char **argv)
             if (!set_nameopt(opt_arg()))
                 goto end;
             break;
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
         case OPT_SIGN_CERT:
             sign_cert_file = opt_arg();
             break;
@@ -1396,8 +1386,7 @@ int s_client_main(int argc, char **argv)
             min_version = TLS1_VERSION;
             max_version = TLS1_VERSION;
             break;
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
         case OPT_NTLS:
             meth = NTLS_client_method();
             break;
@@ -1485,8 +1474,7 @@ int s_client_main(int argc, char **argv)
         case OPT_KEY:
             key_file = opt_arg();
             break;
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
         case OPT_SIGN_KEY:
             sign_key_file = opt_arg();
             break;
@@ -1814,8 +1802,7 @@ int s_client_main(int argc, char **argv)
     }
 #endif
 
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     /* XXX: don't support cert-key bundle at current stage */
     /* TODO: fix the key format stuff and password stuffs */
     if (sign_key_file) {
@@ -2148,9 +2135,7 @@ int s_client_main(int argc, char **argv)
     if (!set_cert_key_stuff(ctx, cert, key, chain, build_chain))
         goto end;
 
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-    /* for SM2 and NTLS only */
+#ifndef OPENSSL_NO_NTLS
     if (sign_cert != NULL && sign_key != NULL)
         if (!set_sign_cert_key_stuff(ctx, sign_cert, sign_key, NULL, 0))
             goto end;
@@ -3389,15 +3374,13 @@ int s_client_main(int argc, char **argv)
     SSL_CTX_free(ctx);
     set_keylog_file(NULL, NULL);
     X509_free(cert);
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     X509_free(enc_cert);
     X509_free(sign_cert);
 #endif
     sk_X509_CRL_pop_free(crls, X509_CRL_free);
     EVP_PKEY_free(key);
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     EVP_PKEY_free(enc_key);
     EVP_PKEY_free(sign_key);
 #endif

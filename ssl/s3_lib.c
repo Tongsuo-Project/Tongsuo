@@ -121,7 +121,7 @@ static SSL_CIPHER tls13_ciphers[] = {
         TLS1_3_RFC_SM4_GCM_SM3,
         TLS1_3_CK_SM4_GCM_SM3,
         SSL_kANY,
-        SSL_aSM2,
+        SSL_aANY,
         SSL_SM4GCM,
         SSL_AEAD,
         TLS1_3_VERSION,TLS1_3_VERSION,
@@ -136,7 +136,7 @@ static SSL_CIPHER tls13_ciphers[] = {
         TLS1_3_RFC_SM4_CCM_SM3,
         TLS1_3_CK_SM4_CCM_SM3,
         SSL_kANY,
-        SSL_aSM2,
+        SSL_aANY,
         SSL_SM4CCM,
         SSL_AEAD,
         TLS1_3_VERSION,TLS1_3_VERSION,
@@ -2950,12 +2950,14 @@ static SSL_CIPHER ssl3_ciphers[] = {
      128,
      },
 #endif                          /* OPENSSL_NO_WEAK_SSL_CIPHERS */
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
+# ifndef OPENSSL_NO_SM4
+#  ifndef OPENSSL_NO_SM3
+#   ifndef OPENSSL_NO_SM2
     {
      1,
      NTLS_TXT_ECDHE_SM2_SM4_CBC_SM3,
-     NULL,
+     NTLS_GB_ECDHE_SM2_SM4_CBC_SM3,
      NTLS_CK_ECDHE_SM2_SM4_CBC_SM3,
      SSL_kSM2DHE,
      SSL_aSM2,
@@ -2971,7 +2973,7 @@ static SSL_CIPHER ssl3_ciphers[] = {
     {
      1,
      NTLS_TXT_ECDHE_SM2_SM4_GCM_SM3,
-     NULL,
+     NTLS_GB_ECDHE_SM2_SM4_GCM_SM3,
      NTLS_CK_ECDHE_SM2_SM4_GCM_SM3,
      SSL_kSM2DHE,
      SSL_aSM2,
@@ -2987,7 +2989,7 @@ static SSL_CIPHER ssl3_ciphers[] = {
     {
      1,
      NTLS_TXT_ECC_SM2_SM4_CBC_SM3,
-     NULL,
+     NTLS_GB_ECC_SM2_SM4_CBC_SM3,
      NTLS_CK_ECC_SM2_SM4_CBC_SM3,
      SSL_kSM2,
      SSL_aSM2,
@@ -3003,7 +3005,7 @@ static SSL_CIPHER ssl3_ciphers[] = {
     {
      1,
      NTLS_TXT_ECC_SM2_SM4_GCM_SM3,
-     NULL,
+     NTLS_GB_ECC_SM2_SM4_GCM_SM3,
      NTLS_CK_ECC_SM2_SM4_GCM_SM3,
      SSL_kSM2,
      SSL_aSM2,
@@ -3015,8 +3017,75 @@ static SSL_CIPHER ssl3_ciphers[] = {
      SSL_HANDSHAKE_MAC_SM3 | TLS1_PRF_SM3,
      128,
      128,
-    }
-#endif
+    },
+#   endif   /* OPENSSL_NO_SM2 */
+    {
+     1,
+     NTLS_TXT_RSA_SM4_CBC_SM3,
+     NTLS_GB_RSA_SM4_CBC_SM3,
+     NTLS_CK_RSA_SM4_CBC_SM3,
+     SSL_kRSA,
+     SSL_aRSA,
+     SSL_SM4,
+     SSL_SM3,
+     NTLS_VERSION, NTLS_VERSION,
+     0, 0,
+     SSL_HIGH,
+     SSL_HANDSHAKE_MAC_SM3 | TLS1_PRF_SM3,
+     128,
+     128,
+    },
+    {
+     1,
+     NTLS_TXT_RSA_SM4_GCM_SM3,
+     NTLS_GB_RSA_SM4_GCM_SM3,
+     NTLS_CK_RSA_SM4_GCM_SM3,
+     SSL_kRSA,
+     SSL_aRSA,
+     SSL_SM4GCM,
+     SSL_AEAD,
+     NTLS_VERSION, NTLS_VERSION,
+     0, 0,
+     SSL_HIGH,
+     SSL_HANDSHAKE_MAC_SM3 | TLS1_PRF_SM3,
+     128,
+     128,
+    },
+#  endif    /* OPENSSL_NO_SM3 */
+    {
+     1,
+     NTLS_TXT_RSA_SM4_CBC_SHA256,
+     NTLS_GB_RSA_SM4_CBC_SHA256,
+     NTLS_CK_RSA_SM4_CBC_SHA256,
+     SSL_kRSA,
+     SSL_aRSA,
+     SSL_SM4,
+     SSL_SHA256,
+     NTLS_VERSION, NTLS_VERSION,
+     0, 0,
+     SSL_HIGH,
+     SSL_HANDSHAKE_MAC_SHA256 | TLS1_PRF_SHA256,
+     128,
+     128,
+    },
+    {
+     1,
+     NTLS_TXT_RSA_SM4_GCM_SHA256,
+     NTLS_GB_RSA_SM4_GCM_SHA256,
+     NTLS_CK_RSA_SM4_GCM_SHA256,
+     SSL_kRSA,
+     SSL_aRSA,
+     SSL_SM4GCM,
+     SSL_AEAD,
+     NTLS_VERSION, NTLS_VERSION,
+     0, 0,
+     SSL_HIGH,
+     SSL_HANDSHAKE_MAC_SHA256 | TLS1_PRF_SHA256,
+     128,
+     128,
+    },
+# endif /* OPENSSL_NO_SM4 */
+#endif  /* OPENSSL_NO_NTLS */
 };
 
 /*

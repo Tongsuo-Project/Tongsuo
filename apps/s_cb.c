@@ -207,8 +207,7 @@ int set_dc_cert_key_stuff(SSL_CTX *ctx, X509 *cert, EVP_PKEY *key,
 }
 #endif
 
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
 int set_sign_cert_key_stuff(SSL_CTX *ctx, X509 *cert, EVP_PKEY *key,
                             STACK_OF(X509) *chain, int build_chain)
 {

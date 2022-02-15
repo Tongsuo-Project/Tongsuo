@@ -7,8 +7,7 @@
 #include "statem_local_ntls.h"
 #include "internal/cryptlib.h"
 
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
 
 # define COOKIE_STATE_FORMAT_VERSION     0
 

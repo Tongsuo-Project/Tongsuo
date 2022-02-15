@@ -677,8 +677,7 @@ int tls1_alert_code(int code)
     }
 }
 
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
 int ntls_alert_code(int code)
 {
     switch (code) {

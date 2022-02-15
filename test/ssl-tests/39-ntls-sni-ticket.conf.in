@@ -21,17 +21,17 @@ sub generate_tests() {
                         "name" => "ntls-sni-session-ticket",
                         "client" => {
                             "Enable_ntls" => "on",
-                            "VerifyCAFile" => test_run("test_sign_sm2", "chain-ca.crt"),
+                            "VerifyCAFile" => test_pem("sm2", "chain-ca.crt"),
                             "Options" => $c,
                             "extra" => {
                                 "ServerName" => $n,
                             },
                         },
                         "server" => {
-                            "SignCertificate" => test_run("test_sign_sm2", "server_sign.crt"),
-                            "SignPrivateKey" => test_run("test_sign_sm2", "server_sign.key"),
-                            "EncCertificate" => test_run("test_sign_sm2", "server_enc.crt"),
-                            "EncPrivateKey" => test_run("test_sign_sm2", "server_enc.key"),
+                            "SignCertificate" => test_pem("sm2", "server_sign.crt"),
+                            "SignPrivateKey" => test_pem("sm2", "server_sign.key"),
+                            "EncCertificate" => test_pem("sm2", "server_enc.crt"),
+                            "EncPrivateKey" => test_pem("sm2", "server_enc.key"),
                             "Enable_ntls" => "on",
                             "Options" => $s1,
                             "extra" => {
@@ -40,10 +40,10 @@ sub generate_tests() {
                             },
                         },
                         "server2" => {
-                            "SignCertificate" => test_run("test_sign_sm2", "server_sign.crt"),
-                            "SignPrivateKey" => test_run("test_sign_sm2", "server_sign.key"),
-                            "EncCertificate" => test_run("test_sign_sm2", "server_enc.crt"),
-                            "EncPrivateKey" => test_run("test_sign_sm2", "server_enc.key"),
+                            "SignCertificate" => test_pem("sm2", "server_sign.crt"),
+                            "SignPrivateKey" => test_pem("sm2", "server_sign.key"),
+                            "EncCertificate" => test_pem("sm2", "server_enc.crt"),
+                            "EncPrivateKey" => test_pem("sm2", "server_enc.key"),
                             "Enable_ntls" => "on",
                             "Options" => $s2,
                         },
@@ -81,17 +81,17 @@ push @tests, {
     "name" => "ntls-sni-session-ticket",
     "client" => {
         "Enable_ntls" => "on",
-        "VerifyCAFile" => test_run("test_sign_sm2", "chain-ca.crt"),
+        "VerifyCAFile" => test_pem("sm2", "chain-ca.crt"),
         "Options" => "SessionTicket",
         "extra" => {
             "ServerName" => "server1",
         }
     },
     "server" => {
-        "SignCertificate" => test_run("test_sign_sm2", "server_sign.crt"),
-        "SignPrivateKey" => test_run("test_sign_sm2", "server_sign.key"),
-        "EncCertificate" => test_run("test_sign_sm2", "server_enc.crt"),
-        "EncPrivateKey" => test_run("test_sign_sm2", "server_enc.key"),
+        "SignCertificate" => test_pem("sm2", "server_sign.crt"),
+        "SignPrivateKey" => test_pem("sm2", "server_sign.key"),
+        "EncCertificate" => test_pem("sm2", "server_enc.crt"),
+        "EncPrivateKey" => test_pem("sm2", "server_enc.key"),
         "Enable_ntls" => "on",
         "Options" => "SessionTicket",
         "extra" => {
@@ -99,10 +99,10 @@ push @tests, {
         },
     },
     "server2" => {
-        "SignCertificate" => test_run("test_sign_sm2", "server_sign.crt"),
-        "SignPrivateKey" => test_run("test_sign_sm2", "server_sign.key"),
-        "EncCertificate" => test_run("test_sign_sm2", "server_enc.crt"),
-        "EncPrivateKey" => test_run("test_sign_sm2", "server_enc.key"),
+        "SignCertificate" => test_pem("sm2", "server_sign.crt"),
+        "SignPrivateKey" => test_pem("sm2", "server_sign.key"),
+        "EncCertificate" => test_pem("sm2", "server_enc.crt"),
+        "EncPrivateKey" => test_pem("sm2", "server_enc.key"),
         "Enable_ntls" => "on",
         "Options" => "SessionTicket",
     },

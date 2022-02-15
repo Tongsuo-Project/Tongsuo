@@ -5,13 +5,13 @@
 #include "internal/cryptlib.h"
 #include <openssl/ec.h>
 #include <openssl/evp.h>
+#include <openssl/bn.h>
 #include "crypto/sm2.h"
 #include "crypto/ec.h" /* ecdh_KDF_X9_63() */
 #include "crypto/sm2err.h"
 
 
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_SM2
 int SM2_compute_key(void *out, size_t outlen, int server,
                     const char *peer_uid, int peer_uid_len,
                     const char *self_uid, int self_uid_len,

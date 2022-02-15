@@ -1654,16 +1654,14 @@ void EVP_PKEY_meth_get_digest_custom(EVP_PKEY_METHOD *pmeth,
                                                              EVP_MD_CTX *mctx));
 void EVP_add_alg_module(void);
 
-#  ifndef OPENSSL_NO_NTLS
-#   ifndef OPENSSL_NO_SM2
+# ifndef OPENSSL_NO_SM2
 int SM2_compute_key(void *out, size_t outlen,
                     int server, const char *peer_uid, int peer_uid_len,
                     const char *self_uid, int self_uid_len,
                     const EC_KEY *peer_ecdhe_key, const EC_KEY *self_ecdhe_key,
                     const EC_KEY *peer_pub_key, const EC_KEY *self_eckey,
                     const EVP_MD *md);
-#   endif
-#  endif
+# endif
 
 # ifdef  __cplusplus
 }

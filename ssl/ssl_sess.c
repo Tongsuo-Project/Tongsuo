@@ -319,8 +319,7 @@ int ssl_generate_session_id(SSL *s, SSL_SESSION *ss)
     case DTLS1_BAD_VER:
     case DTLS1_VERSION:
     case DTLS1_2_VERSION:
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     case NTLS_VERSION:
 #endif
         ss->session_id_length = SSL3_SSL_SESSION_ID_LENGTH;

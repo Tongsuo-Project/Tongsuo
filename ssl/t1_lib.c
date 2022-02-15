@@ -96,8 +96,7 @@ SSL3_ENC_METHOD const TLSv1_3_enc_data = {
     ssl3_handshake_write
 };
 
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
 SSL3_ENC_METHOD const NTLS_enc_data = {
     tls1_enc,
     tls1_mac,
@@ -325,8 +324,7 @@ uint16_t tls1_shared_group(SSL *s, int nmatch)
     size_t num_pref, num_supp, i;
     int k;
 
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     if (SSL_IS_NTLS(s))
         return TLSEXT_curve_SM2;
 #endif
@@ -679,6 +677,20 @@ static int tls1_check_cert_param(SSL *s, X509 *x, int set_ee_md)
 
 #endif                          /* OPENSSL_NO_EC */
 
+#ifndef OPENSSL_NO_NTLS
+static const SIGALG_LOOKUP ntls_sm2_sigalg = {
+    "sm2sig_sm3", TLSEXT_SIGALG_sm2sig_sm3,
+    NID_sm3, SSL_MD_SM3_IDX, NID_sm2, SSL_PKEY_SM2_SIGN,
+    NID_SM2_with_SM3, NID_sm2
+};
+
+static const SIGALG_LOOKUP ntls_rsa_sigalg = {
+    "rsa_pkcs1_sha256", TLSEXT_SIGALG_rsa_pkcs1_sha256,
+    NID_sha256, SSL_MD_SHA256_IDX, EVP_PKEY_RSA, SSL_PKEY_RSA_SIGN,
+    NID_sha256WithRSAEncryption, NID_undef
+};
+#endif
+
 /* Default sigalg schemes */
 static const uint16_t tls12_sigalgs[] = {
 #ifndef OPENSSL_NO_EC
@@ -847,10 +859,11 @@ static const uint16_t tls_default_sigalg[] = {
     TLSEXT_SIGALG_gostr34102012_512_gostr34112012_512, /* SSL_PKEY_GOST12_512 */
     0, /* SSL_PKEY_ED25519 */
     0, /* SSL_PKEY_ED448 */
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     0, /* SSL_PKEY_SM2_SIGN */
     0, /* SSL_PKEY_SM2_ENC */
+    0, /* SSL_PKEY_RSA_SIGN */
+    0, /* SSL_PKEY_RSA_ENC */
 #endif
 };
 
@@ -1004,6 +1017,20 @@ int tls1_set_peer_legacy_sigalg(SSL *s, const EVP_PKEY *pkey)
     size_t idx;
     const SIGALG_LOOKUP *lu;
 
+#ifndef OPENSSL_NO_NTLS
+    if (SSL_IS_NTLS(s)) {
+        int nid = EVP_PKEY_id(pkey);
+
+        if (nid == EVP_PKEY_SM2)
+            s->s3->tmp.peer_sigalg = &ntls_sm2_sigalg;
+        else if (nid == EVP_PKEY_RSA)
+            s->s3->tmp.peer_sigalg = &ntls_rsa_sigalg;
+        else
+            return 0;
+
+        return 1;
+    }
+#endif
     if (ssl_cert_lookup_by_pkey(pkey, &idx) == NULL)
         return 0;
     lu = tls1_get_legacy_sigalg(s, idx);
@@ -2561,10 +2588,11 @@ void tls1_set_cert_validity(SSL *s)
 #ifndef OPENSSL_NO_SM2
     tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_SM2);
 #endif
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_SM2_SIGN);
     tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_SM2_ENC);
+    tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_RSA_SIGN);
+    tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_RSA_ENC);
 #endif
 }
 
@@ -2864,6 +2892,49 @@ static const SIGALG_LOOKUP *find_sig_alg(SSL *s, X509 *x, EVP_PKEY *pkey)
     return lu;
 }
 
+#ifndef OPENSSL_NO_NTLS
+int tls_choose_sigalg_ntls(SSL *s, int fatalerrs)
+{
+    const SIGALG_LOOKUP *lu = NULL;
+    uint32_t kalg;
+
+    s->s3->tmp.cert = NULL;
+    s->s3->tmp.sign_cert = NULL;
+    s->s3->tmp.enc_cert = NULL;
+    s->s3->tmp.sigalg = NULL;
+
+    /* If ciphersuite doesn't require a cert nothing to do */
+    if (!(s->s3->tmp.new_cipher->algorithm_auth & SSL_aCERT))
+        return 1;
+
+    if (!s->server && !ssl_has_cert(s, s->cert->key - s->cert->pkeys))
+        return 1;
+
+    kalg = s->s3->tmp.new_cipher->algorithm_mkey;
+
+    if (kalg & (SSL_kSM2 | SSL_kSM2DHE)) {
+        lu = &ntls_sm2_sigalg;
+    } else if (kalg & SSL_kRSA) {
+        lu = &ntls_rsa_sigalg;
+    } else {
+        if (!fatalerrs)
+            return 1;
+        SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER,
+                 SSL_F_TLS_CHOOSE_SIGALG_NTLS,
+                 SSL_R_UNKNOWN_KEY_EXCHANGE_TYPE);
+        return 0;
+    }
+
+    s->s3->tmp.sign_cert = &s->cert->pkeys[lu->sig_idx];
+    s->s3->tmp.enc_cert = &s->cert->pkeys[lu->sig_idx + 1];
+
+    s->cert->key = s->s3->tmp.cert = s->s3->tmp.sign_cert;
+    s->s3->tmp.sigalg = lu;
+
+    return 1;
+}
+#endif
+
 /*
  * Choose an appropriate signature algorithm based on available certificates
  * Sets chosen certificate and signature algorithm.
@@ -2907,7 +2978,7 @@ int tls_choose_sigalg(SSL *s, int fatalerrs)
         if (!(s->s3->tmp.new_cipher->algorithm_auth & SSL_aCERT))
             return 1;
         if (!s->server && !ssl_has_cert(s, s->cert->key - s->cert->pkeys))
-                return 1;
+            return 1;
 
         if (SSL_USE_SIGALGS(s)) {
             size_t i;
@@ -3252,10 +3323,7 @@ int tls1_lookup_sigalg_by_pkey_and_hash(EVP_PKEY *pkey, int hash, int is_tls13,
 
 #ifndef OPENSSL_NO_EC
     if (sig_idx == SSL_PKEY_ECC
-#if (!defined OPENSSL_NO_SM2) && (!defined OPENSSL_NO_SM3)
-        || sig_idx == SSL_PKEY_SM2
-#endif
-    ) {
+        || sig_idx == SSL_PKEY_SM2) {
         group = EC_KEY_get0_group(EVP_PKEY_get0_EC_KEY(pkey));
 
         if (group) {

@@ -76,15 +76,16 @@ static int test_ssl_cert_table(void)
         return 0;
     if (!test_cert_table(EVP_PKEY_ED448, SSL_aECDSA, SSL_PKEY_ED448))
         return 0;
-#ifndef OPENSSL_NO_SM2
     if (!test_cert_table(EVP_PKEY_SM2, SSL_aSM2, SSL_PKEY_SM2))
         return 0;
-#endif
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     if (!test_cert_table(EVP_PKEY_SM2, SSL_aSM2, SSL_PKEY_SM2_SIGN))
         return 0;
     if (!test_cert_table(EVP_PKEY_SM2, SSL_aSM2, SSL_PKEY_SM2_ENC))
+        return 0;
+    if (!test_cert_table(EVP_PKEY_RSA, SSL_aRSA, SSL_PKEY_RSA_SIGN))
+        return 0;
+    if (!test_cert_table(EVP_PKEY_RSA, SSL_aRSA, SSL_PKEY_RSA_ENC))
         return 0;
 #endif
     return 1;

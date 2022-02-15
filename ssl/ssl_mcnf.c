@@ -66,8 +66,7 @@ static int ssl_do_config(SSL *s, SSL_CTX *ctx, const char *name, int system)
         char *cmdstr, *arg;
 
         conf_ssl_get_cmd(cmds, i, &cmdstr, &arg);
-       /*#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+       /*#ifndef OPENSSL_NO_NTLS
 
          * I don't think it's the best way to solve the problems of version,
          * but it seems like if I modify test case in normal way, it will make

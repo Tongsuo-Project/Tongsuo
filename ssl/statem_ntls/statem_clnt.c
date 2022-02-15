@@ -17,8 +17,7 @@
 #include <openssl/engine.h>
 #include <internal/cryptlib.h>
 
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
 static MSG_PROCESS_RETURN tls_process_as_hello_retry_request(SSL *s, PACKET *pkt);
 static MSG_PROCESS_RETURN tls_process_encrypted_extensions(SSL *s, PACKET *pkt);
 
@@ -2592,9 +2591,10 @@ int tls_client_key_exchange_post_work_ntls(SSL *s)
  */
 static int ssl3_check_client_certificate_ntls(SSL *s)
 {
-    if (!ssl_has_cert(s, SSL_PKEY_SM2_SIGN) ||
-        !ssl_has_cert(s, SSL_PKEY_SM2_ENC))
+    /* If no suitable signature algorithm can't use certificate */
+    if (!tls_choose_sigalg_ntls(s, 0) || s->s3->tmp.sigalg == NULL)
         return 0;
+
     /*
      * If strict mode check suitability of chain before using it. This also
      * adjusts suite B digest if necessary.
@@ -2685,10 +2685,8 @@ WORK_STATE tls_prepare_client_certificate_ntls(SSL *s, WORK_STATE wst)
 int tls_construct_client_certificate_ntls(SSL *s, WPACKET *pkt)
 {
     if (!ssl3_output_cert_chain_ntls(s, pkt,
-        (s->s3->tmp.cert_req == 2) ? NULL
-                    : &s->cert->pkeys[SSL_PKEY_SM2_SIGN],
-        (s->s3->tmp.cert_req == 2) ? NULL
-                    : &s->cert->pkeys[SSL_PKEY_SM2_ENC])) {
+            (s->s3->tmp.cert_req == 2) ? NULL : s->s3->tmp.sign_cert,
+            (s->s3->tmp.cert_req == 2) ? NULL : s->s3->tmp.enc_cert)) {
         /* SSLfatal_ntls() already called */
         return 0;
     }
