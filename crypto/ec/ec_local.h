@@ -306,7 +306,6 @@ struct ec_point_st {
                                  * Z) represents (X/Z^2, Y/Z^3) if Z != 0 */
     int Z_is_one;               /* enable optimized point arithmetics for
                                  * special case */
-    BIGNUM *T;
 };
 
 static ossl_inline int ec_point_is_compat(const EC_POINT *point,
