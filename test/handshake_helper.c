@@ -1758,6 +1758,17 @@ static HANDSHAKE_RESULT *do_handshake_internal(
     ret->client_dc_usage = get_ssl_dc_usage(client.ssl);
     ret->server_dc_usage = get_ssl_dc_usage(server.ssl);
 #endif
+
+    if (client.ssl->hello_retry_request != SSL_HRR_NONE)
+        ret->client_hrr = SSL_TEST_HRR_YES;
+    else
+        ret->client_hrr = SSL_TEST_HRR_NO;
+
+    if (server.ssl->hello_retry_request != SSL_HRR_NONE)
+        ret->server_hrr = SSL_TEST_HRR_YES;
+    else
+        ret->server_hrr = SSL_TEST_HRR_NO;
+
     ctx_data_free_data(&server_ctx_data);
     ctx_data_free_data(&server2_ctx_data);
     ctx_data_free_data(&client_ctx_data);

@@ -1136,7 +1136,7 @@ struct ssl_ctx_st {
 
 #ifndef OPENSSL_NO_SM2
     /*
-     * tag of determining whether we should strict follow draft-yang-tls-tls13-sm-suites,
+     * tag of determining whether we should strict follow RFC 8998,
      * when this tag set to 1, we will reject "TLS_SM4_GCM_SM3" and "TLS_SM4_CCM_SM3"
      * without sm2 cert at server. This tag set to 0 default
      */
@@ -1619,7 +1619,7 @@ struct ssl_st {
 
 #ifndef OPENSSL_NO_SM2
     /*
-     * tag of determining whether we should strict follow draft-yang-tls-tls13-sm-suites,
+     * tag of determining whether we should strict follow RFC 8998,
      * when this tag set to 1, we will reject "TLS_SM4_GCM_SM3" and "TLS_SM4_CCM_SM3"
      * without sm2 cert at server. This tag set to 0 default
      */
