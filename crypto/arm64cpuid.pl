@@ -71,6 +71,13 @@ _armv8_pmull_probe:
 	ret
 .size	_armv8_pmull_probe,.-_armv8_pmull_probe
 
+.globl	_armv8_sm4_probe
+.type	_armv8_sm4_probe,%function
+_armv8_sm4_probe:
+	.long	0xcec08400	// sm4e	v0.4s, v0.4s
+	ret
+.size	_armv8_sm4_probe,.-_armv8_sm4_probe
+
 .globl	_armv8_sha512_probe
 .type	_armv8_sha512_probe,%function
 _armv8_sha512_probe:

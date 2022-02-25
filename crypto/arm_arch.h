@@ -83,5 +83,6 @@ extern unsigned int OPENSSL_armcap_P;
 # define ARMV8_CPUID     (1<<7)
 # define ARMV8_RNG       (1<<8)
 # define ARMV8_SM3       (1<<9)
+# define ARMV8_SM4       (1<<10)
 
 #endif
