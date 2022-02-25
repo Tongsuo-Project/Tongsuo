@@ -536,7 +536,7 @@ static int ntls_construct_cke_sm2(SSL *s, WPACKET *pkt)
     size_t enclen;
     unsigned char *pms = NULL;
     size_t pmslen;
-    unsigned char *encdata = NULL;
+    unsigned char *encbytes1, *encbytes2;
     X509 *x509;
 
     /* get sm2 encryption key from enc cert */
@@ -584,13 +584,6 @@ static int ntls_construct_cke_sm2(SSL *s, WPACKET *pkt)
         goto end;
     }
 
-    /* set pkey to SM2 */
-    if (!EVP_PKEY_set_alias_type(pkey, EVP_PKEY_SM2)) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_CONSTRUCT_CKE_SM2,
-                      ERR_R_EVP_LIB);
-        goto end;
-    }
-
     /* encrypt pre_master_secret */
     if ((pctx = EVP_PKEY_CTX_new(pkey, NULL)) == NULL) {
         SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_CONSTRUCT_CKE_SM2,
@@ -612,15 +605,27 @@ static int ntls_construct_cke_sm2(SSL *s, WPACKET *pkt)
 
     /*
      * XXX:
-     * This is very unclear. The standard TLS protocol requries no u16 len
+     * This is very unclear. The standard TLS protocol requires no u16 len
      * bytes before the encrypted PMS value. The NTLS specification is also
      * very blurry on this. But major implementations require the 2 bytes
      * length field (which is redundant), otherwise handshake will fail...
      */
-    if (!WPACKET_sub_allocate_bytes_u16(pkt, enclen, &encdata)
-            || EVP_PKEY_encrypt(pctx, encdata, &enclen, pms, pmslen) <= 0) {
+    if (!WPACKET_sub_reserve_bytes_u16(pkt, enclen, &encbytes1)) {
+        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_CONSTRUCT_CKE_SM2,
+                      ERR_R_INTERNAL_ERROR);
+        goto end;
+    }
+
+    if (EVP_PKEY_encrypt(pctx, encbytes1, &enclen, pms, pmslen) <= 0) {
         SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_CONSTRUCT_CKE_SM2,
                       SSL_R_BAD_SM2_ENCRYPT);
+        goto end;
+    }
+
+    if (!WPACKET_sub_allocate_bytes_u16(pkt, enclen, &encbytes2)
+            || encbytes1 != encbytes2) {
+        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_CONSTRUCT_CKE_SM2,
+                      ERR_R_INTERNAL_ERROR);
         goto end;
     }
 
