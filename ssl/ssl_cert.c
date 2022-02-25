@@ -958,8 +958,7 @@ static int ssl_security_default_callback(const SSL *s, const SSL_CTX *ctx,
                 return 0;
             /* Level 3: forward secure ciphersuites only */
             if (level >= 3 && c->min_tls != TLS1_3_VERSION &&
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
                               !(c->algorithm_mkey & (SSL_kEDH | SSL_kEECDH
                                                      | SSL_kSM2DHE)))
 #else
@@ -970,8 +969,7 @@ static int ssl_security_default_callback(const SSL *s, const SSL_CTX *ctx,
         }
     case SSL_SECOP_VERSION:
         if (!SSL_IS_DTLS(s)) {
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
             /* NTLS v1.1 not allowed at level 3 */
             if (nid == NTLS_VERSION && level >= 3)
                 return 0;

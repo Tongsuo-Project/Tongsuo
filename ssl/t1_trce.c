@@ -393,16 +393,17 @@ static const ssl_trace_tbl ssl_ciphers_tbl[] = {
     {0xFEFF, "SSL_RSA_FIPS_WITH_3DES_EDE_CBC_SHA"},
     {0xFF85, "GOST2012-GOST8912-GOST8912"},
     {0xFF87, "GOST2012-NULL-GOST12"},
-#if (!defined OPENSSL_NO_SM2) && (!defined OPENSSL_NO_SM3) \
-     && (!defined OPENSSL_NO_SM4)
     {0x00C6, "TLS_SM4_GCM_SM3"},
     {0x00C7, "TLS_SM4_CCM_SM3"},
-# if (!defined OPENSSL_NO_NTLS)
-    {0xE011, "ECDHE-SM2-SM4-CBC-SM3"},
-    {0xE051, "ECDHE-SM2-SM4-GCM-SM3"},
-    {0xE013, "ECC-SM2-SM4-CBC-SM3"},
-    {0xE053, "ECC-SM2-SM4-GCM-SM3"},
-# endif
+#ifndef OPENSSL_NO_NTLS
+    {0xE011, "ECDHE_SM4_CBC_SM3"},
+    {0xE051, "ECDHE_SM4_GCM_SM3"},
+    {0xE013, "ECC_SM4_CBC_SM3"},
+    {0xE053, "ECC_SM4_GCM_SM3"},
+    {0xE019, "RSA_SM4_CBC_SM3"},
+    {0xE059, "RSA_SM4_GCM_SM3"},
+    {0xE01C, "RSA_SM4_CBC_SHA256"},
+    {0xE05A, "RSA_SM4_GCM_SHA256"},
 #endif
 };
 
@@ -1049,8 +1050,6 @@ static int ssl_get_keyex(const char **pname, const SSL *ssl)
         *pname = "GOST";
         return SSL_kGOST;
     }
-# if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
     if (alg_k & SSL_kSM2) {
         *pname = "SM2";
         return SSL_kSM2;
@@ -1059,7 +1058,7 @@ static int ssl_get_keyex(const char **pname, const SSL *ssl)
         *pname = "SM2DHE";
         return SSL_kSM2DHE;
     }
-# endif
+
     *pname = "UNKNOWN";
     return 0;
 }
@@ -1102,8 +1101,6 @@ static int ssl_print_client_keyex(BIO *bio, int indent, const SSL *ssl,
         if (!ssl_print_hexbuf(bio, indent + 2, "ecdh_Yc", 1, &msg, &msglen))
             return 0;
         break;
-# if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
     case SSL_kSM2:
         if (!ssl_print_hexbuf(bio, indent + 2,
                               "EncryptedPreMasterSecret", 2, &msg, &msglen))
@@ -1117,7 +1114,6 @@ static int ssl_print_client_keyex(BIO *bio, int indent, const SSL *ssl,
                               "sm2dh_Yc", 1, &msg, &msglen))
             return 0;
         break;
-# endif
     }
 
     return !msglen;
@@ -1159,10 +1155,7 @@ static int ssl_print_server_keyex(BIO *bio, int indent, const SSL *ssl,
 # ifndef OPENSSL_NO_EC
     case SSL_kECDHE:
     case SSL_kECDHEPSK:
-# if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
     case SSL_kSM2DHE:
-# endif
         if (msglen < 1)
             return 0;
         BIO_indent(bio, indent + 2, 80);

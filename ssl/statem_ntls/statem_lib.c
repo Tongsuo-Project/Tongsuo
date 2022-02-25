@@ -14,8 +14,7 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
 static int ssl_add_cert_to_wpacket_ntls(SSL *s, WPACKET *pkt, X509 *x);
 /*
  * Map error codes to TLS/SSL alart types.

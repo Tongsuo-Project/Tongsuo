@@ -41,8 +41,7 @@
  * ---------------------------------------------            -------------------
  *
  */
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
 
 /* Sub state machine return values */
 typedef enum {

@@ -18,11 +18,11 @@
 #include <openssl/crypto.h>
 #include <openssl/bio.h>
 
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
 
 #include "internal/sockets.h"
 
+# if !defined(OPENSSL_NO_SM2) && !defined(OPENSSL_NO_SM3)
 int ntls_sm2_derive_ntls(SSL *s, EVP_PKEY *tmp_priv, EVP_PKEY *peer_tmp_pub)
 {
     int ret = 0, idx = 1;
@@ -127,6 +127,7 @@ int ntls_sm2_derive_ntls(SSL *s, EVP_PKEY *tmp_priv, EVP_PKEY *peer_tmp_pub)
  end:
     return ret;
 }
+# endif
 
 # define PEEK_HEADER_LENGTH 3
 int SSL_connection_is_ntls(SSL *s, int is_server)

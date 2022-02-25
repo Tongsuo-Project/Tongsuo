@@ -24,12 +24,11 @@ static const SSL_CERT_LOOKUP ssl_cert_info [] = {
     {NID_id_GostR3410_2012_512, SSL_aGOST12}, /* SSL_PKEY_GOST12_512 */
     {EVP_PKEY_ED25519, SSL_aECDSA}, /* SSL_PKEY_ED25519 */
     {EVP_PKEY_ED448, SSL_aECDSA}, /* SSL_PKEY_ED448 */
-#ifndef OPENSSL_NO_SM2
     {EVP_PKEY_SM2, SSL_aSM2}, /* SSL_PKEY_ECC SM2 */
-#endif
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-    {EVP_PKEY_SM2, SSL_aSM2}, /* NTLS sign cert */
-    {EVP_PKEY_SM2, SSL_aSM2}  /* NTLS enc cert */
+#ifndef OPENSSL_NO_NTLS
+    {EVP_PKEY_SM2, SSL_aSM2}, /* SSL_PKEY_SM2_SIGN */
+    {EVP_PKEY_SM2, SSL_aSM2}, /* SSL_PKEY_SM2_ENC */
+    {EVP_PKEY_RSA, SSL_aRSA}, /* SSL_PKEY_RSA_SIGN */
+    {EVP_PKEY_RSA, SSL_aRSA}, /* SSL_PKEY_RSA_ENC */
 #endif
 };

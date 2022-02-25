@@ -35,10 +35,7 @@
 # include "internal/refcount.h"
 # include "internal/tsan_assist.h"
 
-# if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-#  include <openssl/ntls.h>
-# endif
+# include <openssl/ntls.h>
 
 # ifdef OPENSSL_BUILD_SHLIBSSL
 #  undef OPENSSL_EXTERN
@@ -182,11 +179,8 @@
 # define SSL_kECDHEPSK           0x00000080U
 # define SSL_kDHEPSK             0x00000100U
 
-# if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-#  define SSL_kSM2               0x00000200U
-#  define SSL_kSM2DHE            0x00000400U
-# endif
+# define SSL_kSM2               0x00000200U
+# define SSL_kSM2DHE            0x00000400U
 
 /* all PSK */
 
@@ -218,7 +212,7 @@
 # define SSL_aSM2                0x00000100U
 /* All bits requiring a certificate */
 #define SSL_aCERT \
-    (SSL_aRSA | SSL_aDSS | SSL_aECDSA | SSL_aGOST01 | SSL_aGOST12)
+    (SSL_aRSA | SSL_aDSS | SSL_aECDSA | SSL_aGOST01 | SSL_aGOST12 | SSL_aSM2)
 
 /* Bits for algorithm_enc (symmetric encryption) */
 # define SSL_DES                 0x00000001U
@@ -244,10 +238,7 @@
 /* 0x100000U & 0x200000U are spared now due to the removal of ARIA */
 # define SSL_SM4CCM              0x00400000U
 # define SSL_SM4GCM              0x00800000U
-# if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-#  define SSL_SM4                0x01000000U
-# endif
+# define SSL_SM4                0x01000000U
 
 # define SSL_AESGCM              (SSL_AES128GCM | SSL_AES256GCM)
 # define SSL_AESCCM              (SSL_AES128CCM | SSL_AES256CCM | SSL_AES128CCM8 | SSL_AES256CCM8)
@@ -413,11 +404,12 @@
 # define SSL_PKEY_ED25519        7
 # define SSL_PKEY_ED448          8
 # define SSL_PKEY_SM2            9
-# if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+# ifndef OPENSSL_NO_NTLS
 #  define SSL_PKEY_SM2_SIGN      10
 #  define SSL_PKEY_SM2_ENC       11
-#  define SSL_PKEY_NUM           12
+#  define SSL_PKEY_RSA_SIGN      12
+#  define SSL_PKEY_RSA_ENC       13
+#  define SSL_PKEY_NUM           14
 # else
 #  define SSL_PKEY_NUM           10
 # endif
@@ -1806,6 +1798,11 @@ typedef struct ssl3_state_st {
         const SIGALG_LOOKUP *sigalg;
         /* Pointer to certificate we use */
         CERT_PKEY *cert;
+
+# ifndef OPENSSL_NO_NTLS
+        CERT_PKEY *sign_cert;
+        CERT_PKEY *enc_cert;
+# endif
         /*
          * signature algorithms peer reports: e.g. supported signature
          * algorithms extension for server or as part of a certificate
@@ -2309,8 +2306,7 @@ __owur const SSL_METHOD *dtls_bad_ver_client_method(void);
 __owur const SSL_METHOD *dtlsv1_2_method(void);
 __owur const SSL_METHOD *dtlsv1_2_server_method(void);
 __owur const SSL_METHOD *dtlsv1_2_client_method(void);
-# if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+# ifndef OPENSSL_NO_NTLS
 __owur const SSL_METHOD *ntls_method(void);
 __owur const SSL_METHOD *ntls_server_method(void);
 __owur const SSL_METHOD *ntls_client_method(void);
@@ -2323,8 +2319,7 @@ extern const SSL3_ENC_METHOD TLSv1_3_enc_data;
 extern const SSL3_ENC_METHOD SSLv3_enc_data;
 extern const SSL3_ENC_METHOD DTLSv1_enc_data;
 extern const SSL3_ENC_METHOD DTLSv1_2_enc_data;
-# if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+# ifndef OPENSSL_NO_NTLS
 extern const SSL3_ENC_METHOD NTLS_enc_data;
 # endif
 
@@ -2738,9 +2733,9 @@ __owur int tls13_export_keying_material_early(SSL *s, unsigned char *out,
 __owur int tls1_alert_code(int code);
 __owur int tls13_alert_code(int code);
 __owur int ssl3_alert_code(int code);
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
 __owur int ntls_alert_code(int code);
+int tls_choose_sigalg_ntls(SSL *s, int fatalerrs);
 #endif
 
 #  ifndef OPENSSL_NO_EC

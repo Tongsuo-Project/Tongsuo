@@ -743,8 +743,7 @@ typedef enum OPTION_choice {
     OPT_UPPER_WWW, OPT_HTTP, OPT_ASYNC, OPT_SSL_CONFIG,
     OPT_MAX_SEND_FRAG, OPT_SPLIT_SEND_FRAG, OPT_MAX_PIPELINES, OPT_READ_BUF,
     OPT_SSL3, OPT_TLS1_3, OPT_TLS1_2, OPT_TLS1_1, OPT_TLS1, OPT_DTLS, OPT_DTLS1,
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     OPT_NTLS, OPT_ENC_CERT, OPT_ENC_KEY, OPT_SIGN_CERT, OPT_SIGN_KEY,
     OPT_ENABLE_NTLS, OPT_ENC_CERTFORM, OPT_SIGN_CERTFORM,
     OPT_ENC_KEYFORM, OPT_SIGN_KEYFORM,
@@ -803,8 +802,7 @@ const OPTIONS s_server_options[] = {
     {"pass", OPT_PASS, 's', "Private key file pass phrase source"},
     {"dcert", OPT_DCERT, '<',
      "Second certificate file to use (usually for DSA)"},
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     {"enc_cert", OPT_ENC_CERT, '<',
      "NTLS encryption certificate file to use, PEM format assumed"},
     {"sign_cert", OPT_SIGN_CERT, '<',
@@ -952,8 +950,7 @@ const OPTIONS s_server_options[] = {
 #ifndef OPENSSL_NO_TLS1_3
     {"tls1_3", OPT_TLS1_3, '-', "just talk TLSv1.3"},
 #endif
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     {"ntls", OPT_NTLS, '-', "Just talk NTLS"},
     {"enable_ntls", OPT_ENABLE_NTLS, '-', "enable ntls"},
 #endif
@@ -1016,8 +1013,7 @@ const OPTIONS s_server_options[] = {
     {NULL, OPT_EOF, 0, NULL}
 };
 
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
 # define IS_PROT_FLAG(o) \
  (o == OPT_SSL3 || o == OPT_TLS1 || o == OPT_TLS1_1 || o == OPT_TLS1_2 \
   || o == OPT_TLS1_3 || o == OPT_DTLS || o == OPT_DTLS1 || o == OPT_DTLS1_2 || o == OPT_NTLS)
@@ -1092,8 +1088,7 @@ int s_server_main(int argc, char *argv[])
     const char *s_cert_file = TEST_CERT, *s_key_file = NULL, *s_chain_file = NULL;
     const char *s_cert_file2 = TEST_CERT2, *s_key_file2 = NULL;
     char *s_dcert_file = NULL, *s_dkey_file = NULL, *s_dchain_file = NULL;
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     char *s_enc_cert_file = NULL, *s_enc_key_file = NULL;
     char *s_sign_cert_file = NULL, *s_sign_key_file = NULL;
     EVP_PKEY *s_enc_key = NULL;
@@ -1311,8 +1306,7 @@ int s_server_main(int argc, char *argv[])
         case OPT_DCERT:
             s_dcert_file = opt_arg();
             break;
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
         case OPT_ENC_CERT:
             s_enc_cert_file = opt_arg();
             break;
@@ -1602,8 +1596,7 @@ int s_server_main(int argc, char *argv[])
             socket_type = SOCK_DGRAM;
 #endif
             break;
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
         case OPT_NTLS:
             meth = NTLS_server_method();
             break;
@@ -1812,8 +1805,7 @@ int s_server_main(int argc, char *argv[])
         goto end;
 
     if (nocert == 0) {
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
         /* XXX: don't support cert-key bundle at current stage */
         if (s_enc_key_file) {
             s_enc_key = load_key(s_enc_key_file, s_enc_key_format, 0, pass, engine,
@@ -1851,8 +1843,7 @@ int s_server_main(int argc, char *argv[])
             }
         }
 #endif
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
         if (s_sign_cert_file != NULL && !strcmp(s_cert_file, TEST_CERT)) {
             /* Don't try to load the default cert if NTLS certs are load */
             goto skip;
@@ -1892,8 +1883,7 @@ int s_server_main(int argc, char *argv[])
             }
         }
 #endif
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
 skip:
 #endif
         if (s_chain_file != NULL) {
@@ -2263,8 +2253,7 @@ skip:
     if (!set_cert_key_stuff(ctx, s_cert, s_key, s_chain, build_chain))
         goto end;
 
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     if (!set_sign_cert_key_stuff(ctx, s_sign_cert, s_sign_key, NULL, 0))
         goto end;
 
@@ -2445,8 +2434,7 @@ skip:
     X509_free(s_dcert);
     EVP_PKEY_free(s_key);
     EVP_PKEY_free(s_dkey);
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     X509_free(s_sign_cert);
     X509_free(s_enc_cert);
     EVP_PKEY_free(s_enc_key);

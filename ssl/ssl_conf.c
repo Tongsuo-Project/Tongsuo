@@ -314,8 +314,7 @@ static int protocol_from_string(const char *value)
         {"TLSv1.3", TLS1_3_VERSION},
         {"DTLSv1", DTLS1_VERSION},
         {"DTLSv1.2", DTLS1_2_VERSION},
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
         {"NTLS", NTLS_VERSION},
         {"MIN_VERSION_WITH_NTLS", MIN_VERSION_WITH_NTLS}
 #endif
@@ -454,8 +453,7 @@ static int cmd_PrivateKey(SSL_CONF_CTX *cctx, const char *value)
     return rv > 0;
 }
 
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
 static int cmd_EncCertificate(SSL_CONF_CTX *cctx, const char *value)
 {
     int rv = 1;
@@ -502,7 +500,7 @@ static int cmd_SignCertificate(SSL_CONF_CTX *cctx, const char *value)
     CERT *c = NULL;
 
     if (cctx->ctx) {
-        /* FIXME: currently we assume all SM2 certs in PEM format */
+        /* FIXME: currently we assume all sign certs in PEM format */
         rv = SSL_CTX_use_sign_certificate_file(cctx->ctx, value,
                                                SSL_FILETYPE_PEM);
         c = cctx->ctx->cert;
@@ -800,8 +798,7 @@ static const ssl_conf_cmd_tbl ssl_conf_cmds[] = {
     SSL_CONF_CMD_SWITCH("no_tls1_1", 0),
     SSL_CONF_CMD_SWITCH("no_tls1_2", 0),
     SSL_CONF_CMD_SWITCH("no_tls1_3", 0),
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     SSL_CONF_CMD_SWITCH("no_ntls", 0),
 #endif
     SSL_CONF_CMD_SWITCH("bugs", 0),
@@ -867,8 +864,7 @@ static const ssl_conf_cmd_tbl ssl_conf_cmds[] = {
 #endif
     SSL_CONF_CMD_STRING(RecordPadding, "record_padding", 0),
     SSL_CONF_CMD_STRING(NumTickets, "num_tickets", SSL_CONF_FLAG_SERVER),
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     SSL_CONF_CMD_STRING(Enable_ntls, "enable_ntls", 0),
     SSL_CONF_CMD(EncCertificate, "enc_cert", SSL_CONF_FLAG_CERTIFICATE,
                  SSL_CONF_TYPE_FILE),
@@ -898,8 +894,7 @@ static const ssl_switch_tbl ssl_cmd_switches[] = {
     {SSL_OP_NO_TLSv1_1, 0},     /* no_tls1_1 */
     {SSL_OP_NO_TLSv1_2, 0},     /* no_tls1_2 */
     {SSL_OP_NO_TLSv1_3, 0},     /* no_tls1_3 */
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
     {SSL_OP_NO_NTLS, 0},        /* no_ntls */
 #endif
     {SSL_OP_ALL, 0},            /* bugs */

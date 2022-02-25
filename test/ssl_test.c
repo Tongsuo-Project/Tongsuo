@@ -370,20 +370,6 @@ static int check_cipher(HANDSHAKE_RESULT *result, SSL_TEST_CTX *test_ctx)
     if (!TEST_ptr(result->cipher))
         return 0;
 
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
-    if ((TEST_str_eq(test_ctx->expected_cipher, NTLS_TXT_SM2DHE_WITH_SM4_SM3)
-        && TEST_str_eq(result->cipher, NTLS_TXT_ECDHE_SM2_SM4_CBC_SM3))
-        || (TEST_str_eq(test_ctx->expected_cipher, NTLS_TXT_ECDHE_SM2_SM4_CBC_SM3)
-            && TEST_str_eq(result->cipher, NTLS_TXT_SM2DHE_WITH_SM4_SM3)))
-            return 1;
-
-    if ((TEST_str_eq(test_ctx->expected_cipher, NTLS_TXT_SM2_WITH_SM4_SM3)
-         && TEST_str_eq(result->cipher, NTLS_TXT_ECC_SM2_SM4_CBC_SM3))
-        || (TEST_str_eq(test_ctx->expected_cipher, NTLS_TXT_ECC_SM2_SM4_CBC_SM3)
-            && TEST_str_eq(result->cipher, NTLS_TXT_SM2_WITH_SM4_SM3)))
-        return 1;
-#endif
     if (!TEST_str_eq(test_ctx->expected_cipher,
                      result->cipher))
         return 0;

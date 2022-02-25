@@ -11,7 +11,7 @@ my $test_name = "test_sign_sm2";
 setup($test_name);
 
 plan skip_all => "sm2 is not supported by this OpenSSL build"
-    if disabled("sm2") || disabled("sm3") || disabled("sm4");
+    if disabled("sm2") || disabled("sm3");
 
 plan tests => 20;
 

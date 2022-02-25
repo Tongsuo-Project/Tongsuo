@@ -173,8 +173,7 @@ IMPLEMENT_dtls1_meth_func(DTLS_ANY_VERSION, 0, 0,
                           ssl_undefined_function,
                           ossl_statem_connect, DTLSv1_2_enc_data)
 
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
 IMPLEMENT_tls_meth_func(NTLS_VERSION, SSL_METHOD_NO_SUITEB, SSL_OP_NO_NTLS,
                         ntls_method,
                         ossl_statem_accept,
@@ -294,8 +293,7 @@ const SSL_METHOD *DTLSv1_client_method(void)
 }
 # endif
 
-# if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+# ifndef OPENSSL_NO_NTLS
 const SSL_METHOD *NTLS_method(void)
 {
     return ntls_method();

@@ -2,13 +2,12 @@
  * Copyright 2019 The BabaSSL Project Authors. All Rights Reserved.
  */
 
-# include <openssl/ocsp.h>
-# include "ssl_local_ntls.h"
-# include "internal/cryptlib.h"
-# include "statem_local_ntls.h"
+#include <openssl/ocsp.h>
+#include "ssl_local_ntls.h"
+#include "internal/cryptlib.h"
+#include "statem_local_ntls.h"
 
-#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)    \
-     && (!defined OPENSSL_NO_SM3) && (!defined OPENSSL_NO_SM4)
+#ifndef OPENSSL_NO_NTLS
 EXT_RETURN tls_construct_ctos_server_name_ntls(SSL *s, WPACKET *pkt,
                                           unsigned int context, X509 *x,
                                           size_t chainidx)

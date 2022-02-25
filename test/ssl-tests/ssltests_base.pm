@@ -26,9 +26,14 @@ sub test_run
 
 sub test_pem
 {
-    my ($file) = @_;
     my $dir_sep = $^O ne "VMS" ? "/" : "";
-    return "\${ENV::TEST_CERTS_DIR}" . $dir_sep . $file,
+    my $ret = "\${ENV::TEST_CERTS_DIR}";
+
+    foreach (@_) {
+        $ret = $ret . $dir_sep . $_;
+    }
+
+    return $ret;
 }
 
 our %base_server = (

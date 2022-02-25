@@ -110,11 +110,16 @@ my %skip = (
   "26-tls13_client_auth.conf" => disabled("tls1_3"),
   "29-dtls-sctp-label-bug.conf" => disabled("sctp") || disabled("sock"),
   "30-tls13-sm.conf" => disabled("sm2") || disabled("sm3") || disabled("sm4"),
-  "31-ntls.conf" => disabled("ntls"),
-  "38-delegated-credential.conf" => disabled("delegated-credential") || disabled("ec"),
-  "39-ntls-sni-ticket.conf" => disabled("ntls"),
-  "40-ntls_client_auth.conf" => disabled("ntls"),
-  "41-ntls-alpn.conf" => disabled("ntls"),
+  "31-ntls.conf" => disabled("ntls") || disabled("sm2") || disabled("sm3")
+                    || disabled("sm4"),
+  "38-delegated-credential.conf" => disabled("delegated-credential")
+                                    || disabled("ec"),
+  "39-ntls-sni-ticket.conf" => disabled("ntls") || disabled("sm2")
+                                || disabled("sm3") || disabled("sm4"),
+  "40-ntls_client_auth.conf" => disabled("ntls") || disabled("sm2")
+                                || disabled("sm3") || disabled("sm4"),
+  "41-ntls-alpn.conf" => disabled("ntls") || disabled("sm2")
+                         || disabled("sm3") || disabled("sm4"),
 );
 
 foreach my $conf (@conf_files) {
