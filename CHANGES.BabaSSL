@@ -5,9 +5,35 @@
  This is a high-level summary of the most important changes.
  For a full list of changes, see the git commit log.
 
- Changes between 8.2.0 and 8.3.0 [xx XXX xxxx]
+ Changes between 8.2.0 and 8.3.0 [28 Feb 2022]
 
-  *)
+  *) Fix CVE-2021-4160
+
+  *) Support wrap mode in `openssl enc` command
+
+  *) ASYNC: Fixes for nested job creation
+
+  *) Support TLS certificate compression (RFC 8879)
+
+  *) A bundle of upstream patches are backported [hustliyilin]
+
+  *) Support NTLS session ticket
+
+  *) Support integrity algorithm 128-EIA3
+
+  *) Support NTLS client authentication
+
+  *) Remove ARIA cipher
+
+  *) Support software random generator in compliance with Chinese SCA
+
+  *) Support PHE algorithm EC-Elgamal
+
+  *) Support RSA_SM4 cipher suites for NTLS
+
+  *) SM3 and SM4 hardware acceleration on aarch64
+
+  *) SM4 optimization for non-asm mode
 
  Changes between 8.1.3 and 8.2.0 [19 May 2021]
 
