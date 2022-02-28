@@ -12,6 +12,7 @@ use warnings;
 
 use File::Basename;
 use File::Compare qw/compare_text/;
+use File::Spec::Functions qw/devnull/;
 use OpenSSL::Glob;
 use OpenSSL::Test qw/:DEFAULT srctop_dir srctop_file/;
 use OpenSSL::Test::Utils qw/disabled alldisabled available_protocols/;
@@ -161,6 +162,12 @@ sub test_conf {
       # Test 3. Run the test.
       skip "No tests available; skipping tests", 1 if $skip;
       skip "Stale sources; skipping tests", 1 if !$run_test;
+
+      if ($conf eq "38-delegated-credential.conf") {
+          run(perltest(["run_tests.pl", "test_dc_sign"],
+                       interpreter_args => [ "-I", srctop_dir("util", "perl")],
+                       stdout => devnull()));
+      }
 
       ok(run(test(["ssl_test", $tmp_file])), "running ssl_test $conf");
     }
