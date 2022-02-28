@@ -5,6 +5,10 @@
  This is a high-level summary of the most important changes.
  For a full list of changes, see the git commit log.
 
+ Changes between 8.3.0 and 8.4.0 [xx XXX xxxx]
+
+  *)
+
  Changes between 8.2.0 and 8.3.0 [28 Feb 2022]
 
   *) Fix CVE-2021-4160
