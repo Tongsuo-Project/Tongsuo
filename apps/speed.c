@@ -4012,40 +4012,20 @@ int speed_main(int argc, char **argv)
                                    loopargs[i].ciphertext_a[testnum],
                                    loopargs[i].ciphertext_b[testnum])
                 || !EC_ELGAMAL_decrypt(ectx, &r,
-                                       loopargs[i].ciphertext_r[testnum])) {
-                st = 0;
-                break;
-            }
-
-            if (r != (ec_elgamal_plaintext_a + ec_elgamal_plaintext_b)) {
-                st = 0;
-                break;
-            }
-
-            if (!EC_ELGAMAL_sub(ectx, loopargs[i].ciphertext_r[testnum],
-                                loopargs[i].ciphertext_a[testnum],
-                                loopargs[i].ciphertext_b[testnum])
+                                       loopargs[i].ciphertext_r[testnum])
+                || r != (ec_elgamal_plaintext_a + ec_elgamal_plaintext_b)
+                || !EC_ELGAMAL_sub(ectx, loopargs[i].ciphertext_r[testnum],
+                                   loopargs[i].ciphertext_a[testnum],
+                                   loopargs[i].ciphertext_b[testnum])
                 || !EC_ELGAMAL_decrypt(ectx, &r,
-                                       loopargs[i].ciphertext_r[testnum])) {
-                st = 0;
-                break;
-            }
-
-            if (r != (ec_elgamal_plaintext_a - ec_elgamal_plaintext_b)) {
-                st = 0;
-                break;
-            }
-
-            if (!EC_ELGAMAL_mul(ectx, loopargs[i].ciphertext_r[testnum],
-                                loopargs[i].ciphertext_b[testnum],
-                                ec_elgamal_plaintext_a)
+                                       loopargs[i].ciphertext_r[testnum])
+                || r != (ec_elgamal_plaintext_a - ec_elgamal_plaintext_b)
+                || !EC_ELGAMAL_mul(ectx, loopargs[i].ciphertext_r[testnum],
+                                   loopargs[i].ciphertext_b[testnum],
+                                   ec_elgamal_plaintext_a)
                 || !EC_ELGAMAL_decrypt(ectx, &r,
-                                       loopargs[i].ciphertext_r[testnum])) {
-                st = 0;
-                break;
-            }
-
-            if (r != (ec_elgamal_plaintext_a * ec_elgamal_plaintext_b)) {
+                                       loopargs[i].ciphertext_r[testnum])
+                || r != (ec_elgamal_plaintext_a * ec_elgamal_plaintext_b)) {
                 st = 0;
                 break;
             }
@@ -4340,7 +4320,7 @@ int speed_main(int argc, char **argv)
         }
 
         if (mr)
-            printf("+F7:%u:%s:%f:%f\n", k, test_ec_elgamal_curves[k].name,
+            printf("+F8:%u:%s:%f:%f\n", k, test_ec_elgamal_curves[k].name,
                    ec_elgamal_results[k][0][0], ec_elgamal_results[k][1][0]);
         else
             printf("%-20s %15.1f %15.1f\n", test_ec_elgamal_curves[k].name,
@@ -4360,8 +4340,8 @@ int speed_main(int argc, char **argv)
 
         for (j = 0; j < sizeof(ec_elgamal_plaintexts) / sizeof(int); j++) {
             if (mr)
-                printf("+F8:%u:%s:%d:%d:%f:%f:%f:%f:%f\n",
-                       k, test_ec_elgamal_curves[k].name, ec_elgamal_plaintext_a,
+                printf("+F9:%u:%ld:%s:%d:%d:%f:%f:%f:%f:%f\n", k, j,
+                       test_ec_elgamal_curves[k].name, ec_elgamal_plaintext_a,
                        ec_elgamal_plaintexts[j], ec_elgamal_results[k][j][1],
                        ec_elgamal_results[k][j][2], ec_elgamal_results[k][j][3],
                        ec_elgamal_results[k][j][4], ec_elgamal_results[k][j][5]);
@@ -4417,6 +4397,30 @@ int speed_main(int argc, char **argv)
             EVP_MD_CTX_free(loopargs[i].sm2_vfy_ctx[k]);
             /* free pkey */
             EVP_PKEY_free(loopargs[i].sm2_pkey[k]);
+        }
+# endif
+# ifndef OPENSSL_NO_EC_ELGAMAL
+        for (k = 0; k < EC_ELGAMAL_NUM; k++) {
+            if (loopargs[i].decrypt_table[k][0] != NULL)
+                EC_ELGAMAL_DECRYPT_TABLE_free(loopargs[i].decrypt_table[k][0]);
+
+            if (loopargs[i].decrypt_table[k][1] != NULL)
+                EC_ELGAMAL_DECRYPT_TABLE_free(loopargs[i].decrypt_table[k][1]);
+
+            if (loopargs[i].ciphertext_a[k] != NULL)
+                EC_ELGAMAL_CIPHERTEXT_free(loopargs[i].ciphertext_a[k]);
+
+            if (loopargs[i].ciphertext_b[k] != NULL)
+                EC_ELGAMAL_CIPHERTEXT_free(loopargs[i].ciphertext_b[k]);
+
+            if (loopargs[i].ciphertext_r[k] != NULL)
+                EC_ELGAMAL_CIPHERTEXT_free(loopargs[i].ciphertext_r[k]);
+
+            if (loopargs[i].ec_elgamal_key[k] != NULL)
+                EC_KEY_free(loopargs[i].ec_elgamal_key[k]);
+
+            if (loopargs[i].ec_elgamal_ctx[k] != NULL)
+                EC_ELGAMAL_CTX_free(loopargs[i].ec_elgamal_ctx[k]);
         }
 # endif
         OPENSSL_free(loopargs[i].secret_a);
@@ -4682,6 +4686,48 @@ static int do_multi(int multi, int size_num)
                 sm2_results[k][1] += d;
             }
 #  endif /* OPENSSL_NO_SM2 */
+#  ifndef OPENSSL_NO_EC_ELGAMAL
+            else if (strncmp(buf, "+F8:", 4) == 0) {
+                int k;
+                double d;
+
+                p = buf + 4;
+                k = atoi(sstrsep(&p, sep));
+                sstrsep(&p, sep);
+
+                d = atof(sstrsep(&p, sep));
+                ec_elgamal_results[k][0][0] += d;
+
+                d = atof(sstrsep(&p, sep));
+                ec_elgamal_results[k][1][0] += d;
+            }
+            else if (strncmp(buf, "+F9:", 4) == 0) {
+                int k, j;
+                double d;
+
+                p = buf + 4;
+                k = atoi(sstrsep(&p, sep));
+                j = atoi(sstrsep(&p, sep));
+                sstrsep(&p, sep);
+                sstrsep(&p, sep);
+                sstrsep(&p, sep);
+
+                d = atof(sstrsep(&p, sep));
+                ec_elgamal_results[k][j][1] += d;
+
+                d = atof(sstrsep(&p, sep));
+                ec_elgamal_results[k][j][2] += d;
+
+                d = atof(sstrsep(&p, sep));
+                ec_elgamal_results[k][j][3] += d;
+
+                d = atof(sstrsep(&p, sep));
+                ec_elgamal_results[k][j][4] += d;
+
+                d = atof(sstrsep(&p, sep));
+                ec_elgamal_results[k][j][5] += d;
+            }
+#  endif /* OPENSSL_NO_EC_ELGAMAL */
 # endif
 
             else if (strncmp(buf, "+H:", 3) == 0) {
