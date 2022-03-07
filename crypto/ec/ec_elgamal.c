@@ -619,7 +619,8 @@ int EC_ELGAMAL_encrypt(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r, int32_t pl
     EC_GROUP_get_order(ctx->key->group, ord, bn_ctx);
     BN_rand_range(rand, ord);
 
-    BN_set_word(bn_plain, plaintext);
+    BN_set_word(bn_plain, (BN_ULONG)(plaintext > 0 ? plaintext : -(int64_t)plaintext));
+    BN_set_negative(bn_plain, plaintext < 0 ? 1 : 0);
 
     if (!EC_POINT_mul(ctx->key->group, r->C1, rand, NULL, NULL, bn_ctx))
         goto err;
@@ -803,7 +804,7 @@ int EC_ELGAMAL_mul(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r,
     bn_m = BN_CTX_get(bn_ctx);
     if (bn_m == NULL)
         goto err;
-    BN_set_word(bn_m, (BN_ULONG)(m > 0 ? m : -m));
+    BN_set_word(bn_m, (BN_ULONG)(m > 0 ? m : -(int64_t)m));
     BN_set_negative(bn_m, m < 0 ? 1 : 0);
 
     if (!EC_POINT_mul(ctx->key->group, r->C1, NULL, c->C1, bn_m, bn_ctx))
