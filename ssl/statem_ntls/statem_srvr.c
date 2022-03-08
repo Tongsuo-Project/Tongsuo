@@ -1084,14 +1084,6 @@ static int tls_early_post_process_client_hello(SSL *s)
         }
     }
 
-    /* We need to do this before getting the session */
-    if (!tls_parse_extension_ntls(s, TLSEXT_IDX_extended_master_secret,
-                             SSL_EXT_CLIENT_HELLO,
-                             clienthello->pre_proc_exts, NULL, 0)) {
-        /* SSLfatal_ntls() already called */
-        goto err;
-    }
-
     /*
      * We don't allow resumption in a backwards compatible ClientHello.
      * TODO(openssl-team): in TLS1.1+, session_id MUST be empty.
