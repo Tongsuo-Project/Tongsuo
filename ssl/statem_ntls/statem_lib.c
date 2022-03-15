@@ -1396,7 +1396,6 @@ int ssl_choose_server_version_ntls(SSL *s, CLIENTHELLO_MSG *hello, DOWNGRADE *dg
     const version_info *vent;
     const version_info *table;
     int disabled = 0;
-    RAW_EXTENSION *suppversions;
 
     s->client_version = client_version;
 
@@ -1423,76 +1422,8 @@ int ssl_choose_server_version_ntls(SSL *s, CLIENTHELLO_MSG *hello, DOWNGRADE *dg
         break;
     }
 
-    suppversions = &hello->pre_proc_exts[TLSEXT_IDX_supported_versions];
-
-    /* If we did an HRR then supported versions is mandatory */
-    if (!suppversions->present && s->hello_retry_request != SSL_HRR_NONE)
-        return SSL_R_UNSUPPORTED_PROTOCOL;
-
-    if (suppversions->present) {
-        unsigned int candidate_vers = 0;
-        unsigned int best_vers = 0;
-        const SSL_METHOD *best_method = NULL;
-        PACKET versionslist;
-
-        suppversions->parsed = 1;
-
-        if (!PACKET_as_length_prefixed_1(&suppversions->data, &versionslist)) {
-            /* Trailing or invalid data? */
-            return SSL_R_LENGTH_MISMATCH;
-        }
-
-        /*
-         * The TLSv1.3 spec says the client MUST set this to TLS1_2_VERSION.
-         * The spec only requires servers to check that it isn't SSLv3:
-         * "Any endpoint receiving a Hello message with
-         * ClientHello.legacy_version or ServerHello.legacy_version set to
-         * 0x0300 MUST abort the handshake with a "protocol_version" alert."
-         * We are slightly stricter and require that it isn't SSLv3 or lower.
-         * We tolerate TLSv1 and TLSv1.1.
-         */
-        if (client_version <= SSL3_VERSION)
-            return SSL_R_BAD_LEGACY_VERSION;
-
-        while (PACKET_get_net_2(&versionslist, &candidate_vers)) {
-            if (version_cmp(s, candidate_vers, best_vers) <= 0)
-                continue;
-            if (ssl_version_supported_ntls(s, candidate_vers, &best_method))
-                best_vers = candidate_vers;
-        }
-        if (PACKET_remaining(&versionslist) != 0) {
-            /* Trailing data? */
-            return SSL_R_LENGTH_MISMATCH;
-        }
-
-        if (best_vers > 0) {
-            if (s->hello_retry_request != SSL_HRR_NONE) {
-                /*
-                 * This is after a HelloRetryRequest so we better check that we
-                 * negotiated TLSv1.3
-                 */
-                if (best_vers != TLS1_3_VERSION)
-                    return SSL_R_UNSUPPORTED_PROTOCOL;
-                return 0;
-            }
-            check_for_downgrade(s, best_vers, dgrd);
-            s->version = best_vers;
-            s->method = best_method;
-            return 0;
-        }
-        return SSL_R_UNSUPPORTED_PROTOCOL;
-    }
-
     /*
-     * If the supported versions extension isn't present, then the highest
-     * version we can negotiate is TLSv1.2
-     */
-    if (version_cmp(s, client_version, TLS1_3_VERSION) >= 0)
-        client_version = TLS1_2_VERSION;
-
-    /*
-     * No supported versions extension, so we just use the version supplied in
-     * the ClientHello.
+     * just use the version supplied in the ClientHello.
      */
     for (vent = table; vent->version != 0; ++vent) {
         const SSL_METHOD *method;
@@ -1531,15 +1462,6 @@ int ssl_choose_client_version_ntls(SSL *s, int version, RAW_EXTENSION *extension
 
     origv = s->version;
     s->version = version;
-
-    /* This will overwrite s->version if the extension is present */
-    if (!tls_parse_extension_ntls(s, TLSEXT_IDX_supported_versions,
-                             SSL_EXT_TLS1_2_SERVER_HELLO
-                             | SSL_EXT_TLS1_3_SERVER_HELLO, extensions,
-                             NULL, 0)) {
-        s->version = origv;
-        return 0;
-    }
 
     if (s->hello_retry_request != SSL_HRR_NONE
             && s->version != TLS1_3_VERSION) {
