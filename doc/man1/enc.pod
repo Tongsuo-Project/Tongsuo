@@ -364,15 +364,6 @@ standard data format and performs the needed key/iv/nonce management.
  aes-[128|192|256]-ecb  128/192/256 bit AES in ECB mode
  aes-[128|192|256]-ofb  128/192/256 bit AES in OFB mode
 
- camellia-[128|192|256]-cbc  128/192/256 bit Camellia in CBC mode
- camellia[128|192|256]       Alias for camellia-[128|192|256]-cbc
- camellia-[128|192|256]-cfb  128/192/256 bit Camellia in 128 bit CFB mode
- camellia-[128|192|256]-cfb1 128/192/256 bit Camellia in 1 bit CFB mode
- camellia-[128|192|256]-cfb8 128/192/256 bit Camellia in 8 bit CFB mode
- camellia-[128|192|256]-ctr  128/192/256 bit Camellia in CTR mode
- camellia-[128|192|256]-ecb  128/192/256 bit Camellia in ECB mode
- camellia-[128|192|256]-ofb  128/192/256 bit Camellia in OFB mode
-
 =head1 EXAMPLES
 
 Just base64 encode a binary file:

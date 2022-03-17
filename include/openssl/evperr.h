@@ -36,7 +36,6 @@ int ERR_load_EVP_strings(void);
 # define EVP_F_ARIA_GCM_INIT_KEY                          176
 # define EVP_F_ARIA_INIT_KEY                              185
 # define EVP_F_B64_NEW                                    198
-# define EVP_F_CAMELLIA_INIT_KEY                          159
 # define EVP_F_CHACHA20_POLY1305_CTRL                     182
 # define EVP_F_CMLL_T4_INIT_KEY                           179
 # define EVP_F_DES_EDE3_WRAP_CIPHER                       171
@@ -138,7 +137,6 @@ int ERR_load_EVP_strings(void);
 # define EVP_R_BAD_DECRYPT                                100
 # define EVP_R_BAD_KEY_LENGTH                             195
 # define EVP_R_BUFFER_TOO_SMALL                           155
-# define EVP_R_CAMELLIA_KEY_SETUP_FAILED                  157
 # define EVP_R_CIPHER_PARAMETER_ERROR                     122
 # define EVP_R_COMMAND_NOT_SUPPORTED                      147
 # define EVP_R_COPY_ERROR                                 173

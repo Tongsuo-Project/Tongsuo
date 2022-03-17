@@ -43,9 +43,6 @@
 # include <openssl/des.h>
 #endif
 #include <openssl/aes.h>
-#ifndef OPENSSL_NO_CAMELLIA
-# include <openssl/camellia.h>
-#endif
 #ifndef OPENSSL_NO_MD2
 # include <openssl/md2.h>
 #endif
@@ -376,27 +373,23 @@ const OPTIONS speed_options[] = {
 #define D_CBC_128_AES   16
 #define D_CBC_192_AES   17
 #define D_CBC_256_AES   18
-#define D_CBC_128_CML   19
-#define D_CBC_192_CML   20
-#define D_CBC_256_CML   21
-#define D_EVP           22
-#define D_SHA256        23
-#define D_SHA512        24
-#define D_WHIRLPOOL     25
-#define D_IGE_128_AES   26
-#define D_IGE_192_AES   27
-#define D_IGE_256_AES   28
-#define D_GHASH         29
-#define D_RAND          30
-#define D_SM3           31
-#define D_CBC_SM4       32
+#define D_EVP           19
+#define D_SHA256        20
+#define D_SHA512        21
+#define D_WHIRLPOOL     22
+#define D_IGE_128_AES   23
+#define D_IGE_192_AES   24
+#define D_IGE_256_AES   25
+#define D_GHASH         26
+#define D_RAND          27
+#define D_SM3           28
+#define D_CBC_SM4       29
 /* name of algorithms to test */
 static const char *names[] = {
     "md2", "mdc2", "md4", "md5", "hmac(md5)", "sha1", "rmd160", "rc4",
     "des cbc", "des ede3", "idea cbc", "seed cbc",
     "rc2 cbc", "rc5-32/12 cbc", "blowfish cbc", "cast cbc",
     "aes-128 cbc", "aes-192 cbc", "aes-256 cbc",
-    "camellia-128 cbc", "camellia-192 cbc", "camellia-256 cbc",
     "evp", "sha256", "sha512", "whirlpool",
     "aes-128 ige", "aes-192 ige", "aes-256 ige", "ghash",
     "rand", "sm3", "sm4"
@@ -1765,20 +1758,6 @@ int speed_main(int argc, char **argv)
         0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12, 0x34,
         0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12, 0x34, 0x56
     };
-#ifndef OPENSSL_NO_CAMELLIA
-    static const unsigned char ckey24[24] = {
-        0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0,
-        0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12,
-        0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12, 0x34
-    };
-    static const unsigned char ckey32[32] = {
-        0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0,
-        0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12,
-        0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12, 0x34,
-        0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12, 0x34, 0x56
-    };
-    CAMELLIA_KEY camellia_ks1, camellia_ks2, camellia_ks3;
-#endif
 #ifndef OPENSSL_NO_DES
     static DES_cblock key = {
         0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0
@@ -2073,12 +2052,6 @@ int speed_main(int argc, char **argv)
             doit[D_CBC_128_AES] = doit[D_CBC_192_AES] = doit[D_CBC_256_AES] = 1;
             continue;
         }
-#ifndef OPENSSL_NO_CAMELLIA
-        if (strcmp(*argv, "camellia") == 0) {
-            doit[D_CBC_128_CML] = doit[D_CBC_192_CML] = doit[D_CBC_256_CML] = 1;
-            continue;
-        }
-#endif
 #ifndef OPENSSL_NO_EC
         if (strcmp(*argv, "ecdsa") == 0) {
             for (loop = 0; loop < OSSL_NELEM(ecdsa_doit); loop++)
@@ -2287,11 +2260,6 @@ int speed_main(int argc, char **argv)
     AES_set_encrypt_key(key16, 128, &aes_ks1);
     AES_set_encrypt_key(key24, 192, &aes_ks2);
     AES_set_encrypt_key(key32, 256, &aes_ks3);
-#ifndef OPENSSL_NO_CAMELLIA
-    Camellia_set_key(key16, 128, &camellia_ks1);
-    Camellia_set_key(ckey24, 192, &camellia_ks2);
-    Camellia_set_key(ckey32, 256, &camellia_ks3);
-#endif
 #ifndef OPENSSL_NO_IDEA
     IDEA_set_encrypt_key(key16, &idea_ks);
 #endif
@@ -2969,66 +2937,6 @@ int speed_main(int argc, char **argv)
         for (i = 0; i < loopargs_len; i++)
             CRYPTO_gcm128_release(loopargs[i].gcm_ctx);
     }
-#ifndef OPENSSL_NO_CAMELLIA
-    if (doit[D_CBC_128_CML]) {
-        if (async_jobs > 0) {
-            BIO_printf(bio_err, "Async mode is not supported with %s\n",
-                       names[D_CBC_128_CML]);
-            doit[D_CBC_128_CML] = 0;
-        }
-        for (testnum = 0; testnum < size_num && async_init == 0; testnum++) {
-            print_message(names[D_CBC_128_CML], c[D_CBC_128_CML][testnum],
-                          lengths[testnum], seconds.sym);
-            Time_F(START);
-            for (count = 0; COND(c[D_CBC_128_CML][testnum]); count++)
-                Camellia_cbc_encrypt(loopargs[0].buf, loopargs[0].buf,
-                                     (size_t)lengths[testnum], &camellia_ks1,
-                                     iv, CAMELLIA_ENCRYPT);
-            d = Time_F(STOP);
-            print_result(D_CBC_128_CML, testnum, count, d);
-        }
-    }
-    if (doit[D_CBC_192_CML]) {
-        if (async_jobs > 0) {
-            BIO_printf(bio_err, "Async mode is not supported with %s\n",
-                       names[D_CBC_192_CML]);
-            doit[D_CBC_192_CML] = 0;
-        }
-        for (testnum = 0; testnum < size_num && async_init == 0; testnum++) {
-            print_message(names[D_CBC_192_CML], c[D_CBC_192_CML][testnum],
-                          lengths[testnum], seconds.sym);
-            if (async_jobs > 0) {
-                BIO_printf(bio_err, "Async mode is not supported, exiting...");
-                exit(1);
-            }
-            Time_F(START);
-            for (count = 0; COND(c[D_CBC_192_CML][testnum]); count++)
-                Camellia_cbc_encrypt(loopargs[0].buf, loopargs[0].buf,
-                                     (size_t)lengths[testnum], &camellia_ks2,
-                                     iv, CAMELLIA_ENCRYPT);
-            d = Time_F(STOP);
-            print_result(D_CBC_192_CML, testnum, count, d);
-        }
-    }
-    if (doit[D_CBC_256_CML]) {
-        if (async_jobs > 0) {
-            BIO_printf(bio_err, "Async mode is not supported with %s\n",
-                       names[D_CBC_256_CML]);
-            doit[D_CBC_256_CML] = 0;
-        }
-        for (testnum = 0; testnum < size_num && async_init == 0; testnum++) {
-            print_message(names[D_CBC_256_CML], c[D_CBC_256_CML][testnum],
-                          lengths[testnum], seconds.sym);
-            Time_F(START);
-            for (count = 0; COND(c[D_CBC_256_CML][testnum]); count++)
-                Camellia_cbc_encrypt(loopargs[0].buf, loopargs[0].buf,
-                                     (size_t)lengths[testnum], &camellia_ks3,
-                                     iv, CAMELLIA_ENCRYPT);
-            d = Time_F(STOP);
-            print_result(D_CBC_256_CML, testnum, count, d);
-        }
-    }
-#endif
 #ifndef OPENSSL_NO_IDEA
     if (doit[D_CBC_IDEA]) {
         if (async_jobs > 0) {

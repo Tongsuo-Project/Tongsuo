@@ -687,10 +687,6 @@ $::code.=<<___ if ($alg eq "aes");
 	aes_eround01	%f16, %f14, %f2, %f4
 	aes_eround23	%f18, %f14, %f2, %f2
 ___
-$::code.=<<___ if ($alg eq "cmll");
-	camellia_f	%f16, %f2, %f14, %f2
-	camellia_f	%f18, %f14, %f2, %f0
-___
 $::code.=<<___;
 	call		_${alg}${bits}_encrypt_1x+8
 	add		$inp, 16, $inp
@@ -769,12 +765,6 @@ $::code.=<<___ if ($alg eq "aes");
 	aes_eround23	%f18, %f14, %f2, %f2
 	aes_eround01	%f16, %f14, %f6, %f10
 	aes_eround23	%f18, %f14, %f6, %f6
-___
-$::code.=<<___ if ($alg eq "cmll");
-	camellia_f	%f16, %f2, %f14, %f2
-	camellia_f	%f16, %f6, %f14, %f6
-	camellia_f	%f18, %f14, %f2, %f0
-	camellia_f	%f18, %f14, %f6, %f4
 ___
 $::code.=<<___;
 	call		_${alg}${bits}_encrypt_2x+16
@@ -874,12 +864,6 @@ $::code.=<<___ if ($alg eq "aes");
 	aes_eround23	%f18, %f14, %f2, %f2
 	aes_eround01	%f16, %f14, %f6, %f10
 	aes_eround23	%f18, %f14, %f6, %f6
-___
-$::code.=<<___ if ($alg eq "cmll");
-	camellia_f	%f16, %f2, %f14, %f2
-	camellia_f	%f16, %f6, %f14, %f6
-	camellia_f	%f18, %f14, %f2, %f0
-	camellia_f	%f18, %f14, %f6, %f4
 ___
 $::code.=<<___;
 	call		_${alg}${bits}_encrypt_2x+16
@@ -1520,59 +1504,6 @@ my %aesopf = (	"aes_kexpand0"	=> 0x130,
     }
 }
 
-sub uncamellia_f {	# 4-argument instructions
-my ($mnemonic,$rs1,$rs2,$rs3,$rd)=@_;
-my ($ref,$opf);
-
-    $ref = "$mnemonic\t$rs1,$rs2,$rs3,$rd";
-
-    if (1) {
-	$rs3 = ($rs3 =~ /%f([0-6]*[02468])/) ? (($1|$1>>5)&31) : $rs3;
-	foreach ($rs1,$rs2,$rd) {
-	    return $ref if (!/%f([0-9]{1,2})/);
-	    $_=$1;
-	    if ($1>=32) {
-		return $ref if ($1&1);
-		# re-encode for upper double register addressing
-		$_=($1|$1>>5)&31;
-	    }
-	}
-
-	return	sprintf ".word\t0x%08x !%s",
-			2<<30|$rd<<25|0x19<<19|$rs1<<14|$rs3<<9|0xc<<5|$rs2,
-			$ref;
-    } else {
-	return $ref;
-    }
-}
-
-sub uncamellia3 {	# 3-argument instructions
-my ($mnemonic,$rs1,$rs2,$rd)=@_;
-my ($ref,$opf);
-my %cmllopf = (	"camellia_fl"	=> 0x13c,
-		"camellia_fli"	=> 0x13d	);
-
-    $ref = "$mnemonic\t$rs1,$rs2,$rd";
-
-    if (defined($opf=$cmllopf{$mnemonic})) {
-	foreach ($rs1,$rs2,$rd) {
-	    return $ref if (!/%f([0-9]{1,2})/);
-	    $_=$1;
-	    if ($1>=32) {
-		return $ref if ($1&1);
-		# re-encode for upper double register addressing
-		$_=($1|$1>>5)&31;
-	    }
-	}
-
-	return	sprintf ".word\t0x%08x !%s",
-			2<<30|$rd<<25|0x36<<19|$rs1<<14|$opf<<5|$rs2,
-			$ref;
-    } else {
-	return $ref;
-    }
-}
-
 sub unmovxtox {		# 2-argument instructions
 my ($mnemonic,$rs,$rd)=@_;
 my %bias = ( "g" => 0, "o" => 8, "l" => 16, "i" => 24, "f" => 0 );
@@ -1672,12 +1603,6 @@ sub emit_assembler {
 	 /geo or
 	s/\b(aes_kexpand[02])\s+(%f[0-9]{1,2}),\s*(%f[0-9]{1,2}),\s*(%f[0-9]{1,2})/
 		&unaes_kexpand($1,$2,$3,$4)
-	 /geo or
-	s/\b(camellia_f)\s+(%f[0-9]{1,2}),\s*(%f[0-9]{1,2}),\s*([%fx0-9]+),\s*(%f[0-9]{1,2})/
-		&uncamellia_f($1,$2,$3,$4,$5)
-	 /geo or
-	s/\b(camellia_[^s]+)\s+(%f[0-9]{1,2}),\s*(%f[0-9]{1,2}),\s*(%f[0-9]{1,2})/
-		&uncamellia3($1,$2,$3,$4)
 	 /geo or
 	s/\b(des_\w+)\s+(%f[0-9]{1,2}),\s*([%fx0-9]+)(?:,\s*(%f[0-9]{1,2})(?:,\s*(%f[0-9]{1,2}))?)?/
 		&undes($1,$2,$3,$4,$5)

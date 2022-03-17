@@ -192,37 +192,6 @@ void openssl_add_all_ciphers_int(void)
     EVP_add_cipher(EVP_aes_256_cbc_hmac_sha1());
     EVP_add_cipher(EVP_aes_128_cbc_hmac_sha256());
     EVP_add_cipher(EVP_aes_256_cbc_hmac_sha256());
-
-#ifndef OPENSSL_NO_CAMELLIA
-    EVP_add_cipher(EVP_camellia_128_ecb());
-    EVP_add_cipher(EVP_camellia_128_cbc());
-    EVP_add_cipher(EVP_camellia_128_cfb());
-    EVP_add_cipher(EVP_camellia_128_cfb1());
-    EVP_add_cipher(EVP_camellia_128_cfb8());
-    EVP_add_cipher(EVP_camellia_128_ofb());
-    EVP_add_cipher_alias(SN_camellia_128_cbc, "CAMELLIA128");
-    EVP_add_cipher_alias(SN_camellia_128_cbc, "camellia128");
-    EVP_add_cipher(EVP_camellia_192_ecb());
-    EVP_add_cipher(EVP_camellia_192_cbc());
-    EVP_add_cipher(EVP_camellia_192_cfb());
-    EVP_add_cipher(EVP_camellia_192_cfb1());
-    EVP_add_cipher(EVP_camellia_192_cfb8());
-    EVP_add_cipher(EVP_camellia_192_ofb());
-    EVP_add_cipher_alias(SN_camellia_192_cbc, "CAMELLIA192");
-    EVP_add_cipher_alias(SN_camellia_192_cbc, "camellia192");
-    EVP_add_cipher(EVP_camellia_256_ecb());
-    EVP_add_cipher(EVP_camellia_256_cbc());
-    EVP_add_cipher(EVP_camellia_256_cfb());
-    EVP_add_cipher(EVP_camellia_256_cfb1());
-    EVP_add_cipher(EVP_camellia_256_cfb8());
-    EVP_add_cipher(EVP_camellia_256_ofb());
-    EVP_add_cipher_alias(SN_camellia_256_cbc, "CAMELLIA256");
-    EVP_add_cipher_alias(SN_camellia_256_cbc, "camellia256");
-    EVP_add_cipher(EVP_camellia_128_ctr());
-    EVP_add_cipher(EVP_camellia_192_ctr());
-    EVP_add_cipher(EVP_camellia_256_ctr());
-#endif
-
 #ifndef OPENSSL_NO_CHACHA
     EVP_add_cipher(EVP_chacha20());
 # ifndef OPENSSL_NO_POLY1305

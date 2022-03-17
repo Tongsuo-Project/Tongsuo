@@ -269,9 +269,6 @@ In each table entry, the following keys are significant:
                            Defaults to 'rc5_enc.c'
         wp_asm_src      => Assembler implementation of core WHIRLPOOL
                            functions.
-        cmll_asm_src    => Assembler implementation of core CAMELLIA
-                           functions.
-                           Defaults to 'camellia.c cmll_misc.c cmll_cbc.c'
         modes_asm_src   => Assembler implementation of cipher modes,
                            currently the functions gcm_gmult_4bit and
                            gcm_ghash_4bit.

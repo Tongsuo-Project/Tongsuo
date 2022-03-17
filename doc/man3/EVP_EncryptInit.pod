@@ -629,9 +629,7 @@ L<evp(7)>
 Supported ciphers are listed in:
 
 L<EVP_aes(3)>,
-L<EVP_aria(3)>,
 L<EVP_bf(3)>,
-L<EVP_camellia(3)>,
 L<EVP_cast5(3)>,
 L<EVP_chacha20(3)>,
 L<EVP_des(3)>,

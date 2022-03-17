@@ -14,9 +14,6 @@ B<openssl> B<genrsa>
 [B<-aes128>]
 [B<-aes192>]
 [B<-aes256>]
-[B<-camellia128>]
-[B<-camellia192>]
-[B<-camellia256>]
 [B<-des>]
 [B<-des3>]
 [B<-idea>]
@@ -50,7 +47,7 @@ standard output is used.
 The output file password source. For more information about the format
 of B<arg> see the B<PASS PHRASE ARGUMENTS> section in L<openssl(1)>.
 
-=item B<-aes128>, B<-aes192>, B<-aes256>, B<-camellia128>, B<-camellia192>, B<-camellia256>, B<-des>, B<-des3>, B<-idea>
+=item B<-aes128>, B<-aes192>, B<-aes256>, B<-des>, B<-des3>, B<-idea>
 
 These options encrypt the private key with specified
 cipher before outputting it. If none of these options is

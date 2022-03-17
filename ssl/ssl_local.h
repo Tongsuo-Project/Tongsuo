@@ -223,8 +223,7 @@
 # define SSL_eNULL               0x00000020U
 # define SSL_AES128              0x00000040U
 # define SSL_AES256              0x00000080U
-# define SSL_CAMELLIA128         0x00000100U
-# define SSL_CAMELLIA256         0x00000200U
+/* 0x100U & 0x200U are spared now due to the removal of Camellia */
 # define SSL_eGOST2814789CNT     0x00000400U
 # define SSL_SEED                0x00000800U
 # define SSL_AES128GCM           0x00001000U
@@ -238,12 +237,11 @@
 /* 0x100000U & 0x200000U are spared now due to the removal of ARIA */
 # define SSL_SM4CCM              0x00400000U
 # define SSL_SM4GCM              0x00800000U
-# define SSL_SM4                0x01000000U
+# define SSL_SM4                 0x01000000U
 
 # define SSL_AESGCM              (SSL_AES128GCM | SSL_AES256GCM)
 # define SSL_AESCCM              (SSL_AES128CCM | SSL_AES256CCM | SSL_AES128CCM8 | SSL_AES256CCM8)
 # define SSL_AES                 (SSL_AES128|SSL_AES256|SSL_AESGCM|SSL_AESCCM)
-# define SSL_CAMELLIA            (SSL_CAMELLIA128|SSL_CAMELLIA256)
 # define SSL_CHACHA20            (SSL_CHACHA20POLY1305)
 
 /* Bits for algorithm_mac (symmetric authentication) */

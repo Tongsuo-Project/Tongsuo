@@ -592,7 +592,7 @@
 
   no-<alg>
                    Build without support for the specified algorithm, where
-                   <alg> is one of: aria, bf, blake2, camellia, cast, chacha,
+                   <alg> is one of: aria, bf, blake2, cast, chacha,
                    cmac, des, dh, dsa, ecdh, ecdsa, idea, md4, mdc2, ocb,
                    poly1305, rc2, rc4, rmd160, scrypt, seed, siphash, sm2, sm3,
                    sm4 or whirlpool.  The "ripemd" algorithm is deprecated and
