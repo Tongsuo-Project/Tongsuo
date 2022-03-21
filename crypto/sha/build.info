@@ -26,13 +26,6 @@ GENERATE[sha256-mb-x86_64.s]=asm/sha256-mb-x86_64.pl $(PERLASM_SCHEME)
 GENERATE[sha512-x86_64.s]=asm/sha512-x86_64.pl $(PERLASM_SCHEME)
 GENERATE[keccak1600-x86_64.s]=asm/keccak1600-x86_64.pl $(PERLASM_SCHEME)
 
-GENERATE[sha1-sparcv9.S]=asm/sha1-sparcv9.pl $(PERLASM_SCHEME)
-INCLUDE[sha1-sparcv9.o]=..
-GENERATE[sha256-sparcv9.S]=asm/sha512-sparcv9.pl $(PERLASM_SCHEME)
-INCLUDE[sha256-sparcv9.o]=..
-GENERATE[sha512-sparcv9.S]=asm/sha512-sparcv9.pl $(PERLASM_SCHEME)
-INCLUDE[sha512-sparcv9.o]=..
-
 GENERATE[sha1-ppc.s]=asm/sha1-ppc.pl $(PERLASM_SCHEME)
 GENERATE[sha256-ppc.s]=asm/sha512-ppc.pl $(PERLASM_SCHEME)
 GENERATE[sha512-ppc.s]=asm/sha512-ppc.pl $(PERLASM_SCHEME)
