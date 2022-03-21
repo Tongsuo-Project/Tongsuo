@@ -1409,59 +1409,6 @@ member-body 643 100 112	: issuerSignTool	: Signing Tool of Issuer
 			: magma-cfb
 			: magma-mac
 
-# Definitions for Camellia cipher - CBC MODE
-
-1 2 392 200011 61 1 1 1 2 : CAMELLIA-128-CBC		: camellia-128-cbc
-1 2 392 200011 61 1 1 1 3 : CAMELLIA-192-CBC		: camellia-192-cbc
-1 2 392 200011 61 1 1 1 4 : CAMELLIA-256-CBC		: camellia-256-cbc
-1 2 392 200011 61 1 1 3 2 : id-camellia128-wrap
-1 2 392 200011 61 1 1 3 3 : id-camellia192-wrap
-1 2 392 200011 61 1 1 3 4 : id-camellia256-wrap
-
-# Definitions for Camellia cipher - ECB, CFB, OFB MODE
-
-!Alias ntt-ds 0 3 4401 5
-!Alias camellia ntt-ds 3 1 9
-
-camellia 1		: CAMELLIA-128-ECB		: camellia-128-ecb
-!Cname camellia-128-ofb128
-camellia 3		: CAMELLIA-128-OFB		: camellia-128-ofb
-!Cname camellia-128-cfb128
-camellia 4		: CAMELLIA-128-CFB		: camellia-128-cfb
-camellia 6		: CAMELLIA-128-GCM		: camellia-128-gcm
-camellia 7		: CAMELLIA-128-CCM		: camellia-128-ccm
-camellia 9		: CAMELLIA-128-CTR		: camellia-128-ctr
-camellia 10		: CAMELLIA-128-CMAC		: camellia-128-cmac
-
-camellia 21		: CAMELLIA-192-ECB		: camellia-192-ecb
-!Cname camellia-192-ofb128
-camellia 23		: CAMELLIA-192-OFB		: camellia-192-ofb
-!Cname camellia-192-cfb128
-camellia 24		: CAMELLIA-192-CFB		: camellia-192-cfb
-camellia 26		: CAMELLIA-192-GCM		: camellia-192-gcm
-camellia 27		: CAMELLIA-192-CCM		: camellia-192-ccm
-camellia 29		: CAMELLIA-192-CTR		: camellia-192-ctr
-camellia 30		: CAMELLIA-192-CMAC		: camellia-192-cmac
-
-camellia 41		: CAMELLIA-256-ECB		: camellia-256-ecb
-!Cname camellia-256-ofb128
-camellia 43		: CAMELLIA-256-OFB		: camellia-256-ofb
-!Cname camellia-256-cfb128
-camellia 44		: CAMELLIA-256-CFB		: camellia-256-cfb
-camellia 46		: CAMELLIA-256-GCM		: camellia-256-gcm
-camellia 47		: CAMELLIA-256-CCM		: camellia-256-ccm
-camellia 49		: CAMELLIA-256-CTR		: camellia-256-ctr
-camellia 50		: CAMELLIA-256-CMAC		: camellia-256-cmac
-
-# There are no OIDs for these modes...
-
-			: CAMELLIA-128-CFB1		: camellia-128-cfb1
-			: CAMELLIA-192-CFB1		: camellia-192-cfb1
-			: CAMELLIA-256-CFB1		: camellia-256-cfb1
-			: CAMELLIA-128-CFB8		: camellia-128-cfb8
-			: CAMELLIA-192-CFB8		: camellia-192-cfb8
-			: CAMELLIA-256-CFB8		: camellia-256-cfb8
-
 # Definitions for SEED cipher - ECB, CBC, OFB mode
 
 member-body 410 200004  : KISA          : kisa
