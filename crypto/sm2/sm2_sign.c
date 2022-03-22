@@ -261,6 +261,10 @@ static ECDSA_SIG *sm2_sig_gen(const EC_KEY *key, const BIGNUM *e)
             goto done;
         }
 
+        /* try again if s == 0 */
+        if (BN_is_zero(s))
+            continue;
+
         sig = ECDSA_SIG_new();
         if (sig == NULL) {
             SM2err(SM2_F_SM2_SIG_GEN, ERR_R_MALLOC_FAILURE);
