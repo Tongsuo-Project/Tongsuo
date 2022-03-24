@@ -295,6 +295,8 @@ typedef int (*ENGINE_PKEY_METHS_PTR) (ENGINE *, EVP_PKEY_METHOD **,
                                       const int **, int);
 typedef int (*ENGINE_PKEY_ASN1_METHS_PTR) (ENGINE *, EVP_PKEY_ASN1_METHOD **,
                                            const int **, int);
+typedef int (*ENGINE_ECP_METHS_PTR) (ENGINE *, const EC_POINT_METHOD **,
+                                     const int **, int);
 /*
  * STRUCTURE functions ... all of these functions deal with pointers to
  * ENGINE structures where the pointers have a "structural reference". This
@@ -391,6 +393,10 @@ int ENGINE_register_pkey_asn1_meths(ENGINE *e);
 void ENGINE_unregister_pkey_asn1_meths(ENGINE *e);
 void ENGINE_register_all_pkey_asn1_meths(void);
 
+int ENGINE_register_ecp_meths(ENGINE *e);
+void ENGINE_unregister_ecp_meths(ENGINE *e);
+void ENGINE_register_all_ecp_meths(void);
+
 /*
  * These functions register all support from the above categories. Note, use
  * of these functions can result in static linkage of code your application
@@ -486,6 +492,7 @@ int ENGINE_set_ciphers(ENGINE *e, ENGINE_CIPHERS_PTR f);
 int ENGINE_set_digests(ENGINE *e, ENGINE_DIGESTS_PTR f);
 int ENGINE_set_pkey_meths(ENGINE *e, ENGINE_PKEY_METHS_PTR f);
 int ENGINE_set_pkey_asn1_meths(ENGINE *e, ENGINE_PKEY_ASN1_METHS_PTR f);
+int ENGINE_set_ecp_meths(ENGINE *e, ENGINE_ECP_METHS_PTR f);
 int ENGINE_set_flags(ENGINE *e, int flags);
 int ENGINE_set_cmd_defns(ENGINE *e, const ENGINE_CMD_DEFN *defns);
 /* These functions allow control over any per-structure ENGINE data. */
@@ -527,6 +534,7 @@ ENGINE_CIPHERS_PTR ENGINE_get_ciphers(const ENGINE *e);
 ENGINE_DIGESTS_PTR ENGINE_get_digests(const ENGINE *e);
 ENGINE_PKEY_METHS_PTR ENGINE_get_pkey_meths(const ENGINE *e);
 ENGINE_PKEY_ASN1_METHS_PTR ENGINE_get_pkey_asn1_meths(const ENGINE *e);
+ENGINE_ECP_METHS_PTR ENGINE_get_ecp_meths(ENGINE *e);
 const EVP_CIPHER *ENGINE_get_cipher(ENGINE *e, int nid);
 const EVP_MD *ENGINE_get_digest(ENGINE *e, int nid);
 const EVP_PKEY_METHOD *ENGINE_get_pkey_meth(ENGINE *e, int nid);
@@ -537,6 +545,7 @@ const EVP_PKEY_ASN1_METHOD *ENGINE_get_pkey_asn1_meth_str(ENGINE *e,
 const EVP_PKEY_ASN1_METHOD *ENGINE_pkey_asn1_find_str(ENGINE **pe,
                                                       const char *str,
                                                       int len);
+const EC_POINT_METHOD *ENGINE_get_ecp_meth(ENGINE *e, int curve_id);
 const ENGINE_CMD_DEFN *ENGINE_get_cmd_defns(const ENGINE *e);
 int ENGINE_get_flags(const ENGINE *e);
 
@@ -600,6 +609,7 @@ ENGINE *ENGINE_get_cipher_engine(int nid);
 ENGINE *ENGINE_get_digest_engine(int nid);
 ENGINE *ENGINE_get_pkey_meth_engine(int nid);
 ENGINE *ENGINE_get_pkey_asn1_meth_engine(int nid);
+ENGINE *ENGINE_get_ecp_meth_engine(int curve_id);
 
 /*
  * This sets a new default ENGINE structure for performing RSA operations. If
@@ -618,6 +628,7 @@ int ENGINE_set_default_ciphers(ENGINE *e);
 int ENGINE_set_default_digests(ENGINE *e);
 int ENGINE_set_default_pkey_meths(ENGINE *e);
 int ENGINE_set_default_pkey_asn1_meths(ENGINE *e);
+int ENGINE_set_default_ecp_meths(ENGINE *e);
 
 /*
  * The combination "set" - the flags are bitwise "OR"d from the

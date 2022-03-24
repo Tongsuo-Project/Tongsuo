@@ -13,6 +13,7 @@
 #include <openssl/obj_mac.h>
 #include <openssl/ec.h>
 #include <openssl/bn.h>
+#include <openssl/engine.h>
 #include "internal/refcount.h"
 #include "crypto/ec.h"
 
@@ -194,6 +195,38 @@ struct ec_method_st {
                        EC_POINT *p, BN_CTX *ctx);
 };
 
+struct ec_point_method_st {
+    int curve_id;
+
+    /* used by EC_POINT_add */
+    int (*add)(const EC_GROUP *, EC_POINT *r, const EC_POINT *a,
+                const EC_POINT *b, BN_CTX *);
+    /* used by EC_POINT_dbl */
+    int (*dbl)(const EC_GROUP *, EC_POINT *r, const EC_POINT *a, BN_CTX *);
+    /* used by ECP_POINT_invert */
+    int (*invert)(const EC_GROUP *, EC_POINT *, BN_CTX *);
+    /* used by ECP_POINT_mul */
+    int (*mul)(const EC_GROUP *group, EC_POINT *r, const BIGNUM *scalar,
+                size_t num, const EC_POINT *points[], const BIGNUM *scalars[],
+                BN_CTX *);
+    /* used by ECP_POINTs_scalars_mul */
+    int (*scalars_mul)(const EC_GROUP *group, EC_POINT *r[], size_t num,
+                       const EC_POINT *points[], const BIGNUM *scalars[],
+                       BN_CTX *ctx);
+    /* used by ECP_POINTs_scalar_mul */
+    int (*scalar_mul)(const EC_GROUP *group, EC_POINT *r[], size_t num,
+                      const EC_POINT *points[], const BIGNUM *scalar,
+                      BN_CTX *ctx);
+    /* used by ECP_POINTs_string2_to_points */
+    int (*strings_to_points)(const EC_GROUP *group, EC_POINT *r[],
+                             size_t num, const unsigned char *strings[],
+                             BN_CTX *ctx);
+    /* used by ECP_POINTs_string2_to_points_scalar_mul */
+    int (*strings_to_points_scalar_mul)(const EC_GROUP *group, EC_POINT *r[],
+                                        size_t num, const unsigned char *strings[],
+                                        const BIGNUM *scalar, BN_CTX *ctx);
+};
+
 /*
  * Types and functions to manipulate pre-computed values.
  */
@@ -270,6 +303,11 @@ struct ec_group_st {
         NISTZ256_PRE_COMP *nistz256;
         EC_PRE_COMP *ec;
     } pre_comp;
+
+#ifndef OPENSSL_NO_ENGINE
+    ENGINE *engine;
+    const EC_POINT_METHOD *ecp_meth;
+#endif
 };
 
 #define SETPRECOMP(g, type, pre) \
@@ -306,6 +344,11 @@ struct ec_point_st {
                                  * Z) represents (X/Z^2, Y/Z^3) if Z != 0 */
     int Z_is_one;               /* enable optimized point arithmetics for
                                  * special case */
+};
+
+struct ec_points_st {
+    int count;
+    EC_POINT *items[];
 };
 
 static ossl_inline int ec_point_is_compat(const EC_POINT *point,

@@ -2099,6 +2099,104 @@ static int ec_point_hex2point_test(int id)
     return ret;
 }
 
+static const char *scalars_arr[] = {
+    "0000000000000000000000000000000000000000000000000000000000000001",
+    "0000000000000000000000000000000000000000000000000000000000000002",
+    "785129917D45A9EA5437A59356B82338EAADDA6CEB199088F14AE10D1FA229B5",
+};
+
+static int batch_points_mul_test(void)
+{
+    int r = 0, i, count;
+    BN_CTX *ctx = NULL;
+    BIGNUM *scalar1, *scalar2, *scalar3;
+    EC_GROUP *group = NULL;
+    EC_POINT *R1 = NULL, *R2 = NULL, *R3 = NULL;
+    EC_POINTS *rs = NULL;
+    const EC_POINT *G;
+    const EC_POINT *points[3];
+    const BIGNUM *scalars[3];
+    const unsigned char *strings[2] = {
+        (unsigned char *)"test1",
+        (unsigned char *)"test2",
+    };
+
+    TEST_info("Batch point scalar multiplication test");
+    if (!TEST_ptr(ctx = BN_CTX_new()))
+        goto err;
+
+    BN_CTX_start(ctx);
+    scalar1 = BN_CTX_get(ctx);
+    scalar2 = BN_CTX_get(ctx);
+    scalar3 = BN_CTX_get(ctx);
+    if (!TEST_ptr(scalar3)
+        || !TEST_true(BN_hex2bn(&scalar1, scalars_arr[0]))
+        || !TEST_true(BN_hex2bn(&scalar2, scalars_arr[1]))
+        || !TEST_true(BN_hex2bn(&scalar3, scalars_arr[2])))
+        goto err;
+
+    if (!TEST_ptr(group = EC_GROUP_new_by_curve_name(NID_X9_62_prime256v1))
+        || !TEST_ptr(R1 = EC_POINT_new(group))
+        || !TEST_ptr(R2 = EC_POINT_new(group))
+        || !TEST_ptr(R3 = EC_POINT_new(group))
+        || !TEST_true(EC_POINT_mul(group, R1, scalar1, NULL, NULL, ctx))
+        || !TEST_true(EC_POINT_mul(group, R2, scalar2, NULL, NULL, ctx))
+        || !TEST_true(EC_POINT_mul(group, R3, scalar3, NULL, NULL, ctx)))
+        goto err;
+
+    G = EC_GROUP_get0_generator(group);
+
+    points[0] = points[1] = points[2] = G;
+    scalars[0] = scalar1;
+    scalars[1] = scalar2;
+    scalars[2] = scalar3;
+
+    count = sizeof(points) / sizeof(points[0]);
+
+    if (!TEST_true(EC_POINTs_scalars_mul(group, &rs, count, points, scalars, NULL))
+        || !TEST_ptr(rs)
+        || !TEST_int_eq(EC_POINTS_count(rs), count))
+        goto err;
+
+    for (i = 0; i < count; i++) {
+        if (!TEST_int_eq(EC_POINT_cmp(group, R1, EC_POINTS_get_item(rs, 0), NULL), 0)
+            || !TEST_int_eq(EC_POINT_cmp(group, R2, EC_POINTS_get_item(rs, 1), NULL), 0)
+            || !TEST_int_eq(EC_POINT_cmp(group, R3, EC_POINTS_get_item(rs, 2), NULL), 0))
+            goto err;
+    }
+
+    if (!TEST_true(EC_POINTs_scalar_mul(group, &rs, count, points, scalar2, NULL))
+        || !TEST_ptr(rs)
+        || !TEST_int_eq(EC_POINTS_count(rs), count))
+        goto err;
+
+    for (i = 0; i < count; i++) {
+        if (!TEST_int_eq(EC_POINT_cmp(group, R2, EC_POINTS_get_item(rs, 0), NULL), 0)
+            || !TEST_int_eq(EC_POINT_cmp(group, R2, EC_POINTS_get_item(rs, 1), NULL), 0)
+            || !TEST_int_eq(EC_POINT_cmp(group, R2, EC_POINTS_get_item(rs, 2), NULL), 0))
+            goto err;
+    }
+
+    if (TEST_true(EC_POINTs_from_strings(group, &rs, 2, strings, NULL)))
+        goto err;
+
+    if (TEST_true(EC_POINTs_from_strings_scalar_mul(group, &rs, 2, strings,
+                                                    scalar2, NULL)))
+        goto err;
+
+    r = 1;
+err:
+    EC_POINTS_free(rs);
+    EC_POINT_free(R1);
+    EC_POINT_free(R2);
+    EC_POINT_free(R3);
+    EC_GROUP_free(group);
+    BN_CTX_end(ctx);
+    BN_CTX_free(ctx);
+    return r;
+}
+
+
 #endif /* OPENSSL_NO_EC */
 
 int setup_tests(void)
@@ -2126,6 +2224,7 @@ int setup_tests(void)
 
     ADD_ALL_TESTS(check_named_curve_from_ecparameters, crv_len);
     ADD_ALL_TESTS(ec_point_hex2point_test, crv_len);
+    ADD_TEST(batch_points_mul_test);
 #endif /* OPENSSL_NO_EC */
     return 1;
 }

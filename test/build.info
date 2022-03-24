@@ -52,7 +52,7 @@ INCLUDE_MAIN___test_libtestutil_OLB = /INCLUDE=MAIN
           time_offset_test pemtest ssl_cert_table_internal_test ciphername_test \
           servername_test ocspapitest rsa_mp_test fatalerrtest tls13ccstest \
           sysdefaulttest errtest ssl_ctx_test gosttest \
-          ssl_ntls_api_test
+          ssl_ntls_api_test ecpmeth_test
 
 
   SOURCE[versions]=versions.c
@@ -269,6 +269,10 @@ INCLUDE_MAIN___test_libtestutil_OLB = /INCLUDE=MAIN
   SOURCE[afalgtest]=afalgtest.c
   INCLUDE[afalgtest]=../include
   DEPEND[afalgtest]=../libcrypto libtestutil.a
+
+  SOURCE[ecpmeth_test]=ecpmeth_test.c
+  INCLUDE[ecpmeth_test]=../include
+  DEPEND[ecpmeth_test]=../libcrypto libtestutil.a
 
   SOURCE[d2i_test]=d2i_test.c
   INCLUDE[d2i_test]=../include
