@@ -9,6 +9,9 @@
 
 #include "internal/nelem.h"
 #include "testutil.h"
+#include <openssl/conf.h>
+#include <openssl/opensslconf.h>
+#include <openssl/bio.h>
 #include <openssl/ec.h>
 #include <openssl/pem.h>
 #include <openssl/objects.h>
@@ -193,10 +196,8 @@ err:
 
 static int ec_elgamal_test(int curve_id)
 {
-    TEST_info("Testing encrypt/descrypt of EC-ElGamal for curve_id: %d\n", curve_id);
-
     int ret = 0;
-    FILE *f;
+    BIO *bio = NULL;
     EC_KEY *eckey = NULL, *ec_pub_key = NULL, *ec_pri_key = NULL;
     //uint32_t p1 = 2000000021, p2 = 500, m = 800, r;
     int32_t p1 = 111111, p2 = 555555, m = 3, r;
@@ -204,6 +205,8 @@ static int ec_elgamal_test(int curve_id)
     size_t size, size1, size2;
     EC_ELGAMAL_CTX *ectx = NULL, *dctx = NULL;
     EC_ELGAMAL_DECRYPT_TABLE *dtable = NULL;
+
+    TEST_info("Testing encrypt/descrypt of EC-ElGamal for curve_id: %d\n", curve_id);
 
     if (!TEST_ptr(eckey = EC_KEY_new_by_curve_name(curve_id)))
         goto err;
@@ -214,15 +217,18 @@ static int ec_elgamal_test(int curve_id)
     /*
      * saving ec public key to pem file for this test
      */
-    f = fopen(EC_PUB_FILE_PATH, "w");
-    PEM_write_EC_PUBKEY(f, eckey);
-    fclose(f);
-
-    f = fopen(EC_PUB_FILE_PATH, "r");
-    if (!TEST_ptr(ec_pub_key = PEM_read_EC_PUBKEY(f, NULL, NULL, NULL)))
+    if (!TEST_ptr(bio = BIO_new(BIO_s_file()))
+        || !TEST_true(BIO_write_filename(bio, EC_PUB_FILE_PATH))
+        || !TEST_true(PEM_write_bio_EC_PUBKEY(bio, eckey)))
         goto err;
+    BIO_free(bio);
 
-    fclose(f);
+    if (!TEST_ptr(bio = BIO_new(BIO_s_file()))
+        || !TEST_true(BIO_read_filename(bio, EC_PUB_FILE_PATH))
+        || !TEST_ptr(ec_pub_key = PEM_read_bio_EC_PUBKEY(bio, NULL, NULL,
+                                                         NULL)))
+        goto err;
+    BIO_free(bio);
 
     if (!TEST_ptr(ectx = EC_ELGAMAL_CTX_new(ec_pub_key)))
         goto err;
@@ -230,15 +236,19 @@ static int ec_elgamal_test(int curve_id)
     /*
      * saving ec secret key to pem file for this test
      */
-    f = fopen(EC_KEY_FILE_PATH, "w");
-    PEM_write_ECPrivateKey(f, eckey, NULL, NULL, 0, NULL, NULL);
-    fclose(f);
-
-    f = fopen(EC_KEY_FILE_PATH, "r");
-    if (!TEST_ptr(ec_pri_key = PEM_read_ECPrivateKey(f, NULL, NULL, NULL)))
+    if (!TEST_ptr(bio = BIO_new(BIO_s_file()))
+        || !TEST_true(BIO_write_filename(bio, EC_KEY_FILE_PATH))
+        || !TEST_true(PEM_write_bio_ECPrivateKey(bio, eckey, NULL, NULL, 0,
+                                                 NULL, NULL)))
         goto err;
+    BIO_free(bio);
 
-    fclose(f);
+    if (!TEST_ptr(bio = BIO_new(BIO_s_file()))
+        || !TEST_true(BIO_read_filename(bio, EC_KEY_FILE_PATH))
+        || !TEST_true(ec_pri_key = PEM_read_bio_ECPrivateKey(bio, NULL, NULL,
+                                                             NULL)))
+        goto err;
+    BIO_free(bio);
 
     if (!TEST_ptr(dctx = EC_ELGAMAL_CTX_new(ec_pri_key)))
         goto err;
@@ -289,6 +299,8 @@ static int ec_elgamal_test(int curve_id)
     ret = 1;
 
 err:
+    EC_ELGAMAL_DECRYPT_TABLE_free(dtable);
+
     OPENSSL_free(buf1);
     OPENSSL_free(buf2);
     OPENSSL_free(buf);
@@ -307,8 +319,10 @@ static int ec_elgamal_tests(void)
     if (!TEST_true(ec_elgamal_test(NID_X9_62_prime256v1)))
         return 0;
 
+#ifndef OPENSSL_NO_SM2
     if (!TEST_true(ec_elgamal_test(NID_sm2)))
         return 0;
+#endif
 
     return 1;
 }
