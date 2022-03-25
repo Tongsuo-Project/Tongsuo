@@ -32,22 +32,21 @@
 #define SSL_ENC_AES128_IDX      6
 #define SSL_ENC_AES256_IDX      7
 #define SSL_ENC_GOST89_IDX      8
-#define SSL_ENC_SEED_IDX        9
-#define SSL_ENC_AES128GCM_IDX   10
-#define SSL_ENC_AES256GCM_IDX   11
-#define SSL_ENC_AES128CCM_IDX   12
-#define SSL_ENC_AES256CCM_IDX   13
-#define SSL_ENC_AES128CCM8_IDX  14
-#define SSL_ENC_AES256CCM8_IDX  15
-#define SSL_ENC_GOST8912_IDX    16
-#define SSL_ENC_CHACHA_IDX      17
-#define SSL_ENC_SM4_GCM_IDX     18
-#define SSL_ENC_SM4_CCM_IDX     19
+#define SSL_ENC_AES128GCM_IDX   9
+#define SSL_ENC_AES256GCM_IDX   10
+#define SSL_ENC_AES128CCM_IDX   11
+#define SSL_ENC_AES256CCM_IDX   12
+#define SSL_ENC_AES128CCM8_IDX  13
+#define SSL_ENC_AES256CCM8_IDX  14
+#define SSL_ENC_GOST8912_IDX    15
+#define SSL_ENC_CHACHA_IDX      16
+#define SSL_ENC_SM4_GCM_IDX     17
+#define SSL_ENC_SM4_CCM_IDX     18
 #ifndef OPENSSL_NO_SM4
-# define SSL_ENC_SM4_IDX        20
-# define SSL_ENC_NUM_IDX        21
-#else
+# define SSL_ENC_SM4_IDX        19
 # define SSL_ENC_NUM_IDX        20
+#else
+# define SSL_ENC_NUM_IDX        19
 #endif
 
 /* NB: make sure indices in these tables match values above */
@@ -68,19 +67,18 @@ static const ssl_cipher_table ssl_cipher_table_cipher[SSL_ENC_NUM_IDX] = {
     {SSL_AES128, NID_aes_128_cbc}, /* SSL_ENC_AES128_IDX 6 */
     {SSL_AES256, NID_aes_256_cbc}, /* SSL_ENC_AES256_IDX 7 */
     {SSL_eGOST2814789CNT, NID_gost89_cnt}, /* SSL_ENC_GOST89_IDX 8 */
-    {SSL_SEED, NID_seed_cbc},   /* SSL_ENC_SEED_IDX 9 */
-    {SSL_AES128GCM, NID_aes_128_gcm}, /* SSL_ENC_AES128GCM_IDX 10 */
-    {SSL_AES256GCM, NID_aes_256_gcm}, /* SSL_ENC_AES256GCM_IDX 11 */
-    {SSL_AES128CCM, NID_aes_128_ccm}, /* SSL_ENC_AES128CCM_IDX 12 */
-    {SSL_AES256CCM, NID_aes_256_ccm}, /* SSL_ENC_AES256CCM_IDX 13 */
-    {SSL_AES128CCM8, NID_aes_128_ccm}, /* SSL_ENC_AES128CCM8_IDX 14 */
-    {SSL_AES256CCM8, NID_aes_256_ccm}, /* SSL_ENC_AES256CCM8_IDX 15 */
-    {SSL_eGOST2814789CNT12, NID_gost89_cnt_12}, /* SSL_ENC_GOST8912_IDX 16 */
-    {SSL_CHACHA20POLY1305, NID_chacha20_poly1305}, /* SSL_ENC_CHACHA_IDX 17 */
-    {SSL_SM4GCM, NID_sm4_gcm}, /* SSL_ENC_SM4_GCM_IDX 18 */
-    {SSL_SM4CCM, NID_sm4_ccm}, /* SSL_ENC_SM4_CCM_IDX 19 */
+    {SSL_AES128GCM, NID_aes_128_gcm}, /* SSL_ENC_AES128GCM_IDX 9 */
+    {SSL_AES256GCM, NID_aes_256_gcm}, /* SSL_ENC_AES256GCM_IDX 10 */
+    {SSL_AES128CCM, NID_aes_128_ccm}, /* SSL_ENC_AES128CCM_IDX 11 */
+    {SSL_AES256CCM, NID_aes_256_ccm}, /* SSL_ENC_AES256CCM_IDX 12 */
+    {SSL_AES128CCM8, NID_aes_128_ccm}, /* SSL_ENC_AES128CCM8_IDX 13 */
+    {SSL_AES256CCM8, NID_aes_256_ccm}, /* SSL_ENC_AES256CCM8_IDX 14 */
+    {SSL_eGOST2814789CNT12, NID_gost89_cnt_12}, /* SSL_ENC_GOST8912_IDX 15 */
+    {SSL_CHACHA20POLY1305, NID_chacha20_poly1305}, /* SSL_ENC_CHACHA_IDX 16 */
+    {SSL_SM4GCM, NID_sm4_gcm}, /* SSL_ENC_SM4_GCM_IDX 17 */
+    {SSL_SM4CCM, NID_sm4_ccm}, /* SSL_ENC_SM4_CCM_IDX 18 */
 #ifndef OPENSSL_NO_SM4
-    {SSL_SM4, NID_sm4_cbc}     /* SSL_ENC_SM4_IDX 20 */
+    {SSL_SM4, NID_sm4_cbc}     /* SSL_ENC_SM4_IDX 19 */
 #endif
 };
 
@@ -280,7 +278,6 @@ static const SSL_CIPHER cipher_aliases[] = {
     {0, SSL_TXT_RC4, NULL, 0, 0, 0, SSL_RC4},
     {0, SSL_TXT_RC2, NULL, 0, 0, 0, SSL_RC2},
     {0, SSL_TXT_IDEA, NULL, 0, 0, 0, SSL_IDEA},
-    {0, SSL_TXT_SEED, NULL, 0, 0, 0, SSL_SEED},
     {0, SSL_TXT_eNULL, NULL, 0, 0, 0, SSL_eNULL},
     {0, SSL_TXT_GOST, NULL, 0, 0, 0, SSL_eGOST2814789CNT | SSL_eGOST2814789CNT12},
     {0, SSL_TXT_AES128, NULL, 0, 0, 0,
@@ -1866,9 +1863,6 @@ char *SSL_CIPHER_description(const SSL_CIPHER *cipher, char *buf, int len)
         break;
     case SSL_AES256CCM8:
         enc = "AESCCM8(256)";
-        break;
-    case SSL_SEED:
-        enc = "SEED(128)";
         break;
     case SSL_eGOST2814789CNT:
     case SSL_eGOST2814789CNT12:

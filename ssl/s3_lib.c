@@ -156,7 +156,7 @@ static SSL_CIPHER tls13_ciphers[] = {
  *      EC
  *      PSK
  *      SRP (within that: RSA EC PSK)
- *      Cipher families: Chacha/poly, Gost, IDEA, SEED
+ *      Cipher families: Chacha/poly, Gost, IDEA
  *      Weak ciphers
  */
 static SSL_CIPHER ssl3_ciphers[] = {
@@ -2269,73 +2269,6 @@ static SSL_CIPHER ssl3_ciphers[] = {
      128,
      },
 #endif
-
-#ifndef OPENSSL_NO_SEED
-    {
-     1,
-     TLS1_TXT_RSA_WITH_SEED_SHA,
-     TLS1_RFC_RSA_WITH_SEED_SHA,
-     TLS1_CK_RSA_WITH_SEED_SHA,
-     SSL_kRSA,
-     SSL_aRSA,
-     SSL_SEED,
-     SSL_SHA1,
-     SSL3_VERSION, TLS1_2_VERSION,
-     DTLS1_BAD_VER, DTLS1_2_VERSION,
-     SSL_NOT_DEFAULT | SSL_MEDIUM,
-     SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
-     128,
-     128,
-     },
-    {
-     1,
-     TLS1_TXT_DHE_DSS_WITH_SEED_SHA,
-     TLS1_RFC_DHE_DSS_WITH_SEED_SHA,
-     TLS1_CK_DHE_DSS_WITH_SEED_SHA,
-     SSL_kDHE,
-     SSL_aDSS,
-     SSL_SEED,
-     SSL_SHA1,
-     SSL3_VERSION, TLS1_2_VERSION,
-     DTLS1_BAD_VER, DTLS1_2_VERSION,
-     SSL_NOT_DEFAULT | SSL_MEDIUM,
-     SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
-     128,
-     128,
-     },
-    {
-     1,
-     TLS1_TXT_DHE_RSA_WITH_SEED_SHA,
-     TLS1_RFC_DHE_RSA_WITH_SEED_SHA,
-     TLS1_CK_DHE_RSA_WITH_SEED_SHA,
-     SSL_kDHE,
-     SSL_aRSA,
-     SSL_SEED,
-     SSL_SHA1,
-     SSL3_VERSION, TLS1_2_VERSION,
-     DTLS1_BAD_VER, DTLS1_2_VERSION,
-     SSL_NOT_DEFAULT | SSL_MEDIUM,
-     SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
-     128,
-     128,
-     },
-    {
-     1,
-     TLS1_TXT_ADH_WITH_SEED_SHA,
-     TLS1_RFC_ADH_WITH_SEED_SHA,
-     TLS1_CK_ADH_WITH_SEED_SHA,
-     SSL_kDHE,
-     SSL_aNULL,
-     SSL_SEED,
-     SSL_SHA1,
-     SSL3_VERSION, TLS1_2_VERSION,
-     DTLS1_BAD_VER, DTLS1_2_VERSION,
-     SSL_NOT_DEFAULT | SSL_MEDIUM,
-     SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
-     128,
-     128,
-     },
-#endif                          /* OPENSSL_NO_SEED */
 
 #ifndef OPENSSL_NO_WEAK_SSL_CIPHERS
     {
