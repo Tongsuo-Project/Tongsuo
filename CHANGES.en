@@ -5,13 +5,15 @@
  This is a high-level summary of the most important changes.
  For a full list of changes, see the git commit log.
 
- Changes between 8.3.0 and 8.3.1 [xx XXX xxxx]
+ Changes between 8.3.0 and 8.4.0 [xx XXX xxxx]
 
   *)
 
-  *) 修复2处SM2签名算法的实现bug [0x9527-zhou]
+  *) Fix bugs in SM2 implementation [0x9527-zhou]
 
-  *) 修复CVE-2022-0778
+  *) Remove Camellia
+
+  *) Fix CVE-2022-0778
 
  Changes between 8.2.0 and 8.3.0 [28 Feb 2022]
 
