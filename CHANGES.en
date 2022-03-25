@@ -9,11 +9,11 @@
 
   *)
 
-  *) 修复2处SM2签名算法的实现bug [0x9527-zhou]
+  *) Fix bugs in SM2 implementation [0x9527-zhou]
 
-  *) 删除Camellia算法
+  *) Remove Camellia
 
-  *) 修复CVE-2022-0778
+  *) Fix CVE-2022-0778
 
  Changes between 8.2.0 and 8.3.0 [28 Feb 2022]
 
