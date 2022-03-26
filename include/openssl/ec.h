@@ -868,7 +868,7 @@ int EC_POINTs_scalar_mul(const EC_GROUP *group, EC_POINTS **r, size_t num,
                          BN_CTX *ctx);
 
 /*
- * Functions for convert some strings to spoints on the elliptic curve.
+ * Functions for convert some strings to some points on the elliptic curve.
  * r[i]->X = hash(strings[i])
  * r[i]->Y = F(hash(strings[i])), the Y coordinate can be calculated by taking
  *           the X coordinate into the equation
@@ -886,7 +886,7 @@ int EC_POINTs_from_strings(const EC_GROUP *group, EC_POINTS **r,
                            BN_CTX *ctx);
 
 /*
- * Functions for convert some strings to spoints on the elliptic curve, then
+ * Functions for convert some strings to some points on the elliptic curve, then
  * multiply with scalar.
  * point[i]->X = hash(strings[i])
  * point[i]->Y = F(hash(strings[i])), the Y coordinate can be calculated by taking

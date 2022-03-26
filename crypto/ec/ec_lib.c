@@ -1348,7 +1348,7 @@ err:
 }
 
 /*
- * Functions for convert some strings to spoints on the elliptic curve.
+ * Functions for convert some strings to some points on the elliptic curve.
  * r[i]->X = hash(strings[i])
  * r[i]->Y = F(hash(strings[i])), the Y coordinate can be calculated by taking
  *           the X coordinate into the equation
@@ -1402,7 +1402,7 @@ err:
 }
 
 /*
- * Functions for convert some strings to spoints on the elliptic curve, then
+ * Functions for convert some strings to some points on the elliptic curve, then
  * multiply with scalar.
  * point[i]->X = hash(strings[i])
  * point[i]->Y = F(hash(strings[i])), the Y coordinate can be calculated by taking
