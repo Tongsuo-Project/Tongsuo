@@ -309,6 +309,9 @@ static int ec_elgamal_tests(void)
     if (!TEST_true(ec_elgamal_test(NID_sm2)))
         return 0;
 
+    if (!TEST_true(ec_elgamal_test(NID_ED25519)))
+        return 0;
+
     return 1;
 }
 
