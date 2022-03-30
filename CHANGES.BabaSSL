@@ -7,9 +7,11 @@
 
  Changes between 8.3.0 and 8.3.1 [xx XXX xxxx]
 
-  *) Fix CVE-2022-0778
-
   *)
+
+  *) Fix bugs in SM2 implementation [0x9527-zhou]
+
+  *) Fix CVE-2022-0778
 
  Changes between 8.2.0 and 8.3.0 [28 Feb 2022]
 
