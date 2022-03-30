@@ -9,6 +9,8 @@
 
   *)
 
+  *) Remove SEED
+
   *) Fix bugs in SM2 implementation [0x9527-zhou]
 
   *) Remove Camellia

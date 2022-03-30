@@ -196,7 +196,6 @@ d2i_X509_ALGORS                         198	1_1_0	EXIST::FUNCTION:
 EVP_PKEY2PKCS8                          199	1_1_0	EXIST::FUNCTION:
 BN_nist_mod_256                         200	1_1_0	EXIST::FUNCTION:
 OCSP_request_add0_id                    201	1_1_0	EXIST::FUNCTION:OCSP
-EVP_seed_cfb128                         202	1_1_0	EXIST::FUNCTION:SEED
 BASIC_CONSTRAINTS_free                  203	1_1_0	EXIST::FUNCTION:
 EVP_CIPHER_flags                        204	1_1_0	EXIST::FUNCTION:
 PEM_write_bio_ECPKParameters            205	1_1_0	EXIST::FUNCTION:EC
@@ -235,7 +234,6 @@ d2i_ASN1_SET_ANY                        236	1_1_0	EXIST::FUNCTION:
 ASN1_item_i2d                           238	1_1_0	EXIST::FUNCTION:
 OCSP_copy_nonce                         239	1_1_0	EXIST::FUNCTION:OCSP
 OBJ_txt2nid                             240	1_1_0	EXIST::FUNCTION:
-SEED_set_key                            241	1_1_0	EXIST::FUNCTION:SEED
 EC_KEY_clear_flags                      242	1_1_0	EXIST::FUNCTION:EC
 CMS_RecipientInfo_ktri_get0_algs        243	1_1_0	EXIST::FUNCTION:CMS
 i2d_EC_PUBKEY                           244	1_1_0	EXIST::FUNCTION:EC
@@ -259,7 +257,6 @@ EC_KEY_copy                             263	1_1_0	EXIST::FUNCTION:EC
 EVP_des_ede3                            264	1_1_0	EXIST::FUNCTION:DES
 PKCS7_add1_attrib_digest                265	1_1_0	EXIST::FUNCTION:
 EC_POINT_get_affine_coordinates_GFp     266	1_1_0	EXIST::FUNCTION:DEPRECATEDIN_1_2_0,EC
-EVP_seed_ecb                            267	1_1_0	EXIST::FUNCTION:SEED
 BIO_dgram_sctp_wait_for_dry             268	1_1_0	EXIST::FUNCTION:DGRAM,SCTP
 ASN1_OCTET_STRING_NDEF_it               269	1_1_0	EXIST:!EXPORT_VAR_AS_FUNCTION:VARIABLE:
 ASN1_OCTET_STRING_NDEF_it               269	1_1_0	EXIST:EXPORT_VAR_AS_FUNCTION:FUNCTION:
@@ -365,7 +362,6 @@ CMS_signed_add1_attr_by_txt             366	1_1_0	EXIST::FUNCTION:CMS
 i2d_NETSCAPE_SPKAC                      367	1_1_0	EXIST::FUNCTION:
 X509V3_add_value_bool_nf                368	1_1_0	EXIST::FUNCTION:
 ASN1_item_verify                        369	1_1_0	EXIST::FUNCTION:
-SEED_ecb_encrypt                        370	1_1_0	EXIST::FUNCTION:SEED
 X509_PUBKEY_get0_param                  371	1_1_0	EXIST::FUNCTION:
 ASN1_i2d_fp                             372	1_1_0	EXIST::FUNCTION:STDIO
 BIO_new_mem_buf                         373	1_1_0	EXIST::FUNCTION:
@@ -993,7 +989,6 @@ BIO_printf                              995	1_1_0	EXIST::FUNCTION:
 a2i_IPADDRESS                           996	1_1_0	EXIST::FUNCTION:
 ERR_peek_error_line_data                997	1_1_0	EXIST::FUNCTION:
 ERR_unload_strings                      998	1_1_0	EXIST::FUNCTION:
-SEED_cfb128_encrypt                     999	1_1_0	EXIST::FUNCTION:SEED
 ASN1_BIT_STRING_it                      1000	1_1_0	EXIST:!EXPORT_VAR_AS_FUNCTION:VARIABLE:
 ASN1_BIT_STRING_it                      1000	1_1_0	EXIST:EXPORT_VAR_AS_FUNCTION:FUNCTION:
 PKCS12_decrypt_skey                     1001	1_1_0	EXIST::FUNCTION:
@@ -1945,7 +1940,6 @@ ASN1_ENUMERATED_free                    1944	1_1_0	EXIST::FUNCTION:
 X509_CRL_set_meth_data                  1945	1_1_0	EXIST::FUNCTION:
 EVP_aes_192_cfb1                        1946	1_1_0	EXIST::FUNCTION:
 EVP_MD_CTX_set_flags                    1947	1_1_0	EXIST::FUNCTION:
-EVP_seed_cbc                            1948	1_1_0	EXIST::FUNCTION:SEED
 d2i_PKCS12                              1949	1_1_0	EXIST::FUNCTION:
 X509_policy_node_get0_policy            1950	1_1_0	EXIST::FUNCTION:
 PKCS12_unpack_p7data                    1951	1_1_0	EXIST::FUNCTION:
@@ -2149,7 +2143,6 @@ ASN1_PRINTABLE_new                      2139	1_1_0	EXIST::FUNCTION:
 OBJ_NAME_new_index                      2140	1_1_0	EXIST::FUNCTION:
 EVP_PKEY_asn1_add_alias                 2141	1_1_0	EXIST::FUNCTION:
 EVP_PKEY_get1_DSA                       2142	1_1_0	EXIST::FUNCTION:DSA
-SEED_cbc_encrypt                        2143	1_1_0	EXIST::FUNCTION:SEED
 EVP_rc2_40_cbc                          2144	1_1_0	EXIST::FUNCTION:RC2
 ECDSA_SIG_new                           2145	1_1_0	EXIST::FUNCTION:EC
 i2d_PKCS8PrivateKey_nid_fp              2146	1_1_0	EXIST::FUNCTION:STDIO
@@ -2626,7 +2619,6 @@ DIRECTORYSTRING_it                      2614	1_1_0	EXIST:!EXPORT_VAR_AS_FUNCTION
 DIRECTORYSTRING_it                      2614	1_1_0	EXIST:EXPORT_VAR_AS_FUNCTION:FUNCTION:
 BIO_write                               2615	1_1_0	EXIST::FUNCTION:
 OCSP_ONEREQ_get_ext_by_OBJ              2616	1_1_0	EXIST::FUNCTION:OCSP
-SEED_encrypt                            2617	1_1_0	EXIST::FUNCTION:SEED
 IPAddressRange_it                       2618	1_1_0	EXIST:!EXPORT_VAR_AS_FUNCTION:VARIABLE:RFC3779
 IPAddressRange_it                       2618	1_1_0	EXIST:EXPORT_VAR_AS_FUNCTION:FUNCTION:RFC3779
 PEM_read_bio_DSAPrivateKey              2619	1_1_0	EXIST::FUNCTION:DSA
@@ -2736,7 +2728,6 @@ i2d_TS_TST_INFO_bio                     2719	1_1_0	EXIST::FUNCTION:TS
 CMS_sign_receipt                        2720	1_1_0	EXIST::FUNCTION:CMS
 ENGINE_set_RAND                         2721	1_1_0	EXIST::FUNCTION:ENGINE
 X509_REVOKED_get_ext_by_OBJ             2722	1_1_0	EXIST::FUNCTION:
-SEED_decrypt                            2723	1_1_0	EXIST::FUNCTION:SEED
 PEM_write_PKCS8PrivateKey               2724	1_1_0	EXIST::FUNCTION:STDIO
 ENGINE_new                              2725	1_1_0	EXIST::FUNCTION:ENGINE
 X509_check_issued                       2726	1_1_0	EXIST::FUNCTION:
@@ -3024,7 +3015,6 @@ RSA_padding_add_PKCS1_OAEP_mgf1         2999	1_1_0	EXIST::FUNCTION:RSA
 COMP_CTX_get_type                       3000	1_1_0	EXIST::FUNCTION:COMP
 TS_RESP_CTX_set_status_info             3001	1_1_0	EXIST::FUNCTION:TS
 BIO_f_nbio_test                         3002	1_1_0	EXIST::FUNCTION:
-SEED_ofb128_encrypt                     3003	1_1_0	EXIST::FUNCTION:SEED
 d2i_RSAPrivateKey_bio                   3004	1_1_0	EXIST::FUNCTION:RSA
 DH_KDF_X9_42                            3005	1_1_0	EXIST::FUNCTION:CMS,DH
 EVP_PKEY_meth_set_signctx               3006	1_1_0	EXIST::FUNCTION:
@@ -3082,7 +3072,6 @@ X509_check_akid                         3056	1_1_0	EXIST::FUNCTION:
 PKCS12_key_gen_asc                      3057	1_1_0	EXIST::FUNCTION:
 EVP_bf_ofb                              3058	1_1_0	EXIST::FUNCTION:BF
 AUTHORITY_KEYID_free                    3059	1_1_0	EXIST::FUNCTION:
-EVP_seed_ofb                            3060	1_1_0	EXIST::FUNCTION:SEED
 OBJ_NAME_get                            3061	1_1_0	EXIST::FUNCTION:
 ASN1_UTCTIME_set                        3062	1_1_0	EXIST::FUNCTION:
 X509_NAME_ENTRY_set_data                3063	1_1_0	EXIST::FUNCTION:

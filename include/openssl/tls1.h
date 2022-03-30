@@ -455,14 +455,6 @@ __owur int SSL_check_chain(SSL *s, X509 *x, EVP_PKEY *pk, STACK_OF(X509) *chain)
 # define TLS1_CK_ADH_WITH_AES_128_SHA256                 0x0300006C
 # define TLS1_CK_ADH_WITH_AES_256_SHA256                 0x0300006D
 
-/* SEED ciphersuites from RFC4162 */
-# define TLS1_CK_RSA_WITH_SEED_SHA                       0x03000096
-# define TLS1_CK_DH_DSS_WITH_SEED_SHA                    0x03000097
-# define TLS1_CK_DH_RSA_WITH_SEED_SHA                    0x03000098
-# define TLS1_CK_DHE_DSS_WITH_SEED_SHA                   0x03000099
-# define TLS1_CK_DHE_RSA_WITH_SEED_SHA                   0x0300009A
-# define TLS1_CK_ADH_WITH_SEED_SHA                       0x0300009B
-
 /* TLS v1.2 GCM ciphersuites from RFC5288 */
 # define TLS1_CK_RSA_WITH_AES_128_GCM_SHA256             0x0300009C
 # define TLS1_CK_RSA_WITH_AES_256_GCM_SHA384             0x0300009D
@@ -722,10 +714,6 @@ __owur int SSL_check_chain(SSL *s, X509 *x, EVP_PKEY *pk, STACK_OF(X509) *chain)
 # define TLS1_RFC_ECDHE_PSK_WITH_CHACHA20_POLY1305       "TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256"
 # define TLS1_RFC_DHE_PSK_WITH_CHACHA20_POLY1305         "TLS_DHE_PSK_WITH_CHACHA20_POLY1305_SHA256"
 # define TLS1_RFC_RSA_PSK_WITH_CHACHA20_POLY1305         "TLS_RSA_PSK_WITH_CHACHA20_POLY1305_SHA256"
-# define TLS1_RFC_RSA_WITH_SEED_SHA                      "TLS_RSA_WITH_SEED_CBC_SHA"
-# define TLS1_RFC_DHE_DSS_WITH_SEED_SHA                  "TLS_DHE_DSS_WITH_SEED_CBC_SHA"
-# define TLS1_RFC_DHE_RSA_WITH_SEED_SHA                  "TLS_DHE_RSA_WITH_SEED_CBC_SHA"
-# define TLS1_RFC_ADH_WITH_SEED_SHA                      "TLS_DH_anon_WITH_SEED_CBC_SHA"
 # define TLS1_RFC_ECDHE_PSK_WITH_RC4_128_SHA             "TLS_ECDHE_PSK_WITH_RC4_128_SHA"
 # define TLS1_RFC_ECDH_anon_WITH_RC4_128_SHA             "TLS_ECDH_anon_WITH_RC4_128_SHA"
 # define TLS1_RFC_ECDHE_ECDSA_WITH_RC4_128_SHA           "TLS_ECDHE_ECDSA_WITH_RC4_128_SHA"
@@ -840,14 +828,6 @@ __owur int SSL_check_chain(SSL *s, X509 *x, EVP_PKEY *pk, STACK_OF(X509) *chain)
 # define TLS1_TXT_SRP_SHA_WITH_AES_256_CBC_SHA           "SRP-AES-256-CBC-SHA"
 # define TLS1_TXT_SRP_SHA_RSA_WITH_AES_256_CBC_SHA       "SRP-RSA-AES-256-CBC-SHA"
 # define TLS1_TXT_SRP_SHA_DSS_WITH_AES_256_CBC_SHA       "SRP-DSS-AES-256-CBC-SHA"
-
-/* SEED ciphersuites from RFC4162 */
-# define TLS1_TXT_RSA_WITH_SEED_SHA                      "SEED-SHA"
-# define TLS1_TXT_DH_DSS_WITH_SEED_SHA                   "DH-DSS-SEED-SHA"
-# define TLS1_TXT_DH_RSA_WITH_SEED_SHA                   "DH-RSA-SEED-SHA"
-# define TLS1_TXT_DHE_DSS_WITH_SEED_SHA                  "DHE-DSS-SEED-SHA"
-# define TLS1_TXT_DHE_RSA_WITH_SEED_SHA                  "DHE-RSA-SEED-SHA"
-# define TLS1_TXT_ADH_WITH_SEED_SHA                      "ADH-SEED-SHA"
 
 /* TLS v1.2 ciphersuites */
 # define TLS1_TXT_RSA_WITH_NULL_SHA256                   "NULL-SHA256"

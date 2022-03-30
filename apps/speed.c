@@ -75,9 +75,6 @@
 #ifndef OPENSSL_NO_IDEA
 # include <openssl/idea.h>
 #endif
-#ifndef OPENSSL_NO_SEED
-# include <openssl/seed.h>
-#endif
 #ifndef OPENSSL_NO_BF
 # include <openssl/blowfish.h>
 #endif
@@ -365,29 +362,28 @@ const OPTIONS speed_options[] = {
 #define D_CBC_DES       8
 #define D_EDE3_DES      9
 #define D_CBC_IDEA      10
-#define D_CBC_SEED      11
-#define D_CBC_RC2       12
-#define D_CBC_RC5       13
-#define D_CBC_BF        14
-#define D_CBC_CAST      15
-#define D_CBC_128_AES   16
-#define D_CBC_192_AES   17
-#define D_CBC_256_AES   18
-#define D_EVP           19
-#define D_SHA256        20
-#define D_SHA512        21
-#define D_WHIRLPOOL     22
-#define D_IGE_128_AES   23
-#define D_IGE_192_AES   24
-#define D_IGE_256_AES   25
-#define D_GHASH         26
-#define D_RAND          27
-#define D_SM3           28
-#define D_CBC_SM4       29
+#define D_CBC_RC2       11
+#define D_CBC_RC5       12
+#define D_CBC_BF        13
+#define D_CBC_CAST      14
+#define D_CBC_128_AES   15
+#define D_CBC_192_AES   16
+#define D_CBC_256_AES   17
+#define D_EVP           18
+#define D_SHA256        19
+#define D_SHA512        20
+#define D_WHIRLPOOL     21
+#define D_IGE_128_AES   22
+#define D_IGE_192_AES   23
+#define D_IGE_256_AES   24
+#define D_GHASH         25
+#define D_RAND          26
+#define D_SM3           27
+#define D_CBC_SM4       28
 /* name of algorithms to test */
 static const char *names[] = {
     "md2", "mdc2", "md4", "md5", "hmac(md5)", "sha1", "rmd160", "rc4",
-    "des cbc", "des ede3", "idea cbc", "seed cbc",
+    "des cbc", "des ede3", "idea cbc",
     "rc2 cbc", "rc5-32/12 cbc", "blowfish cbc", "cast cbc",
     "aes-128 cbc", "aes-192 cbc", "aes-256 cbc",
     "evp", "sha256", "sha512", "whirlpool",
@@ -446,10 +442,6 @@ static const OPT_PAIR doit_choices[] = {
 #ifndef OPENSSL_NO_IDEA
     {"idea-cbc", D_CBC_IDEA},
     {"idea", D_CBC_IDEA},
-#endif
-#ifndef OPENSSL_NO_SEED
-    {"seed-cbc", D_CBC_SEED},
-    {"seed", D_CBC_SEED},
 #endif
 #ifndef OPENSSL_NO_BF
     {"bf-cbc", D_CBC_BF},
@@ -1734,9 +1726,6 @@ int speed_main(int argc, char **argv)
 #ifndef OPENSSL_NO_IDEA
     IDEA_KEY_SCHEDULE idea_ks;
 #endif
-#ifndef OPENSSL_NO_SEED
-    SEED_KEY_SCHEDULE seed_ks;
-#endif
 #ifndef OPENSSL_NO_BF
     BF_KEY bf_ks;
 #endif
@@ -2263,9 +2252,6 @@ int speed_main(int argc, char **argv)
 #ifndef OPENSSL_NO_IDEA
     IDEA_set_encrypt_key(key16, &idea_ks);
 #endif
-#ifndef OPENSSL_NO_SEED
-    SEED_set_key(key16, &seed_ks);
-#endif
 #ifndef OPENSSL_NO_RC4
     RC4_set_key(&rc4_ks, 16, key16);
 #endif
@@ -2306,7 +2292,6 @@ int speed_main(int argc, char **argv)
     c[D_CBC_DES][0] = count;
     c[D_EDE3_DES][0] = count / 3;
     c[D_CBC_IDEA][0] = count;
-    c[D_CBC_SEED][0] = count;
     c[D_CBC_RC2][0] = count;
     c[D_CBC_RC5][0] = count;
     c[D_CBC_BF][0] = count;
@@ -2354,7 +2339,6 @@ int speed_main(int argc, char **argv)
         c[D_CBC_DES][i] = c[D_CBC_DES][i - 1] * l0 / l1;
         c[D_EDE3_DES][i] = c[D_EDE3_DES][i - 1] * l0 / l1;
         c[D_CBC_IDEA][i] = c[D_CBC_IDEA][i - 1] * l0 / l1;
-        c[D_CBC_SEED][i] = c[D_CBC_SEED][i - 1] * l0 / l1;
         c[D_CBC_RC2][i] = c[D_CBC_RC2][i - 1] * l0 / l1;
         c[D_CBC_RC5][i] = c[D_CBC_RC5][i - 1] * l0 / l1;
         c[D_CBC_BF][i] = c[D_CBC_BF][i - 1] * l0 / l1;
@@ -2954,25 +2938,6 @@ int speed_main(int argc, char **argv)
                                  iv, IDEA_ENCRYPT);
             d = Time_F(STOP);
             print_result(D_CBC_IDEA, testnum, count, d);
-        }
-    }
-#endif
-#ifndef OPENSSL_NO_SEED
-    if (doit[D_CBC_SEED]) {
-        if (async_jobs > 0) {
-            BIO_printf(bio_err, "Async mode is not supported with %s\n",
-                       names[D_CBC_SEED]);
-            doit[D_CBC_SEED] = 0;
-        }
-        for (testnum = 0; testnum < size_num && async_init == 0; testnum++) {
-            print_message(names[D_CBC_SEED], c[D_CBC_SEED][testnum],
-                          lengths[testnum], seconds.sym);
-            Time_F(START);
-            for (count = 0; COND(c[D_CBC_SEED][testnum]); count++)
-                SEED_cbc_encrypt(loopargs[0].buf, loopargs[0].buf,
-                                 (size_t)lengths[testnum], &seed_ks, iv, 1);
-            d = Time_F(STOP);
-            print_result(D_CBC_SEED, testnum, count, d);
         }
     }
 #endif

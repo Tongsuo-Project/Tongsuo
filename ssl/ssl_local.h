@@ -225,7 +225,7 @@
 # define SSL_AES256              0x00000080U
 /* 0x100U & 0x200U are spared now due to the removal of Camellia */
 # define SSL_eGOST2814789CNT     0x00000400U
-# define SSL_SEED                0x00000800U
+/* 0x800U is spared now due to the removal of SEED */
 # define SSL_AES128GCM           0x00001000U
 # define SSL_AES256GCM           0x00002000U
 # define SSL_AES128CCM           0x00004000U
