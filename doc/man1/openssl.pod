@@ -438,10 +438,6 @@ RC5 Cipher
 
 =item B<seed>, B<seed-cbc>, B<seed-cfb>, B<seed-ecb>, B<seed-ofb>
 
-SEED Cipher
-
-=item B<sm4>, B<sm4-cbc>, B<sm4-cfb>, B<sm4-ctr>, B<sm4-ecb>, B<sm4-ofb>
-
 SM4 Cipher
 
 =back
