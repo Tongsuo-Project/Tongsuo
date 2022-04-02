@@ -140,7 +140,7 @@ sed -i '/linux-aarch64/a\        multilib         => "64",' Configurations/10-ma
     enable-dynamic-engine enable-tls1_3 enable-ssl3 enable-ssl3-method \
     enable-weak-ssl-ciphers enable-evp-cipher-api-compat enable-status \
     enable-crypto-mdebug-count enable-dynamic-ciphers enable-optimize-chacha \
-    enable-md2 enable-rc5 \
+    enable-rc5 \
     enable-rsa-multi-prime-key-compat enable-session-lookup \
     enable-session-reused-type enable-global-session-cache enable-verify-sni \
     enable-skip-scsv enable-ntls enable-sm2 $RPM_OPT_FLAGS --release -fPIC

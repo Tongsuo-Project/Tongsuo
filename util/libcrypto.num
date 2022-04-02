@@ -249,7 +249,6 @@ X509_CRL_http_nbio                      253	1_1_0	EXIST::FUNCTION:OCSP
 ENGINE_register_all_ciphers             254	1_1_0	EXIST::FUNCTION:ENGINE
 SXNET_new                               255	1_1_0	EXIST::FUNCTION:
 d2i_PKCS8_PRIV_KEY_INFO                 257	1_1_0	EXIST::FUNCTION:
-EVP_md2                                 259	1_1_0	EXIST::FUNCTION:MD2
 RC2_ecb_encrypt                         260	1_1_0	EXIST::FUNCTION:RC2
 ENGINE_register_DH                      261	1_1_0	EXIST::FUNCTION:ENGINE
 ASN1_NULL_free                          262	1_1_0	EXIST::FUNCTION:
@@ -2388,7 +2387,6 @@ ENGINE_get_pkey_asn1_meth_engine        2382	1_1_0	EXIST::FUNCTION:ENGINE
 d2i_ASN1_BMPSTRING                      2383	1_1_0	EXIST::FUNCTION:
 PKCS12_SAFEBAG_create0_p8inf            2384	1_1_0	EXIST::FUNCTION:
 OBJ_cmp                                 2385	1_1_0	EXIST::FUNCTION:
-MD2                                     2386	1_1_0	EXIST::FUNCTION:MD2
 X509_PUBKEY_new                         2387	1_1_0	EXIST::FUNCTION:
 BN_CTX_end                              2388	1_1_0	EXIST::FUNCTION:
 BIO_get_retry_BIO                       2389	1_1_0	EXIST::FUNCTION:
@@ -2470,7 +2468,6 @@ X509_print_fp                           2463	1_1_0	EXIST::FUNCTION:STDIO
 TS_REQ_set_version                      2464	1_1_0	EXIST::FUNCTION:TS
 OCSP_REQINFO_new                        2465	1_1_0	EXIST::FUNCTION:OCSP
 X509_signature_print                    2467	1_1_0	EXIST::FUNCTION:
-MD2_Final                               2469	1_1_0	EXIST::FUNCTION:MD2
 OCSP_REQ_CTX_add1_header                2470	1_1_0	EXIST::FUNCTION:OCSP
 NETSCAPE_SPKAC_it                       2471	1_1_0	EXIST:!EXPORT_VAR_AS_FUNCTION:VARIABLE:
 NETSCAPE_SPKAC_it                       2471	1_1_0	EXIST:EXPORT_VAR_AS_FUNCTION:FUNCTION:
@@ -3251,7 +3248,6 @@ i2d_PUBKEY                              3240	1_1_0	EXIST::FUNCTION:
 ERR_load_EVP_strings                    3241	1_1_0	EXIST::FUNCTION:
 X509_ATTRIBUTE_set1_data                3242	1_1_0	EXIST::FUNCTION:
 d2i_X509_fp                             3243	1_1_0	EXIST::FUNCTION:STDIO
-MD2_Init                                3244	1_1_0	EXIST::FUNCTION:MD2
 ERR_get_error_line                      3245	1_1_0	EXIST::FUNCTION:
 X509_CRL_get_ext_by_NID                 3246	1_1_0	EXIST::FUNCTION:
 OPENSSL_INIT_free                       3247	1_1_0	EXIST::FUNCTION:
@@ -3596,7 +3592,6 @@ ENGINE_unregister_ciphers               3589	1_1_0	EXIST::FUNCTION:ENGINE
 X509_issuer_and_serial_cmp              3590	1_1_0	EXIST::FUNCTION:
 OCSP_response_create                    3591	1_1_0	EXIST::FUNCTION:OCSP
 SHA224                                  3592	1_1_0	EXIST::FUNCTION:
-MD2_options                             3593	1_1_0	EXIST::FUNCTION:MD2
 X509_REQ_it                             3595	1_1_0	EXIST:!EXPORT_VAR_AS_FUNCTION:VARIABLE:
 X509_REQ_it                             3595	1_1_0	EXIST:EXPORT_VAR_AS_FUNCTION:FUNCTION:
 RAND_bytes                              3596	1_1_0	EXIST::FUNCTION:
@@ -3629,7 +3624,6 @@ SRP_VBASE_get1_by_user                  3622	1_1_0	EXIST::FUNCTION:SRP
 UI_method_get_closer                    3623	1_1_0	EXIST::FUNCTION:
 ENGINE_get_ex_data                      3624	1_1_0	EXIST::FUNCTION:ENGINE
 BN_print_fp                             3625	1_1_0	EXIST::FUNCTION:STDIO
-MD2_Update                              3626	1_1_0	EXIST::FUNCTION:MD2
 ENGINE_free                             3628	1_1_0	EXIST::FUNCTION:ENGINE
 d2i_X509_ATTRIBUTE                      3629	1_1_0	EXIST::FUNCTION:
 TS_RESP_free                            3630	1_1_0	EXIST::FUNCTION:TS
