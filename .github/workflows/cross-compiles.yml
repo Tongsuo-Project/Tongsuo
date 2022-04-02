@@ -104,14 +104,6 @@ jobs:
             libs: libc6-dev-mips64-cross,
             target: linux64-mips64,
             tests: none
-          },
-
-          # This build doesn't execute either with or without shared libraries.
-          {
-            arch: sparc64-linux-gnu,
-            libs: libc6-dev-sparc64-cross,
-            target: linux64-sparcv9,
-            tests: none
           }
         ]
     runs-on: ubuntu-latest
