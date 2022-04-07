@@ -116,6 +116,8 @@ typedef struct rsa_pss_params_st RSA_PSS_PARAMS;
 typedef struct ec_key_st EC_KEY;
 typedef struct ec_key_method_st EC_KEY_METHOD;
 
+typedef struct ec_point_method_st EC_POINT_METHOD;
+
 typedef struct rand_meth_st RAND_METHOD;
 typedef struct rand_drbg_st RAND_DRBG;
 

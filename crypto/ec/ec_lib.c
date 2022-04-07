@@ -58,6 +58,22 @@ EC_GROUP *EC_GROUP_new(const EC_METHOD *meth)
     return NULL;
 }
 
+#ifndef OPENSSL_NO_ENGINE
+EC_GROUP *EC_GROUP_new_ex(const EC_METHOD *meth, ENGINE *engine)
+{
+    EC_GROUP *ret = EC_GROUP_new(meth);
+    if (ret == NULL)
+        return NULL;
+
+    if (!EC_GROUP_set_engine(ret, engine)) {
+        EC_GROUP_free(ret);
+        return NULL;
+    }
+
+    return ret;
+}
+#endif
+
 void EC_pre_comp_free(EC_GROUP *group)
 {
     switch (group->pre_comp_type) {
@@ -99,6 +115,10 @@ void EC_GROUP_free(EC_GROUP *group)
     if (group->meth->group_finish != 0)
         group->meth->group_finish(group);
 
+#ifndef OPENSSL_NO_ENGINE
+    ENGINE_finish(group->engine);
+#endif
+
     EC_pre_comp_free(group);
     BN_MONT_CTX_free(group->mont_data);
     EC_POINT_free(group->generator);
@@ -117,6 +137,10 @@ void EC_GROUP_clear_free(EC_GROUP *group)
         group->meth->group_clear_finish(group);
     else if (group->meth->group_finish != 0)
         group->meth->group_finish(group);
+
+#ifndef OPENSSL_NO_ENGINE
+    ENGINE_finish(group->engine);
+#endif
 
     EC_pre_comp_free(group);
     BN_MONT_CTX_free(group->mont_data);
@@ -227,6 +251,18 @@ int EC_GROUP_copy(EC_GROUP *dest, const EC_GROUP *src)
         dest->seed = NULL;
         dest->seed_len = 0;
     }
+
+#ifndef OPENSSL_NO_ENGINE
+    if (src->engine) {
+        dest->engine = src->engine;
+        if (!ENGINE_init(dest->engine)) {
+            ECerr(EC_F_EC_GROUP_COPY, ERR_R_ENGINE_LIB);
+            return 0;
+        }
+
+        dest->ecp_meth = src->ecp_meth;
+    }
+#endif
 
     return dest->meth->group_copy(dest, src);
 }
@@ -645,6 +681,127 @@ int EC_GROUP_cmp(const EC_GROUP *a, const EC_GROUP *b, BN_CTX *ctx)
     return r;
 }
 
+/* functions for EC_POINTS objects */
+
+EC_POINTS *EC_POINTS_new(const EC_GROUP *group, int count)
+{
+    int i;
+    EC_POINT *point;
+    EC_POINTS *ret;
+
+    if (group == NULL) {
+        ECerr(EC_F_EC_POINTS_NEW, ERR_R_PASSED_NULL_PARAMETER);
+        return NULL;
+    }
+    if (group->meth->point_init == NULL) {
+        ECerr(EC_F_EC_POINTS_NEW, ERR_R_SHOULD_NOT_HAVE_BEEN_CALLED);
+        return NULL;
+    }
+
+    ret = OPENSSL_zalloc(sizeof(*ret) + count * sizeof(EC_POINT *));
+    if (ret == NULL) {
+        ECerr(EC_F_EC_POINTS_NEW, ERR_R_MALLOC_FAILURE);
+        return NULL;
+    }
+
+    ret->count = count;
+
+    for (i = 0; i < count; i++) {
+        point = EC_POINT_new(group);
+        if (point == NULL)
+            EC_POINTS_free(ret);
+
+        ret->items[i] = point;
+    }
+
+    return ret;
+}
+
+void EC_POINTS_free(EC_POINTS *points)
+{
+    int i;
+
+    if (points == NULL)
+        return;
+
+    for (i = 0; i < points->count; i++)
+        EC_POINT_free(points->items[i]);
+
+    OPENSSL_free(points);
+}
+
+void EC_POINTS_clear_free(EC_POINTS *points)
+{
+    int i;
+
+    if (points == NULL)
+        return;
+
+    for (i = 0; i < points->count; i++)
+        EC_POINT_clear_free(points->items[i]);
+
+    OPENSSL_clear_free(points, sizeof(*points) + points->count * sizeof(EC_POINT *));
+}
+
+int EC_POINTS_copy(EC_POINTS *dest, const EC_POINTS *src)
+{
+    int i;
+
+    if (dest == src)
+        return 1;
+
+    if (dest->count != src->count) {
+        ECerr(EC_F_EC_POINTS_COPY, EC_R_INCOMPATIBLE_OBJECTS);
+        return 0;
+    }
+
+    for (i = 0; i < src->count; i++) {
+        if (!EC_POINT_copy(dest->items[i], src->items[i]))
+            return 0;
+    }
+
+    return 1;
+}
+
+EC_POINTS *EC_POINTS_dup(const EC_POINTS *a, const EC_GROUP *group)
+{
+    EC_POINTS *t;
+    int r;
+
+    if (a == NULL)
+        return NULL;
+
+    t = EC_POINTS_new(group, a->count);
+    if (t == NULL)
+        return NULL;
+    r = EC_POINTS_copy(t, a);
+    if (!r) {
+        EC_POINTS_free(t);
+        return NULL;
+    }
+    return t;
+}
+
+EC_POINT *EC_POINTS_get_item(EC_POINTS *p, int i)
+{
+    return p != NULL && i >= 0 && i < p->count ? p->items[i] : NULL;
+}
+
+int EC_POINTS_set_item(EC_POINTS *p, int i, EC_POINT *point)
+{
+    if (p == NULL || i > p->count)
+        return 0;
+
+    p->items[i] = point;
+
+    return 1;
+}
+
+int EC_POINTS_count(EC_POINTS *p)
+{
+    return p->count;
+}
+
 /* functions for EC_POINT objects */
 
 EC_POINT *EC_POINT_new(const EC_GROUP *group)
@@ -884,6 +1041,10 @@ int EC_POINT_add(const EC_GROUP *group, EC_POINT *r, const EC_POINT *a,
         ECerr(EC_F_EC_POINT_ADD, EC_R_INCOMPATIBLE_OBJECTS);
         return 0;
     }
+#ifndef OPENSSL_NO_ENGINE
+    if (group->ecp_meth != NULL && group->ecp_meth->add != NULL)
+        return group->ecp_meth->add(group, r, a, b, ctx);
+#endif
     return group->meth->add(group, r, a, b, ctx);
 }
 
@@ -898,6 +1059,10 @@ int EC_POINT_dbl(const EC_GROUP *group, EC_POINT *r, const EC_POINT *a,
         ECerr(EC_F_EC_POINT_DBL, EC_R_INCOMPATIBLE_OBJECTS);
         return 0;
     }
+#ifndef OPENSSL_NO_ENGINE
+    if (group->ecp_meth != NULL && group->ecp_meth->dbl != NULL)
+        return group->ecp_meth->dbl(group, r, a, ctx);
+#endif
     return group->meth->dbl(group, r, a, ctx);
 }
 
@@ -911,6 +1076,10 @@ int EC_POINT_invert(const EC_GROUP *group, EC_POINT *a, BN_CTX *ctx)
         ECerr(EC_F_EC_POINT_INVERT, EC_R_INCOMPATIBLE_OBJECTS);
         return 0;
     }
+#ifndef OPENSSL_NO_ENGINE
+    if (group->ecp_meth != NULL && group->ecp_meth->invert != NULL)
+        return group->ecp_meth->invert(group, a, ctx);
+#endif
     return group->meth->invert(group, a, ctx);
 }
 
@@ -1028,6 +1197,12 @@ int EC_POINTs_mul(const EC_GROUP *group, EC_POINT *r, const BIGNUM *scalar,
         return 0;
     }
 
+#ifndef OPENSSL_NO_ENGINE
+    if (group->ecp_meth != NULL && group->ecp_meth->mul != NULL)
+        ret = group->ecp_meth->mul(group, r, scalar, num, points, scalars, ctx);
+    else
+#endif
+
     if (group->meth->mul != NULL)
         ret = group->meth->mul(group, r, scalar, num, points, scalars, ctx);
     else
@@ -1052,6 +1227,236 @@ int EC_POINT_mul(const EC_GROUP *group, EC_POINT *r, const BIGNUM *g_scalar,
     return EC_POINTs_mul(group, r, g_scalar,
                          (point != NULL
                           && p_scalar != NULL), points, scalars, ctx);
+}
+
+
+/*
+ * Functions for point multiplication.
+ * r[i] = points[i] * scalars[i]
+ */
+int EC_POINTs_scalars_mul(const EC_GROUP *group, EC_POINTS **r, size_t num,
+                          const EC_POINT *points[], const BIGNUM *scalars[],
+                          BN_CTX *ctx)
+{
+    int ret = 0;
+    size_t i = 0;
+    BN_CTX *new_ctx = NULL;
+    EC_POINTS *result = NULL;
+
+    if (r == NULL || points == NULL || scalars == NULL || num <= 0)
+        return 0;
+
+    if (*r == NULL) {
+        result = EC_POINTS_new(group, (uint32_t)num);
+        if (result == NULL)
+            return 0;
+    } else {
+        result = *r;
+    }
+
+    for (i = 0; i < num; i++) {
+        if (!ec_point_is_compat(points[i], group)) {
+            ECerr(EC_F_EC_POINTS_SCALARS_MUL, EC_R_INCOMPATIBLE_OBJECTS);
+            goto err;
+        }
+    }
+
+    if (ctx == NULL && (ctx = new_ctx = BN_CTX_secure_new()) == NULL) {
+        ECerr(EC_F_EC_POINTS_SCALARS_MUL, ERR_R_INTERNAL_ERROR);
+        goto err;
+    }
+
+#ifndef OPENSSL_NO_ENGINE
+    if (group->ecp_meth != NULL && group->ecp_meth->scalars_mul != NULL) {
+        if (!group->ecp_meth->scalars_mul(group, result->items, num, points,
+                                          scalars, ctx))
+            goto err;
+    } else
+#endif
+
+    for (i = 0; i < num; i++) {
+        if (!EC_POINT_mul(group, result->items[i], NULL, points[i], scalars[i],
+                          ctx))
+            goto err;
+    }
+
+    *r = result;
+    result = NULL;
+    ret = 1;
+err:
+    BN_CTX_free(new_ctx);
+    EC_POINTS_free(result);
+    return ret;
+}
+
+/*
+ * Functions for point multiplication.
+ * r[i] = points[i] * scalar
+ */
+int EC_POINTs_scalar_mul(const EC_GROUP *group, EC_POINTS **r, size_t num,
+                         const EC_POINT *points[], const BIGNUM *scalar,
+                         BN_CTX *ctx)
+{
+    int ret = 0;
+    size_t i = 0;
+    BN_CTX *new_ctx = NULL;
+    EC_POINTS *result = NULL;
+
+    if (r == NULL || points == NULL || scalar == NULL || num <= 0)
+        return 0;
+
+    if (*r == NULL) {
+        result = EC_POINTS_new(group, (uint32_t)num);
+        if (result == NULL)
+            return 0;
+    } else {
+        result = *r;
+    }
+
+    for (i = 0; i < num; i++) {
+        if (!ec_point_is_compat(points[i], group)) {
+            ECerr(EC_F_EC_POINTS_SCALAR_MUL, EC_R_INCOMPATIBLE_OBJECTS);
+            goto err;
+        }
+    }
+
+    if (ctx == NULL && (ctx = new_ctx = BN_CTX_secure_new()) == NULL) {
+        ECerr(EC_F_EC_POINTS_SCALAR_MUL, ERR_R_INTERNAL_ERROR);
+        goto err;
+    }
+
+#ifndef OPENSSL_NO_ENGINE
+    if (group->ecp_meth != NULL && group->ecp_meth->scalar_mul != NULL) {
+        if (!group->ecp_meth->scalar_mul(group, result->items, num, points,
+                                         scalar, ctx))
+            goto err;
+    } else
+#endif
+
+    for (i = 0; i < num; i++) {
+        if (!EC_POINT_mul(group, result->items[i], NULL, points[i], scalar, ctx))
+            goto err;
+    }
+
+    *r = result;
+    result = NULL;
+    ret = 1;
+err:
+    BN_CTX_free(new_ctx);
+    EC_POINTS_free(result);
+    return ret;
+}
+
+/*
+ * Functions for convert some strings to some points on the elliptic curve.
+ * r[i]->X = hash(strings[i])
+ * r[i]->Y = F(hash(strings[i])), the Y coordinate can be calculated by taking
+ *           the X coordinate into the equation
+ * r[i]->Z = 1
+ */
+int EC_POINTs_from_strings(const EC_GROUP *group, EC_POINTS **r,
+                           size_t num, const unsigned char *strings[],
+                           BN_CTX *ctx)
+{
+    int ret = 0;
+    BN_CTX *new_ctx = NULL;
+    EC_POINTS *result = NULL;
+
+    if (r == NULL || strings == NULL || num <= 0)
+        return 0;
+
+    if (*r == NULL) {
+        result = EC_POINTS_new(group, (uint32_t)num);
+        if (result == NULL)
+            return 0;
+    } else {
+        result = *r;
+    }
+
+    if (ctx == NULL && (ctx = new_ctx = BN_CTX_secure_new()) == NULL) {
+        ECerr(EC_F_EC_POINTS_FROM_STRINGS, ERR_R_INTERNAL_ERROR);
+        goto err;
+    }
+
+#ifndef OPENSSL_NO_ENGINE
+    if (group->ecp_meth != NULL && group->ecp_meth->strings_to_points != NULL) {
+        if (!group->ecp_meth->strings_to_points(group, result->items, num,
+                                                strings, ctx)) {
+            goto err;
+        } else {
+            *r = result;
+            ret = 1;
+        }
+    }
+#endif
+
+    result = NULL;
+
+    /*
+     * TODO
+     */
+err:
+    BN_CTX_free(new_ctx);
+    EC_POINTS_free(result);
+    return ret;
+}
+
+/*
+ * Functions for convert some strings to some points on the elliptic curve, then
+ * multiply with scalar.
+ * point[i]->X = hash(strings[i])
+ * point[i]->Y = F(hash(strings[i])), the Y coordinate can be calculated by taking
+ *           the X coordinate into the equation
+ * point[i]->Z = 1
+ * r[i] = scalar * point[i]
+ */
+int EC_POINTs_from_strings_scalar_mul(const EC_GROUP *group, EC_POINTS **r,
+                                      size_t num, const unsigned char *strings[],
+                                      const BIGNUM *scalar, BN_CTX *ctx)
+{
+    int ret = 0;
+    BN_CTX *new_ctx = NULL;
+    EC_POINTS *result = NULL;
+
+    if (r == NULL || strings == NULL || num <= 0)
+        return 0;
+
+    if (*r == NULL) {
+        result = EC_POINTS_new(group, (uint32_t)num);
+        if (result == NULL)
+            return 0;
+    } else {
+        result = *r;
+    }
+
+    if (ctx == NULL && (ctx = new_ctx = BN_CTX_secure_new()) == NULL) {
+        ECerr(EC_F_EC_POINTS_FROM_STRINGS_SCALAR_MUL, ERR_R_INTERNAL_ERROR);
+        goto err;
+    }
+
+#ifndef OPENSSL_NO_ENGINE
+    if (group->ecp_meth != NULL
+        && group->ecp_meth->strings_to_points_scalar_mul != NULL) {
+        if (!group->ecp_meth->strings_to_points_scalar_mul(group, result->items,
+                                                           num, strings, scalar,
+                                                           ctx)) {
+            goto err;
+        } else {
+            *r = result;
+            ret = 1;
+        }
+    }
+#endif
+
+    result = NULL;
+
+    /*
+     * TODO
+     */
+err:
+    BN_CTX_free(new_ctx);
+    EC_POINTS_free(result);
+    return ret;
 }
 
 int EC_GROUP_precompute_mult(EC_GROUP *group, BN_CTX *ctx)
@@ -1220,3 +1625,29 @@ void BABAEC_POINT_get_coordinates(const EC_POINT *ec_point, const BIGNUM **x,
         *z = ec_point->Z;
 }
 
+#ifndef OPENSSL_NO_ENGINE
+int EC_GROUP_set_engine(EC_GROUP *group, ENGINE *engine)
+{
+    if (!ENGINE_init(engine)) {
+        ECerr(EC_F_EC_GROUP_SET_ENGINE, ERR_R_ENGINE_LIB);
+        return 0;
+    }
+
+    const EC_POINT_METHOD *ecp_meth = ENGINE_get_ecp_meth(engine,
+                                                          group->curve_name);
+    if (ecp_meth == NULL) {
+        ECerr(EC_F_EC_GROUP_SET_ENGINE, EC_R_EC_POINT_METHOD_NOT_FOUND);
+        return 0;
+    }
+
+    group->ecp_meth = ecp_meth;
+    group->engine = engine;
+
+    return 1;
+}
+
+const ENGINE *EC_GROUP_get0_engine(const EC_GROUP *group)
+{
+    return group->engine;
+}
+#endif

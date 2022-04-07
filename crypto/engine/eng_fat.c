@@ -105,6 +105,7 @@ int ENGINE_register_complete(ENGINE *e)
 #endif
 #ifndef OPENSSL_NO_EC
     ENGINE_register_EC(e);
+    ENGINE_register_ecp_meths(e);
 #endif
     ENGINE_register_RAND(e);
     ENGINE_register_pkey_meths(e);

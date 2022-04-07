@@ -151,7 +151,8 @@ static int EC_ELGAMAL_discrete_log_bsgs(EC_ELGAMAL_CTX *ctx, int32_t *r,
         if (entry_res != NULL) {
             ret = 1;
             if (table->decrypt_negative == 1)
-                *r = (int32_t)((entry_res->value << EC_ELGAMAL_ECDLP_BABY_BITS) + i + 1);
+                *r = (int32_t)(((entry_res->value & 0xffffffff) <<
+                                            EC_ELGAMAL_ECDLP_BABY_BITS) + i + 1);
             else
                 *r = (int32_t)(i * table->size + entry_res->value);
             break;
@@ -372,6 +373,7 @@ void EC_ELGAMAL_DECRYPT_TABLE_free(EC_ELGAMAL_DECRYPT_TABLE *table)
 
     lh_EC_ELGAMAL_dec_tbl_entry_free(table->entries);
     EC_POINT_free(table->mG_inv);
+    CRYPTO_THREAD_lock_free(table->lock);
     OPENSSL_free(table);
 }
 
@@ -653,7 +655,7 @@ err:
 int EC_ELGAMAL_decrypt(EC_ELGAMAL_CTX *ctx, int32_t *r, EC_ELGAMAL_CIPHERTEXT *ciphertext)
 {
     int ret = 0;
-    int32_t plaintext;
+    int32_t plaintext = 0;
     EC_POINT *M = NULL;
     BN_CTX *bn_ctx = NULL;
 

@@ -9,6 +9,8 @@
 
   *)
 
+  *) Support APIs for EC computing hardware acceleration
+
   *) Remove SEED
 
   *) Fix bugs in SM2 implementation [0x9527-zhou]
