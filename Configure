@@ -545,7 +545,7 @@ my @disable_cascades = (
     "apps"              => [ "tests" ],
     "tests"             => [ "external-tests" ],
     "comp"              => [ "zlib" ],
-    "ec"                => [ "tls1_3", "sm2" ],
+    "ec"                => [ "tls1_3", "sm2", "ec_elgamal" ],
     "sm3"               => [ "sm2" ],
     sub { !$disabled{"unit-test"} } => [ "heartbeats" ],
 

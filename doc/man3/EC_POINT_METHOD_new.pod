@@ -1,0 +1,184 @@
+=pod
+
+=head1 NAME
+
+EC_POINT_METHOD_new, EC_POINT_METHOD_free, EC_POINT_METHOD_copy,
+EC_POINT_METHOD_curve_id, EC_POINT_METHOD_get_add, EC_POINT_METHOD_set_add,
+EC_POINT_METHOD_get_dbl, EC_POINT_METHOD_set_dbl,
+EC_POINT_METHOD_get_invert, EC_POINT_METHOD_set_invert,
+EC_POINT_METHOD_get_mul, EC_POINT_METHOD_set_mul,
+EC_POINT_METHOD_get_scalars_mul, EC_POINT_METHOD_set_scalars_mul,
+EC_POINT_METHOD_get_scalar_mul, EC_POINT_METHOD_set_scalar_mul,
+EC_POINT_METHOD_get_strings_to_points, EC_POINT_METHOD_set_strings_to_points,
+EC_POINT_METHOD_get_strings_to_points_scalar_mul,
+EC_POINT_METHOD_set_strings_to_points_scalar_mul
+- Functions to build up EC_POINT methods
+
+=head1 SYNOPSIS
+
+ #include <openssl/ec.h>
+
+ EC_POINT_METHOD *EC_POINT_METHOD_new(int curve_id);
+ void EC_POINT_METHOD_free(EC_POINT_METHOD *meth);
+
+ int EC_POINT_METHOD_copy(EC_POINT_METHOD *dst, const EC_POINT_METHOD *src);
+
+ int EC_POINT_METHOD_curve_id(EC_POINT_METHOD *meth);
+
+ int (*EC_POINT_METHOD_get_add(EC_POINT_METHOD *meth))
+     (const EC_GROUP *, EC_POINT *r, const EC_POINT *a, const EC_POINT *b,
+      BN_CTX *);
+ void EC_POINT_METHOD_set_add(EC_POINT_METHOD *meth,
+                              int (*add)(const EC_GROUP *, EC_POINT *r,
+                                         const EC_POINT *a, const EC_POINT *b,
+                                         BN_CTX *));
+
+ int (*EC_POINT_METHOD_get_dbl(EC_POINT_METHOD *meth))
+     (const EC_GROUP *, EC_POINT *r, const EC_POINT *a, BN_CTX *);
+ void EC_POINT_METHOD_set_dbl(EC_POINT_METHOD *meth,
+                              int (*dbl)(const EC_GROUP *, EC_POINT *r,
+                                         const EC_POINT *a, BN_CTX *));
+
+ int (*EC_POINT_METHOD_get_invert(EC_POINT_METHOD *meth))
+     (const EC_GROUP *, EC_POINT *point, BN_CTX *);
+ void EC_POINT_METHOD_set_invert(EC_POINT_METHOD *meth,
+                                 int (*invert)(const EC_GROUP *, EC_POINT *point,
+                                               BN_CTX *));
+
+ int (*EC_POINT_METHOD_get_mul(EC_POINT_METHOD *meth))
+     (const EC_GROUP *group, EC_POINT *r, const BIGNUM *scalar, size_t num,
+      const EC_POINT *points[], const BIGNUM *scalars[], BN_CTX *);
+ void EC_POINT_METHOD_set_mul(EC_POINT_METHOD *meth,
+                              int (*mul)(const EC_GROUP *group, EC_POINT *r,
+                                         const BIGNUM *scalar, size_t num,
+                                         const EC_POINT *points[],
+                                         const BIGNUM *scalars[], BN_CTX *));
+
+ int (*EC_POINT_METHOD_get_scalars_mul(EC_POINT_METHOD *meth))
+     (const EC_GROUP *group, EC_POINT *r[], size_t num, const EC_POINT *points[],
+      const BIGNUM *scalars[], BN_CTX *ctx);
+ void EC_POINT_METHOD_set_scalars_mul(EC_POINT_METHOD *meth,
+                                      int (*scalars_mul)(const EC_GROUP *group,
+                                                         EC_POINT *r[], size_t num,
+                                                         const EC_POINT *points[],
+                                                         const BIGNUM *scalars[],
+                                                         BN_CTX *ctx));
+
+ int (*EC_POINT_METHOD_get_scalar_mul(EC_POINT_METHOD *meth))
+     (const EC_GROUP *group, EC_POINT *r[], size_t num, const EC_POINT *points[],
+      const BIGNUM *scalar, BN_CTX *ctx);
+ void EC_POINT_METHOD_set_scalar_mul(EC_POINT_METHOD *meth,
+                                     int (*scalar_mul)(const EC_GROUP *group,
+                                                       EC_POINT *r[], size_t num,
+                                                       const EC_POINT *points[],
+                                                       const BIGNUM *scalar,
+                                                       BN_CTX *ctx));
+
+ int (*EC_POINT_METHOD_get_strings_to_points(EC_POINT_METHOD *meth))
+     (const EC_GROUP *group, EC_POINT *r[], size_t num, const unsigned char *[],
+      BN_CTX *ctx);
+ void EC_POINT_METHOD_set_strings_to_points(EC_POINT_METHOD *meth,
+                                            int (*func)(const EC_GROUP *,
+                                                        EC_POINT *[], size_t,
+                                                        const unsigned char *[],
+                                                        BN_CTX *));
+
+ int (*EC_POINT_METHOD_get_strings_to_points_scalar_mul(EC_POINT_METHOD *meth))
+     (const EC_GROUP *, EC_POINT *[], size_t, const unsigned char *[],
+      const BIGNUM *, BN_CTX *);
+ void EC_POINT_METHOD_set_strings_to_points_scalar_mul(EC_POINT_METHOD *meth,
+                                                       int (*func)(const EC_GROUP *,
+                                                                   EC_POINT *[],
+                                                                   size_t,
+                                                                   const unsigned char *[],
+                                                                   const BIGNUM *,
+                                                                   BN_CTX *));
+
+=head1 DESCRIPTION
+
+The B<EC_POINT_METHOD> type is a structure used for the provision of custom
+B<EC_POINT> implementations. It provides a set of functions used by BabaSSL
+for the implementation of the various B<EC_POINT> capabilities.
+
+EC_POINT_METHOD_new() creates a new B<EC_POINT_METHOD> structure. It should be
+given a B<curve_id> of elliptic curve.
+
+EC_POINT_METHOD_free() destroys an B<EC_POINT_METHOD> structure and frees up any
+memory associated with it.
+
+EC_POINT_METHOD_curve_id() obtains the curve_id of EC_POINT_METHOD object.
+
+EC_POINT_METHOD_get_add() and EC_POINT_METHOD_set_add() get and set the function
+used for calculating two EC_POINT addition respectively. This function will be
+called in response to the application calling EC_POINT_add(). The
+parameters for the function have the same meaning as for EC_POINT_add().
+
+EC_POINT_METHOD_get_dbl() and EC_POINT_METHOD_set_dbl() get and set the function
+used for calculating an EC_POINT double respectively. This function will be
+called in response to the application calling EC_POINT_dbl(). The
+parameters for the function have the same meaning as for EC_POINT_dbl().
+
+EC_POINT_METHOD_get_invert() and EC_POINT_METHOD_set_invert() get and set the
+function used for calculating an EC_POINT invertion respectively. This function
+will be called in response to the application calling EC_POINT_invert(). The
+parameters for the function have the same meaning as for EC_POINT_invert().
+
+EC_POINT_METHOD_get_mul() and EC_POINT_METHOD_set_mul() get and set the function
+used for calculating batch EC_POINTs multiplication respectively. This function
+will be called in response to the application calling EC_POINTs_mul(). The
+parameters for the function have the same meaning as for EC_POINTs_mul().
+
+EC_POINT_METHOD_get_scalars_mul() and EC_POINT_METHOD_set_scalars_mul() get and
+set the function used for calculating batch EC_POINTs scalar multiplication
+respectively. This function will be called in response to the application
+calling EC_POINT_scalars_mul(). The parameters for the function have the same
+meaning as for EC_POINT_scalars_mul().
+
+EC_POINT_METHOD_get_scalar_mul() and EC_POINT_METHOD_set_scalar_mul() get and
+set the function used for calculating batch EC_POINTs scalar multiplication
+respectively. This function will be called in response to the application
+calling EC_POINT_scalar_mul(). The parameters for the function have the same
+meaning as for EC_POINT_scalar_mul().
+
+EC_POINT_METHOD_get_strings_to_points() and
+EC_POINT_METHOD_set_strings_to_points() get and set the function used for
+converting batch strings to batch EC_POINTs respectively. This function will be
+called in response to the application calling EC_POINTs_from_strings().
+The parameters for the function have the same meaning as for
+EC_POINTs_from_strings().
+
+EC_POINT_METHOD_get_strings_to_points_scalar_mul() and
+EC_POINT_METHOD_set_strings_to_points_scalar_mul() get and set the function
+used for calculating batch EC_POINTs scalar multiplication after converting
+batch strings to batch EC_POINTs respectively. This function will be
+called in response to the application calling EC_POINTs_from_strings_scalar_mul().
+The parameters for the function have the same meaning as for
+EC_POINTs_from_strings_scalar_mul().
+
+=head1 RETURN VALUES
+
+EC_POINT_METHOD_new() return the newly allocated EC_POINT_METHOD object or NULL
+on failure.
+
+EC_POINT_METHOD_curve_id() return the curve_id of EC_POINT_METHOD object.
+
+All EC_POINT_METHOD_get_*() functions return the appropriate function pointer
+that has been set in the EC_POINT_METHOD, or NULL if no such pointer has yet
+been set.
+
+All EC_POINT_METHOD_set_*() functions return 1 on success or 0 on failure.
+
+=head1 SEE ALSO
+
+L<EVP_CIPHER_meth_new(3)>
+
+=head1 COPYRIGHT
+
+Copyright 2022 The BabaSSL Project Authors. All Rights Reserved.
+
+Licensed under the BabaSSL license (the "License").  You may not use
+this file except in compliance with the License.  You can obtain a copy
+in the file LICENSE in the source distribution or at
+L<https://github.com/BabaSSL/BabaSSL/blob/master/LICENSE>.
+
+=cut

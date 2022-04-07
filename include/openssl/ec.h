@@ -46,6 +46,7 @@ typedef struct ec_group_st EC_GROUP;
 typedef struct ec_point_st EC_POINT;
 typedef struct ecpk_parameters_st ECPKPARAMETERS;
 typedef struct ec_parameters_st ECPARAMETERS;
+typedef struct ec_points_st EC_POINTS;
 
 /********************************************************************/
 /*               EC_METHODs for curves over GF(p)                   */
@@ -105,6 +106,30 @@ const EC_METHOD *EC_GF2m_simple_method(void);
  *  \return  newly created EC_GROUP object or NULL in case of an error.
  */
 EC_GROUP *EC_GROUP_new(const EC_METHOD *meth);
+
+# ifndef OPENSSL_NO_ENGINE
+
+/** Creates a new EC_GROUP object, and binding engine
+ *  \param   meth  EC_METHOD to use
+ *  \param   engine  ENGINE to use
+ *  \return  newly created EC_GROUP object or NULL in case of an error.
+ */
+EC_GROUP *EC_GROUP_new_ex(const EC_METHOD *meth, ENGINE *engine);
+
+/** Sets the engine of a EC_GROUP object.
+ *  \param   meth  EC_METHOD to use
+ *  \param   engine  ENGINE to use
+ *  \return 1 on success and 0 if an error occurred.
+ */
+int EC_GROUP_set_engine(EC_GROUP *group, ENGINE *engine);
+
+/** Returns the ENGINE object of a EC_GROUP object
+ *  \param  group  EC_GROUP object
+ *  \return the ENGINE object (possibly NULL).
+ */
+const ENGINE *EC_GROUP_get0_engine(const EC_GROUP *group);
+
+# endif
 
 /** Frees a EC_GROUP object
  *  \param  group  EC_GROUP object to be freed.
@@ -416,6 +441,64 @@ size_t EC_get_builtin_curves(EC_builtin_curve *r, size_t nitems);
 
 const char *EC_curve_nid2nist(int nid);
 int EC_curve_nist2nid(const char *name);
+
+/********************************************************************/
+/*                    EC_POINTS functions                            */
+/********************************************************************/
+
+/** Creates a new EC_POINTS object for the specified EC_GROUP and the count of
+ *  EC_POINT
+ *  \param  group  EC_GROUP the underlying EC_GROUP object
+ *  \param  count  the count of EC_POINT
+ *  \return newly created EC_POINTS object or NULL if an error occurred
+ */
+EC_POINTS *EC_POINTS_new(const EC_GROUP *group, int count);
+
+/** Frees a EC_POINTS object
+ *  \param  points  EC_POINTS object to be freed
+ */
+void EC_POINTS_free(EC_POINTS *points);
+
+/** Clears and frees a EC_POINTS object
+ *  \param  points  EC_POINTS object to be cleared and freed
+ */
+void EC_POINTS_clear_free(EC_POINTS *points);
+
+/** Copies EC_POINTS object
+ *  \param  dst  destination EC_POINTS object
+ *  \param  src  source EC_POINTS object
+ *  \return 1 on success and 0 if an error occurred
+ */
+int EC_POINTS_copy(EC_POINTS *dst, const EC_POINTS *src);
+
+/** Creates a new EC_POINTS object and copies the content of the supplied
+ *  EC_POINT
+ *  \param  src    source EC_POINTS object
+ *  \param  group  underlying the EC_GROUP object
+ *  \return newly created EC_POINTS object or NULL if an error occurred
+ */
+EC_POINTS *EC_POINTS_dup(const EC_POINTS *src, const EC_GROUP *group);
+
+/** Returns the i-th EC_POINT object in EC_POINTS object
+ *  \param  p  EC_POINTS object
+ *  \param  i  the index number
+ *  \return EC_POINT object or NULL if an error occurred.
+ */
+EC_POINT *EC_POINTS_get_item(EC_POINTS *p, int i);
+
+/** Stores EC_POINT object into EC_POINTS object
+ *  \param  p      EC_POINTS object
+ *  \param  i      the index number
+ *  \param  point  EC_POINT object
+ *  \return 1 on success and 0 if an error occurred
+ */
+int EC_POINTS_set_item(EC_POINTS *p, int i, EC_POINT *point);
+
+/** Returns the count of EC_POINT object in the EC_POINTS object.
+ *  \param  p  EC_POINTS object
+ *  \return the count of EC_POINT object in the EC_POINTS object.
+ */
+int EC_POINTS_count(EC_POINTS *p);
 
 /********************************************************************/
 /*                    EC_POINT functions                            */
@@ -753,6 +836,172 @@ int EC_POINTs_mul(const EC_GROUP *group, EC_POINT *r, const BIGNUM *n,
  */
 int EC_POINT_mul(const EC_GROUP *group, EC_POINT *r, const BIGNUM *n,
                  const EC_POINT *q, const BIGNUM *m, BN_CTX *ctx);
+
+/*
+ * Functions for point multiplication:  r[i] = points[i] * scalars[i]
+ *  \param  group   underlying EC_GROUP object
+ *  \param  r       a pointer to a EC_POINTS object for the result (if *r NULL
+ *                  the function allocates a EC_POINTS object and write to *r)
+ *  \param  num     number of points and scalars
+ *  \param  points  array of size num of EC_POINT objects
+ *  \param  scalars array of size num of BIGNUM objects
+ *  \param  ctx     BN_CTX object (optional)
+ *  \return 1 on success and 0 if an error occurred
+ */
+int EC_POINTs_scalars_mul(const EC_GROUP *group, EC_POINTS **r, size_t num,
+                          const EC_POINT *points[], const BIGNUM *scalars[],
+                          BN_CTX *ctx);
+
+/*
+ * Functions for point multiplication: r[i] = points[i] * scalar
+ *  \param  group   underlying EC_GROUP object
+ *  \param  r       a pointer to a EC_POINTS object for the result (if *r NULL
+ *                  the function allocates a EC_POINTS object and write to *r)
+ *  \param  num     number of points
+ *  \param  points  array of size num of EC_POINT objects
+ *  \param  scalar  BIGNUM object for scalar multiply
+ *  \param  ctx     BN_CTX object (optional)
+ *  \return 1 on success and 0 if an error occurred
+ */
+int EC_POINTs_scalar_mul(const EC_GROUP *group, EC_POINTS **r, size_t num,
+                         const EC_POINT *points[], const BIGNUM *scalar,
+                         BN_CTX *ctx);
+
+/*
+ * Functions for convert some strings to some points on the elliptic curve.
+ * r[i]->X = hash(strings[i])
+ * r[i]->Y = F(hash(strings[i])), the Y coordinate can be calculated by taking
+ *           the X coordinate into the equation
+ * r[i]->Z = 1
+ *  \param  group   underlying EC_GROUP object
+ *  \param  r       a pointer to a EC_POINTS object for the result (if *r NULL
+ *                  the function allocates a EC_POINTS object and write to *r)
+ *  \param  num     number of strings
+ *  \param  strings array of size num of string objects
+ *  \param  ctx     BN_CTX object (optional)
+ *  \return 1 on success and 0 if an error occurred
+ */
+int EC_POINTs_from_strings(const EC_GROUP *group, EC_POINTS **r,
+                           size_t num, const unsigned char *strings[],
+                           BN_CTX *ctx);
+
+/*
+ * Functions for convert some strings to some points on the elliptic curve, then
+ * multiply with scalar.
+ * point[i]->X = hash(strings[i])
+ * point[i]->Y = F(hash(strings[i])), the Y coordinate can be calculated by taking
+ *           the X coordinate into the equation
+ * point[i]->Z = 1
+ * r[i] = scalar * point[i]
+ *  \param  group   underlying EC_GROUP object
+ *  \param  r       a pointer to a EC_POINTS object for the result (if *r NULL
+ *                  the function allocates a EC_POINTS object and write to *r)
+ *  \param  num     number of strings
+ *  \param  strings array of size num of string objects
+ *  \param  scalar  BIGNUM object for scalar multiply
+ *  \param  ctx     BN_CTX object (optional)
+ *  \return 1 on success and 0 if an error occurred
+ */
+int EC_POINTs_from_strings_scalar_mul(const EC_GROUP *group, EC_POINTS **r,
+                                      size_t num, const unsigned char *strings[],
+                                      const BIGNUM *scalar, BN_CTX *ctx);
+
+/********************************************************************/
+/*  EC_POINT_METHOD constructors, destructors, writers and accessors  */
+/********************************************************************/
+
+/** Creates a new EC_POINT_METHOD object for the specified curve_id
+ *  \param  curve_id  the elliptic curve id
+ *  \return newly created EC_POINT_METHOD object or NULL if an error occurred
+ */
+EC_POINT_METHOD *EC_POINT_METHOD_new(int curve_id);
+
+/** Frees a EC_POINT_METHOD object
+ *  \param  meth  EC_POINT_METHOD object to be freed
+ */
+void EC_POINT_METHOD_free(EC_POINT_METHOD *meth);
+
+/** Copies EC_POINT_METHOD object
+ *  \param  dst  destination EC_POINT_METHOD object
+ *  \param  src  source EC_POINT_METHOD object
+ *  \return 1 on success and 0 if an error occurred
+ */
+int EC_POINT_METHOD_copy(EC_POINT_METHOD *dst, const EC_POINT_METHOD *src);
+
+/** Returns the curve_id of a EC_POINT_METHOD object
+ *  \param  meth  EC_POINT_METHOD object
+ *  \return NID of the curve name OID or 0 if not set.
+ */
+int EC_POINT_METHOD_curve_id(EC_POINT_METHOD *meth);
+
+int (*EC_POINT_METHOD_get_add(EC_POINT_METHOD *meth))
+    (const EC_GROUP *, EC_POINT *r, const EC_POINT *a, const EC_POINT *b,
+     BN_CTX *);
+void EC_POINT_METHOD_set_add(EC_POINT_METHOD *meth,
+                             int (*add)(const EC_GROUP *, EC_POINT *r,
+                                        const EC_POINT *a, const EC_POINT *b,
+                                        BN_CTX *));
+
+int (*EC_POINT_METHOD_get_dbl(EC_POINT_METHOD *meth))
+    (const EC_GROUP *, EC_POINT *r, const EC_POINT *a, BN_CTX *);
+void EC_POINT_METHOD_set_dbl(EC_POINT_METHOD *meth,
+                             int (*dbl)(const EC_GROUP *, EC_POINT *r,
+                                        const EC_POINT *a, BN_CTX *));
+
+int (*EC_POINT_METHOD_get_invert(EC_POINT_METHOD *meth))
+    (const EC_GROUP *, EC_POINT *point, BN_CTX *);
+void EC_POINT_METHOD_set_invert(EC_POINT_METHOD *meth,
+                                int (*invert)(const EC_GROUP *, EC_POINT *point,
+                                              BN_CTX *));
+
+int (*EC_POINT_METHOD_get_mul(EC_POINT_METHOD *meth))
+    (const EC_GROUP *group, EC_POINT *r, const BIGNUM *scalar, size_t num,
+     const EC_POINT *points[], const BIGNUM *scalars[], BN_CTX *);
+void EC_POINT_METHOD_set_mul(EC_POINT_METHOD *meth,
+                             int (*mul)(const EC_GROUP *group, EC_POINT *r,
+                                        const BIGNUM *scalar, size_t num,
+                                        const EC_POINT *points[],
+                                        const BIGNUM *scalars[], BN_CTX *));
+
+int (*EC_POINT_METHOD_get_scalars_mul(EC_POINT_METHOD *meth))
+    (const EC_GROUP *group, EC_POINT *r[], size_t num, const EC_POINT *points[],
+     const BIGNUM *scalars[], BN_CTX *ctx);
+void EC_POINT_METHOD_set_scalars_mul(EC_POINT_METHOD *meth,
+                                     int (*scalars_mul)(const EC_GROUP *group,
+                                                        EC_POINT *r[], size_t num,
+                                                        const EC_POINT *points[],
+                                                        const BIGNUM *scalars[],
+                                                        BN_CTX *ctx));
+
+int (*EC_POINT_METHOD_get_scalar_mul(EC_POINT_METHOD *meth))
+    (const EC_GROUP *group, EC_POINT *r[], size_t num, const EC_POINT *points[],
+     const BIGNUM *scalar, BN_CTX *ctx);
+void EC_POINT_METHOD_set_scalar_mul(EC_POINT_METHOD *meth,
+                                    int (*scalar_mul)(const EC_GROUP *group,
+                                                      EC_POINT *r[], size_t num,
+                                                      const EC_POINT *points[],
+                                                      const BIGNUM *scalar,
+                                                      BN_CTX *ctx));
+
+int (*EC_POINT_METHOD_get_strings_to_points(EC_POINT_METHOD *meth))
+    (const EC_GROUP *group, EC_POINT *r[], size_t num, const unsigned char *[],
+     BN_CTX *ctx);
+void EC_POINT_METHOD_set_strings_to_points(EC_POINT_METHOD *meth,
+                                           int (*func)(const EC_GROUP *,
+                                                       EC_POINT *[], size_t,
+                                                       const unsigned char *[],
+                                                       BN_CTX *));
+
+int (*EC_POINT_METHOD_get_strings_to_points_scalar_mul(EC_POINT_METHOD *meth))
+    (const EC_GROUP *, EC_POINT *[], size_t, const unsigned char *[],
+     const BIGNUM *, BN_CTX *);
+void EC_POINT_METHOD_set_strings_to_points_scalar_mul(EC_POINT_METHOD *meth,
+                                                      int (*func)(const EC_GROUP *,
+                                                                  EC_POINT *[],
+                                                                  size_t,
+                                                                  const unsigned char *[],
+                                                                  const BIGNUM *,
+                                                                  BN_CTX *));
 
 /** Stores multiples of generator for faster point multiplication
  *  \param  group  EC_GROUP object

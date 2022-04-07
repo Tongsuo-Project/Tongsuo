@@ -5,6 +5,9 @@
 EC_GROUP_get_ecparameters,
 EC_GROUP_get_ecpkparameters,
 EC_GROUP_new,
+EC_GROUP_new_ex,
+EC_GROUP_set_engine,
+EC_GROUP_get0_engine,
 EC_GROUP_new_from_ecparameters,
 EC_GROUP_new_from_ecpkparameters,
 EC_GROUP_free,
@@ -26,6 +29,9 @@ objects
  #include <openssl/ec.h>
 
  EC_GROUP *EC_GROUP_new(const EC_METHOD *meth);
+ EC_GROUP *EC_GROUP_new_ex(const EC_METHOD *meth, ENGINE *engine);
+ int EC_GROUP_set_engine(EC_GROUP *group, ENGINE *engine);
+ const ENGINE *EC_GROUP_get0_engine(const EC_GROUP *group);
  EC_GROUP *EC_GROUP_new_from_ecparameters(const ECPARAMETERS *params)
  EC_GROUP *EC_GROUP_new_from_ecpkparameters(const ECPKPARAMETERS *params)
  void EC_GROUP_free(EC_GROUP *group);
@@ -74,9 +80,11 @@ Operations in a binary field are performed relative to an B<irreducible
 polynomial>. All such curves with OpenSSL use a trinomial or a pentanomial for
 this parameter.
 
-A new curve can be constructed by calling EC_GROUP_new(), using the
-implementation provided by B<meth> (see L<EC_GFp_simple_method(3)>). It is then
-necessary to call EC_GROUP_set_curve() to set the curve parameters.
+A new curve can be constructed by calling EC_GROUP_new() or EC_GROUP_new_ex(),
+using the implementation provided by B<meth> (see L<EC_GFp_simple_method(3)>).
+If necessary, call EC_GROUP_new_ex() to bind B<engine> to a newly created
+EC_GROUP, or use EC_GROUP_set_engine() to bind B<engine> to an existing EC_GROUP.
+It is then necessary to call EC_GROUP_set_curve() to set the curve parameters.
 EC_GROUP_new_from_ecparameters() will create a group from the specified
 B<params> and EC_GROUP_new_from_ecpkparameters() will create a group from the
 specific PK B<params>.
@@ -102,6 +110,8 @@ should not be used.
 The functions EC_GROUP_new_curve_GFp() and EC_GROUP_new_curve_GF2m() are
 shortcuts for calling EC_GROUP_new() and then the EC_GROUP_set_curve() function.
 An appropriate default implementation method will be used.
+
+EC_KEY_get0_engine() returns a pointer to an ENGINE, or NULL if it wasn't set.
 
 Whilst the library can be used to create any curve using the functions described
 above, there are also a number of predefined curves that are available. In order
