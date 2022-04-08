@@ -27,13 +27,6 @@
 
 #include "rsaz_exp.h"
 
-#undef SPARC_T4_MONT
-#if defined(OPENSSL_BN_ASM_MONT) && (defined(__sparc__) || defined(__sparc))
-# include "sparc_arch.h"
-extern unsigned int OPENSSL_sparcv9cap_P[];
-# define SPARC_T4_MONT
-#endif
-
 /* maximum precomputation table size for *variable* sliding windows */
 #define TABLE_SIZE      32
 
@@ -447,17 +440,6 @@ int BN_mod_exp_mont(BIGNUM *rr, const BIGNUM *a, const BIGNUM *p,
      * removes padding [if any] and makes return value suitable for public
      * API consumer.
      */
-#if defined(SPARC_T4_MONT)
-    if (OPENSSL_sparcv9cap_P[0] & (SPARCV9_VIS3 | SPARCV9_PREFER_FPU)) {
-        j = mont->N.top;        /* borrow j */
-        val[0]->d[0] = 1;       /* borrow val[0] */
-        for (i = 1; i < j; i++)
-            val[0]->d[i] = 0;
-        val[0]->top = j;
-        if (!BN_mod_mul_montgomery(rr, r, val[0], mont, ctx))
-            goto err;
-    } else
-#endif
     if (!BN_from_montgomery(rr, r, mont, ctx))
         goto err;
     ret = 1;
@@ -602,9 +584,6 @@ int BN_mod_exp_mont_consttime(BIGNUM *rr, const BIGNUM *a, const BIGNUM *p,
     int powerbufLen = 0;
     unsigned char *powerbuf = NULL;
     BIGNUM tmp, am;
-#if defined(SPARC_T4_MONT)
-    unsigned int t4 = 0;
-#endif
 
     bn_check_top(a);
     bn_check_top(p);
@@ -688,13 +667,6 @@ int BN_mod_exp_mont_consttime(BIGNUM *rr, const BIGNUM *a, const BIGNUM *p,
 
     /* Get the window size to use with size of p. */
     window = BN_window_bits_for_ctime_exponent_size(bits);
-#if defined(SPARC_T4_MONT)
-    if (window >= 5 && (top & 15) == 0 && top <= 64 &&
-        (OPENSSL_sparcv9cap_P[1] & (CFR_MONTMUL | CFR_MONTSQR)) ==
-        (CFR_MONTMUL | CFR_MONTSQR) && (t4 = OPENSSL_sparcv9cap_P[0]))
-        window = 5;
-    else
-#endif
 #if defined(OPENSSL_BN_ASM_MONT5)
     if (window >= 5) {
         window = 5;             /* ~5% improvement for RSA2048 sign, and even
@@ -757,145 +729,6 @@ int BN_mod_exp_mont_consttime(BIGNUM *rr, const BIGNUM *a, const BIGNUM *p,
     if (!bn_to_mont_fixed_top(&am, a, mont, ctx))
         goto err;
 
-#if defined(SPARC_T4_MONT)
-    if (t4) {
-        typedef int (*bn_pwr5_mont_f) (BN_ULONG *tp, const BN_ULONG *np,
-                                       const BN_ULONG *n0, const void *table,
-                                       int power, int bits);
-        int bn_pwr5_mont_t4_8(BN_ULONG *tp, const BN_ULONG *np,
-                              const BN_ULONG *n0, const void *table,
-                              int power, int bits);
-        int bn_pwr5_mont_t4_16(BN_ULONG *tp, const BN_ULONG *np,
-                               const BN_ULONG *n0, const void *table,
-                               int power, int bits);
-        int bn_pwr5_mont_t4_24(BN_ULONG *tp, const BN_ULONG *np,
-                               const BN_ULONG *n0, const void *table,
-                               int power, int bits);
-        int bn_pwr5_mont_t4_32(BN_ULONG *tp, const BN_ULONG *np,
-                               const BN_ULONG *n0, const void *table,
-                               int power, int bits);
-        static const bn_pwr5_mont_f pwr5_funcs[4] = {
-            bn_pwr5_mont_t4_8, bn_pwr5_mont_t4_16,
-            bn_pwr5_mont_t4_24, bn_pwr5_mont_t4_32
-        };
-        bn_pwr5_mont_f pwr5_worker = pwr5_funcs[top / 16 - 1];
-
-        typedef int (*bn_mul_mont_f) (BN_ULONG *rp, const BN_ULONG *ap,
-                                      const void *bp, const BN_ULONG *np,
-                                      const BN_ULONG *n0);
-        int bn_mul_mont_t4_8(BN_ULONG *rp, const BN_ULONG *ap, const void *bp,
-                             const BN_ULONG *np, const BN_ULONG *n0);
-        int bn_mul_mont_t4_16(BN_ULONG *rp, const BN_ULONG *ap,
-                              const void *bp, const BN_ULONG *np,
-                              const BN_ULONG *n0);
-        int bn_mul_mont_t4_24(BN_ULONG *rp, const BN_ULONG *ap,
-                              const void *bp, const BN_ULONG *np,
-                              const BN_ULONG *n0);
-        int bn_mul_mont_t4_32(BN_ULONG *rp, const BN_ULONG *ap,
-                              const void *bp, const BN_ULONG *np,
-                              const BN_ULONG *n0);
-        static const bn_mul_mont_f mul_funcs[4] = {
-            bn_mul_mont_t4_8, bn_mul_mont_t4_16,
-            bn_mul_mont_t4_24, bn_mul_mont_t4_32
-        };
-        bn_mul_mont_f mul_worker = mul_funcs[top / 16 - 1];
-
-        void bn_mul_mont_vis3(BN_ULONG *rp, const BN_ULONG *ap,
-                              const void *bp, const BN_ULONG *np,
-                              const BN_ULONG *n0, int num);
-        void bn_mul_mont_t4(BN_ULONG *rp, const BN_ULONG *ap,
-                            const void *bp, const BN_ULONG *np,
-                            const BN_ULONG *n0, int num);
-        void bn_mul_mont_gather5_t4(BN_ULONG *rp, const BN_ULONG *ap,
-                                    const void *table, const BN_ULONG *np,
-                                    const BN_ULONG *n0, int num, int power);
-        void bn_flip_n_scatter5_t4(const BN_ULONG *inp, size_t num,
-                                   void *table, size_t power);
-        void bn_gather5_t4(BN_ULONG *out, size_t num,
-                           void *table, size_t power);
-        void bn_flip_t4(BN_ULONG *dst, BN_ULONG *src, size_t num);
-
-        BN_ULONG *np = mont->N.d, *n0 = mont->n0;
-        int stride = 5 * (6 - (top / 16 - 1)); /* multiple of 5, but less
-                                                * than 32 */
-
-        /*
-         * BN_to_montgomery can contaminate words above .top [in
-         * BN_DEBUG[_DEBUG] build]...
-         */
-        for (i = am.top; i < top; i++)
-            am.d[i] = 0;
-        for (i = tmp.top; i < top; i++)
-            tmp.d[i] = 0;
-
-        bn_flip_n_scatter5_t4(tmp.d, top, powerbuf, 0);
-        bn_flip_n_scatter5_t4(am.d, top, powerbuf, 1);
-        if (!(*mul_worker) (tmp.d, am.d, am.d, np, n0) &&
-            !(*mul_worker) (tmp.d, am.d, am.d, np, n0))
-            bn_mul_mont_vis3(tmp.d, am.d, am.d, np, n0, top);
-        bn_flip_n_scatter5_t4(tmp.d, top, powerbuf, 2);
-
-        for (i = 3; i < 32; i++) {
-            /* Calculate a^i = a^(i-1) * a */
-            if (!(*mul_worker) (tmp.d, tmp.d, am.d, np, n0) &&
-                !(*mul_worker) (tmp.d, tmp.d, am.d, np, n0))
-                bn_mul_mont_vis3(tmp.d, tmp.d, am.d, np, n0, top);
-            bn_flip_n_scatter5_t4(tmp.d, top, powerbuf, i);
-        }
-
-        /* switch to 64-bit domain */
-        np = alloca(top * sizeof(BN_ULONG));
-        top /= 2;
-        bn_flip_t4(np, mont->N.d, top);
-
-        /*
-         * The exponent may not have a whole number of fixed-size windows.
-         * To simplify the main loop, the initial window has between 1 and
-         * full-window-size bits such that what remains is always a whole
-         * number of windows
-         */
-        window0 = (bits - 1) % 5 + 1;
-        wmask = (1 << window0) - 1;
-        bits -= window0;
-        wvalue = bn_get_bits(p, bits) & wmask;
-        bn_gather5_t4(tmp.d, top, powerbuf, wvalue);
-
-        /*
-         * Scan the exponent one window at a time starting from the most
-         * significant bits.
-         */
-        while (bits > 0) {
-            if (bits < stride)
-                stride = bits;
-            bits -= stride;
-            wvalue = bn_get_bits(p, bits);
-
-            if ((*pwr5_worker) (tmp.d, np, n0, powerbuf, wvalue, stride))
-                continue;
-            /* retry once and fall back */
-            if ((*pwr5_worker) (tmp.d, np, n0, powerbuf, wvalue, stride))
-                continue;
-
-            bits += stride - 5;
-            wvalue >>= stride - 5;
-            wvalue &= 31;
-            bn_mul_mont_t4(tmp.d, tmp.d, tmp.d, np, n0, top);
-            bn_mul_mont_t4(tmp.d, tmp.d, tmp.d, np, n0, top);
-            bn_mul_mont_t4(tmp.d, tmp.d, tmp.d, np, n0, top);
-            bn_mul_mont_t4(tmp.d, tmp.d, tmp.d, np, n0, top);
-            bn_mul_mont_t4(tmp.d, tmp.d, tmp.d, np, n0, top);
-            bn_mul_mont_gather5_t4(tmp.d, tmp.d, powerbuf, np, n0, top,
-                                   wvalue);
-        }
-
-        bn_flip_t4(tmp.d, tmp.d, top);
-        top *= 2;
-        /* back to 32-bit domain */
-        tmp.top = top;
-        bn_correct_top(&tmp);
-        OPENSSL_cleanse(np, top * sizeof(BN_ULONG));
-    } else
-#endif
 #if defined(OPENSSL_BN_ASM_MONT5)
     if (window == 5 && top > 1) {
         /*
@@ -1103,15 +936,6 @@ int BN_mod_exp_mont_consttime(BIGNUM *rr, const BIGNUM *a, const BIGNUM *p,
      * removes padding [if any] and makes return value suitable for public
      * API consumer.
      */
-#if defined(SPARC_T4_MONT)
-    if (OPENSSL_sparcv9cap_P[0] & (SPARCV9_VIS3 | SPARCV9_PREFER_FPU)) {
-        am.d[0] = 1;            /* borrow am */
-        for (i = 1; i < top; i++)
-            am.d[i] = 0;
-        if (!BN_mod_mul_montgomery(rr, &tmp, &am, mont, ctx))
-            goto err;
-    } else
-#endif
     if (!BN_from_montgomery(rr, &tmp, mont, ctx))
         goto err;
     ret = 1;
