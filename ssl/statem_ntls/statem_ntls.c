@@ -159,20 +159,30 @@ int SSL_connection_is_ntls(SSL *s, int is_server)
             PACKET pkt;
             unsigned int version, type;
             unsigned char buf[PEEK_HEADER_LENGTH];
+            char *data = NULL;
 
-            ret = BIO_get_fd(s->rbio, &fd);
+            if (BIO_method_type(s->rbio) == BIO_TYPE_MEM) {
+                ret = BIO_get_mem_data(s->rbio, &data);
+                if (ret < PEEK_HEADER_LENGTH) {
+                    s->rwstate = SSL_READING;
+                    return -1;
+                }
+                memcpy(buf, data, PEEK_HEADER_LENGTH);
+            } else {
+                ret = BIO_get_fd(s->rbio, &fd);
 
-            if (ret <= 0) {
-                /* NTLS only support socket communication */
-                SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_SSL_CONNECTION_IS_NTLS,
-                            ERR_R_INTERNAL_ERROR);
-                return -1;
-            }
+                if (ret <= 0) {
+                    /* NTLS only support socket communication */
+                    SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_SSL_CONNECTION_IS_NTLS,
+                                  ERR_R_INTERNAL_ERROR);
+                    return -1;
+                }
 
-            ret = recv(fd, buf, PEEK_HEADER_LENGTH, MSG_PEEK);
-            if (ret < PEEK_HEADER_LENGTH) {
-                s->rwstate = SSL_READING;
-                return -1;
+                ret = recv(fd, buf, PEEK_HEADER_LENGTH, MSG_PEEK);
+                if (ret < PEEK_HEADER_LENGTH) {
+                    s->rwstate = SSL_READING;
+                    return -1;
+                }
             }
 
             if (!PACKET_buf_init(&pkt, buf, 3)) {
