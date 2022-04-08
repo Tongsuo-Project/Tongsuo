@@ -364,7 +364,7 @@ static ssize_t syscall_random(void *buf, size_t buflen)
      * - Linux since 3.17 with glibc 2.25
      * - FreeBSD since 12.0 (1200061)
      */
-#  if defined(__GNUC__) && __GNUC__>=2 && defined(__ELF__) && !defined(__hpux)
+#  if defined(__GNUC__) && __GNUC__>=2 && defined(__ELF__)
     extern int getentropy(void *buffer, size_t length) __attribute__((weak));
 
     if (getentropy != NULL)
@@ -826,7 +826,7 @@ static uint64_t get_timer_bits(void)
     if (res != 0)
         return res;
 
-# if defined(__sun) || defined(__hpux)
+# if defined(__sun)
     return gethrtime();
 # elif defined(_AIX)
     {

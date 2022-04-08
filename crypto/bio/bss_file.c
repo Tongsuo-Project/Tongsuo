@@ -7,7 +7,7 @@
  * https://www.openssl.org/source/license.html
  */
 
-#if defined(__linux) || defined(__sun) || defined(__hpux)
+#if defined(__linux) || defined(__sun)
 /*
  * Following definition aliases fopen to fopen64 on above mentioned
  * platforms. This makes it possible to open and sequentially access files
