@@ -9,6 +9,8 @@
 
   *)
 
+  *) Remove code for PA-RISC architecture
+
   *) Remove code for SPARC architecture
 
   *) Support APIs for EC computing hardware acceleration
