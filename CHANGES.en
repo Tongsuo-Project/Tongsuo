@@ -9,6 +9,8 @@
 
   *)
 
+  *) Remove MD2
+
   *) Remove code for SPARC architecture
 
   *) Support APIs for EC computing hardware acceleration

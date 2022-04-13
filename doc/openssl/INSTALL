@@ -587,8 +587,7 @@
                    Applications should use TLS_method() instead.
 
   enable-<alg>
-                   Build with support for the specified algorithm, where <alg>
-                   is one of: md2 or rc5.
+                   Build with support for the specified algorithm.
 
   no-<alg>
                    Build without support for the specified algorithm, where

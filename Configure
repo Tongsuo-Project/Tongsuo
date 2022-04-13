@@ -326,7 +326,7 @@ $config{dirs} = [ "crypto", "ssl", "engines", "apps", "test", "util", "tools", "
 # crypto/ subdirectories to build
 $config{sdirs} = [
     "objects",
-    "md2", "md4", "md5", "sha", "mdc2", "hmac", "ripemd", "whrlpool", "poly1305", "blake2", "siphash", "sm3",
+    "md4", "md5", "sha", "mdc2", "hmac", "ripemd", "whrlpool", "poly1305", "blake2", "siphash", "sm3",
     "des", "aes", "rc2", "rc4", "rc5", "idea", "bf", "cast", "seed", "sm4", "chacha", "zuc", "eia3", "modes",
     "bn", "ec", "rsa", "dsa", "dh", "sm2", "dso", "engine",
     "buffer", "bio", "stack", "lhash", "rand", "err",
@@ -393,7 +393,6 @@ my @disablables = (
     "hw(-.+)?",
     "idea",
     "makedepend",
-    "md2",
     "md4",
     "mdc2",
     "msan",
@@ -489,7 +488,6 @@ our %disabled = ( # "what"         => "comment"
                   "fuzz-libfuzzer"      => "default",
                   "fuzz-afl"            => "default",
                   "heartbeats"          => "default",
-                  "md2"                 => "default",
                   "msan"                => "default",
                   "rc5"                 => "default",
                   "sctp"                => "default",

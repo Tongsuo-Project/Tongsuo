@@ -218,12 +218,12 @@ below.
 
 =over 4
 
-=item B<PBE-MD2-DES PBE-MD5-DES>
+=item B<PBE-MD5-DES>
 
-These algorithms were included in the original PKCS#5 v1.5 specification.
+This algorithm was included in the original PKCS#5 v1.5 specification.
 They only offer 56 bits of protection since they both use DES.
 
-=item B<PBE-SHA1-RC2-64>, B<PBE-MD2-RC2-64>, B<PBE-MD5-RC2-64>, B<PBE-SHA1-DES>
+=item B<PBE-SHA1-RC2-64>, B<PBE-MD5-RC2-64>, B<PBE-SHA1-DES>
 
 These algorithms are not mentioned in the original PKCS#5 v1.5 specification
 but they use the same key derivation algorithm and are supported by some

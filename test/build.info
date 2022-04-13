@@ -29,7 +29,6 @@ INCLUDE_MAIN___test_libtestutil_OLB = /INCLUDE=MAIN
           aborttest test_test \
           sanitytest rsa_complex exdatatest bntest \
           ectest ecstresstest ecdsatest gmdifftest pbelutest ideatest \
-          md2test \
           hmactest \
           rc2test rc4test rc5test \
           destest mdc2test \
@@ -105,10 +104,6 @@ INCLUDE_MAIN___test_libtestutil_OLB = /INCLUDE=MAIN
   SOURCE[ideatest]=ideatest.c
   INCLUDE[ideatest]=../include
   DEPEND[ideatest]=../libcrypto libtestutil.a
-
-  SOURCE[md2test]=md2test.c
-  INCLUDE[md2test]=../include
-  DEPEND[md2test]=../libcrypto libtestutil.a
 
   SOURCE[hmactest]=hmactest.c
   INCLUDE[hmactest]=../include
