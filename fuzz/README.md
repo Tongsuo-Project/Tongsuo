@@ -42,7 +42,7 @@ Configure for fuzzing:
             -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION \
             -fsanitize-coverage=trace-pc-guard,indirect-calls,trace-cmp \
             enable-ec_nistp_64_gcc_128 -fno-sanitize=alignment enable-tls1_3 \
-            enable-weak-ssl-ciphers enable-rc5 enable-md2 \
+            enable-weak-ssl-ciphers enable-rc5  \
             enable-ssl3 enable-ssl3-method enable-nextprotoneg \
             --debug
     $ sudo apt-get install make
@@ -61,7 +61,7 @@ Configure for fuzzing:
 
     $ sudo apt-get install afl-clang
     $ CC=afl-clang-fast ./config enable-fuzz-afl no-shared -DPEDANTIC \
-        enable-tls1_3 enable-weak-ssl-ciphers enable-rc5 enable-md2 \
+        enable-tls1_3 enable-weak-ssl-ciphers enable-rc5 \
         enable-ssl3 enable-ssl3-method enable-nextprotoneg \
         enable-ec_nistp_64_gcc_128 -fno-sanitize=alignment \
         --debug

@@ -123,7 +123,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: config
-        run: ./config --debug enable-asan enable-ubsan enable-rc5 enable-md2 enable-ec_nistp_64_gcc_128 && perl configdata.pm --dump
+        run: ./config --debug enable-asan enable-ubsan enable-rc5 enable-ec_nistp_64_gcc_128 && perl configdata.pm --dump
       - name: make
         run: make -s -j4
       - name: make test
@@ -153,7 +153,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: config
-        run: ./config -Werror --debug no-afalgeng no-shared enable-crypto-mdebug enable-rc5 enable-md2 enable-ssl3 enable-ssl3-method enable-weak-ssl-ciphers enable-zlib enable-ec_nistp_64_gcc_128 && perl configdata.pm --dump
+        run: ./config -Werror --debug no-afalgeng no-shared enable-crypto-mdebug enable-rc5 enable-ssl3 enable-ssl3-method enable-weak-ssl-ciphers enable-zlib enable-ec_nistp_64_gcc_128 && perl configdata.pm --dump
       - name: make
         run: make -s -j4
       - name: make test

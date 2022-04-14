@@ -43,9 +43,6 @@
 # include <openssl/des.h>
 #endif
 #include <openssl/aes.h>
-#ifndef OPENSSL_NO_MD2
-# include <openssl/md2.h>
-#endif
 #ifndef OPENSSL_NO_MDC2
 # include <openssl/mdc2.h>
 #endif
@@ -134,10 +131,6 @@ static volatile int run = 0;
 
 static int mr = 0;
 static int usertime = 1;
-
-#ifndef OPENSSL_NO_MD2
-static int EVP_Digest_MD2_loop(void *args);
-#endif
 
 #ifndef OPENSSL_NO_MDC2
 static int EVP_Digest_MDC2_loop(void *args);
@@ -351,38 +344,37 @@ const OPTIONS speed_options[] = {
     {NULL}
 };
 
-#define D_MD2           0
-#define D_MDC2          1
-#define D_MD4           2
-#define D_MD5           3
-#define D_HMAC          4
-#define D_SHA1          5
-#define D_RMD160        6
-#define D_RC4           7
-#define D_CBC_DES       8
-#define D_EDE3_DES      9
-#define D_CBC_IDEA      10
-#define D_CBC_RC2       11
-#define D_CBC_RC5       12
-#define D_CBC_BF        13
-#define D_CBC_CAST      14
-#define D_CBC_128_AES   15
-#define D_CBC_192_AES   16
-#define D_CBC_256_AES   17
-#define D_EVP           18
-#define D_SHA256        19
-#define D_SHA512        20
-#define D_WHIRLPOOL     21
-#define D_IGE_128_AES   22
-#define D_IGE_192_AES   23
-#define D_IGE_256_AES   24
-#define D_GHASH         25
-#define D_RAND          26
-#define D_SM3           27
-#define D_CBC_SM4       28
+#define D_MDC2          0
+#define D_MD4           1
+#define D_MD5           2
+#define D_HMAC          3
+#define D_SHA1          4
+#define D_RMD160        5
+#define D_RC4           6
+#define D_CBC_DES       7
+#define D_EDE3_DES      8
+#define D_CBC_IDEA      9
+#define D_CBC_RC2       10
+#define D_CBC_RC5       11
+#define D_CBC_BF        12
+#define D_CBC_CAST      13
+#define D_CBC_128_AES   14
+#define D_CBC_192_AES   15
+#define D_CBC_256_AES   16
+#define D_EVP           17
+#define D_SHA256        18
+#define D_SHA512        19
+#define D_WHIRLPOOL     20
+#define D_IGE_128_AES   21
+#define D_IGE_192_AES   22
+#define D_IGE_256_AES   23
+#define D_GHASH         24
+#define D_RAND          25
+#define D_SM3           26
+#define D_CBC_SM4       27
 /* name of algorithms to test */
 static const char *names[] = {
-    "md2", "mdc2", "md4", "md5", "hmac(md5)", "sha1", "rmd160", "rc4",
+    "mdc2", "md4", "md5", "hmac(md5)", "sha1", "rmd160", "rc4",
     "des cbc", "des ede3", "idea cbc",
     "rc2 cbc", "rc5-32/12 cbc", "blowfish cbc", "cast cbc",
     "aes-128 cbc", "aes-192 cbc", "aes-256 cbc",
@@ -394,9 +386,6 @@ static const char *names[] = {
 
 /* list of configured algorithm (remaining) */
 static const OPT_PAIR doit_choices[] = {
-#ifndef OPENSSL_NO_MD2
-    {"md2", D_MD2},
-#endif
 #ifndef OPENSSL_NO_MDC2
     {"mdc2", D_MDC2},
 #endif
@@ -744,23 +733,6 @@ static unsigned int testnum;
 
 /* Nb of iterations to do per algorithm and key-size */
 static long c[ALGOR_NUM][OSSL_NELEM(lengths_list)];
-
-#ifndef OPENSSL_NO_MD2
-static int EVP_Digest_MD2_loop(void *args)
-{
-    loopargs_t *tempargs = *(loopargs_t **) args;
-    unsigned char *buf = tempargs->buf;
-    unsigned char md2[MD2_DIGEST_LENGTH];
-    int count;
-
-    for (count = 0; COND(c[D_MD2][testnum]); count++) {
-        if (!EVP_Digest(buf, (size_t)lengths[testnum], md2, NULL, EVP_md2(),
-                        NULL))
-            return -1;
-    }
-    return count;
-}
-#endif
 
 #ifndef OPENSSL_NO_MDC2
 static int EVP_Digest_MDC2_loop(void *args)
@@ -2281,7 +2253,6 @@ int speed_main(int argc, char **argv)
         d = Time_F(STOP);
     } while (d < 3);
     save_count = count;
-    c[D_MD2][0] = count / 10;
     c[D_MDC2][0] = count / 10;
     c[D_MD4][0] = count;
     c[D_MD5][0] = count;
@@ -2319,7 +2290,6 @@ int speed_main(int argc, char **argv)
         l0 = (long)lengths[0];
         l1 = (long)lengths[i];
 
-        c[D_MD2][i] = c[D_MD2][0] * 4 * l0 / l1;
         c[D_MDC2][i] = c[D_MDC2][0] * 4 * l0 / l1;
         c[D_MD4][i] = c[D_MD4][0] * 4 * l0 / l1;
         c[D_MD5][i] = c[D_MD5][0] * 4 * l0 / l1;
@@ -2653,18 +2623,6 @@ int speed_main(int argc, char **argv)
     signal(SIGALRM, alarmed);
 #endif                          /* SIGALRM */
 
-#ifndef OPENSSL_NO_MD2
-    if (doit[D_MD2]) {
-        for (testnum = 0; testnum < size_num; testnum++) {
-            print_message(names[D_MD2], c[D_MD2][testnum], lengths[testnum],
-                          seconds.sym);
-            Time_F(START);
-            count = run_benchmark(async_jobs, EVP_Digest_MD2_loop, loopargs);
-            d = Time_F(STOP);
-            print_result(D_MD2, testnum, count, d);
-        }
-    }
-#endif
 #ifndef OPENSSL_NO_MDC2
     if (doit[D_MDC2]) {
         for (testnum = 0; testnum < size_num; testnum++) {
@@ -4016,9 +3974,6 @@ int speed_main(int argc, char **argv)
         printf("%s\n", OpenSSL_version(OPENSSL_BUILT_ON));
         printf("options:");
         printf("%s ", BN_options());
-#ifndef OPENSSL_NO_MD2
-        printf("%s ", MD2_options());
-#endif
 #ifndef OPENSSL_NO_RC4
         printf("%s ", RC4_options());
 #endif

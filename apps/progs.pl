@@ -109,7 +109,7 @@ my %md_disabler = (
     blake2s256 => "blake2",
 );
 foreach my $cmd (
-    "md2", "md4", "md5",
+    "md4", "md5",
     "gost",
     "sha1", "sha224", "sha256", "sha384",
     "sha512", "sha512-224", "sha512-256",

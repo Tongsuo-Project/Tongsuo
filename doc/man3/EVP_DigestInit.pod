@@ -418,7 +418,6 @@ L<evp(7)>
 The full list of digest algorithms are provided below.
 
 L<EVP_blake2b512(3)>,
-L<EVP_md2(3)>,
 L<EVP_md4(3)>,
 L<EVP_md5(3)>,
 L<EVP_mdc2(3)>,

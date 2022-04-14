@@ -2,19 +2,10 @@
 
 =head1 NAME
 
-MD2, MD4, MD5, MD2_Init, MD2_Update, MD2_Final, MD4_Init, MD4_Update,
-MD4_Final, MD5_Init, MD5_Update, MD5_Final - MD2, MD4, and MD5 hash functions
+MD4, MD5, MD4_Init, MD4_Update,
+MD4_Final, MD5_Init, MD5_Update, MD5_Final - MD4 and MD5 hash functions
 
 =head1 SYNOPSIS
-
- #include <openssl/md2.h>
-
- unsigned char *MD2(const unsigned char *d, unsigned long n, unsigned char *md);
-
- int MD2_Init(MD2_CTX *c);
- int MD2_Update(MD2_CTX *c, const unsigned char *data, unsigned long len);
- int MD2_Final(unsigned char *md, MD2_CTX *c);
-
 
  #include <openssl/md4.h>
 
@@ -35,27 +26,26 @@ MD4_Final, MD5_Init, MD5_Update, MD5_Final - MD2, MD4, and MD5 hash functions
 
 =head1 DESCRIPTION
 
-MD2, MD4, and MD5 are cryptographic hash functions with a 128 bit output.
+MD4 and MD5 are cryptographic hash functions with a 128 bit output.
 
-MD2(), MD4(), and MD5() compute the MD2, MD4, and MD5 message digest
+MD4() and MD5() compute the MD4 and MD5 message digest
 of the B<n> bytes at B<d> and place it in B<md> (which must have space
-for MD2_DIGEST_LENGTH == MD4_DIGEST_LENGTH == MD5_DIGEST_LENGTH == 16
+for MD4_DIGEST_LENGTH == MD5_DIGEST_LENGTH == 16
 bytes of output). If B<md> is NULL, the digest is placed in a static
 array.
 
 The following functions may be used if the message is not completely
 stored in memory:
 
-MD2_Init() initializes a B<MD2_CTX> structure.
+MD4_Init() initializes a B<MD4_CTX> structure.
 
-MD2_Update() can be called repeatedly with chunks of the message to
+MD4_Update() can be called repeatedly with chunks of the message to
 be hashed (B<len> bytes at B<data>).
 
-MD2_Final() places the message digest in B<md>, which must have space
-for MD2_DIGEST_LENGTH == 16 bytes of output, and erases the B<MD2_CTX>.
+MD4_Final() places the message digest in B<md>, which must have space
+for MD4_DIGEST_LENGTH == 16 bytes of output, and erases the B<MD4_CTX>.
 
-MD4_Init(), MD4_Update(), MD4_Final(), MD5_Init(), MD5_Update(), and
-MD5_Final() are analogous using an B<MD4_CTX> and B<MD5_CTX> structure.
+MD5_Init(), MD5_Update() and MD5_Final() are analogous using an B<MD5_CTX> structure.
 
 Applications should use the higher level functions
 L<EVP_DigestInit(3)>
@@ -63,15 +53,15 @@ etc. instead of calling the hash functions directly.
 
 =head1 NOTE
 
-MD2, MD4, and MD5 are recommended only for compatibility with existing
+MD4 and MD5 are recommended only for compatibility with existing
 applications. In new applications, SHA-1 or RIPEMD-160 should be
 preferred.
 
 =head1 RETURN VALUES
 
-MD2(), MD4(), and MD5() return pointers to the hash value.
+MD4() and MD5() return pointers to the hash value.
 
-MD2_Init(), MD2_Update(), MD2_Final(), MD4_Init(), MD4_Update(),
+MD4_Init(), MD4_Update(),
 MD4_Final(), MD5_Init(), MD5_Update(), and MD5_Final() return 1 for
 success, 0 otherwise.
 

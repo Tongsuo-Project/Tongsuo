@@ -171,7 +171,6 @@ rsadsi 1		: pkcs			: RSA Data Security, Inc. PKCS
 
 pkcs 1			: pkcs1
 pkcs1 1			:			: rsaEncryption
-pkcs1 2			: RSA-MD2		: md2WithRSAEncryption
 pkcs1 3			: RSA-MD4		: md4WithRSAEncryption
 pkcs1 4			: RSA-MD5		: md5WithRSAEncryption
 pkcs1 5			: RSA-SHA1		: sha1WithRSAEncryption
@@ -192,9 +191,7 @@ pkcs 3			: pkcs3
 pkcs3 1			:			: dhKeyAgreement
 
 pkcs 5			: pkcs5
-pkcs5 1			: PBE-MD2-DES		: pbeWithMD2AndDES-CBC
 pkcs5 3			: PBE-MD5-DES		: pbeWithMD5AndDES-CBC
-pkcs5 4			: PBE-MD2-RC2-64	: pbeWithMD2AndRC2-CBC
 pkcs5 6			: PBE-MD5-RC2-64	: pbeWithMD5AndRC2-CBC
 pkcs5 10		: PBE-SHA1-DES		: pbeWithSHA1AndDES-CBC
 pkcs5 11		: PBE-SHA1-RC2-64	: pbeWithSHA1AndRC2-CBC
@@ -373,7 +370,6 @@ pkcs12-BagIds 4		:			: crlBag
 pkcs12-BagIds 5		:			: secretBag
 pkcs12-BagIds 6		:			: safeContentsBag
 
-rsadsi 2 2		: MD2			: md2
 rsadsi 2 4		: MD4			: md4
 rsadsi 2 5		: MD5			: md5
 			: MD5-SHA1		: md5-sha1
