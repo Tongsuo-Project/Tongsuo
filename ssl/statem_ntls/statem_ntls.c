@@ -155,14 +155,14 @@ int SSL_connection_is_ntls(SSL *s, int is_server)
          * have to get the server version from clientHello
          */
         if (SSL_IS_FIRST_HANDSHAKE(s) && SSL_in_before(s)) {
-            int ret, fd;
+            int ret, fd = -1;
             PACKET pkt;
             unsigned int version, type;
             unsigned char buf[PEEK_HEADER_LENGTH];
 
-            ret = BIO_get_fd(s->rbio, &fd);
+            (void) BIO_get_fd(s->rbio, &fd);
 
-            if (ret <= 0) {
+            if (fd < 0) {
                 /* NTLS only support socket communication */
                 SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_SSL_CONNECTION_IS_NTLS,
                             ERR_R_INTERNAL_ERROR);
