@@ -5,11 +5,11 @@ on:
     branches:
       - 'master'
   schedule:
-    - cron: '0 */8 * * *'
+    - cron: '0 0 * * *'
 
 jobs:
   test:
-    if: ${{ github.event.pull_request.merged }}
+    if: ${{ github.event.pull_request.merged || github.event.schedule == '0 0 * * *'  }}
     runs-on: [self-hosted,X64]
     env:
       MYSQL_ARG: "--mysql-host=${{ secrets.MYSQL_HOST }} --mysql-user=${{ secrets.MYSQL_USER }} --mysql-password=${{ secrets.MYSQL_PASSWORD }} --mysql-db=${{ secrets.MYSQL_DB }}"
@@ -39,7 +39,15 @@ jobs:
           mkdir -p speed/cpu
           mkdir -p speed/mem
           lscpu > speed/cpu/$NOW.txt
-          free -m > speed/mem/$NOW.txt
+          CPUS=`cat /sys/fs/cgroup/cpuset/cpuset.cpus`
+          CPUQ=`cat /sys/fs/cgroup/cpu/cpu.cfs_quota_us`
+          CPUP=`cat /sys/fs/cgroup/cpu/cpu.cfs_period_us`
+          echo "/sys/fs/cgroup/cpuset/cpuset.cpus: $CPUS" >> speed/cpu/$NOW.txt
+          echo "/sys/fs/cgroup/cpu/cpu.cfs_quota_us: $CPUQ" >> speed/cpu/$NOW.txt
+          echo "/sys/fs/cgroup/cpu/cpu.cfs_period_us: $CPUP" >> speed/cpu/$NOW.txt
+          free -mh > speed/mem/$NOW.txt
+          MEM=`cat /sys/fs/cgroup/memory/memory.limit_in_bytes`
+          echo "/sys/fs/cgroup/memory/memory.limit_in_bytes: $MEM" >> speed/mem/$NOW.txt
       - name: symmetric encryption speed test
         shell: bash
         run: |
