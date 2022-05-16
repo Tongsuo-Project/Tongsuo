@@ -1,0 +1,172 @@
+name: Speed Test
+
+on:
+  push:
+    branches:
+      - 'master'
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  test:
+    if: ${{ github.event.pull_request.merged || github.event.schedule == '0 0 * * *'  }}
+    runs-on: [self-hosted,X64]
+    env:
+      MYSQL_ARG: "--mysql-host=${{ secrets.MYSQL_HOST }} --mysql-user=${{ secrets.MYSQL_USER }} --mysql-password=${{ secrets.MYSQL_PASSWORD }} --mysql-db=${{ secrets.MYSQL_DB }}"
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.head_ref }}
+      - name: fetch all branch
+        uses: nick-fields/retry@v2
+        with:
+          timeout_seconds: 30
+          max_attempts: 60
+          shell: bash
+          command: git fetch --depth=1
+      - name: config
+        run: ./config --strict-warnings enable-ec_elgamal enable-ntls enable-sm2 enable-sm3 enable-sm4 && perl configdata.pm --dump
+      - name: make
+        run: make -j4
+      - name: Set current date as env variable
+        run: |
+          NOW=$(date +'%F~%T')
+          echo "NOW=$NOW" >> $GITHUB_ENV
+          echo "JOB_DATE='$NOW'" | sed 's/~/ /g' >> $GITHUB_ENV
+      - name: save cpu and memory info
+        shell: bash
+        run: |
+          mkdir -p speed/cpu
+          mkdir -p speed/mem
+          lscpu > speed/cpu/$NOW.txt
+          CPUS=`cat /sys/fs/cgroup/cpuset/cpuset.cpus`
+          CPUQ=`cat /sys/fs/cgroup/cpu/cpu.cfs_quota_us`
+          CPUP=`cat /sys/fs/cgroup/cpu/cpu.cfs_period_us`
+          echo "/sys/fs/cgroup/cpuset/cpuset.cpus: $CPUS" >> speed/cpu/$NOW.txt
+          echo "/sys/fs/cgroup/cpu/cpu.cfs_quota_us: $CPUQ" >> speed/cpu/$NOW.txt
+          echo "/sys/fs/cgroup/cpu/cpu.cfs_period_us: $CPUP" >> speed/cpu/$NOW.txt
+          free -mh > speed/mem/$NOW.txt
+          MEM=`cat /sys/fs/cgroup/memory/memory.limit_in_bytes`
+          echo "/sys/fs/cgroup/memory/memory.limit_in_bytes: $MEM" >> speed/mem/$NOW.txt
+      - name: symmetric encryption speed test
+        shell: bash
+        run: |
+          set -x
+          commit=`git rev-parse HEAD`
+          algo_type="symmetric_encryption"
+          algos=(aes-256-gcm aes-256-ccm aes-256-cbc aes-128-gcm aes-128-ccm aes-128-cbc sm4-gcm sm4-ccm sm4-cbc)
+          for algo in ${algos[@]}
+          do
+            mkdir -p speed/$algo_type/$algo
+            now=`date +"%F %T"`
+            FILE="./speed/$algo_type/$algo/$NOW.txt"
+            echo "commit: $commit" >> $FILE
+            echo "date: $now" >> $FILE
+            LD_LIBRARY_PATH=. ./apps/openssl speed -evp $algo | tee -a $FILE
+          done
+          echo $MYSQL_ARG > /tmp/mysql_arg.txt
+      - name: asymmetric encryption speed test
+        shell: bash
+        run: |
+          echo "TODO"
+      - name: signature speed test
+        shell: bash
+        run: |
+          commit=`git rev-parse HEAD`
+          algo_type="signature"
+          algos=(rsa2048 ecdsap256 ed25519 sm2)
+          for algo in ${algos[@]}
+          do
+            mkdir -p speed/$algo_type/$algo
+            now=`date +"%F %T"`
+            FILE="./speed/$algo_type/$algo/$NOW.txt"
+            echo "commit: $commit" >> $FILE
+            echo "date: $now" >> $FILE
+            LD_LIBRARY_PATH=. ./apps/openssl speed $algo | tee -a $FILE
+          done
+      - name: digest speed test
+        shell: bash
+        run: |
+          commit=`git rev-parse HEAD`
+          algo_type="digest"
+          algos=(sha256 sm3)
+          for algo in ${algos[@]}
+          do
+            mkdir -p speed/$algo_type/$algo
+            now=`date +"%F %T"`
+            FILE="./speed/$algo_type/$algo/$NOW.txt"
+            echo "commit: $commit" >> $FILE
+            echo "date: $now" >> $FILE
+            LD_LIBRARY_PATH=. ./apps/openssl speed -evp $algo | tee -a $FILE
+          done
+      - name: key_exchange speed test
+        shell: bash
+        run: |
+          commit=`git rev-parse HEAD`
+          algo_type="key_exchange"
+          algos=(ecdhp256 ecdhp384 ecdhp521 ecdhx448 ecdhx25519)
+          for algo in ${algos[@]}
+          do
+            mkdir -p speed/$algo_type/$algo
+            now=`date +"%F %T"`
+            FILE="./speed/$algo_type/$algo/$NOW.txt"
+            echo "commit: $commit" >> $FILE
+            echo "date: $now" >> $FILE
+            LD_LIBRARY_PATH=. ./apps/openssl speed $algo | tee -a $FILE
+          done
+      - name: phe speed test
+        shell: bash
+        run: |
+          commit=`git rev-parse HEAD`
+          algo_type="phe"
+          algos=(ecelgamalp256 ecelgamalsm2)
+          for algo in ${algos[@]}
+          do
+            mkdir -p speed/$algo_type/$algo
+            now=`date +"%F %T"`
+            FILE="./speed/$algo_type/$algo/$NOW.txt"
+            echo "commit: $commit" >> $FILE
+            echo "date: $now" >> $FILE
+            LD_LIBRARY_PATH=. ./apps/openssl speed $algo | tee -a $FILE
+          done
+      - name: switch to the speed-auto-test branch and commit speed test result file
+        run: |
+          git checkout speed-auto-test
+          git add ./speed/*
+          git -c user.name="github-actions[bot]" \
+              -c user.email="github-actions[bot]@users.noreply.github.com" \
+              commit -a -m "Benchmark automated testing." \
+              --author="${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>"
+      - name: push speed test result
+        uses: nick-fields/retry@v2
+        with:
+          timeout_seconds: 30
+          max_attempts: 60
+          shell: bash
+          command: git push -u origin speed-auto-test:speed-auto-test
+      - name: Parse the test results file and save it to the mysql database
+        shell: bash
+        run: |
+          commit=`git rev-parse HEAD`
+          algos=(
+            'symmetric_encryption aes-256-gcm aes-256-ccm aes-256-cbc aes-128-gcm aes-128-ccm aes-128-cbc sm4-gcm sm4-ccm sm4-cbc'
+            'signature rsa2048 ecdsap256 ed25519 sm2'
+            'digest sha256 sm3'
+            'key_exchange ecdhp256 ecdhp384 ecdhp521 ecdhx448 ecdhx25519'
+            'phe ecelgamalp256 ecelgamalsm2'
+          )
+          for item in "${algos[@]}"; do
+            algo_type=''
+            for algo in ${item[@]}; do
+              if [[ $algo_type == ''  ]]; then
+                algo_type=$algo
+                continue
+              fi
+              FILE="./speed/$algo_type/$algo/$NOW.txt"
+              python3 /home/runner/speed_parse.py -c $commit -f $FILE -t $algo_type -j "$JOB_DATE" $MYSQL_ARG
+            done
+          done
+      - name: make clean
+        run: make clean
+      - name: check dirty
+        run: test $(git status --porcelain | wc -l) -eq "0"
