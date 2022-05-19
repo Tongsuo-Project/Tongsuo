@@ -5427,3 +5427,17 @@ EVP_PKEY_get0_provider                  5554	3_0_0	EXIST::FUNCTION:
 EVP_PKEY_CTX_get0_provider              5555	3_0_0	EXIST::FUNCTION:
 OPENSSL_strcasecmp                      5556	3_0_3	EXIST::FUNCTION:
 OPENSSL_strncasecmp                     5557	3_0_3	EXIST::FUNCTION:
+EC_ELGAMAL_CTX_new                      ?	3_0_3	EXIST::FUNCTION:EC,EC_ELGAMAL
+EC_ELGAMAL_CTX_free                     ?	3_0_3	EXIST::FUNCTION:EC,EC_ELGAMAL
+EC_ELGAMAL_DECRYPT_TABLE_new            ?	3_0_3	EXIST::FUNCTION:EC,EC_ELGAMAL
+EC_ELGAMAL_DECRYPT_TABLE_free           ?	3_0_3	EXIST::FUNCTION:EC,EC_ELGAMAL
+EC_ELGAMAL_CTX_set_decrypt_table        ?	3_0_3	EXIST::FUNCTION:EC,EC_ELGAMAL
+EC_ELGAMAL_encrypt                      ?	3_0_3	EXIST::FUNCTION:EC,EC_ELGAMAL
+EC_ELGAMAL_decrypt                      ?	3_0_3	EXIST::FUNCTION:EC,EC_ELGAMAL
+EC_ELGAMAL_add                          ?	3_0_3	EXIST::FUNCTION:EC,EC_ELGAMAL
+EC_ELGAMAL_sub                          ?	3_0_3	EXIST::FUNCTION:EC,EC_ELGAMAL
+EC_ELGAMAL_mul                          ?	3_0_3	EXIST::FUNCTION:EC,EC_ELGAMAL
+EC_ELGAMAL_CIPHERTEXT_new               ?	3_0_3	EXIST::FUNCTION:EC,EC_ELGAMAL
+EC_ELGAMAL_CIPHERTEXT_free              ?	3_0_3	EXIST::FUNCTION:EC,EC_ELGAMAL
+EC_ELGAMAL_CIPHERTEXT_encode            ?	3_0_3	EXIST::FUNCTION:EC,EC_ELGAMAL
+EC_ELGAMAL_CIPHERTEXT_decode            ?	3_0_3	EXIST::FUNCTION:EC,EC_ELGAMAL
