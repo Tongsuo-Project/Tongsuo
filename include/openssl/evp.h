@@ -1142,6 +1142,10 @@ const EVP_CIPHER *EVP_sm4_ofb(void);
 const EVP_CIPHER *EVP_sm4_ctr(void);
 # endif
 
+# ifndef OPENSSL_NO_ZUC
+const EVP_CIPHER *EVP_eea3(void);
+# endif
+
 # ifndef OPENSSL_NO_DEPRECATED_1_1_0
 #  define OPENSSL_add_all_algorithms_conf() \
     OPENSSL_init_crypto(OPENSSL_INIT_ADD_ALL_CIPHERS \

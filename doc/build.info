@@ -1359,6 +1359,10 @@ DEPEND[html/man3/EVP_desx_cbc.html]=man3/EVP_desx_cbc.pod
 GENERATE[html/man3/EVP_desx_cbc.html]=man3/EVP_desx_cbc.pod
 DEPEND[man/man3/EVP_desx_cbc.3]=man3/EVP_desx_cbc.pod
 GENERATE[man/man3/EVP_desx_cbc.3]=man3/EVP_desx_cbc.pod
+DEPEND[html/man3/EVP_eea3.html]=man3/EVP_eea3.pod
+GENERATE[html/man3/EVP_eea3.html]=man3/EVP_eea3.pod
+DEPEND[man/man3/EVP_eea3.3]=man3/EVP_eea3.pod
+GENERATE[man/man3/EVP_eea3.3]=man3/EVP_eea3.pod
 DEPEND[html/man3/EVP_idea_cbc.html]=man3/EVP_idea_cbc.pod
 GENERATE[html/man3/EVP_idea_cbc.html]=man3/EVP_idea_cbc.pod
 DEPEND[man/man3/EVP_idea_cbc.3]=man3/EVP_idea_cbc.pod
@@ -3071,6 +3075,7 @@ html/man3/EVP_cast5_cbc.html \
 html/man3/EVP_chacha20.html \
 html/man3/EVP_des_cbc.html \
 html/man3/EVP_desx_cbc.html \
+html/man3/EVP_eea3.html \
 html/man3/EVP_idea_cbc.html \
 html/man3/EVP_md2.html \
 html/man3/EVP_md4.html \
@@ -3666,6 +3671,7 @@ man/man3/EVP_cast5_cbc.3 \
 man/man3/EVP_chacha20.3 \
 man/man3/EVP_des_cbc.3 \
 man/man3/EVP_desx_cbc.3 \
+man/man3/EVP_eea3.3 \
 man/man3/EVP_idea_cbc.3 \
 man/man3/EVP_md2.3 \
 man/man3/EVP_md4.3 \
