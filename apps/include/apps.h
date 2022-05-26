@@ -340,4 +340,16 @@ void app_providers_cleanup(void);
 EVP_PKEY *app_keygen(EVP_PKEY_CTX *ctx, const char *alg, int bits, int verbose);
 EVP_PKEY *app_paramgen(EVP_PKEY_CTX *ctx, const char *alg);
 
+/* for SM2 compatibility usage */
+#define DISTID           "distid:"
+#define DISTID_LEN       (sizeof("distid:") - 1)
+#define HEXDISTID        "hexdistid:"
+#define HEXDISTID_LEN    (sizeof("hexdistid:") - 1)
+#define SM2ID            "sm2_id:"
+#define SM2ID_LEN        (sizeof("sm2_id:") - 1)
+#define SM2HEXID         "sm2_hex_id:"
+#define SM2HEXID_LEN     (sizeof("sm2_hex_id:") - 1)
+
+int build_vfyopt_compat_string(int option, char **ret, const char *value);
+int build_sigopt_compat_string(char **ret, const char *value);
 #endif

@@ -78,6 +78,8 @@ B<openssl> B<x509>
 [B<-addreject> I<arg>]
 {- $OpenSSL::safe::opt_r_synopsis -}
 {- $OpenSSL::safe::opt_engine_synopsis -}{- $OpenSSL::safe::opt_provider_synopsis -}
+[B<-sm2-id> I<string>]
+[B<-sm2-hex-id> I<hex-string>]
 
 =head1 DESCRIPTION
 
@@ -204,6 +206,20 @@ Do not output a certificate (except for printing as requested by below options).
 =item B<-noout>
 
 This option prevents output except for printing as requested by below options.
+
+=item B<-sm2-id>
+
+Specify the ID string to use when verifying an SM2 certificate. The ID string is
+required by the SM2 signature algorithm for signing and verification.
+
+This is a compatible option for older Tongsuo/BabaSSL versions.
+
+=item B<-sm2-hex-id>
+
+Specify a binary ID string to use when signing or verifying using an SM2
+certificate. The argument for this option is string of hexadecimal digits.
+
+This is a compatible option for older Tongsuo/BabaSSL versions.
 
 =back
 

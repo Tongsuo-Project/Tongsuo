@@ -20,6 +20,8 @@ B<openssl> B<verify>
 {- $OpenSSL::safe::opt_trust_synopsis -}
 {- $OpenSSL::safe::opt_engine_synopsis -}{- $OpenSSL::safe::opt_v_synopsis -}
 {- $OpenSSL::safe::opt_provider_synopsis -}
+[B<-sm2-id> I<string>]
+[B<-sm2-hex-id> I<hex-string>]
 [B<-->]
 [I<certificate> ...]
 
@@ -101,6 +103,20 @@ with a B<->.
 One or more target certificates to verify, one per file. If no certificates are
 given, this command will attempt to read a single certificate from standard
 input.
+
+=item B<-sm2-id>
+
+Specify the ID string to use when verifying an SM2 certificate. The ID string is
+required by the SM2 signature algorithm for signing and verification.
+
+This is a compatible option for older Tongsuo/BabaSSL versions.
+
+=item B<-sm2-hex-id>
+
+Specify a binary ID string to use when signing or verifying using an SM2
+certificate. The argument for this option is string of hexadecimal digits.
+
+This is a compatible option for older Tongsuo/BabaSSL versions.
 
 =back
 

@@ -128,6 +128,10 @@ int pkeyutl_main(int argc, char **argv)
     EVP_MD *md = NULL;
     int filesize = -1;
     OSSL_LIB_CTX *libctx = app_get0_libctx();
+    char *pkeyopt_str = NULL;
+#ifndef OPENSSL_NO_SM2
+    char *sm2_id = NULL;
+#endif
 
     prog = opt_init(argc, argv, pkeyutl_options);
     while ((o = opt_next()) != OPT_EOF) {
@@ -228,12 +232,27 @@ int pkeyutl_main(int argc, char **argv)
             rev = 1;
             break;
         case OPT_PKEYOPT:
-            if ((pkeyopts == NULL &&
-                 (pkeyopts = sk_OPENSSL_STRING_new_null()) == NULL) ||
-                sk_OPENSSL_STRING_push(pkeyopts, opt_arg()) == 0) {
+            if (pkeyopts == NULL &&
+                 (pkeyopts = sk_OPENSSL_STRING_new_null()) == NULL) {
                 BIO_puts(bio_err, "out of memory\n");
                 goto end;
             }
+            pkeyopt_str = opt_arg();
+#ifndef OPENSSL_NO_SM2
+            /*
+             * trying to find out if we need to rebuild the string.
+             * multiple sm2 ids are not allowed, so we only try to
+             * rebuild the string once.
+             */
+            if (sm2_id == NULL) {
+                if (!build_sigopt_compat_string(&sm2_id, opt_arg()))
+                    goto end;
+                if (sm2_id != NULL)
+                    pkeyopt_str = sm2_id;
+            }
+#endif
+            if (sk_OPENSSL_STRING_push(pkeyopts, pkeyopt_str) == 0)
+                goto end;
             break;
         case OPT_PKEYOPT_PASSIN:
             if ((pkeyopts_passin == NULL &&
@@ -517,6 +536,9 @@ int pkeyutl_main(int argc, char **argv)
     sk_OPENSSL_STRING_free(pkeyopts);
     sk_OPENSSL_STRING_free(pkeyopts_passin);
     NCONF_free(conf);
+#ifndef OPENSSL_NO_SM2
+    OPENSSL_free(sm2_id);
+#endif
     return ret;
 }
 
