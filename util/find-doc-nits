@@ -762,7 +762,7 @@ sub check {
     err($id, "WARNING not WARNINGS section.")
         if $contents =~ /=head1 WARNING[^S]/;
     err($id, "Missing copyright")
-        if $contents !~ /Copyright .* The OpenSSL Project Authors/;
+        if $contents !~ /Copyright .* The (OpenSSL|Tongsuo) Project Authors/;
     err($id, "Copyright not last")
         if $contents =~ /head1 COPYRIGHT.*=head/ms;
     err($id, "head2 in All uppercase")
