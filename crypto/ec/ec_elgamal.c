@@ -1,10 +1,10 @@
 /*
- * Copyright 2021 The BabaSSL Project Authors. All Rights Reserved.
+ * Copyright 2022 The Tongsuo Project Authors. All Rights Reserved.
  *
- * Licensed under the BabaSSL license (the "License").  You may not use
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
- * https://github.com/BabaSSL/BabaSSL/blob/master/LICENSE
+ * https://github.com/Tongsuo-Project/Tongsuo/blob/master/LICENSE
  */
 
 #include "ec_elgamal.h"
