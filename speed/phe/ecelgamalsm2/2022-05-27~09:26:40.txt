@@ -1,0 +1,16 @@
+commit: 49e43cbcdc8ee45e3a48f919820a4fee9ba68b73
+date: 2022-05-27 09:37:12
+OpenSSL 1.1.1h  22 Sep 2020
+built on: Fri May 27 01:23:54 2022 UTC
+options:bn(64,64) rc4(16x,int) des(int) aes(partial) idea(int) blowfish(ptr) 
+compiler: gcc -fPIC -pthread -m64 -Wa,--noexecstack -Wall -O3 -DDEBUG_UNUSED -DPEDANTIC -pedantic -Wno-long-long -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wswitch -Wsign-compare -Wshadow -Wformat -Wtype-limits -Wundef -Werror -Wmissing-prototypes -Wstrict-prototypes -DOPENSSL_USE_NODELETE -DL_ENDIAN -DOPENSSL_PIC -DOPENSSL_CPUID_OBJ -DOPENSSL_IA32_SSE2 -DOPENSSL_BN_ASM_MONT -DOPENSSL_BN_ASM_MONT5 -DOPENSSL_BN_ASM_GF2m -DSHA1_ASM -DSHA256_ASM -DSHA512_ASM -DKECCAK1600_ASM -DRC4_ASM -DMD5_ASM -DAESNI_ASM -DVPAES_ASM -DGHASH_ASM -DECP_NISTZ256_ASM -DX25519_ASM -DPOLY1305_ASM -DNDEBUG 
+EC-ElGamal curve          init[+](s)     init[+-](s)
+sm2                              1.7            67.6
+
+EC-ElGamal curve        a            b   encrypt(b)/s   decrypt(b)/s   add(a,b)/s   sub(a,b)/s   mul(a,b)/s
+sm2                     9           10         1128.8         1753.0     340727.5    294973.5        969.0
+sm2                     9       100000         1102.3         1753.9     349956.6    290049.3        954.0
+sm2                     9    100000000         1200.5           25.3     344220.5    280426.4        942.4
+sm2                     9          -10         1082.8            1.1     343800.5    280156.8        919.7
+sm2                     9      -100000         1143.8            1.1     318345.0    266297.7        958.0
+sm2                     9   -100000000         1000.3            4.5     321088.5    282556.3        934.5
