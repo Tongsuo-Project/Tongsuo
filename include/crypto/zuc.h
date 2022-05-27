@@ -10,8 +10,7 @@
 #ifndef HEADER_ZUC_H
 # define HEADER_ZUC_H
 
-# include <openssl/opensslconf.h>
-# include <openssl/e_os2.h>
+# include <openssl/core.h>
 
 # ifdef OPENSSL_NO_ZUC
 #  error ZUC is disabled.
@@ -19,6 +18,9 @@
 
 #define EVP_ZUC_KEY_SIZE 16
 #define EIA3_DIGEST_SIZE 4
+
+#define ZUC_KEY_SIZE EVP_ZUC_KEY_SIZE
+#define ZUC_CTR_SIZE 5
 
 typedef struct ZUC_KEY_st {
     /* Linear Feedback Shift Register cells */

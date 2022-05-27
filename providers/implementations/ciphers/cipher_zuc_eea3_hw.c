@@ -7,62 +7,29 @@
  * https://github.com/Tongsuo-Project/Tongsuo/blob/master/LICENSE
  */
 
-#include "internal/deprecated.h"
+/* zuc_128_eea3 cipher implementation */
 
-#include "internal/cryptlib.h"
+#include "cipher_zuc_eea3.h"
 
-#ifndef OPENSSL_NO_ZUC
-
-# include <openssl/evp.h>
-# include <openssl/objects.h>
-
-# include "crypto/zuc.h"
-# include "crypto/evp.h"
-
-typedef struct {
-    ZUC_KEY zk;                 /* working key */
-} EVP_EEA3_KEY;
-
-# define data(ctx) ((EVP_EEA3_KEY *)EVP_CIPHER_CTX_get_cipher_data(ctx))
-
-static int eea3_init_key(EVP_CIPHER_CTX *ctx, const unsigned char *key,
-                        const unsigned char *iv, int enc);
-static int eea3_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
-                      const unsigned char *in, size_t inl);
-static int eea3_cleanup(EVP_CIPHER_CTX *ctx);
-
-static const EVP_CIPHER zuc_128_eea3_cipher = {
-    NID_zuc_128_eea3,
-    1,                      /* block_size */
-    ZUC_KEY_SIZE,           /* key_len */
-    ZUC_CTR_SIZE,           /* iv_len, 128-bit counter in the context */
-    EVP_CIPH_VARIABLE_LENGTH,
-    EVP_ORIG_GLOBAL,
-    eea3_init_key,
-    eea3_cipher,
-    eea3_cleanup,
-    sizeof(EVP_EEA3_KEY),
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
-
-const EVP_CIPHER *EVP_eea3(void)
+static int zuc_128_eea3_initkey(PROV_CIPHER_CTX *bctx, const uint8_t *key,
+                                size_t keylen)
 {
-    return &zuc_128_eea3_cipher;
+    PROV_ZUC_EEA3_CTX *ctx = (PROV_ZUC_EEA3_CTX *)bctx;
+    ZUC_KEY *zk = &ctx->ks.ks;
+
+    zk->k = key;
+
+    return 1;
 }
 
-static int eea3_init_key(EVP_CIPHER_CTX *ctx, const unsigned char *key,
-                         const unsigned char *iv, int enc)
+static int zuc_128_eea3_initiv(PROV_CIPHER_CTX *bctx)
 {
-    EVP_EEA3_KEY *ek = data(ctx);
-    ZUC_KEY *zk = &ek->zk;
+    PROV_ZUC_EEA3_CTX *ctx = (PROV_ZUC_EEA3_CTX *)bctx;
+    ZUC_KEY *zk = &ctx->ks.ks;
     uint32_t count;
     uint32_t bearer;
     uint32_t direction;
-
-    zk->k = key;
+    unsigned char *iv = &bctx->oiv[0];
 
     /*
      * This is a lazy approach: we 'borrow' the 'iv' parameter
@@ -75,7 +42,7 @@ static int eea3_init_key(EVP_CIPHER_CTX *ctx, const unsigned char *key,
      */
 
     /* IV is a 'must' */
-    if (iv == NULL)
+    if (!bctx->iv_set)
         return 0;
 
     count = ((long)iv[0] << 24) | (iv[1] << 16) | (iv[2] << 8) | iv[3];
@@ -104,13 +71,12 @@ static int eea3_init_key(EVP_CIPHER_CTX *ctx, const unsigned char *key,
     return 1;
 }
 
-static int eea3_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
-                       const unsigned char *in, size_t inl)
+static int zuc_128_eea3_cipher(PROV_CIPHER_CTX *bctx, unsigned char *out,
+                               const unsigned char *in, size_t inl)
 {
-    EVP_EEA3_KEY *ek = data(ctx);
-    ZUC_KEY *zk = &ek->zk;
-    unsigned int i, remain;
-    int num = EVP_CIPHER_CTX_num(ctx);
+    PROV_ZUC_EEA3_CTX *ctx = (PROV_ZUC_EEA3_CTX *)bctx;
+    ZUC_KEY *zk = &ctx->ks.ks;
+    unsigned int i, remain, num = bctx->num;
 
     remain = zk->keystream_len - num;
     if (remain < inl) {
@@ -132,17 +98,18 @@ static int eea3_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
         out[i] = in[i] ^ zk->keystream[num];
 
     /* num always points to next key byte to use */
-    EVP_CIPHER_CTX_set_num(ctx, num);
+    bctx->num = num;
 
     return 1;
 }
 
-static int eea3_cleanup(EVP_CIPHER_CTX *ctx)
+static const PROV_CIPHER_HW_ZUC_EEA3 zuc_128_eea3_hw = {
+    { zuc_128_eea3_initkey, zuc_128_eea3_cipher },
+    zuc_128_eea3_initiv
+};
+
+const PROV_CIPHER_HW *ossl_prov_cipher_hw_zuc_128_eea3(size_t keybits)
 {
-    EVP_EEA3_KEY *key = data(ctx);
-
-    ZUC_destroy_keystream(&key->zk);
-
-    return 1;
+    return (PROV_CIPHER_HW *)&zuc_128_eea3_hw;
 }
-#endif
+
