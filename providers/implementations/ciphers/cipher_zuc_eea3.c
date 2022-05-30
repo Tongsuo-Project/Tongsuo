@@ -31,16 +31,6 @@ static OSSL_FUNC_cipher_settable_ctx_params_fn zuc_128_eea3_settable_ctx_params;
 #define zuc_128_eea3_final ossl_cipher_generic_stream_final
 #define zuc_128_eea3_gettable_params ossl_cipher_generic_gettable_params
 
-void ossl_zuc_128_eea3_initctx(PROV_ZUC_EEA3_CTX *ctx)
-{
-    ossl_cipher_generic_initkey(ctx, ZUC_EEA3_KEYLEN * 8,
-                                ZUC_EEA3_BLKLEN * 8,
-                                ZUC_EEA3_IVLEN * 8,
-                                0, ZUC_EEA3_FLAGS,
-                                ossl_prov_cipher_hw_zuc_128_eea3(ZUC_EEA3_KEYLEN * 8),
-                                NULL);
-}
-
 static void *zuc_128_eea3_newctx(void *provctx)
 {
     PROV_ZUC_EEA3_CTX *ctx;
@@ -50,15 +40,23 @@ static void *zuc_128_eea3_newctx(void *provctx)
 
     ctx = OPENSSL_zalloc(sizeof(*ctx));
     if (ctx != NULL)
-        ossl_zuc_128_eea3_initctx(ctx);
+        ossl_cipher_generic_initkey(ctx, ZUC_EEA3_KEYLEN * 8,
+                                    ZUC_EEA3_BLKLEN * 8,
+                                    ZUC_EEA3_IVLEN * 8,
+                                    0, ZUC_EEA3_FLAGS,
+                                    ossl_prov_cipher_hw_zuc_128_eea3(ZUC_EEA3_KEYLEN * 8),
+                                    NULL);
     return ctx;
 }
 
 static void zuc_128_eea3_freectx(void *vctx)
 {
+    PROV_CIPHER_HW_ZUC_EEA3 *hw;
     PROV_ZUC_EEA3_CTX *ctx = (PROV_ZUC_EEA3_CTX *)vctx;
 
     if (ctx != NULL) {
+        hw = (PROV_CIPHER_HW_ZUC_EEA3 *)((PROV_CIPHER_CTX *)vctx)->hw;
+        hw->cleanup(ctx);
         ossl_cipher_generic_reset_ctx((PROV_CIPHER_CTX *)vctx);
         OPENSSL_clear_free(ctx, sizeof(*ctx));
     }
@@ -150,13 +148,14 @@ int ossl_zuc_128_eea3_einit(void *vctx, const unsigned char *key, size_t keylen,
                         const OSSL_PARAM params[])
 {
     int ret;
+    PROV_CIPHER_CTX *ctx;
+    PROV_CIPHER_HW_ZUC_EEA3 *hw;
 
     /* The generic function checks for ossl_prov_is_running() */
     ret = ossl_cipher_generic_einit(vctx, key, keylen, iv, ivlen, NULL);
     if (ret && iv != NULL) {
-        PROV_CIPHER_CTX *ctx = (PROV_CIPHER_CTX *)vctx;
-        PROV_CIPHER_HW_ZUC_EEA3 *hw = (PROV_CIPHER_HW_ZUC_EEA3 *)ctx->hw;
-
+        ctx = (PROV_CIPHER_CTX *)vctx;
+        hw = (PROV_CIPHER_HW_ZUC_EEA3 *)ctx->hw;
         hw->initiv(ctx);
     }
     if (ret && !zuc_128_eea3_set_ctx_params(vctx, params))
@@ -169,13 +168,14 @@ int ossl_zuc_128_eea3_dinit(void *vctx, const unsigned char *key, size_t keylen,
                         const OSSL_PARAM params[])
 {
     int ret;
+    PROV_CIPHER_CTX *ctx;
+    PROV_CIPHER_HW_ZUC_EEA3 *hw;
 
     /* The generic function checks for ossl_prov_is_running() */
     ret = ossl_cipher_generic_dinit(vctx, key, keylen, iv, ivlen, NULL);
     if (ret && iv != NULL) {
-        PROV_CIPHER_CTX *ctx = (PROV_CIPHER_CTX *)vctx;
-        PROV_CIPHER_HW_ZUC_EEA3 *hw = (PROV_CIPHER_HW_ZUC_EEA3 *)ctx->hw;
-
+        ctx = (PROV_CIPHER_CTX *)vctx;
+        hw = (PROV_CIPHER_HW_ZUC_EEA3 *)ctx->hw;
         hw->initiv(ctx);
     }
     if (ret && !zuc_128_eea3_set_ctx_params(vctx, params))

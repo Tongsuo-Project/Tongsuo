@@ -290,4 +290,5 @@ int ZUC_generate_keystream(ZUC_KEY *zk)
 void ZUC_destroy_keystream(ZUC_KEY *zk)
 {
     OPENSSL_free(zk->keystream);
+    zk->keystream = NULL;
 }

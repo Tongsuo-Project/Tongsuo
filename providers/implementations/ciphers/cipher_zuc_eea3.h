@@ -21,7 +21,7 @@ typedef struct {
 typedef struct prov_cipher_hw_zuc_eea3_st {
     PROV_CIPHER_HW base; /* must be first */
     int (*initiv)(PROV_CIPHER_CTX *ctx);
-
+    void (*cleanup)(PROV_ZUC_EEA3_CTX *ctx);
 } PROV_CIPHER_HW_ZUC_EEA3;
 
 const PROV_CIPHER_HW *ossl_prov_cipher_hw_zuc_128_eea3(size_t keybits);

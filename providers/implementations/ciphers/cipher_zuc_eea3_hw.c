@@ -11,10 +11,10 @@
 
 #include "cipher_zuc_eea3.h"
 
-static int zuc_128_eea3_initkey(PROV_CIPHER_CTX *bctx, const uint8_t *key,
+static int zuc_128_eea3_initkey(PROV_CIPHER_CTX *vctx, const uint8_t *key,
                                 size_t keylen)
 {
-    PROV_ZUC_EEA3_CTX *ctx = (PROV_ZUC_EEA3_CTX *)bctx;
+    PROV_ZUC_EEA3_CTX *ctx = (PROV_ZUC_EEA3_CTX *)vctx;
     ZUC_KEY *zk = &ctx->ks.ks;
 
     zk->k = key;
@@ -22,14 +22,14 @@ static int zuc_128_eea3_initkey(PROV_CIPHER_CTX *bctx, const uint8_t *key,
     return 1;
 }
 
-static int zuc_128_eea3_initiv(PROV_CIPHER_CTX *bctx)
+static int zuc_128_eea3_initiv(PROV_CIPHER_CTX *vctx)
 {
-    PROV_ZUC_EEA3_CTX *ctx = (PROV_ZUC_EEA3_CTX *)bctx;
+    PROV_ZUC_EEA3_CTX *ctx = (PROV_ZUC_EEA3_CTX *)vctx;
     ZUC_KEY *zk = &ctx->ks.ks;
     uint32_t count;
     uint32_t bearer;
     uint32_t direction;
-    unsigned char *iv = &bctx->oiv[0];
+    unsigned char *iv = &vctx->oiv[0];
 
     /*
      * This is a lazy approach: we 'borrow' the 'iv' parameter
@@ -42,7 +42,7 @@ static int zuc_128_eea3_initiv(PROV_CIPHER_CTX *bctx)
      */
 
     /* IV is a 'must' */
-    if (!bctx->iv_set)
+    if (!vctx->iv_set)
         return 0;
 
     count = ((long)iv[0] << 24) | (iv[1] << 16) | (iv[2] << 8) | iv[3];
@@ -71,12 +71,12 @@ static int zuc_128_eea3_initiv(PROV_CIPHER_CTX *bctx)
     return 1;
 }
 
-static int zuc_128_eea3_cipher(PROV_CIPHER_CTX *bctx, unsigned char *out,
+static int zuc_128_eea3_cipher(PROV_CIPHER_CTX *vctx, unsigned char *out,
                                const unsigned char *in, size_t inl)
 {
-    PROV_ZUC_EEA3_CTX *ctx = (PROV_ZUC_EEA3_CTX *)bctx;
+    PROV_ZUC_EEA3_CTX *ctx = (PROV_ZUC_EEA3_CTX *)vctx;
     ZUC_KEY *zk = &ctx->ks.ks;
-    unsigned int i, remain, num = bctx->num;
+    unsigned int i, remain, num = vctx->num;
 
     remain = zk->keystream_len - num;
     if (remain < inl) {
@@ -98,14 +98,20 @@ static int zuc_128_eea3_cipher(PROV_CIPHER_CTX *bctx, unsigned char *out,
         out[i] = in[i] ^ zk->keystream[num];
 
     /* num always points to next key byte to use */
-    bctx->num = num;
+    vctx->num = num;
 
     return 1;
 }
 
+static void zuc_128_eea3_cleanup(PROV_ZUC_EEA3_CTX *ctx)
+{
+    ZUC_destroy_keystream(&ctx->ks.ks);
+}
+
 static const PROV_CIPHER_HW_ZUC_EEA3 zuc_128_eea3_hw = {
     { zuc_128_eea3_initkey, zuc_128_eea3_cipher },
-    zuc_128_eea3_initiv
+    zuc_128_eea3_initiv,
+    zuc_128_eea3_cleanup
 };
 
 const PROV_CIPHER_HW *ossl_prov_cipher_hw_zuc_128_eea3(size_t keybits)
