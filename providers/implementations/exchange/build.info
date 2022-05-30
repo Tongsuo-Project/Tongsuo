@@ -5,6 +5,7 @@ $DH_GOAL=../../libdefault.a ../../libfips.a
 $ECDH_GOAL=../../libdefault.a ../../libfips.a
 $ECX_GOAL=../../libdefault.a ../../libfips.a
 $KDF_GOAL=../../libdefault.a ../../libfips.a
+$SM2DH_GOAL=../../libdefault.a
 
 IF[{- !$disabled{dh} -}]
   SOURCE[$DH_GOAL]=dh_exch.c
@@ -24,6 +25,10 @@ IF[{- !$disabled{ec} -}]
   SOURCE[$ECX_GOAL]=ecx_exch.c
   DEFINE[$ECX_GOAL]=$ECDEF
   SOURCE[$ECDH_GOAL]=ecdh_exch.c
+ENDIF
+
+IF[{- !$disabled{sm2} -}]
+  SOURCE[$SM2DH_GOAL]=sm2dh_exch.c
 ENDIF
 
 SOURCE[$KDF_GOAL]=kdf_exch.c

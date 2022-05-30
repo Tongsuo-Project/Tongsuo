@@ -2,7 +2,9 @@
 
 =head1 NAME
 
-SSL_get_rbio, SSL_get_wbio - get BIO linked to an SSL object
+SSL_get_rbio, SSL_get_wbio,
+SSL_get0_wbio, BABASSL_get0_wbio
+- get BIO linked to an SSL object
 
 =head1 SYNOPSIS
 
@@ -11,11 +13,17 @@ SSL_get_rbio, SSL_get_wbio - get BIO linked to an SSL object
  BIO *SSL_get_rbio(SSL *ssl);
  BIO *SSL_get_wbio(SSL *ssl);
 
+ #define SSL_get0_wbio BABASSL_get0_wbio
+ BIO *BABASSL_get0_wbio(const SSL *s);
+
 =head1 DESCRIPTION
 
 SSL_get_rbio() and SSL_get_wbio() return pointers to the BIOs for the
 read or the write channel, which can be different. The reference count
 of the BIO is not incremented.
+
+SSL_get0_wbio() is a macro that calls BABASSL_get0_wbio(), returns the pointer
+to the wbio. The reference count of the BIO is not incremented.
 
 =head1 RETURN VALUES
 

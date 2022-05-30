@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2015-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -17,6 +17,9 @@
 #include "../ssl_local.h"
 #include "statem_local.h"
 #include <assert.h>
+#ifndef OPENSSL_NO_NTLS
+# include "../statem_ntls/ntls_statem.h"
+#endif
 
 /*
  * This file implements the SSL/TLS/DTLS state machines.
@@ -262,11 +265,37 @@ void ossl_statem_set_hello_verify_done(SSL *s)
 
 int ossl_statem_connect(SSL *s)
 {
+#ifndef OPENSSL_NO_NTLS
+    int ret;
+
+    if (s->enable_ntls == 1) {
+        ret = SSL_connection_is_ntls(s, 0);
+        if (ret == 0)
+            return state_machine(s, 0);
+        else if (ret == 1)
+            return state_machine_ntls(s, 0);
+        else
+            return -1;
+    } else
+#endif
     return state_machine(s, 0);
 }
 
 int ossl_statem_accept(SSL *s)
 {
+#ifndef OPENSSL_NO_NTLS
+    int ret;
+
+    if (s->enable_ntls == 1) {
+        ret = SSL_connection_is_ntls(s, 1);
+        if (ret == 0)
+            return state_machine(s, 1);
+        else if (ret == 1)
+            return state_machine_ntls(s, 1);
+        else
+            return ret;
+    } else
+#endif
     return state_machine(s, 1);
 }
 

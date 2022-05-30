@@ -5,7 +5,8 @@
 SSL_get_client_random,
 SSL_get_server_random,
 SSL_SESSION_get_master_key,
-SSL_SESSION_set1_master_key
+SSL_SESSION_set1_master_key,
+SSL_get_master_key, BABASSL_get_master_key
 - get internal TLS/SSL random values and get/set master key
 
 =head1 SYNOPSIS
@@ -18,6 +19,10 @@ SSL_SESSION_set1_master_key
                                    unsigned char *out, size_t outlen);
  int SSL_SESSION_set1_master_key(SSL_SESSION *sess, const unsigned char *in,
                                  size_t len);
+
+ #define SSL_get_master_key BABASSL_get_master_key
+ int BABASSL_get_master_key(SSL *s, unsigned char **master_key,
+                            int *master_key_len);
 
 =head1 DESCRIPTION
 
@@ -35,6 +40,10 @@ sent from the server to the client during the initial SSL/TLS handshake.
 SSL_SESSION_get_master_key() behaves the same, but extracts the master
 secret used to guarantee the security of the SSL/TLS session.  This one
 can be dangerous if misused; see NOTES below.
+
+SSL_get_master_key() is a macro that calls BABASSL_get_master_key(), extracts
+the master secret to B<master_key> and bytes of master secret to
+B<master_key_len>. Both B<master_key> and B<master_key_len> can be NULL.
 
 SSL_SESSION_set1_master_key() sets the master key value associated with the
 SSL_SESSION B<sess>. For example, this could be used to set up a session based
@@ -78,6 +87,8 @@ values based on their view of the current time.
 =head1 RETURN VALUES
 
 SSL_SESSION_set1_master_key() returns 1 on success or 0 on failure.
+
+SSL_get_master_key() returns 1 on success or 0 on failure.
 
 For the other functions, if B<outlen> is greater than 0 then these functions
 return the number of bytes actually copied, which will be less than or equal to

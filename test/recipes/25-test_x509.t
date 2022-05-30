@@ -1,5 +1,5 @@
 #! /usr/bin/env perl
-# Copyright 2015-2021 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2015-2022 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -16,7 +16,7 @@ use OpenSSL::Test qw/:DEFAULT srctop_file/;
 
 setup("test_x509");
 
-plan tests => 20;
+plan tests => 21;
 
 # Prevent MSys2 filename munging for arguments that look like file paths but
 # aren't
@@ -159,3 +159,29 @@ SKIP: {
     ok(test_errors("Unable to load Public Key", "sm2.pem", '-text'),
        "error loading unsupported sm2 cert");
 }
+
+subtest 'x509 -- sign sm2 cert' => sub {
+    plan tests => 2;
+
+    SKIP: {
+        skip "SM2 is not supported by this OpenSSL build", 2
+            if disabled("sm2");
+
+        # test x509 sign sm2 cert, should include X509v3 extensions
+        my $csr = srctop_file(@certs, "sm2-csr.pem");
+        my $key = srctop_file(@certs, "sm2-root.key");
+        my $cert = "sm2-root.tmp";
+        ok(run(app([ "openssl", "x509", "-req", "-in", $csr, "-extfile",
+            srctop_file("apps", "openssl.cnf"), "-extensions", "v3_ca", "-sm3",
+            "-vfyopt", "distid:1234567812345678",
+            "-signkey", $key, "-out", $cert ])));
+
+        my @output = run(app([ "openssl", "x509", "-in", $cert, "-text",
+            "-noout" ], stderr => undef), capture => 1);
+
+        unlink $cert;
+
+        my $count = grep /X509v3 Basic Constraints:/, @output;
+        ok($count == 1);
+    }
+};

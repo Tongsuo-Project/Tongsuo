@@ -1569,6 +1569,8 @@ sm-scheme 104 4         : SM4-CFB             : sm4-cfb
 sm-scheme 104 5         : SM4-CFB1            : sm4-cfb1
 sm-scheme 104 6         : SM4-CFB8            : sm4-cfb8
 sm-scheme 104 7         : SM4-CTR             : sm4-ctr
+sm-scheme 104 8         : SM4-GCM             : sm4-gcm
+sm-scheme 104 9         : SM4-CCM             : sm4-ccm
 
 # There is no OID that just denotes "HMAC" oddly enough...
 
@@ -1686,6 +1688,8 @@ id-pkinit 5                     : pkInitKDC             : Signing KDC Response
                             : KxGOST       : kx-gost
                             : KxGOST18     : kx-gost18
                             : KxANY        : kx-any
+                            : KxSM2        : kx-sm2
+                            : KxSM2DHE     : kx-sm2dhe
 
 # NIDs for cipher authentication
                             : AuthRSA      : auth-rsa
@@ -1697,6 +1701,7 @@ id-pkinit 5                     : pkInitKDC             : Signing KDC Response
                             : AuthSRP      : auth-srp
                             : AuthNULL     : auth-null
                             : AuthANY      : auth-any
+                            : AuthSM2      : auth-sm2
 # NID for Poly1305
                             : Poly1305     : poly1305
 # NID for SipHash

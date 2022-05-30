@@ -38,6 +38,14 @@ IF[{- !$disabled{'deprecated-3.0'} -}]
   SOURCE[../libssl]=ssl_rsa_legacy.c
 ENDIF
 
+IF[{- !$disabled{ntls} -}]
+  SOURCE[../libssl]=statem_ntls/ntls_extensions.c \
+        statem_ntls/ntls_extensions_clnt.c \
+        statem_ntls/ntls_extensions_cust.c statem_ntls/ntls_extensions_srvr.c \
+        statem_ntls/ntls_statem.c statem_ntls/ntls_statem_clnt.c \
+        statem_ntls/ntls_statem_lib.c statem_ntls/ntls_statem_srvr.c
+ENDIF
+
 DEFINE[../libssl]=$AESDEF
 
 SOURCE[../providers/libcommon.a]=record/tls_pad.c

@@ -12,7 +12,16 @@ SSL_CTX_use_RSAPrivateKey_ASN1, SSL_CTX_use_RSAPrivateKey_file,
 SSL_use_PrivateKey_file, SSL_use_PrivateKey_ASN1, SSL_use_PrivateKey,
 SSL_use_RSAPrivateKey, SSL_use_RSAPrivateKey_ASN1,
 SSL_use_RSAPrivateKey_file, SSL_CTX_check_private_key, SSL_check_private_key,
-SSL_CTX_use_cert_and_key, SSL_use_cert_and_key
+SSL_CTX_use_cert_and_key, SSL_use_cert_and_key,
+SSL_use_sign_certificate, SSL_use_sign_certificate_file,
+SSL_use_sign_PrivateKey, SSL_use_sign_PrivateKey_file,
+SSL_use_enc_certificate, SSL_use_enc_certificate_file,
+SSL_use_enc_PrivateKey, SSL_use_enc_PrivateKey_file,
+SSL_CTX_use_sign_certificate, SSL_CTX_use_sign_certificate_file,
+SSL_CTX_use_sign_PrivateKey, SSL_CTX_use_sign_PrivateKey_file,
+SSL_CTX_use_enc_certificate, SSL_CTX_use_enc_certificate_file,
+SSL_CTX_use_enc_PrivateKey, SSL_CTX_use_enc_PrivateKey_file,
+SSL_CTX_certs_clear, BABASSL_CTX_certs_clear
 - load certificate and key data
 
 =head1 SYNOPSIS
@@ -49,6 +58,29 @@ SSL_CTX_use_cert_and_key, SSL_use_cert_and_key
  int SSL_CTX_use_cert_and_key(SSL_CTX *ctx, X509 *x, EVP_PKEY *pkey, STACK_OF(X509) *chain, int override);
  int SSL_use_cert_and_key(SSL *ssl, X509 *x, EVP_PKEY *pkey, STACK_OF(X509) *chain, int override);
 
+ #ifndef OPENSSL_NO_NTLS
+ int SSL_use_sign_certificate(SSL *ssl, X509 *x);
+ int SSL_use_sign_certificate_file(SSL *ssl, const char *file, int type);
+ int SSL_use_enc_certificate(SSL *ssl, X509 *x);
+ int SSL_use_enc_certificate_file(SSL *ssl, const char *file, int type);
+ int SSL_use_sign_PrivateKey(SSL *ssl, EVP_PKEY *pkey);
+ int SSL_use_sign_PrivateKey_file(SSL *ssl, const char *file, int type);
+ int SSL_use_enc_PrivateKey(SSL *ssl, EVP_PKEY *pkey);
+ int SSL_use_enc_PrivateKey_file(SSL *ssl, const char *file, int type);
+
+ int SSL_CTX_use_sign_certificate(SSL_CTX *ctx, X509 *x);
+ int SSL_CTX_use_sign_certificate_file(SSL_CTX *ctx, const char *file, int type);
+ int SSL_CTX_use_enc_certificate(SSL_CTX *ctx, X509 *x);
+ int SSL_CTX_use_enc_certificate_file(SSL_CTX *ctx, const char *file, int type);
+ int SSL_CTX_use_sign_PrivateKey(SSL_CTX *ctx, EVP_PKEY *pkey);
+ int SSL_CTX_use_sign_PrivateKey_file(SSL_CTX *ctx, const char *file, int type);
+ int SSL_CTX_use_enc_PrivateKey(SSL_CTX *ctx, EVP_PKEY *pkey);
+ int SSL_CTX_use_enc_PrivateKey_file(SSL_CTX *ctx, const char *file, int type);
+ #endif
+
+ #define SSL_CTX_certs_clear BABASSL_CTX_certs_clear
+ void BABASSL_CTX_certs_clear(SSL_CTX *ctx);
+
 =head1 DESCRIPTION
 
 These functions load the certificates and private keys into the SSL_CTX
@@ -70,6 +102,11 @@ specified using the
 L<SSL_CTX_add_extra_chain_cert(3)>
 function.
 
+SSL_CTX_use_sign_certificate() loads the signature certificate B<x> into
+B<ctx>, SSL_use_sign_certificate() loads B<x> into B<ssl>.
+SSL_CTX_use_enc_certificate() loads the encryption certificate B<x> into
+B<ctx>, SSL_use_enc_certificate() loads B<x> into B<ssl>.
+
 SSL_CTX_use_certificate_ASN1() loads the ASN1 encoded certificate from
 the memory location B<d> (with length B<len>) into B<ctx>,
 SSL_use_certificate_ASN1() loads the ASN1 encoded certificate into B<ssl>.
@@ -80,6 +117,18 @@ from the known types SSL_FILETYPE_PEM, SSL_FILETYPE_ASN1.
 SSL_use_certificate_file() loads the certificate from B<file> into B<ssl>.
 See the NOTES section on why SSL_CTX_use_certificate_chain_file()
 should be preferred.
+
+SSL_CTX_use_sign_certificate_file() loads the first certificate stored in
+B<file> into B<ctx>. The formatting B<type> of the signature certificate must
+be specified from the known types SSL_FILETYPE_PEM, SSL_FILETYPE_ASN1.
+SSL_use_sign_certificate_file() loads the signature certificate from B<file>
+into B<ssl>.
+
+SSL_CTX_use_enc_certificate_file() loads the first certificate stored in
+B<file> into B<ctx>. The formatting B<type> of the encryption certificate must
+be specified from the known types SSL_FILETYPE_PEM, SSL_FILETYPE_ASN1.
+SSL_use_enc_certificate_file() loads the encryption certificate from B<file>
+into B<ssl>.
 
 SSL_CTX_use_certificate_chain_file() loads a certificate chain from
 B<file> into B<ctx>. The certificates must be in PEM format and must
@@ -97,6 +146,11 @@ to the certificate an error is returned. To change a certificate, private
 key pair the new certificate needs to be set with SSL_use_certificate()
 or SSL_CTX_use_certificate() before setting the private key with
 SSL_CTX_use_PrivateKey() or SSL_use_PrivateKey().
+
+SSL_CTX_use_sign_PrivateKey() adds B<pkey> as signature private key to B<ctx>.
+SSL_use_sign_PrivateKey() adds B<pkey> as signature private key to B<ssl>.
+SSL_CTX_use_enc_PrivateKey() adds B<pkey> as encryption private key to B<ctx>.
+SSL_use_enc_PrivateKey() adds B<pkey> as encryption private key to B<ssl>.
 
 SSL_CTX_use_cert_and_key() and SSL_use_cert_and_key() assign the X.509
 certificate B<x>, private key B<key>, and certificate B<chain> onto the
@@ -127,6 +181,14 @@ B<file> to B<ctx>. SSL_use_PrivateKey_file() adds the first private key found
 in B<file> to B<ssl>; SSL_use_RSAPrivateKey_file() adds the first private
 RSA key found to B<ssl>.
 
+SSL_CTX_use_sign_PrivateKey_file() adds the first private key found in
+B<file> to B<ctx>. The formatting B<type> of the signature private key must be
+specified from the known types SSL_FILETYPE_PEM, SSL_FILETYPE_ASN1.
+
+SSL_CTX_use_enc_PrivateKey_file() adds the first private key found in
+B<file> to B<ctx>. The formatting B<type> of the encryption private key must be
+specified from the known types SSL_FILETYPE_PEM, SSL_FILETYPE_ASN1.
+
 SSL_CTX_check_private_key() checks the consistency of a private key with
 the corresponding certificate loaded into B<ctx>. If more than one
 key/certificate pair (RSA/DSA) is installed, the last item installed will
@@ -134,6 +196,9 @@ be checked. If e.g. the last item was a RSA certificate or key, the RSA
 key/certificate pair will be checked. SSL_check_private_key() performs
 the same check for B<ssl>. If no key/certificate was explicitly added for
 this B<ssl>, the last item added into B<ctx> will be checked.
+
+SSL_CTX_certs_clear() is a macro that calls BABASSL_CTX_certs_clear(), clears
+all the certificates in SSL_CTX B<ctx>.
 
 =head1 NOTES
 
@@ -179,7 +244,9 @@ private key to confirm that the certificate and key match.
 
 =head1 RETURN VALUES
 
-On success, the functions return 1.
+SSL_CTX_certs_clear() returns no value.
+
+All other functions return 1 on success, 0 on error.
 Otherwise check out the error stack to find out the reason.
 
 =head1 SEE ALSO

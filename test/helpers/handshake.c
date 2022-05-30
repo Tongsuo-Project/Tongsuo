@@ -1236,7 +1236,7 @@ static char *dup_str(const unsigned char *in, size_t len)
 
 static int pkey_type(EVP_PKEY *pkey)
 {
-    if (EVP_PKEY_is_a(pkey, "EC")) {
+    if (EVP_PKEY_is_a(pkey, "EC") || EVP_PKEY_is_a(pkey, "SM2")) {
         char name[80];
         size_t name_len;
 

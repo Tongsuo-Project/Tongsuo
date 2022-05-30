@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2022 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved
  * Copyright 2005 Nokia. All rights reserved.
  *
@@ -55,6 +55,11 @@ static const ssl_cipher_table ssl_cipher_table_cipher[SSL_ENC_NUM_IDX] = {
     {SSL_ARIA256GCM, NID_aria_256_gcm}, /* SSL_ENC_ARIA256GCM_IDX 21 */
     {SSL_MAGMA, NID_magma_ctr_acpkm}, /* SSL_ENC_MAGMA_IDX */
     {SSL_KUZNYECHIK, NID_kuznyechik_ctr_acpkm}, /* SSL_ENC_KUZNYECHIK_IDX */
+    {SSL_SM4GCM, NID_sm4_gcm}, /* SSL_ENC_SM4_GCM_IDX */
+    {SSL_SM4CCM, NID_sm4_ccm}, /* SSL_ENC_SM4_CCM_IDX */
+#ifndef OPENSSL_NO_SM4
+    {SSL_SM4, NID_sm4_cbc}     /* SSL_ENC_SM4_IDX */
+#endif
 };
 
 #define SSL_COMP_NULL_IDX       0
@@ -82,7 +87,8 @@ static const ssl_cipher_table ssl_cipher_table_mac[SSL_MD_NUM_IDX] = {
     {0, NID_sha224},            /* SSL_MD_SHA224_IDX 10 */
     {0, NID_sha512},            /* SSL_MD_SHA512_IDX 11 */
     {SSL_MAGMAOMAC, NID_magma_mac}, /* sSL_MD_MAGMAOMAC_IDX */
-    {SSL_KUZNYECHIKOMAC, NID_kuznyechik_mac} /* SSL_MD_KUZNYECHIKOMAC_IDX */
+    {SSL_KUZNYECHIKOMAC, NID_kuznyechik_mac}, /* SSL_MD_KUZNYECHIKOMAC_IDX */
+    {SSL_SM3, NID_sm3}          /* SSL_MD_SM3 */
 };
 
 /* *INDENT-OFF* */
@@ -97,6 +103,8 @@ static const ssl_cipher_table ssl_cipher_table_kx[] = {
     {SSL_kSRP,      NID_kx_srp},
     {SSL_kGOST,     NID_kx_gost},
     {SSL_kGOST18,   NID_kx_gost18},
+    {SSL_kSM2,      NID_kx_sm2},
+    {SSL_kSM2DHE,   NID_kx_sm2dhe},
     {SSL_kANY,      NID_kx_any}
 };
 
@@ -108,6 +116,7 @@ static const ssl_cipher_table ssl_cipher_table_auth[] = {
     {SSL_aGOST01, NID_auth_gost01},
     {SSL_aGOST12, NID_auth_gost12},
     {SSL_aSRP,    NID_auth_srp},
+    {SSL_aSM2,    NID_auth_sm2},
     {SSL_aNULL,   NID_auth_null},
     {SSL_aANY,    NID_auth_any}
 };
@@ -141,7 +150,9 @@ static const int default_mac_pkey_id[SSL_MD_NUM_IDX] = {
     /* GOST2012_512 */
     EVP_PKEY_HMAC,
     /* MD5/SHA1, SHA224, SHA512, MAGMAOMAC, KUZNYECHIKOMAC */
-    NID_undef, NID_undef, NID_undef, NID_undef, NID_undef
+    NID_undef, NID_undef, NID_undef, NID_undef, NID_undef,
+	/* SM3 */
+	EVP_PKEY_HMAC
 };
 
 #define CIPHER_ADD      1
@@ -196,6 +207,16 @@ static const SSL_CIPHER cipher_aliases[] = {
     {0, SSL_TXT_kSRP, NULL, 0, SSL_kSRP},
     {0, SSL_TXT_kGOST, NULL, 0, SSL_kGOST},
     {0, SSL_TXT_kGOST18, NULL, 0, SSL_kGOST18},
+#ifndef OPENSSL_NO_NTLS
+    {0, SSL_TXT_kSM2, NULL, 0, SSL_kSM2},
+    {0, SSL_TXT_kSM2DHE, NULL, 0, SSL_kSM2DHE},
+    {0, NTLS_TXT_SM2DHE_WITH_SM4_SM3, NULL, 0, SSL_kSM2DHE, SSL_aSM2, SSL_SM4,
+     SSL_SM3, NTLS_VERSION, NTLS_VERSION, 0, 0, SSL_HIGH,
+     SSL_HANDSHAKE_MAC_SM3 | TLS1_PRF_SM3, 128, 128},
+    {0, NTLS_TXT_SM2_WITH_SM4_SM3, NULL, 0, SSL_kSM2, SSL_aSM2, SSL_SM4,
+     SSL_SM3, NTLS_VERSION, NTLS_VERSION, 0, 0, SSL_HIGH,
+     SSL_HANDSHAKE_MAC_SM3 | TLS1_PRF_SM3, 128, 128},
+#endif
 
     /* server authentication aliases */
     {0, SSL_TXT_aRSA, NULL, 0, 0, SSL_aRSA},
@@ -209,6 +230,7 @@ static const SSL_CIPHER cipher_aliases[] = {
     {0, SSL_TXT_aGOST12, NULL, 0, 0, SSL_aGOST12},
     {0, SSL_TXT_aGOST, NULL, 0, 0, SSL_aGOST01 | SSL_aGOST12},
     {0, SSL_TXT_aSRP, NULL, 0, 0, SSL_aSRP},
+    {0, SSL_TXT_aSM2, NULL, 0, 0, SSL_aSM2},
 
     /* aliases combining key exchange and server authentication */
     {0, SSL_TXT_EDH, NULL, 0, SSL_kDHE, ~SSL_aNULL},
@@ -251,7 +273,7 @@ static const SSL_CIPHER cipher_aliases[] = {
     {0, SSL_TXT_ARIA128, NULL, 0, 0, 0, SSL_ARIA128GCM},
     {0, SSL_TXT_ARIA256, NULL, 0, 0, 0, SSL_ARIA256GCM},
     {0, SSL_TXT_CBC, NULL, 0, 0, 0, SSL_CBC},
-
+    {0, SSL_TXT_SM4, NULL, 0, 0, 0, SSL_SM4},
     /* MAC aliases */
     {0, SSL_TXT_MD5, NULL, 0, 0, 0, 0, SSL_MD5},
     {0, SSL_TXT_SHA1, NULL, 0, 0, 0, 0, SSL_SHA1},
@@ -261,12 +283,16 @@ static const SSL_CIPHER cipher_aliases[] = {
     {0, SSL_TXT_SHA256, NULL, 0, 0, 0, 0, SSL_SHA256},
     {0, SSL_TXT_SHA384, NULL, 0, 0, 0, 0, SSL_SHA384},
     {0, SSL_TXT_GOST12, NULL, 0, 0, 0, 0, SSL_GOST12_256},
+    {0, SSL_TXT_SM3, NULL, 0, 0, 0, 0, SSL_SM3},
 
     /* protocol version aliases */
     {0, SSL_TXT_SSLV3, NULL, 0, 0, 0, 0, 0, SSL3_VERSION},
     {0, SSL_TXT_TLSV1, NULL, 0, 0, 0, 0, 0, TLS1_VERSION},
     {0, "TLSv1.0", NULL, 0, 0, 0, 0, 0, TLS1_VERSION},
     {0, SSL_TXT_TLSV1_2, NULL, 0, 0, 0, 0, 0, TLS1_2_VERSION},
+#ifndef OPENSSL_NO_NTLS
+    {0, SSL_TXT_NTLSV1_1, NULL, 0, 0, 0, 0, 0, NTLS1_1_VERSION},
+#endif
 
     /* strength classes */
     {0, SSL_TXT_LOW, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, SSL_LOW},
@@ -379,6 +405,16 @@ int ssl_load_ciphers(SSL_CTX *ctx)
     sig = EVP_SIGNATURE_fetch(ctx->libctx, "ECDSA", ctx->propq);
     if (sig == NULL)
         ctx->disabled_auth_mask |= SSL_aECDSA;
+    else
+        EVP_SIGNATURE_free(sig);
+    kex = EVP_KEYEXCH_fetch(ctx->libctx, "SM2DH", ctx->propq);
+    if (kex == NULL)
+        ctx->disabled_mkey_mask |= SSL_kSM2DHE;
+    else
+        EVP_KEYEXCH_free(kex);
+    sig = EVP_SIGNATURE_fetch(ctx->libctx, "SM2", ctx->propq);
+    if (sig == NULL)
+        ctx->disabled_auth_mask |= SSL_aSM2;
     else
         EVP_SIGNATURE_free(sig);
     ERR_pop_to_mark();
@@ -1740,6 +1776,12 @@ char *SSL_CIPHER_description(const SSL_CIPHER *cipher, char *buf, int len)
     case SSL_kGOST18:
         kx = "GOST18";
         break;
+    case SSL_kSM2:
+        kx = "SM2";
+        break;
+    case SSL_kSM2DHE:
+        kx = "SM2DHE";
+        break;
     case SSL_kANY:
         kx = "any";
         break;
@@ -1772,6 +1814,9 @@ char *SSL_CIPHER_description(const SSL_CIPHER *cipher, char *buf, int len)
     /* New GOST ciphersuites have both SSL_aGOST12 and SSL_aGOST01 bits */
     case (SSL_aGOST12 | SSL_aGOST01):
         au = "GOST12";
+        break;
+    case SSL_aSM2:
+        au = "SM2";
         break;
     case SSL_aANY:
         au = "any";
@@ -1852,6 +1897,15 @@ char *SSL_CIPHER_description(const SSL_CIPHER *cipher, char *buf, int len)
     case SSL_CHACHA20POLY1305:
         enc = "CHACHA20/POLY1305(256)";
         break;
+    case SSL_SM4CCM:
+        enc = "SM4-CCM(128)";
+        break;
+    case SSL_SM4GCM:
+        enc = "SM4-GCM(128)";
+        break;
+    case SSL_SM4:
+        enc = "SM4(128)";
+        break;
     default:
         enc = "unknown";
         break;
@@ -1883,6 +1937,9 @@ char *SSL_CIPHER_description(const SSL_CIPHER *cipher, char *buf, int len)
     case SSL_GOST12_256:
     case SSL_GOST12_512:
         mac = "GOST2012";
+        break;
+    case SSL_SM3:
+        mac = "SM3";
         break;
     default:
         mac = "unknown";
@@ -2236,4 +2293,24 @@ const char *OSSL_default_ciphersuites(void)
     return "TLS_AES_256_GCM_SHA384:"
            "TLS_CHACHA20_POLY1305_SHA256:"
            "TLS_AES_128_GCM_SHA256";
+}
+
+unsigned long BABASSL_CIPHER_get_mkey(const SSL_CIPHER *c)
+{
+    return c->algorithm_mkey;
+}
+
+unsigned long BABASSL_CIPHER_get_auth(const SSL_CIPHER *c)
+{
+    return c->algorithm_auth;
+}
+
+unsigned long BABASSL_CIPHER_get_enc(const SSL_CIPHER *c)
+{
+    return c->algorithm_enc;
+}
+
+unsigned long BABASSL_CIPHER_get_mac(const SSL_CIPHER *c)
+{
+    return c->algorithm_mac;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -27,6 +27,12 @@ int set_cert_stuff(SSL_CTX *ctx, char *cert_file, char *key_file);
 int set_cert_key_stuff(SSL_CTX *ctx, X509 *cert, EVP_PKEY *key,
                        STACK_OF(X509) *chain, int build_chain);
 int ssl_print_sigalgs(BIO *out, SSL *s);
+#ifndef OPENSSL_NO_NTLS
+int set_enc_cert_key_stuff(SSL_CTX *ctx, X509 *cert, EVP_PKEY *key,
+                           STACK_OF(X509) *chain, int build_chain);
+int set_sign_cert_key_stuff(SSL_CTX *ctx, X509 *cert, EVP_PKEY *key,
+                            STACK_OF(X509) *chain, int build_chain);
+#endif
 int ssl_print_point_formats(BIO *out, SSL *s);
 int ssl_print_groups(BIO *out, SSL *s, int noshared);
 int ssl_print_tmp_key(BIO *out, SSL *s);

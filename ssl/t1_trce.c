@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2012-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -67,7 +67,10 @@ static const ssl_trace_tbl ssl_version_tbl[] = {
     {TLS1_3_VERSION, "TLS 1.3"},
     {DTLS1_VERSION, "DTLS 1.0"},
     {DTLS1_2_VERSION, "DTLS 1.2"},
-    {DTLS1_BAD_VER, "DTLS 1.0 (bad)"}
+    {DTLS1_BAD_VER, "DTLS 1.0 (bad)"},
+#ifndef OPENSSL_NO_NTLS
+    {NTLS_VERSION, "NTLS"},
+#endif
 };
 
 static const ssl_trace_tbl ssl_content_tbl[] = {
@@ -447,6 +450,16 @@ static const ssl_trace_tbl ssl_ciphers_tbl[] = {
     {0xC100, "GOST2012-KUZNYECHIK-KUZNYECHIKOMAC"},
     {0xC101, "GOST2012-MAGMA-MAGMAOMAC"},
     {0xC102, "GOST2012-GOST8912-IANA"},
+#ifndef OPENSSL_NO_NTLS
+    {0xE011, "ECDHE_SM4_CBC_SM3"},
+    {0xE051, "ECDHE_SM4_GCM_SM3"},
+    {0xE013, "ECC_SM4_CBC_SM3"},
+    {0xE053, "ECC_SM4_GCM_SM3"},
+    {0xE019, "RSA_SM4_CBC_SM3"},
+    {0xE059, "RSA_SM4_GCM_SM3"},
+    {0xE01C, "RSA_SM4_CBC_SHA256"},
+    {0xE05A, "RSA_SM4_GCM_SHA256"},
+#endif
 };
 
 /* Compression methods */
@@ -538,7 +551,8 @@ static const ssl_trace_tbl ssl_groups_tbl[] = {
     {259, "ffdhe6144"},
     {260, "ffdhe8192"},
     {0xFF01, "arbitrary_explicit_prime_curves"},
-    {0xFF02, "arbitrary_explicit_char2_curves"}
+    {0xFF02, "arbitrary_explicit_char2_curves"},
+    {41, "curveSM2"},
 };
 
 static const ssl_trace_tbl ssl_point_tbl[] = {
@@ -584,6 +598,7 @@ static const ssl_trace_tbl ssl_sigalg_tbl[] = {
     {TLSEXT_SIGALG_gostr34102012_256_gostr34112012_256, "gost2012_256"},
     {TLSEXT_SIGALG_gostr34102012_512_gostr34112012_512, "gost2012_512"},
     {TLSEXT_SIGALG_gostr34102001_gostr3411, "gost2001_gost94"},
+    {TLSEXT_SIGALG_sm2sig_sm3, "sm2sig_sm3"},
 };
 
 static const ssl_trace_tbl ssl_ctype_tbl[] = {
@@ -1092,6 +1107,14 @@ static int ssl_get_keyex(const char **pname, const SSL *ssl)
         *pname = "GOST18";
         return SSL_kGOST18;
     }
+    if (alg_k & SSL_kSM2) {
+        *pname = "SM2";
+        return SSL_kSM2;
+    }
+    if (alg_k & SSL_kSM2DHE) {
+        *pname = "SM2DHE";
+        return SSL_kSM2DHE;
+    }
     *pname = "UNKNOWN";
     return 0;
 }
@@ -1143,6 +1166,19 @@ static int ssl_print_client_keyex(BIO *bio, int indent, const SSL *ssl,
                       "GOST-wrapped PreMasterSecret", msg, msglen);
         msglen = 0;
         break;
+    case SSL_kSM2:
+        if (!ssl_print_hexbuf(bio, indent + 2,
+                              "EncryptedPreMasterSecret", 2, &msg, &msglen))
+            return 0;
+        break;
+    case SSL_kSM2DHE:
+        ssl_print_hex(bio, indent + 2, "ECParameters", msg, 3);
+        msg += 3;
+        msglen -= 3;
+        if (!ssl_print_hexbuf(bio, indent + 2,
+                              "sm2dh_Yc", 1, &msg, &msglen))
+            return 0;
+        break;
     }
 
     return !msglen;
@@ -1183,6 +1219,7 @@ static int ssl_print_server_keyex(BIO *bio, int indent, const SSL *ssl,
 
     case SSL_kECDHE:
     case SSL_kECDHEPSK:
+    case SSL_kSM2DHE:
         if (msglen < 1)
             return 0;
         BIO_indent(bio, indent + 2, 80);

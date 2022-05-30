@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2016-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -437,6 +437,34 @@ static int test_handshake(int idx)
                 goto err;
             if (!TEST_ptr(resume_server_ctx)
                     || !TEST_ptr(resume_client_ctx))
+                goto err;
+        }
+    }
+#endif
+#ifndef OPENSSL_NO_NTLS
+    if (test_ctx->method == SSL_TEST_METHOD_NTLS) {
+        server_ctx = SSL_CTX_new_ex(libctx, NULL, NTLS_server_method());
+        if (!TEST_ptr(server_ctx)) {
+            goto err;
+        }
+
+        if (test_ctx->extra.server.servername_callback !=
+            SSL_TEST_SERVERNAME_CB_NONE) {
+            if (!TEST_ptr(server2_ctx = SSL_CTX_new_ex(libctx, NULL, NTLS_server_method())))
+                goto err;
+        }
+
+        client_ctx = SSL_CTX_new_ex(libctx, NULL, NTLS_client_method());
+        if (!TEST_ptr(client_ctx)) {
+            goto err;
+        }
+
+        if (test_ctx->handshake_mode == SSL_TEST_HANDSHAKE_RESUME) {
+            resume_server_ctx = SSL_CTX_new_ex(libctx, NULL, NTLS_server_method());
+            resume_client_ctx = SSL_CTX_new_ex(libctx, NULL, NTLS_client_method());
+
+            if (!TEST_ptr(resume_server_ctx)
+                || !TEST_ptr(resume_client_ctx))
                 goto err;
         }
     }

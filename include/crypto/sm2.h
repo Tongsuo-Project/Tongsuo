@@ -28,7 +28,7 @@ int ossl_sm2_key_private_check(const EC_KEY *eckey);
 int ossl_sm2_compute_z_digest(uint8_t *out,
                               const EVP_MD *digest,
                               const uint8_t *id,
-                              const size_t id_len,
+                              size_t id_len,
                               const EC_KEY *key);
 
 /*
@@ -82,5 +82,13 @@ int ossl_sm2_decrypt(const EC_KEY *key,
 
 const unsigned char *ossl_sm2_algorithmidentifier_encoding(int md_nid,
                                                            size_t *len);
+
+int SM2_compute_key(void *out, size_t outlen, int initiator,
+                    const uint8_t *peer_id, size_t peer_id_len,
+                    const uint8_t *self_id, size_t self_id_len,
+                    const EC_KEY *peer_ecdhe_key, const EC_KEY *self_ecdhe_key,
+                    const EC_KEY *peer_pub_key, const EC_KEY *self_eckey,
+                    const EVP_MD *md, OSSL_LIB_CTX *libctx,
+                    const char *propq);
 # endif /* OPENSSL_NO_SM2 */
 #endif

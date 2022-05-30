@@ -2,7 +2,8 @@
 
 =head1 NAME
 
-ERR_print_errors, ERR_print_errors_fp, ERR_print_errors_cb
+ERR_print_errors, ERR_print_errors_fp, ERR_print_errors_cb,
+SSL_debug, BABASSL_debug
 - print error messages
 
 =head1 SYNOPSIS
@@ -13,6 +14,10 @@ ERR_print_errors, ERR_print_errors_fp, ERR_print_errors_cb
  void ERR_print_errors_fp(FILE *fp);
  void ERR_print_errors_cb(int (*cb)(const char *str, size_t len, void *u),
                           void *u);
+
+ #include <openssl/ssl.h>
+ #define SSL_debug BABASSL_debug
+ void BABASSL_debug(SSL *s, unsigned char *str, int len);
 
 =head1 DESCRIPTION
 
@@ -38,9 +43,14 @@ text message> if one was set for the respective error code.
 If there is no text string registered for the given error code,
 the error string will contain the numeric code.
 
+SSL_debug() is a macro that calls BABASSL_debug(), prints B<str> with the
+length B<len>.
+
 =head1 RETURN VALUES
 
 ERR_print_errors() and ERR_print_errors_fp() return no values.
+
+SSL_debug() returns no value.
 
 =head1 SEE ALSO
 

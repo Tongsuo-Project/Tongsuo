@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -182,6 +182,87 @@ int set_cert_key_stuff(SSL_CTX *ctx, X509 *cert, EVP_PKEY *key,
     return 1;
 }
 
+#ifndef OPENSSL_NO_NTLS
+int set_sign_cert_key_stuff(SSL_CTX *ctx, X509 *cert, EVP_PKEY *key,
+                            STACK_OF(X509) *chain, int build_chain)
+{
+    int chflags = chain ? SSL_BUILD_CHAIN_FLAG_CHECK : 0;
+    if (cert == NULL)
+        return 1;
+    if (SSL_CTX_use_sign_certificate(ctx, cert) <= 0) {
+        BIO_printf(bio_err, "error setting sign certificate\n");
+        ERR_print_errors(bio_err);
+        return 0;
+    }
+
+    if (SSL_CTX_use_sign_PrivateKey(ctx, key) <= 0) {
+        BIO_printf(bio_err, "error setting sign private key\n");
+        ERR_print_errors(bio_err);
+        return 0;
+    }
+
+    /*
+     * Now we know that a key and cert have been set against the SSL context
+     */
+    if (!SSL_CTX_check_private_key(ctx)) {
+        BIO_printf(bio_err,
+                   "Private key does not match the certificate public key\n");
+        return 0;
+    }
+    if (chain && !SSL_CTX_set1_chain(ctx, chain)) {
+        BIO_printf(bio_err, "error setting certificate chain\n");
+        ERR_print_errors(bio_err);
+        return 0;
+    }
+    if (build_chain && !SSL_CTX_build_cert_chain(ctx, chflags)) {
+        BIO_printf(bio_err, "error building certificate chain\n");
+        ERR_print_errors(bio_err);
+        return 0;
+    }
+    return 1;
+}
+
+int set_enc_cert_key_stuff(SSL_CTX *ctx, X509 *cert, EVP_PKEY *key,
+                           STACK_OF(X509) *chain, int build_chain)
+{
+    int chflags = chain ? SSL_BUILD_CHAIN_FLAG_CHECK : 0;
+
+    if (cert == NULL)
+        return 1;
+    if (SSL_CTX_use_enc_certificate(ctx, cert) <= 0) {
+        BIO_printf(bio_err, "error setting enc certificate\n");
+        ERR_print_errors(bio_err);
+        return 0;
+    }
+
+    if (SSL_CTX_use_enc_PrivateKey(ctx, key) <= 0) {
+        BIO_printf(bio_err, "error setting enc private key\n");
+        ERR_print_errors(bio_err);
+        return 0;
+    }
+
+    /*
+     * Now we know that a key and cert have been set against the SSL context
+     */
+    if (!SSL_CTX_check_private_key(ctx)) {
+        BIO_printf(bio_err,
+                   "Private key does not match the certificate public key\n");
+        return 0;
+    }
+    if (chain && !SSL_CTX_set1_chain(ctx, chain)) {
+        BIO_printf(bio_err, "error setting certificate chain\n");
+        ERR_print_errors(bio_err);
+        return 0;
+    }
+    if (build_chain && !SSL_CTX_build_cert_chain(ctx, chflags)) {
+        BIO_printf(bio_err, "error building certificate chain\n");
+        ERR_print_errors(bio_err);
+        return 0;
+    }
+    return 1;
+}
+#endif
+
 static STRINT_PAIR cert_type_list[] = {
     {"RSA sign", TLS_CT_RSA_SIGN},
     {"DSA sign", TLS_CT_DSS_SIGN},
@@ -229,6 +310,11 @@ static const char *get_sigtype(int nid)
 
     case EVP_PKEY_DSA:
         return "DSA";
+
+# ifndef OPENSSL_NO_SM2
+    case EVP_PKEY_SM2:
+        return "SM2";
+# endif
 
     case EVP_PKEY_EC:
         return "ECDSA";

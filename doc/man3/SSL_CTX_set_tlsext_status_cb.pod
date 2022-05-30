@@ -11,7 +11,9 @@ SSL_CTX_get_tlsext_status_type,
 SSL_set_tlsext_status_type,
 SSL_get_tlsext_status_type,
 SSL_get_tlsext_status_ocsp_resp,
-SSL_set_tlsext_status_ocsp_resp
+SSL_set_tlsext_status_ocsp_resp,
+OPENSSL_CHECK_TLSEXT_STATUS,
+SSL_check_tlsext_status, BABASSL_check_tlsext_status
 - OCSP Certificate Status Request functions
 
 =head1 SYNOPSIS
@@ -32,6 +34,12 @@ SSL_set_tlsext_status_ocsp_resp
 
  long SSL_get_tlsext_status_ocsp_resp(ssl, unsigned char **resp);
  long SSL_set_tlsext_status_ocsp_resp(ssl, unsigned char *resp, int len);
+
+ #include <openssl/ssl.h>
+
+ #define OPENSSL_CHECK_TLSEXT_STATUS 1
+ #define SSL_check_tlsext_status BABASSL_check_tlsext_status
+ int BABASSL_check_tlsext_status(SSL *s);
 
 =head1 DESCRIPTION
 
@@ -80,6 +88,10 @@ calling SSL_set_tlsext_status_ocsp_resp(). A pointer to the response data should
 be provided in the B<resp> argument, and the length of that data should be in
 the B<len> argument.
 
+SSL_check_tlsext_status() is a macro that calls BABASSL_check_tlsext_status(),
+checks whether the status type and callback are set, returns 1 if both are
+set. Otherwise 0 is returned.
+
 =head1 RETURN VALUES
 
 The callback when used on the client side should return a negative value on
@@ -105,6 +117,9 @@ or -1 if there is no OCSP response data.
 SSL_get_tlsext_status_type() returns B<TLSEXT_STATUSTYPE_ocsp> on the client
 side if SSL_set_tlsext_status_type() was previously called, or on the server
 side if the client requested OCSP stapling. Otherwise -1 is returned.
+
+SSL_check_tlsext_status() returns 1 if both the status type and callback are
+set. Otherwise 0 is returned.
 
 =head1 SEE ALSO
 

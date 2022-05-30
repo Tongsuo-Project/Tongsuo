@@ -98,6 +98,25 @@ SSL3_ENC_METHOD const TLSv1_3_enc_data = {
     ssl3_handshake_write
 };
 
+#ifndef OPENSSL_NO_NTLS
+SSL3_ENC_METHOD const NTLS_enc_data = {
+    tls1_enc,
+    tls1_mac,
+    tls1_setup_key_block,
+    tls1_generate_master_secret,
+    tls1_change_cipher_state,
+    tls1_final_finish_mac,
+    TLS_MD_CLIENT_FINISH_CONST, TLS_MD_CLIENT_FINISH_CONST_SIZE,
+    TLS_MD_SERVER_FINISH_CONST, TLS_MD_SERVER_FINISH_CONST_SIZE,
+    ntls_alert_code,
+    tls1_export_keying_material,
+    SSL_ENC_FLAG_EXPLICIT_IV,
+    ssl3_set_handshake_header,
+    tls_close_construct_packet,
+    ssl3_handshake_write
+};
+#endif
+
 long tls1_default_timeout(void)
 {
     /*
@@ -182,7 +201,8 @@ static struct {
     {NID_ffdhe3072, OSSL_TLS_GROUP_ID_ffdhe3072},
     {NID_ffdhe4096, OSSL_TLS_GROUP_ID_ffdhe4096},
     {NID_ffdhe6144, OSSL_TLS_GROUP_ID_ffdhe6144},
-    {NID_ffdhe8192, OSSL_TLS_GROUP_ID_ffdhe8192}
+    {NID_ffdhe8192, OSSL_TLS_GROUP_ID_ffdhe8192},
+    {NID_sm2, OSSL_TLS_GROUP_ID_sm2},
 };
 
 static const unsigned char ecformats_default[] = {
@@ -205,6 +225,9 @@ static const uint16_t supported_groups_default[] = {
     38,                      /* GC512A (38) */
     39,                      /* GC512B (39) */
     40,                      /* GC512C (40) */
+#ifndef OPENSSL_NO_SM2
+    41,                      /* curveSM2 (41) */
+#endif
     0x100,                   /* ffdhe2048 (0x100) */
     0x101,                   /* ffdhe3072 (0x101) */
     0x102,                   /* ffdhe4096 (0x102) */
@@ -599,6 +622,11 @@ uint16_t tls1_shared_group(SSL *s, int nmatch)
     size_t num_pref, num_supp, i;
     int k;
 
+#ifndef OPENSSL_NO_NTLS
+    if (SSL_IS_NTLS(s))
+        return TLSEXT_curve_SM2;
+#endif
+
     /* Can't do anything on client side */
     if (s->server == 0)
         return 0;
@@ -973,11 +1001,28 @@ int tls1_check_ec_tmp_key(SSL *s, unsigned long cid)
     return 0;
 }
 
+
+#ifndef OPENSSL_NO_NTLS
+static const SIGALG_LOOKUP ntls_sm2_sigalg = {
+    "sm2sig_sm3", TLSEXT_SIGALG_sm2sig_sm3,
+    NID_sm3, SSL_MD_SM3_IDX, NID_sm2, SSL_PKEY_SM2_SIGN,
+    NID_SM2_with_SM3, NID_sm2
+};
+
+static const SIGALG_LOOKUP ntls_rsa_sigalg = {
+    "rsa_pkcs1_sha256", TLSEXT_SIGALG_rsa_pkcs1_sha256,
+    NID_sha256, SSL_MD_SHA256_IDX, EVP_PKEY_RSA, SSL_PKEY_RSA_SIGN,
+    NID_sha256WithRSAEncryption, NID_undef
+};
+#endif
 /* Default sigalg schemes */
 static const uint16_t tls12_sigalgs[] = {
     TLSEXT_SIGALG_ecdsa_secp256r1_sha256,
     TLSEXT_SIGALG_ecdsa_secp384r1_sha384,
     TLSEXT_SIGALG_ecdsa_secp521r1_sha512,
+#if (!defined OPENSSL_NO_SM2) && (!defined OPENSSL_NO_SM3)
+    TLSEXT_SIGALG_sm2sig_sm3,
+#endif
     TLSEXT_SIGALG_ed25519,
     TLSEXT_SIGALG_ed448,
 
@@ -1021,6 +1066,11 @@ static const uint16_t suiteb_sigalgs[] = {
 };
 
 static const SIGALG_LOOKUP sigalg_lookup_tbl[] = {
+#if (!defined OPENSSL_NO_SM2) && (!defined OPENSSL_NO_SM3)
+    {"sm2sig_sm3", TLSEXT_SIGALG_sm2sig_sm3,
+     NID_sm3, SSL_MD_SM3_IDX, EVP_PKEY_SM2, SSL_PKEY_SM2,
+     NID_SM2_with_SM3, NID_sm2, 1},
+#endif
     {"ecdsa_secp256r1_sha256", TLSEXT_SIGALG_ecdsa_secp256r1_sha256,
      NID_sha256, SSL_MD_SHA256_IDX, EVP_PKEY_EC, SSL_PKEY_ECC,
      NID_ecdsa_with_SHA256, NID_X9_62_prime256v1, 1},
@@ -1135,6 +1185,12 @@ static const uint16_t tls_default_sigalg[] = {
     TLSEXT_SIGALG_gostr34102012_512_intrinsic, /* SSL_PKEY_GOST12_512 */
     0, /* SSL_PKEY_ED25519 */
     0, /* SSL_PKEY_ED448 */
+#ifndef OPENSSL_NO_NTLS
+    0, /* SSL_PKEY_SM2_SIGN */
+    0, /* SSL_PKEY_SM2_ENC */
+    0, /* SSL_PKEY_RSA_SIGN */
+    0, /* SSL_PKEY_RSA_ENC */
+#endif
 };
 
 int ssl_setup_sig_algs(SSL_CTX *ctx)
@@ -1331,6 +1387,18 @@ int tls1_set_peer_legacy_sigalg(SSL *s, const EVP_PKEY *pkey)
     size_t idx;
     const SIGALG_LOOKUP *lu;
 
+#ifndef OPENSSL_NO_NTLS
+    if (SSL_IS_NTLS(s)) {
+        if (EVP_PKEY_is_a(pkey, "SM2"))
+            s->s3.tmp.peer_sigalg = &ntls_sm2_sigalg;
+        else if (EVP_PKEY_is_a(pkey, "RSA"))
+            s->s3.tmp.peer_sigalg = &ntls_rsa_sigalg;
+        else
+            return 0;
+
+        return 1;
+    }
+#endif
     if (ssl_cert_lookup_by_pkey(pkey, &idx) == NULL)
         return 0;
     lu = tls1_get_legacy_sigalg(s, idx);
@@ -1641,6 +1709,15 @@ int ssl_cipher_disabled(const SSL *s, const SSL_CIPHER *c, int op, int ecdhe)
     if (!SSL_IS_DTLS(s)) {
         int min_tls = c->min_tls;
 
+#ifndef OPENSSL_NO_NTLS
+        /*
+         * NTLS cipher can only use in NTLS
+         */
+        if (min_tls == NTLS_VERSION)
+            if (s->s3.tmp.max_ver != NTLS_VERSION)
+                return 1;
+#endif
+
         /*
          * For historical reasons we will allow ECHDE to be selected by a server
          * in SSLv3 if we are a client
@@ -1737,7 +1814,16 @@ SSL_TICKET_STATUS tls_get_ticket_from_client(SSL *s, CLIENTHELLO_MSG *hello,
      * (e.g. TLSv1.3) behave as if no ticket present to permit stateful
      * resumption.
      */
-    if (s->version <= SSL3_VERSION || !tls_use_ticket(s))
+    if (
+#ifndef OPENSSL_NO_NTLS
+        (
+#endif
+        s->version <= SSL3_VERSION
+#ifndef OPENSSL_NO_NTLS
+        && !SSL_IS_NTLS(s)
+        )
+#endif
+        || !tls_use_ticket(s))
         return SSL_TICKET_NONE;
 
     ticketext = &hello->pre_proc_exts[TLSEXT_IDX_session_ticket];
@@ -2874,6 +2960,13 @@ void tls1_set_cert_validity(SSL *s)
     tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_GOST12_512);
     tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_ED25519);
     tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_ED448);
+    tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_SM2);
+#ifndef OPENSSL_NO_NTLS
+    tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_SM2_SIGN);
+    tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_SM2_ENC);
+    tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_RSA_SIGN);
+    tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_RSA_ENC);
+#endif
 }
 
 /* User level utility function to check a chain is suitable */
@@ -3174,7 +3267,7 @@ static const SIGALG_LOOKUP *find_sig_alg(SSL *s, X509 *x, EVP_PKEY *pkey)
         tmppkey = (pkey != NULL) ? pkey
                                  : s->cert->pkeys[lu->sig_idx].privatekey;
 
-        if (lu->sig == EVP_PKEY_EC) {
+        if (lu->sig == EVP_PKEY_EC || lu->sig == EVP_PKEY_SM2) {
             if (curve == -1)
                 curve = ssl_get_EC_curve_nid(tmppkey);
             if (lu->curve != NID_undef && curve != lu->curve)
@@ -3192,6 +3285,47 @@ static const SIGALG_LOOKUP *find_sig_alg(SSL *s, X509 *x, EVP_PKEY *pkey)
 
     return lu;
 }
+
+#ifndef OPENSSL_NO_NTLS
+int tls_choose_sigalg_ntls(SSL *s, int fatalerrs)
+{
+    const SIGALG_LOOKUP *lu = NULL;
+    uint32_t kalg;
+
+    s->s3.tmp.cert = NULL;
+    s->s3.tmp.sign_cert = NULL;
+    s->s3.tmp.enc_cert = NULL;
+    s->s3.tmp.sigalg = NULL;
+
+    /* If ciphersuite doesn't require a cert nothing to do */
+    if (!(s->s3.tmp.new_cipher->algorithm_auth & SSL_aCERT))
+        return 1;
+
+    if (!s->server && !ssl_has_cert(s, s->cert->key - s->cert->pkeys))
+        return 1;
+
+    kalg = s->s3.tmp.new_cipher->algorithm_mkey;
+
+    if (kalg & (SSL_kSM2 | SSL_kSM2DHE)) {
+        lu = &ntls_sm2_sigalg;
+    } else if (kalg & SSL_kRSA) {
+        lu = &ntls_rsa_sigalg;
+    } else {
+        if (!fatalerrs)
+            return 1;
+        SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER, SSL_R_UNKNOWN_KEY_EXCHANGE_TYPE);
+        return 0;
+    }
+
+    s->s3.tmp.sign_cert = &s->cert->pkeys[lu->sig_idx];
+    s->s3.tmp.enc_cert = &s->cert->pkeys[lu->sig_idx + 1];
+
+    s->cert->key = s->s3.tmp.cert = s->s3.tmp.sign_cert;
+    s->s3.tmp.sigalg = lu;
+
+    return 1;
+}
+#endif
 
 /*
  * Choose an appropriate signature algorithm based on available certificates

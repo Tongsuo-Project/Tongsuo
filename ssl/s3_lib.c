@@ -3212,6 +3212,142 @@ static SSL_CIPHER ssl3_ciphers[] = {
      256,
      256,
      },
+#ifndef OPENSSL_NO_NTLS
+# ifndef OPENSSL_NO_SM4
+#  ifndef OPENSSL_NO_SM3
+#   ifndef OPENSSL_NO_SM2
+    {
+     1,
+     NTLS_TXT_ECDHE_SM2_SM4_CBC_SM3,
+     NTLS_GB_ECDHE_SM2_SM4_CBC_SM3,
+     NTLS_CK_ECDHE_SM2_SM4_CBC_SM3,
+     SSL_kSM2DHE,
+     SSL_aSM2,
+     SSL_SM4,
+     SSL_SM3,
+     NTLS_VERSION, NTLS_VERSION,
+     0, 0,
+     SSL_HIGH,
+     SSL_HANDSHAKE_MAC_SM3 | TLS1_PRF_SM3,
+     128,
+     128,
+     },
+    {
+     1,
+     NTLS_TXT_ECDHE_SM2_SM4_GCM_SM3,
+     NTLS_GB_ECDHE_SM2_SM4_GCM_SM3,
+     NTLS_CK_ECDHE_SM2_SM4_GCM_SM3,
+     SSL_kSM2DHE,
+     SSL_aSM2,
+     SSL_SM4GCM,
+     SSL_AEAD,
+     NTLS_VERSION, NTLS_VERSION,
+     0, 0,
+     SSL_HIGH,
+     SSL_HANDSHAKE_MAC_SM3 | TLS1_PRF_SM3,
+     128,
+     128,
+    },
+    {
+     1,
+     NTLS_TXT_ECC_SM2_SM4_CBC_SM3,
+     NTLS_GB_ECC_SM2_SM4_CBC_SM3,
+     NTLS_CK_ECC_SM2_SM4_CBC_SM3,
+     SSL_kSM2,
+     SSL_aSM2,
+     SSL_SM4,
+     SSL_SM3,
+     NTLS_VERSION, NTLS_VERSION,
+     0, 0,
+     SSL_HIGH,
+     SSL_HANDSHAKE_MAC_SM3 | TLS1_PRF_SM3,
+     128,
+     128,
+     },
+    {
+     1,
+     NTLS_TXT_ECC_SM2_SM4_GCM_SM3,
+     NTLS_GB_ECC_SM2_SM4_GCM_SM3,
+     NTLS_CK_ECC_SM2_SM4_GCM_SM3,
+     SSL_kSM2,
+     SSL_aSM2,
+     SSL_SM4GCM,
+     SSL_AEAD,
+     NTLS_VERSION, NTLS_VERSION,
+     0, 0,
+     SSL_HIGH,
+     SSL_HANDSHAKE_MAC_SM3 | TLS1_PRF_SM3,
+     128,
+     128,
+    },
+#   endif   /* OPENSSL_NO_SM2 */
+    {
+     1,
+     NTLS_TXT_RSA_SM4_CBC_SM3,
+     NTLS_GB_RSA_SM4_CBC_SM3,
+     NTLS_CK_RSA_SM4_CBC_SM3,
+     SSL_kRSA,
+     SSL_aRSA,
+     SSL_SM4,
+     SSL_SM3,
+     NTLS_VERSION, NTLS_VERSION,
+     0, 0,
+     SSL_HIGH,
+     SSL_HANDSHAKE_MAC_SM3 | TLS1_PRF_SM3,
+     128,
+     128,
+    },
+    {
+     1,
+     NTLS_TXT_RSA_SM4_GCM_SM3,
+     NTLS_GB_RSA_SM4_GCM_SM3,
+     NTLS_CK_RSA_SM4_GCM_SM3,
+     SSL_kRSA,
+     SSL_aRSA,
+     SSL_SM4GCM,
+     SSL_AEAD,
+     NTLS_VERSION, NTLS_VERSION,
+     0, 0,
+     SSL_HIGH,
+     SSL_HANDSHAKE_MAC_SM3 | TLS1_PRF_SM3,
+     128,
+     128,
+    },
+#  endif    /* OPENSSL_NO_SM3 */
+    {
+     1,
+     NTLS_TXT_RSA_SM4_CBC_SHA256,
+     NTLS_GB_RSA_SM4_CBC_SHA256,
+     NTLS_CK_RSA_SM4_CBC_SHA256,
+     SSL_kRSA,
+     SSL_aRSA,
+     SSL_SM4,
+     SSL_SHA256,
+     NTLS_VERSION, NTLS_VERSION,
+     0, 0,
+     SSL_HIGH,
+     SSL_HANDSHAKE_MAC_SHA256 | TLS1_PRF_SHA256,
+     128,
+     128,
+    },
+    {
+     1,
+     NTLS_TXT_RSA_SM4_GCM_SHA256,
+     NTLS_GB_RSA_SM4_GCM_SHA256,
+     NTLS_CK_RSA_SM4_GCM_SHA256,
+     SSL_kRSA,
+     SSL_aRSA,
+     SSL_SM4GCM,
+     SSL_AEAD,
+     NTLS_VERSION, NTLS_VERSION,
+     0, 0,
+     SSL_HIGH,
+     SSL_HANDSHAKE_MAC_SHA256 | TLS1_PRF_SHA256,
+     128,
+     128,
+    },
+# endif /* OPENSSL_NO_SM4 */
+#endif  /* OPENSSL_NO_NTLS */
 };
 
 /*
@@ -4357,14 +4493,23 @@ int ssl3_get_req_cert_type(SSL *s, WPACKET *pkt)
     }
     if (!(alg_a & SSL_aRSA) && !WPACKET_put_bytes_u8(pkt, SSL3_CT_RSA_SIGN))
         return 0;
-    if (!(alg_a & SSL_aDSS) && !WPACKET_put_bytes_u8(pkt, SSL3_CT_DSS_SIGN))
+    if (!(alg_a & SSL_aDSS)
+#ifndef OPENSSL_NO_NTLS
+        /* TLCP not define DSS sign */
+        && !SSL_IS_NTLS(s)
+#endif
+        && !WPACKET_put_bytes_u8(pkt, SSL3_CT_DSS_SIGN))
         return 0;
 
     /*
      * ECDSA certs can be used with RSA cipher suites too so we don't
      * need to check for SSL_kECDH or SSL_kECDHE
      */
-    if (s->version >= TLS1_VERSION
+    if ((s->version >= TLS1_VERSION
+#if (!defined OPENSSL_NO_NTLS) && (!defined OPENSSL_NO_SM2)
+        || SSL_IS_NTLS(s)
+#endif
+        )
             && !(alg_a & SSL_aECDSA)
             && !WPACKET_put_bytes_u8(pkt, TLS_CT_ECDSA_SIGN))
         return 0;

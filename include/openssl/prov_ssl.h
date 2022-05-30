@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2021-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -19,6 +19,7 @@ extern "C" {
 
 # define SSL_MAX_MASTER_KEY_LENGTH 48
 
+# define NTLS1_1_VERSION                 0x0101
 # define SSL3_VERSION                    0x0300
 # define TLS1_VERSION                    0x0301
 # define TLS1_1_VERSION                  0x0302

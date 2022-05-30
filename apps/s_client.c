@@ -433,6 +433,9 @@ typedef enum OPTION_choice {
     OPT_4, OPT_6, OPT_HOST, OPT_PORT, OPT_CONNECT, OPT_BIND, OPT_UNIX,
     OPT_XMPPHOST, OPT_VERIFY, OPT_NAMEOPT,
     OPT_CERT, OPT_CRL, OPT_CRL_DOWNLOAD, OPT_SESS_OUT, OPT_SESS_IN,
+#ifndef OPENSSL_NO_NTLS
+    OPT_SIGN_CERT, OPT_SIGN_KEY, OPT_ENC_CERT, OPT_ENC_KEY,
+#endif
     OPT_CERTFORM, OPT_CRLFORM, OPT_VERIFY_RET_ERROR, OPT_VERIFY_QUIET,
     OPT_BRIEF, OPT_PREXIT, OPT_CRLF, OPT_QUIET, OPT_NBIO,
     OPT_SSL_CLIENT_ENGINE, OPT_IGN_EOF, OPT_NO_IGN_EOF,
@@ -446,6 +449,9 @@ typedef enum OPTION_choice {
 #endif
     OPT_SSL3, OPT_SSL_CONFIG,
     OPT_TLS1_3, OPT_TLS1_2, OPT_TLS1_1, OPT_TLS1, OPT_DTLS, OPT_DTLS1,
+#ifndef OPENSSL_NO_NTLS
+    OPT_NTLS, OPT_ENABLE_NTLS,
+#endif
     OPT_DTLS1_2, OPT_SCTP, OPT_TIMEOUT, OPT_MTU, OPT_KEYFORM, OPT_PASS,
     OPT_CERT_CHAIN, OPT_KEY, OPT_RECONNECT, OPT_BUILD_CHAIN,
     OPT_NEXTPROTONEG, OPT_ALPN,
@@ -516,12 +522,25 @@ const OPTIONS s_client_options[] = {
     {"fallback_scsv", OPT_FALLBACKSCSV, '-', "Send the fallback SCSV"},
 
     OPT_SECTION("Identity"),
+#ifndef OPENSSL_NO_NTLS
+    {"cert", OPT_CERT, '<',
+     "Certificate file or NTLS signing certificate to use, PEM format assumed"},
+    {"sign_cert", OPT_SIGN_CERT, '<',
+     "NTLS signing certificate file to use, PEM format assumed"},
+    {"enc_cert", OPT_ENC_CERT, '<',
+     "NTLS encryption certificate file to use, PEM format assumed"},
+#else
     {"cert", OPT_CERT, '<', "Client certificate file to use"},
+#endif
     {"certform", OPT_CERTFORM, 'F',
      "Client certificate file format (PEM/DER/P12); has no effect"},
     {"cert_chain", OPT_CERT_CHAIN, '<',
      "Client certificate chain file (in PEM format)"},
     {"build_chain", OPT_BUILD_CHAIN, '-', "Build client certificate chain"},
+#ifndef OPENSSL_NO_NTLS
+    {"sign_key", OPT_SIGN_KEY, 's', "NTLS signing private key file to use"},
+    {"enc_key", OPT_ENC_KEY, 's', "NTLS encryption private key file to use"},
+#endif
     {"key", OPT_KEY, 's', "Private key file to use; default: -cert file"},
     {"keyform", OPT_KEYFORM, 'E', "Key format (ENGINE, other values ignored)"},
     {"pass", OPT_PASS, 's', "Private key and cert file pass phrase source"},
@@ -627,6 +646,10 @@ const OPTIONS s_client_options[] = {
 #endif
 #ifndef OPENSSL_NO_TLS1_3
     {"tls1_3", OPT_TLS1_3, '-', "Just use TLSv1.3"},
+#endif
+#ifndef OPENSSL_NO_NTLS
+    {"ntls", OPT_NTLS, '-', "Just use NTLS"},
+    {"enable_ntls", OPT_ENABLE_NTLS, '-', "enable ntls"},
 #endif
 #ifndef OPENSSL_NO_DTLS
     {"dtls", OPT_DTLS, '-', "Use any version of DTLS"},
@@ -735,9 +758,15 @@ static const OPT_PAIR services[] = {
  (o == OPT_4 || o == OPT_6 || o == OPT_HOST || o == OPT_PORT || o == OPT_CONNECT)
 #define IS_UNIX_FLAG(o) (o == OPT_UNIX)
 
-#define IS_PROT_FLAG(o) \
+#ifndef OPENSSL_NO_NTLS
+# define IS_PROT_FLAG(o) \
+ (o == OPT_SSL3 || o == OPT_TLS1 || o == OPT_TLS1_1 || o == OPT_TLS1_2 \
+  || o == OPT_TLS1_3 || o == OPT_DTLS || o == OPT_DTLS1 || o == OPT_DTLS1_2 || o == OPT_NTLS)
+#else
+# define IS_PROT_FLAG(o) \
  (o == OPT_SSL3 || o == OPT_TLS1 || o == OPT_TLS1_1 || o == OPT_TLS1_2 \
   || o == OPT_TLS1_3 || o == OPT_DTLS || o == OPT_DTLS1 || o == OPT_DTLS1_2)
+#endif
 
 /* Free |*dest| and optionally set it to a copy of |source|. */
 static void freeandcopy(char **dest, const char *source)
@@ -784,10 +813,18 @@ int s_client_main(int argc, char **argv)
 {
     BIO *sbio;
     EVP_PKEY *key = NULL;
+#ifndef OPENSSL_NO_NTLS
+    EVP_PKEY *enc_key = NULL;
+    EVP_PKEY *sign_key = NULL;
+#endif
     SSL *con = NULL;
     SSL_CTX *ctx = NULL;
     STACK_OF(X509) *chain = NULL;
     X509 *cert = NULL;
+#ifndef OPENSSL_NO_NTLS
+    X509 *enc_cert = NULL;
+    X509 *sign_cert = NULL;
+#endif
     X509_VERIFY_PARAM *vpm = NULL;
     SSL_EXCERT *exc = NULL;
     SSL_CONF_CTX *cctx = NULL;
@@ -803,6 +840,11 @@ int s_client_main(int argc, char **argv)
     char *proxypassarg = NULL, *proxypass = NULL;
     char *connectstr = NULL, *bindstr = NULL;
     char *cert_file = NULL, *key_file = NULL, *chain_file = NULL;
+#ifndef OPENSSL_NO_NTLS
+    char *enc_cert_file = NULL, *enc_key_file = NULL;
+    char *sign_cert_file = NULL, *sign_key_file = NULL;
+    int enable_ntls = 0;
+#endif
     char *chCApath = NULL, *chCAfile = NULL, *chCAstore = NULL, *host = NULL;
     char *thost = NULL, *tport = NULL;
     char *port = NULL;
@@ -1019,6 +1061,14 @@ int s_client_main(int argc, char **argv)
             if (!set_nameopt(opt_arg()))
                 goto end;
             break;
+#ifndef OPENSSL_NO_NTLS
+        case OPT_SIGN_CERT:
+            sign_cert_file = opt_arg();
+            break;
+        case OPT_ENC_CERT:
+            enc_cert_file = opt_arg();
+            break;
+#endif
         case OPT_CRL:
             crl_file = opt_arg();
             break;
@@ -1244,6 +1294,14 @@ int s_client_main(int argc, char **argv)
             isdtls = 0;
 #endif
             break;
+#ifndef OPENSSL_NO_NTLS
+        case OPT_NTLS:
+            meth = NTLS_client_method();
+            break;
+        case OPT_ENABLE_NTLS:
+            enable_ntls = 1;
+            break;
+#endif
         case OPT_DTLS:
 #ifndef OPENSSL_NO_DTLS
             meth = DTLS_client_method();
@@ -1305,6 +1363,14 @@ int s_client_main(int argc, char **argv)
         case OPT_KEY:
             key_file = opt_arg();
             break;
+#ifndef OPENSSL_NO_NTLS
+        case OPT_SIGN_KEY:
+            sign_key_file = opt_arg();
+            break;
+        case OPT_ENC_KEY:
+            enc_key_file = opt_arg();
+            break;
+#endif
         case OPT_RECONNECT:
             reconnect = 5;
             break;
@@ -1640,6 +1706,46 @@ int s_client_main(int argc, char **argv)
             goto end;
     }
 
+#ifndef OPENSSL_NO_NTLS
+    /* XXX: don't support cert-key bundle at current stage */
+    /* TODO: fix the key format stuff and password stuffs */
+    if (sign_key_file) {
+        sign_key = load_key(sign_key_file, FORMAT_PEM, 0, pass, e,
+                       "NTLS client signing certificate private key file");
+        if (sign_key == NULL) {
+            ERR_print_errors(bio_err);
+            goto end;
+        }
+    }
+
+    if (sign_cert_file) {
+        sign_cert = load_cert(sign_cert_file, FORMAT_PEM,
+                             "NTLS client signing certificate file");
+        if (sign_cert == NULL) {
+            ERR_print_errors(bio_err);
+            goto end;
+        }
+    }
+
+    if (enc_key_file) {
+        enc_key = load_key(enc_key_file, FORMAT_PEM, 0, pass, e,
+                       "NTLS client encryption certificate private key file");
+        if (enc_key == NULL) {
+            ERR_print_errors(bio_err);
+            goto end;
+        }
+    }
+
+    if (enc_cert_file) {
+        enc_cert = load_cert(enc_cert_file, FORMAT_PEM,
+                             "NTLS client encryption certificate file");
+        if (enc_cert == NULL) {
+            ERR_print_errors(bio_err);
+            goto end;
+        }
+    }
+#endif
+
     if (chain_file != NULL) {
         if (!load_certs(chain_file, 0, &chain, pass, "client certificate chain"))
             goto end;
@@ -1693,6 +1799,12 @@ int s_client_main(int argc, char **argv)
         ERR_print_errors(bio_err);
         goto end;
     }
+
+#ifndef OPENSSL_NO_NTLS
+    if (enable_ntls) {
+        SSL_CTX_enable_ntls(ctx);
+    }
+#endif
 
     SSL_CTX_clear_mode(ctx, SSL_MODE_AUTO_RETRY);
 
@@ -1910,6 +2022,16 @@ int s_client_main(int argc, char **argv)
 
     if (!set_cert_key_stuff(ctx, cert, key, chain, build_chain))
         goto end;
+
+#ifndef OPENSSL_NO_NTLS
+    if (sign_cert != NULL && sign_key != NULL)
+        if (!set_sign_cert_key_stuff(ctx, sign_cert, sign_key, NULL, 0))
+            goto end;
+
+    if (enc_cert != NULL && enc_key != NULL)
+        if (!set_enc_cert_key_stuff(ctx, enc_cert, enc_key, NULL, 0))
+            goto end;
+#endif
 
     if (!noservername) {
         tlsextcbp.biodebug = bio_err;
@@ -3095,8 +3217,16 @@ int s_client_main(int argc, char **argv)
     SSL_CTX_free(ctx);
     set_keylog_file(NULL, NULL);
     X509_free(cert);
+#ifndef OPENSSL_NO_NTLS
+    X509_free(enc_cert);
+    X509_free(sign_cert);
+#endif
     sk_X509_CRL_pop_free(crls, X509_CRL_free);
     EVP_PKEY_free(key);
+#ifndef OPENSSL_NO_NTLS
+    EVP_PKEY_free(enc_key);
+    EVP_PKEY_free(sign_key);
+#endif
     sk_X509_pop_free(chain, X509_free);
     OPENSSL_free(pass);
 #ifndef OPENSSL_NO_SRP
