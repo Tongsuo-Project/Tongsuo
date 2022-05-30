@@ -695,3 +695,4 @@ SSL_CTX_certs_clear                     define
 OPENSSL_CHECK_TLSEXT_STATUS             define
 SSL_set_SESSION_CTX                     define
 SSL_debug                               define
+EVP_PKEY_is_sm2                         define

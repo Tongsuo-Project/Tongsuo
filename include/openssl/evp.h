@@ -2168,6 +2168,11 @@ OSSL_LIB_CTX *EVP_PKEY_CTX_get0_libctx(EVP_PKEY_CTX *ctx);
 const char *EVP_PKEY_CTX_get0_propq(const EVP_PKEY_CTX *ctx);
 const OSSL_PROVIDER *EVP_PKEY_CTX_get0_provider(const EVP_PKEY_CTX *ctx);
 
+/* for compattibility usage */
+# ifndef OPENSSL_NO_SM2
+#  define EVP_PKEY_is_sm2(pkey) EVP_PKEY_is_a(pkey, "SM2")
+# endif
+
 # ifdef  __cplusplus
 }
 # endif
