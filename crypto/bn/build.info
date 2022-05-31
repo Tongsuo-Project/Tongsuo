@@ -39,14 +39,6 @@ IF[{- !$disabled{asm} -}]
     $BNASM_ia64=bn_asm.c ia64-mont.s
   ENDIF
 
-  $BNASM_sparcv9=asm/sparcv8plus.S sparcv9-mont.S sparcv9a-mont.S vis3-mont.S \
-          sparct4-mont.S bn_sparc.c
-  $BNDEF_sparcv9=OPENSSL_BN_ASM_MONT
-  $BNASM_sparcv9_ec2m=sparcv9-gf2m.S
-  $BNDEF_sparcv9_ec2m=OPENSSL_BN_ASM_GF2m
-
-  $BNASM_sparcv8=asm/sparcv8.S
-
   $BNASM_alpha=bn_asm.c alpha-mont.S
   $BNDEF_alpha=OPENSSL_BN_ASM_MONT
 
@@ -135,17 +127,6 @@ GENERATE[x86-mont.s]=asm/x86-mont.pl
 DEPEND[x86-mont.s]=../perlasm/x86asm.pl
 GENERATE[x86-gf2m.s]=asm/x86-gf2m.pl
 DEPEND[x86-gf2m.s]=../perlasm/x86asm.pl
-
-GENERATE[sparcv9a-mont.S]=asm/sparcv9a-mont.pl
-INCLUDE[sparcv9a-mont.o]=..
-GENERATE[sparcv9-mont.S]=asm/sparcv9-mont.pl
-INCLUDE[sparcv9-mont.o]=..
-GENERATE[vis3-mont.S]=asm/vis3-mont.pl
-INCLUDE[vis3-mont.o]=..
-GENERATE[sparct4-mont.S]=asm/sparct4-mont.pl
-INCLUDE[sparct4-mont.o]=..
-GENERATE[sparcv9-gf2m.S]=asm/sparcv9-gf2m.pl
-INCLUDE[sparcv9-gf2m.o]=..
 
 GENERATE[bn-mips.S]=asm/mips.pl
 INCLUDE[bn-mips.o]=..

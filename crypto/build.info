@@ -33,8 +33,6 @@ IF[{- !$disabled{asm} && $config{processor} ne '386' -}]
 
   $CPUIDASM_ia64=ia64cpuid.s
 
-  $CPUIDASM_sparcv9=sparcv9cap.c sparccpuid.S
-
   $CPUIDASM_alpha=alphacpuid.s
 
   $CPUIDASM_s390x=s390xcap.c s390xcpuid.S
