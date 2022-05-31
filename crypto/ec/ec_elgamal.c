@@ -8,6 +8,7 @@
  */
 
 #include "ec_elgamal.h"
+#include <openssl/err.h>
 #include <string.h>
 
 #define EC_ELGAMAL_MSG_BITS 32
@@ -54,16 +55,22 @@ static int EC_ELGAMAL_discrete_log_brute(EC_ELGAMAL_CTX *ctx, int32_t *r,
     EC_POINT *P = NULL;
     BN_CTX *bn_ctx = NULL;
 
-    if (EC_POINT_is_at_infinity(ctx->key->group, M))
+    if (EC_POINT_is_at_infinity(ctx->key->group, M)) {
+        ERR_raise(ERR_LIB_EC, EC_R_POINT_AT_INFINITY);
         goto err;
+    }
 
     bn_ctx = BN_CTX_new();
-    if (bn_ctx == NULL)
+    if (bn_ctx == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
         goto err;
+    }
 
     P = EC_POINT_new(ctx->key->group);
-    if (P == NULL)
+    if (P == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
         goto err;
+    }
 
     G = EC_GROUP_get0_generator(ctx->key->group);
     EC_POINT_set_to_infinity(ctx->key->group, P);
@@ -105,21 +112,27 @@ static int EC_ELGAMAL_discrete_log_bsgs(EC_ELGAMAL_CTX *ctx, int32_t *r,
     BN_CTX *bn_ctx = NULL;
 
     bn_ctx = BN_CTX_new();
-    if (bn_ctx == NULL)
+    if (bn_ctx == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
         return ret;
+    }
 
     if (table->decrypt_negative == 1) {
         G = EC_GROUP_get0_generator(ctx->key->group);
 
         Q = EC_POINT_new(ctx->key->group);
-        if (Q == NULL)
+        if (Q == NULL) {
+            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
             goto err;
+        }
 
         EC_POINT_set_to_infinity(ctx->key->group, Q);
 
         P = EC_POINT_new(ctx->key->group);
-        if (P == NULL)
+        if (P == NULL) {
+            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
             goto err;
+        }
 
         max = 1L << EC_ELGAMAL_ECDLP_BABY_BITS;
     } else {
@@ -189,8 +202,10 @@ static EC_ELGAMAL_dec_tbl_entry *EC_ELGAMAL_dec_tbl_entry_new(EC_ELGAMAL_CTX *ct
     BN_CTX *bn_ctx = NULL;
 
     bn_ctx = BN_CTX_new();
-    if (bn_ctx == NULL)
+    if (bn_ctx == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
         goto err;
+    }
 
     point_size = EC_POINT_point2oct(ctx->key->group, point,
                                     POINT_CONVERSION_COMPRESSED, NULL, 0,
@@ -199,12 +214,16 @@ static EC_ELGAMAL_dec_tbl_entry *EC_ELGAMAL_dec_tbl_entry_new(EC_ELGAMAL_CTX *ct
         goto err;
 
     entry = OPENSSL_zalloc(sizeof(*entry));
-    if (entry == NULL)
+    if (entry == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
         goto err;
+    }
 
     point_key = OPENSSL_zalloc(point_size + 1);
-    if (point_key == NULL)
+    if (point_key == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
         goto err;
+    }
 
     if ((len = EC_POINT_point2oct(ctx->key->group, point,
                                   POINT_CONVERSION_COMPRESSED, point_key,
@@ -256,24 +275,32 @@ EC_ELGAMAL_DECRYPT_TABLE *EC_ELGAMAL_DECRYPT_TABLE_new(EC_ELGAMAL_CTX *ctx,
     BN_CTX *bn_ctx = NULL;
     int32_t i, size = 1L << (EC_ELGAMAL_ECDLP_GIANT_BITS - 1);
 
-    if (ctx == NULL || ctx->key == NULL)
+    if (ctx == NULL || ctx->key == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_PASSED_NULL_PARAMETER);
         return NULL;
+    }
 
     group = ctx->key->group;
 
     bn_ctx = BN_CTX_new();
-    if (bn_ctx == NULL)
+    if (bn_ctx == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
         goto err;
+    }
 
     table = OPENSSL_zalloc(sizeof(*table));
-    if (table == NULL)
+    if (table == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
         goto err;
+    }
 
     table->size = size;
 
     bn_size = BN_CTX_get(bn_ctx);
-    if (bn_size == NULL)
+    if (bn_size == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
         goto err;
+    }
     BN_set_word(bn_size,  (BN_ULONG)size);
     BN_set_negative(bn_size, 0);
 
@@ -398,12 +425,16 @@ EC_ELGAMAL_CTX *EC_ELGAMAL_CTX_new(EC_KEY *key)
 {
     EC_ELGAMAL_CTX *ctx = NULL;
 
-    if (key == NULL)
+    if (key == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_PASSED_NULL_PARAMETER);
         return NULL;
+    }
 
     ctx = OPENSSL_zalloc(sizeof(*ctx));
-    if (ctx == NULL)
+    if (ctx == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
         goto err;
+    }
 
     EC_KEY_up_ref(key);
     ctx->key = key;
@@ -438,8 +469,10 @@ EC_ELGAMAL_CIPHERTEXT *EC_ELGAMAL_CIPHERTEXT_new(EC_ELGAMAL_CTX *ctx)
     EC_ELGAMAL_CIPHERTEXT *ciphertext;
 
     ciphertext = OPENSSL_zalloc(sizeof(*ciphertext));
-    if (ciphertext == NULL)
+    if (ciphertext == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
 
     C1 = EC_POINT_new(ctx->key->group);
     if (C1 == NULL)
@@ -485,7 +518,8 @@ void EC_ELGAMAL_CIPHERTEXT_free(EC_ELGAMAL_CIPHERTEXT *ciphertext)
  *  \return the length of the encoded octet string or 0 if an error occurred
  */
 size_t EC_ELGAMAL_CIPHERTEXT_encode(EC_ELGAMAL_CTX *ctx, unsigned char *out,
-                                    size_t size, EC_ELGAMAL_CIPHERTEXT *ciphertext,
+                                    size_t size,
+                                    const EC_ELGAMAL_CIPHERTEXT *ciphertext,
                                     int compressed)
 {
     size_t point_len, ret = 0, len;
@@ -494,12 +528,16 @@ size_t EC_ELGAMAL_CIPHERTEXT_encode(EC_ELGAMAL_CTX *ctx, unsigned char *out,
                                                 POINT_CONVERSION_UNCOMPRESSED;
     BN_CTX *bn_ctx = NULL;
 
-    if (ctx == NULL || ctx->key == NULL)
+    if (ctx == NULL || ctx->key == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_PASSED_NULL_PARAMETER);
         return ret;
+    }
 
     bn_ctx = BN_CTX_new();
-    if (bn_ctx == NULL)
+    if (bn_ctx == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
         goto end;
+    }
 
     point_len = EC_POINT_point2oct(ctx->key->group,
                                    EC_GROUP_get0_generator(ctx->key->group),
@@ -550,12 +588,16 @@ int EC_ELGAMAL_CIPHERTEXT_decode(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r,
     BN_CTX *bn_ctx = NULL;
 
     if (ctx == NULL || ctx->key == NULL || r == NULL || r->C1 == NULL ||
-        r->C2 == NULL || size % 2 != 0)
+        r->C2 == NULL || size % 2 != 0) {
+        ERR_raise(ERR_LIB_EC, ERR_R_PASSED_NULL_PARAMETER);
         return ret;
+    }
 
     bn_ctx = BN_CTX_new();
-    if (bn_ctx == NULL)
+    if (bn_ctx == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
         goto err;
+    }
 
     point_len = EC_POINT_point2oct(ctx->key->group,
                                    EC_GROUP_get0_generator(ctx->key->group),
@@ -593,18 +635,24 @@ int EC_ELGAMAL_encrypt(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r, int32_t pl
     BN_CTX *bn_ctx = NULL;
     BIGNUM *bn_plain = NULL, *ord = NULL, *rand = NULL;
 
-    if (ctx == NULL || ctx->key == NULL || ctx->key->pub_key == NULL || r == NULL)
+    if (ctx == NULL || ctx->key == NULL || ctx->key->pub_key == NULL || r == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_PASSED_NULL_PARAMETER);
         return ret;
+    }
 
     bn_ctx = BN_CTX_new();
-    if (bn_ctx == NULL)
+    if (bn_ctx == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
         goto err;
+    }
 
     bn_plain = BN_CTX_get(bn_ctx);
     ord = BN_CTX_get(bn_ctx);
     rand = BN_CTX_get(bn_ctx);
-    if (rand == NULL)
+    if (rand == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
         goto err;
+    }
 
     if (r->C1 == NULL) {
         r->C1 = EC_POINT_new(ctx->key->group);
@@ -652,19 +700,24 @@ err:
  *  \param  cihpertext EC_ELGAMAL_CIPHERTEXT object to be decrypted
  *  \return 1 on success and 0 otherwise
  */
-int EC_ELGAMAL_decrypt(EC_ELGAMAL_CTX *ctx, int32_t *r, EC_ELGAMAL_CIPHERTEXT *ciphertext)
+int EC_ELGAMAL_decrypt(EC_ELGAMAL_CTX *ctx, int32_t *r,
+                       const EC_ELGAMAL_CIPHERTEXT *ciphertext)
 {
     int ret = 0;
     int32_t plaintext = 0;
     EC_POINT *M = NULL;
     BN_CTX *bn_ctx = NULL;
 
-    if (ctx == NULL || ctx->key == NULL || ctx->key->priv_key == NULL || r == NULL)
+    if (ctx == NULL || ctx->key == NULL || ctx->key->priv_key == NULL || r == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_PASSED_NULL_PARAMETER);
         return ret;
+    }
 
     bn_ctx = BN_CTX_new();
-    if (bn_ctx == NULL)
+    if (bn_ctx == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
         goto err;
+    }
 
     M = EC_POINT_new(ctx->key->group);
     if (M == NULL)
@@ -707,17 +760,22 @@ err:
  *  \return 1 on success and 0 otherwise
  */
 int EC_ELGAMAL_add(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r,
-                   EC_ELGAMAL_CIPHERTEXT *c1, EC_ELGAMAL_CIPHERTEXT *c2)
+                   const EC_ELGAMAL_CIPHERTEXT *c1,
+                   const EC_ELGAMAL_CIPHERTEXT *c2)
 {
     int ret = 0;
     BN_CTX *bn_ctx = NULL;
 
-    if (ctx == NULL || ctx->key == NULL || r == NULL || c1 == NULL || c2 == NULL)
+    if (ctx == NULL || ctx->key == NULL || r == NULL || c1 == NULL || c2 == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_PASSED_NULL_PARAMETER);
         return ret;
+    }
 
     bn_ctx = BN_CTX_new();
-    if (bn_ctx == NULL)
+    if (bn_ctx == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
         goto err;
+    }
 
     if (!EC_POINT_add(ctx->key->group, r->C1, c1->C1, c2->C1, bn_ctx))
         goto err;
@@ -741,18 +799,23 @@ err:
  *  \return 1 on success and 0 otherwise
  */
 int EC_ELGAMAL_sub(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r,
-                   EC_ELGAMAL_CIPHERTEXT *c1, EC_ELGAMAL_CIPHERTEXT *c2)
+                   const EC_ELGAMAL_CIPHERTEXT *c1,
+                   const EC_ELGAMAL_CIPHERTEXT *c2)
 {
     int ret = 0;
     BN_CTX *bn_ctx = NULL;
     EC_POINT *C1_inv = NULL, *C2_inv = NULL;
 
-    if (ctx == NULL || ctx->key == NULL || r == NULL || c1 == NULL || c2 == NULL)
+    if (ctx == NULL || ctx->key == NULL || r == NULL || c1 == NULL || c2 == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_PASSED_NULL_PARAMETER);
         return ret;
+    }
 
     bn_ctx = BN_CTX_new();
-    if (bn_ctx == NULL)
+    if (bn_ctx == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
         goto err;
+    }
 
     if ((C1_inv = EC_POINT_dup(c2->C1, ctx->key->group)) == NULL)
         goto err;
@@ -790,22 +853,28 @@ err:
  *  \return 1 on success and 0 otherwise
  */
 int EC_ELGAMAL_mul(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r,
-                   EC_ELGAMAL_CIPHERTEXT *c, int32_t m)
+                   const EC_ELGAMAL_CIPHERTEXT *c, int32_t m)
 {
     int ret = 0;
     BIGNUM *bn_m;
     BN_CTX *bn_ctx = NULL;
 
-    if (ctx == NULL || ctx->key == NULL || r == NULL || c == NULL)
+    if (ctx == NULL || ctx->key == NULL || r == NULL || c == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_PASSED_NULL_PARAMETER);
         return ret;
+    }
 
     bn_ctx = BN_CTX_new();
-    if (bn_ctx == NULL)
+    if (bn_ctx == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
         goto err;
+    }
 
     bn_m = BN_CTX_get(bn_ctx);
-    if (bn_m == NULL)
+    if (bn_m == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
         goto err;
+    }
     BN_set_word(bn_m, (BN_ULONG)(m > 0 ? m : -(int64_t)m));
     BN_set_negative(bn_m, m < 0 ? 1 : 0);
 

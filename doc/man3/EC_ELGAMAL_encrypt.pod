@@ -22,6 +22,7 @@ EC_ELGAMAL_CIPHERTEXT_decode
 
  #include <openssl/ec.h>
 
+ #ifndef OPENSSL_NO_EC_ELGAMAL
  EC_ELGAMAL_CTX *EC_ELGAMAL_CTX_new(EC_KEY *key);
  void EC_ELGAMAL_CTX_free(EC_ELGAMAL_CTX *ctx);
  EC_ELGAMAL_DECRYPT_TABLE *EC_ELGAMAL_DECRYPT_TABLE_new(EC_ELGAMAL_CTX *ctx,
@@ -44,6 +45,7 @@ EC_ELGAMAL_CIPHERTEXT_decode
                                      int compressed);
  int EC_ELGAMAL_CIPHERTEXT_decode(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r,
                                   unsigned char *in, size_t size);
+ #endif
 
 
 =head1 DESCRIPTION

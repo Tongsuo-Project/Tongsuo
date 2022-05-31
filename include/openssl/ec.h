@@ -1623,7 +1623,8 @@ int EC_ELGAMAL_encrypt(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r, int32_t pl
  *  \param  cihpertext EC_ELGAMAL_CIPHERTEXT object to be decrypted
  *  \return 1 on success and 0 otherwise
  */
-int EC_ELGAMAL_decrypt(EC_ELGAMAL_CTX *ctx, int32_t *r, EC_ELGAMAL_CIPHERTEXT *ciphertext);
+int EC_ELGAMAL_decrypt(EC_ELGAMAL_CTX *ctx, int32_t *r,
+                       const EC_ELGAMAL_CIPHERTEXT *ciphertext);
 
 /** Adds two EC-Elgamal ciphertext and stores it in r (r = c1 + c2).
  *  \param  ctx        EC_ELGAMAL_CTX object
@@ -1634,7 +1635,8 @@ int EC_ELGAMAL_decrypt(EC_ELGAMAL_CTX *ctx, int32_t *r, EC_ELGAMAL_CIPHERTEXT *c
  *  \return 1 on success and 0 otherwise
  */
 int EC_ELGAMAL_add(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r,
-                   EC_ELGAMAL_CIPHERTEXT *c1, EC_ELGAMAL_CIPHERTEXT *c2);
+                   const EC_ELGAMAL_CIPHERTEXT *c1,
+                   const EC_ELGAMAL_CIPHERTEXT *c2);
 
 /** Substracts two EC-Elgamal ciphertext and stores it in r (r = c1 - c2).
  *  \param  ctx        EC_ELGAMAL_CTX object
@@ -1645,7 +1647,8 @@ int EC_ELGAMAL_add(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r,
  *  \return 1 on success and 0 otherwise
  */
 int EC_ELGAMAL_sub(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r,
-                   EC_ELGAMAL_CIPHERTEXT *c1, EC_ELGAMAL_CIPHERTEXT *c2);
+                   const EC_ELGAMAL_CIPHERTEXT *c1,
+                   const EC_ELGAMAL_CIPHERTEXT *c2);
 
 /** Ciphertext multiplication, computes r = c * m
  *  \param  ctx        EC_ELGAMAL_CTX object
@@ -1656,7 +1659,7 @@ int EC_ELGAMAL_sub(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r,
  *  \return 1 on success and 0 otherwise
  */
 int EC_ELGAMAL_mul(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r,
-                   EC_ELGAMAL_CIPHERTEXT *c, int32_t m);
+                   const EC_ELGAMAL_CIPHERTEXT *c, int32_t m);
 
 /** Creates a new EC_ELGAMAL_CIPHERTEXT object for EC-ELGAMAL oparations
  *  \param  ctx        EC_ELGAMAL_CTX object
@@ -1679,7 +1682,8 @@ void EC_ELGAMAL_CIPHERTEXT_free(EC_ELGAMAL_CIPHERTEXT *ciphertext);
  *  \return the length of the encoded octet string or 0 if an error occurred
  */
 size_t EC_ELGAMAL_CIPHERTEXT_encode(EC_ELGAMAL_CTX *ctx, unsigned char *out,
-                                    size_t size, EC_ELGAMAL_CIPHERTEXT *ciphertext,
+                                    size_t size,
+                                    const EC_ELGAMAL_CIPHERTEXT *ciphertext,
                                     int compressed);
 
 /** Decodes binary to EC_ELGAMAL_CIPHERTEXT
