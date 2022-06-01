@@ -377,7 +377,8 @@ static int ntls_construct_ske_rsa(SSL *s, WPACKET *pkt)
         return 0;
     }
 
-    p = &(buf[3]);
+    p = buf;
+    l2n3(n, p);
 
     if ((n = i2d_X509(x509, &p)) <= 0) {
         SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_CONSTRUCT_SKE_RSA,
@@ -385,8 +386,7 @@ static int ntls_construct_ske_rsa(SSL *s, WPACKET *pkt)
         goto end;
     }
 
-    l2n3(n, buf);
-    buf -= 3;
+    n += 3;
 
     siglen = EVP_PKEY_size(pkey);
 
