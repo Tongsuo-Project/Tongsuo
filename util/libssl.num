@@ -565,3 +565,4 @@ BABASSL_check_tlsext_status             565	3_0_3	EXIST::FUNCTION:
 BABASSL_get_master_key                  566	3_0_3	EXIST::FUNCTION:
 BABASSL_debug                           567	3_0_3	EXIST::FUNCTION:
 SSL_set_skip_scsv                       568	3_0_3	EXIST::FUNCTION:SKIP_SCSV
+SSL_magic_pending_session_ptr           569	3_0_3	EXIST::FUNCTION:SESSION_LOOKUP

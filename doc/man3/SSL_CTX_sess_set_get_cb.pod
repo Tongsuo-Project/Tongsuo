@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-SSL_CTX_sess_set_new_cb, SSL_CTX_sess_set_remove_cb, SSL_CTX_sess_set_get_cb, SSL_CTX_sess_get_new_cb, SSL_CTX_sess_get_remove_cb, SSL_CTX_sess_get_get_cb - provide callback functions for server side external session caching
+SSL_CTX_sess_set_new_cb, SSL_CTX_sess_set_remove_cb, SSL_CTX_sess_set_get_cb, SSL_CTX_sess_get_new_cb, SSL_CTX_sess_get_remove_cb, SSL_CTX_sess_get_get_cb, SSL_magic_pending_session_ptr - provide callback functions for server side external session caching
 
 =head1 SYNOPSIS
 
@@ -25,6 +25,10 @@ SSL_CTX_sess_set_new_cb, SSL_CTX_sess_set_remove_cb, SSL_CTX_sess_set_get_cb, SS
  SSL_SESSION *(*SSL_CTX_sess_get_get_cb(SSL_CTX *ctx))(struct ssl_st *ssl,
                                                        const unsigned char *data,
                                                        int len, int *copy);
+
+ #ifndef OPENSSL_NO_SESSION_LOOKUP
+ SSL_SESSION *SSL_magic_pending_session_ptr(void);
+ #endif
 
 =head1 DESCRIPTION
 
@@ -96,7 +100,12 @@ SSL engine to increment the reference count of the SSL_SESSION object;
 setting B<copy> to B<0> causes the reference count to remain unchanged.
 If the get_session_cb() does not write to B<copy>, the reference count
 is incremented and the session must be explicitly freed with
-L<SSL_SESSION_free(3)>.
+L<SSL_SESSION_free(3)>. get_session_cb() can also return the value returned by
+SSL_magic_pending_session_ptr() instead of a real SSL_SESSION object, in which
+case the handshake is suspended. The next call to the handshake function will
+again lead to the call of get_session_cb(). To indicate that the handshake was
+suspended, L<SSL_get_error(3)> will return SSL_ERROR_WANT_SESSION_LOOKUP to the
+application.
 
 =head1 RETURN VALUES
 

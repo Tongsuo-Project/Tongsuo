@@ -1,3 +1,12 @@
+/*
+ * Copyright 2022 The Tongsuo Project Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
+ * this file except in compliance with the License.  You can obtain a copy
+ * in the file LICENSE in the source distribution or at
+ * https://github.com/Tongsuo-Project/Tongsuo/blob/master/LICENSE.txt
+ */
+
 #include <string.h>
 
 #include <openssl/opensslconf.h>
@@ -14,6 +23,9 @@
 #include "testutil/output.h"
 #include "internal/nelem.h"
 #include "../ssl/ssl_local.h"
+# ifndef OPENSSL_NO_EC
+#  include "crypto/ec/ec_local.h"
+# endif
 
 static char *certsdir = NULL;
 static char *cert = NULL;
@@ -495,8 +507,233 @@ end:
 }
 #endif
 
+#ifndef OPENSSL_NO_TLS1_2
+# ifdef SSL_client_hello_get1_extensions
+static int babassl_cb = 0;
+# endif
+
+static int babassl_client_hello_callback(SSL *s, int *al, void *arg)
+{
+    SSL_CTX *sctx2 = arg;
+
+# ifdef SSL_client_hello_get1_extensions
+    int *exts = NULL;
+    size_t  len, i;
+    /* We only configure two ciphers, but the SCSV is added automatically. */
+    const int expected_extensions[] = {
+#   ifndef OPENSSL_NO_EC
+                                       11, 10,
+#   endif
+                                       35, 16, 22, 23, 13};
+
+    if (!SSL_client_hello_get1_extensions(s, &exts, &len))
+        return SSL_CLIENT_HELLO_ERROR;
+
+    babassl_cb++;
+
+    if (babassl_cb == 3 && (!TEST_int_eq(len, OSSL_NELEM(expected_extensions)) ||
+        !TEST_int_eq(memcmp(exts, expected_extensions, len * sizeof(*exts)), 0))) {
+        printf("ClientHello callback expected extensions mismatch\n");
+        printf("exts: ");
+        for (i = 0; i < len; i++) {
+            printf("%d ", exts[i]);
+        }
+        printf("\n");
+        OPENSSL_free(exts);
+        return SSL_CLIENT_HELLO_ERROR;
+    }
+
+    OPENSSL_free(exts);
+# endif
+
+    SSL_set_SSL_CTX(s, sctx2);
+
+    SSL_set_options(s, SSL_CTX_get_options(sctx2));
+
+    return SSL_CLIENT_HELLO_SUCCESS;
+}
+#endif
+
+static int test_babassl_set_ssl_ctx(void)
+{
+    SSL_CTX *cctx = NULL, *sctx = NULL, *sctx2 = NULL;
+    SSL *clientssl = NULL, *serverssl = NULL;
+    int testresult = 0;
+
+    if (!TEST_true(create_ssl_ctx_pair(NULL, TLS_server_method(),
+                                       TLS_client_method(),
+                                       TLS1_VERSION, 0,
+                                       &sctx, &cctx, cert, privkey)))
+        goto end;
+
+    if (!TEST_true(create_ssl_ctx_pair(NULL, TLS_server_method(), NULL,
+                                       TLS1_VERSION, 0,
+                                       &sctx2, NULL, cert, privkey)))
+        goto end;
+
+    SSL_CTX_set_options(sctx2, SSL_OP_NO_TLSv1_1);
+    SSL_CTX_set_options(sctx2, SSL_OP_NO_TLSv1);
+    SSL_CTX_set_options(sctx2, SSL_OP_NO_SSLv3);
+
+#ifndef OPENSSL_NO_TLS1_2
+    SSL_CTX_set_client_hello_cb(sctx, babassl_client_hello_callback, sctx2);
+#endif
+
+    /* The gimpy cipher list we configure can't do TLS 1.3. */
+    SSL_CTX_set_max_proto_version(cctx, TLS1_2_VERSION);
+#ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
+    if (!TEST_int_eq(SSL_CTX_set_alpn_protos(cctx, (u_char *) "\x02h2", 3), 0))
+        goto end;
+#endif
+
+    SSL_CTX_set_options(cctx, SSL_OP_NO_TLSv1_2);
+    SSL_CTX_set_options(cctx, SSL_OP_NO_TLSv1);
+    SSL_CTX_set_options(cctx, SSL_OP_NO_SSLv3);
+
+    if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl, &clientssl,
+                                      NULL, NULL))
+            || !TEST_false(create_ssl_connection(serverssl, clientssl,
+                                                 SSL_ERROR_NONE)))
+        goto end;
+
+    SSL_free(serverssl);
+    SSL_free(clientssl);
+
+    serverssl = NULL;
+    clientssl = NULL;
+
+#ifndef OPENSSL_NO_TLS1_2
+    SSL_CTX_clear_options(cctx, SSL_OP_NO_TLSv1_2);
+
+    if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl, &clientssl,
+                                      NULL, NULL))
+            || !TEST_true(create_ssl_connection(serverssl, clientssl,
+                                                SSL_ERROR_NONE)))
+        goto end;
+
+    SSL_free(serverssl);
+    SSL_free(clientssl);
+
+    serverssl = NULL;
+    clientssl = NULL;
+
+    if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl, &clientssl,
+                                      NULL, NULL))
+            || !TEST_true(create_ssl_connection(serverssl, clientssl,
+                                                SSL_ERROR_NONE)))
+        goto end;
+#endif
+
+    fflush(stdout);
+    setvbuf(stdout, NULL, _IONBF, 0);
+
+    testresult = 1;
+
+end:
+    SSL_free(serverssl);
+    SSL_free(clientssl);
+    SSL_CTX_free(sctx);
+    SSL_CTX_free(cctx);
+    SSL_CTX_free(sctx2);
+
+    return testresult;
+}
+
+#if !defined(OPENSSL_NO_SESSION_LOOKUP) && (!defined(OPENSSL_NO_TLS1_2) \
+                                            || !defined(OPENSSL_NO_TLS1_1) \
+                                            || !defined(OPENSSL_NO_TLS1))
+static int new_called = 0, get_called = 0;
+
+static int new_session_cb(SSL *ssl, SSL_SESSION *sess)
+{
+    new_called++;
+    /*
+     * sess has been up-refed for us, but we don't actually need it so free it
+     * immediately.
+     */
+    SSL_SESSION_free(sess);
+    return 1;
+}
+
+static SSL_SESSION *get_sess_val = NULL;
+
+static SSL_SESSION *get_session_cb(SSL *ssl, const unsigned char *id, int len,
+                                   int *copy)
+{
+    *copy = 0;
+    if (get_called++ == 0)
+        return SSL_magic_pending_session_ptr();
+
+    return get_sess_val;
+}
+
+static int test_babassl_session_lookup(void)
+{
+    SSL_CTX *cctx = NULL, *sctx = NULL;
+    SSL *clientssl1 = NULL, *serverssl1 = NULL;
+    SSL *clientssl2 = NULL, *serverssl2 = NULL;
+    SSL_SESSION *sess1 = NULL;
+    int testresult = 0;
+
+    if (!TEST_true(create_ssl_ctx_pair(NULL, TLS_server_method(),
+                                       TLS_client_method(),
+                                       TLS1_VERSION, TLS1_2_VERSION,
+                                       &sctx, &cctx, cert, privkey))
+            || !TEST_true(SSL_CTX_set_cipher_list(cctx, "DEFAULT:@SECLEVEL=0"))
+            || !TEST_true(SSL_CTX_set_cipher_list(sctx, "DEFAULT:@SECLEVEL=0")))
+        goto end;
+
+    SSL_CTX_set_options(sctx, SSL_OP_NO_TICKET);
+    SSL_CTX_set_session_cache_mode(sctx,
+                                   SSL_SESS_CACHE_SERVER
+                                   | SSL_SESS_CACHE_NO_INTERNAL_STORE);
+
+    if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl1, &clientssl1,
+                                      NULL, NULL))
+            || !TEST_true(create_ssl_connection(serverssl1, clientssl1,
+                                                SSL_ERROR_NONE))
+            || !TEST_ptr(sess1 = SSL_get1_session(clientssl1)))
+        goto end;
+
+    get_sess_val = sess1;
+
+    SSL_CTX_sess_set_get_cb(sctx, get_session_cb);
+    SSL_CTX_sess_set_new_cb(sctx, new_session_cb);
+
+    if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl2,
+                                      &clientssl2, NULL, NULL))
+            || !TEST_true(SSL_set_session(clientssl2, sess1))
+            || !TEST_false(create_ssl_connection(serverssl2, clientssl2,
+                                                 SSL_ERROR_WANT_SESSION_LOOKUP))
+            || !TEST_true(create_ssl_connection(serverssl2, clientssl2,
+                                                SSL_ERROR_NONE))
+            || !TEST_true(SSL_session_reused(clientssl2)))
+        goto end;
+
+    if (!TEST_ptr(SSL_magic_pending_session_ptr()))
+        goto end;
+
+    testresult = 1;
+
+end:
+    SSL_free(serverssl1);
+    SSL_free(clientssl1);
+    SSL_free(serverssl2);
+    SSL_free(clientssl2);
+    SSL_CTX_free(sctx);
+    SSL_CTX_free(cctx);
+
+    return testresult;
+}
+#endif
+
 int setup_tests(void)
 {
+    if (!test_skip_common_options()) {
+        TEST_error("Error parsing test options\n");
+        return 0;
+    }
+
     if (!TEST_ptr(certsdir = test_get_argument(0)))
         return 0;
 
@@ -525,6 +762,12 @@ int setup_tests(void)
 #endif
 #ifndef OPENSSL_NO_OCSP
     ADD_TEST(test_babassl_tlsext_status);
+#endif
+    ADD_TEST(test_babassl_set_ssl_ctx);
+#if !defined(OPENSSL_NO_SESSION_LOOKUP) && (!defined(OPENSSL_NO_TLS1_2) \
+                                            || !defined(OPENSSL_NO_TLS1_1) \
+                                            || !defined(OPENSSL_NO_TLS1))
+    ADD_TEST(test_babassl_session_lookup);
 #endif
     return 1;
 }
