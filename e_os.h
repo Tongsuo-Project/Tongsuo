@@ -400,7 +400,7 @@ inline int nssgetpid();
    /* unistd.h defines _POSIX_VERSION */
 #  if (defined(OPENSSL_SYS_UNIX) \
         && ( (defined(_POSIX_VERSION) && _POSIX_VERSION >= 200112L)      \
-             || defined(__sun) || defined(__hpux) || defined(__sgi)      \
+             || defined(__sun) || defined(__sgi)      \
              || defined(__osf__) )) \
       || defined(_WIN32)
       /* secure memory is implemented */

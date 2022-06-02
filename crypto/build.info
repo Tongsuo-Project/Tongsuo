@@ -41,9 +41,6 @@ IF[{- !$disabled{asm} && $config{processor} ne '386' -}]
 
   $CPUIDASM_aarch64=armcap.c arm64cpuid.S
 
-  $CPUIDASM_parisc11=pariscid.s
-  $CPUIDASM_parisc20_64=$CPUIDASM_parisc11
-
   $CPUIDASM_ppc32=ppccpuid.s ppccap.c
   $CPUIDASM_ppc64=$CPUIDASM_ppc32
 
@@ -120,7 +117,6 @@ GENERATE[x86_64cpuid.s]=x86_64cpuid.pl
 
 GENERATE[ia64cpuid.s]=ia64cpuid.S
 GENERATE[ppccpuid.s]=ppccpuid.pl
-GENERATE[pariscid.s]=pariscid.pl
 GENERATE[alphacpuid.s]=alphacpuid.pl
 GENERATE[arm64cpuid.S]=arm64cpuid.pl
 INCLUDE[arm64cpuid.o]=.

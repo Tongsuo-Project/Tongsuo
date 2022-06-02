@@ -8,7 +8,6 @@ a2466f18da5847c7d9fbced17524633c10ce024671a72f53f9c9c55b9b9923dd  crypto/aes/aes
 953897f86e2de9fa27ef411155ab3aed133af94885f1507e76449c142da78656  crypto/aes/asm/aes-c64xplus.pl
 00196f01f5218ad731e6a058d406078f7228a9756d9d73f51c0d0c2a68f885af  crypto/aes/asm/aes-ia64.S
 88b6f8396cd9d86004743d5c3b0f72b7b8c3d5a2b00b0bbb761ba91ae5a7cdc8  crypto/aes/asm/aes-mips.pl
-7ff9c96ef3d591d45d776fa4b244601ea0d9328e289aeab1e1b92436ce7d02ad  crypto/aes/asm/aes-parisc.pl
 f1244cdeadcb4e48f35bc5df19d4cfaf07e0086ad951b84f07ff6966501faa5b  crypto/aes/asm/aes-ppc.pl
 ecbfe826f4c514810c3ee20e265f4f621149694c298554b2682e5de4f029f14f  crypto/aes/asm/aes-s390x.pl
 2b3b9ac56bf54334d053857a24bdb08592151e8a7a60b89b8195846b7f8ee7b5  crypto/aes/asm/aes-x86_64.pl
@@ -37,7 +36,6 @@ c86664fb974362ee52a454c83c2c4b23fd5b7d64b3c9e23ef1e0dfd130a46ee5  crypto/bn/asm/
 a511aafbf76647a0c83705d4491c898a5584d300aa449fa6166c8803372946eb  crypto/bn/asm/ia64.S
 687c5d6606fdfd0e242005972d15db74a9cbac2b8a9a54a56fcb1e99d3880ff3  crypto/bn/asm/mips-mont.pl
 8aca83d2ec45a40af15e59cff1ac2dc33737a3d25f0a0b74d401fa778a5c5eb8  crypto/bn/asm/mips.pl
-b27ec5181e387e812925bb26823b830f49d7a6e4971b6d11ea583f5632a1504b  crypto/bn/asm/parisc-mont.pl
 9973523b361db963eea4938a7a8a3adc692e1a4e1aec4fa1f1e57dc93da37921  crypto/bn/asm/ppc-mont.pl
 59cd27e1e10c4984b7fb684b27f491e7634473b1bcff197a07e0ca653124aa9a  crypto/bn/asm/ppc.pl
 b1696b1aacf45d153b58c9a698a84c1917c6621eca50568dd83c341a1e61b3c0  crypto/bn/asm/ppc64-mont-fixed.pl
@@ -218,7 +216,6 @@ c2e874a8deb418b5d8c935b2e256370566a5150e040c9fa008cdb5b463c26904  crypto/modes/a
 6bc7d63569c73d7020ede481f2de05221ac92403c7cc11e7263ada7644f6aa9b  crypto/modes/asm/ghash-armv4.pl
 097975df63370de7ebea012d17de14fc1f361fb83acf03b432a99ae7d5bceb24  crypto/modes/asm/ghash-c64xplus.pl
 fdde3bc48b37790c6e0006014da71e7a831bbb4fdbfcda2d01dbe0ceb0ba88fa  crypto/modes/asm/ghash-ia64.pl
-e472d73d06933667a51a0af973479993eed333c71b43af03095450acb36dbeb4  crypto/modes/asm/ghash-parisc.pl
 6fb4332ac88113a20915ad4de1931ef88b0114b5379b16e1d967820e1229fbb0  crypto/modes/asm/ghash-s390x.pl
 26f55a57e77f774d17dfba93d757f78edfa3a03f68a71ffa37ccf3bfc468b1e2  crypto/modes/asm/ghash-x86.pl
 72744131007d2389c09665a59a862f5f6bb61b64bd3456e9b400985cb56586b8  crypto/modes/asm/ghash-x86_64.pl
@@ -288,7 +285,6 @@ efc69cb0d867b7fac6b3fa8985c343d1f984d552bc8e75bbbbace0adf9ee5f15  crypto/sha/asm
 32ff0e701a7b8f25bcfe8477b20795de54f536527bd87d3ce694fd9aaae356d4  crypto/sha/asm/sha1-ia64.pl
 471c27efca685b2a82ad7fefe329ca54172df9f49b9785da6d706b913b75e693  crypto/sha/asm/sha1-mb-x86_64.pl
 0f5c63cf09e950d1b488935ab3b5562e3e9d5cd1a563fb88a41e3dae90a35e6d  crypto/sha/asm/sha1-mips.pl
-b5ffd7b6dbb04c05de7efa2945adb67ea845e7e61a3bf163a532f7b6acdf4267  crypto/sha/asm/sha1-parisc.pl
 482cd23ca6ec38d6f62b90c68f9f20643579c50f2c0fbb0dab1c10a0e35efe77  crypto/sha/asm/sha1-ppc.pl
 28cf69efd53d7a5a8c32e0f8db32c193f41b91faf44f5f59944334bc3f5aa337  crypto/sha/asm/sha1-s390x.pl
 74d197cdd72400cabbff7e173f72c8976723081508b095dc995e8cd1abf3daa6  crypto/sha/asm/sha1-thumb.pl
@@ -303,7 +299,6 @@ dadacb6d66b160913bffb4e1a6c3e5f7be6509b26e2c099701d8d3fdb92c1be0  crypto/sha/asm
 6f548a088feae3b6faa179653ba449df9d3f5cda1e0561e5b5f120b32274d1eb  crypto/sha/asm/sha512-c64xplus.pl
 f999dbef1f95004b7dd926208dd942dc4106750de7a7ccfb70c6487e9916feac  crypto/sha/asm/sha512-ia64.pl
 fb06844e7c3b014a58dccc8ec6020c71843cfdc5be08288bc7d204f0a840c474  crypto/sha/asm/sha512-mips.pl
-11548f06d213947104a80898e000218ec0d6ff3f6913f6582de498476482ce9f  crypto/sha/asm/sha512-parisc.pl
 7c0c490ce6bb11a228853aecad5e164ce84e5bdabb8a6658ae7184782076c7d3  crypto/sha/asm/sha512-ppc.pl
 38e0455fd6a2b93a7a5385379ca92bc6526585ca1eb4af365fac4c78f7285c72  crypto/sha/asm/sha512-s390x.pl
 f64d16c1e5c3fa4a7969de494a8372127502171a517c14be7a1e3a43a7308699  crypto/sha/asm/sha512-x86_64.pl

@@ -8,7 +8,6 @@ crypto/aes/asm/aes-armv4.pl
 crypto/aes/asm/aes-c64xplus.pl
 crypto/aes/asm/aes-ia64.S
 crypto/aes/asm/aes-mips.pl
-crypto/aes/asm/aes-parisc.pl
 crypto/aes/asm/aes-ppc.pl
 crypto/aes/asm/aes-s390x.pl
 crypto/aes/asm/aes-x86_64.pl
@@ -37,7 +36,6 @@ crypto/bn/asm/ia64-mont.pl
 crypto/bn/asm/ia64.S
 crypto/bn/asm/mips-mont.pl
 crypto/bn/asm/mips.pl
-crypto/bn/asm/parisc-mont.pl
 crypto/bn/asm/ppc-mont.pl
 crypto/bn/asm/ppc.pl
 crypto/bn/asm/ppc64-mont-fixed.pl
@@ -217,7 +215,6 @@ crypto/modes/asm/ghash-alpha.pl
 crypto/modes/asm/ghash-armv4.pl
 crypto/modes/asm/ghash-c64xplus.pl
 crypto/modes/asm/ghash-ia64.pl
-crypto/modes/asm/ghash-parisc.pl
 crypto/modes/asm/ghash-s390x.pl
 crypto/modes/asm/ghash-x86.pl
 crypto/modes/asm/ghash-x86_64.pl
@@ -287,7 +284,6 @@ crypto/sha/asm/sha1-c64xplus.pl
 crypto/sha/asm/sha1-ia64.pl
 crypto/sha/asm/sha1-mb-x86_64.pl
 crypto/sha/asm/sha1-mips.pl
-crypto/sha/asm/sha1-parisc.pl
 crypto/sha/asm/sha1-ppc.pl
 crypto/sha/asm/sha1-s390x.pl
 crypto/sha/asm/sha1-thumb.pl
@@ -302,7 +298,6 @@ crypto/sha/asm/sha512-armv8.pl
 crypto/sha/asm/sha512-c64xplus.pl
 crypto/sha/asm/sha512-ia64.pl
 crypto/sha/asm/sha512-mips.pl
-crypto/sha/asm/sha512-parisc.pl
 crypto/sha/asm/sha512-ppc.pl
 crypto/sha/asm/sha512-s390x.pl
 crypto/sha/asm/sha512-x86_64.pl
