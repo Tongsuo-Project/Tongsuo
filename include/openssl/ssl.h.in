@@ -2655,6 +2655,11 @@ __owur int SSL_use_sign_PrivateKey(SSL *ssl, EVP_PKEY *pkey);
 __owur int SSL_use_sign_PrivateKey_file(SSL *ssl, const char *file, int type);
 # endif
 
+# ifndef OPENSSL_NO_SKIP_SCSV
+#  define SSL_set_no_scsv SSL_set_skip_scsv
+void SSL_set_skip_scsv(SSL *s, int skip_scsv);
+# endif
+
 # ifdef  __cplusplus
 }
 # endif
