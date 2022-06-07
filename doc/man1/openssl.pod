@@ -560,6 +560,13 @@ with different filenames.
 Writes the seed data to the specified I<file> upon exit.
 This file can be used in a subsequent command invocation.
 
+=item B<-drbg_type> I<algorithm>
+
+Set the type for DRBG, I<algorithm> can be a cipher or digest name.
+If I<algorithm> is a cipher name, such as AES-256-CTR, DRBG will
+use I<algorithm> as a CTR-DRBG. If I<algorithm> is a digest name,
+such as SM3, DRBG will use I<algorithm> as a HASH-DRBG.
+
 =back
 
 =head2 Certificate Verification Options

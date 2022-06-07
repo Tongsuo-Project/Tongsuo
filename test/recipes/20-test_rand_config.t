@@ -55,7 +55,16 @@ my @aria_tests = (
       desc => 'CTR-DRBG ARIA-256' },
 );
 
+my @sm3_tests = (
+    { drbg => 'HASH-DRBG',
+        digest => 'SM3',
+        properties => '',
+        expected => ["HASH-DRBG", "digest: 'SM3'"],
+        desc => 'HASH-DRBG SM3' },
+);
+
 push @rand_tests, @aria_tests unless disabled("aria");
+push @rand_tests, @sm3_tests unless disabled("sm3");
 
 plan tests => scalar @rand_tests;
 
