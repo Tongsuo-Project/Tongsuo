@@ -1217,6 +1217,16 @@
 #define NID_SM2_with_SM3                1204
 #define OBJ_SM2_with_SM3                OBJ_sm_scheme,501L
 
+#define SN_zuc          "ZUC"
+#define LN_zuc          "zuc"
+#define NID_zuc         1248
+#define OBJ_zuc         OBJ_sm_scheme,201L
+
+#define SN_zuc_128_eea3         "ZUC-128-EEA3"
+#define LN_zuc_128_eea3         "zuc-128-eea3"
+#define NID_zuc_128_eea3                1249
+#define OBJ_zuc_128_eea3                OBJ_sm_scheme,801L
+
 #define LN_hmacWithSHA224               "hmacWithSHA224"
 #define NID_hmacWithSHA224              798
 #define OBJ_hmacWithSHA224              OBJ_rsadsi,2L,8L

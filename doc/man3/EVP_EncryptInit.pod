@@ -1661,6 +1661,7 @@ L<EVP_rc4(3)>,
 L<EVP_rc5_32_12_16_cbc(3)>,
 L<EVP_seed_cbc(3)>,
 L<EVP_sm4_cbc(3)>,
+L<EVP_eea3(3)>
 
 =head1 HISTORY
 

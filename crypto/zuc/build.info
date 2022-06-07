@@ -1,0 +1,5 @@
+LIBS=../../libcrypto
+
+#IF[{- !$disabled{zuc} -}]
+  SOURCE[../../libcrypto]=zuc.c
+#ENDIF
