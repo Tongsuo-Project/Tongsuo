@@ -3,7 +3,8 @@
 =head1 NAME
 
 EVP_PKEY_is_a, EVP_PKEY_can_sign, EVP_PKEY_type_names_do_all,
-EVP_PKEY_get0_type_name, EVP_PKEY_get0_description, EVP_PKEY_get0_provider
+EVP_PKEY_get0_type_name, EVP_PKEY_get0_description, EVP_PKEY_get0_provider,
+EVP_PKEY_is_sm2
 - key type and capabilities functions
 
 =head1 SYNOPSIS
@@ -11,6 +12,7 @@ EVP_PKEY_get0_type_name, EVP_PKEY_get0_description, EVP_PKEY_get0_provider
  #include <openssl/evp.h>
 
  int EVP_PKEY_is_a(const EVP_PKEY *pkey, const char *name);
+ int EVP_PKEY_is_sm2(const EVP_PKEY *pkey);
  int EVP_PKEY_can_sign(const EVP_PKEY *pkey);
  int EVP_PKEY_type_names_do_all(const EVP_PKEY *pkey,
                                 void (*fn)(const char *name, void *data),
@@ -22,6 +24,9 @@ EVP_PKEY_get0_type_name, EVP_PKEY_get0_description, EVP_PKEY_get0_provider
 =head1 DESCRIPTION
 
 EVP_PKEY_is_a() checks if the key type of I<pkey> is I<name>.
+
+EVP_PKEY_is_sm2() checks if the key type of I<pkey> is SM2. This function is
+only used for compatibility reasons.
 
 EVP_PKEY_can_sign() checks if the functionality for the key type of
 I<pkey> supports signing.  No other check is done, such as whether
@@ -50,6 +55,9 @@ L<EVP_KEYMGMT(3)>.
 =head1 RETURN VALUES
 
 EVP_PKEY_is_a() returns 1 if I<pkey> has the key type I<name>,
+otherwise 0.
+
+EVP_PKEY_is_sm2() returns 1 if I<pkey> has the key type SM2,
 otherwise 0.
 
 EVP_PKEY_can_sign() returns 1 if the I<pkey> key type functionality
@@ -99,7 +107,8 @@ this as an crude example:
 
 =head1 HISTORY
 
-The functions described here were added in OpenSSL 3.0.
+EVP_PKEY_is_sm2() was added in BabaSSL 8.2.0, while other functions described
+here were added in OpenSSL 3.0.
 
 =head1 COPYRIGHT
 

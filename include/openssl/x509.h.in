@@ -577,6 +577,15 @@ void X509_set0_distinguishing_id(X509 *x, ASN1_OCTET_STRING *d_id);
 ASN1_OCTET_STRING *X509_get0_distinguishing_id(X509 *x);
 void X509_REQ_set0_distinguishing_id(X509_REQ *x, ASN1_OCTET_STRING *d_id);
 ASN1_OCTET_STRING *X509_REQ_get0_distinguishing_id(X509_REQ *x);
+
+/* for compattibility usage */
+# ifndef OPENSSL_NO_SM2
+#  define X509_set0_sm2_id X509_set0_distinguishing_id
+#  define X509_get0_sm2_id X509_get0_distinguishing_id
+#  define X509_REQ_set0_sm2_id X509_REQ_set0_distinguishing_id
+#  define X509_REQ_get0_sm2_id X509_REQ_get0_distinguishing_id
+# endif
+
 int X509_alias_set1(X509 *x, const unsigned char *name, int len);
 int X509_keyid_set1(X509 *x, const unsigned char *id, int len);
 unsigned char *X509_alias_get0(X509 *x, int *len);

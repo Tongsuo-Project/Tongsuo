@@ -178,6 +178,82 @@ static int test_req_distinguishing_id(void)
     return ret;
 }
 
+#ifndef OPENSSL_NO_SM2
+static int test_sm2_id(void)
+{
+    X509 *x = NULL;
+    int ret = 0;
+    ASN1_OCTET_STRING *v = NULL, *v2 = NULL;
+    char *distid = "this is an ID";
+
+    x = load_cert_from_file(bad_f);
+    if (x == NULL)
+        goto err;
+
+    v = ASN1_OCTET_STRING_new();
+    if (v == NULL)
+        goto err;
+
+    if (!ASN1_OCTET_STRING_set(v, (unsigned char *)distid,
+                               (int)strlen(distid))) {
+        ASN1_OCTET_STRING_free(v);
+        goto err;
+    }
+
+    X509_set0_sm2_id(x, v);
+
+    v2 = X509_get0_sm2_id(x);
+    if (!TEST_ptr(v2)
+            || !TEST_int_eq(ASN1_OCTET_STRING_cmp(v, v2), 0))
+        goto err;
+
+    ret = 1;
+ err:
+    X509_free(x);
+    return ret;
+}
+
+static int test_req_sm2_id(void)
+{
+    X509_REQ *x = NULL;
+    BIO *bio = NULL;
+    int ret = 0;
+    ASN1_OCTET_STRING *v = NULL, *v2 = NULL;
+    char *distid = "this is an ID";
+
+    bio = BIO_new_file(req_f, "r");
+    if (bio == NULL)
+        goto err;
+
+    x = PEM_read_bio_X509_REQ(bio, NULL, 0, NULL);
+    if (x == NULL)
+        goto err;
+
+    v = ASN1_OCTET_STRING_new();
+    if (v == NULL)
+        goto err;
+
+    if (!ASN1_OCTET_STRING_set(v, (unsigned char *)distid,
+                               (int)strlen(distid))) {
+        ASN1_OCTET_STRING_free(v);
+        goto err;
+    }
+
+    X509_REQ_set0_sm2_id(x, v);
+
+    v2 = X509_REQ_get0_sm2_id(x);
+    if (!TEST_ptr(v2)
+            || !TEST_int_eq(ASN1_OCTET_STRING_cmp(v, v2), 0))
+        goto err;
+
+    ret = 1;
+ err:
+    X509_REQ_free(x);
+    BIO_free(bio);
+    return ret;
+}
+#endif
+
 static int test_self_signed(const char *filename, int use_trusted, int expected)
 {
     X509 *cert = load_cert_from_file(filename); /* may result in NULL */
@@ -316,6 +392,10 @@ int setup_tests(void)
     ADD_TEST(test_store_ctx);
     ADD_TEST(test_distinguishing_id);
     ADD_TEST(test_req_distinguishing_id);
+#ifndef OPENSSL_NO_SM2
+    ADD_TEST(test_sm2_id);
+    ADD_TEST(test_req_sm2_id);
+#endif
     ADD_TEST(test_self_signed_good);
     ADD_TEST(test_self_signed_bad);
     ADD_TEST(test_self_signed_error);
