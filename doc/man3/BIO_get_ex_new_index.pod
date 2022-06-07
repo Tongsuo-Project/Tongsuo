@@ -22,7 +22,9 @@ UI_set_app_data, UI_get_app_data,
 X509_STORE_CTX_get_ex_new_index, X509_STORE_CTX_set_ex_data, X509_STORE_CTX_get_ex_data,
 X509_STORE_CTX_set_app_data, X509_STORE_CTX_get_app_data,
 X509_STORE_get_ex_new_index, X509_STORE_set_ex_data, X509_STORE_get_ex_data,
-X509_get_ex_new_index, X509_set_ex_data, X509_get_ex_data
+X509_get_ex_new_index, X509_set_ex_data, X509_get_ex_data,
+SSL_SESSION_get_ref, BABASSL_SESSION_get_ref,
+SSL_set_SESSION_CTX, BABASSL_set_SESSION_CTX
 - application-specific data
 
 =head1 SYNOPSIS
@@ -70,6 +72,14 @@ see L<openssl_user_macros(7)>:
  int ENGINE_set_ex_data(ENGINE *type, int idx, void *arg);
  void *ENGINE_get_ex_data(ENGINE *type, int idx);
 
+ #include <openssl/ssl.h>
+
+ #define SSL_SESSION_get_ref BABASSL_SESSION_get_ref
+ int BABASSL_SESSION_get_ref(SSL_SESSION *sess);
+
+ #define SSL_set_SESSION_CTX BABASSL_set_SESSION_CTX
+ SSL_CTX *BABASSL_set_SESSION_CTX(SSL *ssl, SSL_CTX *ctx);
+
 =head1 DESCRIPTION
 
 In the description here, I<TYPE> is used a placeholder
@@ -102,6 +112,14 @@ B<idx> set to zero.
 TYPE_get_app_data() is a macro that invokes TYPE_get_ex_data() with
 B<idx> set to zero.
 
+SSL_SESSION_get_ref() is a macro that invokes BABASSL_SESSION_get_ref() with
+the SSL_SESSION B<sess>.
+
+SSL_set_SESSION_CTX() is a macro that invokes BABASSL_set_SESSION_CTX() with
+B<ctx> set to session context within B<ssl>. If B<ctx> and the session context
+on the B<ssl> are the same, nothing is done. If B<ctx> is NULL, the current
+session context is returned, otherwise B<ctx> is returned.
+
 =head1 RETURN VALUES
 
 TYPE_get_ex_new_index() returns a new index on success or -1 on error.
@@ -109,6 +127,11 @@ TYPE_get_ex_new_index() returns a new index on success or -1 on error.
 TYPE_set_ex_data() returns 1 on success or 0 on error.
 
 TYPE_get_ex_data() returns the application data or NULL if an error occurred.
+
+SSL_SESSION_get_ref() returns the reference count of the session.
+
+SSL_set_SESSION_CTX() returns the session context which has been set if B<ctx>
+is not NULL, or the current session context if B<ctx> is NULL.
 
 =head1 SEE ALSO
 

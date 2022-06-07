@@ -4,7 +4,8 @@
 
 SSL_CTX_set_alpn_protos, SSL_set_alpn_protos, SSL_CTX_set_alpn_select_cb,
 SSL_CTX_set_next_proto_select_cb, SSL_CTX_set_next_protos_advertised_cb,
-SSL_select_next_proto, SSL_get0_alpn_selected, SSL_get0_next_proto_negotiated
+SSL_select_next_proto, SSL_get0_alpn_selected, SSL_get0_next_proto_negotiated,
+SSL_get0_alpn_proposed, BABASSL_get0_alpn_proposed
 - handle application layer protocol negotiation (ALPN)
 
 =head1 SYNOPSIS
@@ -46,6 +47,10 @@ SSL_select_next_proto, SSL_get0_alpn_selected, SSL_get0_next_proto_negotiated
                            unsigned int client_len);
  void SSL_get0_next_proto_negotiated(const SSL *s, const unsigned char **data,
                              unsigned *len);
+
+ #define SSL_get0_alpn_proposed BABASSL_get0_alpn_proposed
+ void BABASSL_get0_alpn_proposed(const SSL *ssl, const unsigned char **data,
+                                 unsigned *len);
 
 =head1 DESCRIPTION
 
@@ -111,6 +116,12 @@ the client can request any protocol it chooses. The value returned from
 this function need not be a member of the list of supported protocols
 provided by the callback.
 
+SSL_get0_alpn_proposed() is a macro that calls BABASSL_get0_alpn_proposed(),
+used by the server to gets the proposed ALPN protocol (if any) from B<ssl>.
+On return it sets B<*data> to point to B<*len> bytes of protocol name,
+not including the leading length-prefix byte. If the server didn't respond
+with a negotiated protocol then B<*len> will be zero.
+
 =head1 NOTES
 
 The protocol-lists must be in wire-format, which is defined as a vector of
@@ -137,6 +148,8 @@ invoked.
 
 SSL_CTX_set_alpn_protos() and SSL_set_alpn_protos() return 0 on success, and
 non-0 on failure. WARNING: these functions reverse the return value convention.
+
+SSL_get0_alpn_proposed() returns no value.
 
 SSL_select_next_proto() returns one of the following:
 

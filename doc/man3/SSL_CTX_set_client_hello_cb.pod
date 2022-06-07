@@ -2,7 +2,15 @@
 
 =head1 NAME
 
-SSL_CTX_set_client_hello_cb, SSL_client_hello_cb_fn, SSL_client_hello_isv2, SSL_client_hello_get0_legacy_version, SSL_client_hello_get0_random, SSL_client_hello_get0_session_id, SSL_client_hello_get0_ciphers, SSL_client_hello_get0_compression_methods, SSL_client_hello_get1_extensions_present, SSL_client_hello_get0_ext - callback functions for early server-side ClientHello processing
+SSL_CTX_set_client_hello_cb, SSL_client_hello_cb_fn, SSL_client_hello_isv2,
+SSL_client_hello_get0_legacy_version, SSL_client_hello_get0_random,
+SSL_client_hello_get0_session_id, SSL_client_hello_get0_ciphers,
+SSL_client_hello_get0_compression_methods,
+SSL_client_hello_get1_extensions_present,
+SSL_client_hello_get0_ext,
+SSL_client_hello_get1_extensions,
+BABASSL_client_hello_get1_extensions
+- callback functions for early server-side ClientHello processing
 
 =head1 SYNOPSIS
 
@@ -20,6 +28,9 @@ SSL_CTX_set_client_hello_cb, SSL_client_hello_cb_fn, SSL_client_hello_isv2, SSL_
                                               size_t *outlen);
  int SSL_client_hello_get0_ext(SSL *s, unsigned int type, const unsigned char **out,
                                size_t *outlen);
+
+ # define SSL_client_hello_get1_extensions BABASSL_client_hello_get1_extensions
+ int BABASSL_client_hello_get1_extensions(SSL *s, int **out, size_t *outlen);
 
 =head1 DESCRIPTION
 

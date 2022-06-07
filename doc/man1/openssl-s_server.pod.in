@@ -20,13 +20,21 @@ B<openssl> B<s_server>
 [B<-Verify> I<int>]
 [B<-cert> I<infile>]
 [B<-cert2> I<infile>]
+[B<-sign_cert> I<infile>]
+[B<-enc_cert> I<infile>]
 [B<-certform> B<DER>|B<PEM>|B<P12>]
+[B<-sign_certform> B<DER>|B<PEM>|B<P12>]
+[B<-enc_certform> B<DER>|B<PEM>|B<P12>]
 [B<-cert_chain> I<infile>]
 [B<-build_chain>]
 [B<-serverinfo> I<val>]
 [B<-key> I<filename>|I<uri>]
 [B<-key2> I<filename>|I<uri>]
+[B<-sign_key> I<filename>]
+[B<-enc_key> I<filename>]
 [B<-keyform> B<DER>|B<PEM>|B<P12>|B<ENGINE>]
+[B<-sign_keyform> B<DER>|B<PEM>|B<P12>|B<ENGINE>]
+[B<-enc_keyform> B<DER>|B<PEM>|B<P12>|B<ENGINE>]
 [B<-pass> I<val>]
 [B<-dcert> I<infile>]
 [B<-dcertform> B<DER>|B<PEM>|B<P12>]
@@ -39,6 +47,8 @@ B<openssl> B<s_server>
 [B<-debug>]
 [B<-msg>]
 [B<-msgfile> I<outfile>]
+[B<-ntls>]
+[B<-enable_ntls>]
 [B<-state>]
 [B<-nocert>]
 [B<-quiet>]
@@ -214,9 +224,27 @@ for example the DSS cipher suites require a certificate containing a DSS
 
 The certificate file to use for servername; default is C<server2.pem>.
 
+=item B<-sign_cert> I<infile>
+
+The signature certificate to use.
+
+=item B<-enc_cert> I<infile>
+
+The encryption certificate to use.
+
 =item B<-certform> B<DER>|B<PEM>|B<P12>
 
 The server certificate file format; unspecified by default.
+See L<openssl-format-options(1)> for details.
+
+=item B<-sign_certform> B<DER>|B<PEM>|B<P12>
+
+The server signature certificate file format; unspecified by default.
+See L<openssl-format-options(1)> for details.
+
+=item B<-enc_certform> B<DER>|B<PEM>|B<P12>
+
+The server encryption certificate file format; unspecified by default.
 See L<openssl-format-options(1)> for details.
 
 =item B<-cert_chain>
@@ -247,9 +275,27 @@ be used.
 
 The private Key file to use for servername if not given via B<-cert2>.
 
+=item B<-sign_key> I<filename>
+
+The signature private key to use.
+
+=item B<-enc_key> I<filename>
+
+The encryption private key to use.
+
 =item B<-keyform> B<DER>|B<PEM>|B<P12>|B<ENGINE>
 
 The key format; unspecified by default.
+See L<openssl-format-options(1)> for details.
+
+=item B<-sign_keyform> B<DER>|B<PEM>|B<P12>|B<ENGINE>
+
+The format of signature key; unspecified by default.
+See L<openssl-format-options(1)> for details.
+
+=item B<-enc_keyform> B<DER>|B<PEM>|B<P12>|B<ENGINE>
+
+The format of encryption key; unspecified by default.
 See L<openssl-format-options(1)> for details.
 
 =item B<-pass> I<val>
@@ -319,6 +365,14 @@ Show all protocol messages with hex dump.
 =item B<-msgfile> I<outfile>
 
 File to send output of B<-msg> or B<-trace> to, default standard output.
+
+=item B<-ntls>
+
+Only use NTLS protocol.
+
+=item B<-enable_ntls>
+
+Enable NTLS protocol, including TLCP and GM/T 0024-2014.
 
 =item B<-state>
 

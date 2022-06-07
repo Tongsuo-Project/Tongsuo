@@ -1,4 +1,4 @@
-# Copyright 2016-2021 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2016-2022 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -24,7 +24,8 @@ $VERSION = "1.0";
                                          result_file result_dir
                                          pipe with cmdstr
                                          openssl_versions
-                                         ok_nofips is_nofips isnt_nofips));
+                                         ok_nofips is_nofips isnt_nofips
+                                         merge_files));
 
 =head1 NAME
 
@@ -1278,6 +1279,29 @@ sub __decorate_cmd {
     return ($cmdstr, $display_cmd);
 }
 
+sub merge_files {
+    return __merge_files(@_);
+}
+
+sub __merge_files {
+    my $dest_file = pop @_;
+
+    open my $dest, '>', $dest_file
+        or die "Trying to write to $dest_file: $!\n";
+
+    foreach my $file (@_) {
+        open my $src, "<", $file
+            or die "Could not open $file: $!\n";
+
+        while (my $line = <$src>) {
+            print $dest $line;
+        }
+
+        close($src);
+    }
+
+    close($dest);
+}
 =head1 SEE ALSO
 
 L<Test::More>, L<Test::Harness>

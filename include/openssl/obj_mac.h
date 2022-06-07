@@ -4962,6 +4962,16 @@
 #define NID_sm4_ctr             1139
 #define OBJ_sm4_ctr             OBJ_sm_scheme,104L,7L
 
+#define SN_sm4_gcm              "SM4-GCM"
+#define LN_sm4_gcm              "sm4-gcm"
+#define NID_sm4_gcm             1250
+#define OBJ_sm4_gcm             OBJ_sm_scheme,104L,8L
+
+#define SN_sm4_ccm              "SM4-CCM"
+#define LN_sm4_ccm              "sm4-ccm"
+#define NID_sm4_ccm             1251
+#define OBJ_sm4_ccm             OBJ_sm_scheme,104L,9L
+
 #define SN_hmac         "HMAC"
 #define LN_hmac         "hmac"
 #define NID_hmac                855
@@ -5255,6 +5265,14 @@
 #define LN_kx_any               "kx-any"
 #define NID_kx_any              1063
 
+#define SN_kx_sm2               "KxSM2"
+#define LN_kx_sm2               "kx-sm2"
+#define NID_kx_sm2              1252
+
+#define SN_kx_sm2dhe            "KxSM2DHE"
+#define LN_kx_sm2dhe            "kx-sm2dhe"
+#define NID_kx_sm2dhe           1253
+
 #define SN_auth_rsa             "AuthRSA"
 #define LN_auth_rsa             "auth-rsa"
 #define NID_auth_rsa            1046
@@ -5290,6 +5308,10 @@
 #define SN_auth_any             "AuthANY"
 #define LN_auth_any             "auth-any"
 #define NID_auth_any            1064
+
+#define SN_auth_sm2             "AuthSM2"
+#define LN_auth_sm2             "auth-sm2"
+#define NID_auth_sm2            1254
 
 #define SN_poly1305             "Poly1305"
 #define LN_poly1305             "poly1305"

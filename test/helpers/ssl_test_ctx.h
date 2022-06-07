@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2016-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -66,6 +66,9 @@ typedef enum {
 typedef enum {
     SSL_TEST_METHOD_TLS = 0, /* Default */
     SSL_TEST_METHOD_DTLS
+#ifndef OPENSSL_NO_NTLS
+    ,SSL_TEST_METHOD_NTLS
+#endif
 } ssl_test_method_t;
 
 typedef enum {

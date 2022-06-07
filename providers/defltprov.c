@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -290,6 +290,7 @@ static const OSSL_ALGORITHM_CAPABLE deflt_ciphers[] = {
     ALG(PROV_NAMES_SM4_CTR, ossl_sm4128ctr_functions),
     ALG(PROV_NAMES_SM4_OFB, ossl_sm4128ofb128_functions),
     ALG(PROV_NAMES_SM4_CFB, ossl_sm4128cfb128_functions),
+    ALG(PROV_NAMES_SM4_GCM, ossl_sm4128gcm_functions),
 #endif /* OPENSSL_NO_SM4 */
 #ifndef OPENSSL_NO_CHACHA
     ALG(PROV_NAMES_ChaCha20, ossl_chacha20_functions),
@@ -352,6 +353,9 @@ static const OSSL_ALGORITHM deflt_keyexch[] = {
     { PROV_NAMES_ECDH, "provider=default", ossl_ecdh_keyexch_functions },
     { PROV_NAMES_X25519, "provider=default", ossl_x25519_keyexch_functions },
     { PROV_NAMES_X448, "provider=default", ossl_x448_keyexch_functions },
+#endif
+#ifndef OPENSSL_NO_SM2
+    { PROV_NAMES_SM2DH, "provider=default", ossl_sm2dh_keyexch_functions },
 #endif
     { PROV_NAMES_TLS1_PRF, "provider=default", ossl_kdf_tls1_prf_keyexch_functions },
     { PROV_NAMES_HKDF, "provider=default", ossl_kdf_hkdf_keyexch_functions },

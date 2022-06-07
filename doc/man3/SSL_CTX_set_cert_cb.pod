@@ -2,7 +2,13 @@
 
 =head1 NAME
 
-SSL_CTX_set_cert_cb, SSL_set_cert_cb - handle certificate callback function
+SSL_CTX_set_cert_cb, SSL_set_cert_cb,
+SSL_CTX_get_cert_cb, SSL_get_cert_cb,
+SSL_CTX_get_cert_cb_arg, SSL_get_cert_cb_arg,
+BABASSL_CTX_get_cert_cb, BABASSL_get_cert_cb,
+BABASSL_CTX_get_cert_cb_arg, BABASSL_get_cert_cb_arg,
+SSL_cert_cb_fn
+- handle certificate callback function
 
 =head1 SYNOPSIS
 
@@ -12,12 +18,28 @@ SSL_CTX_set_cert_cb, SSL_set_cert_cb - handle certificate callback function
                           void *arg);
  void SSL_set_cert_cb(SSL *s, int (*cert_cb)(SSL *ssl, void *arg), void *arg);
 
+ typedef int (*SSL_cert_cb_fn) (SSL *s, void *arg);
+
+ #define SSL_CTX_get_cert_cb BABASSL_CTX_get_cert_cb
+ #define SSL_CTX_get_cert_cb_arg BABASSL_CTX_get_cert_cb_arg
+ SSL_cert_cb_fn BABASSL_CTX_get_cert_cb(SSL_CTX *c);
+ void *BABASSL_CTX_get_cert_cb_arg(SSL_CTX *c);
+
+ #define SSL_get_cert_cb BABASSL_get_cert_cb
+ #define SSL_get_cert_cb_arg BABASSL_get_cert_cb_arg
+ SSL_cert_cb_fn BABASSL_get_cert_cb(SSL *s);
+ void *BABASSL_get_cert_cb_arg(SSL *s);
+
 =head1 DESCRIPTION
 
 SSL_CTX_set_cert_cb() and SSL_set_cert_cb() sets the I<cert_cb> callback,
 I<arg> value is pointer which is passed to the application callback.
 
 When I<cert_cb> is NULL, no callback function is used.
+
+SSL_CTX_get_cert_cb and SSL_get_cert_cb return cert_cb which has been set
+or NULL if no cert_cb has been set.
+SSL_CTX_get_cert_cb_arg and SSL_get_cert_cb_arg return the arg of cert_cb.
 
 I<cert_cb> is the application defined callback. It is called before a
 certificate will be used by a client or server. The callback can then inspect
@@ -60,6 +82,9 @@ support it will B<not> be used.
 =head1 RETURN VALUES
 
 SSL_CTX_set_cert_cb() and SSL_set_cert_cb() do not return values.
+SSL_CTX_get_cert_cb and SSL_get_cert_cb return cert_cb, maybe NULL, with the
+type of SSL_cert_cb_fn.
+SSL_CTX_get_cert_cb_arg and SSL_get_cert_cb_arg return the arg of cert_cb.
 
 =head1 SEE ALSO
 

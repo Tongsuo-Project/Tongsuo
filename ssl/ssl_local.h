@@ -183,6 +183,9 @@
 /* GOST KDF key exchange, draft-smyshlyaev-tls12-gost-suites */
 # define SSL_kGOST18             0x00000200U
 
+# define SSL_kSM2                0x00000400U
+# define SSL_kSM2DHE             0x00000800U
+
 /* all PSK */
 
 # define SSL_PSK     (SSL_kPSK | SSL_kRSAPSK | SSL_kECDHEPSK | SSL_kDHEPSK)
@@ -209,9 +212,11 @@
 # define SSL_aGOST12             0x00000080U
 /* Any appropriate signature auth (for TLS 1.3 ciphersuites) */
 # define SSL_aANY                0x00000000U
+/* SM2 auth */
+# define SSL_aSM2                0x00000100U
 /* All bits requiring a certificate */
 #define SSL_aCERT \
-    (SSL_aRSA | SSL_aDSS | SSL_aECDSA | SSL_aGOST01 | SSL_aGOST12)
+    (SSL_aRSA | SSL_aDSS | SSL_aECDSA | SSL_aGOST01 | SSL_aGOST12 | SSL_aSM2)
 
 /* Bits for algorithm_enc (symmetric encryption) */
 # define SSL_DES                 0x00000001U
@@ -239,6 +244,9 @@
 # define SSL_MAGMA               0x00400000U
 # define SSL_KUZNYECHIK          0x00800000U
 
+# define SSL_SM4CCM              0x01000000U
+# define SSL_SM4GCM              0x02000000U
+# define SSL_SM4                 0x04000000U
 # define SSL_AESGCM              (SSL_AES128GCM | SSL_AES256GCM)
 # define SSL_AESCCM              (SSL_AES128CCM | SSL_AES256CCM | SSL_AES128CCM8 | SSL_AES256CCM8)
 # define SSL_AES                 (SSL_AES128|SSL_AES256|SSL_AESGCM|SSL_AESCCM)
@@ -265,6 +273,7 @@
 # define SSL_GOST12_512          0x00000200U
 # define SSL_MAGMAOMAC           0x00000400U
 # define SSL_KUZNYECHIKOMAC      0x00000800U
+# define SSL_SM3                 0x00001000U
 
 /*
  * When adding new digest in the ssl_ciph.c and increment SSL_MD_NUM_IDX make
@@ -285,7 +294,8 @@
 # define SSL_MD_SHA512_IDX 11
 # define SSL_MD_MAGMAOMAC_IDX 12
 # define SSL_MD_KUZNYECHIKOMAC_IDX 13
-# define SSL_MAX_DIGEST 14
+# define SSL_MD_SM3_IDX 14
+# define SSL_MAX_DIGEST 15
 
 #define SSL_MD_NUM_IDX  SSL_MAX_DIGEST
 
@@ -300,6 +310,7 @@
 # define SSL_HANDSHAKE_MAC_GOST12_256 SSL_MD_GOST12_256_IDX
 # define SSL_HANDSHAKE_MAC_GOST12_512 SSL_MD_GOST12_512_IDX
 # define SSL_HANDSHAKE_MAC_DEFAULT  SSL_HANDSHAKE_MAC_MD5_SHA1
+# define SSL_HANDSHAKE_MAC_SM3 SSL_MD_SM3_IDX
 
 /* Bits 8-15 bits are PRF */
 # define TLS1_PRF_DGST_SHIFT 8
@@ -310,6 +321,7 @@
 # define TLS1_PRF_GOST12_256 (SSL_MD_GOST12_256_IDX << TLS1_PRF_DGST_SHIFT)
 # define TLS1_PRF_GOST12_512 (SSL_MD_GOST12_512_IDX << TLS1_PRF_DGST_SHIFT)
 # define TLS1_PRF            (SSL_MD_MD5_SHA1_IDX << TLS1_PRF_DGST_SHIFT)
+# define TLS1_PRF_SM3 (SSL_MD_SM3_IDX << TLS1_PRF_DGST_SHIFT)
 
 /*
  * Stream MAC for GOST ciphersuites from cryptopro draft (currently this also
@@ -344,6 +356,10 @@
 # define SSL_IS_TLS13(s) (!SSL_IS_DTLS(s) \
                           && (s)->method->version >= TLS1_3_VERSION \
                           && (s)->method->version != TLS_ANY_VERSION)
+
+# ifndef OPENSSL_NO_NTLS
+#  define SSL_IS_NTLS(s) (s->version == NTLS_VERSION)
+# endif
 
 # define SSL_TREAT_AS_TLS13(s) \
     (SSL_IS_TLS13(s) || (s)->early_data_state == SSL_EARLY_DATA_CONNECTING \
@@ -405,7 +421,16 @@
 # define SSL_PKEY_GOST12_512     6
 # define SSL_PKEY_ED25519        7
 # define SSL_PKEY_ED448          8
-# define SSL_PKEY_NUM            9
+# define SSL_PKEY_SM2            9
+# ifndef OPENSSL_NO_NTLS
+#  define SSL_PKEY_SM2_SIGN      10
+#  define SSL_PKEY_SM2_ENC       11
+#  define SSL_PKEY_RSA_SIGN      12
+#  define SSL_PKEY_RSA_ENC       13
+#  define SSL_PKEY_NUM           14
+# else
+#  define SSL_PKEY_NUM           10
+# endif
 
 # define SSL_ENC_DES_IDX         0
 # define SSL_ENC_3DES_IDX        1
@@ -431,7 +456,14 @@
 # define SSL_ENC_ARIA256GCM_IDX  21
 # define SSL_ENC_MAGMA_IDX       22
 # define SSL_ENC_KUZNYECHIK_IDX  23
-# define SSL_ENC_NUM_IDX         24
+# define SSL_ENC_SM4_GCM_IDX     24
+# define SSL_ENC_SM4_CCM_IDX     25
+# ifndef OPENSSL_NO_SM4
+#  define SSL_ENC_SM4_IDX        26
+#  define SSL_ENC_NUM_IDX        27
+# else
+#  define SSL_ENC_NUM_IDX        26
+# endif
 
 /*-
  * SSL_kRSA <- RSA_ENC
@@ -1205,6 +1237,10 @@ struct ssl_ctx_st {
     uint32_t disabled_mac_mask;
     uint32_t disabled_mkey_mask;
     uint32_t disabled_auth_mask;
+#ifndef OPENSSL_NO_NTLS
+    /* Tag of NTLS */
+    int enable_ntls;
+#endif
 };
 
 typedef struct cert_pkey_st CERT_PKEY;
@@ -1348,6 +1384,11 @@ struct ssl_st {
             const struct sigalg_lookup_st *sigalg;
             /* Pointer to certificate we use */
             CERT_PKEY *cert;
+
+# ifndef OPENSSL_NO_NTLS
+            CERT_PKEY *sign_cert;
+            CERT_PKEY *enc_cert;
+# endif
             /*
              * signature algorithms peer reports: e.g. supported signature
              * algorithms extension for server or as part of a certificate
@@ -1799,6 +1840,10 @@ struct ssl_st {
      */
     const struct sigalg_lookup_st **shared_sigalgs;
     size_t shared_sigalgslen;
+
+# ifndef OPENSSL_NO_NTLS
+    int enable_ntls;
+# endif
 };
 
 /*
@@ -2151,6 +2196,7 @@ typedef enum downgrade_en {
 #define TLSEXT_SIGALG_ecdsa_secp521r1_sha512                    0x0603
 #define TLSEXT_SIGALG_ecdsa_sha224                              0x0303
 #define TLSEXT_SIGALG_ecdsa_sha1                                0x0203
+#define TLSEXT_SIGALG_sm2sig_sm3                                0x0708
 #define TLSEXT_SIGALG_rsa_pss_rsae_sha256                       0x0804
 #define TLSEXT_SIGALG_rsa_pss_rsae_sha384                       0x0805
 #define TLSEXT_SIGALG_rsa_pss_rsae_sha512                       0x0806
@@ -2222,6 +2268,11 @@ __owur const SSL_METHOD *dtls_bad_ver_client_method(void);
 __owur const SSL_METHOD *dtlsv1_2_method(void);
 __owur const SSL_METHOD *dtlsv1_2_server_method(void);
 __owur const SSL_METHOD *dtlsv1_2_client_method(void);
+# ifndef OPENSSL_NO_NTLS
+__owur const SSL_METHOD *ntls_method(void);
+__owur const SSL_METHOD *ntls_server_method(void);
+__owur const SSL_METHOD *ntls_client_method(void);
+# endif
 
 extern const SSL3_ENC_METHOD TLSv1_enc_data;
 extern const SSL3_ENC_METHOD TLSv1_1_enc_data;
@@ -2230,6 +2281,9 @@ extern const SSL3_ENC_METHOD TLSv1_3_enc_data;
 extern const SSL3_ENC_METHOD SSLv3_enc_data;
 extern const SSL3_ENC_METHOD DTLSv1_enc_data;
 extern const SSL3_ENC_METHOD DTLSv1_2_enc_data;
+# ifndef OPENSSL_NO_NTLS
+extern const SSL3_ENC_METHOD NTLS_enc_data;
+# endif
 
 /*
  * Flags for SSL methods
@@ -2425,6 +2479,8 @@ __owur int ssl_cert_add1_chain_cert(SSL *s, SSL_CTX *ctx, X509 *x);
 __owur int ssl_cert_select_current(CERT *c, X509 *x);
 __owur int ssl_cert_set_current(CERT *c, long arg);
 void ssl_cert_set_cert_cb(CERT *c, int (*cb) (SSL *ssl, void *arg), void *arg);
+SSL_cert_cb_fn ssl_cert_get_cert_cb(CERT *c);
+void *ssl_cert_get_cert_cb_arg(CERT *c);
 
 __owur int ssl_verify_cert_chain(SSL *s, STACK_OF(X509) *sk);
 __owur int ssl_build_cert_chain(SSL *s, SSL_CTX *ctx, int flags);
@@ -2644,6 +2700,10 @@ __owur int tls13_export_keying_material_early(SSL *s, unsigned char *out,
 __owur int tls1_alert_code(int code);
 __owur int tls13_alert_code(int code);
 __owur int ssl3_alert_code(int code);
+#ifndef OPENSSL_NO_NTLS
+__owur int ntls_alert_code(int code);
+int tls_choose_sigalg_ntls(SSL *s, int fatalerrs);
+#endif
 
 __owur int ssl_check_srvr_ecc_cert_and_alg(X509 *x, SSL *s);
 

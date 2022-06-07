@@ -318,7 +318,11 @@ static int protocol_from_string(const char *value)
         {"TLSv1.2", TLS1_2_VERSION},
         {"TLSv1.3", TLS1_3_VERSION},
         {"DTLSv1", DTLS1_VERSION},
-        {"DTLSv1.2", DTLS1_2_VERSION}
+        {"DTLSv1.2", DTLS1_2_VERSION},
+#ifndef OPENSSL_NO_NTLS
+        {"NTLS", NTLS_VERSION},
+        {"MIN_VERSION_WITH_NTLS", MIN_VERSION_WITH_NTLS}
+#endif
     };
     size_t i;
     size_t n = OSSL_NELEM(versions);
@@ -458,6 +462,89 @@ static int cmd_PrivateKey(SSL_CONF_CTX *cctx, const char *value)
         rv = SSL_use_PrivateKey_file(cctx->ssl, value, SSL_FILETYPE_PEM);
     return rv > 0;
 }
+
+#ifndef OPENSSL_NO_NTLS
+static int cmd_EncCertificate(SSL_CONF_CTX *cctx, const char *value)
+{
+    int rv = 1;
+    CERT *c = NULL;
+
+    if (cctx->ctx) {
+        /* FIXME: currently we assume all SM2 certs in PEM format */
+        rv = SSL_CTX_use_enc_certificate_file(cctx->ctx, value,
+                                              SSL_FILETYPE_PEM);
+        c = cctx->ctx->cert;
+    }
+
+    if (cctx->ssl) {
+        /* FIXME: setting certificates for SSL is not supported yet */
+        rv = 0;
+    }
+
+    if (rv > 0 && c && cctx->flags & SSL_CONF_FLAG_REQUIRE_PRIVATE) {
+        char **pfilename = &cctx->cert_filename[c->key - c->pkeys];
+        OPENSSL_free(*pfilename);
+        *pfilename = OPENSSL_strdup(value);
+        if (!*pfilename)
+            rv = 0;
+    }
+
+    return rv > 0;
+}
+
+static int cmd_EncPrivateKey(SSL_CONF_CTX *cctx, const char *value)
+{
+    int rv = 1;
+    if (!(cctx->flags & SSL_CONF_FLAG_CERTIFICATE))
+        return -2;
+    if (cctx->ctx)
+        rv = SSL_CTX_use_enc_PrivateKey_file(cctx->ctx, value, SSL_FILETYPE_PEM);
+    if (cctx->ssl)
+        rv = 0;
+    return rv > 0;
+}
+
+static int cmd_SignCertificate(SSL_CONF_CTX *cctx, const char *value)
+{
+    int rv = 1;
+    CERT *c = NULL;
+
+    if (cctx->ctx) {
+        /* FIXME: currently we assume all sign certs in PEM format */
+        rv = SSL_CTX_use_sign_certificate_file(cctx->ctx, value,
+                                               SSL_FILETYPE_PEM);
+        c = cctx->ctx->cert;
+    }
+
+    if (cctx->ssl) {
+        /* FIXME: setting certificates for SSL is not supported yet */
+        rv = 0;
+    }
+
+    if (rv > 0 && c && cctx->flags & SSL_CONF_FLAG_REQUIRE_PRIVATE) {
+        char **pfilename = &cctx->cert_filename[c->key - c->pkeys];
+        OPENSSL_free(*pfilename);
+        *pfilename = OPENSSL_strdup(value);
+        if (!*pfilename)
+            rv = 0;
+    }
+
+    return rv > 0;
+}
+
+static int cmd_SignPrivateKey(SSL_CONF_CTX *cctx, const char *value)
+{
+    int rv = 1;
+    if (!(cctx->flags & SSL_CONF_FLAG_CERTIFICATE))
+        return -2;
+    if (cctx->ctx)
+        rv = SSL_CTX_use_sign_PrivateKey_file(cctx->ctx, value,
+                                              SSL_FILETYPE_PEM);
+    if (cctx->ssl)
+        rv = 0;
+    return rv > 0;
+}
+#endif
 
 static int cmd_ServerInfoFile(SSL_CONF_CTX *cctx, const char *value)
 {
@@ -662,6 +749,23 @@ static int cmd_NumTickets(SSL_CONF_CTX *cctx, const char *value)
     return rv;
 }
 
+#ifndef OPENSSL_NO_NTLS
+static int cmd_Enable_ntls(SSL_CONF_CTX *cctx, const char *value)
+{
+    if (strcmp(value, "on") == 0) {
+        if (cctx->ctx)
+            SSL_CTX_enable_ntls(cctx->ctx);
+        if (cctx->ssl)
+            SSL_enable_ntls(cctx->ssl);
+    } else {
+        if (cctx->ctx)
+            SSL_CTX_disable_ntls(cctx->ctx);
+        if (cctx->ssl)
+            SSL_disable_ntls(cctx->ssl);
+    }
+    return 1;
+}
+#endif
 typedef struct {
     int (*cmd) (SSL_CONF_CTX *cctx, const char *value);
     const char *str_file;
@@ -689,6 +793,9 @@ static const ssl_conf_cmd_tbl ssl_conf_cmds[] = {
     SSL_CONF_CMD_SWITCH("no_tls1_1", 0),
     SSL_CONF_CMD_SWITCH("no_tls1_2", 0),
     SSL_CONF_CMD_SWITCH("no_tls1_3", 0),
+#ifndef OPENSSL_NO_NTLS
+    SSL_CONF_CMD_SWITCH("no_ntls", 0),
+#endif
     SSL_CONF_CMD_SWITCH("bugs", 0),
     SSL_CONF_CMD_SWITCH("no_comp", 0),
     SSL_CONF_CMD_SWITCH("comp", 0),
@@ -759,6 +866,17 @@ static const ssl_conf_cmd_tbl ssl_conf_cmds[] = {
                  SSL_CONF_TYPE_FILE),
     SSL_CONF_CMD_STRING(RecordPadding, "record_padding", 0),
     SSL_CONF_CMD_STRING(NumTickets, "num_tickets", SSL_CONF_FLAG_SERVER),
+#ifndef OPENSSL_NO_NTLS
+    SSL_CONF_CMD_STRING(Enable_ntls, "enable_ntls", 0),
+    SSL_CONF_CMD(EncCertificate, "enc_cert", SSL_CONF_FLAG_CERTIFICATE,
+                 SSL_CONF_TYPE_FILE),
+    SSL_CONF_CMD(EncPrivateKey, "enc_key", SSL_CONF_FLAG_CERTIFICATE,
+                 SSL_CONF_TYPE_FILE),
+    SSL_CONF_CMD(SignCertificate, "sign_cert", SSL_CONF_FLAG_CERTIFICATE,
+                 SSL_CONF_TYPE_FILE),
+    SSL_CONF_CMD(SignPrivateKey, "sign_key", SSL_CONF_FLAG_CERTIFICATE,
+                 SSL_CONF_TYPE_FILE),
+#endif
 };
 
 /* Supported switches: must match order of switches in ssl_conf_cmds */
@@ -768,6 +886,9 @@ static const ssl_switch_tbl ssl_cmd_switches[] = {
     {SSL_OP_NO_TLSv1_1, 0},     /* no_tls1_1 */
     {SSL_OP_NO_TLSv1_2, 0},     /* no_tls1_2 */
     {SSL_OP_NO_TLSv1_3, 0},     /* no_tls1_3 */
+#ifndef OPENSSL_NO_NTLS
+    {SSL_OP_NO_NTLS, 0},        /* no_ntls */
+#endif
     {SSL_OP_ALL, 0},            /* bugs */
     {SSL_OP_NO_COMPRESSION, 0}, /* no_comp */
     {SSL_OP_NO_COMPRESSION, SSL_TFLAG_INV}, /* comp */

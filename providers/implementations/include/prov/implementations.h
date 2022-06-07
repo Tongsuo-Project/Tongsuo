@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -179,6 +179,7 @@ extern const OSSL_DISPATCH ossl_sm4128cbc_functions[];
 extern const OSSL_DISPATCH ossl_sm4128ctr_functions[];
 extern const OSSL_DISPATCH ossl_sm4128ofb128_functions[];
 extern const OSSL_DISPATCH ossl_sm4128cfb128_functions[];
+extern const OSSL_DISPATCH ossl_sm4128gcm_functions[];
 #endif /* OPENSSL_NO_SM4 */
 #ifndef OPENSSL_NO_RC5
 extern const OSSL_DISPATCH ossl_rc5128ecb_functions[];
@@ -303,6 +304,9 @@ extern const OSSL_DISPATCH ossl_dh_keyexch_functions[];
 extern const OSSL_DISPATCH ossl_x25519_keyexch_functions[];
 extern const OSSL_DISPATCH ossl_x448_keyexch_functions[];
 extern const OSSL_DISPATCH ossl_ecdh_keyexch_functions[];
+#ifndef OPENSSL_NO_SM2
+extern const OSSL_DISPATCH ossl_sm2dh_keyexch_functions[];
+#endif
 extern const OSSL_DISPATCH ossl_kdf_tls1_prf_keyexch_functions[];
 extern const OSSL_DISPATCH ossl_kdf_hkdf_keyexch_functions[];
 extern const OSSL_DISPATCH ossl_kdf_scrypt_keyexch_functions[];

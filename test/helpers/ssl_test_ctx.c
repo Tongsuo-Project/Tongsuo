@@ -124,6 +124,7 @@ static const test_enum ssl_alerts[] = {
     {"BadCertificate", SSL_AD_BAD_CERTIFICATE},
     {"NoApplicationProtocol", SSL_AD_NO_APPLICATION_PROTOCOL},
     {"CertificateRequired", SSL_AD_CERTIFICATE_REQUIRED},
+    {"CertificateExpired", SSL_AD_CERTIFICATE_EXPIRED},
 };
 
 __owur static int parse_alert(int *alert, const char *value)
@@ -156,6 +157,9 @@ static const test_enum ssl_protocols[] = {
      {"SSLv3", SSL3_VERSION},
      {"DTLSv1", DTLS1_VERSION},
      {"DTLSv1.2", DTLS1_2_VERSION},
+#ifndef OPENSSL_NO_NTLS
+     {"NTLS", NTLS_VERSION},
+#endif
 };
 
 __owur static int parse_protocol(SSL_TEST_CTX *test_ctx, const char *value)
@@ -328,6 +332,9 @@ const char *ssl_session_id_name(ssl_session_id_t server)
 static const test_enum ssl_test_methods[] = {
     {"TLS", SSL_TEST_METHOD_TLS},
     {"DTLS", SSL_TEST_METHOD_DTLS},
+#ifndef OPENSSL_NO_NTLS
+    {"NTLS", SSL_TEST_METHOD_NTLS},
+#endif
 };
 
 __owur static int parse_test_method(SSL_TEST_CTX *test_ctx, const char *value)

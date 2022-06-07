@@ -2,7 +2,11 @@
 
 =head1 NAME
 
-SSL_get_certificate, SSL_get_privatekey - retrieve TLS/SSL certificate and
+SSL_get_certificate, SSL_get_privatekey,
+SSL_get_use_certificate, BABASSL_get_use_certificate,
+SSL_get_sign_certificate_ntls, SSL_get_enc_certificate_ntls,
+BABASSL_get_sign_certificate_ntls, BABASSL_get_enc_certificate_ntls
+- retrieve TLS/SSL certificate and
 private key
 
 =head1 SYNOPSIS
@@ -12,10 +16,29 @@ private key
  X509 *SSL_get_certificate(const SSL *s);
  EVP_PKEY *SSL_get_privatekey(const SSL *s);
 
+ #define SSL_get_use_certificate BABASSL_get_use_certificate
+ X509 *BABASSL_get_use_certificate(const SSL *s);
+
+ #ifndef OPENSSL_NO_NTLS
+ #define SSL_get_sign_certificate_ntls BABASSL_get_sign_certificate_ntls
+ #define SSL_get_enc_certificate_ntls BABASSL_get_enc_certificate_ntls
+
+ X509 *BABASSL_get_sign_certificate_ntls(const SSL *s);
+ X509 *BABASSL_get_enc_certificate_ntls(const SSL *s);
+ #endif
+
 =head1 DESCRIPTION
 
 SSL_get_certificate() returns a pointer to an B<X509> object representing a
 certificate used as the local peer's identity.
+
+SSL_get_use_certificate() is a macro that calls BABASSL_get_use_certificate(),
+returns a pointer to an B<X509> object representing the used certificate.
+
+SSL_get_sign_certificate_ntls() returns a pointer to an B<X509> object
+representing the used signature certificate.
+SSL_get_enc_certificate_ntls() returns a pointer to an B<X509> object
+representing the used encryption certificate.
 
 Multiple certificates can be configured; for example, a server might have both
 RSA and ECDSA certificates. The certificate which is returned by

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -440,6 +440,17 @@ extern "C" {
 #define OSSL_EXCHANGE_PARAM_KDF_OUTLEN            "kdf-outlen" /* size_t */
 /* The following parameter is an octet_string on set and an octet_ptr on get */
 #define OSSL_EXCHANGE_PARAM_KDF_UKM               "kdf-ukm"
+
+/* SM2DH Exchange parameters */
+#define OSSL_EXCHANGE_PARAM_INITIATOR             "sm2-initiator"
+#define OSSL_EXCHANGE_PARAM_SELF_ID               "self-id"
+#define OSSL_EXCHANGE_PARAM_PEER_ID               "peer-id"
+#define OSSL_EXCHANGE_PARAM_SELF_ENC_KEY          "self-enc-key"
+#define OSSL_EXCHANGE_PARAM_PEER_ENC_KEY          "peer-enc-key"
+
+#define OSSL_EXCHANGE_PARAM_DIGEST                OSSL_PKEY_PARAM_DIGEST
+#define OSSL_EXCHANGE_PARAM_DIGEST_PROPS          "digest-props" /* utf8_string */
+#define OSSL_EXCHANGE_PARAM_OUTLEN                "outlen" /* size_t */
 
 /* Signature parameters */
 #define OSSL_SIGNATURE_PARAM_ALGORITHM_ID       "algorithm-id"

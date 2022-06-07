@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2020 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2017-2022 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright 2017 BaishanCloud. All rights reserved.
  *
  * Licensed under the Apache License 2.0 (the "License");
@@ -363,6 +363,14 @@ static CIPHER_ID_NAME cipher_names[] = {
     {0x1305, "TLS_AES_128_CCM_8_SHA256"},
     {0xFEFE, "SSL_RSA_FIPS_WITH_DES_CBC_SHA"},
     {0xFEFF, "SSL_RSA_FIPS_WITH_3DES_EDE_CBC_SHA"},
+    {0xE011, "ECDHE_SM4_CBC_SM3"},
+    {0xE051, "ECDHE_SM4_GCM_SM3"},
+    {0xE013, "ECC_SM4_CBC_SM3"},
+    {0xE053, "ECC_SM4_GCM_SM3"},
+    {0xE019, "RSA_SM4_CBC_SM3"},
+    {0xE059, "RSA_SM4_GCM_SM3"},
+    {0xE01C, "RSA_SM4_CBC_SHA256"},
+    {0xE05A, "RSA_SM4_GCM_SHA256"},
 };
 
 static const char *get_std_name_by_id(int id)

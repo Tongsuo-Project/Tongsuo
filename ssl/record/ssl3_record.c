@@ -333,6 +333,12 @@ int ssl3_get_record(SSL *s)
                     return -1;
                 }
 
+#ifndef OPENSSL_NO_NTLS
+                if (s->enable_ntls == 1
+                    && version == NTLS_VERSION) {
+                    /* do nothing */
+                } else
+#endif
                 if ((version >> 8) != SSL3_VERSION_MAJOR) {
                     if (RECORD_LAYER_is_first_record(&s->rlayer)) {
                         /* Go back to start of packet, look at the five bytes

@@ -1,5 +1,5 @@
 #! /usr/bin/env perl
-# Copyright 2015-2021 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2015-2022 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -34,7 +34,7 @@ map { s/\^// } @conf_files if $^O eq "VMS";
 
 # We hard-code the number of tests to double-check that the globbing above
 # finds all files as expected.
-plan tests => 30;
+plan tests => 34;
 
 # Some test results depend on the configuration of enabled protocols. We only
 # verify generated sources in the default configuration.
@@ -80,6 +80,10 @@ my %conf_dependent_tests = (
   "27-ticket-appdata.cnf" => !$is_default_tls,
   "28-seclevel.cnf" => disabled("tls1_2") || $no_ec,
   "30-extended-master-secret.cnf" => disabled("tls1_2"),
+  "31-ntls.cnf" => disabled("ntls"),
+  "39-ntls-sni-ticket.cnf" => disabled("ntls"),
+  "40-ntls_client_auth.cnf" => disabled("ntls"),
+  "41-ntls-alpn.cnf" => disabled("ntls"),
 );
 
 # Add your test here if it should be skipped for some compile-time
@@ -114,6 +118,16 @@ my %skip = (
   "25-cipher.cnf" => disabled("ec") || disabled("tls1_2"),
   "26-tls13_client_auth.cnf" => disabled("tls1_3") || ($no_ec && $no_dh),
   "29-dtls-sctp-label-bug.cnf" => disabled("sctp") || disabled("sock"),
+  "31-ntls.cnf" => disabled("ntls") || disabled("sm2") || disabled("sm3")
+                    || disabled("sm4") || !$no_fips,
+  "39-ntls-sni-ticket.cnf" => disabled("ntls") || disabled("sm2")
+                                || disabled("sm3") || disabled("sm4")
+                                || !$no_fips,
+  "40-ntls_client_auth.cnf" => disabled("ntls") || disabled("sm2")
+                                || disabled("sm3") || disabled("sm4")
+                                || !$no_fips,
+  "41-ntls-alpn.cnf" => disabled("ntls") || disabled("sm2")
+                         || disabled("sm3") || disabled("sm4") || !$no_fips,
 );
 
 foreach my $conf (@conf_files) {

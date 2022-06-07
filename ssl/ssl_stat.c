@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2022 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright 2005 Nokia. All rights reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
@@ -312,6 +312,20 @@ const char *SSL_alert_desc_string(int value)
         return "BH";
     case TLS1_AD_UNKNOWN_PSK_IDENTITY:
         return "UP";
+#ifndef OPENSSL_NO_NTLS
+    case NTLS_AD_UNSUPPORTED_SITE2SITE:
+        return "U2";
+    case NTLS_AD_NO_AREA:
+        return "NA";
+    case NTLS_AD_UNSUPPORTED_AREATYPE:
+        return "AT";
+    case NTLS_AD_BAD_IBCPARAM:
+        return "BI";
+    case NTLS_AD_UNSUPPORTED_IBCPARAM:
+        return "UI";
+    case NTLS_AD_IDENTITY_NEED:
+        return "IN";
+#endif
     default:
         return "UK";
     }
@@ -382,6 +396,20 @@ const char *SSL_alert_desc_string_long(int value)
         return "unknown PSK identity";
     case TLS1_AD_NO_APPLICATION_PROTOCOL:
         return "no application protocol";
+#ifndef OPENSSL_NO_NTLS
+    case NTLS_AD_UNSUPPORTED_SITE2SITE:
+        return "unsupported site2site";
+    case NTLS_AD_NO_AREA:
+        return "no area";
+    case NTLS_AD_UNSUPPORTED_AREATYPE:
+        return "unsupported areatype";
+    case NTLS_AD_BAD_IBCPARAM:
+        return "bad ibc parameters";
+    case NTLS_AD_UNSUPPORTED_IBCPARAM:
+        return "unsupported ibc parameters";
+    case NTLS_AD_IDENTITY_NEED:
+        return "identity need";
+#endif
     default:
         return "unknown";
     }

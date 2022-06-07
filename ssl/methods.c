@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2016 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -173,6 +173,24 @@ IMPLEMENT_dtls1_meth_func(DTLS_ANY_VERSION, 0, 0,
                           DTLS_client_method,
                           ssl_undefined_function,
                           ossl_statem_connect, DTLSv1_2_enc_data)
+
+#ifndef OPENSSL_NO_NTLS
+IMPLEMENT_tls_meth_func(NTLS_VERSION, SSL_METHOD_NO_SUITEB, SSL_OP_NO_NTLS,
+                        ntls_method,
+                        ossl_statem_accept,
+                        ossl_statem_connect, NTLS_enc_data)
+
+IMPLEMENT_tls_meth_func(NTLS_VERSION, SSL_METHOD_NO_SUITEB, SSL_OP_NO_NTLS,
+                        ntls_server_method,
+                        ossl_statem_accept,
+                        ssl_undefined_function, NTLS_enc_data)
+
+IMPLEMENT_tls_meth_func(NTLS_VERSION, SSL_METHOD_NO_SUITEB, SSL_OP_NO_NTLS,
+                        ntls_client_method,
+                        ssl_undefined_function,
+                        ossl_statem_connect, NTLS_enc_data)
+#endif
+
 #ifndef OPENSSL_NO_DEPRECATED_1_1_0
 # ifndef OPENSSL_NO_TLS1_2_METHOD
 const SSL_METHOD *TLSv1_2_method(void)
@@ -273,6 +291,23 @@ const SSL_METHOD *DTLSv1_server_method(void)
 const SSL_METHOD *DTLSv1_client_method(void)
 {
     return dtlsv1_client_method();
+}
+# endif
+
+# ifndef OPENSSL_NO_NTLS
+const SSL_METHOD *NTLS_method(void)
+{
+    return ntls_method();
+}
+
+const SSL_METHOD *NTLS_server_method(void)
+{
+    return ntls_server_method();
+}
+
+const SSL_METHOD *NTLS_client_method(void)
+{
+    return ntls_client_method();
 }
 # endif
 
