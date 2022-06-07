@@ -32,7 +32,8 @@ typedef enum OPTION_choice {
     OPT_UNTRUSTED, OPT_TRUSTED, OPT_CRLFILE, OPT_CRL_DOWNLOAD, OPT_SHOW_CHAIN,
     OPT_V_ENUM, OPT_NAMEOPT, OPT_VFYOPT,
     OPT_VERBOSE,
-    OPT_PROV_ENUM
+    OPT_PROV_ENUM,
+    OPT_SM2ID, OPT_SM2HEXID
 } OPTION_CHOICE;
 
 const OPTIONS verify_options[] = {
@@ -73,6 +74,12 @@ const OPTIONS verify_options[] = {
 
     OPT_PARAMETERS(),
     {"cert", 0, 0, "Certificate(s) to verify (optional; stdin used otherwise)"},
+#ifndef OPENSSL_NO_SM2
+    {"sm2-id", OPT_SM2ID, 's',
+     "Specify an ID string to verify an SM2 certificate request"},
+    {"sm2-hex-id", OPT_SM2HEXID, 's',
+     "Specify a hex ID string to verify an SM2 certificate request"},
+#endif
     {NULL}
 };
 
@@ -88,6 +95,9 @@ int verify_main(int argc, char **argv)
     int noCApath = 0, noCAfile = 0, noCAstore = 0;
     int vpmtouched = 0, crl_download = 0, show_chain = 0, i = 0, ret = 1;
     OPTION_CHOICE o;
+#ifndef OPENSSL_NO_SM2
+    char *sm2_id = NULL;
+#endif
 
     if ((vpm = X509_VERIFY_PARAM_new()) == NULL)
         goto end;
@@ -178,6 +188,34 @@ int verify_main(int argc, char **argv)
             if (!set_nameopt(opt_arg()))
                 goto end;
             break;
+        case OPT_SM2ID:
+#ifndef OPENSSL_NO_SM2
+            if (sm2_id != NULL) {
+                /* the ID has already been set */
+                goto end;
+            }
+            if (!build_vfyopt_compat_string(0, &sm2_id, opt_arg()))
+                goto end;
+            if (vfyopts == NULL)
+                vfyopts = sk_OPENSSL_STRING_new_null();
+            if (vfyopts == NULL || !sk_OPENSSL_STRING_push(vfyopts, sm2_id))
+                goto end;
+#endif
+            break;
+        case OPT_SM2HEXID:
+#ifndef OPENSSL_NO_SM2
+            if (sm2_id != NULL) {
+                /* the ID has already been set */
+                goto end;
+            }
+            if (!build_vfyopt_compat_string(1, &sm2_id, opt_arg()))
+                goto end;
+            if (vfyopts == NULL)
+                vfyopts = sk_OPENSSL_STRING_new_null();
+            if (vfyopts == NULL || !sk_OPENSSL_STRING_push(vfyopts, sm2_id))
+                goto end;
+#endif
+            break;
         case OPT_VFYOPT:
             if (!vfyopts)
                 vfyopts = sk_OPENSSL_STRING_new_null();
@@ -239,6 +277,9 @@ int verify_main(int argc, char **argv)
     sk_X509_CRL_pop_free(crls, X509_CRL_free);
     sk_OPENSSL_STRING_free(vfyopts);
     release_engine(e);
+#ifndef OPENSSL_NO_SM2
+    OPENSSL_free(sm2_id);
+#endif
     return (ret < 0 ? 2 : ret);
 }
 

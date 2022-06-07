@@ -16,12 +16,12 @@ use OpenSSL::Test::Utils;
 
 setup("test_pkeyutl");
 
-plan tests => 12;
+plan tests => 14;
 
 # For the tests below we use the cert itself as the TBS file
 
 SKIP: {
-    skip "Skipping tests that require EC, SM2 or SM3", 2
+    skip "Skipping tests that require EC, SM2 or SM3", 4
         if disabled("ec") || disabled("sm2") || disabled("sm3");
 
     # SM2
@@ -38,6 +38,21 @@ SKIP: {
                       '-sigfile', 'sm2.sig', '-rawin',
                       '-digest', 'sm3', '-pkeyopt', 'distid:someid']))),
                       "Verify an SM2 signature against a piece of data");
+
+    # SM2 compatible options
+    ok_nofips(run(app(([ 'openssl', 'pkeyutl', '-sign',
+                      '-in', srctop_file('test', 'certs', 'sm2.pem'),
+                      '-inkey', srctop_file('test', 'certs', 'sm2.key'),
+                      '-out', 'sm2.sig', '-rawin',
+                      '-digest', 'sm3', '-pkeyopt', 'sm2_id:someid']))),
+                      "Sign a piece of data using SM2 (compat)");
+    ok_nofips(run(app(([ 'openssl', 'pkeyutl',
+                      '-verify', '-certin',
+                      '-in', srctop_file('test', 'certs', 'sm2.pem'),
+                      '-inkey', srctop_file('test', 'certs', 'sm2.pem'),
+                      '-sigfile', 'sm2.sig', '-rawin',
+                      '-digest', 'sm3', '-pkeyopt', 'sm2_id:someid']))),
+                      "Verify an SM2 signature against a piece of data (compat)");
 }
 
 SKIP: {

@@ -92,7 +92,8 @@ typedef enum OPTION_choice {
     OPT_COPY_EXTENSIONS, OPT_ADDEXT, OPT_EXTENSIONS,
     OPT_REQEXTS, OPT_PRECERT, OPT_MD,
     OPT_SECTION,
-    OPT_R_ENUM, OPT_PROV_ENUM
+    OPT_R_ENUM, OPT_PROV_ENUM,
+    OPT_SM2ID, OPT_SM2HEXID
 } OPTION_CHOICE;
 
 const OPTIONS req_options[] = {
@@ -167,6 +168,13 @@ const OPTIONS req_options[] = {
 
     OPT_R_OPTIONS,
     OPT_PROV_OPTIONS,
+
+#ifndef OPENSSL_NO_SM2
+    {"sm2-id", OPT_SM2ID, 's',
+     "Specify an ID string to verify an SM2 certificate request"},
+    {"sm2-hex-id", OPT_SM2HEXID, 's',
+     "Specify a hex ID string to verify an SM2 certificate request"},
+#endif
     {NULL}
 };
 
@@ -264,6 +272,11 @@ int req_main(int argc, char **argv)
     int noenc = 0, newhdr = 0, subject = 0, pubkey = 0, precert = 0;
     long newkey_len = -1;
     unsigned long chtype = MBSTRING_ASC, reqflag = 0;
+#ifndef OPENSSL_NO_SM2
+    char *sm2_id = NULL;
+    char *sig_sm2_id = NULL;
+#endif
+    char *sigopt_str = NULL;
 
 #ifndef OPENSSL_NO_DES
     cipher = (EVP_CIPHER *)EVP_des_ede3_cbc();
@@ -357,8 +370,52 @@ int req_main(int argc, char **argv)
         case OPT_SIGOPT:
             if (!sigopts)
                 sigopts = sk_OPENSSL_STRING_new_null();
-            if (!sigopts || !sk_OPENSSL_STRING_push(sigopts, opt_arg()))
-                goto opthelp;
+            if (!sigopts)
+                goto end;
+            sigopt_str = opt_arg();
+#ifndef OPENSSL_NO_SM2
+            /*
+             * trying to find out if we need to rebuild the string.
+             * multiple sm2 ids are not allowed, so we only try to
+             * rebuild the string once.
+             */
+            if (sig_sm2_id == NULL) {
+                if (!build_sigopt_compat_string(&sig_sm2_id, opt_arg()))
+                    goto end;
+                if (sig_sm2_id != NULL)
+                    sigopt_str = sig_sm2_id;
+            }
+#endif
+            if (!sk_OPENSSL_STRING_push(sigopts, sigopt_str))
+                goto end;
+            break;
+        case OPT_SM2ID:
+#ifndef OPENSSL_NO_SM2
+            if (sm2_id != NULL) {
+                /* the ID has already been set */
+                goto end;
+            }
+            if (!build_vfyopt_compat_string(0, &sm2_id, opt_arg()))
+                goto end;
+            if (vfyopts == NULL)
+                vfyopts = sk_OPENSSL_STRING_new_null();
+            if (vfyopts == NULL || !sk_OPENSSL_STRING_push(vfyopts, sm2_id))
+                goto end;
+#endif
+            break;
+        case OPT_SM2HEXID:
+#ifndef OPENSSL_NO_SM2
+            if (sm2_id != NULL) {
+                /* the ID has already been set */
+                goto end;
+            }
+            if (!build_vfyopt_compat_string(1, &sm2_id, opt_arg()))
+                goto end;
+            if (vfyopts == NULL)
+                vfyopts = sk_OPENSSL_STRING_new_null();
+            if (vfyopts == NULL || !sk_OPENSSL_STRING_push(vfyopts, sm2_id))
+                goto end;
+#endif
             break;
         case OPT_VFYOPT:
             if (!vfyopts)
@@ -1058,6 +1115,10 @@ int req_main(int argc, char **argv)
         OPENSSL_free(passin);
     if (passout != nofree_passout)
         OPENSSL_free(passout);
+#ifndef OPENSSL_NO_SM2
+    OPENSSL_free(sm2_id);
+    OPENSSL_free(sig_sm2_id);
+#endif
     return ret;
 }
 

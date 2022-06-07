@@ -3372,3 +3372,81 @@ int opt_legacy_okay(void)
         return 0;
     return 1;
 }
+
+/*-
+ * This function returns a new string built by input option and value
+ * This is only used for SM2 related option compatibility
+ *
+ * The caller needs to free the memory pointed by ret.
+ *
+ * options: 0 for sm2-id and 1 for sm2-hex-id.
+ */
+int build_vfyopt_compat_string(int option, char **ret, const char *value)
+{
+    int prefix_len = 0;
+    char *prefix = NULL;
+    char *tmp = NULL;
+
+    if (option == 0) {
+        prefix_len = DISTID_LEN;
+        prefix = DISTID;
+    } else if (option == 1) {
+        prefix_len = HEXDISTID_LEN;
+        prefix = HEXDISTID;
+    } else {
+        /* unknown option */
+        return 0;
+    }
+
+    tmp = OPENSSL_zalloc(strlen(value) + prefix_len + 1);
+    if (tmp == NULL)
+        return 0;
+
+    memcpy(tmp, prefix, prefix_len);
+    memcpy(tmp + prefix_len, value, strlen(value));
+    *ret = tmp;
+
+    return 1;
+}
+
+/*-
+ * This function returns a new string rebuilt from the input value
+ * This is only used for SM2 related option compatibility
+ *
+ * The caller needs to free the memory pointed by ret.
+ *
+ * detailed substitution rules are:
+ *   sm2_id -> distid
+ *   sm2_hex_id -> hexdistid
+ */
+int build_sigopt_compat_string(char **ret, const char *value)
+{
+    int prefix_len = 0;
+    int new_prefix_len = 0;
+    char *new_prefix = NULL;
+    char *tmp = NULL;
+
+    if (!strncmp(value, SM2ID, SM2ID_LEN)) {
+        prefix_len = SM2ID_LEN;
+        new_prefix = DISTID;
+        new_prefix_len = DISTID_LEN;
+    } else if (!strncmp(value, SM2HEXID, SM2HEXID_LEN)) {
+        prefix_len = SM2HEXID_LEN;
+        new_prefix = HEXDISTID;
+        new_prefix_len = HEXDISTID_LEN;
+    } else {
+        /* pattern not found */
+        return -1;
+    }
+
+    tmp = OPENSSL_zalloc(new_prefix_len + strlen(value) - prefix_len + 1);
+    if (tmp == NULL)
+        return 0;
+
+    memcpy(tmp, new_prefix, new_prefix_len);
+    memcpy(tmp + new_prefix_len, value + prefix_len,
+           strlen(value) - prefix_len);
+    *ret = tmp;
+
+    return 1;
+}

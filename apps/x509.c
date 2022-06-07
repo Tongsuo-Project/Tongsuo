@@ -53,7 +53,8 @@ typedef enum OPTION_choice {
     OPT_CLRREJECT, OPT_ALIAS, OPT_CACREATESERIAL, OPT_CLREXT, OPT_OCSPID,
     OPT_SUBJECT_HASH_OLD, OPT_ISSUER_HASH_OLD, OPT_COPY_EXTENSIONS,
     OPT_BADSIG, OPT_MD, OPT_ENGINE, OPT_NOCERT, OPT_PRESERVE_DATES,
-    OPT_R_ENUM, OPT_PROV_ENUM, OPT_EXT
+    OPT_R_ENUM, OPT_PROV_ENUM, OPT_EXT,
+    OPT_SM2ID, OPT_SM2HEXID
 } OPTION_CHOICE;
 
 const OPTIONS x509_options[] = {
@@ -177,6 +178,12 @@ const OPTIONS x509_options[] = {
     {"engine", OPT_ENGINE, 's', "Use engine, possibly a hardware device"},
 #endif
     OPT_PROV_OPTIONS,
+#ifndef OPENSSL_NO_SM2
+    {"sm2-id", OPT_SM2ID, 's',
+     "Specify an ID string to verify an SM2 certificate request"},
+    {"sm2-hex-id", OPT_SM2HEXID, 's',
+     "Specify a hex ID string to verify an SM2 certificate request"},
+#endif
     {NULL}
 };
 
@@ -296,6 +303,11 @@ int x509_main(int argc, char **argv)
 #ifndef OPENSSL_NO_MD5
     int subject_hash_old = 0, issuer_hash_old = 0;
 #endif
+#ifndef OPENSSL_NO_SM2
+    char *sm2_id = NULL;
+    char *sig_sm2_id = NULL;
+#endif
+    char *sigopt_str = NULL;
 
     ctx = X509_STORE_new();
     if (ctx == NULL)
@@ -362,8 +374,52 @@ int x509_main(int argc, char **argv)
         case OPT_SIGOPT:
             if (!sigopts)
                 sigopts = sk_OPENSSL_STRING_new_null();
-            if (!sigopts || !sk_OPENSSL_STRING_push(sigopts, opt_arg()))
+            if (!sigopts)
                 goto opthelp;
+            sigopt_str = opt_arg();
+#ifndef OPENSSL_NO_SM2
+            /*
+             * trying to find out if we need to rebuild the string.
+             * multiple sm2 ids are not allowed, so we only try to
+             * rebuild the string once.
+             */
+            if (sig_sm2_id == NULL) {
+                if (!build_sigopt_compat_string(&sig_sm2_id, opt_arg()))
+                    goto opthelp;
+                if (sig_sm2_id != NULL)
+                    sigopt_str = sig_sm2_id;
+            }
+#endif
+            if (!sk_OPENSSL_STRING_push(sigopts, sigopt_str))
+                goto opthelp;
+            break;
+        case OPT_SM2ID:
+#ifndef OPENSSL_NO_SM2
+            if (sm2_id != NULL) {
+                /* the ID has already been set */
+                goto opthelp;
+            }
+            if (!build_vfyopt_compat_string(0, &sm2_id, opt_arg()))
+                goto opthelp;
+            if (vfyopts == NULL)
+                vfyopts = sk_OPENSSL_STRING_new_null();
+            if (vfyopts == NULL || !sk_OPENSSL_STRING_push(vfyopts, sm2_id))
+                goto opthelp;
+#endif
+            break;
+        case OPT_SM2HEXID:
+#ifndef OPENSSL_NO_SM2
+            if (sm2_id != NULL) {
+                /* the ID has already been set */
+                goto opthelp;
+            }
+            if (!build_vfyopt_compat_string(1, &sm2_id, opt_arg()))
+                goto opthelp;
+            if (vfyopts == NULL)
+                vfyopts = sk_OPENSSL_STRING_new_null();
+            if (vfyopts == NULL || !sk_OPENSSL_STRING_push(vfyopts, sm2_id))
+                goto opthelp;
+#endif
             break;
         case OPT_VFYOPT:
             if (!vfyopts)
@@ -1066,6 +1122,10 @@ int x509_main(int argc, char **argv)
     EVP_PKEY_free(pubkey);
     sk_OPENSSL_STRING_free(sigopts);
     sk_OPENSSL_STRING_free(vfyopts);
+#ifndef OPENSSL_NO_SM2
+    OPENSSL_free(sm2_id);
+    OPENSSL_free(sig_sm2_id);
+#endif
     X509_REQ_free(rq);
     ASN1_INTEGER_free(sno);
     sk_ASN1_OBJECT_pop_free(trust, ASN1_OBJECT_free);
