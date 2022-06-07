@@ -4,7 +4,7 @@
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
- * https://github.com/Tongsuo-Project/Tongsuo/blob/master/LICENSE
+ * https://github.com/Tongsuo-Project/Tongsuo/blob/master/LICENSE.txt
  */
 
 /* Dispatch functions for zuc_128_eea3 cipher */
