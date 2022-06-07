@@ -240,7 +240,7 @@ sub get_sco_type {
 sub guess_system {
     ($SYSTEM, undef, $RELEASE, $VERSION, $MACHINE) = POSIX::uname();
     my $sys = "${SYSTEM}:${RELEASE}:${VERSION}:${MACHINE}";
-    
+
     # Special-cases for ISC, SCO, Unixware
     my $REL = is_sco_uname();
     if ( defined $REL ) {
@@ -364,7 +364,7 @@ sub determine_compiler_settings {
         if ( $SYSTEM eq "SunOS" ) {
             # check for Oracle Developer Studio, expected output is "cc: blah-blah C x.x blah-blah"
             my $v = `(cc -V 2>&1) 2>/dev/null | egrep -e '^cc: .* C [0-9]\.[0-9]'`;
-            my @numbers = 
+            my @numbers =
                     ( $v =~ m/^.* C ([0-9]+)\.([0-9]+) .*/ );
             my @factors = (100, 1);
             $v = 0;
@@ -582,27 +582,6 @@ EOF
       [ 'e2k-.*-linux.*',         { target => "linux-generic64",
                                     defines => [ 'L_ENDIAN' ] } ],
       [ 'ia64-.*-linux.',         { target => "linux-ia64" } ],
-      [ 'sparc64-.*-linux2',
-        sub {
-            print <<EOF;
-WARNING! If you *know* that your GNU C supports 64-bit/V9 ABI and you
-         want to build 64-bit library, do this:
-         $WHERE/Configure linux64-sparcv9
-EOF
-            maybe_abort();
-            return { target => "linux-sparcv9" };
-        }
-      ],
-      [ 'sparc-.*-linux2',
-        sub {
-            my $KARCH = `awk '/^type/{print \$3;exit(0);}' /proc/cpuinfo`;
-            $KARCH //= "sun4";
-            return { target => "linux-sparcv9" } if $KARCH =~ 'sun4u.*';
-            return { target => "linux-sparcv8" } if $KARCH =~ 'sun4[md]';
-            return { target => "linux-generic32",
-                     defines => [ 'L_ENDIAN' ] };
-        }
-      ],
       [ 'parisc.*-.*-linux2',
         sub {
             # 64-bit builds under parisc64 linux are not supported and
@@ -682,46 +661,6 @@ EOF
       [ '.*86-.*-linux1',         { target => "linux-aout" } ],
       [ 'riscv64-.*-linux.',      { target => "linux64-riscv64" } ],
       [ '.*-.*-linux.',           { target => "linux-generic32" } ],
-      [ 'sun4[uv].*-.*-solaris2',
-        sub {
-            my $KERNEL_BITS = $ENV{KERNEL_BITS};
-            my $ISA64 = `isainfo 2>/dev/null | grep sparcv9`;
-            my $KB = $KERNEL_BITS // '64';
-            if ( $ISA64 ne "" && $KB eq '64' ) {
-                if ( $CCVENDOR eq "sun" && $CCVER >= 500 ) {
-                    print <<EOF;
-WARNING! To build 32-bit package, do this:
-         $WHERE/Configure solaris-sparcv9-cc
-EOF
-                    maybe_abort();
-                } elsif ( $CCVENDOR eq "gnu" && $GCC_ARCH eq "-m64" ) {
-                    # $GCC_ARCH denotes default ABI chosen by compiler driver
-                    # (first one found on the $PATH). I assume that user
-                    # expects certain consistency with the rest of his builds
-                    # and therefore switch over to 64-bit. <appro>
-                    print <<EOF;
-WARNING! To build 32-bit package, do this:
-         $WHERE/Configure solaris-sparcv9-gcc
-EOF
-                    maybe_abort();
-                    return { target => "solaris64-sparcv9-gcc" };
-                } elsif ( $GCC_ARCH eq "-m32" ) {
-                    print <<EOF;
-NOTICE! If you *know* that your GNU C supports 64-bit/V9 ABI and you wish
-        to build 64-bit library, do this:
-        $WHERE/Configure solaris64-sparcv9-gcc
-EOF
-                    maybe_abort();
-                }
-            }
-            return { target => "solaris64-sparcv9-cc" }
-                if $ISA64 ne "" && $KB eq '64';
-            return { target => "solaris-sparcv9-cc" };
-        }
-      ],
-      [ 'sun4m-.*-solaris2',      { target => "solaris-sparcv8" } ],
-      [ 'sun4d-.*-solaris2',      { target => "solaris-sparcv8" } ],
-      [ 'sun4.*-.*-solaris2',     { target => "solaris-sparcv7" } ],
       [ '.*86.*-.*-solaris2',
         sub {
             my $KERNEL_BITS = $ENV{KERNEL_BITS};
@@ -750,7 +689,6 @@ EOF
       [ 'powerpc64-.*-.*bsd.*',   { target => "BSD-generic64",
                                     defines => [ 'B_ENDIAN' ] } ],
       [ 'riscv64-.*-.*bsd.*',     { target => "BSD-riscv64" } ],
-      [ 'sparc64-.*-.*bsd.*',     { target => "BSD-sparc64" } ],
       [ 'ia64-.*-.*bsd.*',        { target => "BSD-ia64" } ],
       [ 'x86_64-.*-dragonfly.*',  { target => "BSD-x86_64" } ],
       [ 'amd64-.*-.*bsd.*',       { target => "BSD-x86_64" } ],
@@ -929,30 +867,6 @@ sub map_guess {
     return ( target => $fields[2] );
 }
 
-# gcc < 2.8 does not support -march=ultrasparc
-sub check_solaris_sparc8 {
-    my $OUT = shift;
-    if ( $CCVENDOR eq 'gnu' && $CCVER < 208 ) {
-        if ( $OUT eq 'solaris-sparcv9-gcc' ) {
-            print <<EOF;
-WARNING! Downgrading to solaris-sparcv8-gcc
-         Upgrade to gcc-2.8 or later.
-EOF
-            maybe_abort();
-            return 'solaris-sparcv8-gcc';
-        }
-        if ( $OUT eq "linux-sparcv9" ) {
-            print <<EOF;
-WARNING! Downgrading to linux-sparcv8
-         Upgrade to gcc-2.8 or later.
-EOF
-            maybe_abort();
-            return 'linux-sparcv8';
-        }
-    }
-    return $OUT;
-}
-
 ###
 ###   MAIN PROCESSING
 ###
@@ -969,7 +883,6 @@ sub get_platform {
     determine_compiler_settings();
 
     my %ret = map_guess($GUESSOS);
-    $ret{target} = check_solaris_sparc8($ret{target});
     return %ret;
 }
 

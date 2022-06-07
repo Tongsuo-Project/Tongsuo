@@ -7,8 +7,6 @@ IF[{- !$disabled{asm} -}]
 
   $POLY1305ASM_ia64=asm/poly1305-ia64.s
 
-  $POLY1305ASM_sparcv9=poly1305-sparcv9.S
-
   $POLY1305ASM_mips64=poly1305-mips.S
 
   $POLY1305ASM_s390x=poly1305-s390x.S
@@ -35,8 +33,6 @@ SOURCE[../../libcrypto]=poly1305.c $POLY1305ASM
 # need to be applied to all affected libraries and modules.
 DEFINE[../../libcrypto]=$POLY1305DEF
 
-GENERATE[poly1305-sparcv9.S]=asm/poly1305-sparcv9.pl
-INCLUDE[poly1305-sparcv9.o]=..
 GENERATE[poly1305-x86.s]=asm/poly1305-x86.pl
 GENERATE[poly1305-x86_64.s]=asm/poly1305-x86_64.pl
 GENERATE[poly1305-ppc.s]=asm/poly1305-ppc.pl

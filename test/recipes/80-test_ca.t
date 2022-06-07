@@ -27,7 +27,7 @@ my $std_openssl_cnf = '"'
 
 rmtree("demoCA", { safe => 0 });
 
-plan tests => 15;
+plan tests => 17;
  SKIP: {
      my $cakey = srctop_file("test", "certs", "ca-key.pem");
      $ENV{OPENSSL_CONFIG} = qq(-config "$cnf");
@@ -74,6 +74,32 @@ SKIP: {
                        "-keyfile", srctop_file("test", "certs", "sm2-root.key")]))),
        0,
        "Signing SM2 certificate request");
+}
+
+SKIP: {
+    skip "SM2 is not supported by this OpenSSL build", 2
+	      if disabled("sm2");
+
+    ok(
+        run(app(['openssl',
+                    'ca',
+                    '-config', $cnf,
+                    '-revoke', "sm2-test.crt",
+                ])),
+        'Revoke SM2 certificate'
+    );
+
+    is(yes(cmdstr(app(["openssl", "ca", "-config",
+                       $cnf,
+                       "-in", srctop_file("test", "certs", "sm2-csr.pem"),
+                       "-out", "sm2-test-cpt.crt",
+                       "-sigopt", "sm2_id:1234567812345678",
+                       "-sm2-id", "1234567812345678",
+                       "-md", "sm3",
+                       "-cert", srctop_file("test", "certs", "sm2-root.crt"),
+                       "-keyfile", srctop_file("test", "certs", "sm2-root.key")]))),
+       0,
+       "Signing SM2 certificate request (compat)");
 }
 
 test_revoke('notimes', {
