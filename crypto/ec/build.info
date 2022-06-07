@@ -57,6 +57,10 @@ IF[{- !$disabled{'ec_nistp_64_gcc_128'} -}]
   $COMMON=$COMMON ecp_nistp224.c ecp_nistp256.c ecp_nistp521.c ecp_nistputil.c
 ENDIF
 
+IF[{- !$disabled{'ec_elgamal'} -}]
+  $COMMON=$COMMON ec_elgamal.c
+ENDIF
+
 SOURCE[../../libcrypto]=$COMMON ec_ameth.c ec_pmeth.c ecx_meth.c \
                         ec_err.c eck_prn.c \
                         ec_deprecated.c ec_print.c

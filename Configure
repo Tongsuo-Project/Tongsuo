@@ -435,6 +435,7 @@ my @disablables = (
     "ec",
     "ec2m",
     "ec_nistp_64_gcc_128",
+    "ec_elgamal",
     "ecdh",
     "ecdsa",
     "egd",
@@ -557,6 +558,7 @@ our %disabled = ( # "what"         => "comment"
                   "weak-ssl-ciphers"    => "default",
                   "zlib"                => "default",
                   "zlib-dynamic"        => "default",
+                  "ec_elgamal"          => "default",
                 );
 
 # Note: => pair form used for aesthetics, not to truly make a hash table
