@@ -13,9 +13,6 @@ IF[{- !$disabled{asm} -}]
     $MODESDEF_ia64=GHASH_ASM
   ENDIF
 
-  $MODESASM_sparcv9=ghash-sparcv9.S
-  $MODESDEF_sparcv9=GHASH_ASM
-
   $MODESASM_alpha=ghash-alpha.S
   $MODESDEF_alpha=GHASH_ASM
 
@@ -66,8 +63,6 @@ GENERATE[ghash-ia64.s]=asm/ghash-ia64.pl
 GENERATE[ghash-x86.s]=asm/ghash-x86.pl
 GENERATE[ghash-x86_64.s]=asm/ghash-x86_64.pl
 GENERATE[aesni-gcm-x86_64.s]=asm/aesni-gcm-x86_64.pl
-GENERATE[ghash-sparcv9.S]=asm/ghash-sparcv9.pl
-INCLUDE[ghash-sparcv9.o]=..
 GENERATE[ghash-alpha.S]=asm/ghash-alpha.pl
 GENERATE[ghash-parisc.s]=asm/ghash-parisc.pl
 GENERATE[ghashp8-ppc.s]=asm/ghashp8-ppc.pl

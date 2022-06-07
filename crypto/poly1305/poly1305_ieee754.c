@@ -41,9 +41,6 @@
  *
  * z10                  11.2
  * z196+                7.30
- *
- * UltraSPARC III       16.0
- * SPARC T4             16.1
  */
 
 #if !(defined(__GNUC__) && __GNUC__>=2)
@@ -99,8 +96,6 @@ static const u32 mxcsr = 0x7f80;
 static const u64 one = 1;
 #elif defined(__s390x__)
 static const u32 fpc = 1;
-#elif defined(__sparc__)
-static const u64 fsr = 1ULL<<30;
 #elif defined(__mips__)
 static const u32 fcsr = 1;
 #else
@@ -144,11 +139,6 @@ int poly1305_init(void *ctx, const unsigned char key[16])
 
         asm volatile ("stfpc	%0":"=m"(fpc_orig));
         asm volatile ("lfpc	%0"::"m"(fpc));
-#elif defined(__sparc__)
-        u64 fsr_orig;
-
-        asm volatile ("stx	%%fsr,%0":"=m"(fsr_orig));
-        asm volatile ("ldx	%0,%%fsr"::"m"(fsr));
 #elif defined(__mips__)
         u32 fcsr_orig;
 
@@ -211,8 +201,6 @@ int poly1305_init(void *ctx, const unsigned char key[16])
         asm volatile ("mtfsf	255,%0"::"f"(fpscr_orig));
 #elif defined(__s390x__)
         asm volatile ("lfpc	%0"::"m"(fpc_orig));
-#elif defined(__sparc__)
-        asm volatile ("ldx	%0,%%fsr"::"m"(fsr_orig));
 #elif defined(__mips__)
         asm volatile ("ctc1	%0,$31"::"r"(fcsr_orig));
 #endif
@@ -266,11 +254,6 @@ void poly1305_blocks(void *ctx, const unsigned char *inp, size_t len,
 
     asm volatile ("stfpc	%0":"=m"(fpc_orig));
     asm volatile ("lfpc		%0"::"m"(fpc));
-#elif defined(__sparc__)
-    u64 fsr_orig;
-
-    asm volatile ("stx		%%fsr,%0":"=m"(fsr_orig));
-    asm volatile ("ldx		%0,%%fsr"::"m"(fsr));
 #elif defined(__mips__)
     u32 fcsr_orig;
 
@@ -420,8 +403,6 @@ void poly1305_blocks(void *ctx, const unsigned char *inp, size_t len,
     asm volatile ("mtfsf	255,%0"::"f"(fpscr_orig));
 #elif defined(__s390x__)
     asm volatile ("lfpc		%0"::"m"(fpc_orig));
-#elif defined(__sparc__)
-    asm volatile ("ldx		%0,%%fsr"::"m"(fsr_orig));
 #elif defined(__mips__)
     asm volatile ("ctc1		%0,$31"::"r"(fcsr_orig));
 #endif
