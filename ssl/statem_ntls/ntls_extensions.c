@@ -346,6 +346,8 @@ static const EXTENSION_DEFINITION ext_defs[] = {
         tls_construct_certificate_authorities,
         tls_construct_certificate_authorities, NULL,
     },
+    INVALID_EXTENSION, /* TLSEXT_TYPE_quic_transport_parameters_draft */
+    INVALID_EXTENSION, /* TLSEXT_TYPE_quic_transport_parameters */
     {
         /* Must be immediately before pre_shared_key */
         TLSEXT_TYPE_padding,

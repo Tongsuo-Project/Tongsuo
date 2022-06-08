@@ -81,6 +81,10 @@ const char *OpenSSL_version(int t)
             return ossl_cpu_info_str;
         else
             return "CPUINFO: N/A";
+#ifndef OPENSSL_NO_QUIC
+    case OPENSSL_INFO_QUIC:
+        return "QUIC";
+#endif
     }
     return "not available";
 }

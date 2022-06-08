@@ -815,6 +815,10 @@ Don't use POSIX IO capabilities.
 
 Don't build support for Pre-Shared Key based ciphersuites.
 
+### no-quic
+
+Don't build with support for QUIC.
+
 ### no-rdrand
 
 Don't use hardware RDRAND capabilities.

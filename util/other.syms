@@ -697,3 +697,5 @@ SSL_set_SESSION_CTX                     define
 SSL_debug                               define
 EVP_PKEY_is_sm2                         define
 SSL_set_no_scsv                         define
+OSSL_ENCRYPTION_LEVEL                   datatype
+SSL_QUIC_METHOD                         datatype
