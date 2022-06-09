@@ -2,16 +2,16 @@
 
 =head1 NAME
 
-SSL_set_skip_scsv - function for skipping the validation of TLS-FALLBACK-SCSV
+SSL_set_skip_scsv, SSL_set_no_scsv - function for skipping the validation of TLS-FALLBACK-SCSV
 
 =head1 SYNOPSIS
 
  #include <openssl/ssl.h>
 
-#ifndef OPENSSL_NO_SKIP_SCSV
-# define SSL_set_no_scsv SSL_set_skip_scsv
-void SSL_set_skip_scsv(SSL *s, int skip_scsv);
-#endif
+ #ifndef OPENSSL_NO_SKIP_SCSV
+ # define SSL_set_no_scsv SSL_set_skip_scsv
+ void SSL_set_skip_scsv(SSL *s, int skip_scsv);
+ #endif
 
 =head1 DESCRIPTION
 
@@ -25,11 +25,8 @@ it is skipped.
 
 SSL_set_skip_scsv() does not provide a return value.
 
-=head1 SEE ALSO
-
 =head1 COPYRIGHT
 
-L<https://www.openssl.org/source/license.html>.
 Copyright 2022 The Tongsuo Project Authors. All Rights Reserved.
 
 Licensed under the Apache License 2.0 (the "License").  You may not use

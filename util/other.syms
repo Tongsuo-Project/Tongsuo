@@ -696,3 +696,4 @@ OPENSSL_CHECK_TLSEXT_STATUS             define
 SSL_set_SESSION_CTX                     define
 SSL_debug                               define
 EVP_PKEY_is_sm2                         define
+SSL_set_no_scsv                         define
