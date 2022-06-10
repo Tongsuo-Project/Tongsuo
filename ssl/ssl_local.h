@@ -1844,6 +1844,9 @@ struct ssl_st {
 # ifndef OPENSSL_NO_NTLS
     int enable_ntls;
 # endif
+# ifndef OPENSSL_NO_SKIP_SCSV
+    int skip_scsv;
+# endif
 };
 
 /*

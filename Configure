@@ -507,6 +507,7 @@ my @disablables = (
     "whirlpool",
     "zlib",
     "zlib-dynamic",
+    "skip-scsv",
     );
 foreach my $proto ((@tls, @dtls))
         {
