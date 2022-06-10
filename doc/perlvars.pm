@@ -84,9 +84,10 @@ $OpenSSL::safe::opt_name_item = ""
 # Random State Options
 $OpenSSL::safe::opt_r_synopsis = ""
 . "[B<-rand> I<files>]\n"
-. "[B<-writerand> I<file>]";
+. "[B<-writerand> I<file>]\n"
+. "[B<-drbg_type> I<algorithm>];";
 $OpenSSL::safe::opt_r_item = ""
-. "=item B<-rand> I<files>, B<-writerand> I<file>\n"
+. "=item B<-rand> I<files>, B<-writerand> I<file>, B<-drbg_type> I<algorithm>\n"
 . "\n"
 . "See L<openssl(1)/Random State Options> for details.";
 

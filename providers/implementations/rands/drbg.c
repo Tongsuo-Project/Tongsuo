@@ -148,7 +148,8 @@ size_t ossl_drbg_get_seed(void *vdrbg, unsigned char **pout,
 {
     PROV_DRBG *drbg = (PROV_DRBG *)vdrbg;
     size_t bytes_needed;
-    unsigned char *buffer;
+    size_t chunk, outlen;
+    unsigned char *buffer, *out;
 
     /* Figure out how many bytes we need */
     bytes_needed = entropy >= 0 ? (entropy + 7) / 8 : 0;
@@ -164,22 +165,36 @@ size_t ossl_drbg_get_seed(void *vdrbg, unsigned char **pout,
         return 0;
     }
 
-    /*
-     * Get random data.  Include our DRBG address as
-     * additional input, in order to provide a distinction between
-     * different DRBG child instances.
-     *
-     * Note: using the sizeof() operator on a pointer triggers
-     *       a warning in some static code analyzers, but it's
-     *       intentional and correct here.
-     */
-    if (!ossl_prov_drbg_generate(drbg, buffer, bytes_needed,
-                                 drbg->strength, prediction_resistance,
-                                 (unsigned char *)&drbg, sizeof(drbg))) {
-        OPENSSL_secure_clear_free(buffer, bytes_needed);
-        ERR_raise(ERR_LIB_PROV, PROV_R_GENERATE_ERROR);
-        return 0;
+    out = buffer;
+    outlen = bytes_needed;
+
+    for (; outlen > 0; outlen -= chunk, out += chunk) {
+        chunk = outlen > drbg->max_request ? drbg->max_request : outlen;
+
+        /*
+         * Get random data.  Include our DRBG address as
+         * additional input, in order to provide a distinction between
+         * different DRBG child instances.
+         *
+         * Note: using the sizeof() operator on a pointer triggers
+         *       a warning in some static code analyzers, but it's
+         *       intentional and correct here.
+         */
+        if (!ossl_prov_drbg_generate(drbg, out, chunk,
+                                     drbg->strength, prediction_resistance,
+                                     (unsigned char *)&drbg, sizeof(drbg))) {
+            OPENSSL_secure_clear_free(buffer, bytes_needed);
+            ERR_raise(ERR_LIB_PROV, PROV_R_GENERATE_ERROR);
+            return 0;
+        }
+
+        /*
+         * Prediction resistance is only relevant the first time around,
+         * subsequently, the DRBG has already been properly reseeded.
+         */
+        prediction_resistance = 0;
     }
+
     *pout = buffer;
     return bytes_needed;
 }

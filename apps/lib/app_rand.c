@@ -94,6 +94,28 @@ int app_RAND_write(void)
     return ret;
 }
 
+/*
+ * Only support CTR-DRBG and HASH-DRBG
+ */
+static int set_drbg_type(const char *name)
+{
+    int ret = 0;
+
+    ERR_set_mark();
+
+    if (opt_cipher_silent(name, NULL))
+        ret = RAND_set_DRBG_type(app_get0_libctx(), "CTR-DRBG",
+                                 app_get0_propq(), name, NULL);
+    else if (opt_md_silent(name, NULL))
+        ret = RAND_set_DRBG_type(app_get0_libctx(), "HASH-DRBG",
+                                 app_get0_propq(), NULL, name);
+    else
+        BIO_printf(bio_err, "Unknown cipher or digest name for DRBG: %s\n",
+                   name);
+
+    ERR_pop_to_mark();
+    return ret;
+}
 
 /*
  * See comments in opt_verify for explanation of this.
@@ -119,6 +141,8 @@ int opt_rand(int opt)
         if (save_rand_file == NULL)
             return 0;
         break;
+    case OPT_R_DRBG_TYPE:
+        return set_drbg_type(opt_arg());
     }
     return 1;
 }

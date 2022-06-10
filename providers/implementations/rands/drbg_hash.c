@@ -251,9 +251,15 @@ static int drbg_hash_instantiate(PROV_DRBG *drbg,
                                  const unsigned char *pstr, size_t pstr_len)
 {
     PROV_DRBG_HASH *hash = (PROV_DRBG_HASH *)drbg->data;
+    const EVP_MD *md;
 
     EVP_MD_CTX_free(hash->ctx);
     hash->ctx = EVP_MD_CTX_new();
+
+    md = ossl_prov_digest_md(&hash->digest);
+    /* GM/T 0105-2021 B.1, requested_number_of_bits <= 256 bits */
+    if (md != NULL && EVP_MD_is_a(md, "SM3"))
+        drbg->max_request = 256 / 8;
 
     /* (Step 1-3) V = Hash_df(entropy||nonce||pers, seedlen) */
     return hash->ctx != NULL
@@ -290,12 +296,26 @@ static int drbg_hash_reseed(PROV_DRBG *drbg,
                             const unsigned char *adin, size_t adin_len)
 {
     PROV_DRBG_HASH *hash = (PROV_DRBG_HASH *)drbg->data;
+    const EVP_MD *md;
 
-    /* (Step 1-2) V = Hash_df(0x01 || V || entropy_input || additional_input) */
-    /* V about to be updated so use C as output instead */
-    if (!hash_df(drbg, hash->C, 0x01, hash->V, drbg->seedlen, ent, ent_len,
-                 adin, adin_len))
-        return 0;
+    md = ossl_prov_digest_md(&hash->digest);
+
+    if (md != NULL && EVP_MD_is_a(md, "SM3")) {
+        /*
+         * GM/T 0105-2021 B.5
+         * V = SM3_df(0x01 || entropy_input || V || additional_input)
+         */
+        if (!hash_df(drbg, hash->C, 0x01, ent, ent_len, hash->V, drbg->seedlen,
+                     adin, adin_len))
+            return 0;
+    } else {
+        /* (Step 1-2) V = Hash_df(0x01 || V || entropy_input || additional_input) */
+        /* V about to be updated so use C as output instead */
+        if (!hash_df(drbg, hash->C, 0x01, hash->V, drbg->seedlen, ent, ent_len,
+                     adin, adin_len))
+            return 0;
+    }
+
     memcpy(hash->V, hash->C, drbg->seedlen);
     /* (Step 4) C = Hash_df(0x00||V, seedlen) */
     return hash_df1(drbg, hash->C, 0x00, hash->V, drbg->seedlen);
