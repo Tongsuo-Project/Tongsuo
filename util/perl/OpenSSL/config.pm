@@ -582,36 +582,6 @@ EOF
       [ 'e2k-.*-linux.*',         { target => "linux-generic64",
                                     defines => [ 'L_ENDIAN' ] } ],
       [ 'ia64-.*-linux.',         { target => "linux-ia64" } ],
-      [ 'parisc.*-.*-linux2',
-        sub {
-            # 64-bit builds under parisc64 linux are not supported and
-            # compiler is expected to generate 32-bit objects...
-            my $CPUARCH =
-                `awk '/cpu family/{print substr(\$5,1,3); exit(0);}' /proc/cpuinfo`;
-            my $CPUSCHEDULE =
-                `awk '/^cpu.[ 	]*: PA/{print substr(\$3,3); exit(0);}' /proc/cpuinfo`;
-            # TODO XXX  Model transformations
-            # 0. CPU Architecture for the 1.1 processor has letter suffixes.
-            #    We strip that off assuming no further arch. identification
-            #    will ever be used by GCC.
-            # 1. I'm most concerned about whether is a 7300LC is closer to a
-            #    7100 versus a 7100LC.
-            # 2. The variant 64-bit processors cause concern should GCC support
-            #    explicit schedulers for these chips in the future.
-            #         PA7300LC -> 7100LC (1.1)
-            #         PA8200   -> 8000   (2.0)
-            #         PA8500   -> 8000   (2.0)
-            #         PA8600   -> 8000   (2.0)
-            $CPUSCHEDULE =~ s/7300LC/7100LC/;
-            $CPUSCHEDULE =~ s/8.00/8000/;
-            return
-                { target => "linux-generic32",
-                  defines => [ 'B_ENDIAN' ],
-                  cflags => [ "-mschedule=$CPUSCHEDULE", "-march=$CPUARCH" ],
-                  cxxflags => [ "-mschedule=$CPUSCHEDULE", "-march=$CPUARCH" ]
-                };
-        }
-      ],
       [ 'armv[1-3].*-.*-linux2',  { target => "linux-generic32" } ],
       [ 'armv[7-9].*-.*-linux2',  { target => "linux-armv4",
                                     cflags => [ '-march=armv7-a' ],
@@ -738,52 +708,6 @@ EOF
                                     cflags => [ '-march=armv7-a' ],
                                     cxxflags => [ '-march=armv7-a' ] } ],
       [ 'arm.*-.*-android',       { target => "android-armeabi" } ],
-      [ '.*-hpux1.*',
-        sub {
-            my $KERNEL_BITS = $ENV{KERNEL_BITS};
-            my %common_return = ( defines => [ '_REENTRANT' ] );
-            $KERNEL_BITS ||= `getconf KERNEL_BITS 2>/dev/null` // '32';
-            # See <sys/unistd.h> for further info on CPU_VERSION.
-            my $CPU_VERSION = `getconf CPU_VERSION 2>/dev/null` // 0;
-            if ( $CPU_VERSION >= 768 ) {
-                # IA-64 CPU
-                return { target => "hpux64-ia64",
-                         %common_return }
-                    if $KERNEL_BITS eq '64' && ! $CCVENDOR;
-                return { target => "hpux-ia64",
-                         %common_return };
-            }
-            if ( $CPU_VERSION >= 532 ) {
-                # PA-RISC 2.x CPU
-                # PA-RISC 2.0 is no longer supported as separate 32-bit
-                # target. This is compensated for by run-time detection
-                # in most critical assembly modules and taking advantage
-                # of 2.0 architecture in PA-RISC 1.1 build.
-                my $target = ($CCVENDOR eq "gnu" && $GCC_BITS eq '64')
-                    ? "hpux64-parisc2"
-                    : "hpux-parisc1_1";
-                if ( $KERNEL_BITS eq '64' && ! $CCVENDOR ) {
-                    print <<EOF;
-WARNING! To build 64-bit package, do this:
-         $WHERE/Configure hpux64-parisc2-cc
-EOF
-                    maybe_abort();
-                }
-                return { target => $target,
-                         %common_return };
-            }
-            # PA-RISC 1.1+ CPU?
-            return { target => "hpux-parisc1_1",
-                     %common_return } if $CPU_VERSION >= 528;
-            # PA-RISC 1.0 CPU
-            return { target => "hpux-parisc",
-                     %common_return } if $CPU_VERSION >= 523;
-            # Motorola(?) CPU
-            return { target => "hpux",
-                     %common_return };
-        }
-      ],
-      [ '.*-hpux',                { target => "hpux-parisc" } ],
       [ '.*-aix',
         sub {
             my %config = ();
