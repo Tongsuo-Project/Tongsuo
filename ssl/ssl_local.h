@@ -239,8 +239,7 @@
 # define SSL_AES256CCM8          0x00020000U
 # define SSL_eGOST2814789CNT12   0x00040000U
 # define SSL_CHACHA20POLY1305    0x00080000U
-# define SSL_ARIA128GCM          0x00100000U
-# define SSL_ARIA256GCM          0x00200000U
+/* 0x100000U & 0x200000U are spared now due to the removal of ARIA */
 # define SSL_MAGMA               0x00400000U
 # define SSL_KUZNYECHIK          0x00800000U
 
@@ -252,8 +251,6 @@
 # define SSL_AES                 (SSL_AES128|SSL_AES256|SSL_AESGCM|SSL_AESCCM)
 # define SSL_CAMELLIA            (SSL_CAMELLIA128|SSL_CAMELLIA256)
 # define SSL_CHACHA20            (SSL_CHACHA20POLY1305)
-# define SSL_ARIAGCM             (SSL_ARIA128GCM | SSL_ARIA256GCM)
-# define SSL_ARIA                (SSL_ARIAGCM)
 # define SSL_CBC                 (SSL_DES | SSL_3DES | SSL_RC2 | SSL_IDEA \
                                   | SSL_AES128 | SSL_AES256 | SSL_CAMELLIA128 \
                                   | SSL_CAMELLIA256 | SSL_SEED)
@@ -452,17 +449,15 @@
 # define SSL_ENC_AES256CCM8_IDX  17
 # define SSL_ENC_GOST8912_IDX    18
 # define SSL_ENC_CHACHA_IDX      19
-# define SSL_ENC_ARIA128GCM_IDX  20
-# define SSL_ENC_ARIA256GCM_IDX  21
-# define SSL_ENC_MAGMA_IDX       22
-# define SSL_ENC_KUZNYECHIK_IDX  23
-# define SSL_ENC_SM4_GCM_IDX     24
-# define SSL_ENC_SM4_CCM_IDX     25
+# define SSL_ENC_MAGMA_IDX       20
+# define SSL_ENC_KUZNYECHIK_IDX  21
+# define SSL_ENC_SM4_GCM_IDX     22
+# define SSL_ENC_SM4_CCM_IDX     23
 # ifndef OPENSSL_NO_SM4
-#  define SSL_ENC_SM4_IDX        26
-#  define SSL_ENC_NUM_IDX        27
+#  define SSL_ENC_SM4_IDX        24
+#  define SSL_ENC_NUM_IDX        25
 # else
-#  define SSL_ENC_NUM_IDX        26
+#  define SSL_ENC_NUM_IDX        24
 # endif
 
 /*-
