@@ -762,6 +762,10 @@ typedef struct {
     PACKET extensions;
     size_t pre_proc_exts_len;
     RAW_EXTENSION *pre_proc_exts;
+# if !defined(OPENSSL_NO_SESSION_LOOKUP)
+    /* for asynchronous session resumption */
+    STACK_OF(SSL_CIPHER) *ciphers;
+# endif
 } CLIENTHELLO_MSG;
 
 /*
