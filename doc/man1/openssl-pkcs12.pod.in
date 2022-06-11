@@ -31,9 +31,6 @@ PKCS#12 input (parsing) options:
 [B<-aes128>]
 [B<-aes192>]
 [B<-aes256>]
-[B<-aria128>]
-[B<-aria192>]
-[B<-aria256>]
 [B<-camellia128>]
 [B<-camellia192>]
 [B<-camellia256>]
@@ -192,10 +189,6 @@ Only output CA certificates (not client certificates).
 =item B<-aes128>, B<-aes192>, B<-aes256>
 
 Use AES to encrypt private keys before outputting.
-
-=item B<-aria128>, B<-aria192>, B<-aria256>
-
-Use ARIA to encrypt private keys before outputting.
 
 =item B<-camellia128>, B<-camellia192>, B<-camellia256>
 

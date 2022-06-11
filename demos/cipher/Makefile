@@ -15,10 +15,9 @@ all: aesccm aesgcm ariacbc
 
 aesccm: aesccm.o
 aesgcm: aesgcm.o
-ariacbc: ariacbc.o
 
-aesccm aesgcm ariacbc:
+aesccm aesgcm:
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
 
 clean:
-	$(RM) aesccm aesgcm ariacbc *.o
+	$(RM) aesccm aesgcm *.o

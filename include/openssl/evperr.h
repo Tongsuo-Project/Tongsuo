@@ -22,7 +22,6 @@
  * EVP reason codes.
  */
 # define EVP_R_AES_KEY_SETUP_FAILED                       143
-# define EVP_R_ARIA_KEY_SETUP_FAILED                      176
 # define EVP_R_BAD_ALGORITHM_NAME                         200
 # define EVP_R_BAD_DECRYPT                                100
 # define EVP_R_BAD_KEY_LENGTH                             195
