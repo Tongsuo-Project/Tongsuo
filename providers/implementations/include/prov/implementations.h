@@ -94,35 +94,6 @@ extern const OSSL_DISPATCH ossl_aes128cbc_hmac_sha1_functions[];
 extern const OSSL_DISPATCH ossl_aes256cbc_hmac_sha256_functions[];
 extern const OSSL_DISPATCH ossl_aes128cbc_hmac_sha256_functions[];
 
-#ifndef OPENSSL_NO_ARIA
-extern const OSSL_DISPATCH ossl_aria256gcm_functions[];
-extern const OSSL_DISPATCH ossl_aria192gcm_functions[];
-extern const OSSL_DISPATCH ossl_aria128gcm_functions[];
-extern const OSSL_DISPATCH ossl_aria256ccm_functions[];
-extern const OSSL_DISPATCH ossl_aria192ccm_functions[];
-extern const OSSL_DISPATCH ossl_aria128ccm_functions[];
-extern const OSSL_DISPATCH ossl_aria256ecb_functions[];
-extern const OSSL_DISPATCH ossl_aria192ecb_functions[];
-extern const OSSL_DISPATCH ossl_aria128ecb_functions[];
-extern const OSSL_DISPATCH ossl_aria256cbc_functions[];
-extern const OSSL_DISPATCH ossl_aria192cbc_functions[];
-extern const OSSL_DISPATCH ossl_aria128cbc_functions[];
-extern const OSSL_DISPATCH ossl_aria256ofb_functions[];
-extern const OSSL_DISPATCH ossl_aria192ofb_functions[];
-extern const OSSL_DISPATCH ossl_aria128ofb_functions[];
-extern const OSSL_DISPATCH ossl_aria256cfb_functions[];
-extern const OSSL_DISPATCH ossl_aria192cfb_functions[];
-extern const OSSL_DISPATCH ossl_aria128cfb_functions[];
-extern const OSSL_DISPATCH ossl_aria256cfb1_functions[];
-extern const OSSL_DISPATCH ossl_aria192cfb1_functions[];
-extern const OSSL_DISPATCH ossl_aria128cfb1_functions[];
-extern const OSSL_DISPATCH ossl_aria256cfb8_functions[];
-extern const OSSL_DISPATCH ossl_aria192cfb8_functions[];
-extern const OSSL_DISPATCH ossl_aria128cfb8_functions[];
-extern const OSSL_DISPATCH ossl_aria256ctr_functions[];
-extern const OSSL_DISPATCH ossl_aria192ctr_functions[];
-extern const OSSL_DISPATCH ossl_aria128ctr_functions[];
-#endif /* OPENSSL_NO_ARIA */
 #ifndef OPENSSL_NO_CAMELLIA
 extern const OSSL_DISPATCH ossl_camellia256ecb_functions[];
 extern const OSSL_DISPATCH ossl_camellia192ecb_functions[];

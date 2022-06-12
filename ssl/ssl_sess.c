@@ -20,6 +20,10 @@
 #include "ssl_local.h"
 #include "statem/statem_local.h"
 
+#ifndef OPENSSL_NO_SESSION_LOOKUP
+static const char g_pending_session_magic = 0;
+#endif
+
 static void SSL_SESSION_list_remove(SSL_CTX *ctx, SSL_SESSION *s);
 static void SSL_SESSION_list_add(SSL_CTX *ctx, SSL_SESSION *s);
 static int remove_session_lock(SSL_CTX *ctx, SSL_SESSION *c, int lck);
@@ -544,6 +548,11 @@ SSL_SESSION *lookup_sess_in_cache(SSL *s, const unsigned char *sess_id,
 
         ret = s->session_ctx->get_session_cb(s, sess_id, sess_id_len, &copy);
 
+#ifndef OPENSSL_NO_SESSION_LOOKUP
+        if (ret == SSL_magic_pending_session_ptr())
+            return ret; /* Retry later */
+#endif
+
         if (ret != NULL) {
             ssl_tsan_counter(s->session_ctx,
                              &s->session_ctx->stats.sess_cb_hit);
@@ -584,6 +593,7 @@ SSL_SESSION *lookup_sess_in_cache(SSL *s, const unsigned char *sess_id,
  *   hello: The parsed ClientHello data
  *
  * Returns:
+ *   -2: want asynchronous session lookup by lua
  *   -1: fatal error
  *    0: no session found
  *    1: a session may have been found.
@@ -641,6 +651,10 @@ int ssl_get_prev_session(SSL *s, CLIENTHELLO_MSG *hello)
         }
     }
 
+#ifndef OPENSSL_NO_SESSION_LOOKUP
+    if (ret == SSL_magic_pending_session_ptr())
+        return -2; /* Retry later */
+#endif
     if (ret == NULL)
         goto err;
 
@@ -1079,6 +1093,13 @@ X509 *SSL_SESSION_get0_peer(SSL_SESSION *s)
 {
     return s->peer;
 }
+
+#ifndef OPENSSL_NO_SESSION_LOOKUP
+SSL_SESSION *SSL_magic_pending_session_ptr(void)
+{
+    return (SSL_SESSION *) &g_pending_session_magic;
+}
+#endif
 
 int SSL_SESSION_set1_id_context(SSL_SESSION *s, const unsigned char *sid_ctx,
                                 unsigned int sid_ctx_len)

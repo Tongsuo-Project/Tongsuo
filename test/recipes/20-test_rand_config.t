@@ -41,20 +41,6 @@ my @rand_tests = (
       desc => 'CTR-DRBG AES-256 defaults' },
 );
 
-my @aria_tests = (
-    { drbg => 'CTR-DRBG',
-      cipher => 'ARIA-128-CTR',
-      properties => '',
-      expected => ["CTR-DRBG", "cipher: 'ARIA-128-CTR'"],
-      desc => 'CTR-DRBG ARIA-128' },
-
-    { drbg => 'CTR-DRBG',
-      cipher => 'ARIA-128-CTR',
-      properties => '',
-      expected => ["CTR-DRBG", "cipher: 'ARIA-128-CTR'"],
-      desc => 'CTR-DRBG ARIA-256' },
-);
-
 my @sm3_tests = (
     { drbg => 'HASH-DRBG',
         digest => 'SM3',
@@ -63,7 +49,6 @@ my @sm3_tests = (
         desc => 'HASH-DRBG SM3' },
 );
 
-push @rand_tests, @aria_tests unless disabled("aria");
 push @rand_tests, @sm3_tests unless disabled("sm3");
 
 plan tests => scalar @rand_tests;

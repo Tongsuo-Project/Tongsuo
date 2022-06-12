@@ -423,18 +423,6 @@ AES-192 Cipher
 
 AES-256 Cipher
 
-=item B<aria128>, B<aria-128-cbc>, B<aria-128-cfb>, B<aria-128-ctr>, B<aria-128-ecb>, B<aria-128-ofb>
-
-Aria-128 Cipher
-
-=item B<aria192>, B<aria-192-cbc>, B<aria-192-cfb>, B<aria-192-ctr>, B<aria-192-ecb>, B<aria-192-ofb>
-
-Aria-192 Cipher
-
-=item B<aria256>, B<aria-256-cbc>, B<aria-256-cfb>, B<aria-256-ctr>, B<aria-256-ecb>, B<aria-256-ofb>
-
-Aria-256 Cipher
-
 =item B<base64>
 
 Base64 Encoding

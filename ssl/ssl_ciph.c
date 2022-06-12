@@ -51,8 +51,6 @@ static const ssl_cipher_table ssl_cipher_table_cipher[SSL_ENC_NUM_IDX] = {
     {SSL_AES256CCM8, NID_aes_256_ccm}, /* SSL_ENC_AES256CCM8_IDX 17 */
     {SSL_eGOST2814789CNT12, NID_gost89_cnt_12}, /* SSL_ENC_GOST8912_IDX 18 */
     {SSL_CHACHA20POLY1305, NID_chacha20_poly1305}, /* SSL_ENC_CHACHA_IDX 19 */
-    {SSL_ARIA128GCM, NID_aria_128_gcm}, /* SSL_ENC_ARIA128GCM_IDX 20 */
-    {SSL_ARIA256GCM, NID_aria_256_gcm}, /* SSL_ENC_ARIA256GCM_IDX 21 */
     {SSL_MAGMA, NID_magma_ctr_acpkm}, /* SSL_ENC_MAGMA_IDX */
     {SSL_KUZNYECHIK, NID_kuznyechik_ctr_acpkm}, /* SSL_ENC_KUZNYECHIK_IDX */
     {SSL_SM4GCM, NID_sm4_gcm}, /* SSL_ENC_SM4_GCM_IDX */
@@ -268,10 +266,6 @@ static const SSL_CIPHER cipher_aliases[] = {
     {0, SSL_TXT_CHACHA20, NULL, 0, 0, 0, SSL_CHACHA20},
     {0, SSL_TXT_GOST2012_GOST8912_GOST8912, NULL, 0, 0, 0, SSL_eGOST2814789CNT12},
 
-    {0, SSL_TXT_ARIA, NULL, 0, 0, 0, SSL_ARIA},
-    {0, SSL_TXT_ARIA_GCM, NULL, 0, 0, 0, SSL_ARIA128GCM | SSL_ARIA256GCM},
-    {0, SSL_TXT_ARIA128, NULL, 0, 0, 0, SSL_ARIA128GCM},
-    {0, SSL_TXT_ARIA256, NULL, 0, 0, 0, SSL_ARIA256GCM},
     {0, SSL_TXT_CBC, NULL, 0, 0, 0, SSL_CBC},
     {0, SSL_TXT_SM4, NULL, 0, 0, 0, SSL_SM4},
     /* MAC aliases */
@@ -1875,12 +1869,6 @@ char *SSL_CIPHER_description(const SSL_CIPHER *cipher, char *buf, int len)
     case SSL_CAMELLIA256:
         enc = "Camellia(256)";
         break;
-    case SSL_ARIA128GCM:
-        enc = "ARIAGCM(128)";
-        break;
-    case SSL_ARIA256GCM:
-        enc = "ARIAGCM(256)";
-        break;
     case SSL_SEED:
         enc = "SEED(128)";
         break;
@@ -2220,7 +2208,7 @@ int ssl_cipher_get_overhead(const SSL_CIPHER *c, size_t *mac_overhead,
 
     /* Some hard-coded numbers for the CCM/Poly1305 MAC overhead
      * because there are no handy #defines for those. */
-    if (c->algorithm_enc & (SSL_AESGCM | SSL_ARIAGCM)) {
+    if (c->algorithm_enc & SSL_AESGCM) {
         out = EVP_GCM_TLS_EXPLICIT_IV_LEN + EVP_GCM_TLS_TAG_LEN;
     } else if (c->algorithm_enc & (SSL_AES128CCM | SSL_AES256CCM)) {
         out = EVP_CCM_TLS_EXPLICIT_IV_LEN + 16;

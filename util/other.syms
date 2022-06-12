@@ -606,6 +606,7 @@ SSL_want_read                           define
 SSL_want_retry_verify                   define
 SSL_want_write                          define
 SSL_want_x509_lookup                    define
+SSL_want_sess_lookup                    define
 SSLv23_client_method                    define
 SSLv23_method                           define
 SSLv23_server_method                    define
