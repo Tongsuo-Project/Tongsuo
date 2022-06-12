@@ -46,6 +46,10 @@ IF[{- !$disabled{ntls} -}]
         statem_ntls/ntls_statem_lib.c statem_ntls/ntls_statem_srvr.c
 ENDIF
 
+IF[{- !$disabled{quic} -}]
+  SOURCE[../libssl]=ssl_quic.c statem/statem_quic.c
+ENDIF
+
 DEFINE[../libssl]=$AESDEF
 
 SOURCE[../providers/libcommon.a]=record/tls_pad.c

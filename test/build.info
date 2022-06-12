@@ -925,6 +925,13 @@ IF[{- !$disabled{tests} -}]
     INCLUDE[ssl_ntls_api_test]=.. ../include ../apps/include
     DEPEND[ssl_ntls_api_test]=../libcrypto ../libssl libtestutil.a
   ENDIF
+
+  IF[{- !$disabled{'quic'} -}]
+    PROGRAMS{noinst}=quicapitest
+    SOURCE[quicapitest]=quicapitest.c helpers/ssltestlib.c
+    INCLUDE[quicapitest]=.. ../include ../apps/include
+    DEPEND[quicapitest]=../libcrypto ../libssl libtestutil.a
+  ENDIF
 ENDIF
 
   SOURCE[ssl_ctx_test]=ssl_ctx_test.c

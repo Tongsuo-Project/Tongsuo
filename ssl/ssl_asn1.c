@@ -44,6 +44,10 @@ typedef struct {
     uint32_t tlsext_max_fragment_len_mode;
     ASN1_OCTET_STRING *ticket_appdata;
     uint32_t kex_group;
+#ifndef OPENSSL_NO_QUIC
+    uint32_t is_quic;
+    ASN1_OCTET_STRING *quic_early_data_context;
+#endif
 } SSL_SESSION_ASN1;
 
 ASN1_SEQUENCE(SSL_SESSION_ASN1) = {
@@ -75,7 +79,11 @@ ASN1_SEQUENCE(SSL_SESSION_ASN1) = {
     ASN1_EXP_OPT(SSL_SESSION_ASN1, alpn_selected, ASN1_OCTET_STRING, 16),
     ASN1_EXP_OPT_EMBED(SSL_SESSION_ASN1, tlsext_max_fragment_len_mode, ZUINT32, 17),
     ASN1_EXP_OPT(SSL_SESSION_ASN1, ticket_appdata, ASN1_OCTET_STRING, 18),
-    ASN1_EXP_OPT_EMBED(SSL_SESSION_ASN1, kex_group, UINT32, 19)
+    ASN1_EXP_OPT_EMBED(SSL_SESSION_ASN1, kex_group, UINT32, 19),
+#ifndef OPENSSL_NO_QUIC
+    ASN1_EXP_OPT_EMBED(SSL_SESSION_ASN1, is_quic, ZUINT32, 20),
+    ASN1_EXP_OPT(SSL_SESSION_ASN1, quic_early_data_context, ASN1_OCTET_STRING, 21),
+#endif
 } static_ASN1_SEQUENCE_END(SSL_SESSION_ASN1)
 
 IMPLEMENT_STATIC_ASN1_ENCODE_FUNCTIONS(SSL_SESSION_ASN1)
@@ -125,7 +133,9 @@ int i2d_SSL_SESSION(const SSL_SESSION *in, unsigned char **pp)
 #endif
     ASN1_OCTET_STRING alpn_selected;
     ASN1_OCTET_STRING ticket_appdata;
-
+#ifndef OPENSSL_NO_QUIC
+    ASN1_OCTET_STRING quic_early_data_context;
+#endif
     long l;
 
     if ((in == NULL) || ((in->cipher == NULL) && (in->cipher_id == 0)))
@@ -203,6 +213,16 @@ int i2d_SSL_SESSION(const SSL_SESSION *in, unsigned char **pp)
     else
         ssl_session_oinit(&as.ticket_appdata, &ticket_appdata,
                           in->ticket_appdata, in->ticket_appdata_len);
+
+#ifndef OPENSSL_NO_QUIC
+    as.is_quic = in->is_quic;
+
+    if (in->quic_early_data_context == NULL)
+        as.quic_early_data_context = NULL;
+    else
+        ssl_session_oinit(&as.quic_early_data_context, &quic_early_data_context,
+                          in->quic_early_data_context, in->quic_early_data_context_len);
+#endif
 
     return i2d_SSL_SESSION_ASN1(&as, pp);
 
@@ -387,6 +407,20 @@ SSL_SESSION *d2i_SSL_SESSION(SSL_SESSION **a, const unsigned char **pp,
         ret->ticket_appdata = NULL;
         ret->ticket_appdata_len = 0;
     }
+
+#ifndef OPENSSL_NO_QUIC
+    ret->is_quic = as->is_quic;
+
+    OPENSSL_free(ret->quic_early_data_context);
+    if (as->quic_early_data_context != NULL) {
+        ret->quic_early_data_context = as->quic_early_data_context->data;
+        ret->quic_early_data_context_len = as->quic_early_data_context->length;
+        as->quic_early_data_context->data = NULL;
+    } else {
+        ret->quic_early_data_context = NULL;
+        ret->quic_early_data_context_len = 0;
+    }
+#endif
 
     M_ASN1_free_of(as, SSL_SESSION_ASN1);
 
