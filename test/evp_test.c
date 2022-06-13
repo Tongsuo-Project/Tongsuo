@@ -4014,10 +4014,6 @@ static int is_cipher_disabled(const char *name)
     if (STR_STARTS_WITH(name, "BF"))
         return 1;
 #endif
-#ifdef OPENSSL_NO_CAMELLIA
-    if (STR_STARTS_WITH(name, "CAMELLIA"))
-        return 1;
-#endif
 #ifdef OPENSSL_NO_CAST
     if (STR_STARTS_WITH(name, "CAST"))
         return 1;

@@ -236,8 +236,7 @@ unwrapping. The algorithms are: "AES-128-WRAP-INV", "AES-192-WRAP-INV",
 
 CTS ciphers added to EVP layer.
 
-The algorithms are "AES-128-CBC-CTS", "AES-192-CBC-CTS", "AES-256-CBC-CTS",
-"CAMELLIA-128-CBC-CTS", "CAMELLIA-192-CBC-CTS" and "CAMELLIA-256-CBC-CTS".
+The algorithms are "AES-128-CBC-CTS", "AES-192-CBC-CTS", "AES-256-CBC-CTS".
 CS1, CS2 and CS3 variants are supported.
 
 =back

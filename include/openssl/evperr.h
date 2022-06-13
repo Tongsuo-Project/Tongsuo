@@ -27,7 +27,6 @@
 # define EVP_R_BAD_KEY_LENGTH                             195
 # define EVP_R_BUFFER_TOO_SMALL                           155
 # define EVP_R_CACHE_CONSTANTS_FAILED                     225
-# define EVP_R_CAMELLIA_KEY_SETUP_FAILED                  157
 # define EVP_R_CANNOT_GET_PARAMETERS                      197
 # define EVP_R_CANNOT_SET_PARAMETERS                      198
 # define EVP_R_CIPHER_NOT_GCM_MODE                        184
