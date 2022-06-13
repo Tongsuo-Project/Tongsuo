@@ -49,7 +49,7 @@ may find that some algorithms are no longer available unless they load the
 legacy provider explicitly.
 
 Algorithms in the legacy provider include MD2, MD4, MDC2, RMD160, CAST5,
-BF (Blowfish), IDEA, SEED, RC2, RC4, RC5 and DES (but not 3DES).
+BF (Blowfish), IDEA, RC2, RC4, RC5 and DES (but not 3DES).
 
 The FIPS Provider
 -----------------

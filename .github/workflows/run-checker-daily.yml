@@ -96,7 +96,6 @@ jobs:
           no-scrypt,
           no-sctp,
           no-secure-memory,
-          no-seed,
           no-shared,
           no-siphash,
           no-siv,

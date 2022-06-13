@@ -19,7 +19,6 @@ $CAST5_GOAL=../../liblegacy.a
 $RC2_GOAL=../../liblegacy.a
 $RC4_GOAL=../../liblegacy.a
 $RC5_GOAL=../../liblegacy.a
-$SEED_GOAL=../../liblegacy.a
 $SM4_GOAL=../../libdefault.a
 $CHACHA_GOAL=../../libdefault.a
 $CHACHAPOLY_GOAL=../../libdefault.a
@@ -89,11 +88,6 @@ ENDIF
 IF[{- !$disabled{cast} -}]
   SOURCE[$CAST5_GOAL]=\
       cipher_cast5.c cipher_cast5_hw.c
-ENDIF
-
-IF[{- !$disabled{seed} -}]
-  SOURCE[$SEED_GOAL]=\
-      cipher_seed.c cipher_seed_hw.c
 ENDIF
 
 IF[{- !$disabled{sm4} -}]

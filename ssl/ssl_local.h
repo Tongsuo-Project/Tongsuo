@@ -230,7 +230,7 @@
 # define SSL_CAMELLIA128         0x00000100U
 # define SSL_CAMELLIA256         0x00000200U
 # define SSL_eGOST2814789CNT     0x00000400U
-# define SSL_SEED                0x00000800U
+/* 0x800U is spared now due to the removal of SEED */
 # define SSL_AES128GCM           0x00001000U
 # define SSL_AES256GCM           0x00002000U
 # define SSL_AES128CCM           0x00004000U
@@ -253,7 +253,7 @@
 # define SSL_CHACHA20            (SSL_CHACHA20POLY1305)
 # define SSL_CBC                 (SSL_DES | SSL_3DES | SSL_RC2 | SSL_IDEA \
                                   | SSL_AES128 | SSL_AES256 | SSL_CAMELLIA128 \
-                                  | SSL_CAMELLIA256 | SSL_SEED)
+                                  | SSL_CAMELLIA256)
 
 /* Bits for algorithm_mac (symmetric authentication) */
 
@@ -447,24 +447,23 @@
 # define SSL_ENC_CAMELLIA128_IDX 8
 # define SSL_ENC_CAMELLIA256_IDX 9
 # define SSL_ENC_GOST89_IDX      10
-# define SSL_ENC_SEED_IDX        11
-# define SSL_ENC_AES128GCM_IDX   12
-# define SSL_ENC_AES256GCM_IDX   13
-# define SSL_ENC_AES128CCM_IDX   14
-# define SSL_ENC_AES256CCM_IDX   15
-# define SSL_ENC_AES128CCM8_IDX  16
-# define SSL_ENC_AES256CCM8_IDX  17
-# define SSL_ENC_GOST8912_IDX    18
-# define SSL_ENC_CHACHA_IDX      19
-# define SSL_ENC_MAGMA_IDX       20
-# define SSL_ENC_KUZNYECHIK_IDX  21
-# define SSL_ENC_SM4_GCM_IDX     22
-# define SSL_ENC_SM4_CCM_IDX     23
+# define SSL_ENC_AES128GCM_IDX   11
+# define SSL_ENC_AES256GCM_IDX   12
+# define SSL_ENC_AES128CCM_IDX   13
+# define SSL_ENC_AES256CCM_IDX   14
+# define SSL_ENC_AES128CCM8_IDX  15
+# define SSL_ENC_AES256CCM8_IDX  16
+# define SSL_ENC_GOST8912_IDX    17
+# define SSL_ENC_CHACHA_IDX      18
+# define SSL_ENC_MAGMA_IDX       19
+# define SSL_ENC_KUZNYECHIK_IDX  20
+# define SSL_ENC_SM4_GCM_IDX     21
+# define SSL_ENC_SM4_CCM_IDX     22
 # ifndef OPENSSL_NO_SM4
-#  define SSL_ENC_SM4_IDX        24
-#  define SSL_ENC_NUM_IDX        25
-# else
+#  define SSL_ENC_SM4_IDX        23
 #  define SSL_ENC_NUM_IDX        24
+# else
+#  define SSL_ENC_NUM_IDX        23
 # endif
 
 /*-
