@@ -1,0 +1,75 @@
+=pod
+
+=head1 NAME
+
+SSL_CTX_set_cipher_list2,
+SSL_CTX_set_cipher_list_by_id,
+SSL_CTX_get_cipher_list_by_id,
+SSL_set_cipher_list2,
+SSL_set_cipher_list_by_id,
+SSL_dup_cipher_list,
+SSL_dup_cipher_list_by_id
+- choose list of available SSL_CIPHERs
+
+=head1 SYNOPSIS
+
+ #include <openssl/ssl.h>
+
+ #ifndef OPENSSL_NO_DYNAMIC_CIPHERS
+ int SSL_CTX_set_cipher_list2(SSL_CTX *ctx, STACK_OF(SSL_CIPHER) *cipher_list);
+ int SSL_CTX_set_cipher_list_by_id(SSL_CTX *ctx,
+                                   STACK_OF(SSL_CIPHER) *cipher_list_by_id);
+ STACK_OF(SSL_CIPHER) *SSL_CTX_get_cipher_list_by_id(const SSL_CTX *ctx);
+
+ int SSL_set_cipher_list2(SSL *s, STACK_OF(SSL_CIPHER) *cipher_list);
+ int SSL_set_cipher_list_by_id(SSL *s, STACK_OF(SSL_CIPHER) *cipher_list_by_id);
+
+ STACK_OF(SSL_CIPHER) *SSL_dup_cipher_list(SSL *s);
+ STACK_OF(SSL_CIPHER) *SSL_dup_cipher_list_by_id(SSL *s);
+ #endif
+
+=head1 DESCRIPTION
+
+SSL_CTX_set_cipher_list2() uses parameter B<cipher_list> to set the member
+cipher_list of the B<SSL_CTX> structure. If ctx->cipher_list is not NULL, it
+will be released before setting.
+
+SSL_CTX_set_cipher_list_by_id() sets B<cipher_list_by_id> for B<ctx>, similer to
+SSL_CTX_set_cipher_list2().
+
+SSL_set_cipher_list2() sets B<cipher_list> for B<ssl>, similer to
+SSL_CTX_set_cipher_list2().
+
+SSL_set_cipher_list_by_id() sets B<cipher_list_by_id> for B<ssl>, similer to
+SSL_set_cipher_list2().
+
+SSL_CTX_get_cipher_list_by_id() returns the member cipher_list_by_id of the
+B<ctx>. similer to SSL_CTX_get_ciphers().
+
+SSL_dup_cipher_list() duplicates the member cipher_list of the B<ssl>.
+SSL_dup_cipher_list_by_id() duplicates the member cipher_list_by_id of the B<ssl>.
+similar to SSL_dup_cipher_list().
+
+=head1 RETURN VALUES
+
+SSL_CTX_set_*() and SSL_set_*() returns 1 for success or 0 otherwise.
+
+SSL_CTX_get_cipher_list_by_id(), SSL_dup_cipher_list() and
+SSL_dup_cipher_list_by_id() return the stack of available B<SSL_CIPHER>.
+
+
+=head1 SEE ALSO
+
+L<SSL_set_cipher_list(3)>, L<SSL_CTX_set_cipher_list(3)>,
+L<SSL_CTX_get_ciphers(3)>
+
+=head1 COPYRIGHT
+
+Copyright 2022 The Tongsuo Project Authors. All Rights Reserved.
+
+Licensed under the Apache License 2.0 (the "License").  You may not use
+this file except in compliance with the License.  You can obtain a copy
+in the file LICENSE in the source distribution or at
+L<https://github.com/Tongsuo-Project/Tongsuo/blob/master/LICENSE.txt>
+
+=cut

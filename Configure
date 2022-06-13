@@ -506,6 +506,7 @@ my @disablables = (
     "zlib-dynamic",
     "skip-scsv",
     "session-lookup",
+    "dynamic-ciphers",
     );
 foreach my $proto ((@tls, @dtls))
         {
