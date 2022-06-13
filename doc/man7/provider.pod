@@ -214,7 +214,7 @@ format:
 ALGNAME[VERSION?][-SUBNAME[VERSION?]?][-SIZE?][-MODE?]
 
 VERSION is only present if there are multiple versions of an algorithm (e.g.
-MD2, MD4, MD5).  It may be omitted if there is only one version.
+MD4, MD5).  It may be omitted if there is only one version.
 
 SUBNAME may be present where multiple algorithms are combined together,
 e.g. MD5-SHA1.

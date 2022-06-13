@@ -331,10 +331,6 @@ BLAKE2b-512 Digest
 
 BLAKE2s-256 Digest
 
-=item B<md2>
-
-MD2 Digest
-
 =item B<md4>
 
 MD4 Digest

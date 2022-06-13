@@ -40,8 +40,6 @@ The OpenSSL legacy provider supports these operations and algorithms:
 
 =over 4
 
-=item MD2, see L<EVP_MD-MD2(7)>
-
 =item MD4, see L<EVP_MD-MD4(7)>
 
 =item MDC2, see L<EVP_MD-MDC2(7)>

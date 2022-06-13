@@ -340,7 +340,7 @@ See L<OSSL_PROVIDER-FIPS(7)> and L<fips_module(7)>.
 The legacy provider is a dynamically loadable module, and must therefore
 be loaded explicitly, either in code or through OpenSSL configuration
 (see L<config(5)>). It contains algorithm implementations that are considered
-insecure, or are no longer in common use such as MD2 or RC4. Should it be needed
+insecure, or are no longer in common use such as RC4. Should it be needed
 (if other providers are loaded and offer implementations of the same algorithms),
 the property "provider=legacy" can be used as a search criterion for these
 implementations.

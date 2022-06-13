@@ -239,15 +239,6 @@ static const int enc_nids_all[] = {
     NID_rc2_cbc,
 #endif
 
-#ifndef OPENSSL_NO_MD2
-# ifndef OPENSSL_NO_DES
-    NID_pbeWithMD2AndDES_CBC,
-# endif
-# ifndef OPENSSL_NO_RC2
-    NID_pbeWithMD2AndRC2_CBC,
-# endif
-#endif
-
 #ifndef OPENSSL_NO_MD5
 # ifndef OPENSSL_NO_DES
     NID_pbeWithMD5AndDES_CBC,

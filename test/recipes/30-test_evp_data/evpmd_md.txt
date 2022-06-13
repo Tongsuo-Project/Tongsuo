@@ -6,43 +6,6 @@
 # in the file LICENSE in the source distribution or at
 # https://www.openssl.org/source/license.html
 
-Title = MD2 tests
-
-Availablein = legacy
-Digest = MD2
-Input =
-Output = 8350e5a3e24c153df2275c9f80692773
-
-Availablein = legacy
-Digest = MD2
-Input = "a"
-Output = 32ec01ec4a6dac72c0ab96fb34c0b5d1
-
-Availablein = legacy
-Digest = MD2
-Input = "abc"
-Output = da853b0d3f88d99b30283a69e6ded6bb
-
-Availablein = legacy
-Digest = MD2
-Input = "message digest"
-Output = ab4f496bfb2a530b219ff33031fe06b0
-
-Availablein = legacy
-Digest = MD2
-Input = "abcdefghijklmnopqrstuvwxyz"
-Output = 4e8ddff3650292ab5a4108c3aa47940b
-
-Availablein = legacy
-Digest = MD2
-Input = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-Output = da33def2a42df13975352846c30338cd
-
-Availablein = legacy
-Digest = MD2
-Input = "12345678901234567890123456789012345678901234567890123456789012345678901234567890"
-Output = d5976f79d83d3a0dc9806c3c66f3efd8
-
 Title = MD4 tests
 
 Availablein = legacy
