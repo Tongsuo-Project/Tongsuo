@@ -49,7 +49,6 @@ id-RSASSA-PSS    OBJECT IDENTIFIER ::= { pkcs-1 10 }
 -- When the following OIDs are used in an AlgorithmIdentifier,
 -- the parameters MUST be present and MUST be NULL.
 --
-md2WithRSAEncryption         OBJECT IDENTIFIER ::= { pkcs-1 2 }
 md5WithRSAEncryption         OBJECT IDENTIFIER ::= { pkcs-1 4 }
 sha1WithRSAEncryption        OBJECT IDENTIFIER ::= { pkcs-1 5 }
 sha224WithRSAEncryption      OBJECT IDENTIFIER ::= { pkcs-1 14 }

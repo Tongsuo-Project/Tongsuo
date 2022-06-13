@@ -18,14 +18,6 @@ KDF = PBKDF1
 Ctrl.pass = pass:password
 Ctrl.salt = salt:saltsalt
 Ctrl.iter = iter:1
-Ctrl.digest = digest:md2
-Output = 2C5DAEBD49984F34642ACC09BAD696D7
-
-Availablein = legacy
-KDF = PBKDF1
-Ctrl.pass = pass:password
-Ctrl.salt = salt:saltsalt
-Ctrl.iter = iter:1
 Ctrl.digest = digest:md5
 Output = FDBDF3419FFF98BDB0241390F62A9DB3
 
@@ -36,14 +28,6 @@ Ctrl.salt = salt:saltsalt
 Ctrl.iter = iter:1
 Ctrl.digest = digest:sha1
 Output = CAB86DD6261710891E8CB56EE3625691
-
-Availablein = legacy
-KDF = PBKDF1
-Ctrl.pass = pass:password
-Ctrl.salt = salt:saltsalt
-Ctrl.iter = iter:2
-Ctrl.digest = digest:md2
-Output = FD7999A1AB54B01B4FC39389A5FE820D
 
 Availablein = legacy
 KDF = PBKDF1
@@ -66,14 +50,6 @@ KDF = PBKDF1
 Ctrl.pass = pass:password
 Ctrl.salt = salt:saltsalt
 Ctrl.iter = iter:4096
-Ctrl.digest = digest:md2
-Output = 94E4671F438BD6C441C5B120C6CC79CA
-
-Availablein = legacy
-KDF = PBKDF1
-Ctrl.pass = pass:password
-Ctrl.salt = salt:saltsalt
-Ctrl.iter = iter:4096
 Ctrl.digest = digest:md5
 Output = 3283ED8F8D037045157DA055BFF84A02
 
@@ -84,14 +60,6 @@ Ctrl.salt = salt:saltsalt
 Ctrl.iter = iter:4096
 Ctrl.digest = digest:sha1
 Output = 3CB0C21E81127F5BFF2EEA2B5DC3F31D
-
-Availablein = legacy
-KDF = PBKDF1
-Ctrl.pass = pass:passwordPASSWORDpassword
-Ctrl.salt = salt:saltSALT
-Ctrl.iter = iter:65537
-Ctrl.digest = digest:md2
-Output = 36DAA8DEB8B471B26AA8CE064A81E54F
 
 Availablein = legacy
 KDF = PBKDF1
@@ -110,14 +78,6 @@ Ctrl.digest = digest:sha1
 Output = B2B4635718AAAD9FEF23FE328EB83ECF
 
 Title = PBKDF1 tests for empty inputs
-
-Availablein = legacy
-KDF = PBKDF1
-Ctrl.pass = pass:
-Ctrl.salt = salt:saltsalt
-Ctrl.iter = iter:1
-Ctrl.digest = digest:md2
-Output = 8ECD1C4C1D57C415295784CCD4686905
 
 Availablein = legacy
 KDF = PBKDF1

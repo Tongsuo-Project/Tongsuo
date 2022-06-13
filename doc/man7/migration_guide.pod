@@ -95,7 +95,7 @@ This is described in more detail in L</Deprecation of Low Level Functions>
 
 =head3 Legacy Algorithms
 
-Some cryptographic algorithms such as B<MD2> and B<DES> that were available via
+Some cryptographic algorithms such as B<DES> that were available via
 the EVP APIs are now considered legacy and their use is strongly discouraged.
 These legacy EVP algorithms are still available in OpenSSL 3.0 but not by
 default. If you want to use them then you must load the legacy provider.
@@ -1856,19 +1856,6 @@ IDEA has been moved to the L<Legacy Provider|/Legacy Algorithms>.
 =item *
 
 IDEA_options()
-
-There is no replacement. This function returned a constant string.
-
-=item *
-
-MD2(), MD2_Init(), MD2_Update(), MD2_Final()
-
-See L</Deprecated low-level encryption functions>.
-MD2 has been moved to the L<Legacy Provider|/Legacy Algorithms>.
-
-=item *
-
-MD2_options()
 
 There is no replacement. This function returned a constant string.
 

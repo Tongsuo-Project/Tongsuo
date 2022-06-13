@@ -67,9 +67,6 @@ static int legacy_get_params(void *provctx, OSSL_PARAM params[])
 }
 
 static const OSSL_ALGORITHM legacy_digests[] = {
-#ifndef OPENSSL_NO_MD2
-    ALG(PROV_NAMES_MD2, ossl_md2_functions),
-#endif
 #ifndef OPENSSL_NO_MD4
     ALG(PROV_NAMES_MD4, ossl_md4_functions),
 #endif

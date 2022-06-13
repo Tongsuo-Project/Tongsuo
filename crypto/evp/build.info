@@ -31,9 +31,6 @@ ENDIF
 IF[{- !$disabled{'rsa'} -}]
   SOURCE[../../libcrypto]=p_open.c
 ENDIF
-IF[{- !$disabled{md2} -}]
-  SOURCE[../../libcrypto]=legacy_md2.c
-ENDIF
 IF[{- !$disabled{md4} -}]
   SOURCE[../../libcrypto]=legacy_md4.c
 ENDIF

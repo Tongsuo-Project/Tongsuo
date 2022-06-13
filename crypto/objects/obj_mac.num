@@ -1,13 +1,10 @@
 undef		0
 rsadsi		1
 pkcs		2
-md2		3
 md5		4
 rc4		5
 rsaEncryption		6
-md2WithRSAEncryption		7
 md5WithRSAEncryption		8
-pbeWithMD2AndDES_CBC		9
 pbeWithMD5AndDES_CBC		10
 X500		11
 X509		12
@@ -165,7 +162,6 @@ id_qt_cps		164
 id_qt_unotice		165
 rc2_64_cbc		166
 SMIMECapabilities		167
-pbeWithMD2AndRC2_CBC		168
 pbeWithMD5AndRC2_CBC		169
 pbeWithSHA1AndDES_CBC		170
 ms_ext_req		171

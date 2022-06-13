@@ -2,7 +2,6 @@
 # Links signatures OIDs to their corresponding public key algorithms
 # and digests.
 
-md2WithRSAEncryption	md2	rsaEncryption
 md5WithRSAEncryption	md5	rsaEncryption
 shaWithRSAEncryption	sha	rsaEncryption
 sha1WithRSAEncryption	sha1	rsaEncryption

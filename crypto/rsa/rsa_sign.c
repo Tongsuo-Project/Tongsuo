@@ -19,9 +19,6 @@
 #include <openssl/rsa.h>
 #include <openssl/objects.h>
 #ifndef FIPS_MODULE
-# ifndef OPENSSL_NO_MD2
-#  include <openssl/md2.h> /* uses MD2_DIGEST_LENGTH */
-# endif
 # ifndef OPENSSL_NO_MD4
 #  include <openssl/md4.h> /* uses MD4_DIGEST_LENGTH */
 # endif
@@ -94,9 +91,6 @@ static const unsigned char digestinfo_##name##_der[] = {                       \
 };
 
 #ifndef FIPS_MODULE
-# ifndef OPENSSL_NO_MD2
-ENCODE_DIGESTINFO_MD(md2, 0x02, MD2_DIGEST_LENGTH)
-# endif
 # ifndef OPENSSL_NO_MD4
 ENCODE_DIGESTINFO_MD(md4, 0x03, MD4_DIGEST_LENGTH)
 # endif
@@ -157,9 +151,6 @@ const unsigned char *ossl_rsa_digestinfo_encoding(int md_nid, size_t *len)
 # ifndef OPENSSL_NO_MDC2
     MD_CASE(mdc2)
 # endif
-# ifndef OPENSSL_NO_MD2
-    MD_CASE(md2)
-# endif
 # ifndef OPENSSL_NO_MD4
     MD_CASE(md4)
 # endif
@@ -196,9 +187,6 @@ static int digest_sz_from_nid(int nid)
 #ifndef FIPS_MODULE
 # ifndef OPENSSL_NO_MDC2
     MD_NID_CASE(mdc2, MDC2_DIGEST_LENGTH)
-# endif
-# ifndef OPENSSL_NO_MD2
-    MD_NID_CASE(md2, MD2_DIGEST_LENGTH)
 # endif
 # ifndef OPENSSL_NO_MD4
     MD_NID_CASE(md4, MD4_DIGEST_LENGTH)
