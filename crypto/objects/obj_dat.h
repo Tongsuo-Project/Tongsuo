@@ -10,7 +10,7 @@
  */
 
 /* Serialized OID's */
-static const unsigned char so[7612] = {
+static const unsigned char so[7620] = {
     0x2A,0x86,0x48,0x86,0xF7,0x0D,                 /* [    0] OBJ_rsadsi */
     0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,            /* [    6] OBJ_pkcs */
     0x2A,0x86,0x48,0x86,0xF7,0x0D,0x02,0x05,       /* [   13] OBJ_md5 */
@@ -1062,9 +1062,10 @@ static const unsigned char so[7612] = {
     0x2A,0x81,0x1C,0xCF,0x55,0x01,0x86,0x21,       /* [ 7587] OBJ_zuc_128_eea3 */
     0x2A,0x81,0x1C,0xCF,0x55,0x01,0x68,0x08,       /* [ 7595] OBJ_sm4_gcm */
     0x2A,0x81,0x1C,0xCF,0x55,0x01,0x68,0x09,       /* [ 7603] OBJ_sm4_ccm */
+    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x86,0x22,       /* [ 7611] OBJ_zuc_128_eia3 */
 };
 
-#define NUM_NID 1255
+#define NUM_NID 1256
 static const ASN1_OBJECT nid_objs[NUM_NID] = {
     {"UNDEF", "undefined", NID_undef},
     {"rsadsi", "RSA Data Security, Inc.", NID_rsadsi, 6, &so[0]},
@@ -2321,9 +2322,10 @@ static const ASN1_OBJECT nid_objs[NUM_NID] = {
     {"KxSM2", "kx-sm2", NID_kx_sm2},
     {"KxSM2DHE", "kx-sm2dhe", NID_kx_sm2dhe},
     {"AuthSM2", "auth-sm2", NID_auth_sm2},
+    {"ZUC-128-EIA3", "zuc-128-eia3", NID_zuc_128_eia3, 8, &so[7611]},
 };
 
-#define NUM_SN 1177
+#define NUM_SN 1178
 static const unsigned int sn_objs[NUM_SN] = {
      364,    /* "AD_DVCS" */
      419,    /* "AES-128-CBC" */
@@ -2571,6 +2573,7 @@ static const unsigned int sn_objs[NUM_SN] = {
      125,    /* "ZLIB" */
     1248,    /* "ZUC" */
     1249,    /* "ZUC-128-EEA3" */
+    1255,    /* "ZUC-128-EIA3" */
      478,    /* "aRecord" */
      289,    /* "aaControls" */
      287,    /* "ac-auditEntity" */
@@ -3504,7 +3507,7 @@ static const unsigned int sn_objs[NUM_SN] = {
     1093,    /* "x509ExtAdmission" */
 };
 
-#define NUM_LN 1177
+#define NUM_LN 1178
 static const unsigned int ln_objs[NUM_LN] = {
      363,    /* "AD Time Stamping" */
      405,    /* "ANSI X9.62" */
@@ -4683,9 +4686,10 @@ static const unsigned int ln_objs[NUM_LN] = {
      125,    /* "zlib compression" */
     1248,    /* "zuc" */
     1249,    /* "zuc-128-eea3" */
+    1255,    /* "zuc-128-eia3" */
 };
 
-#define NUM_OBJ 1057
+#define NUM_OBJ 1058
 static const unsigned int obj_objs[NUM_OBJ] = {
        0,    /* OBJ_undef                        0 */
      181,    /* OBJ_iso                          1 */
@@ -5148,6 +5152,7 @@ static const unsigned int obj_objs[NUM_OBJ] = {
     1204,    /* OBJ_SM2_with_SM3                 1 2 156 10197 1 501 */
     1144,    /* OBJ_sm3WithRSAEncryption         1 2 156 10197 1 504 */
     1249,    /* OBJ_zuc_128_eea3                 1 2 156 10197 1 801 */
+    1255,    /* OBJ_zuc_128_eia3                 1 2 156 10197 1 802 */
      852,    /* OBJ_id_GostR3411_94_with_GostR3410_94_cc 1 2 643 2 9 1 3 3 */
      853,    /* OBJ_id_GostR3411_94_with_GostR3410_2001_cc 1 2 643 2 9 1 3 4 */
      850,    /* OBJ_id_GostR3410_94_cc           1 2 643 2 9 1 5 3 */

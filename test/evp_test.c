@@ -1174,6 +1174,10 @@ static int mac_test_init(EVP_TEST *t, const char *alg)
             type = EVP_PKEY_POLY1305;
         else if (strncmp(alg, "SipHash", sz) == 0)
             type = EVP_PKEY_SIPHASH;
+#ifndef OPENSSL_NO_ZUC
+        else if (strncmp(alg, "EIA3", sz) == 0)
+            type = EVP_PKEY_EIA3;
+#endif
         else
             return 0;
     }
@@ -3995,6 +3999,10 @@ static int is_mac_disabled(const char *name)
 #endif
 #ifdef OPENSSL_NO_SIPHASH
     if (STR_STARTS_WITH(name, "SipHash"))
+        return 1;
+#endif
+#ifdef OPENSSL_NO_ZUC
+    if (STR_STARTS_WITH(name, "EIA3"))
         return 1;
 #endif
     return 0;

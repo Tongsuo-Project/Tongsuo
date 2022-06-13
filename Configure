@@ -313,7 +313,7 @@ $config{perlargv} = [ @argvcopy ];
 foreach ( reverse sort( 'aes', 'bf', 'cast', 'des', 'dh',
                         'dsa', 'ec', 'hmac', 'idea', 'md5', 'mdc2',
                         'rc2', 'rc4', 'rc5', 'ripemd', 'sha',
-                        'sm2', 'sm3', 'sm4', 'zuc') ) {
+                        'sm2', 'sm3', 'sm4', 'zuc', 'eia3') ) {
     unshift @argvcopy, "no-$_" if ! -d catdir($srcdir, 'crypto', $_);
 }
 

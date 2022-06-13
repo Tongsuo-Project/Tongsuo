@@ -268,6 +268,9 @@ static const OSSL_ALGORITHM deflt_macs[] = {
 #ifndef OPENSSL_NO_POLY1305
     { PROV_NAMES_POLY1305, "provider=default", ossl_poly1305_functions },
 #endif
+#ifndef OPENSSL_NO_ZUC
+    { PROV_NAMES_EIA3, "provider=default", ossl_eia3_functions },
+#endif
     { NULL, NULL, NULL }
 };
 
@@ -338,6 +341,10 @@ static const OSSL_ALGORITHM deflt_signature[] = {
     { PROV_NAMES_POLY1305, "provider=default",
       ossl_mac_legacy_poly1305_signature_functions },
 #endif
+#ifndef OPENSSL_NO_ZUC
+    { PROV_NAMES_EIA3, "provider=default",
+      ossl_mac_legacy_eia3_signature_functions },
+#endif
 #ifndef OPENSSL_NO_CMAC
     { PROV_NAMES_CMAC, "provider=default", ossl_mac_legacy_cmac_signature_functions },
 #endif
@@ -397,6 +404,10 @@ static const OSSL_ALGORITHM deflt_keymgmt[] = {
 #ifndef OPENSSL_NO_POLY1305
     { PROV_NAMES_POLY1305, "provider=default", ossl_mac_legacy_keymgmt_functions,
       PROV_DESCS_POLY1305_SIGN },
+#endif
+#ifndef OPENSSL_NO_ZUC
+    { PROV_NAMES_EIA3, "provider=default", ossl_mac_legacy_keymgmt_functions,
+      PROV_DESCS_EIA3_SIGN },
 #endif
 #ifndef OPENSSL_NO_CMAC
     { PROV_NAMES_CMAC, "provider=default", ossl_cmac_legacy_keymgmt_functions,

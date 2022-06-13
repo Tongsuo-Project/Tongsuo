@@ -193,6 +193,9 @@ extern const OSSL_DISPATCH ossl_kmac128_functions[];
 extern const OSSL_DISPATCH ossl_kmac256_functions[];
 extern const OSSL_DISPATCH ossl_siphash_functions[];
 extern const OSSL_DISPATCH ossl_poly1305_functions[];
+#ifndef OPENSSL_NO_ZUC
+extern const OSSL_DISPATCH ossl_eia3_functions[];
+#endif
 
 /* KDFs / PRFs */
 extern const OSSL_DISPATCH ossl_kdf_pbkdf1_functions[];
@@ -259,6 +262,7 @@ extern const OSSL_DISPATCH ossl_mac_legacy_hmac_signature_functions[];
 extern const OSSL_DISPATCH ossl_mac_legacy_siphash_signature_functions[];
 extern const OSSL_DISPATCH ossl_mac_legacy_poly1305_signature_functions[];
 extern const OSSL_DISPATCH ossl_mac_legacy_cmac_signature_functions[];
+extern const OSSL_DISPATCH ossl_mac_legacy_eia3_signature_functions[];
 extern const OSSL_DISPATCH ossl_sm2_signature_functions[];
 
 /* Asym Cipher */

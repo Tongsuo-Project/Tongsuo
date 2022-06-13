@@ -112,8 +112,9 @@ B<EVP_PKEY_ED25519>, B<EVP_PKEY_X448> or B<EVP_PKEY_ED448>.
 EVP_PKEY_new_raw_private_key_ex() and EVP_PKEY_new_raw_private_key() may also
 be used with most MACs implemented as public key algorithms, so key types such
 as "HMAC", "POLY1305", "SIPHASH", or their NID form B<EVP_PKEY_POLY1305>,
-B<EVP_PKEY_SIPHASH>, B<EVP_PKEY_HMAC> are also accepted.  This usage is,
-as mentioned above, discouraged in favor of the L<EVP_MAC(3)> API.
+B<EVP_PKEY_EIA3>, B<EVP_PKEY_SIPHASH>, B<EVP_PKEY_HMAC> are also accepted.
+This usage is, as mentioned above, discouraged in favor of the L<EVP_MAC(3)>
+API.
 
 EVP_PKEY_new_raw_public_key_ex() works in the same way as
 EVP_PKEY_new_raw_private_key_ex() except that I<key> points to the raw
@@ -137,8 +138,9 @@ actually written. If the buffer I<priv> is NULL then I<*len> is populated with
 the number of bytes required to hold the key. The calling application is
 responsible for ensuring that the buffer is large enough to receive the private
 key data. This function only works for algorithms that support raw private keys.
-Currently this is: B<EVP_PKEY_HMAC>, B<EVP_PKEY_POLY1305>, B<EVP_PKEY_SIPHASH>,
-B<EVP_PKEY_X25519>, B<EVP_PKEY_ED25519>, B<EVP_PKEY_X448> or B<EVP_PKEY_ED448>.
+Currently this is: B<EVP_PKEY_HMAC>, B<EVP_PKEY_POLY1305>, B<EVP_PKEY_EIA3>,
+B<EVP_PKEY_SIPHASH>, B<EVP_PKEY_X25519>, B<EVP_PKEY_ED25519>, B<EVP_PKEY_X448>
+or B<EVP_PKEY_ED448>.
 
 EVP_PKEY_get_raw_public_key() fills the buffer provided by I<pub> with raw
 public key data. The size of the I<pub> buffer should be in I<*len> on entry
@@ -210,7 +212,7 @@ previously implied to be disallowed.
 
 =head1 COPYRIGHT
 
-Copyright 2002-2021 The OpenSSL Project Authors. All Rights Reserved.
+Copyright 2002-2022 The OpenSSL Project Authors. All Rights Reserved.
 
 Licensed under the Apache License 2.0 (the "License").  You may not use
 this file except in compliance with the License.  You can obtain a copy
