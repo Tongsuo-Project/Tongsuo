@@ -1382,9 +1382,6 @@ static void list_disabled(void)
 #ifdef OPENSSL_NO_SCTP
     BIO_puts(bio_out, "SCTP\n");
 #endif
-#ifdef OPENSSL_NO_SEED
-    BIO_puts(bio_out, "SEED\n");
-#endif
 #ifdef OPENSSL_NO_SM2
     BIO_puts(bio_out, "SM2\n");
 #endif

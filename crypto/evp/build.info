@@ -52,9 +52,6 @@ ENDIF
 IF[{- !$disabled{rmd160} -}]
   SOURCE[../../libcrypto]=legacy_ripemd.c
 ENDIF
-IF[{- !$disabled{seed} -}]
-  SOURCE[../../libcrypto]=e_seed.c
-ENDIF
 IF[{- !$disabled{camellia} -}]
   SOURCE[../../libcrypto]=e_camellia.c
   INCLUDE[e_camellia.o]=.. ../modes

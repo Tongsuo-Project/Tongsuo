@@ -77,8 +77,6 @@ and DESX_CBC.
 
 Disabled by default. Use I<enable-rc5> config option to enable.
 
-=item SEED, see L<EVP_CIPHER-SEED(7)>
-
 =back
 
 =head2 Key Derivation Function (KDF)

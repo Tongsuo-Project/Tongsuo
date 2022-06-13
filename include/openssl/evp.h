@@ -1093,14 +1093,6 @@ const EVP_CIPHER *EVP_chacha20_poly1305(void);
 #  endif
 # endif
 
-# ifndef OPENSSL_NO_SEED
-const EVP_CIPHER *EVP_seed_ecb(void);
-const EVP_CIPHER *EVP_seed_cbc(void);
-const EVP_CIPHER *EVP_seed_cfb128(void);
-#  define EVP_seed_cfb EVP_seed_cfb128
-const EVP_CIPHER *EVP_seed_ofb(void);
-# endif
-
 # ifndef OPENSSL_NO_SM4
 const EVP_CIPHER *EVP_sm4_ecb(void);
 const EVP_CIPHER *EVP_sm4_cbc(void);

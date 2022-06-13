@@ -272,7 +272,7 @@ const OPTIONS speed_options[] = {
 enum {
     D_MD2, D_MDC2, D_MD4, D_MD5, D_SHA1, D_RMD160,
     D_SHA256, D_SHA512, D_WHIRLPOOL, D_HMAC,
-    D_CBC_DES, D_EDE3_DES, D_RC4, D_CBC_IDEA, D_CBC_SEED,
+    D_CBC_DES, D_EDE3_DES, D_RC4, D_CBC_IDEA,
     D_CBC_RC2, D_CBC_RC5, D_CBC_BF, D_CBC_CAST,
     D_CBC_128_AES, D_CBC_192_AES, D_CBC_256_AES,
     D_CBC_128_CML, D_CBC_192_CML, D_CBC_256_CML,
@@ -282,7 +282,7 @@ enum {
 static const char *names[ALGOR_NUM] = {
     "md2", "mdc2", "md4", "md5", "sha1", "rmd160",
     "sha256", "sha512", "whirlpool", "hmac(md5)",
-    "des-cbc", "des-ede3", "rc4", "idea-cbc", "seed-cbc",
+    "des-cbc", "des-ede3", "rc4", "idea-cbc",
     "rc2-cbc", "rc5-cbc", "blowfish", "cast-cbc",
     "aes-128-cbc", "aes-192-cbc", "aes-256-cbc",
     "camellia-128-cbc", "camellia-192-cbc", "camellia-256-cbc",
@@ -318,8 +318,6 @@ static const OPT_PAIR doit_choices[] = {
     {"rc5", D_CBC_RC5},
     {"idea-cbc", D_CBC_IDEA},
     {"idea", D_CBC_IDEA},
-    {"seed-cbc", D_CBC_SEED},
-    {"seed", D_CBC_SEED},
     {"bf-cbc", D_CBC_BF},
     {"blowfish", D_CBC_BF},
     {"bf", D_CBC_BF},

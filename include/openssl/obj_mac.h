@@ -4771,31 +4771,6 @@
 #define LN_camellia_256_cfb8            "camellia-256-cfb8"
 #define NID_camellia_256_cfb8           765
 
-#define SN_kisa         "KISA"
-#define LN_kisa         "kisa"
-#define NID_kisa                773
-#define OBJ_kisa                OBJ_member_body,410L,200004L
-
-#define SN_seed_ecb             "SEED-ECB"
-#define LN_seed_ecb             "seed-ecb"
-#define NID_seed_ecb            776
-#define OBJ_seed_ecb            OBJ_kisa,1L,3L
-
-#define SN_seed_cbc             "SEED-CBC"
-#define LN_seed_cbc             "seed-cbc"
-#define NID_seed_cbc            777
-#define OBJ_seed_cbc            OBJ_kisa,1L,4L
-
-#define SN_seed_cfb128          "SEED-CFB"
-#define LN_seed_cfb128          "seed-cfb"
-#define NID_seed_cfb128         779
-#define OBJ_seed_cfb128         OBJ_kisa,1L,5L
-
-#define SN_seed_ofb128          "SEED-OFB"
-#define LN_seed_ofb128          "seed-ofb"
-#define NID_seed_ofb128         778
-#define OBJ_seed_ofb128         OBJ_kisa,1L,6L
-
 #define SN_sm4_ecb              "SM4-ECB"
 #define LN_sm4_ecb              "sm4-ecb"
 #define NID_sm4_ecb             1133

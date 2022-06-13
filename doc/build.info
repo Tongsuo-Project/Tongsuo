@@ -1399,10 +1399,6 @@ DEPEND[html/man3/EVP_ripemd160.html]=man3/EVP_ripemd160.pod
 GENERATE[html/man3/EVP_ripemd160.html]=man3/EVP_ripemd160.pod
 DEPEND[man/man3/EVP_ripemd160.3]=man3/EVP_ripemd160.pod
 GENERATE[man/man3/EVP_ripemd160.3]=man3/EVP_ripemd160.pod
-DEPEND[html/man3/EVP_seed_cbc.html]=man3/EVP_seed_cbc.pod
-GENERATE[html/man3/EVP_seed_cbc.html]=man3/EVP_seed_cbc.pod
-DEPEND[man/man3/EVP_seed_cbc.3]=man3/EVP_seed_cbc.pod
-GENERATE[man/man3/EVP_seed_cbc.3]=man3/EVP_seed_cbc.pod
 DEPEND[html/man3/EVP_set_default_properties.html]=man3/EVP_set_default_properties.pod
 GENERATE[html/man3/EVP_set_default_properties.html]=man3/EVP_set_default_properties.pod
 DEPEND[man/man3/EVP_set_default_properties.3]=man3/EVP_set_default_properties.pod
@@ -3093,7 +3089,6 @@ html/man3/EVP_rc2_cbc.html \
 html/man3/EVP_rc4.html \
 html/man3/EVP_rc5_32_12_16_cbc.html \
 html/man3/EVP_ripemd160.html \
-html/man3/EVP_seed_cbc.html \
 html/man3/EVP_set_default_properties.html \
 html/man3/EVP_sha1.html \
 html/man3/EVP_sha224.html \
@@ -3691,7 +3686,6 @@ man/man3/EVP_rc2_cbc.3 \
 man/man3/EVP_rc4.3 \
 man/man3/EVP_rc5_32_12_16_cbc.3 \
 man/man3/EVP_ripemd160.3 \
-man/man3/EVP_seed_cbc.3 \
 man/man3/EVP_set_default_properties.3 \
 man/man3/EVP_sha1.3 \
 man/man3/EVP_sha224.3 \
@@ -4119,10 +4113,6 @@ DEPEND[html/man7/EVP_CIPHER-RC5.html]=man7/EVP_CIPHER-RC5.pod
 GENERATE[html/man7/EVP_CIPHER-RC5.html]=man7/EVP_CIPHER-RC5.pod
 DEPEND[man/man7/EVP_CIPHER-RC5.7]=man7/EVP_CIPHER-RC5.pod
 GENERATE[man/man7/EVP_CIPHER-RC5.7]=man7/EVP_CIPHER-RC5.pod
-DEPEND[html/man7/EVP_CIPHER-SEED.html]=man7/EVP_CIPHER-SEED.pod
-GENERATE[html/man7/EVP_CIPHER-SEED.html]=man7/EVP_CIPHER-SEED.pod
-DEPEND[man/man7/EVP_CIPHER-SEED.7]=man7/EVP_CIPHER-SEED.pod
-GENERATE[man/man7/EVP_CIPHER-SEED.7]=man7/EVP_CIPHER-SEED.pod
 DEPEND[html/man7/EVP_CIPHER-SM4.html]=man7/EVP_CIPHER-SM4.pod
 GENERATE[html/man7/EVP_CIPHER-SM4.html]=man7/EVP_CIPHER-SM4.pod
 DEPEND[man/man7/EVP_CIPHER-SM4.7]=man7/EVP_CIPHER-SM4.pod
@@ -4582,7 +4572,6 @@ html/man7/EVP_CIPHER-IDEA.html \
 html/man7/EVP_CIPHER-RC2.html \
 html/man7/EVP_CIPHER-RC4.html \
 html/man7/EVP_CIPHER-RC5.html \
-html/man7/EVP_CIPHER-SEED.html \
 html/man7/EVP_CIPHER-SM4.html \
 html/man7/EVP_KDF-HKDF.html \
 html/man7/EVP_KDF-KB.html \
@@ -4704,7 +4693,6 @@ man/man7/EVP_CIPHER-IDEA.7 \
 man/man7/EVP_CIPHER-RC2.7 \
 man/man7/EVP_CIPHER-RC4.7 \
 man/man7/EVP_CIPHER-RC5.7 \
-man/man7/EVP_CIPHER-SEED.7 \
 man/man7/EVP_CIPHER-SM4.7 \
 man/man7/EVP_KDF-HKDF.7 \
 man/man7/EVP_KDF-KB.7 \

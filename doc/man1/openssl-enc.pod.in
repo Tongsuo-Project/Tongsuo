@@ -347,12 +347,6 @@ standard data format and performs the needed key/iv/nonce management.
  rc5-ecb            RC5 cipher in ECB mode
  rc5-ofb            RC5 cipher in OFB mode
 
- seed-cbc           SEED cipher in CBC mode
- seed               Alias for seed-cbc
- seed-cfb           SEED cipher in CFB mode
- seed-ecb           SEED cipher in ECB mode
- seed-ofb           SEED cipher in OFB mode
-
  sm4-cbc            SM4 cipher in CBC mode
  sm4                Alias for sm4-cbc
  sm4-cfb            SM4 cipher in CFB mode

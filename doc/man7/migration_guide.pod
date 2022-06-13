@@ -2132,14 +2132,6 @@ See B<OSSL_SIGNATURE_PARAM_PAD_MODE>.
 
 =item *
 
-SEED_encrypt(), SEED_decrypt(), SEED_set_key(), SEED_cbc_encrypt(),
-SEED_cfb128_encrypt(), SEED_ecb_encrypt(), SEED_ofb128_encrypt()
-
-See L</Deprecated low-level encryption functions>.
-The SEED algorithm has been moved to the L<Legacy Provider|/Legacy Algorithms>.
-
-=item *
-
 SHA1_Init(), SHA1_Update(), SHA1_Final(), SHA1_Transform(),
 SHA224_Init(), SHA224_Update(), SHA224_Final(),
 SHA256_Init(), SHA256_Update(), SHA256_Final(), SHA256_Transform(),
