@@ -130,6 +130,17 @@ static int old_rsa_priv_decode(EVP_PKEY *pkey,
 
     if ((rsa = d2i_RSAPrivateKey(NULL, pder, derlen)) == NULL)
         return 0;
+# ifndef OPENSSL_NO_RSA_MULTI_PRIME_KEY_COMPAT
+    if (rsa->version == RSA_ASN1_VERSION_DEFAULT
+            && sk_RSA_PRIME_INFO_num(rsa->prime_infos) > 0) {
+        rsa->version = RSA_ASN1_VERSION_MULTI;
+        if (!ossl_rsa_multip_calc_product(rsa)) {
+            RSAerr(RSA_F_OLD_RSA_PRIV_DECODE, ERR_R_RSA_LIB);
+            return 0;
+        }
+    }
+# endif
+
     EVP_PKEY_assign(pkey, pkey->ameth->pkey_id, rsa);
     return 1;
 }

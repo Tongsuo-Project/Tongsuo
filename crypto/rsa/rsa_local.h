@@ -13,7 +13,11 @@
 #include "internal/refcount.h"
 #include "crypto/rsa.h"
 
-#define RSA_MAX_PRIME_NUM       5
+# ifndef OPENSSL_NO_RSA_MULTI_PRIME_KEY_COMPAT
+#  define RSA_MAX_PRIME_NUM     512
+# else
+#  define RSA_MAX_PRIME_NUM     5
+# endif
 
 typedef struct rsa_prime_info_st {
     BIGNUM *r;

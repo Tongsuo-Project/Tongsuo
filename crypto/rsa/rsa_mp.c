@@ -99,6 +99,9 @@ int ossl_rsa_multip_calc_product(RSA *rsa)
 
 int ossl_rsa_multip_cap(int bits)
 {
+# ifndef OPENSSL_NO_RSA_MULTI_PRIME_KEY_COMPAT
+    return RSA_MAX_PRIME_NUM;
+# else
     int cap = 5;
 
     if (bits < 1024)
@@ -112,4 +115,5 @@ int ossl_rsa_multip_cap(int bits)
         cap = RSA_MAX_PRIME_NUM;
 
     return cap;
+# endif
 }
