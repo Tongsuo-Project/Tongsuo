@@ -2771,6 +2771,16 @@ void SSL_CTX_set_verify_cert_with_sni(SSL_CTX *ctx, int value);
 int  SSL_CTX_get_verify_cert_with_sni(SSL_CTX *ctx);
 # endif
 
+# ifndef OPENSSL_NO_SESSION_REUSED_TYPE
+#  define SSL_SESSION_REUSED_TYPE_NOCACHE                  0
+#  define SSL_SESSION_REUSED_TYPE_CACHE                    1
+#  define SSL_SESSION_REUSED_TYPE_TICKET                   2
+
+#  define SSL_get_session_reuse_type  SSL_get_session_reused_type
+
+int SSL_get_session_reused_type(SSL *s);
+# endif
+
 # ifdef  __cplusplus
 }
 # endif

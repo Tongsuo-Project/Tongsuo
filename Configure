@@ -509,6 +509,7 @@ my @disablables = (
     "dynamic-ciphers",
     "verify-sni",
     "rsa-multi-prime-key-compat",
+    "session-reused-type",
     );
 foreach my $proto ((@tls, @dtls))
         {

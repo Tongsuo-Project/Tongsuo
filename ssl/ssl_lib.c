@@ -6505,3 +6505,10 @@ int  SSL_CTX_get_verify_cert_with_sni(SSL_CTX *ctx)
     return ctx->verify_mode & SSL_VERIFY_FAIL_IF_SNI_NOT_MATCH_CERT;
 }
 #endif
+
+#ifndef OPENSSL_NO_SESSION_REUSED_TYPE
+int SSL_get_session_reused_type(SSL *s)
+{
+    return !s->hit ? SSL_SESSION_REUSED_TYPE_NOCACHE : s->session_reused_type;
+}
+#endif

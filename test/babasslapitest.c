@@ -27,6 +27,12 @@
 #  include "crypto/ec/ec_local.h"
 # endif
 
+#undef OSSL_NO_USABLE_TLS1_3
+#if defined(OPENSSL_NO_TLS1_3) \
+    || (defined(OPENSSL_NO_EC) && defined(OPENSSL_NO_DH))
+# define OSSL_NO_USABLE_TLS1_3
+#endif
+
 static char *certsdir = NULL;
 static char *cert = NULL;
 static char *privkey = NULL;
@@ -927,6 +933,142 @@ end:
 }
 #endif
 
+#ifndef OPENSSL_NO_SESSION_REUSED_TYPE
+static int test_babassl_session_reused_type(void)
+{
+    SSL_CTX *cctx = NULL, *sctx = NULL;
+    SSL *clientssl1 = NULL, *serverssl1 = NULL;
+    SSL *clientssl2 = NULL, *serverssl2 = NULL;
+    SSL_SESSION *sess1 = NULL;
+    int testresult = 0;
+
+    if (!TEST_true(create_ssl_ctx_pair(NULL, TLS_server_method(),
+                                       TLS_client_method(),
+                                       TLS1_VERSION, 0,
+                                       &sctx, &cctx, cert, privkey))
+            || !TEST_true(SSL_CTX_set_cipher_list(cctx, "DEFAULT:@SECLEVEL=0"))
+            || !TEST_true(SSL_CTX_set_cipher_list(sctx, "DEFAULT:@SECLEVEL=0")))
+        goto end;
+
+    SSL_CTX_set_max_proto_version(cctx, TLS1_3_VERSION);
+    SSL_CTX_set_options(sctx, SSL_OP_NO_TICKET);
+    SSL_CTX_set_session_cache_mode(sctx, SSL_SESS_CACHE_SERVER);
+
+# ifndef OSSL_NO_USABLE_TLS1_3
+    if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl1, &clientssl1,
+                                      NULL, NULL))
+            || !TEST_true(create_ssl_connection(serverssl1, clientssl1,
+                                                SSL_ERROR_NONE))
+            || !TEST_ptr(sess1 = SSL_get1_session(clientssl1)))
+        goto end;
+
+    if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl2,
+                                      &clientssl2, NULL, NULL))
+            || !TEST_true(SSL_set_session(clientssl2, sess1))
+            || !TEST_true(create_ssl_connection(serverssl2, clientssl2,
+                                                SSL_ERROR_NONE))
+            || !TEST_true(SSL_session_reused(clientssl2))
+            || !TEST_int_eq(SSL_get_session_reused_type(serverssl2),
+                                                SSL_SESSION_REUSED_TYPE_TICKET))
+        goto end;
+
+    SSL_SESSION_free(sess1);
+    SSL_free(serverssl2);
+    SSL_free(clientssl2);
+    SSL_free(serverssl1);
+    SSL_free(clientssl1);
+
+    sess1 = NULL;
+    serverssl2 = NULL;
+    clientssl2 = NULL;
+    serverssl1 = NULL;
+    clientssl1 = NULL;
+# endif
+
+# ifndef OPENSSL_NO_TLS1_2
+    SSL_CTX_set_min_proto_version(cctx, TLS1_VERSION);
+    SSL_CTX_set_max_proto_version(cctx, TLS1_2_VERSION);
+
+    if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl1, &clientssl1,
+                                      NULL, NULL))
+            || !TEST_true(create_ssl_connection(serverssl1, clientssl1,
+                                                SSL_ERROR_NONE))
+            || !TEST_ptr(sess1 = SSL_get1_session(clientssl1))
+            || !TEST_int_eq(SSL_get_session_reused_type(serverssl1),
+                                                SSL_SESSION_REUSED_TYPE_NOCACHE))
+        goto end;
+
+    if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl2,
+                                      &clientssl2, NULL, NULL))
+            || !TEST_true(SSL_set_session(clientssl2, sess1))
+            || !TEST_true(create_ssl_connection(serverssl2, clientssl2,
+                                                SSL_ERROR_NONE))
+            || !TEST_true(SSL_session_reused(clientssl2))
+            || !TEST_int_eq(SSL_get_session_reused_type(serverssl2),
+                                                SSL_SESSION_REUSED_TYPE_CACHE))
+        goto end;
+
+    SSL_SESSION_free(sess1);
+    SSL_free(serverssl2);
+    SSL_free(clientssl2);
+    SSL_free(serverssl1);
+    SSL_free(clientssl1);
+    SSL_CTX_free(sctx);
+    SSL_CTX_free(cctx);
+
+    sess1 = NULL;
+    serverssl2 = NULL;
+    clientssl2 = NULL;
+    serverssl1 = NULL;
+    clientssl1 = NULL;
+    sctx = NULL;
+    cctx = NULL;
+
+    if (!TEST_true(create_ssl_ctx_pair(NULL, TLS_server_method(),
+                                       TLS_client_method(),
+                                       TLS1_VERSION, TLS1_2_VERSION,
+                                       &sctx, &cctx, cert, privkey))
+            || !TEST_true(SSL_CTX_set_cipher_list(cctx, "DEFAULT:@SECLEVEL=0"))
+            || !TEST_true(SSL_CTX_set_cipher_list(sctx, "DEFAULT:@SECLEVEL=0")))
+        goto end;
+
+    SSL_CTX_set_min_proto_version(cctx, TLS1_VERSION);
+    SSL_CTX_set_max_proto_version(cctx, TLS1_2_VERSION);
+    SSL_CTX_set_session_cache_mode(sctx, SSL_SESS_CACHE_CLIENT);
+
+    if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl1, &clientssl1,
+                                      NULL, NULL))
+            || !TEST_true(create_ssl_connection(serverssl1, clientssl1,
+                                                SSL_ERROR_NONE))
+            || !TEST_ptr(sess1 = SSL_get1_session(clientssl1)))
+        goto end;
+
+    if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl2,
+                                      &clientssl2, NULL, NULL))
+            || !TEST_true(SSL_set_session(clientssl2, sess1))
+            || !TEST_true(create_ssl_connection(serverssl2, clientssl2,
+                                                SSL_ERROR_NONE))
+            || !TEST_true(SSL_session_reused(clientssl2))
+            || !TEST_int_eq(SSL_get_session_reused_type(serverssl2),
+                                                SSL_SESSION_REUSED_TYPE_TICKET))
+        goto end;
+# endif
+
+    testresult = 1;
+
+end:
+    SSL_SESSION_free(sess1);
+    SSL_free(serverssl1);
+    SSL_free(clientssl1);
+    SSL_free(serverssl2);
+    SSL_free(clientssl2);
+    SSL_CTX_free(sctx);
+    SSL_CTX_free(cctx);
+
+    return testresult;
+}
+#endif
+
 int setup_tests(void)
 {
     if (!test_skip_common_options()) {
@@ -976,6 +1118,9 @@ int setup_tests(void)
 #endif
 #ifndef OPENSSL_NO_VERIFY_SNI
     ADD_TEST(test_babassl_verify_cert_with_sni);
+#endif
+#ifndef OPENSSL_NO_SESSION_REUSED_TYPE
+    ADD_TEST(test_babassl_session_reused_type);
 #endif
     return 1;
 }

@@ -2479,6 +2479,10 @@ DEPEND[html/man3/SSL_get_session.html]=man3/SSL_get_session.pod
 GENERATE[html/man3/SSL_get_session.html]=man3/SSL_get_session.pod
 DEPEND[man/man3/SSL_get_session.3]=man3/SSL_get_session.pod
 GENERATE[man/man3/SSL_get_session.3]=man3/SSL_get_session.pod
+DEPEND[html/man3/SSL_get_session_reused_type.html]=man3/SSL_get_session_reused_type.pod
+GENERATE[html/man3/SSL_get_session_reused_type.html]=man3/SSL_get_session_reused_type.pod
+DEPEND[man/man3/SSL_get_session_reused_type.3]=man3/SSL_get_session_reused_type.pod
+GENERATE[man/man3/SSL_get_session_reused_type.3]=man3/SSL_get_session_reused_type.pod
 DEPEND[html/man3/SSL_get_shared_sigalgs.html]=man3/SSL_get_shared_sigalgs.pod
 GENERATE[html/man3/SSL_get_shared_sigalgs.html]=man3/SSL_get_shared_sigalgs.pod
 DEPEND[man/man3/SSL_get_shared_sigalgs.3]=man3/SSL_get_shared_sigalgs.pod
@@ -3355,6 +3359,7 @@ html/man3/SSL_get_peer_tmp_key.html \
 html/man3/SSL_get_psk_identity.html \
 html/man3/SSL_get_rbio.html \
 html/man3/SSL_get_session.html \
+html/man3/SSL_get_session_reused_type.html \
 html/man3/SSL_get_shared_sigalgs.html \
 html/man3/SSL_get_verify_result.html \
 html/man3/SSL_get_version.html \
@@ -3951,6 +3956,7 @@ man/man3/SSL_get_peer_tmp_key.3 \
 man/man3/SSL_get_psk_identity.3 \
 man/man3/SSL_get_rbio.3 \
 man/man3/SSL_get_session.3 \
+man/man3/SSL_get_session_reused_type.3 \
 man/man3/SSL_get_shared_sigalgs.3 \
 man/man3/SSL_get_verify_result.3 \
 man/man3/SSL_get_version.3 \

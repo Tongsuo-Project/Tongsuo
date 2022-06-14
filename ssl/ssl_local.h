@@ -1905,6 +1905,11 @@ struct ssl_st {
 # ifndef OPENSSL_NO_SKIP_SCSV
     int skip_scsv;
 # endif
+
+# ifndef OPENSSL_NO_SESSION_REUSED_TYPE
+    /* session reuse type: 0->nocache, 1->cache, 2->ticket */
+    int session_reused_type;
+# endif
 };
 
 /*
