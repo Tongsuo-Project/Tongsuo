@@ -811,7 +811,6 @@ OSSL_DEPRECATEDIN_3_0 int ERR_load_X509V3_strings(void);
 #  define EVP_F_AES_XTS_INIT_KEY                           0
 #  define EVP_F_ALG_MODULE_INIT                            0
 #  define EVP_F_B64_NEW                                    0
-#  define EVP_F_CAMELLIA_INIT_KEY                          0
 #  define EVP_F_CHACHA20_POLY1305_CTRL                     0
 #  define EVP_F_CMLL_T4_INIT_KEY                           0
 #  define EVP_F_DES_EDE3_WRAP_CIPHER                       0

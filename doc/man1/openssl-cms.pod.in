@@ -831,9 +831,9 @@ alternatively you can base64 decode the signature and use
 
  openssl cms -verify -inform DER -in signature.der -content content.txt
 
-Create an encrypted message using 128 bit Camellia:
+Create an encrypted message using 128 bit AES:
 
- openssl cms -encrypt -in plain.txt -camellia128 -out mail.msg cert.pem
+ openssl cms -encrypt -in plain.txt -aes128 -out mail.msg cert.pem
 
 Add a signer to an existing message:
 

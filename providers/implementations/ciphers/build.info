@@ -11,7 +11,6 @@ $NULL_GOAL=../../libdefault.a
 $AES_GOAL=../../libdefault.a ../../libfips.a
 $TDES_1_GOAL=../../libdefault.a ../../libfips.a
 $TDES_2_GOAL=../../libdefault.a
-$CAMELLIA_GOAL=../../libdefault.a
 $DES_GOAL=../../liblegacy.a
 $BLOWFISH_GOAL=../../liblegacy.a
 $IDEA_GOAL=../../liblegacy.a
@@ -68,11 +67,6 @@ IF[{- !$disabled{des} -}]
    SOURCE[$DES_GOAL]=\
        cipher_tdes_common.c
  ENDIF
-ENDIF
-
-IF[{- !$disabled{camellia} -}]
-  SOURCE[$CAMELLIA_GOAL]=\
-      cipher_camellia.c cipher_camellia_hw.c
 ENDIF
 
 IF[{- !$disabled{bf} -}]

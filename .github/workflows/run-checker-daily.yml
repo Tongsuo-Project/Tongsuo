@@ -30,7 +30,6 @@ jobs:
           no-buildtest-c++,
           no-bulk,
           no-cached-fetch,
-          no-camellia,
           no-capieng,
           no-cast,
           no-chacha,

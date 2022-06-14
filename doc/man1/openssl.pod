@@ -427,18 +427,6 @@ Base64 Encoding
 
 Blowfish Cipher
 
-=item B<camellia128>, B<camellia-128-cbc>, B<camellia-128-cfb>, B<camellia-128-ctr>, B<camellia-128-ecb>, B<camellia-128-ofb>
-
-Camellia-128 Cipher
-
-=item B<camellia192>, B<camellia-192-cbc>, B<camellia-192-cfb>, B<camellia-192-ctr>, B<camellia-192-ecb>, B<camellia-192-ofb>
-
-Camellia-192 Cipher
-
-=item B<camellia256>, B<camellia-256-cbc>, B<camellia-256-cfb>, B<camellia-256-ctr>, B<camellia-256-ecb>, B<camellia-256-ofb>
-
-Camellia-256 Cipher
-
 =item B<cast>, B<cast-cbc>
 
 CAST Cipher
