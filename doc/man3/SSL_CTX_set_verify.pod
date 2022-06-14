@@ -8,7 +8,9 @@ SSL_CTX_set_verify_depth, SSL_set_verify_depth,
 SSL_verify_cb,
 SSL_verify_client_post_handshake,
 SSL_set_post_handshake_auth,
-SSL_CTX_set_post_handshake_auth
+SSL_CTX_set_post_handshake_auth,
+SSL_CTX_set_verify_cert_with_sni,
+SSL_CTX_get_verify_cert_with_sni
 - set various SSL/TLS parameters for peer certificate verification
 
 =head1 SYNOPSIS
@@ -27,6 +29,11 @@ SSL_CTX_set_post_handshake_auth
  int SSL_verify_client_post_handshake(SSL *ssl);
  void SSL_CTX_set_post_handshake_auth(SSL_CTX *ctx, int val);
  void SSL_set_post_handshake_auth(SSL *ssl, int val);
+
+ #ifndef OPENSSL_NO_VERIFY_SNI
+ void SSL_CTX_set_verify_cert_with_sni(SSL_CTX *ctx, int value);
+ int  SSL_CTX_get_verify_cert_with_sni(SSL_CTX *ctx);
+ #endif
 
 =head1 DESCRIPTION
 
@@ -75,6 +82,14 @@ SSL_CTX_set_client_cert_cb() if no certificate is provided at initialization.
 SSL_verify_client_post_handshake() causes a CertificateRequest message to be
 sent by a server on the given B<ssl> connection. The SSL_VERIFY_PEER flag must
 be set; the SSL_VERIFY_POST_HANDSHAKE flag is optional.
+
+SSL_CTX_set_verify_cert_with_sni() sets the flag B<value> for whether to verify
+the matching of the certificate and server_name during the ssl handshake for
+B<ctx>. 1 is to verify, 0 is not to verify.
+
+SSL_CTX_get_verify_cert_with_sni() gets the flag of B<ctx> that whether to
+verify the matching of the certificate and server_name during the ssl handshake.
+1 is to verify, 0 is not to verify.
 
 =head1 NOTES
 
@@ -229,6 +244,10 @@ The SSL*_set_verify*() functions do not provide diagnostic information.
 The SSL_verify_client_post_handshake() function returns 1 if the request
 succeeded, and 0 if the request failed. The error stack can be examined
 to determine the failure reason.
+
+SSL_CTX_set_verify_cert_with_sni has no return value.
+
+The SSL_CTX_get_verify_cert_with_sni() function returns 1 or 0.
 
 =head1 EXAMPLES
 

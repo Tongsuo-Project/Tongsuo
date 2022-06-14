@@ -708,3 +708,7 @@ SSL_dup_ciphers_by_id                   define
 SSL_CTX_set_ciphers                     define
 SSL_CTX_get_ciphers_by_id               define
 SSL_CTX_set_ciphers_by_id               define
+SSL_CTX_get_verify_sni                  define
+SSL_CTX_set_verify_sni                  define
+SSL_CTX_get_verify_server_certificate_host define
+SSL_CTX_set_verify_server_certificate_host define

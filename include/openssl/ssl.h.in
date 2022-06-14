@@ -1119,6 +1119,10 @@ size_t SSL_get_peer_finished(const SSL *s, void *buf, size_t count);
 # define SSL_VERIFY_CLIENT_ONCE          0x04
 # define SSL_VERIFY_POST_HANDSHAKE       0x08
 
+# ifndef OPENSSL_NO_VERIFY_SNI
+#  define SSL_VERIFY_FAIL_IF_SNI_NOT_MATCH_CERT    0x10
+# endif
+
 # ifndef OPENSSL_NO_DEPRECATED_1_1_0
 #  define OpenSSL_add_ssl_algorithms()   SSL_library_init()
 #  define SSLeay_add_ssl_algorithms()    SSL_library_init()
@@ -2754,6 +2758,17 @@ int SSL_CTX_set_cipher_list2(SSL_CTX *ctx, STACK_OF(SSL_CIPHER) *cipher_list);
 STACK_OF(SSL_CIPHER) *SSL_CTX_get_cipher_list_by_id(const SSL_CTX *ctx);
 int SSL_CTX_set_cipher_list_by_id(SSL_CTX *ctx,
                               STACK_OF(SSL_CIPHER) *cipher_list_by_id);
+# endif
+
+# ifndef OPENSSL_NO_VERIFY_SNI
+#  define OPENSSL_VERIFY_SERVER_CERTIFICATE_HOST     1
+#  define SSL_CTX_set_verify_server_certificate_host SSL_CTX_set_verify_cert_with_sni
+#  define SSL_CTX_get_verify_server_certificate_host SSL_CTX_get_verify_cert_with_sni
+#  define SSL_CTX_set_verify_sni SSL_CTX_set_verify_cert_with_sni
+#  define SSL_CTX_get_verify_sni SSL_CTX_get_verify_cert_with_sni
+
+void SSL_CTX_set_verify_cert_with_sni(SSL_CTX *ctx, int value);
+int  SSL_CTX_get_verify_cert_with_sni(SSL_CTX *ctx);
 # endif
 
 # ifdef  __cplusplus
