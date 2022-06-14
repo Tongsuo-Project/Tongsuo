@@ -700,3 +700,4 @@ EVP_PKEY_is_sm2                         define
 SSL_set_no_scsv                         define
 OSSL_ENCRYPTION_LEVEL                   datatype
 SSL_QUIC_METHOD                         datatype
+EVP_PKEY_assign_EIA3                    define

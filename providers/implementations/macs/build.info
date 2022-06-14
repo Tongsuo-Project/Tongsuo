@@ -8,6 +8,7 @@ $CMAC_GOAL=../../libdefault.a ../../libfips.a
 $BLAKE2_GOAL=../../libdefault.a
 $SIPHASH_GOAL=../../libdefault.a
 $POLY1305_GOAL=../../libdefault.a
+$EIA3_GOAL=../../libdefault.a
 
 SOURCE[$GMAC_GOAL]=gmac_prov.c
 SOURCE[$HMAC_GOAL]=hmac_prov.c
@@ -27,4 +28,8 @@ ENDIF
 
 IF[{- !$disabled{poly1305} -}]
   SOURCE[$POLY1305_GOAL]=poly1305_prov.c
+ENDIF
+
+IF[{- !$disabled{zuc} -}]
+  SOURCE[$EIA3_GOAL]=eia3_prov.c
 ENDIF

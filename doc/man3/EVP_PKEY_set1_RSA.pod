@@ -6,11 +6,11 @@ EVP_PKEY_set1_RSA, EVP_PKEY_set1_DSA, EVP_PKEY_set1_DH, EVP_PKEY_set1_EC_KEY,
 EVP_PKEY_get1_RSA, EVP_PKEY_get1_DSA, EVP_PKEY_get1_DH, EVP_PKEY_get1_EC_KEY,
 EVP_PKEY_get0_RSA, EVP_PKEY_get0_DSA, EVP_PKEY_get0_DH, EVP_PKEY_get0_EC_KEY,
 EVP_PKEY_assign_RSA, EVP_PKEY_assign_DSA, EVP_PKEY_assign_DH,
-EVP_PKEY_assign_EC_KEY, EVP_PKEY_assign_POLY1305, EVP_PKEY_assign_SIPHASH,
-EVP_PKEY_get0_hmac, EVP_PKEY_get0_poly1305, EVP_PKEY_get0_siphash,
-EVP_PKEY_get0, EVP_PKEY_type, EVP_PKEY_get_id, EVP_PKEY_get_base_id,
-EVP_PKEY_set1_engine, EVP_PKEY_get0_engine,
-EVP_PKEY_id, EVP_PKEY_base_id -
+EVP_PKEY_assign_EC_KEY, EVP_PKEY_assign_POLY1305, EVP_PKEY_assign_EIA3,
+EVP_PKEY_assign_SIPHASH, EVP_PKEY_get0_hmac, EVP_PKEY_get0_poly1305,
+EVP_PKEY_get0_eia3, EVP_PKEY_get0_siphash, EVP_PKEY_get0, EVP_PKEY_type,
+EVP_PKEY_get_id, EVP_PKEY_get_base_id, EVP_PKEY_set1_engine,
+EVP_PKEY_get0_engine, EVP_PKEY_id, EVP_PKEY_base_id -
 EVP_PKEY assignment functions
 
 =head1 SYNOPSIS
@@ -40,6 +40,9 @@ see L<openssl_user_macros(7)>:
 
  const unsigned char *EVP_PKEY_get0_hmac(const EVP_PKEY *pkey, size_t *len);
  const unsigned char *EVP_PKEY_get0_poly1305(const EVP_PKEY *pkey, size_t *len);
+ #ifndef OPENSSL_NO_ZUC
+ const unsigned char *EVP_PKEY_get0_eia3(const EVP_PKEY *pkey, size_t *len);
+ #endif
  const unsigned char *EVP_PKEY_get0_siphash(const EVP_PKEY *pkey, size_t *len);
  const RSA *EVP_PKEY_get0_RSA(const EVP_PKEY *pkey);
  const DSA *EVP_PKEY_get0_DSA(const EVP_PKEY *pkey);
@@ -53,6 +56,7 @@ see L<openssl_user_macros(7)>:
  int EVP_PKEY_assign_EC_KEY(EVP_PKEY *pkey, EC_KEY *key);
  int EVP_PKEY_assign_POLY1305(EVP_PKEY *pkey, ASN1_OCTET_STRING *key);
  int EVP_PKEY_assign_SIPHASH(EVP_PKEY *pkey, ASN1_OCTET_STRING *key);
+ int EVP_PKEY_assign_EIA3(EVP_PKEY *pkey, ASN1_OCTET_STRING *key);
 
  ENGINE *EVP_PKEY_get0_engine(const EVP_PKEY *pkey);
  int EVP_PKEY_set1_engine(EVP_PKEY *pkey, ENGINE *engine);
@@ -79,7 +83,7 @@ functions are deprecated. Applications should instead use
 L<EVP_PKEY_fromdata(3)>.
 
 EVP_PKEY_assign_RSA(), EVP_PKEY_assign_DSA(), EVP_PKEY_assign_DH(),
-EVP_PKEY_assign_EC_KEY(), EVP_PKEY_assign_POLY1305() and
+EVP_PKEY_assign_EC_KEY(), EVP_PKEY_assign_POLY1305(), EVP_PKEY_assign_EIA3() and
 EVP_PKEY_assign_SIPHASH() set the referenced key to I<key> however these use
 the supplied I<key> internally and so I<key> will be freed when the parent
 I<pkey> is freed. These macros are deprecated. Applications should instead read
@@ -96,15 +100,15 @@ then applications should use L<EVP_PKEY_get_params(3)> and other similar
 functions. To write an EVP_PKEY out use the OSSL_ENCODER APIs (see
 L<OSSL_ENCODER_CTX_new_for_pkey(3)>).
 
-EVP_PKEY_get0_hmac(), EVP_PKEY_get0_poly1305(), EVP_PKEY_get0_siphash(),
-EVP_PKEY_get0_RSA(), EVP_PKEY_get0_DSA(), EVP_PKEY_get0_DH() and
-EVP_PKEY_get0_EC_KEY() return the referenced key in I<pkey> or NULL if the
-key is not of the correct type. The reference count of the returned key is
-B<not> incremented and so the key must not be freed after use. These functions
-are deprecated. Applications should instead use the EVP_PKEY directly where
-possible. If access to the low level key parameters is required then
-applications should use L<EVP_PKEY_get_params(3)> and other similar functions.
-To write an EVP_PKEY out use the OSSL_ENCODER APIs (see
+EVP_PKEY_get0_hmac(), EVP_PKEY_get0_poly1305(), EVP_PKEY_get0_eia3(),
+EVP_PKEY_get0_siphash(), EVP_PKEY_get0_RSA(), EVP_PKEY_get0_DSA(),
+EVP_PKEY_get0_DH() and EVP_PKEY_get0_EC_KEY() return the referenced key in
+I<pkey> or NULL if the key is not of the correct type. The reference count of
+the returned key is B<not> incremented and so the key must not be freed after
+use. These functions are deprecated. Applications should instead use the
+EVP_PKEY directly where possible. If access to the low level key parameters
+is required then applications should use L<EVP_PKEY_get_params(3)> and other
+similar functions.  To write an EVP_PKEY out use the OSSL_ENCODER APIs (see
 L<OSSL_ENCODER_CTX_new_for_pkey(3)>). EVP_PKEY_get0() returns a pointer to the
 legacy key or NULL if the key is not legacy.
 
@@ -114,14 +118,15 @@ or EVP_PKEY_set1_EC_KEY(), or via the similarly named B<EVP_PKEY_assign> macros
 described above then the internal key will be managed by a provider (see
 L<provider(7)>). In that case the key returned by EVP_PKEY_get1_RSA(),
 EVP_PKEY_get1_DSA(), EVP_PKEY_get1_DH(), EVP_PKEY_get1_EC_KEY(),
-EVP_PKEY_get0_hmac(), EVP_PKEY_get0_poly1305(), EVP_PKEY_get0_siphash(),
-EVP_PKEY_get0_RSA(), EVP_PKEY_get0_DSA(), EVP_PKEY_get0_DH() or
-EVP_PKEY_get0_EC_KEY() will be a cached copy of the provider's key. Subsequent
-updates to the provider's key will not be reflected back in the cached copy, and
-updates made by an application to the returned key will not be reflected back in
-the provider's key. Subsequent calls to EVP_PKEY_get1_RSA(),
-EVP_PKEY_get1_DSA(), EVP_PKEY_get1_DH() and EVP_PKEY_get1_EC_KEY() will always
-return the cached copy returned by the first call.
+EVP_PKEY_get0_hmac(), EVP_PKEY_get0_poly1305(), EVP_PKEY_get0_eia3(),
+EVP_PKEY_get0_siphash(), EVP_PKEY_get0_RSA(), EVP_PKEY_get0_DSA(),
+EVP_PKEY_get0_DH() or EVP_PKEY_get0_EC_KEY() will be a cached copy of the
+provider's key. Subsequent updates to the provider's key will not be reflected
+back in the cached copy, and updates made by an application to the returned
+key will not be reflected back in the provider's key. Subsequent calls to
+EVP_PKEY_get1_RSA(), EVP_PKEY_get1_DSA(), EVP_PKEY_get1_DH() and
+EVP_PKEY_get1_EC_KEY() will always return the cached copy returned by the
+first call.
 
 EVP_PKEY_get0_engine() returns a reference to the ENGINE handling I<pkey>. This
 function is deprecated. Applications should use providers instead of engines
@@ -160,7 +165,7 @@ from or assigned to the I<pkey> using the B<1> functions must be
 freed as well as I<pkey>.
 
 EVP_PKEY_assign_RSA(), EVP_PKEY_assign_DSA(), EVP_PKEY_assign_DH(),
-EVP_PKEY_assign_EC_KEY(), EVP_PKEY_assign_POLY1305()
+EVP_PKEY_assign_EC_KEY(), EVP_PKEY_assign_POLY1305(), EVP_PKEY_assign_EIA3()
 and EVP_PKEY_assign_SIPHASH() are implemented as macros.
 
 EVP_PKEY_assign_EC_KEY() looks at the curve name id to determine if
@@ -188,7 +193,7 @@ EVP_PKEY_get1_EC_KEY() return the referenced key or NULL if
 an error occurred.
 
 EVP_PKEY_assign_RSA(), EVP_PKEY_assign_DSA(), EVP_PKEY_assign_DH(),
-EVP_PKEY_assign_EC_KEY(), EVP_PKEY_assign_POLY1305()
+EVP_PKEY_assign_EC_KEY(), EVP_PKEY_assign_POLY1305(), EVP_PKEY_assign_EIA3()
 and EVP_PKEY_assign_SIPHASH() return 1 for success and 0 for failure.
 
 EVP_PKEY_get_base_id(), EVP_PKEY_get_id() and EVP_PKEY_type() return a key
@@ -210,9 +215,10 @@ EVP_PKEY_set1_RSA, EVP_PKEY_set1_DSA, EVP_PKEY_set1_DH, EVP_PKEY_set1_EC_KEY,
 EVP_PKEY_get1_RSA, EVP_PKEY_get1_DSA, EVP_PKEY_get1_DH, EVP_PKEY_get1_EC_KEY,
 EVP_PKEY_get0_RSA, EVP_PKEY_get0_DSA, EVP_PKEY_get0_DH, EVP_PKEY_get0_EC_KEY,
 EVP_PKEY_assign_RSA, EVP_PKEY_assign_DSA, EVP_PKEY_assign_DH,
-EVP_PKEY_assign_EC_KEY, EVP_PKEY_assign_POLY1305, EVP_PKEY_assign_SIPHASH,
-EVP_PKEY_get0_hmac, EVP_PKEY_get0_poly1305, EVP_PKEY_get0_siphash,
-EVP_PKEY_set1_engine and EVP_PKEY_get0_engine were deprecated in OpenSSL 3.0.
+EVP_PKEY_assign_EC_KEY, EVP_PKEY_assign_POLY1305, EVP_PKEY_assign_EIA3,
+EVP_PKEY_assign_SIPHASH, EVP_PKEY_get0_hmac, EVP_PKEY_get0_poly1305,
+EVP_PKEY_get0_eia3, EVP_PKEY_get0_siphash, EVP_PKEY_set1_engine and
+EVP_PKEY_get0_engine were deprecated in OpenSSL 3.0.
 
 The return value from EVP_PKEY_get0_RSA, EVP_PKEY_get0_DSA, EVP_PKEY_get0_DH,
 EVP_PKEY_get0_EC_KEY were made const in OpenSSL 3.0.
@@ -222,7 +228,7 @@ It was removed in OpenSSL 3.0.
 
 =head1 COPYRIGHT
 
-Copyright 2002-2021 The OpenSSL Project Authors. All Rights Reserved.
+Copyright 2002-2022 The OpenSSL Project Authors. All Rights Reserved.
 
 Licensed under the Apache License 2.0 (the "License").  You may not use
 this file except in compliance with the License.  You can obtain a copy

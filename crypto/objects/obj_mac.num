@@ -1184,3 +1184,4 @@ sm4_ccm		1251
 kx_sm2		1252
 kx_sm2dhe		1253
 auth_sm2		1254
+zuc_128_eia3		1255

@@ -29,6 +29,7 @@ static OSSL_FUNC_signature_newctx_fn mac_hmac_newctx;
 static OSSL_FUNC_signature_newctx_fn mac_siphash_newctx;
 static OSSL_FUNC_signature_newctx_fn mac_poly1305_newctx;
 static OSSL_FUNC_signature_newctx_fn mac_cmac_newctx;
+static OSSL_FUNC_signature_newctx_fn mac_eia3_newctx;
 static OSSL_FUNC_signature_digest_sign_init_fn mac_digest_sign_init;
 static OSSL_FUNC_signature_digest_sign_update_fn mac_digest_sign_update;
 static OSSL_FUNC_signature_digest_sign_final_fn mac_digest_sign_final;
@@ -39,6 +40,7 @@ static OSSL_FUNC_signature_settable_ctx_params_fn mac_hmac_settable_ctx_params;
 static OSSL_FUNC_signature_settable_ctx_params_fn mac_siphash_settable_ctx_params;
 static OSSL_FUNC_signature_settable_ctx_params_fn mac_poly1305_settable_ctx_params;
 static OSSL_FUNC_signature_settable_ctx_params_fn mac_cmac_settable_ctx_params;
+static OSSL_FUNC_signature_settable_ctx_params_fn mac_eia3_settable_ctx_params;
 
 typedef struct {
     OSSL_LIB_CTX *libctx;
@@ -94,6 +96,7 @@ MAC_NEWCTX(hmac, "HMAC")
 MAC_NEWCTX(siphash, "SIPHASH")
 MAC_NEWCTX(poly1305, "POLY1305")
 MAC_NEWCTX(cmac, "CMAC")
+MAC_NEWCTX(eia3, "EIA3")
 
 static int mac_digest_sign_init(void *vpmacctx, const char *mdname, void *vkey,
                                 const OSSL_PARAM params[])
@@ -242,6 +245,7 @@ MAC_SETTABLE_CTX_PARAMS(hmac, "HMAC")
 MAC_SETTABLE_CTX_PARAMS(siphash, "SIPHASH")
 MAC_SETTABLE_CTX_PARAMS(poly1305, "POLY1305")
 MAC_SETTABLE_CTX_PARAMS(cmac, "CMAC")
+MAC_SETTABLE_CTX_PARAMS(eia3, "EIA3")
 
 #define MAC_SIGNATURE_FUNCTIONS(funcname) \
     const OSSL_DISPATCH ossl_mac_legacy_##funcname##_signature_functions[] = { \
@@ -265,3 +269,4 @@ MAC_SIGNATURE_FUNCTIONS(hmac)
 MAC_SIGNATURE_FUNCTIONS(siphash)
 MAC_SIGNATURE_FUNCTIONS(poly1305)
 MAC_SIGNATURE_FUNCTIONS(cmac)
+MAC_SIGNATURE_FUNCTIONS(eia3)
