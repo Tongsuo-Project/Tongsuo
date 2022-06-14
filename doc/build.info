@@ -2163,6 +2163,10 @@ DEPEND[html/man3/SSL_CTX_set_cipher_list.html]=man3/SSL_CTX_set_cipher_list.pod
 GENERATE[html/man3/SSL_CTX_set_cipher_list.html]=man3/SSL_CTX_set_cipher_list.pod
 DEPEND[man/man3/SSL_CTX_set_cipher_list.3]=man3/SSL_CTX_set_cipher_list.pod
 GENERATE[man/man3/SSL_CTX_set_cipher_list.3]=man3/SSL_CTX_set_cipher_list.pod
+DEPEND[html/man3/SSL_CTX_set_cipher_list2.html]=man3/SSL_CTX_set_cipher_list2.pod
+GENERATE[html/man3/SSL_CTX_set_cipher_list2.html]=man3/SSL_CTX_set_cipher_list2.pod
+DEPEND[man/man3/SSL_CTX_set_cipher_list2.3]=man3/SSL_CTX_set_cipher_list2.pod
+GENERATE[man/man3/SSL_CTX_set_cipher_list2.3]=man3/SSL_CTX_set_cipher_list2.pod
 DEPEND[html/man3/SSL_CTX_set_client_cert_cb.html]=man3/SSL_CTX_set_client_cert_cb.pod
 GENERATE[html/man3/SSL_CTX_set_client_cert_cb.html]=man3/SSL_CTX_set_client_cert_cb.pod
 DEPEND[man/man3/SSL_CTX_set_client_cert_cb.3]=man3/SSL_CTX_set_client_cert_cb.pod
@@ -3272,6 +3276,7 @@ html/man3/SSL_CTX_set_cert_cb.html \
 html/man3/SSL_CTX_set_cert_store.html \
 html/man3/SSL_CTX_set_cert_verify_callback.html \
 html/man3/SSL_CTX_set_cipher_list.html \
+html/man3/SSL_CTX_set_cipher_list2.html \
 html/man3/SSL_CTX_set_client_cert_cb.html \
 html/man3/SSL_CTX_set_client_hello_cb.html \
 html/man3/SSL_CTX_set_ct_validation_callback.html \
@@ -3867,6 +3872,7 @@ man/man3/SSL_CTX_set_cert_cb.3 \
 man/man3/SSL_CTX_set_cert_store.3 \
 man/man3/SSL_CTX_set_cert_verify_callback.3 \
 man/man3/SSL_CTX_set_cipher_list.3 \
+man/man3/SSL_CTX_set_cipher_list2.3 \
 man/man3/SSL_CTX_set_client_cert_cb.3 \
 man/man3/SSL_CTX_set_client_hello_cb.3 \
 man/man3/SSL_CTX_set_ct_validation_callback.3 \

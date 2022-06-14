@@ -727,6 +727,152 @@ end:
 }
 #endif
 
+#ifndef OPENSSL_NO_DYNAMIC_CIPHERS
+
+# ifndef OPENSSL_NO_TLS1_2
+static STACK_OF(SSL_CIPHER)       *cipher_list = NULL;
+static STACK_OF(SSL_CIPHER)       *cipher_list_by_id = NULL;
+static int dynamic_ciphers_cb_count = 0;
+
+static int babassl_dynamic_ciphers_client_hello_callback(SSL *s, int *al, void *arg)
+{
+    if (dynamic_ciphers_cb_count == 0) {
+        if (!TEST_true(SSL_set_cipher_list(s, "AES128-SHA")))
+            return 0;
+
+        cipher_list = SSL_dup_ciphers(s);
+        cipher_list_by_id = SSL_dup_ciphers_by_id(s);
+    }
+
+    if (cipher_list) {
+        SSL_set_ciphers(s, cipher_list);
+        SSL_set_ciphers_by_id(s, cipher_list_by_id);
+    }
+
+    dynamic_ciphers_cb_count++;
+
+    return 1;
+}
+
+static int test_babassl_dynamic_ciphers(void)
+{
+    SSL_CTX *cctx = NULL, *sctx = NULL, *sctx2 = NULL;
+    SSL *clientssl = NULL, *serverssl = NULL;
+    int testresult = 0;
+
+    if (!TEST_true(create_ssl_ctx_pair(NULL, TLS_server_method(), TLS_client_method(),
+                                       TLS1_VERSION, TLS1_2_VERSION,
+                                       &sctx, &cctx, cert, privkey)))
+        goto end;
+
+    SSL_CTX_set_client_hello_cb(sctx, babassl_dynamic_ciphers_client_hello_callback,
+                                sctx);
+    SSL_CTX_set_max_proto_version(cctx, TLS1_2_VERSION);
+
+    if (!TEST_true(SSL_CTX_set_cipher_list(sctx, "AES256-GCM-SHA384")))
+        goto end;
+
+    SSL_CTX_set_options(sctx, SSL_OP_CIPHER_SERVER_PREFERENCE);
+
+    if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl, &clientssl,
+                                      NULL, NULL))
+            || !TEST_true(create_ssl_connection(serverssl, clientssl,
+                                                SSL_ERROR_NONE)))
+        goto end;
+
+    if (!TEST_int_eq(SSL_CIPHER_get_protocol_id(SSL_get_current_cipher(serverssl)),
+                     0x002f))
+        goto end;
+
+    SSL_free(serverssl);
+    SSL_free(clientssl);
+
+    serverssl = NULL;
+    clientssl = NULL;
+
+
+    if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl, &clientssl,
+                                      NULL, NULL))
+            || !TEST_true(create_ssl_connection(serverssl, clientssl,
+                                                SSL_ERROR_NONE)))
+        goto end;
+
+    if (!TEST_int_eq(SSL_CIPHER_get_protocol_id(SSL_get_current_cipher(serverssl)),
+                     0x002f))
+        goto end;
+
+    SSL_free(serverssl);
+    SSL_free(clientssl);
+
+    serverssl = NULL;
+    clientssl = NULL;
+
+    if (cipher_list)
+        sk_SSL_CIPHER_free(cipher_list);
+
+    if (cipher_list_by_id)
+        sk_SSL_CIPHER_free(cipher_list_by_id);
+
+    cipher_list = SSL_CTX_get_ciphers(sctx);
+    cipher_list_by_id = SSL_CTX_get_ciphers_by_id(sctx);
+
+    if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl, &clientssl,
+                                      NULL, NULL))
+            || !TEST_true(create_ssl_connection(serverssl, clientssl,
+                                                SSL_ERROR_NONE)))
+        goto end;
+
+    if (!TEST_int_eq(SSL_CIPHER_get_protocol_id(SSL_get_current_cipher(serverssl)),
+                     0x009d))
+        goto end;
+
+    SSL_free(serverssl);
+    SSL_free(clientssl);
+
+    serverssl = NULL;
+    clientssl = NULL;
+
+    if (!TEST_true(create_ssl_ctx_pair(NULL, TLS_server_method(), NULL,
+                                       TLS1_VERSION, TLS1_2_VERSION,
+                                       &sctx2, NULL, cert, privkey)))
+        goto end;
+
+    if (!TEST_true(SSL_CTX_set_cipher_list(sctx2, "AES128-SHA256")))
+        goto end;
+
+    cipher_list = SSL_CTX_get_ciphers(sctx2);
+    cipher_list_by_id = SSL_CTX_get_ciphers_by_id(sctx2);
+
+    SSL_CTX_set_ciphers(sctx, cipher_list);
+    SSL_CTX_set_ciphers_by_id(sctx, cipher_list_by_id);
+
+    cipher_list = NULL;
+    cipher_list_by_id = NULL;
+
+    if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl, &clientssl,
+                                      NULL, NULL))
+            || !TEST_true(create_ssl_connection(serverssl, clientssl,
+                                                SSL_ERROR_NONE)))
+        goto end;
+
+    if (!TEST_int_eq(SSL_CIPHER_get_protocol_id(SSL_get_current_cipher(serverssl)),
+                     0x003C))
+        goto end;
+
+    testresult = 1;
+
+end:
+    SSL_free(serverssl);
+    SSL_free(clientssl);
+    SSL_CTX_free(sctx2);
+    SSL_CTX_free(sctx);
+    SSL_CTX_free(cctx);
+
+    return testresult;
+}
+# endif
+#endif
+
 int setup_tests(void)
 {
     if (!test_skip_common_options()) {
@@ -768,6 +914,11 @@ int setup_tests(void)
                                             || !defined(OPENSSL_NO_TLS1_1) \
                                             || !defined(OPENSSL_NO_TLS1))
     ADD_TEST(test_babassl_session_lookup);
+#endif
+#ifndef OPENSSL_NO_DYNAMIC_CIPHERS
+# ifndef OPENSSL_NO_TLS1_2
+    ADD_TEST(test_babassl_dynamic_ciphers);
+# endif
 #endif
     return 1;
 }

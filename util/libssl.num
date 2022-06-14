@@ -583,3 +583,10 @@ SSL_get_peer_quic_transport_version     583	3_0_3	EXIST::FUNCTION:QUIC
 SSL_CIPHER_get_prf_nid                  584	3_0_3	EXIST::FUNCTION:QUIC
 SSL_set_quic_early_data_enabled         585	3_0_3	EXIST::FUNCTION:QUIC
 SSL_set_quic_early_data_context         586	3_0_3	EXIST::FUNCTION:QUIC
+SSL_set_cipher_list2                    587	3_0_3	EXIST::FUNCTION:DYNAMIC_CIPHERS
+SSL_set_cipher_list_by_id               588	3_0_3	EXIST::FUNCTION:DYNAMIC_CIPHERS
+SSL_CTX_set_cipher_list2                589	3_0_3	EXIST::FUNCTION:DYNAMIC_CIPHERS
+SSL_CTX_get_cipher_list_by_id           590	3_0_3	EXIST::FUNCTION:DYNAMIC_CIPHERS
+SSL_CTX_set_cipher_list_by_id           591	3_0_3	EXIST::FUNCTION:DYNAMIC_CIPHERS
+SSL_dup_cipher_list                     592	3_0_3	EXIST::FUNCTION:DYNAMIC_CIPHERS
+SSL_dup_cipher_list_by_id               593	3_0_3	EXIST::FUNCTION:DYNAMIC_CIPHERS
