@@ -507,6 +507,7 @@ my @disablables = (
     "skip-scsv",
     "session-lookup",
     "dynamic-ciphers",
+    "verify-sni",
     );
 foreach my $proto ((@tls, @dtls))
         {

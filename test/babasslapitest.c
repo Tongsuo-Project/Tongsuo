@@ -790,7 +790,6 @@ static int test_babassl_dynamic_ciphers(void)
     serverssl = NULL;
     clientssl = NULL;
 
-
     if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl, &clientssl,
                                       NULL, NULL))
             || !TEST_true(create_ssl_connection(serverssl, clientssl,
@@ -873,6 +872,61 @@ end:
 # endif
 #endif
 
+#ifndef OPENSSL_NO_VERIFY_SNI
+static int test_babassl_verify_cert_with_sni(void)
+{
+    SSL_CTX *cctx = NULL, *sctx = NULL;
+    SSL *clientssl = NULL, *serverssl = NULL;
+    int testresult = 0;
+
+    if (!TEST_true(create_ssl_ctx_pair(NULL, TLS_server_method(),
+                                       TLS_client_method(),
+                                       TLS1_VERSION, 0,
+                                       &sctx, &cctx, cert, privkey)))
+        goto end;
+
+    SSL_CTX_set_verify_cert_with_sni(sctx, 1);
+
+    if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl, &clientssl,
+                                      NULL, NULL)))
+        goto end;
+
+    if (!TEST_true(SSL_set_tlsext_host_name(clientssl, "badservername.example"))
+        || !TEST_false(create_ssl_connection(serverssl, clientssl,
+                                             SSL_ERROR_NONE)))
+        goto end;
+
+    SSL_free(serverssl);
+    SSL_free(clientssl);
+
+    serverssl = NULL;
+    clientssl = NULL;
+
+    if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl, &clientssl,
+                                      NULL, NULL)))
+        goto end;
+
+    if (!TEST_true(SSL_set_tlsext_host_name(clientssl, "server.example"))
+        || !TEST_true(create_ssl_connection(serverssl, clientssl,
+                                            SSL_ERROR_NONE)))
+        goto end;
+
+    if (!TEST_int_eq(SSL_CTX_get_verify_cert_with_sni(sctx),
+                     sctx->verify_mode & SSL_VERIFY_FAIL_IF_SNI_NOT_MATCH_CERT))
+        goto end;
+
+    testresult = 1;
+
+end:
+    SSL_free(serverssl);
+    SSL_free(clientssl);
+    SSL_CTX_free(sctx);
+    SSL_CTX_free(cctx);
+
+    return testresult;
+}
+#endif
+
 int setup_tests(void)
 {
     if (!test_skip_common_options()) {
@@ -919,6 +973,9 @@ int setup_tests(void)
 # ifndef OPENSSL_NO_TLS1_2
     ADD_TEST(test_babassl_dynamic_ciphers);
 # endif
+#endif
+#ifndef OPENSSL_NO_VERIFY_SNI
+    ADD_TEST(test_babassl_verify_cert_with_sni);
 #endif
     return 1;
 }
