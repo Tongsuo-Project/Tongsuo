@@ -627,6 +627,10 @@ int ssl_get_prev_session(SSL *s, CLIENTHELLO_MSG *hello)
             return -1;
 
         ret = s->session;
+# ifndef OPENSSL_NO_SESSION_REUSED_TYPE
+        if (ret != NULL)
+            s->session_reused_type = SSL_SESSION_REUSED_TYPE_TICKET;
+# endif
     } else {
         /* sets s->ext.ticket_expected */
         r = tls_get_ticket_from_client(s, hello, &ret);
@@ -645,7 +649,13 @@ int ssl_get_prev_session(SSL *s, CLIENTHELLO_MSG *hello)
             }
             break;
         case SSL_TICKET_NO_DECRYPT:
+# ifndef OPENSSL_NO_SESSION_REUSED_TYPE
+            break;
+# endif
         case SSL_TICKET_SUCCESS:
+# ifndef OPENSSL_NO_SESSION_REUSED_TYPE
+            s->session_reused_type = SSL_SESSION_REUSED_TYPE_TICKET;
+# endif
         case SSL_TICKET_SUCCESS_RENEW:
             break;
         }
@@ -718,11 +728,20 @@ int ssl_get_prev_session(SSL *s, CLIENTHELLO_MSG *hello)
         s->session = ret;
     }
 
+# ifndef OPENSSL_NO_SESSION_REUSED_TYPE
+    if (try_session_cache)
+        s->session_reused_type = SSL_SESSION_REUSED_TYPE_CACHE;
+# endif
+
     ssl_tsan_counter(s->session_ctx, &s->session_ctx->stats.sess_hit);
     s->verify_result = s->session->verify_result;
     return 1;
 
  err:
+# ifndef OPENSSL_NO_SESSION_REUSED_TYPE
+    s->session_reused_type = SSL_SESSION_REUSED_TYPE_NOCACHE;
+# endif
+
     if (ret != NULL) {
         SSL_SESSION_free(ret);
         /* In TLSv1.3 s->session was already set to ret, so we NULL it out */

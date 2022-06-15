@@ -1713,6 +1713,10 @@ static int tls_early_post_process_client_hello(SSL *s)
 
     s->hit = 0;
 
+#ifndef OPENSSL_NO_SESSION_REUSED_TYPE
+    s->session_reused_type = SSL_SESSION_REUSED_TYPE_NOCACHE;
+#endif
+
     if (!ssl_cache_cipherlist(s, &clienthello->ciphersuites,
                               clienthello->isv2) ||
         !bytes_to_cipher_list(s, &clienthello->ciphersuites, &ciphers, &scsvs,
@@ -1944,6 +1948,10 @@ static int tls_early_post_process_client_hello(SSL *s)
             s->hit = 1;
             s->peer_ciphers = ciphers;
             s->session->verify_result = X509_V_OK;
+
+#ifndef OPENSSL_NO_SESSION_REUSED_TYPE
+            s->session_reused_type = SSL_SESSION_REUSED_TYPE_CACHE;
+#endif
 
             ciphers = NULL;
 

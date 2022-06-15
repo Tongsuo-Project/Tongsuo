@@ -700,6 +700,7 @@ EVP_PKEY_is_sm2                         define
 SSL_set_no_scsv                         define
 OSSL_ENCRYPTION_LEVEL                   datatype
 SSL_QUIC_METHOD                         datatype
+<<<<<<< HEAD
 EVP_PKEY_assign_EIA3                    define
 SSL_set_ciphers                         define
 SSL_set_ciphers_by_id                   define
@@ -712,3 +713,4 @@ SSL_CTX_get_verify_sni                  define
 SSL_CTX_set_verify_sni                  define
 SSL_CTX_get_verify_server_certificate_host define
 SSL_CTX_set_verify_server_certificate_host define
+SSL_get_session_reuse_type              define
