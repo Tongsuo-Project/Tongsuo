@@ -38,6 +38,38 @@ static ENGINE *try_load_engine(const char *engine)
     }
     return e;
 }
+
+int engine_meth_cb(const char *elem, int len, void *arg)
+{
+    unsigned int *pmeth = arg;
+    if (elem == NULL)
+        return 0;
+
+    if (strncasecmp(elem, "rsa", 3) == 0) {
+        *pmeth |= ENGINE_METHOD_RSA;
+    } else if (strncasecmp(elem, "dsa", 3) == 0) {
+        *pmeth |= ENGINE_METHOD_DSA;
+    } else if (strncasecmp(elem, "dh", 2) == 0) {
+        *pmeth |= ENGINE_METHOD_DH;
+    }  else if (strncasecmp(elem, "rand", 4) == 0) {
+        *pmeth |= ENGINE_METHOD_RAND;
+    } else if (strncasecmp(elem, "ciphers", 7) == 0) {
+        *pmeth |= ENGINE_METHOD_CIPHERS;
+    } else if (strncasecmp(elem, "digests", 7) == 0) {
+        *pmeth |= ENGINE_METHOD_DIGESTS;
+    } else if (strncasecmp(elem, "pkey_meths", 10) == 0) {
+        *pmeth |= ENGINE_METHOD_PKEY_METHS;
+    } else if (strncasecmp(elem, "pkey_asn1_meths", 15) == 0) {
+        *pmeth |= ENGINE_METHOD_PKEY_ASN1_METHS;
+    } else if (strncasecmp(elem, "ec", 2) == 0) {
+        *pmeth |= ENGINE_METHOD_EC;
+    } else {
+        BIO_printf(bio_err, "invalid engine method\n");
+        return 0;
+    }
+
+    return 1;
+}
 #endif
 
 ENGINE *setup_engine_methods(const char *id, unsigned int methods, int debug)

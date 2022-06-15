@@ -168,6 +168,9 @@ __owur int ctx_set_ctlog_list_file(SSL_CTX *ctx, const char *path);
 
 # endif
 
+#ifndef OPENSSL_NO_ENGINE
+int engine_meth_cb(const char *elem, int len, void *arg);
+#endif
 ENGINE *setup_engine_methods(const char *id, unsigned int methods, int debug);
 # define setup_engine(e, debug) setup_engine_methods(e, (unsigned int)-1, debug)
 void release_engine(ENGINE *e);
@@ -352,4 +355,12 @@ EVP_PKEY *app_paramgen(EVP_PKEY_CTX *ctx, const char *alg);
 
 int build_vfyopt_compat_string(int option, char **ret, const char *value);
 int build_sigopt_compat_string(char **ret, const char *value);
+
+# if defined(OPENSSL_SYS_WINDOWS)
+#  define strcasecmp _stricmp
+#  define strncasecmp _strnicmp
+# else
+#  include <strings.h>
+# endif
+
 #endif
