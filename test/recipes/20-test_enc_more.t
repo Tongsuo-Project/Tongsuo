@@ -15,16 +15,16 @@ use File::Spec::Functions qw/catfile/;
 use File::Copy;
 use File::Compare qw/compare_text/;
 use File::Basename;
-use OpenSSL::Test qw/:DEFAULT srctop_file bldtop_dir/;
+use OpenSSL::Test qw/:DEFAULT srctop_file bldtop_dir data_file/;
 use OpenSSL::Test::Utils;
 
-
-setup("test_evp_more");
+setup("test_enc_more");
 
 my $testsrc = srctop_file("test", "recipes", basename($0));
 
-my $cipherlist = undef;
 my $plaintext = catfile(".", "testdatafile");
+my $test_plain = data_file("plain_for_wrap.txt");
+my $wrap_plaintext = catfile(".", "plain_for_wrap");
 my $fail = "";
 my $cmd = "openssl";
 my $provpath = bldtop_dir("providers");
@@ -33,7 +33,7 @@ push @prov, ("-provider", "legacy") unless disabled("legacy");
 
 my $ciphersstatus = undef;
 my @ciphers =
-    grep(! /wrap|^$|^[^-]/,
+    grep(! /^$|^[^-]/,
          (map { split /\s+/ }
           run(app([$cmd, "enc", "-list"]),
               capture => 1, statusvar => \$ciphersstatus)));
@@ -41,26 +41,37 @@ my @ciphers =
                       |desx|idea|rc2|rc4|seed)/x} @ciphers
     if disabled("legacy");
 
-plan tests => 2 + scalar @ciphers;
+plan tests => 3 + scalar @ciphers;
 
 SKIP: {
     skip "Problems getting ciphers...", 1 + scalar(@ciphers)
         unless ok($ciphersstatus, "Running 'openssl enc -list'");
-    unless (ok(copy($testsrc, $plaintext), "Copying $testsrc to $plaintext")) {
+    unless (ok(copy($testsrc, $plaintext), "Copying $testsrc to $plaintext")
+        && ok(copy($test_plain, $wrap_plaintext),
+              "Copying $test_plain to $wrap_plaintext")) {
         diag($!);
         skip "Not initialized, skipping...", scalar(@ciphers);
     }
 
     foreach my $cipher (@ciphers) {
+        my $plain;
+        if ($cipher =~ /wrap|^$|^[^-]/) {
+            $plain = $wrap_plaintext;
+        } else {
+            $plain = $plaintext;
+        }
         my $ciphername = substr $cipher, 1;
-        my $cipherfile = "$plaintext.$ciphername.cipher";
-        my $clearfile = "$plaintext.$ciphername.clear";
+        my $cipherfile = "$plain.$ciphername.cipher";
+        my $clearfile = "$plain.$ciphername.clear";
         my @common = ( $cmd, "enc", "$cipher", "-k", "test" );
 
-        ok(run(app([@common, @prov, "-e", "-in", $plaintext, "-out", $cipherfile]))
-           && compare_text($plaintext, $cipherfile) != 0
+        ok(run(app([@common, @prov, "-e", "-in", $plain, "-out", $cipherfile]))
+           && compare_text($plain, $cipherfile) != 0
            && run(app([@common, @prov, "-d", "-in", $cipherfile, "-out", $clearfile]))
-           && compare_text($plaintext, $clearfile) == 0
+           && compare_text($plain, $clearfile) == 0
            , $ciphername);
     }
 }
+
+unlink $plaintext;
+unlink $wrap_plaintext;
