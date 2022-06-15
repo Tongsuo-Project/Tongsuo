@@ -129,7 +129,6 @@ $code.=<<___;
 .type	ossl_hwsm3_block_data_order,%function
 .align	5
 ossl_hwsm3_block_data_order:
-	AARCH64_VALID_CALL_TARGET
 	// load state
 	ld1     {$state1.4s-$state2.4s}, [$pstate]
 	rev64   $state1.4s, $state1.4s

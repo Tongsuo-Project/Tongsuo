@@ -144,7 +144,6 @@ $code.=<<___;
 .type	${prefix}_set_encrypt_key,%function
 .align	5
 ${prefix}_set_encrypt_key:
-	AARCH64_VALID_CALL_TARGET
 	ld1	{$key0.4s},[$key]
 	adr	$tmp,.Lfk
 	ld1	{$fkconst.4s},[$tmp]
@@ -181,7 +180,6 @@ $code.=<<___;
 .type	${prefix}_set_decrypt_key,%function
 .align	5
 ${prefix}_set_decrypt_key:
-	AARCH64_VALID_CALL_TARGET
 	ld1	{$key0.4s},[$key]
 	adr	$tmp,.Lfk
 	ld1	{$fkconst.4s},[$tmp]
@@ -233,7 +231,6 @@ $code.=<<___;
 .type	${prefix}_${dir}crypt,%function
 .align	5
 ${prefix}_${dir}crypt:
-	AARCH64_VALID_CALL_TARGET
 	ld1	{$data.4s},[$inp]
 	ld1	{@rks[0].4s,@rks[1].4s,@rks[2].4s,@rks[3].4s},[$rk],64
 	ld1	{@rks[4].4s,@rks[5].4s,@rks[6].4s,@rks[7].4s},[$rk]
@@ -261,7 +258,6 @@ $code.=<<___;
 .type	${prefix}_ecb_encrypt,%function
 .align	5
 ${prefix}_ecb_encrypt:
-	AARCH64_VALID_CALL_TARGET
 	ld1	{@rks[0].4s,@rks[1].4s,@rks[2].4s,@rks[3].4s},[$rk],#64
 	ld1	{@rks[4].4s,@rks[5].4s,@rks[6].4s,@rks[7].4s},[$rk]
 1:
@@ -343,7 +339,6 @@ $code.=<<___;
 .type	${prefix}_cbc_encrypt,%function
 .align	5
 ${prefix}_cbc_encrypt:
-	AARCH64_VALID_CALL_TARGET
 	stp	d8,d9,[sp, #-16]!
 
 	ld1	{@rks[0].4s,@rks[1].4s,@rks[2].4s,@rks[3].4s},[$rk],#64
@@ -496,7 +491,6 @@ $code.=<<___;
 .type	${prefix}_ctr32_encrypt_blocks,%function
 .align	5
 ${prefix}_ctr32_encrypt_blocks:
-	AARCH64_VALID_CALL_TARGET
 	stp	d8,d9,[sp, #-16]!
 
 	ld1	{$ivec.4s},[$ivp]
