@@ -74,6 +74,13 @@ _armv8_pmull_probe:
 	ret
 .size	_armv8_pmull_probe,.-_armv8_pmull_probe
 
+.globl	_armv8_sm4_probe
+.type	_armv8_sm4_probe,%function
+_armv8_sm4_probe:
+	.long	0xcec08400	// sm4e	v0.4s, v0.4s
+	ret
+.size	_armv8_sm4_probe,.-_armv8_sm4_probe
+
 .globl	_armv8_sha512_probe
 .type	_armv8_sha512_probe,%function
 _armv8_sha512_probe:
@@ -87,6 +94,13 @@ _armv8_cpuid_probe:
 	mrs	x0, midr_el1
 	ret
 .size	_armv8_cpuid_probe,.-_armv8_cpuid_probe
+
+.globl	_armv8_sm3_probe
+.type	_armv8_sm3_probe,%function
+_armv8_sm3_probe:
+	.long	0xce63c004	// sm3partw1 v4.4s, v0.4s, v3.4s
+	ret
+.size	_armv8_sm3_probe,.-_armv8_sm3_probe
 
 .globl	OPENSSL_cleanse
 .type	OPENSSL_cleanse,%function
