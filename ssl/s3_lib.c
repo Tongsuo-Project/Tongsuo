@@ -3501,6 +3501,9 @@ const SSL_CIPHER *ssl3_choose_cipher(SSL *s, STACK_OF(SSL_CIPHER) *clnt,
     int i, ii, ok, prefer_sha256 = 0;
     unsigned long alg_k = 0, alg_a = 0, mask_k = 0, mask_a = 0;
     STACK_OF(SSL_CIPHER) *prio_chacha = NULL;
+#ifndef OPENSSL_NO_OPTIMIZE_CHACHA_CHOOSE
+    int use_chacha = 0;
+#endif
 
     /* Let's see which ciphers we can support */
 
@@ -3601,6 +3604,9 @@ const SSL_CIPHER *ssl3_choose_cipher(SSL *s, STACK_OF(SSL_CIPHER) *clnt,
         ssl_set_masks(s);
     }
 
+#ifndef OPENSSL_NO_OPTIMIZE_CHACHA_CHOOSE
+retry:
+#endif
     for (i = 0; i < sk_SSL_CIPHER_num(prio); i++) {
         c = sk_SSL_CIPHER_value(prio, i);
 
@@ -3613,6 +3619,11 @@ const SSL_CIPHER *ssl3_choose_cipher(SSL *s, STACK_OF(SSL_CIPHER) *clnt,
              DTLS_VERSION_GT(s->version, c->max_dtls)))
             continue;
 
+#ifndef OPENSSL_NO_OPTIMIZE_CHACHA_CHOOSE
+        if ((s->options & SSL_OP_PRIORITIZE_CHACHA) && prio_chacha == NULL &&
+            c->algorithm_enc == SSL_CHACHA20POLY1305 && use_chacha == 0)
+            continue;
+#endif
         /*
          * Since TLS 1.3 ciphersuites can be used with any auth or
          * key exchange scheme skip tests.
@@ -3681,6 +3692,14 @@ const SSL_CIPHER *ssl3_choose_cipher(SSL *s, STACK_OF(SSL_CIPHER) *clnt,
             break;
         }
     }
+
+#ifndef OPENSSL_NO_OPTIMIZE_CHACHA_CHOOSE
+    if (ret == NULL && s->options & SSL_OP_PRIORITIZE_CHACHA &&
+        prio_chacha == NULL && use_chacha == 0) {
+        use_chacha = 1;
+        goto retry;
+    }
+#endif
 
     sk_SSL_CIPHER_free(prio_chacha);
 

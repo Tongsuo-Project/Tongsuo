@@ -1600,7 +1600,7 @@ int tls_construct_server_key_exchange_ntls(SSL *s, WPACKET *pkt)
     unsigned long type;
     EVP_MD_CTX *md_ctx = EVP_MD_CTX_new();
     EVP_PKEY_CTX *pctx = NULL;
-    size_t paramlen, paramoffset;
+    size_t paramlen = 0, paramoffset;
     int ret = 0;
 
     if (!WPACKET_get_total_written(pkt, &paramoffset)) {
@@ -1669,7 +1669,7 @@ int tls_construct_server_key_exchange_ntls(SSL *s, WPACKET *pkt)
         unsigned char *sigbytes1, *sigbytes2, *tbs;
         size_t siglen = 0, tbslen;
         unsigned char *buf = NULL;
-        size_t buflen;
+        size_t buflen = 0;
 
         /* get signing cert and pkey */
         if (type & SSL_kRSA) {

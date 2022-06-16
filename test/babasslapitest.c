@@ -37,7 +37,6 @@ static char *certsdir = NULL;
 static char *cert = NULL;
 static char *privkey = NULL;
 
-
 static int dummy_cert_cb(SSL *s, void *arg)
 {
     return 1;
@@ -1069,6 +1068,75 @@ end:
 }
 #endif
 
+#if !defined(OPENSSL_NO_TLS1_2) && !defined(OPENSSL_NO_CHACHA) && !defined(OPENSSL_NO_EC)
+static int test_babassl_optimize_chacha_choose(void)
+{
+    SSL_CTX *cctx = NULL, *sctx = NULL;
+    SSL *clientssl = NULL, *serverssl = NULL;
+    int testresult = 0;
+
+    if (!TEST_true(create_ssl_ctx_pair(NULL, TLS_server_method(), TLS_client_method(),
+                                       TLS1_VERSION, TLS1_2_VERSION,
+                                       &sctx, &cctx, cert, privkey)))
+        goto end;
+
+    SSL_CTX_set_options(sctx, SSL_OP_PRIORITIZE_CHACHA);
+    SSL_CTX_set_max_proto_version(cctx, TLS1_2_VERSION);
+    if (!TEST_true(SSL_CTX_set_cipher_list(sctx,
+                            "ECDHE-RSA-CHACHA20-POLY1305:ECDHE-RSA-AES256-GCM-SHA384"))
+            || !TEST_true(SSL_CTX_set_cipher_list(cctx,
+                            "ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-CHACHA20-POLY1305")))
+        goto end;
+
+    SSL_CTX_set_options(sctx, SSL_OP_CIPHER_SERVER_PREFERENCE);
+
+    if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl, &clientssl,
+                                      NULL, NULL))
+            || !TEST_true(create_ssl_connection(serverssl, clientssl,
+                                                SSL_ERROR_NONE)))
+        goto end;
+
+# ifndef OPENSSL_NO_OPTIMIZE_CHACHA_CHOOSE
+    if (!TEST_int_eq(SSL_CIPHER_get_protocol_id(SSL_get_current_cipher(serverssl)),
+                     0xc030))
+# else
+    if (!TEST_int_eq(SSL_CIPHER_get_protocol_id(SSL_get_current_cipher(serverssl)),
+                     0xcca8))
+# endif
+        goto end;
+
+    SSL_free(serverssl);
+    SSL_free(clientssl);
+
+    serverssl = NULL;
+    clientssl = NULL;
+
+    if (!TEST_true(SSL_CTX_set_cipher_list(cctx,
+                            "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-CHACHA20-POLY1305")))
+        goto end;
+
+    if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl, &clientssl,
+                                      NULL, NULL))
+            || !TEST_true(create_ssl_connection(serverssl, clientssl,
+                                                SSL_ERROR_NONE)))
+        goto end;
+
+    if (!TEST_int_eq(SSL_CIPHER_get_protocol_id(SSL_get_current_cipher(serverssl)),
+                     0xcca8))
+        goto end;
+
+    testresult = 1;
+
+end:
+    SSL_free(serverssl);
+    SSL_free(clientssl);
+    SSL_CTX_free(sctx);
+    SSL_CTX_free(cctx);
+
+    return testresult;
+}
+#endif
+
 int setup_tests(void)
 {
     if (!test_skip_common_options()) {
@@ -1121,6 +1189,9 @@ int setup_tests(void)
 #endif
 #ifndef OPENSSL_NO_SESSION_REUSED_TYPE
     ADD_TEST(test_babassl_session_reused_type);
+#endif
+#if !defined(OPENSSL_NO_TLS1_2) && !defined(OPENSSL_NO_CHACHA) && !defined(OPENSSL_NO_EC)
+    ADD_TEST(test_babassl_optimize_chacha_choose);
 #endif
     return 1;
 }
