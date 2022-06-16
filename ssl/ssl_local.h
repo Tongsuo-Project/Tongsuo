@@ -1349,6 +1349,7 @@ struct ssl_st {
         int change_cipher_spec;
         int warn_alert;
         int fatal_alert;
+        int alert_level;
         /*
          * we allow one fatal and one warning alert to be outstanding, send close
          * alert via the warning alert

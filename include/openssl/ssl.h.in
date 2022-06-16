@@ -2649,6 +2649,9 @@ int BABASSL_get_master_key(SSL *s, unsigned char **master_key,
 # define SSL_debug BABASSL_debug
 void BABASSL_debug(SSL *s, unsigned char *str, int len);
 
+# define SSL_get_desc_and_level SSL_get_alert_level
+int SSL_get_alert_level(SSL *ssl, int *level, int *desc);
+
 # ifndef OPENSSL_NO_NTLS
 #  define SSL_get_sign_certificate_ntls BABASSL_get_sign_certificate_ntls
 #  define SSL_get_enc_certificate_ntls BABASSL_get_enc_certificate_ntls
