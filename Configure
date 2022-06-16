@@ -512,6 +512,7 @@ my @disablables = (
     "session-reused-type",
     "optimize-chacha-choose",
     "status",
+    "evp-cipher-api-compat",
     );
 foreach my $proto ((@tls, @dtls))
         {
@@ -568,6 +569,7 @@ our %disabled = ( # "what"         => "comment"
                   "ec_elgamal"          => "default",
                   "optimize-chacha-choose"     => "default",
                   "status"              => "default",
+                  "evp-cipher-api-compat"      => "default",
                 );
 
 # Note: => pair form used for aesthetics, not to truly make a hash table
