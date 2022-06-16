@@ -184,6 +184,10 @@ typedef struct engine_st ENGINE;
 typedef struct ssl_st SSL;
 typedef struct ssl_ctx_st SSL_CTX;
 
+# ifndef OPENSSL_NO_STATUS
+typedef struct ssl_status_st SSL_status;
+# endif
+
 typedef struct comp_ctx_st COMP_CTX;
 typedef struct comp_method_st COMP_METHOD;
 

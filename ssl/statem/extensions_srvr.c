@@ -913,6 +913,36 @@ int tls_parse_ctos_supported_groups(SSL *s, PACKET *pkt, unsigned int context,
         }
     }
 
+# ifndef OPENSSL_NO_STATUS
+    /* record client ellipitc_curves */
+    if (s->status_param.ssl_status_enable) {
+        uint16_t *peer_supportedgroups = s->ext.peer_supportedgroups;
+        size_t peer_supportedgroups_len = s->ext.peer_supportedgroups_len;
+
+        if (s->hit) {
+            peer_supportedgroups = NULL;
+            peer_supportedgroups_len = 0;
+            if (!tls1_save_u16(&supported_groups_list, &peer_supportedgroups,
+                               &peer_supportedgroups_len)) {
+                SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+                return 0;
+            }
+        }
+
+        s->status_param.type = SSL_CLIENT_ECC_CURVES;
+        if (s->status_callback((unsigned char *)peer_supportedgroups,
+                               peer_supportedgroups_len * 2,
+                               &s->status_param) == -1) {
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_R_STATUS_CALLBACK_ERROR);
+            return 0;
+        }
+
+        if (s->hit)
+            OPENSSL_free(peer_supportedgroups);
+
+    }
+# endif
+
     return 1;
 }
 

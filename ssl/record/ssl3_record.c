@@ -236,6 +236,18 @@ int ssl3_get_record(SSL *s)
             RECORD_LAYER_set_rstate(&s->rlayer, SSL_ST_READ_BODY);
 
             p = RECORD_LAYER_get_packet(&s->rlayer);
+
+# ifndef OPENSSL_NO_STATUS
+            /*record client protocol*/
+            if (s->status_param.ssl_status_enable) {
+                s->status_param.type = SSL_CLIENT_RPOTOCOL;
+                if (s->status_callback(p, 2, &s->status_param) == -1) {
+                    SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_R_STATUS_CALLBACK_ERROR);
+                    return -1;
+                }
+            }
+# endif
+
             if (!PACKET_buf_init(&pkt, RECORD_LAYER_get_packet(&s->rlayer),
                                  RECORD_LAYER_get_packet_length(&s->rlayer))) {
                 SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);

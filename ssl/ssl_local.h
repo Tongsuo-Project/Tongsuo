@@ -1910,6 +1910,11 @@ struct ssl_st {
     /* session reuse type: 0->nocache, 1->cache, 2->ticket */
     int session_reused_type;
 # endif
+
+# ifndef OPENSSL_NO_STATUS
+    int (*status_callback)(unsigned char *p, unsigned int length, SSL_status* param);
+    SSL_status  status_param;
+# endif
 };
 
 /*

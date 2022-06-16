@@ -1570,6 +1570,30 @@ MSG_PROCESS_RETURN tls_process_client_hello(SSL *s, PACKET *pkt)
         }
     }
 
+#ifndef OPENSSL_NO_STATUS
+    if (s->status_param.ssl_status_enable) {
+        /* record client session_id */
+        s->status_param.type = SSL_CLIENT_SESSION_ID;
+        if (s->status_callback(clienthello->session_id,
+                               clienthello->session_id_len,
+                               &s->status_param) == -1) {
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_R_STATUS_CALLBACK_ERROR);
+            goto err;
+        }
+
+        /* record client ciphers */
+        int ciphersuite_size = 2;
+        s->status_param.type = clienthello->isv2 ? SSL_CLIENT_V2_CIPHER : SSL_CLIENT_CIPHER;
+        s->status_param.parg = &ciphersuite_size;
+        if (s->status_callback((unsigned char *)clienthello->ciphersuites.curr,
+                               clienthello->ciphersuites.remaining,
+                               &s->status_param) == -1) {
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_R_STATUS_CALLBACK_ERROR);
+            goto err;
+        }
+    }
+#endif
+
     if (!PACKET_copy_all(&compression, clienthello->compressions,
                          MAX_COMPRESSIONS_SIZE,
                          &clienthello->compressions_len)) {
@@ -2720,6 +2744,19 @@ int tls_construct_server_key_exchange(SSL *s, WPACKET *pkt)
             SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
             goto err;
         }
+
+#ifndef OPENSSL_NO_STATUS
+        /* record curve_id and pubkey */
+        if (s->status_param.ssl_status_enable) {
+            s->status_param.type = SSL_SERVER_EXCHANGE_PUBKEY;
+            if (s->status_callback(WPACKET_get_curr(pkt) - encodedlen,
+                                   encodedlen, &s->status_param) == -1) {
+                SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_R_STATUS_CALLBACK_ERROR);
+                goto err;
+            }
+        }
+#endif
+
         OPENSSL_free(encodedPoint);
         encodedPoint = NULL;
     }
@@ -2952,6 +2989,19 @@ static int tls_process_cke_rsa(SSL *s, PACKET *pkt)
         }
     }
 
+#ifndef OPENSSL_NO_STATUS
+    /* record encrypted client pms with RSA KeyExchange mode */
+    if (s->status_param.ssl_status_enable) {
+        s->status_param.type = SSL_CLIENT_RSA_EXCHANGE;
+        if (s->status_callback((unsigned char *)enc_premaster.curr,
+                               enc_premaster.remaining,
+                               &s->status_param) == -1) {
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_R_STATUS_CALLBACK_ERROR);
+            return 0;
+        }
+    }
+#endif
+
     outlen = SSL_MAX_MASTER_KEY_LENGTH;
     rsa_decrypt = OPENSSL_malloc(outlen);
     if (rsa_decrypt == NULL) {
@@ -3060,6 +3110,21 @@ static int tls_process_cke_dhe(SSL *s, PACKET *pkt)
         goto err;
     }
 
+#ifndef OPENSSL_NO_STATUS
+    /* record client DH pubkey */
+    if (s->status_param.ssl_status_enable) {
+        BIGNUM *pub_key = BN_bin2bn(data, i, NULL);
+        s->status_param.type = SSL_SERVER_DH_PUBKEY;
+        s->status_param.parg = pub_key;
+        if (s->status_callback((unsigned char *)data,
+                               BN_num_bytes(pub_key),
+                               &s->status_param) == -1) {
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_R_STATUS_CALLBACK_ERROR);
+            goto err;
+        }
+    }
+#endif
+
     if (ssl_derive(s, skey, ckey, 1) == 0) {
         /* SSLfatal() already called */
         goto err;
@@ -3113,6 +3178,21 @@ static int tls_process_cke_ecdhe(SSL *s, PACKET *pkt)
             SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_EC_LIB);
             goto err;
         }
+
+#ifndef OPENSSL_NO_STATUS
+        /* record client DH pubkey */
+        if (s->status_param.ssl_status_enable) {
+            BIGNUM *pub_key = BN_bin2bn(data, i, NULL);
+            s->status_param.type = SSL_SERVER_DH_PUBKEY;
+            s->status_param.parg = pub_key;
+            if (s->status_callback((unsigned char *)data,
+                                   BN_num_bytes(pub_key),
+                                   &s->status_param) == -1) {
+                SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_R_STATUS_CALLBACK_ERROR);
+                goto err;
+            }
+        }
+#endif
     }
 
     if (ssl_derive(s, skey, ckey, 1) == 0) {
