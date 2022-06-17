@@ -1007,6 +1007,12 @@ const OPTIONS s_server_options[] = {
 int s_server_main(int argc, char *argv[])
 {
     ENGINE *engine = NULL;
+#ifndef OPENSSL_NO_ENGINE
+    char *eng_p = NULL;
+    char *eng_id = NULL;
+    const char *eng = NULL;
+    unsigned int eng_meth = ENGINE_METHOD_NONE;
+#endif
     EVP_PKEY *s_key = NULL, *s_dkey = NULL;
     SSL_CONF_CTX *cctx = NULL;
     const SSL_METHOD *meth = TLS_server_method();
@@ -1629,7 +1635,28 @@ int s_server_main(int argc, char *argv[])
             break;
         case OPT_ENGINE:
 #ifndef OPENSSL_NO_ENGINE
-            engine = setup_engine(opt_arg(), s_debug);
+            if (engine) {
+                release_engine(engine);
+                engine = NULL;
+            }
+            eng_meth = ENGINE_METHOD_NONE;
+            eng = opt_arg();
+            eng_p = strstr(opt_arg(), ":");
+            if (eng_p) {
+                CONF_parse_list(eng_p + 1, ',', 1, engine_meth_cb, &eng_meth);
+                eng_id = OPENSSL_zalloc(eng_p - opt_arg() + 1);
+                if (eng_id == NULL) {
+                    BIO_printf(bio_err, "failed to malloc\n");
+                    goto end;
+                }
+                strncpy(eng_id, opt_arg(), eng_p - opt_arg());
+                eng = eng_id;
+            }
+
+            if (eng_meth == ENGINE_METHOD_NONE)
+                eng_meth = ENGINE_METHOD_ALL;
+
+            engine = setup_engine_methods(eng, eng_meth, s_debug);
 #endif
             break;
         case OPT_R_CASES:
@@ -2410,6 +2437,9 @@ skip:
     bio_s_msg = NULL;
 #ifdef CHARSET_EBCDIC
     BIO_meth_free(methods_ebcdic);
+#endif
+#ifndef OPENSSL_NO_ENGINE
+    OPENSSL_free(eng_id);
 #endif
     return ret;
 }
