@@ -14,14 +14,42 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <openssl/crypto.h>
+#ifndef OPENSSL_NO_CRYPTO_MDEBUG_COUNT
+# if defined(__linux__)
+#  include <malloc.h>
+#  define MALLOC_SIZE(s) malloc_usable_size(s)
+# elif defined(__APPLE__)
+#  include <malloc/malloc.h>
+#  define MALLOC_SIZE(s) malloc_size(s)
+# else
+#  define MALLOC_SIZE(s) (*((size_t*)(s)-1))
+# endif
+#endif
 
 /*
  * the following pointers may be changed as long as 'allow_customize' is set
  */
 static int allow_customize = 1;
+
+#ifndef OPENSSL_NO_CRYPTO_MDEBUG_COUNT
+# define MDEBUG_COUNT_PTR_SET(ret, val) (*(ret) = (val))
+
+static size_t mdebug_size_total = 0;
+static size_t mdebug_count_total = 0;
+
+static void *CRYPTO_MDEBUG_COUNT_malloc(size_t num, const char *file, int line);
+static void *CRYPTO_MDEBUG_COUNT_realloc(void *str, size_t num, const char *file,
+                                         int line);
+static void CRYPTO_MDEBUG_COUNT_free(void *str, const char *file, int line);
+
+static CRYPTO_malloc_fn malloc_impl = CRYPTO_MDEBUG_COUNT_malloc;
+static CRYPTO_realloc_fn realloc_impl = CRYPTO_MDEBUG_COUNT_realloc;
+static CRYPTO_free_fn free_impl = CRYPTO_MDEBUG_COUNT_free;
+#else
 static CRYPTO_malloc_fn malloc_impl = CRYPTO_malloc;
 static CRYPTO_realloc_fn realloc_impl = CRYPTO_realloc;
 static CRYPTO_free_fn free_impl = CRYPTO_free;
+#endif
 
 #if !defined(OPENSSL_NO_CRYPTO_MDEBUG) && !defined(FIPS_MODULE)
 # include "internal/tsan_assist.h"
@@ -80,6 +108,16 @@ void CRYPTO_get_mem_functions(CRYPTO_malloc_fn *malloc_fn,
     if (free_fn != NULL)
         *free_fn = free_impl;
 }
+
+#ifndef OPENSSL_NO_CRYPTO_MDEBUG_COUNT
+void CRYPTO_get_mem_counts(int *count, size_t *size)
+{
+    if (count != NULL)
+        MDEBUG_COUNT_PTR_SET(count, mdebug_count_total);
+    if (size != NULL)
+        MDEBUG_COUNT_PTR_SET(size, mdebug_size_total);
+}
+#endif
 
 #if !defined(OPENSSL_NO_CRYPTO_MDEBUG) && !defined(FIPS_MODULE)
 void CRYPTO_get_alloc_counts(int *mcount, int *rcount, int *fcount)
@@ -165,6 +203,72 @@ void ossl_malloc_setup_failures(void)
         parseit();
     if ((cp = getenv("OPENSSL_MALLOC_FD")) != NULL)
         md_tracefd = atoi(cp);
+}
+#endif
+
+#ifndef OPENSSL_NO_CRYPTO_MDEBUG_COUNT
+static void *CRYPTO_MDEBUG_COUNT_malloc(size_t num, const char *file, int line)
+{
+    void *ret = NULL;
+    size_t mem_size;
+
+    if (num == 0)
+        return NULL;
+
+    ret = malloc(num);
+
+    if (ret == NULL)
+        return NULL;
+
+    mem_size = MALLOC_SIZE(ret);
+    mdebug_size_total += mem_size;
+    mdebug_count_total++;
+
+    return ret;
+}
+
+static void *CRYPTO_MDEBUG_COUNT_realloc(void *str, size_t num, const char *file,
+                                         int line)
+{
+    size_t mem_size;
+    void *ret = NULL;
+
+    if (str == NULL)
+        return CRYPTO_MDEBUG_COUNT_malloc(num, file, line);
+
+    if (num == 0) {
+        CRYPTO_MDEBUG_COUNT_free(str, file, line);
+        return NULL;
+    }
+
+    mem_size = MALLOC_SIZE(str);
+    mdebug_size_total -= mem_size;
+    mdebug_count_total--;
+
+    ret = realloc(str, num);
+    if (ret == NULL)
+        return NULL;
+
+    mem_size = MALLOC_SIZE(ret);
+    mdebug_size_total += mem_size;
+    mdebug_count_total++;
+
+    return ret;
+}
+
+static void CRYPTO_MDEBUG_COUNT_free(void *str, const char *file, int line)
+{
+    size_t mem_size;
+
+    if (str == NULL)
+        return;
+
+    mem_size = MALLOC_SIZE(str);
+    mdebug_size_total -= mem_size;
+    mdebug_count_total--;
+
+    free(str);
+    return;
 }
 #endif
 

@@ -1371,6 +1371,70 @@ end:
 }
 #endif
 
+#ifndef OPENSSL_NO_CRYPTO_MDEBUG_COUNT
+static int test_babassl_crypto_mdebug_count(void)
+{
+    int testresult = 0, count1 = 0, count2 = 0;
+    size_t size1 = 0, size2 = 0;
+    void *p = NULL;
+
+    CRYPTO_get_mem_counts(&count1, &size1);
+
+    if (!TEST_int_gt(count1, 0)
+        || !TEST_int_gt((int)size1, 0))
+        goto err;
+
+    /* Test malloc count and size records */
+    p = OPENSSL_malloc(1234);
+    if (!TEST_ptr(p))
+        goto err;
+
+    CRYPTO_get_mem_counts(&count2, &size2);
+
+    if (!TEST_int_eq(count2, count1 + 1)
+        || !TEST_int_ge((int)size2, (int)size1))
+        goto err;
+
+    /* Test free count and size records */
+    OPENSSL_free(p);
+    p = NULL;
+
+    CRYPTO_get_mem_counts(&count2, &size2);
+
+    if (!TEST_int_eq(count2, count1)
+        || !TEST_int_eq((int)size2, (int)size1))
+        goto err;
+
+    /* Test realloc count and size records */
+    p = OPENSSL_malloc(1234);
+    p = OPENSSL_realloc(p, 2345);
+    if (!TEST_ptr(p))
+        goto err;
+
+    CRYPTO_get_mem_counts(&count2, &size2);
+
+    if (!TEST_int_eq(count2, count1 + 1)
+        || !TEST_int_ge((int)size2, (int)size1))
+        goto err;
+
+    /* Test free count and size records */
+    OPENSSL_free(p);
+    p = NULL;
+
+    CRYPTO_get_mem_counts(&count2, &size2);
+
+    if (!TEST_int_eq(count2, count1)
+        || !TEST_int_eq((int)size2, (int)size1))
+        goto err;
+
+    testresult = 1;
+
+err:
+    OPENSSL_free(p);
+    return testresult;
+}
+#endif
+
 int setup_tests(void)
 {
     if (!test_skip_common_options()) {
@@ -1429,6 +1493,9 @@ int setup_tests(void)
 #endif
 #if !defined(OPENSSL_NO_STATUS) && !defined(OPENSSL_NO_EC)
     ADD_TEST(test_babassl_status);
+#endif
+#ifndef OPENSSL_NO_CRYPTO_MDEBUG_COUNT
+    ADD_TEST(test_babassl_crypto_mdebug_count);
 #endif
     return 1;
 }

@@ -346,6 +346,10 @@ size_t CRYPTO_secure_used(void);
 
 void OPENSSL_cleanse(void *ptr, size_t len);
 
+# ifndef OPENSSL_NO_CRYPTO_MDEBUG_COUNT
+void CRYPTO_get_mem_counts(int *count, size_t *size);
+# endif
+
 # ifndef OPENSSL_NO_CRYPTO_MDEBUG
 /*
  * The following can be used to detect memory leaks in the library. If
