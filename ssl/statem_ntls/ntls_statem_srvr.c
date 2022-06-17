@@ -981,6 +981,18 @@ static int tls_early_post_process_client_hello(SSL *s)
     /* Finished parsing the ClientHello, now we can start processing it */
     /* Give the ClientHello callback a crack at things */
     if (s->ctx->client_hello_cb != NULL) {
+        /*
+         * Support setting ocsp response message in clienthello callback
+         * function. Parse the ocsp status and set the relevant flags here,
+         * otherwise the ocsp API may fail in the client_hello_cb function.
+         * Because in client_hello_cb it is possible to check if the client
+         * sends a status_request message.
+         */
+        if (!tls_parse_extension_ntls(s, TLSEXT_IDX_status_request,
+                                      SSL_EXT_CLIENT_HELLO,
+                                      clienthello->pre_proc_exts, NULL, 0))
+            goto err;
+
         /* A failure in the ClientHello callback terminates the connection. */
         switch (s->ctx->client_hello_cb(s, &al, s->ctx->client_hello_cb_arg)) {
         case SSL_CLIENT_HELLO_SUCCESS:
