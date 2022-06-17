@@ -7,6 +7,9 @@
  * https://www.openssl.org/source/license.html
  */
 
+/* We need to use some deprecated APIs */
+#define OPENSSL_SUPPRESS_DEPRECATED
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -44,7 +47,7 @@ int version_main(int argc, char **argv)
 {
     int ret = 1, dirty = 0, seed = 0;
     int cflags = 0, version = 0, date = 0, options = 0, platform = 0, dir = 0;
-    int engdir = 0, moddir = 0, cpuinfo = 0;
+    int engdir = 0, moddir = 0, cpuinfo = 0, engines = 0;
     char *prog;
     OPTION_CHOICE o;
 
@@ -92,7 +95,7 @@ opthelp:
             break;
         case OPT_A:
             seed = options = cflags = version = date = platform
-                = dir = engdir = moddir = cpuinfo
+                = dir = engdir = moddir = cpuinfo = engines
                 = 1;
             break;
         }
@@ -132,6 +135,18 @@ opthelp:
     }
     if (cpuinfo)
         printf("%s\n", OpenSSL_version(OPENSSL_CPU_INFO));
+    if (engines) {
+#ifndef OPENSSL_NO_ENGINE
+        ENGINE *e;
+        printf("engines:  ");
+        e = ENGINE_get_first();
+        while (e) {
+            printf("%s ", ENGINE_get_id(e));
+            e = ENGINE_get_next(e);
+        }
+        printf("\n");
+#endif
+    }
     ret = 0;
  end:
     return ret;
