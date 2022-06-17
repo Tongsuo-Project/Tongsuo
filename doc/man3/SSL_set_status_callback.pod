@@ -1,0 +1,92 @@
+=pod
+
+=head1 NAME
+
+SSL_set_status_callback,
+SSL_get_status_callback
+- set or get the callback for getting handshake status information
+
+=head1 SYNOPSIS
+
+ #include <openssl/ssl.h>
+
+ #ifndef OPENSSL_NO_STATUS
+ void SSL_set_status_callback(SSL *s,
+                              int (*status_callback)(unsigned char *p,
+                                                     unsigned int length,
+                                                     SSL_status *param),
+                              unsigned int ssl_status_enable, void *param);
+ int (*SSL_get_status_callback(const SSL *s)) (unsigned char *p,
+                                               unsigned int length,
+                                               SSL_status *param);
+ #endif
+
+=head1 DESCRIPTION
+
+SSL_set_status_callback() can be used to define a status callback function
+I<status_calllback> for getting handshake status information (such as client
+session id, client cipher list, client supported_groups extension, client
+rsa_pre_master_key, server session curve_name, server EC pubkey, etc) that are
+received or sent, as well as other events that occur during processing.
+Using a B<NULL> pointer for I<status_callback> or 0 for ssl_status_enable
+disables the status information callback.
+
+SSL_get_status_callback() returns a pointer to the currently set status
+information callback function for B<ssl>.
+
+The SSL_set_status_callback() function arguments have the following meaning:
+
+=over 4
+
+=item I<s>
+
+The B<SSL> object that received or sent the message.
+
+=item I<status_callback>
+
+The status callback function pointer.
+
+When I<status_callback> is called by the SSL/TLS library the function arguments
+have the following meaning:
+
+=over 8
+
+=item I<p>, I<length>
+
+I<p> points to a buffer containing the status information (the specific format
+needs to be parsed according to the type in param), which consists of I<length>
+bytes. The buffer is no longer valid after the callback function has returned.
+
+=item I<param>
+
+I<SSL_status> structure defined in ssl.h.in
+
+=back
+
+
+=item I<ssl_status_enable>
+
+Whether to enablethe status callback function, 1 is to enable, 0 is to disable.
+
+=item I<arg>
+
+The user-defined argument optionally.
+
+=back
+
+=head1 RETURN VALUES
+
+SSL_set_status_callback() has no return value.
+
+SSL_get_status_callback() returns the current setting.
+
+=head1 COPYRIGHT
+
+Copyright 2022 The Tongsuo Project Authors. All Rights Reserved.
+
+Licensed under the Apache License 2.0 (the "License").  You may not use
+this file except in compliance with the License.  You can obtain a copy
+in the file LICENSE in the source distribution or at
+L<https://github.com/Tongsuo-Project/Tongsuo/blob/master/LICENSE.txt>
+
+=cut

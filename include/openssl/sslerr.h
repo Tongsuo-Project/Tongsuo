@@ -273,6 +273,7 @@
 # define SSL_R_SSL_SESSION_ID_HAS_BAD_LENGTH              303
 # define SSL_R_SSL_SESSION_ID_TOO_LONG                    408
 # define SSL_R_SSL_SESSION_VERSION_MISMATCH               210
+# define SSL_R_STATUS_CALLBACK_ERROR                      317
 # define SSL_R_STILL_IN_INIT                              121
 # define SSL_R_TLSV13_ALERT_CERTIFICATE_REQUIRED          1116
 # define SSL_R_TLSV13_ALERT_MISSING_EXTENSION             1109

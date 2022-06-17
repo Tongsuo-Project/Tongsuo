@@ -1137,6 +1137,240 @@ end:
 }
 #endif
 
+#if !defined(OPENSSL_NO_STATUS) && !defined(OPENSSL_NO_EC)
+
+# ifndef SSLV2_CIPHER_LEN
+#  define SSLV2_CIPHER_LEN      3
+# endif
+
+typedef struct {
+    unsigned char              *buf;
+    unsigned int                len;
+    unsigned int                offset;
+    unsigned char               cipher_suite_len;
+    unsigned int                client_cipher_len;
+    unsigned int                client_cipher_offset;
+    unsigned int                ecc_curve_name;/*two bytes*/
+    unsigned int                ecc_pubkeylen;
+    unsigned int                ecc_pubkey_offset;
+    unsigned int                rsa_pmaster_len;
+    unsigned int                rsa_pmaster_offset;
+    unsigned int                dh_pkey_len;
+    unsigned int                dh_pkey_offset;
+    unsigned int                client_session_len;
+    unsigned int                client_session_offset;
+    unsigned int                ellipticcurvelist_length;
+    unsigned int                ellipticcurvelist_offset;
+    unsigned int                srv_hello_time;
+} ssl_status_t;
+
+static int status_callback(unsigned char *p, unsigned int len, SSL_status *param)
+{
+    unsigned char                 type, m;
+    ssl_status_t                 *status;
+    unsigned int                  i, off;
+# ifndef OPENSSL_NO_DH
+    BIGNUM                       *pub = NULL;
+# endif
+
+    if (param == NULL || param->arg == NULL)
+        return -1;
+
+    type = param->type;
+    status = (ssl_status_t*)param->arg;
+    off = status->offset;
+
+    if (type != SSL_CLIENT_RPOTOCOL && off + len > status->len) {
+        status->buf = (unsigned char*)realloc(status->buf, status->len + len);
+        if (status->buf == NULL) {
+            status->len = 0;
+            return  -1;
+        }
+        status->len += len;
+    }
+
+    if (type == SSL_CLIENT_RPOTOCOL) {
+        if (status->len < 2)  {
+            if (status->buf != NULL)
+                return -1;
+
+            status->buf = (unsigned char*)malloc(2);
+            if (status->buf == NULL)
+                return(-1);
+
+            status->len = 2;
+            status->offset = 2;
+            if ((p[3] == 0x00) && (p[4] == 0x02)) {
+                status->buf[0] = p[3];
+                status->buf[1] = p[4];
+            } else {
+                status->buf[0] = p[9];
+                status->buf[1] = p[10];
+            }
+        }
+    } else if(type == SSL_CLIENT_V2_CIPHER) {
+        if (len > 0) {
+            status->client_cipher_len = 0;
+            status->client_cipher_offset = off;
+            status->cipher_suite_len = 2;
+            for (i = 0; i < len; i += SSLV2_CIPHER_LEN) {
+                if (p[i] != 0)
+                    continue;
+
+                status->buf[off++] = p[i+1];
+                status->buf[off++] = p[i+2];
+                status->client_cipher_len += 2;
+            }
+            status->offset = off;
+        }
+    } else if (type == SSL_CLIENT_CIPHER) {
+        m = *((int*)(param->parg));
+        if (m == 0 || len % m != 0)
+            return -1;
+
+        if (len > 0) {
+            status->client_cipher_offset = off;
+            status->client_cipher_len = len;
+            status->cipher_suite_len = m;
+            memcpy(status->buf + off, p, len);
+            status->offset += len;
+        }
+    } else if (type == SSL_SERVER_EXCHANGE_PUBKEY) {
+        if (len > 0) {
+            status->ecc_pubkeylen = len;
+            status->ecc_pubkey_offset = off;
+            /*curve_name*/
+            status->ecc_curve_name = *(p-2);
+            /*ecc pubkey*/
+            memcpy(status->buf + off, p, len);
+            status->offset += len;
+        }
+    } else if (type == SSL_CLIENT_RSA_EXCHANGE) {
+        if (len > 0) {
+            status->rsa_pmaster_len = len;
+            status->rsa_pmaster_offset = off;
+            memcpy(status->buf + off, p, len);
+            status->offset += len;
+        }
+    } else if (type == SSL_SERVER_DH_PUBKEY) {
+# ifndef OPENSSL_NO_DH
+        if (len > 0) {
+            pub =  (BIGNUM*)param->parg;
+            status->dh_pkey_len = len;
+            status->dh_pkey_offset = off;
+            BN_bn2bin(pub, status->buf + off);
+            status->offset += len;
+        }
+# endif
+    } else if (type == SSL_CLIENT_SESSION_ID) {
+        if (len > 0) {
+            status->client_session_len = len;
+            status->client_session_offset = off;
+            memcpy(status->buf + off, p, len);
+            status->offset += len;
+        }
+    } else if (type == SSL_CLIENT_ECC_CURVES) {
+# ifndef OPENSSL_NO_EC
+        if (len > 0) {
+            status->ellipticcurvelist_length = len;
+            status->ellipticcurvelist_offset = off;
+            memcpy(status->buf + off, p, len);
+            status->offset += len;
+        }
+# endif
+    } else {
+        return -1;
+    }
+
+    return 1;
+}
+
+static int test_babassl_status(void)
+{
+    SSL_CTX *cctx = NULL, *sctx = NULL;
+    SSL *clientssl1 = NULL, *serverssl1 = NULL;
+    SSL *clientssl2 = NULL, *serverssl2 = NULL;
+    int testresult = 0;
+    ssl_status_t status;
+    SSL_SESSION *sess1 = NULL;
+    unsigned int ellipticcurvelist_length;
+
+    if (!create_ssl_ctx_pair(NULL, TLS_server_method(), TLS_client_method(),
+                             TLS1_VERSION, 0, &sctx, &cctx, cert, privkey))
+        return 0;
+
+    SSL_CTX_set_options(sctx, SSL_OP_CIPHER_SERVER_PREFERENCE);
+    SSL_CTX_set_max_proto_version(cctx, TLS1_2_VERSION);
+    SSL_CTX_set_session_cache_mode(sctx, SSL_SESS_CACHE_SERVER);
+
+    if (!TEST_true(SSL_CTX_set_cipher_list(sctx, "ECDHE-RSA-AES256-GCM-SHA384"))
+            || !TEST_true(SSL_CTX_set_cipher_list(cctx,
+                                            "ECDHE-RSA-AES256-GCM-SHA384")))
+        goto end;
+
+    if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl1, &clientssl1,
+                                      NULL, NULL)))
+        goto end;
+
+    memset(&status, 0, sizeof(status));
+    SSL_set_status_callback(serverssl1, status_callback, 1, &status);
+
+    if (!TEST_true(create_ssl_connection(serverssl1, clientssl1, SSL_ERROR_NONE))
+        || !TEST_ptr(sess1 = SSL_get1_session(clientssl1)))
+        goto end;
+
+    if (!TEST_true(SSL_get_status_callback(serverssl1) == status_callback))
+        goto end;
+
+    ellipticcurvelist_length = status.ellipticcurvelist_length;
+
+    if (!TEST_int_eq(clientssl1->session->kex_group, status.ecc_curve_name)
+        || !TEST_int_eq(status.cipher_suite_len, 2)
+        || !TEST_int_eq(htons(*(uint16_t *)(status.buf+status.client_cipher_offset)),
+                        0xc030)
+        || !TEST_int_gt(ellipticcurvelist_length, 0))
+        goto end;
+
+    if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl2, &clientssl2,
+                                      NULL, NULL))
+        || !TEST_true(SSL_set_session(clientssl2, sess1)))
+        goto end;
+
+    memset(&status, 0, sizeof(status));
+    SSL_set_status_callback(serverssl2, status_callback, 1, &status);
+
+    if (!TEST_true(create_ssl_connection(serverssl2, clientssl2,
+                                         SSL_ERROR_NONE))
+        || !TEST_true(SSL_session_reused(clientssl2)))
+        goto end;
+
+    if (!TEST_int_eq(clientssl2->session->kex_group, 29)
+        || !TEST_int_eq(status.ecc_curve_name, 0)
+        || !TEST_mem_eq(serverssl2->session->session_id,
+                        serverssl2->session->session_id_length,
+                        status.buf + status.client_session_offset,
+                        status.client_session_len)
+        || !TEST_int_eq(status.cipher_suite_len, 2)
+        || !TEST_int_eq(htons(*(uint16_t *)(status.buf+status.client_cipher_offset)),
+                        0xc030)
+        || !TEST_int_eq(ellipticcurvelist_length, status.ellipticcurvelist_length))
+        goto end;
+
+    testresult = 1;
+
+end:
+    SSL_SESSION_free(sess1);
+    SSL_free(serverssl1);
+    SSL_free(clientssl1);
+    SSL_free(serverssl2);
+    SSL_free(clientssl2);
+    SSL_CTX_free(sctx);
+    SSL_CTX_free(cctx);
+
+    return testresult;
+}
+#endif
+
 int setup_tests(void)
 {
     if (!test_skip_common_options()) {
@@ -1192,6 +1426,9 @@ int setup_tests(void)
 #endif
 #if !defined(OPENSSL_NO_TLS1_2) && !defined(OPENSSL_NO_CHACHA) && !defined(OPENSSL_NO_EC)
     ADD_TEST(test_babassl_optimize_chacha_choose);
+#endif
+#if !defined(OPENSSL_NO_STATUS) && !defined(OPENSSL_NO_EC)
+    ADD_TEST(test_babassl_status);
 #endif
     return 1;
 }

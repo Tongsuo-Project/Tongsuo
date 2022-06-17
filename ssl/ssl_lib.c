@@ -6512,3 +6512,27 @@ int SSL_get_session_reused_type(SSL *s)
     return !s->hit ? SSL_SESSION_REUSED_TYPE_NOCACHE : s->session_reused_type;
 }
 #endif
+
+#ifndef OPENSSL_NO_STATUS
+void SSL_set_status_callback(SSL *s,
+                             int (*status_callback)(unsigned char *p,
+                                                    unsigned int length,
+                                                    SSL_status *param),
+                             unsigned int ssl_status_enable, void *arg)
+{
+    if (s != NULL) {
+        s->status_callback = status_callback;
+        s->status_param.arg = arg;
+        s->status_param.ssl_status_enable = ssl_status_enable;
+
+        if (status_callback == NULL)
+            s->status_param.ssl_status_enable = 0;
+    }
+}
+
+int (*SSL_get_status_callback(const SSL *s))(unsigned char *p,
+                                             unsigned int length, SSL_status *param)
+{
+    return s->status_callback;
+}
+#endif

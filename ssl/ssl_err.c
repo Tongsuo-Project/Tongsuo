@@ -438,6 +438,8 @@ static const ERR_STRING_DATA SSL_str_reasons[] = {
     "ssl session id too long"},
     {ERR_PACK(ERR_LIB_SSL, 0, SSL_R_SSL_SESSION_VERSION_MISMATCH),
     "ssl session version mismatch"},
+    {ERR_PACK(ERR_LIB_SSL, 0, SSL_R_STATUS_CALLBACK_ERROR),
+    "status callback error"},
     {ERR_PACK(ERR_LIB_SSL, 0, SSL_R_STILL_IN_INIT), "still in init"},
     {ERR_PACK(ERR_LIB_SSL, 0, SSL_R_TLSV13_ALERT_CERTIFICATE_REQUIRED),
     "tlsv13 alert certificate required"},

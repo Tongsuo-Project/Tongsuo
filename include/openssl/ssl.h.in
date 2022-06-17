@@ -2781,6 +2781,36 @@ int  SSL_CTX_get_verify_cert_with_sni(SSL_CTX *ctx);
 int SSL_get_session_reused_type(SSL *s);
 # endif
 
+# ifndef OPENSSL_NO_STATUS
+#  define OPENSSL_STATUS_ENABLE           1
+/*SSL handshake status*/
+#  define SSL_CLIENT_RPOTOCOL             0
+#  define SSL_CLIENT_CIPHER               1
+#  define SSL_CLIENT_V2_CIPHER            2
+#  define SSL_SERVER_EXCHANGE_PUBKEY      3
+#  define SSL_CLIENT_RSA_EXCHANGE         4
+#  define SSL_CLIENT_SM2_EXCHANGE         5
+#  define SSL_SERVER_DH_PUBKEY            6
+#  define SSL_CLIENT_SESSION_ID           7
+#  define SSL_CLIENT_ECC_CURVES           8
+
+struct ssl_status_st {
+    void  *arg;
+    void  *parg;
+    int    type;
+    int    ssl_status_enable;
+};
+
+void SSL_set_status_callback(SSL *s,
+                             int (*status_callback)(unsigned char *p,
+                                                    unsigned int length,
+                                                    SSL_status *param),
+                             unsigned int ssl_status_enable, void *arg);
+int (*SSL_get_status_callback(const SSL *s)) (unsigned char *p,
+                                              unsigned int length,
+                                              SSL_status *param);
+# endif
+
 # ifdef  __cplusplus
 }
 # endif
