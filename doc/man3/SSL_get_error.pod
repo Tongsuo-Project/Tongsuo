@@ -2,13 +2,19 @@
 
 =head1 NAME
 
-SSL_get_error - obtain result code for TLS/SSL I/O operation
+SSL_get_error,
+SSL_get_alert_level,
+SSL_get_desc_and_level
+- obtain result code for TLS/SSL I/O operation
 
 =head1 SYNOPSIS
 
  #include <openssl/ssl.h>
 
  int SSL_get_error(const SSL *ssl, int ret);
+
+ #define SSL_get_desc_and_level SSL_get_alert_level
+ int SSL_get_alert_level(SSL *ssl, int *level, int *desc);
 
 =head1 DESCRIPTION
 
@@ -25,6 +31,11 @@ other OpenSSL function calls should appear in between.  The current
 thread's error queue must be empty before the TLS/SSL I/O operation is
 attempted, or SSL_get_error() will not work reliably.
 
+SSL_get_alert_level() gets the level in the alert protocol message, and writes
+the result if the parameters I<level> pointer is not I<NULL>. If the alter level
+is one of B<SSL3_AL_WARNING> and B<SSL3_AL_FATAL>, the parameter I<desc> will be
+written warn_alert or fatal_alert code.
+
 =head1 NOTES
 
 Some TLS implementations do not send a close_notify alert on shutdown.
@@ -36,7 +47,9 @@ error on the error stack.
 
 =head1 RETURN VALUES
 
-The following return values can currently occur:
+SSL_get_alert_level() return 1 on success, or 0 on error.
+
+The following return values for SSL_get_error() can currently occur:
 
 =over 4
 

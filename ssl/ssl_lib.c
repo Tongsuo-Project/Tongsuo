@@ -6373,6 +6373,24 @@ void BABASSL_debug(SSL *s, unsigned char *str, int len)
     printf("%d\n", len);
 }
 
+int SSL_get_alert_level(SSL *ssl, int *level, int *desc)
+{
+    if (ssl == NULL)
+        return 0;
+
+    if (level != NULL)
+        *level = ssl->s3.alert_level;
+
+    if (desc != NULL) {
+        if (ssl->s3.alert_level == SSL3_AL_WARNING)
+            *desc = ssl->s3.warn_alert;
+        else if (ssl->s3.alert_level == SSL3_AL_FATAL)
+            *desc = ssl->s3.fatal_alert;
+    }
+
+    return 1;
+}
+
 #ifndef OPENSSL_NO_SKIP_SCSV
 void SSL_set_skip_scsv(SSL *s, int skip_scsv)
 {
