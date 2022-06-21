@@ -64,6 +64,33 @@ int EVP_CIPHER_CTX_reset(EVP_CIPHER_CTX *ctx)
     return 1;
 }
 
+#ifndef OPENSSL_NO_EVP_CIPHER_API_COMPAT
+
+/* compatibility: for lua ffi */
+
+# ifdef EVP_CIPHER_CTX_init
+#  undef EVP_CIPHER_CTX_init
+# endif
+
+# ifdef EVP_CIPHER_CTX_cleanup
+#  undef EVP_CIPHER_CTX_cleanup
+# endif
+
+void EVP_CIPHER_CTX_init(EVP_CIPHER_CTX *ctx);
+int EVP_CIPHER_CTX_cleanup(EVP_CIPHER_CTX *ctx);
+
+void EVP_CIPHER_CTX_init(EVP_CIPHER_CTX *ctx)
+{
+    EVP_CIPHER_CTX_reset(ctx);
+}
+
+int EVP_CIPHER_CTX_cleanup(EVP_CIPHER_CTX *ctx)
+{
+    return EVP_CIPHER_CTX_reset(ctx);
+}
+
+#endif
+
 EVP_CIPHER_CTX *EVP_CIPHER_CTX_new(void)
 {
     return OPENSSL_zalloc(sizeof(EVP_CIPHER_CTX));
