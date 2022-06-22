@@ -301,6 +301,8 @@ typedef int (*ENGINE_PKEY_METHS_PTR) (ENGINE *, EVP_PKEY_METHOD **,
                                       const int **, int);
 typedef int (*ENGINE_PKEY_ASN1_METHS_PTR) (ENGINE *, EVP_PKEY_ASN1_METHOD **,
                                            const int **, int);
+typedef int (*ENGINE_ECP_METHS_PTR) (ENGINE *, const EC_POINT_METHOD **,
+                                     const int **, int);
 /*
  * STRUCTURE functions ... all of these functions deal with pointers to
  * ENGINE structures where the pointers have a "structural reference". This
@@ -403,6 +405,11 @@ OSSL_DEPRECATEDIN_3_0 int ENGINE_register_pkey_asn1_meths(ENGINE *e);
 OSSL_DEPRECATEDIN_3_0 void ENGINE_unregister_pkey_asn1_meths(ENGINE *e);
 OSSL_DEPRECATEDIN_3_0 void ENGINE_register_all_pkey_asn1_meths(void);
 #  endif
+
+int ENGINE_register_ecp_meths(ENGINE *e);
+void ENGINE_unregister_ecp_meths(ENGINE *e);
+void ENGINE_register_all_ecp_meths(void);
+
 
 /*
  * These functions register all support from the above categories. Note, use
@@ -526,6 +533,8 @@ OSSL_DEPRECATEDIN_3_0 int ENGINE_set_flags(ENGINE *e, int flags);
 OSSL_DEPRECATEDIN_3_0 int ENGINE_set_cmd_defns(ENGINE *e,
                                                const ENGINE_CMD_DEFN *defns);
 #  endif
+int ENGINE_set_ecp_meths(ENGINE *e, ENGINE_ECP_METHS_PTR f);
+
 /* These functions allow control over any per-structure ENGINE data. */
 #  define ENGINE_get_ex_new_index(l, p, newf, dupf, freef) \
     CRYPTO_get_ex_new_index(CRYPTO_EX_INDEX_ENGINE, l, p, newf, dupf, freef)
@@ -597,6 +606,9 @@ OSSL_DEPRECATEDIN_3_0
 const ENGINE_CMD_DEFN *ENGINE_get_cmd_defns(const ENGINE *e);
 OSSL_DEPRECATEDIN_3_0 int ENGINE_get_flags(const ENGINE *e);
 #  endif
+
+ENGINE_ECP_METHS_PTR ENGINE_get_ecp_meths(ENGINE *e);
+const EC_POINT_METHOD *ENGINE_get_ecp_meth(ENGINE *e, int curve_id);
 
 /*
  * FUNCTIONAL functions. These functions deal with ENGINE structures that
@@ -674,6 +686,8 @@ OSSL_DEPRECATEDIN_3_0 ENGINE *ENGINE_get_pkey_meth_engine(int nid);
 OSSL_DEPRECATEDIN_3_0 ENGINE *ENGINE_get_pkey_asn1_meth_engine(int nid);
 #  endif
 
+ENGINE *ENGINE_get_ecp_meth_engine(int curve_id);
+
 /*
  * This sets a new default ENGINE structure for performing RSA operations. If
  * the result is non-zero (success) then the ENGINE structure will have had
@@ -696,6 +710,8 @@ OSSL_DEPRECATEDIN_3_0 int ENGINE_set_default_digests(ENGINE *e);
 OSSL_DEPRECATEDIN_3_0 int ENGINE_set_default_pkey_meths(ENGINE *e);
 OSSL_DEPRECATEDIN_3_0 int ENGINE_set_default_pkey_asn1_meths(ENGINE *e);
 #  endif
+
+int ENGINE_set_default_ecp_meths(ENGINE *e);
 
 /*
  * The combination "set" - the flags are bitwise "OR"d from the

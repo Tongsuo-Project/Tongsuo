@@ -59,6 +59,17 @@ IF[{- !$disabled{"engine"} -}]
         GENERATE[afalg.ld]=../util/engines.num
       ENDIF
     ENDIF
+    IF[{- !$disabled{ec} -}]
+      MODULES{engine}=ecptest
+      SOURCE[ecptest]=e_ecptest.c
+      DEPEND[ecptest]=../libcrypto
+      INCLUDE[ecptest]= ../include
+      IF[{- defined $target{shared_defflag} -}]
+        SOURCE[ecptest]=ecptest.ld
+        GENERATE[ecptest.ld]=../util/engines.num
+      ENDIF
+    ENDIF
+
     IF[{- !$disabled{"devcryptoeng"} -}]
       MODULES{engine}=devcrypto
       SOURCE[devcrypto]=e_devcrypto.c

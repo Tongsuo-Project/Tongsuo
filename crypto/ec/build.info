@@ -59,7 +59,7 @@ IF[{- !$disabled{'ec_elgamal'} -}]
 ENDIF
 
 SOURCE[../../libcrypto]=$COMMON ec_ameth.c ec_pmeth.c ecx_meth.c \
-                        ec_err.c eck_prn.c \
+                        ec_err.c eck_prn.c ecp_meth.c\
                         ec_deprecated.c ec_print.c
 SOURCE[../../providers/libfips.a]=$COMMON
 

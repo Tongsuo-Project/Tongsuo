@@ -35,6 +35,8 @@ static const ERR_STRING_DATA EC_str_reasons[] = {
     "discriminant is zero"},
     {ERR_PACK(ERR_LIB_EC, 0, EC_R_EC_GROUP_NEW_BY_NAME_FAILURE),
     "ec group new by name failure"},
+    {ERR_PACK(ERR_LIB_EC, 0, EC_R_EC_POINT_METHOD_NOT_FOUND),
+    "ec point method not found"},
     {ERR_PACK(ERR_LIB_EC, 0, EC_R_EXPLICIT_PARAMS_NOT_SUPPORTED),
     "explicit params not supported"},
     {ERR_PACK(ERR_LIB_EC, 0, EC_R_FAILED_MAKING_PUBLIC_KEY),
