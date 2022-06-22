@@ -517,6 +517,7 @@ my @disablables = (
     "optimize-chacha-choose",
     "status",
     "evp-cipher-api-compat",
+    "crypto-mdebug-count",
     );
 foreach my $proto ((@tls, @dtls))
         {
@@ -549,6 +550,7 @@ our %disabled = ( # "what"         => "comment"
                   "fips"                => "default",
                   "asan"                => "default",
                   "buildtest-c++"       => "default",
+                  "crypto-mdebug-count" => "default",
                   "crypto-mdebug"       => "default",
                   "crypto-mdebug-backtrace" => "default",
                   "devcryptoeng"        => "default",
