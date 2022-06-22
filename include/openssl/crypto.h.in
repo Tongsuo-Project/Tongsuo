@@ -150,6 +150,8 @@ const char *OPENSSL_version_pre_release(void);
 const char *OPENSSL_version_build_metadata(void);
 
 unsigned long OpenSSL_version_num(void);
+unsigned long Tongsuo_version_num(void);
+# define BabaSSL_version_num Tongsuo_version_num
 const char *OpenSSL_version(int type);
 # define OPENSSL_VERSION                0
 # define OPENSSL_CFLAGS                 1
@@ -161,6 +163,7 @@ const char *OpenSSL_version(int type);
 # define OPENSSL_FULL_VERSION_STRING    7
 # define OPENSSL_MODULES_DIR            8
 # define OPENSSL_CPU_INFO               9
+# define TONGSUO_VERSION                10
 # ifndef OPENSSL_NO_QUIC
 #  define OPENSSL_INFO_QUIC             2000
 # endif

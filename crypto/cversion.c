@@ -41,6 +41,11 @@ const char *OPENSSL_version_build_metadata(void)
     return OPENSSL_VERSION_BUILD_METADATA;
 }
 
+unsigned long Tongsuo_version_num(void)
+{
+    return TONGSUO_VERSION_NUMBER;
+}
+
 extern char ossl_cpu_info_str[];
 
 const char *OpenSSL_version(int t)
@@ -48,6 +53,8 @@ const char *OpenSSL_version(int t)
     switch (t) {
     case OPENSSL_VERSION:
         return OPENSSL_VERSION_TEXT;
+    case TONGSUO_VERSION:
+        return TONGSUO_VERSION_TEXT;
     case OPENSSL_VERSION_STRING:
         return OPENSSL_VERSION_STR;
     case OPENSSL_FULL_VERSION_STRING:

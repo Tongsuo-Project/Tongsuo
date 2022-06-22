@@ -101,6 +101,12 @@ extern "C" {
       |(OPENSSL_VERSION_PATCH<<4)        \
       |_OPENSSL_VERSION_PRE_RELEASE )
 
+/* Tongsuo/BabaSSL stuffs */
+# define TONGSUO_VERSION_NUMBER  0x80400000L
+# define TONGSUO_VERSION_TEXT    "Tongsuo 8.4.0-dev"
+# define BABASSL_VERSION_NUMBER  TONGSUO_VERSION_NUMBER
+# define BABASSL_VERSION_TEXT    TONGSUO_VERSION_TEXT
+
 # ifdef  __cplusplus
 }
 # endif
