@@ -150,6 +150,8 @@ typedef struct ec_key_st EC_KEY;
 typedef struct ec_key_method_st EC_KEY_METHOD;
 # endif
 
+typedef struct ec_point_method_st EC_POINT_METHOD;
+
 typedef struct rand_meth_st RAND_METHOD;
 typedef struct rand_drbg_st RAND_DRBG;
 

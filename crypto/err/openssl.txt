@@ -537,6 +537,7 @@ EC_R_CURVE_DOES_NOT_SUPPORT_SIGNING:159:curve does not support signing
 EC_R_DECODE_ERROR:142:decode error
 EC_R_DISCRIMINANT_IS_ZERO:118:discriminant is zero
 EC_R_EC_GROUP_NEW_BY_NAME_FAILURE:119:ec group new by name failure
+EC_R_EC_POINT_METHOD_NOT_FOUND:176:ec point method not found
 EC_R_EXPLICIT_PARAMS_NOT_SUPPORTED:127:explicit params not supported
 EC_R_FAILED_MAKING_PUBLIC_KEY:166:failed making public key
 EC_R_FIELD_TOO_LARGE:143:field too large
@@ -633,6 +634,7 @@ ENGINE_R_NO_REFERENCE:130:no reference
 ENGINE_R_NO_SUCH_ENGINE:116:no such engine
 ENGINE_R_UNIMPLEMENTED_CIPHER:146:unimplemented cipher
 ENGINE_R_UNIMPLEMENTED_DIGEST:147:unimplemented digest
+ENGINE_R_UNIMPLEMENTED_ECP_METH:107:unimplemented ecp meth
 ENGINE_R_UNIMPLEMENTED_PUBLIC_KEY_METHOD:101:unimplemented public key method
 ENGINE_R_VERSION_INCOMPATIBILITY:145:version incompatibility
 ESS_R_EMPTY_ESS_CERT_ID_LIST:107:empty ess cert id list
