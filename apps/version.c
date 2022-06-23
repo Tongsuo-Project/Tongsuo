@@ -109,9 +109,13 @@ opthelp:
     if (!dirty)
         version = 1;
 
-    if (version)
+    if (version) {
+         /* BabaSSL/Tongsuo stuffs */
+        printf("Tongsuo: %s (Library: %s)\n",
+               TONGSUO_VERSION_TEXT, OpenSSL_version(TONGSUO_VERSION));
         printf("%s (Library: %s)\n",
                OPENSSL_VERSION_TEXT, OpenSSL_version(OPENSSL_VERSION));
+    }
     if (date)
         printf("%s\n", OpenSSL_version(OPENSSL_BUILT_ON));
     if (platform)
