@@ -31,20 +31,11 @@ my $usage="Usage: Configure [no-<cipher> ...] [enable-<cipher> ...] [-Dxxx] [-lx
 
 my $banner = <<"EOF";
 
-**********************************************************************
-***                                                                ***
-***   OpenSSL has been successfully configured                     ***
-***                                                                ***
-***   If you encounter a problem while building, please open an    ***
-***   issue on GitHub <https://github.com/openssl/openssl/issues>  ***
-***   and include the output from the following command:           ***
-***                                                                ***
-***       perl configdata.pm --dump                                ***
-***                                                                ***
-***   (If you are new to OpenSSL, you might want to consult the    ***
-***   'Troubleshooting' section in the INSTALL.md file first)      ***
-***                                                                ***
-**********************************************************************
+Tongsuo has been successfully configured, use
+
+    perl configdata.pm --dump
+
+to take a look on the full configuration.
 EOF
 
 # Options:
@@ -352,6 +343,14 @@ $config{release_date} = $version{RELEASE_DATE} // 'xx XXX xxxx';
 
 $config{version} = "$config{major}.$config{minor}.$config{patch}";
 $config{full_version} = "$config{version}$config{prerelease}$config{build_metadata}";
+
+$config{tongsuo_major} = $version{TONGSUO_MAJOR} // 'unknown';
+$config{tongsuo_minor} = $version{TONGSUO_MINOR} // 'unknown';
+$config{tongsuo_patch} = $version{TONGSUO_PATCH} // 'unknown';
+$config{tongsuo_prerelease} =
+    defined $version{TONGSUO_PRE_RELEASE_TAG} ? "-$version{TONGSUO_PRE_RELEASE_TAG}" : '';
+$config{tongsuo_version} = "$config{tongsuo_major}.$config{tongsuo_minor}.$config{tongsuo_patch}";
+$config{tongsuo_full_version} = "$config{tongsuo_version}$config{tongsuo_prerelease}";
 
 die "erroneous version information in VERSION.dat: ",
     "$config{version}, $config{shlib_version}\n"
@@ -1239,8 +1238,9 @@ if ($target eq "HASH") {
 
 chop $config{system_ciphers_file} if $config{system_ciphers_file} =~ /\/$/;
 
-print "Configuring OpenSSL version $config{full_version} ";
+print "Configuring Tongsuo version $config{tongsuo_full_version} ";
 print "for target $target\n";
+print "(Underlying OpenSSL version $config{full_version})\n";
 
 if (scalar(@seed_sources) == 0) {
     print "Using os-specific seed configuration\n";

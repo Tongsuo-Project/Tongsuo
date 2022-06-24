@@ -30,6 +30,10 @@ extern "C" {
 # define OPENSSL_VERSION_MINOR  {- $config{minor} -}
 # define OPENSSL_VERSION_PATCH  {- $config{patch} -}
 
+# define TONGSUO_VERSION_MAJOR  {- $config{tongsuo_major} -}
+# define TONGSUO_VERSION_MINOR  {- $config{tongsuo_minor} -}
+# define TONGSUO_VERSION_PATCH  {- $config{tongsuo_patch} -}
+
 /*
  * Additional version information
  *
@@ -42,6 +46,8 @@ extern "C" {
 /* Could be: #define OPENSSL_VERSION_BUILD_METADATA "+fips" */
 /* Could be: #define OPENSSL_VERSION_BUILD_METADATA "+vendor.1" */
 # define OPENSSL_VERSION_BUILD_METADATA "{- $config{build_metadata} -}"
+
+# define TONGSUO_VERSION_PRE_RELEASE "{- $config{tongsuo_prerelease} -}"
 
 /*
  * Note: The OpenSSL Project will never define OPENSSL_VERSION_BUILD_METADATA
@@ -102,8 +108,18 @@ extern "C" {
       |_OPENSSL_VERSION_PRE_RELEASE )
 
 /* Tongsuo/BabaSSL stuffs */
-# define TONGSUO_VERSION_NUMBER  0x80400000L
-# define TONGSUO_VERSION_TEXT    "Tongsuo 8.4.0-dev"
+# ifdef TONGSUO_VERSION_PRE_RELEASE
+#  define _TONGSUO_VERSION_PRE_RELEASE 0x0L
+# else
+#  define _TONGSUO_VERSION_PRE_RELEASE 0xfL
+# endif
+# define TONGSUO_VERSION_NUMBER          \
+    ( (TONGSUO_VERSION_MAJOR<<28)        \
+      |(TONGSUO_VERSION_MINOR<<20)       \
+      |(TONGSUO_VERSION_PATCH<<4)        \
+      |_TONGSUO_VERSION_PRE_RELEASE )
+
+# define TONGSUO_VERSION_TEXT    "Tongsuo {- "$config{tongsuo_full_version}" -}"
 # define BABASSL_VERSION_NUMBER  TONGSUO_VERSION_NUMBER
 # define BABASSL_VERSION_TEXT    TONGSUO_VERSION_TEXT
 
