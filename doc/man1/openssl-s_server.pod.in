@@ -149,6 +149,10 @@ B<openssl> B<s_server>
 [B<-anti_replay>]
 [B<-no_anti_replay>]
 [B<-num_tickets>]
+[B<-dc> I<filename>]
+[B<-dc_pkey> I<filename>]
+[B<-enable_sign_by_dc>]
+[B<-enable_verify_peer_by_dc>]
 {- $OpenSSL::safe::opt_name_synopsis -}
 {- $OpenSSL::safe::opt_version_synopsis -}
 {- $OpenSSL::safe::opt_v_synopsis -}
@@ -868,6 +872,22 @@ automatically detect if a session ticket has been used more than once, TLSv1.3
 has been negotiated, and early data is enabled on the server. A full handshake
 is forced if a session ticket is used a second or subsequent time. Any early
 data that was sent will be rejected.
+
+=item B<-dc> I<filename>
+
+The server delegated credential to use. The default is not to use a DC.
+
+=item B<-dc_pkey> I<filename>
+
+The server DC private key to use.
+
+=item B<-enable_sign_by_dc>
+
+Enable sign by delegated credential.
+
+=item B<-enable_verify_peer_by_dc>
+
+Enable verify peer by delegated credential.
 
 {- $OpenSSL::safe::opt_name_item -}
 

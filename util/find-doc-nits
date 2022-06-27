@@ -204,6 +204,11 @@ sub files {
                       @{$unified_info{mandocs}->{$mansect}} ) {
                 $files{$_} = { $mansect => 1, public_manual => 1 };
             }
+
+            foreach ( glob(catfile($config{sourcedir},
+                                   'doc', $mansect, '*.md')) ) {
+                $files{$_} = { $mansect => 1, public_manual => 1 };
+            }
         }
         $collected_tags{public_manual} = 1;
     }
@@ -824,6 +829,7 @@ sub check {
 my %link_map = ();
 # Map of names in each POD file or from "missing" files; possible values are:
 # If found in a POD files, "name(s)" => filename
+# If found in a markdown file, "name(s) => filename"
 # If found in a "missing" file or external, "name(s)" => ''
 my %name_map = ();
 
@@ -1092,11 +1098,13 @@ sub checkflags {
         or die "Can't open $doc, $!";
     while ( <CFH> ) {
         chop;
-        last if /DESCRIPTION/;
+        last if /DESCRIPTION|示例/;
         my $opt;
         if ( /\[B<-([^ >]+)/ ) {
             $opt = $1;
         } elsif ( /^B<-([^ >]+)/ ) {
+            $opt = $1;
+        } elsif ( /^-([^ *]+)/ ) {
             $opt = $1;
         } else {
             next;
@@ -1153,6 +1161,7 @@ if ( $opt_c ) {
         $cmd =~ s/\.c$//;
         next if $cmd eq 'progs' || $cmd eq 'vms_decc_init';
         my @doc = ( grep { basename($_) eq "openssl-$cmd.pod"
+                           || basename($_) eq "openssl-$cmd.md"
                            # For "tsget" and "CA.pl" pod pages
                            || basename($_) eq "$cmd.pod" }
                     files(TAGS => [ 'manual', 'man1' ]) );
@@ -1184,17 +1193,50 @@ if ( $opt_o ) {
     loadmissing('util/missingssl-internal.txt');
 }
 
+sub collect_names_from_markdown {
+    my $filename = shift;
+    $filename =~ m|man(\d)/|;
+    my $section = $1;
+    my $id = "${filename}:1:";
+
+    open my $fh, $filename or die "Trying to read $filename: $!\n";
+
+    while (my $line = <$fh>) {
+        chomp $line;
+
+        last if $line =~ /描述$/;
+
+        if ( $line =~ /\S*\s+\**(\S+)\(/ ) {
+            my $name_sec = "$1($section)";
+            if ( !defined $name_map{$name_sec} ) {
+                $name_map{$name_sec} = $filename;
+                $state{$name_sec} //=
+                    ( $filename =~ /\/internal\// ? 'internal' : 'public' );
+            } elsif ( $filename eq $name_map{$name_sec} ) {
+                err($id, "$name_sec duplicated", $name_map{$name_sec});
+            } elsif ( $name_map{$name_sec} ne '' ) {
+                err($id, "$name_sec also in", $name_map{$name_sec});
+            }
+        }
+    }
+
+}
+
 if ( $opt_n || $opt_l || $opt_u || $opt_v ) {
     my @files_to_read = ( $opt_n && @ARGV ) ? @ARGV : files(TAGS => 'manual');
 
     foreach (@files_to_read) {
-        my %podinfo = extract_pod_info($_, { debug => $debug });
+        if (/\.md$/) {
+            collect_names_from_markdown($_);
+        } else {
+            my %podinfo = extract_pod_info($_, { debug => $debug });
 
-        collectnames(%podinfo)
-            if ( $opt_l || $opt_u || $opt_v );
+            collectnames(%podinfo)
+                if ( $opt_l || $opt_u || $opt_v );
 
-        check(%podinfo)
-            if ( $opt_n );
+            check(%podinfo)
+                if ( $opt_n );
+        }
     }
 }
 

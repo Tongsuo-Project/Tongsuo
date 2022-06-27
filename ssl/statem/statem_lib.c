@@ -306,6 +306,16 @@ int tls_construct_cert_verify(SSL *s, WPACKET *pkt)
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
         goto err;
     }
+
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    if (s->delegated_credential_tag & DC_HAS_BEEN_USED_FOR_SIGN) {
+        if (s->s3.tmp.dc == NULL) {
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+            goto err;
+        }
+        pkey = s->s3.tmp.dc->privatekey;
+    } else
+#endif
     pkey = s->s3.tmp.cert->privatekey;
 
     if (pkey == NULL || !tls1_lookup_md(s->ctx, lu, &md)) {
@@ -469,6 +479,15 @@ MSG_PROCESS_RETURN tls_process_cert_verify(SSL *s, PACKET *pkt)
 
     peer = s->session->peer;
     pkey = X509_get0_pubkey(peer);
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    if (s->delegated_credential_tag & DC_HAS_BEEN_USED_FOR_VERIFY_PEER) {
+        if (s->session->peer_dc == NULL) {
+            SSLfatal(s, SSL_AD_UNEXPECTED_MESSAGE, ERR_R_INTERNAL_ERROR);
+            goto err;
+        }
+        pkey = DC_get0_publickey(s->session->peer_dc);
+    }
+#endif
     if (pkey == NULL) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
         goto err;
@@ -500,6 +519,23 @@ MSG_PROCESS_RETURN tls_process_cert_verify(SSL *s, PACKET *pkt)
             /* SSLfatal() already called */
             goto err;
         }
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+        /*
+         * Verify that dc expected_cert_verify_algorithm matches the scheme
+         * indicated in the server's CertificateVerify message.
+         */
+        if (s->delegated_credential_tag & DC_HAS_BEEN_USED_FOR_VERIFY_PEER) {
+            if (s->session->peer_dc == NULL) {
+                SSLfatal(s, SSL_AD_UNEXPECTED_MESSAGE, ERR_R_INTERNAL_ERROR);
+                goto err;
+            }
+
+            if (DC_get_expected_cert_verify_algorithm(s->session->peer_dc) != sigalg) {
+                SSLfatal(s, SSL_AD_UNEXPECTED_MESSAGE, ERR_R_INTERNAL_ERROR);
+                goto err;
+            }
+        }
+#endif
     } else if (!tls1_set_peer_legacy_sigalg(s, pkey)) {
             SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
             goto err;
@@ -1648,6 +1684,12 @@ static int is_tls13_capable(const SSL *s)
         default:
             break;
         }
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+        if (s->enable_sign_by_dc
+            && ssl_has_dc(s, i)) {
+            /* nothing */
+        } else
+#endif
         if (!ssl_has_cert(s, i))
             continue;
         if (i != SSL_PKEY_ECC)
@@ -1657,7 +1699,13 @@ static int is_tls13_capable(const SSL *s)
          * more restrictive so check that our sig algs are consistent with this
          * EC cert. See section 4.2.3 of RFC8446.
          */
-        curve = ssl_get_EC_curve_nid(s->cert->pkeys[SSL_PKEY_ECC].privatekey);
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+        if (s->enable_sign_by_dc && ssl_has_dc(s, SSL_PKEY_ECC))
+            curve = ssl_get_EC_curve_nid(
+                        s->cert->dc_pkeys[SSL_PKEY_ECC].privatekey);
+        else
+#endif
+            curve = ssl_get_EC_curve_nid(s->cert->pkeys[SSL_PKEY_ECC].privatekey);
         if (tls_check_sigalg_curve(s, curve))
             return 1;
     }

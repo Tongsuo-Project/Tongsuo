@@ -276,6 +276,19 @@ static const EXTENSION_DEFINITION ext_defs[] = {
 #else
     INVALID_EXTENSION,
 #endif
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    {
+        TLSEXT_TYPE_delegated_credential,
+        SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS1_3_CERTIFICATE_REQUEST
+        | SSL_EXT_TLS1_3_ONLY | SSL_EXT_TLS1_3_CERTIFICATE,
+        NULL,
+        tls_parse_ctos_delegated_credential, tls_parse_stoc_delegated_credential,
+        tls_construct_stoc_delegated_credential, tls_construct_ctos_delegated_credential,
+        NULL
+    },
+#else
+    INVALID_EXTENSION,
+#endif
     {
         TLSEXT_TYPE_extended_master_secret,
         SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS1_2_SERVER_HELLO
@@ -1890,3 +1903,143 @@ int tls_parse_compress_cert(SSL *s, PACKET *pkt, unsigned int context,
     return 1;
 }
 #endif
+
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+int tls_parse_dc_from_extension(SSL *s, PACKET *pkt, unsigned int context,
+                                X509 *x, size_t chainidx)
+{
+    if (!s->enable_verify_peer_by_dc)
+        return 1;
+    /*
+     * If the client receives a delegated credential without sending this extension, then the
+     * client MUST abort with an "unexpected_message" alert.
+     */
+    if (!(s->delegated_credential_tag & DC_REQ_HAS_BEEN_SEND_TO_PEER)) {
+        SSLfatal(s, SSL_AD_UNEXPECTED_MESSAGE, ERR_R_INTERNAL_ERROR);
+        return 0;
+    }
+
+    if (s->session == NULL) {
+        SSLfatal(s, SSL_AD_UNEXPECTED_MESSAGE, ERR_R_INTERNAL_ERROR);
+        return 0;
+    }
+
+    if (PACKET_remaining(pkt) <= 0) {
+        SSLfatal(s, SSL_AD_UNEXPECTED_MESSAGE, ERR_R_INTERNAL_ERROR);
+        return 0;
+    }
+
+    s->session->peer_dc = DC_new_from_raw_byte_ex(PACKET_data(pkt),
+                                                  PACKET_remaining(pkt),
+                                                  s->ctx->libctx,
+                                                  s->ctx->propq);
+    if (s->session->peer_dc == NULL) {
+        SSLfatal(s, SSL_AD_UNEXPECTED_MESSAGE, ERR_R_INTERNAL_ERROR);
+        return 0;
+    }
+
+    s->delegated_credential_tag |= DC_HAS_BEEN_USED_FOR_VERIFY_PEER;
+    return 1;
+}
+
+int tls_process_dc_request(SSL *s, PACKET *pkt, unsigned int context,
+                           X509 *x, size_t chainidx)
+{
+    PACKET supported_sig_algs;
+
+    if (!s->enable_sign_by_dc)
+        return 1;
+
+    if (!PACKET_as_length_prefixed_2(pkt, &supported_sig_algs)
+        || PACKET_remaining(&supported_sig_algs) == 0) {
+        SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_R_BAD_EXTENSION);
+        return 0;
+    }
+
+    OPENSSL_free(s->s3.tmp.peer_dc_sigalgs);
+    s->s3.tmp.peer_dc_sigalgs = NULL;
+    s->s3.tmp.peer_dc_sigalgslen = 0;
+
+    if (!tls1_save_u16(&supported_sig_algs, &s->s3.tmp.peer_dc_sigalgs,
+                       &s->s3.tmp.peer_dc_sigalgslen)) {
+        SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_R_BAD_EXTENSION);
+        return 0;
+    }
+
+    if (!tls1_set_shared_dc_sigalgs(s)) {
+        SSLfatal(s, SSL_AD_DECODE_ERROR, ERR_R_INTERNAL_ERROR);
+        return 0;
+    }
+
+    return 1;
+}
+
+EXT_RETURN tls_construct_delegated_credential_raw(SSL *s, WPACKET *pkt, unsigned int context,
+                                                  X509 *x, size_t chainidx)
+{
+    if (!s->enable_sign_by_dc)
+        return EXT_RETURN_NOT_SENT;
+
+    if (s->delegated_credential_tag & DC_HAS_BEEN_USED_FOR_SIGN) {
+        DELEGATED_CREDENTIAL *dc;
+        unsigned char *dc_raw = NULL;
+        unsigned long  dc_raw_len = 0;
+
+        if (s->s3.tmp.dc == NULL || s->s3.tmp.dc->dc == NULL) {
+            SSLfatal(s, SSL_AD_UNEXPECTED_MESSAGE, ERR_R_INTERNAL_ERROR);
+            return EXT_RETURN_FAIL;
+        }
+
+        dc = s->s3.tmp.dc->dc;
+        dc_raw = DC_get0_raw_byte(dc);
+        if (dc_raw == NULL) {
+            SSLfatal(s, SSL_AD_UNEXPECTED_MESSAGE, ERR_R_INTERNAL_ERROR);
+            return EXT_RETURN_FAIL;
+        }
+        dc_raw_len = DC_get_raw_byte_len(dc);
+        if (dc_raw_len <= 0) {
+            SSLfatal(s, SSL_AD_UNEXPECTED_MESSAGE, ERR_R_INTERNAL_ERROR);
+            return EXT_RETURN_FAIL;
+        }
+
+        if (!WPACKET_put_bytes_u16(pkt, TLSEXT_TYPE_delegated_credential)
+            || !WPACKET_start_sub_packet_u16(pkt)
+            || !WPACKET_memcpy(pkt, dc_raw, dc_raw_len)
+            || !WPACKET_close(pkt)) {
+            SSLfatal(s, SSL_AD_UNEXPECTED_MESSAGE, ERR_R_INTERNAL_ERROR);
+            return EXT_RETURN_FAIL;
+        }
+        return EXT_RETURN_SENT;
+    }
+    return EXT_RETURN_NOT_SENT;
+}
+
+EXT_RETURN tls_construct_delegated_credential_request(SSL *s, WPACKET *pkt,
+                                                      unsigned int context,
+                                                      X509 *x, size_t chainidx)
+{
+    size_t salglen;
+    const uint16_t *salg;
+
+    if (!s->enable_verify_peer_by_dc)
+        return EXT_RETURN_NOT_SENT;
+
+    salglen = tls12_get_psigalgs(s, 1, &salg);
+
+    if (!WPACKET_put_bytes_u16(pkt, TLSEXT_TYPE_delegated_credential)
+            /* Sub-packet for sig-algs extension */
+            || !WPACKET_start_sub_packet_u16(pkt)
+            /* Sub-packet for the actual list */
+            || !WPACKET_start_sub_packet_u16(pkt)
+            || !tls12_copy_sigalgs(s, pkt, salg, salglen)
+            || !WPACKET_close(pkt)
+            || !WPACKET_close(pkt)) {
+        SSLfatal(s, SSL_AD_UNEXPECTED_MESSAGE, ERR_R_INTERNAL_ERROR);
+        return EXT_RETURN_FAIL;
+    }
+
+    s->delegated_credential_tag |= DC_REQ_HAS_BEEN_SEND_TO_PEER;
+    return EXT_RETURN_SENT;
+}
+#endif
+

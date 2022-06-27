@@ -137,6 +137,9 @@ extern "C" {
 /* ExtensionType value from RFC8879 */
 # define TLSEXT_TYPE_compress_certificate        27
 
+/* ExtensionType value from draft-ietf-tls-subcerts-10 */
+# define TLSEXT_TYPE_delegated_credential        34
+
 /* ExtensionType value from RFC4507 */
 # define TLSEXT_TYPE_session_ticket              35
 

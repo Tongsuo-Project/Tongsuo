@@ -16,6 +16,7 @@
 #include <openssl/bio.h>
 #include <openssl/pem.h>
 #include <openssl/store.h>
+#include <openssl/x509.h>
 #include <openssl/x509v3.h>
 #include <openssl/dh.h>
 #include <openssl/bn.h>
@@ -111,6 +112,18 @@ CERT *ssl_cert_dup(CERT *cert)
             rpk->privatekey = cpk->privatekey;
             EVP_PKEY_up_ref(cpk->privatekey);
         }
+
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+        if (cert->dc_pkeys[i].dc) {
+            DC_up_ref(cert->dc_pkeys[i].dc);
+            ret->dc_pkeys[i].dc = cert->dc_pkeys[i].dc;
+        }
+
+        if (cert->dc_pkeys[i].privatekey) {
+            EVP_PKEY_up_ref(cert->dc_pkeys[i].privatekey);
+            ret->dc_pkeys[i].privatekey = cert->dc_pkeys[i].privatekey;
+        }
+#endif
 
         if (cpk->chain) {
             rpk->chain = X509_chain_up_ref(cpk->chain);
@@ -217,6 +230,12 @@ void ssl_cert_clear_certs(CERT *c)
         OPENSSL_free(cpk->serverinfo);
         cpk->serverinfo = NULL;
         cpk->serverinfo_length = 0;
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+        DC_free(c->dc_pkeys[i].dc);
+        c->dc_pkeys[i].dc = NULL;
+        EVP_PKEY_free(c->dc_pkeys[i].privatekey);
+        c->dc_pkeys[i].privatekey = NULL;
+#endif
     }
 }
 

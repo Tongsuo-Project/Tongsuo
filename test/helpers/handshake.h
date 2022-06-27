@@ -80,6 +80,10 @@ typedef struct handshake_result {
     /* check hello retry request */
     ssl_hrr_t client_hrr;
     ssl_hrr_t server_hrr;
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    int client_dc_usage;
+    int server_dc_usage;
+#endif
 } HANDSHAKE_RESULT;
 
 HANDSHAKE_RESULT *HANDSHAKE_RESULT_new(void);

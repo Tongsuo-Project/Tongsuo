@@ -54,6 +54,9 @@ ENDIF
 IF[{- !$disabled{'cmp'} -}]
   $OPENSSLSRC=$OPENSSLSRC cmp.c lib/cmp_mock_srv.c
 ENDIF
+IF[{- !$disabled{'delegated-credential'} -}]
+  $OPENSSLSRC=$OPENSSLSRC delecred.c
+ENDIF
 
 IF[{- !$disabled{apps} -}]
   PROGRAMS=openssl

@@ -27,6 +27,7 @@
 #include <openssl/trace.h>
 #include <openssl/core_names.h>
 #include <openssl/asn1t.h>
+#include <openssl/ssl.h>
 
 #define TICKET_NONCE_SIZE       8
 
@@ -3784,6 +3785,31 @@ MSG_PROCESS_RETURN tls_process_client_certificate(SSL *s, PACKET *pkt)
                      SSL_R_UNKNOWN_CERTIFICATE_TYPE);
             goto err;
         }
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+        X509 *peer_cert = sk_X509_value(sk, 0);
+
+        if (s->delegated_credential_tag & DC_HAS_BEEN_USED_FOR_VERIFY_PEER) {
+            if (!SSL_IS_TLS13(s)) {
+                SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER,
+                         SSL_R_UNKNOWN_CERTIFICATE_TYPE);
+                goto err;
+            }
+
+            if (!DC_check_valid(peer_cert, s->session->peer_dc)) {
+                SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER,
+                         SSL_R_CERTIFICATE_VERIFY_FAILED);
+                goto err;
+            }
+
+            if (SSL_verify_delegated_credential_signature(peer_cert,
+                                                          s->session->peer_dc,
+                                                          0) <= 0) {
+                SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER,
+                        SSL_R_CERTIFICATE_VERIFY_FAILED);
+                goto err;
+            }
+        }
+#endif
     }
 
     /*

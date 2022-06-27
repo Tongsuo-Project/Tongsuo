@@ -50,6 +50,10 @@ IF[{- !$disabled{quic} -}]
   SOURCE[../libssl]=ssl_quic.c statem/statem_quic.c
 ENDIF
 
+IF[{- !$disabled{'delegated-credential'} -}]
+  SOURCE[../libssl]=ssl_dc.c
+ENDIF
+
 DEFINE[../libssl]=$AESDEF
 
 SOURCE[../providers/libcommon.a]=record/tls_pad.c

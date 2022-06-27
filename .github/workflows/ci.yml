@@ -141,7 +141,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: config
-      run: ./config --banner=Configured --debug enable-asan enable-ubsan enable-rc5 enable-ec_nistp_64_gcc_128 enable-fips -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION && perl configdata.pm --dump
+      run: ./config --banner=Configured --debug enable-asan enable-ubsan enable-rc5 enable-ec_nistp_64_gcc_128 enable-fips enable-delegated-credential -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION && perl configdata.pm --dump
     - name: make
       run: make -s -j4
     - name: make test
@@ -164,7 +164,7 @@ jobs:
     - uses: actions/checkout@v2
     - name: config
       # --debug -O1 is to produce a debug build that runs in a reasonable amount of time
-      run: CC=clang ./config --banner=Configured --debug -O1 -fsanitize=memory -DOSSL_SANITIZE_MEMORY -fno-optimize-sibling-calls enable-rc5 enable-ec_nistp_64_gcc_128 enable-fips && perl configdata.pm --dump
+      run: CC=clang ./config --banner=Configured --debug -O1 -fsanitize=memory -DOSSL_SANITIZE_MEMORY -fno-optimize-sibling-calls enable-rc5 enable-ec_nistp_64_gcc_128 enable-fips enable-delegated-credential && perl configdata.pm --dump
     - name: make
       run: make -s -j4
     - name: make test
@@ -200,7 +200,7 @@ jobs:
     - name: modprobe tls
       run: sudo modprobe tls
     - name: config
-      run: ./config --banner=Configured --strict-warnings no-ec enable-ssl-trace enable-zlib enable-zlib-dynamic enable-crypto-mdebug enable-crypto-mdebug-backtrace enable-egd enable-ktls enable-fips enable-ntls enable-optimize-chacha-choose enable-status enable-crypto-mdebug-count enable-cert-compression && perl configdata.pm --dump
+      run: ./config --banner=Configured --strict-warnings no-ec enable-ssl-trace enable-zlib enable-zlib-dynamic enable-crypto-mdebug enable-crypto-mdebug-backtrace enable-egd enable-ktls enable-fips enable-ntls enable-optimize-chacha-choose enable-status enable-crypto-mdebug-count enable-cert-compression enable-delegated-credential && perl configdata.pm --dump
     - name: make
       run: make -s -j4
     - name: make test

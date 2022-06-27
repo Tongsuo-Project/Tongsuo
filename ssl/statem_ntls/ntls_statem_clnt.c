@@ -822,7 +822,7 @@ int tls_construct_client_hello_ntls(SSL *s, WPACKET *pkt)
             session_id = s->tmp_session_id;
             if (s->hello_retry_request == SSL_HRR_NONE
                     && RAND_bytes_ex(s->ctx->libctx, s->tmp_session_id,
-					                 sess_id_len, 0) <= 0) {
+                                     sess_id_len, 0) <= 0) {
                 SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
                 return 0;
             }
@@ -1948,8 +1948,8 @@ static int tls_construct_cke_pms_ntls(SSL *s, WPACKET *pkt, unsigned long alg_k)
     if (EVP_PKEY_encrypt(pctx, NULL, &enclen, pms, pmslen) <= 0
             || !WPACKET_sub_reserve_bytes_u16(pkt, enclen, &encbytes1)
             || EVP_PKEY_encrypt(pctx, encbytes1, &enclen, pms, pmslen) <= 0
-			|| !WPACKET_sub_allocate_bytes_u16(pkt, enclen, &encbytes2)
-			|| encbytes1 != encbytes2) {
+            || !WPACKET_sub_allocate_bytes_u16(pkt, enclen, &encbytes2)
+            || encbytes1 != encbytes2) {
         SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_R_BAD_RSA_ENCRYPT);
         goto err;
     }
