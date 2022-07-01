@@ -1527,7 +1527,7 @@ STACK_OF(SSL_CIPHER) *ssl_create_cipher_list(SSL_CTX *ctx,
 
     if (rule_str != NULL && strncmp(rule_str, "PROFILE=SYSTEM", 14) == 0) {
         char *p = rule_str + 14;
-    
+
         new_rules = load_system_str(p);
         rule_str = new_rules;
     }
@@ -2305,9 +2305,21 @@ int ssl_cipher_get_overhead(const SSL_CIPHER *c, size_t *mac_overhead,
 int ssl_cert_is_disabled(SSL_CTX *ctx, size_t idx)
 {
     const SSL_CERT_LOOKUP *cl = ssl_cert_lookup_by_idx(idx);
+    uint32_t amask;
 
-    if (cl == NULL || (cl->amask & ctx->disabled_auth_mask) != 0)
+    if (cl == NULL)
         return 1;
+
+    amask = cl->amask;
+
+#ifndef OPENSSL_NO_SM2
+    if (cl->nid == EVP_PKEY_EC && (ctx->disabled_auth_mask & SSL_aSM2) != 0)
+        amask &= ~SSL_aSM2;
+#endif
+
+    if ((amask & ctx->disabled_auth_mask) != 0)
+        return 1;
+
     return 0;
 }
 
@@ -2330,7 +2342,13 @@ const char *OSSL_default_ciphersuites(void)
 {
     return "TLS_AES_256_GCM_SHA384:"
            "TLS_CHACHA20_POLY1305_SHA256:"
-           "TLS_AES_128_GCM_SHA256";
+           "TLS_AES_128_GCM_SHA256"
+#if (!defined OPENSSL_NO_SM2) && (!defined OPENSSL_NO_SM3) \
+     && (!defined OPENSSL_NO_SM4)
+           ":TLS_SM4_GCM_SM3"
+           ":TLS_SM4_CCM_SM3"
+#endif
+           ;
 }
 
 unsigned long BABASSL_CIPHER_get_mkey(const SSL_CIPHER *c)

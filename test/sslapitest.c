@@ -7358,7 +7358,12 @@ static struct {
         "AES256-SHA:AES128-SHA256",
         NULL,
         "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:"
-        "TLS_AES_128_GCM_SHA256:AES256-SHA",
+        "TLS_AES_128_GCM_SHA256:"
+# if !defined(OPENSSL_NO_SM2) && !defined(OPENSSL_NO_SM3) \
+    && !defined(OPENSSL_NO_SM4)
+        "TLS_SM4_GCM_SM3:TLS_SM4_CCM_SM3:"
+# endif
+        "AES256-SHA",
         "TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256:AES256-SHA"
     },
 #endif

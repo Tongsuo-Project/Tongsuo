@@ -596,3 +596,7 @@ SSL_get_session_reused_type             596	3_0_3	EXIST::FUNCTION:SESSION_REUSED
 SSL_set_status_callback                 597	3_0_3	EXIST::FUNCTION:STATUS
 SSL_get_status_callback                 598	3_0_3	EXIST::FUNCTION:STATUS
 SSL_get_alert_level                     599	3_0_3	EXIST::FUNCTION:
+SSL_CTX_enable_sm_tls13_strict          600	3_0_3	EXIST::FUNCTION:SM2
+SSL_CTX_disable_sm_tls13_strict         601	3_0_3	EXIST::FUNCTION:SM2
+SSL_enable_sm_tls13_strict              602	3_0_3	EXIST::FUNCTION:SM2
+SSL_disable_sm_tls13_strict             603	3_0_3	EXIST::FUNCTION:SM2

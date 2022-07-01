@@ -351,6 +351,18 @@ static int check_cipher(HANDSHAKE_RESULT *result, SSL_TEST_CTX *test_ctx)
     if (!TEST_str_eq(test_ctx->expected_cipher,
                      result->cipher))
         return 0;
+
+    return 1;
+}
+
+static int check_hrr(HANDSHAKE_RESULT *result, SSL_TEST_CTX *test_ctx)
+{
+    if (test_ctx->expected_hrr == SSL_TEST_HRR_IGNORE)
+        return 1;
+    if (!TEST_int_eq(result->client_hrr, result->server_hrr))
+        return 0;
+    if (!TEST_int_eq(result->client_hrr, test_ctx->expected_hrr))
+        return 0;
     return 1;
 }
 
@@ -387,6 +399,7 @@ static int check_test(HANDSHAKE_RESULT *result, SSL_TEST_CTX *test_ctx)
         ret &= check_client_sign_hash(result, test_ctx);
         ret &= check_client_sign_type(result, test_ctx);
         ret &= check_client_ca_names(result, test_ctx);
+        ret &= check_hrr(result, test_ctx);
     }
     return ret;
 }

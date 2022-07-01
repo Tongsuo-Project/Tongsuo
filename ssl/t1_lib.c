@@ -701,6 +701,10 @@ int tls1_set_groups(uint16_t **pext, size_t *pextlen,
         unsigned long idmask;
         uint16_t id;
         id = tls1_nid2group_id(groups[i]);
+        if (ngroups == 1) {
+            glist[i] = id;
+            break;
+        }
         if ((id & 0x00FF) >= (sizeof(unsigned long) * 8))
             goto err;
         idmask = 1L << (id & 0x00FF);
@@ -1554,7 +1558,7 @@ int tls12_check_peer_sigalg(SSL *s, uint16_t sig, EVP_PKEY *pkey)
      */
     if (lu == NULL
         || (SSL_IS_TLS13(s) && (lu->hash == NID_sha1 || lu->hash == NID_sha224))
-        || (pkeyid != lu->sig
+        || (pkeyid != lu->sig && lu->sig != EVP_PKEY_SM2
         && (lu->sig != EVP_PKEY_RSA_PSS || pkeyid != EVP_PKEY_RSA))) {
         SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER, SSL_R_WRONG_SIGNATURE_TYPE);
         return 0;
@@ -2238,6 +2242,25 @@ int tls12_copy_sigalgs(SSL *s, WPACKET *pkt,
         if (lu == NULL
                 || !tls12_sigalg_allowed(s, SSL_SECOP_SIGALG_SUPPORTED, lu))
             continue;
+
+#ifndef OPENSSL_NO_SM2
+        /*
+         * RFC 8998 requires that
+         * if the server chooses TLS_SM4_GCM_SM3 or TLS_SM4_CCM_SM3,
+         * the only valid signature algorithm present in
+         * "signature_algorithms" extension MUST be "sm2sig_sm3".
+         */
+        if (SSL_IS_TLS13(s) && s->enable_sm_tls13_strict == 1 && s->server) {
+            const SSL_CIPHER *cipher = s->s3.tmp.new_cipher;
+
+            if (cipher != NULL &&
+                (cipher->id == TLS1_3_CK_SM4_GCM_SM3
+                    || cipher->id == TLS1_3_CK_SM4_CCM_SM3)) {
+                if (lu->sigalg != TLSEXT_SIGALG_sm2sig_sm3)
+                    continue;
+            }
+        }
+#endif
         if (!WPACKET_put_bytes_u16(pkt, *psig))
             return 0;
         /*

@@ -1287,6 +1287,45 @@ MSG_PROCESS_RETURN tls_process_server_certificate_ntls(SSL *s, PACKET *pkt)
         x = NULL;
     }
 
+# ifndef OPENSSL_NO_SM2
+    {
+        EVP_PKEY *pkey = NULL;
+        int n = sk_X509_num(s->session->peer_chain) - 1;
+
+        x = sk_X509_value(s->session->peer_chain, 0);
+        pkey = X509_get0_pubkey(x);
+
+        if (pkey != NULL && EVP_PKEY_is_sm2(pkey)) {
+            if (!EVP_PKEY_set_alias_type(pkey, EVP_PKEY_SM2)) {
+                SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+                goto err;
+            }
+
+            while (n >= 0) {
+                X509 *cert = sk_X509_value(s->session->peer_chain, n);
+                ASN1_OCTET_STRING *sm2_id;
+                sm2_id = ASN1_OCTET_STRING_new();
+
+                if (sm2_id == NULL) {
+                    SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+                    goto err;
+                }
+
+                if (!ASN1_OCTET_STRING_set(sm2_id,
+                                           (const unsigned char *)CERTVRIFY_SM2_ID,
+                                           CERTVRIFY_SM2_ID_LEN)) {
+                    SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+                    ASN1_OCTET_STRING_free(sm2_id);
+                    goto err;
+                }
+
+                X509_set0_sm2_id(cert, sm2_id);
+                n--;
+            }
+        }
+    }
+# endif
+
     return MSG_PROCESS_CONTINUE_PROCESSING;
 
  err:

@@ -23,6 +23,7 @@
 #include <openssl/rsa.h>
 #include <openssl/bn.h>
 #include <openssl/engine.h>
+#include <openssl/x509v3.h>
 #include <openssl/trace.h>
 #include <openssl/core_names.h>
 #include <openssl/param_build.h>
@@ -1665,6 +1666,26 @@ MSG_PROCESS_RETURN tls_process_server_hello(SSL *s, PACKET *pkt)
         goto err;
     }
 
+#ifndef OPENSSL_NO_SM2
+    /*
+     * To use the cipher suites TLS_SM4_GCM_SM3 and TLS_SM4_CCM_SM3,
+     * RFC 8998 demand that:
+     * For the key_share extension, a KeyShareEntry with SM2-related
+     * values MUST be added.
+     */
+    if (SSL_IS_TLS13(s) && s->enable_sm_tls13_strict == 1) {
+        const SSL_CIPHER *cipher = s->s3.tmp.new_cipher;
+
+        if (cipher->id == TLS1_3_CK_SM4_GCM_SM3
+            || cipher->id == TLS1_3_CK_SM4_CCM_SM3) {
+            if (s->s3.group_id != TLSEXT_curve_SM2) {
+                SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER, SSL_R_BAD_KEY_SHARE);
+                goto err;
+            }
+        }
+    }
+#endif
+
 #ifndef OPENSSL_NO_SCTP
     if (SSL_IS_DTLS(s) && s->hit) {
         unsigned char sctpauthkey[64];
@@ -1849,6 +1870,46 @@ MSG_PROCESS_RETURN tls_process_server_certificate(SSL *s, PACKET *pkt)
         }
         x = NULL;
     }
+
+#ifndef OPENSSL_NO_SM2
+    {
+        EVP_PKEY *pkey = NULL;
+        int n = sk_X509_num(s->session->peer_chain) - 1;
+
+        x = sk_X509_value(s->session->peer_chain, 0);
+        pkey = X509_get0_pubkey(x);
+
+        if (pkey != NULL && EVP_PKEY_is_sm2(pkey)) {
+            if (!EVP_PKEY_set_alias_type(pkey, EVP_PKEY_SM2)) {
+                SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+                goto err;
+            }
+
+            while (n >= 0) {
+                X509 *cert = sk_X509_value(s->session->peer_chain, n);
+                ASN1_OCTET_STRING *sm2_id;
+                sm2_id = ASN1_OCTET_STRING_new();
+
+                if (sm2_id == NULL) {
+                    SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+                    goto err;
+                }
+
+                if (!ASN1_OCTET_STRING_set(sm2_id,
+                                           (const unsigned char *)CERTVRIFY_SM2_ID,
+                                           CERTVRIFY_SM2_ID_LEN)) {
+                    SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+                    ASN1_OCTET_STRING_free(sm2_id);
+                    goto err;
+                }
+
+                X509_set0_sm2_id(cert, sm2_id);
+                n--;
+            }
+        }
+    }
+#endif
+
     return MSG_PROCESS_CONTINUE_PROCESSING;
 
  err:
@@ -1927,6 +1988,41 @@ WORK_STATE tls_post_process_server_certificate(SSL *s, WORK_STATE wst)
             return WORK_ERROR;
         }
     }
+
+#ifndef OPENSSL_NO_SM2
+    /*
+     * RFC 8998 requires that
+     * The public key in the certificate MUST be a valid SM2 public key.
+     * The signature algorithm used by the CA to sign the current
+     * certificate MUST be "sm2sig_sm3".
+     * The certificate MUST be capable of signing; e.g., the digitalSignature
+     * bit of X.509's Key Usage extension is set.
+     */
+    if (SSL_IS_TLS13(s) && s->enable_sm_tls13_strict == 1) {
+        const SSL_CIPHER *cipher = s->s3.tmp.new_cipher;
+
+        if (cipher->id == TLS1_3_CK_SM4_GCM_SM3
+            || cipher->id == TLS1_3_CK_SM4_CCM_SM3) {
+            if (EVP_PKEY_id(pkey) != EVP_PKEY_SM2) {
+                SSLfatal(s, SSL_AD_BAD_CERTIFICATE,
+                         SSL_R_WRONG_CERTIFICATE_TYPE);
+                return WORK_ERROR;
+            }
+
+            if (X509_get_signature_nid(x) != NID_SM2_with_SM3) {
+                SSLfatal(s, SSL_AD_BAD_CERTIFICATE,
+                         SSL_R_BAD_CERTIFICATE_SIGNATURE_TYPE);
+                return WORK_ERROR;
+            }
+
+            if ((X509_get_key_usage(x) & X509v3_KU_DIGITAL_SIGNATURE) == 0) {
+                SSLfatal(s, SSL_AD_BAD_CERTIFICATE,
+                         SSL_R_BAD_CERTIFICATE_USAGE);
+                return WORK_ERROR;
+            }
+        }
+    }
+#endif
 
     X509_free(s->session->peer);
     X509_up_ref(x);
@@ -2386,6 +2482,39 @@ MSG_PROCESS_RETURN tls_process_certificate_request(SSL *s, PACKET *pkt)
             return MSG_PROCESS_ERROR;
         }
         OPENSSL_free(rawexts);
+#ifndef OPENSSL_NO_SM2
+        /*
+         * RFC 8998 requires that
+         * if the server chooses TLS_SM4_GCM_SM3 or TLS_SM4_CCM_SM3,
+         * the only valid signature algorithm present in
+         * "signature_algorithms" extension MUST be "sm2sig_sm3".
+         */
+        if (s->enable_sm_tls13_strict == 1) {
+            const SSL_CIPHER *cipher = s->s3.tmp.new_cipher;
+
+            if (cipher->id == TLS1_3_CK_SM4_GCM_SM3
+                || cipher->id == TLS1_3_CK_SM4_CCM_SM3) {
+
+                if (s->s3.tmp.peer_sigalgslen > 0
+                    && (s->s3.tmp.peer_sigalgslen != 1
+                    || s->s3.tmp.peer_sigalgs[0] != TLSEXT_SIGALG_sm2sig_sm3))
+                {
+                    SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER,
+                             SSL_R_NO_SUITABLE_SIGNATURE_ALGORITHM);
+                    return MSG_PROCESS_ERROR;
+                }
+
+                if (s->s3.tmp.peer_cert_sigalgslen > 0
+                    && (s->s3.tmp.peer_cert_sigalgslen != 1
+                        || s->s3.tmp.peer_cert_sigalgs[0] != TLSEXT_SIGALG_sm2sig_sm3))
+                {
+                    SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER,
+                             SSL_R_NO_SUITABLE_SIGNATURE_ALGORITHM);
+                    return MSG_PROCESS_ERROR;
+                }
+            }
+        }
+#endif
         if (!tls1_process_sigalgs(s)) {
             SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_R_BAD_LENGTH);
             return MSG_PROCESS_ERROR;

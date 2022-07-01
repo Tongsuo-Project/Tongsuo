@@ -715,6 +715,9 @@ typedef enum OPTION_choice {
     OPT_ENABLE_NTLS, OPT_ENC_CERTFORM, OPT_SIGN_CERTFORM,
     OPT_ENC_KEYFORM, OPT_SIGN_KEYFORM,
 #endif
+#ifndef OPENSSL_NO_SM2
+    OPT_ENABLE_SM_TLS13_STRICT,
+#endif
     OPT_DTLS1_2, OPT_SCTP, OPT_TIMEOUT, OPT_MTU, OPT_LISTEN, OPT_STATELESS,
     OPT_ID_PREFIX, OPT_SERVERNAME, OPT_SERVERNAME_FATAL,
     OPT_CERT2, OPT_KEY2, OPT_NEXTPROTONEG, OPT_ALPN, OPT_SENDFILE,
@@ -956,6 +959,9 @@ const OPTIONS s_server_options[] = {
     {"ntls", OPT_NTLS, '-', "Just talk NTLS"},
     {"enable_ntls", OPT_ENABLE_NTLS, '-', "enable ntls"},
 #endif
+#ifndef OPENSSL_NO_SM2
+    {"enable_sm_tls13_strict", OPT_ENABLE_SM_TLS13_STRICT, '-', "enable sm tls13 strict"},
+#endif
 #ifndef OPENSSL_NO_DTLS
     {"dtls", OPT_DTLS, '-', "Use any DTLS version"},
     {"listen", OPT_LISTEN, '-',
@@ -1087,6 +1093,9 @@ int s_server_main(int argc, char *argv[])
     int s_enc_key_format = FORMAT_PEM;
     int s_sign_key_format = FORMAT_PEM;
     int enable_ntls = 0;
+#endif
+#ifndef OPENSSL_NO_SM2
+    int enable_sm_tls13_strict = 0;
 #endif
 #ifndef OPENSSL_NO_OCSP
     int s_tlsextstatus = 0;
@@ -1602,6 +1611,11 @@ int s_server_main(int argc, char *argv[])
             enable_ntls = 1;
             break;
 #endif
+#ifndef OPENSSL_NO_SM2
+        case OPT_ENABLE_SM_TLS13_STRICT:
+            enable_sm_tls13_strict = 1;
+            break;
+#endif
         case OPT_SCTP:
 #ifndef OPENSSL_NO_SCTP
             protocol = IPPROTO_SCTP;
@@ -1992,6 +2006,11 @@ skip:
 #ifndef OPENSSL_NO_NTLS
     if (enable_ntls)
         SSL_CTX_enable_ntls(ctx);
+#endif
+
+#ifndef OPENSSL_NO_SM2
+    if (enable_sm_tls13_strict)
+        SSL_CTX_enable_sm_tls13_strict(ctx);
 #endif
 
     SSL_CTX_clear_mode(ctx, SSL_MODE_AUTO_RETRY);

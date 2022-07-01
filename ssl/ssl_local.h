@@ -41,6 +41,9 @@
 #  define OPENSSL_EXTERN OPENSSL_EXPORT
 # endif
 
+# define SM2_DEFAULT_ID "1234567812345678"
+# define SM2_DEFAULT_ID_LEN (sizeof(SM2_DEFAULT_ID) - 1)
+
 # define c2l(c,l)        (l = ((unsigned long)(*((c)++)))     , \
                          l|=(((unsigned long)(*((c)++)))<< 8), \
                          l|=(((unsigned long)(*((c)++)))<<16), \
@@ -1251,6 +1254,14 @@ struct ssl_ctx_st {
     int enable_ntls;
 #endif
 
+#ifndef OPENSSL_NO_SM2
+    /*
+     * tag of determining whether we should strict follow RFC 8998,
+     * when this tag set to 1, we will reject "TLS_SM4_GCM_SM3" and "TLS_SM4_CCM_SM3"
+     * without sm2 cert at server. This tag set to 0 default
+     */
+    int enable_sm_tls13_strict;
+#endif
 #ifndef OPENSSL_NO_QUIC
     const SSL_QUIC_METHOD *quic_method;
 #endif
@@ -1915,6 +1926,15 @@ struct ssl_st {
 # ifndef OPENSSL_NO_STATUS
     int (*status_callback)(unsigned char *p, unsigned int length, SSL_status* param);
     SSL_status  status_param;
+# endif
+
+# ifndef OPENSSL_NO_SM2
+    /*
+     * tag of determining whether we should strict follow RFC 8998,
+     * when this tag set to 1, we will reject "TLS_SM4_GCM_SM3" and "TLS_SM4_CCM_SM3"
+     * without sm2 cert at server. This tag set to 0 default
+     */
+    int enable_sm_tls13_strict;
 # endif
 };
 

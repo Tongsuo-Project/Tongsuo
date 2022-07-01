@@ -34,7 +34,7 @@ map { s/\^// } @conf_files if $^O eq "VMS";
 
 # We hard-code the number of tests to double-check that the globbing above
 # finds all files as expected.
-plan tests => 34;
+plan tests => 35;
 
 # Some test results depend on the configuration of enabled protocols. We only
 # verify generated sources in the default configuration.
@@ -118,6 +118,8 @@ my %skip = (
   "25-cipher.cnf" => disabled("ec") || disabled("tls1_2"),
   "26-tls13_client_auth.cnf" => disabled("tls1_3") || ($no_ec && $no_dh),
   "29-dtls-sctp-label-bug.cnf" => disabled("sctp") || disabled("sock"),
+  "30-tls13-sm.cnf" => disabled("sm2") || disabled("sm3") || disabled("sm4")
+                        || disabled("tls1_3") || !$no_fips,
   "31-ntls.cnf" => disabled("ntls") || disabled("sm2") || disabled("sm3")
                     || disabled("sm4") || !$no_fips,
   "39-ntls-sni-ticket.cnf" => disabled("ntls") || disabled("sm2")
