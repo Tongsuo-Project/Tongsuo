@@ -356,11 +356,4 @@ EVP_PKEY *app_paramgen(EVP_PKEY_CTX *ctx, const char *alg);
 int build_vfyopt_compat_string(int option, char **ret, const char *value);
 int build_sigopt_compat_string(char **ret, const char *value);
 
-# if defined(OPENSSL_SYS_WINDOWS)
-#  define strcasecmp _stricmp
-#  define strncasecmp _strnicmp
-# else
-#  include <strings.h>
-# endif
-
 #endif
