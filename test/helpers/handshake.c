@@ -13,6 +13,7 @@
 #include <openssl/x509_vfy.h>
 #include <openssl/ssl.h>
 #include <openssl/core_names.h>
+#include <openssl/err.h>
 
 #include "../../ssl/ssl_local.h"
 #include "internal/sockets.h"
@@ -1707,6 +1708,16 @@ static HANDSHAKE_RESULT *do_handshake_internal(
 
     ret->server_cert_type = peer_pkey_type(client.ssl);
     ret->client_cert_type = peer_pkey_type(server.ssl);
+
+    if (client.ssl->hello_retry_request != SSL_HRR_NONE)
+        ret->client_hrr = SSL_TEST_HRR_YES;
+    else
+        ret->client_hrr = SSL_TEST_HRR_NO;
+
+    if (server.ssl->hello_retry_request != SSL_HRR_NONE)
+        ret->server_hrr = SSL_TEST_HRR_YES;
+    else
+        ret->server_hrr = SSL_TEST_HRR_NO;
 
     ctx_data_free_data(&server_ctx_data);
     ctx_data_free_data(&server2_ctx_data);

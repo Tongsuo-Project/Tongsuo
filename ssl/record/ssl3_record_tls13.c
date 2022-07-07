@@ -101,6 +101,12 @@ int tls13_enc(SSL *s, SSL3_RECORD *recs, size_t n_recs, int sending,
         taglen = EVP_GCM_TLS_TAG_LEN;
     } else if (alg_enc & SSL_CHACHA20) {
         taglen = EVP_CHACHAPOLY_TLS_TAG_LEN;
+#ifndef OPENSSL_NO_SM4
+    } else if (alg_enc & SSL_SM4GCM) {
+        taglen = EVP_GCM_TLS_TAG_LEN;
+    } else if (alg_enc & SSL_SM4CCM) {
+        taglen = EVP_CCM_TLS_TAG_LEN;
+#endif
     } else {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
         return 0;
@@ -163,7 +169,7 @@ int tls13_enc(SSL *s, SSL3_RECORD *recs, size_t n_recs, int sending,
      * For CCM we must explicitly set the total plaintext length before we add
      * any AAD.
      */
-    if (((alg_enc & SSL_AESCCM) != 0
+    if (((alg_enc & SSL_AESCCM || alg_enc & SSL_SM4CCM) != 0
                  && EVP_CipherUpdate(ctx, NULL, &lenu, NULL,
                                      (unsigned int)rec->length) <= 0)
             || EVP_CipherUpdate(ctx, NULL, &lenu, recheader,

@@ -93,6 +93,12 @@ typedef enum {
     SSL_TEST_CERT_STATUS_BAD_RESPONSE
 } ssl_cert_status_t;
 
+typedef enum {
+    SSL_TEST_HRR_IGNORE = 0, /* Default */
+    SSL_TEST_HRR_YES,
+    SSL_TEST_HRR_NO
+} ssl_hrr_t;
+
 /*
  * Server/client settings that aren't supported by the SSL CONF library,
  * such as callbacks.
@@ -231,6 +237,8 @@ typedef struct {
     char *expected_session_ticket_app_data;
 
     OSSL_LIB_CTX *libctx;
+    /* Whether to send hello retry request */
+    ssl_hrr_t expected_hrr;
 } SSL_TEST_CTX;
 
 const char *ssl_test_result_name(ssl_test_result_t result);

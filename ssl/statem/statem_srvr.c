@@ -1816,6 +1816,24 @@ static int tls_early_post_process_client_hello(SSL *s)
             goto err;
         }
         s->s3.tmp.new_cipher = cipher;
+#ifndef OPENSSL_NO_SM2
+        /*
+         * According to RFC 8998, if server chooses TLS_SM4_GCM_SM3 or
+         * TLS_SM4_CCM_SM3, the named group must be curveSM2.
+         */
+        if (s->enable_sm_tls13_strict == 1
+            && (cipher->id == TLS1_3_CK_SM4_GCM_SM3
+                || cipher->id == TLS1_3_CK_SM4_CCM_SM3)) {
+            int sm2_group = NID_sm2;
+
+            if (!tls1_set_groups(&s->ext.supportedgroups,
+                                 &s->ext.supportedgroups_len,
+                                 &sm2_group, 1)) {
+                SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+                goto err;
+            }
+        }
+#endif
     }
 
     /* We need to do this before getting the session */
@@ -1947,6 +1965,55 @@ static int tls_early_post_process_client_hello(SSL *s)
         goto err;
     }
 
+#ifndef OPENSSL_NO_SM2
+    /*
+     * To use the cipher suites TLS_SM4_GCM_SM3 and TLS_SM4_CCM_SM3,
+     * RFC 8998 demand that:
+     * The certificate must be a SM2 cert;
+     * For the signature_algorithms extension, "sm2sig_sm3" MUST be included.
+     * For the signature_algorithms_cert extension (if present), "sm2sig_sm3"
+     * MUST be included.
+     * For the key_share extension, a KeyShareEntry for the "curveSM2"
+     * group MUST be included.
+     */
+    if (SSL_IS_TLS13(s) && s->enable_sm_tls13_strict == 1) {
+        const SSL_CIPHER *cipher = s->s3.tmp.new_cipher;
+
+        if (cipher->id == TLS1_3_CK_SM4_GCM_SM3
+            || cipher->id == TLS1_3_CK_SM4_CCM_SM3) {
+            uint16_t *peer_sig = s->s3.tmp.peer_sigalgs;
+            size_t idx;
+
+            for (idx = 0; idx < s->s3.tmp.peer_sigalgslen; idx++) {
+                if (peer_sig[idx] == TLSEXT_SIGALG_sm2sig_sm3)
+                    break;
+            }
+
+            if (s->s3.tmp.peer_sigalgslen > 0
+                && idx >= s->s3.tmp.peer_sigalgslen) {
+                SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER, SSL_R_BAD_VALUE);
+                goto err;
+            }
+
+            peer_sig = s->s3.tmp.peer_cert_sigalgs;
+            for (idx = 0; idx < s->s3.tmp.peer_cert_sigalgslen; idx++) {
+                if (peer_sig[idx] == TLSEXT_SIGALG_sm2sig_sm3)
+                    break;
+            }
+
+            if (s->s3.tmp.peer_cert_sigalgslen > 0
+                && idx >= s->s3.tmp.peer_cert_sigalgslen) {
+                SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER, SSL_R_BAD_VALUE);
+                goto err;
+            }
+
+            if (s->s3.group_id != TLSEXT_curve_SM2) {
+                SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER, SSL_R_BAD_KEY_SHARE);
+                goto err;
+            }
+        }
+    }
+#endif
     /*
      * Check if we want to use external pre-shared secret for this handshake
      * for not reused session only. We need to generate server_random before

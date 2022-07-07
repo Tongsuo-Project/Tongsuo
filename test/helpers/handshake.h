@@ -77,6 +77,9 @@ typedef struct handshake_result {
     char *cipher;
     /* session ticket application data */
     char *result_session_ticket_app_data;
+    /* check hello retry request */
+    ssl_hrr_t client_hrr;
+    ssl_hrr_t server_hrr;
 } HANDSHAKE_RESULT;
 
 HANDSHAKE_RESULT *HANDSHAKE_RESULT_new(void);

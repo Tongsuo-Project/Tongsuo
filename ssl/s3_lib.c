@@ -112,7 +112,42 @@ static SSL_CIPHER tls13_ciphers[] = {
         SSL_HANDSHAKE_MAC_SHA256,
         128,
         128,
+    },
+#if (!defined OPENSSL_NO_SM2) && (!defined OPENSSL_NO_SM3) \
+    && (!defined OPENSSL_NO_SM4)
+ /* Cipher 0x00C6 and 0x00C7, Reference to RFC 8998 */
+       {
+        1,
+        TLS1_3_RFC_SM4_GCM_SM3,
+        TLS1_3_RFC_SM4_GCM_SM3,
+        TLS1_3_CK_SM4_GCM_SM3,
+        SSL_kANY,
+        SSL_aANY,
+        SSL_SM4GCM,
+        SSL_AEAD,
+        TLS1_3_VERSION,TLS1_3_VERSION,
+        0, 0,
+        SSL_HIGH,
+        SSL_HANDSHAKE_MAC_SM3 | TLS1_PRF_SM3,
+        128,
+        128,
+    }, {
+        1,
+        TLS1_3_RFC_SM4_CCM_SM3,
+        TLS1_3_RFC_SM4_CCM_SM3,
+        TLS1_3_CK_SM4_CCM_SM3,
+        SSL_kANY,
+        SSL_aANY,
+        SSL_SM4CCM,
+        SSL_AEAD,
+        TLS1_3_VERSION,TLS1_3_VERSION,
+        0, 0,
+        SSL_HIGH,
+        SSL_HANDSHAKE_MAC_SM3 | TLS1_PRF_SM3,
+        128,
+        128,
     }
+#endif
 };
 
 /*
@@ -3624,6 +3659,21 @@ retry:
             c->algorithm_enc == SSL_CHACHA20POLY1305 && use_chacha == 0)
             continue;
 #endif
+
+#ifndef OPENSSL_NO_SM2
+        /*
+         * RFC 8998 demand that server can use
+         * "TLS_SM4_GCM_SM3" and "TLS_SM4_CCM_SM3" with sm2 cert only
+         */
+        if (s->enable_sm_tls13_strict) {
+            if (c->id == TLS1_3_CK_SM4_GCM_SM3
+                || c->id == TLS1_3_CK_SM4_CCM_SM3) {
+                if (!ssl_has_cert(s, SSL_PKEY_SM2))
+                    continue;
+            }
+        }
+#endif
+
         /*
          * Since TLS 1.3 ciphersuites can be used with any auth or
          * key exchange scheme skip tests.
@@ -4092,8 +4142,12 @@ EVP_PKEY *ssl_generate_pkey_group(SSL *s, uint16_t id)
         goto err;
     }
 
-    pctx = EVP_PKEY_CTX_new_from_name(s->ctx->libctx, ginf->algorithm,
-                                      s->ctx->propq);
+    if (!SSL_is_server(s) && id == TLSEXT_curve_SM2)
+        pctx = EVP_PKEY_CTX_new_from_name(s->ctx->libctx, "EC",
+                                          s->ctx->propq);
+    else
+        pctx = EVP_PKEY_CTX_new_from_name(s->ctx->libctx, ginf->algorithm,
+                                          s->ctx->propq);
 
     if (pctx == NULL) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
@@ -4130,8 +4184,12 @@ EVP_PKEY *ssl_generate_param_group(SSL *s, uint16_t id)
     if (ginf == NULL)
         goto err;
 
-    pctx = EVP_PKEY_CTX_new_from_name(s->ctx->libctx, ginf->algorithm,
-                                      s->ctx->propq);
+    if (SSL_IS_TLS13(s) && id == TLSEXT_curve_SM2)
+        pctx = EVP_PKEY_CTX_new_from_name(s->ctx->libctx, "EC",
+                                          s->ctx->propq);
+    else
+        pctx = EVP_PKEY_CTX_new_from_name(s->ctx->libctx, ginf->algorithm,
+                                          s->ctx->propq);
 
     if (pctx == NULL)
         goto err;
@@ -4183,7 +4241,7 @@ int ssl_derive(SSL *s, EVP_PKEY *privkey, EVP_PKEY *pubkey, int gensecret)
     int rv = 0;
     unsigned char *pms = NULL;
     size_t pmslen = 0;
-    EVP_PKEY_CTX *pctx;
+    EVP_PKEY_CTX *pctx = NULL;
 
     if (privkey == NULL || pubkey == NULL) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);

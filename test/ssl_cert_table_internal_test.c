@@ -46,7 +46,11 @@ static int test_ssl_cert_table(void)
     return TEST_size_t_eq(OSSL_NELEM(ssl_cert_info), SSL_PKEY_NUM)
            && test_cert_table(EVP_PKEY_RSA, SSL_aRSA, SSL_PKEY_RSA)
            && test_cert_table(EVP_PKEY_DSA, SSL_aDSS, SSL_PKEY_DSA_SIGN)
+#ifndef OPENSSL_NO_SM2
+           && test_cert_table(EVP_PKEY_EC, SSL_aECDSA | SSL_aSM2, SSL_PKEY_ECC)
+#else
            && test_cert_table(EVP_PKEY_EC, SSL_aECDSA, SSL_PKEY_ECC)
+#endif
            && test_cert_table(NID_id_GostR3410_2001, SSL_aGOST01,
                               SSL_PKEY_GOST01)
            && test_cert_table(NID_id_GostR3410_2012_256, SSL_aGOST12,

@@ -188,6 +188,34 @@ int ASN1_item_verify_ctx(const ASN1_ITEM *it, const X509_ALGOR *alg,
                 }
             }
 
+#ifndef OPENSSL_NO_SM2
+            if (pknid == NID_sm2) {
+                EVP_PKEY_CTX *pctx = NULL, *opctx = EVP_MD_CTX_get_pkey_ctx(ctx);
+
+                if (pknid == NID_sm2 && !EVP_PKEY_set_alias_type(pkey, EVP_PKEY_SM2)) {
+                    ERR_raise(ERR_LIB_ASN1, ERR_R_INTERNAL_ERROR);
+                    goto err;
+                }
+
+                pctx = EVP_PKEY_CTX_new_from_pkey(opctx->libctx, pkey,
+                                                  opctx->propquery);
+                if (pctx == NULL) {
+                    ERR_raise(ERR_LIB_ASN1, ERR_R_EVP_LIB);
+                    goto err;
+                }
+
+                if (EVP_PKEY_CTX_set1_id(pctx,
+                                         opctx->cached_parameters.dist_id,
+                                         opctx->cached_parameters.dist_id_len) != 1) {
+                    ERR_raise(ERR_LIB_ASN1, ERR_R_EVP_LIB);
+                    goto err;
+                }
+
+                EVP_PKEY_CTX_free(opctx);
+                EVP_MD_CTX_set_pkey_ctx(ctx, pctx);
+            }
+#endif
+
             /*
              * Note that some algorithms (notably Ed25519 and Ed448) may allow
              * a NULL digest value.

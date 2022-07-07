@@ -452,6 +452,9 @@ typedef enum OPTION_choice {
 #ifndef OPENSSL_NO_NTLS
     OPT_NTLS, OPT_ENABLE_NTLS,
 #endif
+#ifndef OPENSSL_NO_SM2
+    OPT_ENABLE_SM_TLS13_STRICT,
+#endif
     OPT_DTLS1_2, OPT_SCTP, OPT_TIMEOUT, OPT_MTU, OPT_KEYFORM, OPT_PASS,
     OPT_CERT_CHAIN, OPT_KEY, OPT_RECONNECT, OPT_BUILD_CHAIN,
     OPT_NEXTPROTONEG, OPT_ALPN,
@@ -651,6 +654,9 @@ const OPTIONS s_client_options[] = {
     {"ntls", OPT_NTLS, '-', "Just use NTLS"},
     {"enable_ntls", OPT_ENABLE_NTLS, '-', "enable ntls"},
 #endif
+#ifndef OPENSSL_NO_SM2
+    {"enable_sm_tls13_strict", OPT_ENABLE_SM_TLS13_STRICT, '-', "enable sm tls13 strict"},
+#endif
 #ifndef OPENSSL_NO_DTLS
     {"dtls", OPT_DTLS, '-', "Use any version of DTLS"},
     {"timeout", OPT_TIMEOUT, '-',
@@ -844,6 +850,9 @@ int s_client_main(int argc, char **argv)
     char *enc_cert_file = NULL, *enc_key_file = NULL;
     char *sign_cert_file = NULL, *sign_key_file = NULL;
     int enable_ntls = 0;
+#endif
+#ifndef OPENSSL_NO_SM2
+    int enable_sm_tls13_strict = 0;
 #endif
     char *chCApath = NULL, *chCAfile = NULL, *chCAstore = NULL, *host = NULL;
     char *thost = NULL, *tport = NULL;
@@ -1300,6 +1309,11 @@ int s_client_main(int argc, char **argv)
             break;
         case OPT_ENABLE_NTLS:
             enable_ntls = 1;
+            break;
+#endif
+#ifndef OPENSSL_NO_SM2
+        case OPT_ENABLE_SM_TLS13_STRICT:
+            enable_sm_tls13_strict = 1;
             break;
 #endif
         case OPT_DTLS:
@@ -1804,6 +1818,11 @@ int s_client_main(int argc, char **argv)
     if (enable_ntls) {
         SSL_CTX_enable_ntls(ctx);
     }
+#endif
+
+#ifndef OPENSSL_NO_SM2
+    if (enable_sm_tls13_strict)
+        SSL_CTX_enable_sm_tls13_strict(ctx);
 #endif
 
     SSL_CTX_clear_mode(ctx, SSL_MODE_AUTO_RETRY);

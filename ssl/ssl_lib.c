@@ -714,6 +714,9 @@ SSL *SSL_new(SSL_CTX *ctx)
 #ifndef OPENSSL_NO_NTLS
     s->enable_ntls = ctx->enable_ntls;
 #endif
+#ifndef OPENSSL_NO_SM2
+    s->enable_sm_tls13_strict = ctx->enable_sm_tls13_strict;
+#endif
     /* Shallow copy of the ciphersuites stack */
     s->tls13_ciphersuites = sk_SSL_CIPHER_dup(ctx->tls13_ciphersuites);
     if (s->tls13_ciphersuites == NULL)
@@ -3286,6 +3289,9 @@ SSL_CTX *SSL_CTX_new_ex(OSSL_LIB_CTX *libctx, const char *propq,
 
 #ifndef OPENSSL_NO_NTLS
     ret->enable_ntls = 0;
+#endif
+#ifndef OPENSSL_NO_SM2
+    ret->enable_sm_tls13_strict = 0;
 #endif
     ret->method = meth;
     ret->min_proto_version = 0;
@@ -6552,5 +6558,27 @@ int (*SSL_get_status_callback(const SSL *s))(unsigned char *p,
                                              unsigned int length, SSL_status *param)
 {
     return s->status_callback;
+}
+#endif
+
+#ifndef OPENSSL_NO_SM2
+void SSL_CTX_enable_sm_tls13_strict(SSL_CTX *ctx)
+{
+    ctx->enable_sm_tls13_strict = 1;
+}
+
+void SSL_CTX_disable_sm_tls13_strict(SSL_CTX *ctx)
+{
+    ctx->enable_sm_tls13_strict = 0;
+}
+
+void SSL_enable_sm_tls13_strict(SSL *s)
+{
+    s->enable_sm_tls13_strict = 1;
+}
+
+void SSL_disable_sm_tls13_strict(SSL *s)
+{
+    s->enable_sm_tls13_strict = 0;
 }
 #endif

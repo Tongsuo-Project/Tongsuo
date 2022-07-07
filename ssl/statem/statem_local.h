@@ -37,6 +37,17 @@
 /* Dummy message type */
 #define SSL3_MT_DUMMY   -1
 
+#ifndef OPENSSL_NO_SM2
+/*
+ * standard handshake sm2-id and cert verify id is defined in RFC 8998
+ */
+# define HANDSHAKE_SM2_ID "TLSv1.3+GM+Cipher+Suite"
+# define HANDSHAKE_SM2_ID_LEN sizeof(HANDSHAKE_SM2_ID) - 1
+# define CERTVRIFY_SM2_ID "1234567812345678"
+# define CERTVRIFY_SM2_ID_LEN sizeof(CERTVRIFY_SM2_ID) - 1
+
+#endif
+
 extern const unsigned char hrrrandom[];
 
 /* Message processing return codes */

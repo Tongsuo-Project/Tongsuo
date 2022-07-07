@@ -69,6 +69,11 @@ static const uint32_t default_ciphers_in_order[] = {
     TLS1_3_CK_CHACHA20_POLY1305_SHA256,
 # endif
     TLS1_3_CK_AES_128_GCM_SHA256,
+# if (!defined OPENSSL_NO_SM2) && (!defined OPENSSL_NO_SM3) \
+     && (!defined OPENSSL_NO_SM4)
+    TLS1_3_CK_SM4_GCM_SM3,
+    TLS1_3_CK_SM4_CCM_SM3,
+# endif
 #endif
 #ifndef OPENSSL_NO_TLS1_2
 # ifndef OPENSSL_NO_EC
@@ -161,6 +166,11 @@ static int test_default_cipherlist(SSL_CTX *ctx)
 
     num_expected_ciphers = OSSL_NELEM(default_ciphers_in_order);
     num_ciphers = sk_SSL_CIPHER_num(ciphers);
+    for (i = 0; i < num_ciphers; i++) {
+        expected_cipher_id = default_ciphers_in_order[i];
+        cipher_id = SSL_CIPHER_get_id(sk_SSL_CIPHER_value(ciphers, i));
+        fprintf(stderr, "%x <-> %x\n", cipher_id, expected_cipher_id);
+    }
     if (!TEST_int_eq(num_ciphers, num_expected_ciphers))
         goto err;
 

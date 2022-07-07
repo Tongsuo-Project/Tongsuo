@@ -766,6 +766,24 @@ static int cmd_Enable_ntls(SSL_CONF_CTX *cctx, const char *value)
     return 1;
 }
 #endif
+
+#ifndef OPENSSL_NO_SM2
+static int cmd_Enable_sm_tls13_strict(SSL_CONF_CTX *cctx, const char *value)
+{
+    if (strcmp(value, "on") == 0) {
+        if (cctx->ctx)
+            SSL_CTX_enable_sm_tls13_strict(cctx->ctx);
+        if (cctx->ssl)
+            SSL_enable_sm_tls13_strict(cctx->ssl);
+    } else {
+        if (cctx->ctx)
+            SSL_CTX_disable_sm_tls13_strict(cctx->ctx);
+        if (cctx->ssl)
+            SSL_disable_sm_tls13_strict(cctx->ssl);
+    }
+    return 1;
+}
+#endif
 typedef struct {
     int (*cmd) (SSL_CONF_CTX *cctx, const char *value);
     const char *str_file;
@@ -876,6 +894,9 @@ static const ssl_conf_cmd_tbl ssl_conf_cmds[] = {
                  SSL_CONF_TYPE_FILE),
     SSL_CONF_CMD(SignPrivateKey, "sign_key", SSL_CONF_FLAG_CERTIFICATE,
                  SSL_CONF_TYPE_FILE),
+#endif
+#ifndef OPENSSL_NO_SM2
+    SSL_CONF_CMD_STRING(Enable_sm_tls13_strict, "Enable_sm_tls13_strict", 0),
 #endif
 };
 
