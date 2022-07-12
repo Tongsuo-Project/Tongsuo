@@ -17,9 +17,21 @@ extern "C" {
 #endif
 
 /* Avoid name clashes with other applications */
+# ifdef os_toascii
+#  undef os_toascii
+# endif
 # define os_toascii   _openssl_os_toascii
+# ifdef os_toebcdic
+#  undef os_toebcdic
+# endif
 # define os_toebcdic  _openssl_os_toebcdic
+# ifdef ebcdic2ascii
+#  undef ebcdic2ascii
+# endif
 # define ebcdic2ascii _openssl_ebcdic2ascii
+# ifdef ascii2ebcdic
+#  undef ascii2ebcdic
+# endif
 # define ascii2ebcdic _openssl_ascii2ebcdic
 
 extern const unsigned char os_toascii[256];

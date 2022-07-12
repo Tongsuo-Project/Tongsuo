@@ -63,8 +63,12 @@
 
 use strict;
 
+use lib ".";
+use configdata;
+
 my $flavour = shift;
 my $output  = shift;
+my $symbol_prefix = $config{symbol_prefix};
 if ($flavour =~ /\./) { $output = $flavour; undef $flavour; }
 
 open STDOUT,">$output" || die "can't open $output: $!"
@@ -763,8 +767,8 @@ my %globals;
 
 	    SWITCH: for ($dir) {
 		/\.global|\.globl|\.extern/
-			    && do { $globals{$$line} = $prefix . $$line;
-				    $$line = $globals{$$line} if ($prefix);
+			    && do { $globals{$$line} = $prefix . $symbol_prefix . $$line;
+				    $$line = $globals{$$line} if ($prefix or $symbol_prefix);
 				    last;
 				  };
 		/\.type/    && do { my ($sym,$type,$narg) = split(',',$$line);
@@ -781,6 +785,7 @@ my %globals;
 				    }
 				    $$line =~ s/\@abi\-omnipotent/\@function/;
 				    $$line =~ s/\@function.*/\@function/;
+				    $$line =~ s/$sym/$symbol_prefix$sym/g if defined($globals{$sym});
 				    last;
 				  };
 		/\.asciz/   && do { if ($$line =~ /^"(.*)"$/) {
@@ -792,6 +797,24 @@ my %globals;
 		/\.rva|\.long|\.quad/
 			    && do { $$line =~ s/([_a-z][_a-z0-9]*)/$globals{$1} or $1/gei;
 				    $$line =~ s/\.L/$decor/g;
+				    last;
+				  };
+		/\.size/   && do {
+				    if ($$line =~ /^(\S+),\s*\.\-(\S+)$/) {
+					    my $sym = $symbol_prefix . $1;
+					    $$line =~ s/$1/$sym/g if defined($globals{$1});
+				    }
+				    last;
+				  };
+		/\.comm/   && do {
+				    if ($$line =~ /^(\S+),\d+,\d+$/) {
+					    my $sym = $symbol_prefix . $1;
+					    $$line =~ s/$1/$sym/g;
+				    }
+				    last;
+				  };
+		/\.hidden/   && do {
+				    $$line = $symbol_prefix . $$line;
 				    last;
 				  };
 	    }

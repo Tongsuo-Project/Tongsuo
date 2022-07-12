@@ -255,6 +255,49 @@ typedef struct ASN1_VALUE_st ASN1_VALUE;
         int fname##_print_ctx(BIO *out, stname *x, int indent, \
                                          const ASN1_PCTX *pctx);
 
+/* Declare ASN1 functions with static limit: the implement macro in in asn1t.h */
+
+# define DECLARE_STATIC_ASN1_FUNCTIONS(type) DECLARE_ASN1_FUNCTIONS_pname(static, type, type)
+
+# define DECLARE_STATIC_ASN1_ALLOC_FUNCTIONS(type) \
+        DECLARE_ASN1_ALLOC_FUNCTIONS_pname(static, type, type)
+
+# define DECLARE_ASN1_FUNCTIONS_pname(pre, type, name) \
+        DECLARE_ASN1_ALLOC_FUNCTIONS_pname(pre, type, name) \
+        DECLARE_STATIC_ASN1_ENCODE_FUNCTIONS(type, name, name)
+
+# define DECLARE_STATIC_ASN1_FUNCTIONS_fname(type, itname, name) \
+        DECLARE_ASN1_ALLOC_FUNCTIONS_pname(static, type, name) \
+        DECLARE_STATIC_ASN1_ENCODE_FUNCTIONS(type, itname, name)
+
+# define DECLARE_STATIC_ASN1_ENCODE_FUNCTIONS(type, itname, name) \
+        static type *d2i_##name(type **a, const unsigned char **in, long len); \
+        static int i2d_##name(type *a, unsigned char **out); \
+        DECLARE_STATIC_ASN1_ITEM(itname)
+
+# define DECLARE_STATIC_ASN1_ENCODE_FUNCTIONS_const(type, name) \
+        static type *d2i_##name(type **a, const unsigned char **in, long len); \
+        static int i2d_##name(const type *a, unsigned char **out); \
+        DECLARE_STATIC_ASN1_ITEM(name)
+
+# define DECLARE_STATIC_ASN1_NDEF_FUNCTION(name) \
+        static int i2d_##name##_NDEF(name *a, unsigned char **out);
+
+# define DECLARE_STATIC_ASN1_FUNCTIONS_const(name) \
+        DECLARE_STATIC_ASN1_ALLOC_FUNCTIONS(name) \
+        DECLARE_STATIC_ASN1_ENCODE_FUNCTIONS_const(name, name)
+
+# define DECLARE_ASN1_ALLOC_FUNCTIONS_pname(pre, type, name) \
+        pre ossl_unused type *name##_new(void); \
+        pre ossl_unused void name##_free(type *a);
+
+# define DECLARE_STATIC_ASN1_PRINT_FUNCTION(stname) \
+        DECLARE_ASN1_PRINT_FUNCTION_pfname(static, stname, stname)
+
+# define DECLARE_ASN1_PRINT_FUNCTION_pfname(pre, stname, fname) \
+        pre int fname##_print_ctx(BIO *out, stname *x, int indent, \
+                                  const ASN1_PCTX *pctx);
+
 # define D2I_OF(type) type *(*)(type **,const unsigned char **,long)
 # define I2D_OF(type) int (*)(type *,unsigned char **)
 # define I2D_OF_const(type) int (*)(const type *,unsigned char **)
@@ -328,6 +371,8 @@ typedef const ASN1_ITEM ASN1_ITEM_EXP;
 #  define DECLARE_ASN1_ITEM(name) \
         OPENSSL_EXTERN const ASN1_ITEM name##_it;
 
+#  define DECLARE_STATIC_ASN1_ITEM(name)
+
 # else
 
 /*
@@ -348,6 +393,9 @@ typedef const ASN1_ITEM *ASN1_ITEM_EXP (void);
 
 #  define DECLARE_ASN1_ITEM(name) \
         const ASN1_ITEM * name##_it(void);
+
+#  define DECLARE_STATIC_ASN1_ITEM(name) \
+        static const ASN1_ITEM * name##_it(void);
 
 # endif
 

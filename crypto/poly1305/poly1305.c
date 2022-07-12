@@ -463,6 +463,12 @@ void Poly1305_Init(POLY1305 *ctx, const unsigned char key[32])
  * This "eclipses" poly1305_blocks and poly1305_emit, but it's
  * conscious choice imposed by -Wshadow compiler warnings.
  */
+# ifdef poly1305_blocks
+#  undef poly1305_blocks
+# endif
+# ifdef poly1305_emit
+#  undef poly1305_emit
+# endif
 # define poly1305_blocks (*poly1305_blocks_p)
 # define poly1305_emit   (*poly1305_emit_p)
 #endif

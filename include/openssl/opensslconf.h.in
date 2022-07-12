@@ -10,6 +10,7 @@
  */
 
 #include <openssl/opensslv.h>
+#include <openssl/symbol_prefix.h>
 
 #ifdef  __cplusplus
 extern "C" {
