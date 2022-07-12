@@ -45,8 +45,8 @@ static long conn_callback_ctrl(BIO *h, int cmd, BIO_info_cb *);
 
 static int conn_state(BIO *b, BIO_CONNECT *c);
 static void conn_close_socket(BIO *data);
-BIO_CONNECT *BIO_CONNECT_new(void);
-void BIO_CONNECT_free(BIO_CONNECT *a);
+static BIO_CONNECT *BIO_CONNECT_new(void);
+static void BIO_CONNECT_free(BIO_CONNECT *a);
 
 #define BIO_CONN_S_BEFORE                1
 #define BIO_CONN_S_GET_ADDR              2

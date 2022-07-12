@@ -11,17 +11,40 @@
 # define OSSL_SM4_PLATFORM_H
 # pragma once
 
+# include <openssl/opensslconf.h>
+
 # if defined(OPENSSL_CPUID_OBJ)
 #  if (defined(__arm__) || defined(__arm) || defined(__aarch64__))
 #   include "arm_arch.h"
 #   if __ARM_MAX_ARCH__>=8
 #    define HWSM4_CAPABLE (OPENSSL_armcap_P & ARMV8_SM4)
+#    ifdef HWSM4_set_encrypt_key
+#     undef HWSM4_set_encrypt_key
+#    endif
 #    define HWSM4_set_encrypt_key sm4_v8_set_encrypt_key
+#    ifdef HWSM4_set_decrypt_key
+#     undef HWSM4_set_decrypt_key
+#    endif
 #    define HWSM4_set_decrypt_key sm4_v8_set_decrypt_key
+#    ifdef HWSM4_encrypt
+#     undef HWSM4_encrypt
+#    endif
 #    define HWSM4_encrypt sm4_v8_encrypt
+#    ifdef HWSM4_decrypt
+#     undef HWSM4_decrypt
+#    endif
 #    define HWSM4_decrypt sm4_v8_decrypt
+#    ifdef HWSM4_cbc_encrypt
+#     undef HWSM4_cbc_encrypt
+#    endif
 #    define HWSM4_cbc_encrypt sm4_v8_cbc_encrypt
+#    ifdef HWSM4_ecb_encrypt
+#     undef HWSM4_ecb_encrypt
+#    endif
 #    define HWSM4_ecb_encrypt sm4_v8_ecb_encrypt
+#    ifdef HWSM4_ctr32_encrypt_blocks
+#     undef HWSM4_ctr32_encrypt_blocks
+#    endif
 #    define HWSM4_ctr32_encrypt_blocks sm4_v8_ctr32_encrypt_blocks
 #   endif
 #  endif

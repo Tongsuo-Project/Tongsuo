@@ -30,7 +30,7 @@ int MD4_Init(MD4_CTX *c)
     return 1;
 }
 
-#ifndef md4_block_data_order
+#ifndef ASM_md4_block_data_order
 # ifdef X
 #  undef X
 # endif

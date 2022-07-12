@@ -12,6 +12,7 @@
 
 # include <stdlib.h>
 # include <string.h>
+#include <openssl/opensslconf.h>
 
 # ifdef OPENSSL_USE_APPLINK
 #  undef BIO_FLAGS_UPLINK

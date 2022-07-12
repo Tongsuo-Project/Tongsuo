@@ -21,10 +21,21 @@ typedef struct async_fibre_st {
     int dummy;
 } async_fibre;
 
-
+# ifdef async_fibre_swapcontext
+#  undef async_fibre_swapcontext
+# endif
 # define async_fibre_swapcontext(o,n,r)         0
+# ifdef async_fibre_makecontext
+#  undef async_fibre_makecontext
+# endif
 # define async_fibre_makecontext(c)             0
+# ifdef async_fibre_free
+#  undef async_fibre_free
+# endif
 # define async_fibre_free(f)
+# ifdef async_fibre_init_dispatcher
+#  undef async_fibre_init_dispatcher
+# endif
 # define async_fibre_init_dispatcher(f)
 
 #endif

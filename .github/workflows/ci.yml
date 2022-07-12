@@ -148,6 +148,21 @@ jobs:
       - name: check dirty
         run: test $(git status --porcelain | wc -l) -eq "0"
 
+  symbol_prefix-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: config
+        run: ./config --strict-warnings --symbol-prefix=BABA_ enable-asan enable-ubsan enable-ssl-trace enable-zlib enable-zlib-dynamic enable-crypto-mdebug enable-crypto-mdebug-backtrace enable-egd enable-ntls enable-delegated-credential enable-cert-compression && perl configdata.pm --dump
+      - name: make
+        run: make -s -j4
+      - name: make test
+        run: make test
+      - name: make clean
+        run: make clean
+      - name: check dirty
+        run: test $(git status --porcelain | wc -l) -eq "0"
+
   legacy:
     runs-on: ubuntu-latest
     steps:
