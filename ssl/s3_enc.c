@@ -37,7 +37,7 @@ static int ssl3_generate_key_block(SSL *s, unsigned char *km, int num)
     EVP_MD_CTX_set_flags(m5, EVP_MD_CTX_FLAG_NON_FIPS_ALLOW);
     for (i = 0; (int)i < num; i += MD5_DIGEST_LENGTH) {
         k++;
-        if (k > sizeof(buf)) {
+        if (k >= sizeof(buf)) {
             /* bug: 'buf' is too small for this ciphersuite */
             SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_SSL3_GENERATE_KEY_BLOCK,
                      ERR_R_INTERNAL_ERROR);

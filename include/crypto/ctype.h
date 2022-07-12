@@ -21,6 +21,8 @@
 #ifndef OSSL_CRYPTO_CTYPE_H
 # define OSSL_CRYPTO_CTYPE_H
 
+# include <openssl/opensslconf.h>
+
 # define CTYPE_MASK_lower       0x1
 # define CTYPE_MASK_upper       0x2
 # define CTYPE_MASK_digit       0x4
@@ -50,6 +52,12 @@
 int ossl_toascii(int c);
 int ossl_fromascii(int c);
 # else
+#  ifdef ossl_toascii
+#   undef ossl_toascii
+#  endif
+#  ifdef ossl_fromascii
+#   undef ossl_fromascii
+#  endif
 #  define ossl_toascii(c)       (c)
 #  define ossl_fromascii(c)     (c)
 # endif

@@ -35,6 +35,33 @@ void RSAZ_512_mod_exp(BN_ULONG result[8],
                       const BN_ULONG m_norm[8], BN_ULONG k0,
                       const BN_ULONG RR[8]);
 
+/*
+ * See crypto/bn/asm/rsaz-avx2.pl for further details.
+ */
+void rsaz_1024_norm2red_avx2(void *red, const void *norm);
+void rsaz_1024_mul_avx2(void *ret, const void *a, const void *b,
+                        const void *n, BN_ULONG k);
+void rsaz_1024_sqr_avx2(void *ret, const void *a, const void *n, BN_ULONG k,
+                        int cnt);
+void rsaz_1024_scatter5_avx2(void *tbl, const void *val, int i);
+void rsaz_1024_gather5_avx2(void *val, const void *tbl, int i);
+void rsaz_1024_red2norm_avx2(void *norm, const void *red);
+
+/*
+ * See crypto/bn/rsaz-x86_64.pl for further details.
+ */
+void rsaz_512_mul(void *ret, const void *a, const void *b, const void *n,
+                  BN_ULONG k);
+void rsaz_512_mul_scatter4(void *ret, const void *a, const void *n,
+                           BN_ULONG k, const void *tbl, unsigned int power);
+void rsaz_512_mul_gather4(void *ret, const void *a, const void *tbl,
+                          const void *n, BN_ULONG k, unsigned int power);
+void rsaz_512_mul_by_one(void *ret, const void *a, const void *n, BN_ULONG k);
+void rsaz_512_sqr(void *ret, const void *a, const void *n, BN_ULONG k,
+                  int cnt);
+void rsaz_512_scatter4(void *tbl, const BN_ULONG *val, int power);
+void rsaz_512_gather4(BN_ULONG *val, const void *tbl, int power);
+
 # endif
 
 #endif

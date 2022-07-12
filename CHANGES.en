@@ -9,6 +9,8 @@
 
   *)
 
+  *) Support new feature: add export symbol prefix
+
   *) Remove code for PA-RISC architecture
 
   *) Remove MD2
