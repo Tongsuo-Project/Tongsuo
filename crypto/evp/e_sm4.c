@@ -17,6 +17,7 @@
 # include <openssl/modes.h>
 # include "crypto/sm4.h"
 # include "crypto/evp.h"
+# include <openssl/symbol_prefix.h>
 # include "crypto/sm4_platform.h"
 # include "evp_local.h"
 

@@ -11,7 +11,13 @@
 #include "prov/blake2.h"        /* diverse BLAKE2 macros */
 #include "legacy_meth.h"
 
+#ifdef ossl_blake2b_init
+# undef ossl_blake2b_init
+#endif
 #define ossl_blake2b_init ossl_blake2b512_init
+#ifdef ossl_blake2s_init
+# undef ossl_blake2s_init
+#endif
 #define ossl_blake2s_init ossl_blake2s256_init
 
 IMPLEMENT_LEGACY_EVP_MD_METH_LC(blake2s_int, ossl_blake2s)

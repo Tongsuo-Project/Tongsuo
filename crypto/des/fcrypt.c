@@ -15,6 +15,9 @@
 
 /* NOCW */
 #include <stdio.h>
+#include <openssl/crypto.h>
+#include "des_local.h"
+
 #ifdef _OSD_POSIX
 # ifndef CHARSET_EBCDIC
 #  define CHARSET_EBCDIC 1
@@ -23,9 +26,6 @@
 #ifdef CHARSET_EBCDIC
 # include <openssl/ebcdic.h>
 #endif
-
-#include <openssl/crypto.h>
-#include "des_local.h"
 
 /*
  * Added more values to handle illegal salt values the way normal crypt()

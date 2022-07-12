@@ -13,5 +13,6 @@
 
 # include <openssl/configuration.h>
 # include <openssl/macros.h>
+# include <openssl/symbol_prefix.h>
 
 #endif  /* OPENSSL_OPENSSLCONF_H */

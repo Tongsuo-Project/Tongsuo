@@ -230,6 +230,21 @@ jobs:
     - name: make test
       run: make test HARNESS_JOBS=${HARNESS_JOBS:-4}
 
+  symbol_prefix-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: config
+      run: ./config --banner=Configured --symbol-prefix=BABA_ --strict-warnings no-ec enable-ssl-trace enable-zlib enable-zlib-dynamic enable-crypto-mdebug enable-crypto-mdebug-backtrace enable-egd enable-ktls enable-fips enable-ntls enable-optimize-chacha-choose enable-status enable-crypto-mdebug-count enable-cert-compression enable-delegated-credential && perl configdata.pm --dump
+    - name: make
+      run: make -s -j4
+    - name: make test
+      run: make test
+    - name: make clean
+      run: make clean
+    - name: check dirty
+      run: test $(git status --porcelain | wc -l) -eq "0"
+
   legacy:
     runs-on: ubuntu-latest
     steps:

@@ -16,6 +16,9 @@
 static X509 *test_cert;
 
 /* Avoid using X509_new() via the generic macros below. */
+#ifdef X509_new
+# undef X509_new
+#endif
 #define X509_new() X509_dup(test_cert)
 
 typedef struct test_fixture {

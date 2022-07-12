@@ -16,6 +16,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include <openssl/symbol_prefix.h>
 /*
  * When built as an object file to link the application with, we get the
  * init function name through the macro PROVIDER_INIT_FUNCTION_NAME.  If
@@ -23,6 +24,9 @@
  * object form.
  */
 #ifdef PROVIDER_INIT_FUNCTION_NAME
+# ifdef OSSL_provider_init
+#  undef OSSL_provider_init
+# endif
 # define OSSL_provider_init PROVIDER_INIT_FUNCTION_NAME
 #endif
 

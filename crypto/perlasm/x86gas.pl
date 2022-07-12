@@ -9,6 +9,11 @@
 
 package x86gas;
 
+use lib ".";
+use configdata;
+
+my $symbol_prefix = $config{symbol_prefix};
+
 *out=\@::out;
 
 $::lbdecor=$::aout?"L":".L";		# local label decoration
@@ -109,6 +114,7 @@ sub ::file
 sub ::function_begin_B
 { my $func=shift;
   my $global=($func !~ /^_/);
+  $func = "$symbol_prefix$func";
   my $begin="${::lbdecor}_${func}_begin";
 
     &::LABEL($func,$global?"$begin":"$nmdecor$func");
@@ -130,6 +136,7 @@ sub ::function_begin_B
 
 sub ::function_end_B
 { my $func=shift;
+    $func = "$symbol_prefix$func";
     push(@out,".size\t$nmdecor$func,.-".&::LABEL($func)."\n") if ($::elf);
     $::stack=0;
     &::wipe_labels();

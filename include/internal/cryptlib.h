@@ -13,6 +13,7 @@
 
 # include <stdlib.h>
 # include <string.h>
+#include <openssl/opensslconf.h>
 
 # ifdef OPENSSL_USE_APPLINK
 #  define BIO_FLAGS_UPLINK_INTERNAL 0x8000

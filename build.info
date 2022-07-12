@@ -41,7 +41,8 @@ DEPEND[]=include/openssl/asn1.h \
          include/openssl/x509.h \
          include/openssl/x509v3.h \
          include/openssl/x509_vfy.h \
-         include/crypto/bn_conf.h include/crypto/dso_conf.h
+         include/crypto/bn_conf.h include/crypto/dso_conf.h \
+         include/openssl/symbol_prefix.h
 
 GENERATE[include/openssl/asn1.h]=include/openssl/asn1.h.in
 GENERATE[include/openssl/asn1t.h]=include/openssl/asn1t.h.in
@@ -70,6 +71,25 @@ GENERATE[include/openssl/x509v3.h]=include/openssl/x509v3.h.in
 GENERATE[include/openssl/x509_vfy.h]=include/openssl/x509_vfy.h.in
 GENERATE[include/crypto/bn_conf.h]=include/crypto/bn_conf.h.in
 GENERATE[include/crypto/dso_conf.h]=include/crypto/dso_conf.h.in
+GENERATE[include/openssl/symbol_prefix.h]=util/mk_symbol_prefix.pl
+DEPEND[include/openssl/symbol_prefix.h]=configdata.pm                               \
+                                        util/perl/OpenSSL/ParseC.pm                 \
+                                        providers/common/include/prov/der_rsa.h     \
+                                        providers/common/include/prov/der_wrap.h    \
+                                        providers/common/include/prov/der_digests.h
+
+IF[{- !$disabled{dsa} -}]
+  DEPEND[include/openssl/symbol_prefix.h]=providers/common/include/prov/der_dsa.h
+ENDIF
+
+IF[{- !$disabled{ec} -}]
+  DEPEND[include/openssl/symbol_prefix.h]=providers/common/include/prov/der_ec.h
+  DEPEND[include/openssl/symbol_prefix.h]=providers/common/include/prov/der_ecx.h
+ENDIF
+
+IF[{- !$disabled{sm2} -}]
+  DEPEND[include/openssl/symbol_prefix.h]=providers/common/include/prov/der_sm2.h
+ENDIF
 
 IF[{- defined $target{shared_defflag} -}]
   SHARED_SOURCE[libcrypto]=libcrypto.ld

@@ -18,7 +18,11 @@
  */
 #ifdef RMD160_ASM
 # if defined(__i386) || defined(__i386__) || defined(_M_IX86)
+#  ifdef ripemd160_block_data_order
+#   undef ripemd160_block_data_order
+#  endif
 #  define ripemd160_block_data_order ripemd160_block_asm_data_order
+#  define ASM_ripemd160_block_data_order
 # endif
 #endif
 

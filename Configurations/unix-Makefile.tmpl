@@ -68,6 +68,7 @@ FIPSKEY={- $config{FIPSKEY} -}
 
 VERSION={- "$config{full_version}" -}
 VERSION_NUMBER={- "$config{version}" -}
+SYMBOL_PREFIX={- $config{symbol_prefix} -}
 MAJOR={- $config{major} -}
 MINOR={- $config{minor} -}
 SHLIB_VERSION_NUMBER={- $config{shlib_version} -}
@@ -129,7 +130,7 @@ GENERATED_PODS={- # common0.tmpl provides @generated
                        fill_lines(" ", $COLUMNS - 15,
                                   map { my $x = $_;
                                         (
-                                          grep { 
+                                          grep {
                                                  $unified_info{attributes}->{depends}
                                                  ->{$x}->{$_}->{pod} // 0
                                                }
@@ -1172,6 +1173,10 @@ generate_fuzz_oids:
 	( cd $(SRCDIR); $(PERL) fuzz/mkfuzzoids.pl \
 				crypto/objects/obj_dat.h \
 				> fuzz/oids.txt )
+
+generate_symbol_prefix:
+	( cd $(SRCDIR); $(PERL) util/mk_symbol_prefix.pl --symhacks include/openssl/symhacks.h\
+				> include/openssl/symbol_prefix.h )
 
 generate_doc_buildinfo:
 	( $(PERL) -I$(BLDDIR) -Mconfigdata \
