@@ -395,6 +395,19 @@ static const EXTENSION_DEFINITION ext_defs[] = {
     INVALID_EXTENSION,
     INVALID_EXTENSION,
 #endif
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+    {
+        TLSEXT_TYPE_compress_certificate,
+        SSL_EXT_TLS1_3_ONLY | SSL_EXT_CLIENT_HELLO
+        | SSL_EXT_TLS1_3_CERTIFICATE_REQUEST,
+        NULL,
+        tls_parse_compress_cert, tls_parse_compress_cert,
+        tls_construct_compress_cert, tls_construct_compress_cert,
+        NULL
+    },
+#else
+    INVALID_EXTENSION,
+#endif
     {
         /* Must be immediately before pre_shared_key */
         TLSEXT_TYPE_padding,
@@ -1774,6 +1787,104 @@ static int final_quic_transport_params(SSL *s, unsigned int context, int sent)
                 s->ext.peer_quic_transport_params_draft_len = 0;
             }
         }
+    }
+
+    return 1;
+}
+#endif
+
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+EXT_RETURN tls_construct_compress_cert(SSL *s, WPACKET *pkt,
+                                       unsigned int context,
+                                       X509 *x, size_t chainidx)
+{
+    int i;
+    int first = 1;
+
+    if (s->cert_comp_algs == NULL) {
+        return EXT_RETURN_NOT_SENT;
+    }
+
+    for (i = 0; i < sk_CERT_COMP_num(s->cert_comp_algs); ++i) {
+        const CERT_COMP *comp = sk_CERT_COMP_value(s->cert_comp_algs, i);
+
+        if (comp->decompress == NULL)
+            continue;
+
+        if (first &&
+            (!WPACKET_put_bytes_u16(pkt, TLSEXT_TYPE_compress_certificate)
+             /* bytes of extension_data */
+             || !WPACKET_start_sub_packet_u16(pkt)
+             /* bytes of algorithms */
+             || !WPACKET_start_sub_packet_u8(pkt))) {
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+            return EXT_RETURN_FAIL;
+        }
+
+        first = 0;
+
+        if (!WPACKET_put_bytes_u16(pkt, comp->alg_id))
+            return EXT_RETURN_FAIL;
+    }
+
+    if (!first &&
+        (!WPACKET_close(pkt)
+        || !WPACKET_close(pkt))) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+        return EXT_RETURN_FAIL;
+    }
+
+    return (first == 1) ? EXT_RETURN_NOT_SENT : EXT_RETURN_SENT;
+}
+
+int tls_parse_compress_cert(SSL *s, PACKET *pkt, unsigned int context,
+                            X509 *x, size_t chainidx)
+{
+    unsigned int id;
+    CERT_COMP *comp = NULL;
+    PACKET cert_comp_alg_list;
+    size_t size, i;
+    int j, best, num_algs;
+
+    if (s->cert_comp_algs == NULL) {
+        return 1;
+    }
+
+    if (!PACKET_as_length_prefixed_1(pkt, &cert_comp_alg_list)) {
+        SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_R_BAD_EXTENSION);
+        return 0;
+    }
+
+    size = PACKET_remaining(&cert_comp_alg_list);
+
+    /* Each cert compression algorithm id is 2 bytes and we must have at least 1. */
+    if (size == 0 || (size & 1) != 0) {
+        SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_R_BAD_EXTENSION);
+        return 0;
+    }
+
+    size >>= 1;
+
+    num_algs = sk_CERT_COMP_num(s->cert_comp_algs);
+    best = num_algs;
+
+    for (i = 0; i < size && PACKET_get_net_2(&cert_comp_alg_list, &id); i++) {
+        for (j = 0; j < num_algs; j++) {
+            comp = sk_CERT_COMP_value(s->cert_comp_algs, j);
+
+            if (comp->compress == NULL)
+                continue;
+
+            if (id == comp->alg_id && j < best) {
+                best = j;
+                break;
+            }
+        }
+    }
+
+    if (best < num_algs) {
+        comp = sk_CERT_COMP_value(s->cert_comp_algs, best);
+        s->cert_comp_compress_id = comp->alg_id;
     }
 
     return 1;

@@ -476,6 +476,9 @@ typedef enum OPTION_choice {
     OPT_DANE_TLSA_RRDATA, OPT_DANE_EE_NO_NAME,
     OPT_ENABLE_PHA,
     OPT_SCTP_LABEL_BUG,
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+    OPT_CERT_COMP,
+#endif
     OPT_R_ENUM, OPT_PROV_ENUM
 } OPTION_CHOICE;
 
@@ -679,6 +682,9 @@ const OPTIONS s_client_options[] = {
 #endif
     {"early_data", OPT_EARLY_DATA, '<', "File to send as early data"},
     {"enable_pha", OPT_ENABLE_PHA, '-', "Enable post-handshake-authentication"},
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+    {"cert_comp", OPT_CERT_COMP, 's', "Enable TLS cert compression with the algorithm"},
+#endif
 #ifndef OPENSSL_NO_SRTP
     {"use_srtp", OPT_USE_SRTP, 's',
      "Offer SRTP key management with a colon-separated profile list"},
@@ -938,6 +944,9 @@ int s_client_main(int argc, char **argv)
     int enable_pha = 0;
 #ifndef OPENSSL_NO_SCTP
     int sctp_label_bug = 0;
+#endif
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+    const char *cert_comp = NULL;
 #endif
     int ignore_unexpected_eof = 0;
 
@@ -1543,6 +1552,11 @@ int s_client_main(int argc, char **argv)
         case OPT_ENABLE_PHA:
             enable_pha = 1;
             break;
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+        case OPT_CERT_COMP:
+            cert_comp = opt_arg();
+            break;
+#endif
         }
     }
 
@@ -2084,6 +2098,23 @@ int s_client_main(int argc, char **argv)
 
     if (set_keylog_file(ctx, keylog_file))
         goto end;
+
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+    if (cert_comp) {
+# if defined(ZLIB) && !defined(ZLIB_SHARED)
+        if (strncmp(cert_comp, "zlib", 4) == 0) {
+            SSL_CTX_add_cert_compression_alg(ctx, TLSEXT_cert_compression_zlib,
+                                             zlib_compress, zlib_decompress);
+        } else
+# endif
+        {
+            BIO_printf(bio_err,
+                       "cert compression algorithm %s not supported\n",
+                       cert_comp);
+            goto end;
+        }
+    }
+#endif
 
     con = SSL_new(ctx);
     if (con == NULL)

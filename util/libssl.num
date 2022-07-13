@@ -600,3 +600,7 @@ SSL_CTX_enable_sm_tls13_strict          600	3_0_3	EXIST::FUNCTION:SM2
 SSL_CTX_disable_sm_tls13_strict         601	3_0_3	EXIST::FUNCTION:SM2
 SSL_enable_sm_tls13_strict              602	3_0_3	EXIST::FUNCTION:SM2
 SSL_disable_sm_tls13_strict             603	3_0_3	EXIST::FUNCTION:SM2
+SSL_get_cert_compression_compress_id    604	3_0_3	EXIST::FUNCTION:CERT_COMPRESSION
+SSL_get_cert_compression_decompress_id  605	3_0_3	EXIST::FUNCTION:CERT_COMPRESSION
+SSL_add_cert_compression_alg            606	3_0_3	EXIST::FUNCTION:CERT_COMPRESSION
+SSL_CTX_add_cert_compression_alg        607	3_0_3	EXIST::FUNCTION:CERT_COMPRESSION

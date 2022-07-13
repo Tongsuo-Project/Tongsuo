@@ -25,6 +25,11 @@
 #include "internal/refcount.h"
 #include "internal/ktls.h"
 
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+static CERT_COMP *CERT_COMP_copy(const CERT_COMP *p);
+static void CERT_COMP_free(CERT_COMP *p);
+#endif
+
 static int ssl_undefined_function_1(SSL *ssl, SSL3_RECORD *r, size_t s, int t,
                                     SSL_MAC_BUF *mac, size_t macsize)
 {
@@ -860,6 +865,16 @@ SSL *SSL_new(SSL_CTX *ctx)
                                         ctx->ct_validation_callback_arg))
         goto err;
 #endif
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+    if (ctx->cert_comp_algs) {
+        s->cert_comp_algs = sk_CERT_COMP_deep_copy(ctx->cert_comp_algs,
+                                                   CERT_COMP_copy,
+                                                   CERT_COMP_free);
+
+        if (s->cert_comp_algs == NULL)
+            goto err;
+    }
+#endif
 
     return s;
  err:
@@ -1294,7 +1309,9 @@ void SSL_free(SSL *s)
 #ifndef OPENSSL_NO_SRTP
     sk_SRTP_PROTECTION_PROFILE_free(s->srtp_profiles);
 #endif
-
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+    sk_CERT_COMP_pop_free(s->cert_comp_algs, CERT_COMP_free);
+#endif
     CRYPTO_THREAD_lock_free(s->lock);
 
     OPENSSL_free(s);
@@ -3534,6 +3551,10 @@ void SSL_CTX_free(SSL_CTX *a)
     OPENSSL_free(a->ext.supported_groups_default);
     OPENSSL_free(a->ext.alpn);
     OPENSSL_secure_free(a->ext.secure);
+
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+    sk_CERT_COMP_pop_free(a->cert_comp_algs, CERT_COMP_free);
+#endif
 
     ssl_evp_md_free(a->md5);
     ssl_evp_md_free(a->sha1);
@@ -6580,5 +6601,20 @@ void SSL_enable_sm_tls13_strict(SSL *s)
 void SSL_disable_sm_tls13_strict(SSL *s)
 {
     s->enable_sm_tls13_strict = 0;
+}
+#endif
+
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+static CERT_COMP *CERT_COMP_copy(const CERT_COMP *p)
+{
+    return OPENSSL_memdup(p, sizeof(*p));
+}
+
+static void CERT_COMP_free(CERT_COMP *p)
+{
+    if (p == NULL)
+        return;
+
+    OPENSSL_free(p);
 }
 #endif

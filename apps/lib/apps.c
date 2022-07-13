@@ -42,6 +42,11 @@
 #include <openssl/safestack.h>
 #include <openssl/rsa.h>
 #include <openssl/rand.h>
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+# if defined(ZLIB) && !defined(ZLIB_SHARED)
+#  include <zlib.h>
+# endif
+#endif
 #include <openssl/bn.h>
 #include <openssl/ssl.h>
 #include <openssl/store.h>
@@ -3450,3 +3455,38 @@ int build_sigopt_compat_string(char **ret, const char *value)
 
     return 1;
 }
+
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+# if defined(ZLIB) && !defined(ZLIB_SHARED)
+int zlib_compress(SSL *s,
+                  const unsigned char *in, size_t inlen,
+                  unsigned char *out, size_t *outlen)
+{
+
+    if (out == NULL) {
+        *outlen = compressBound(inlen);
+        return 1;
+    }
+
+    if (compress2(out, outlen, in, inlen, Z_DEFAULT_COMPRESSION) != Z_OK)
+        return 0;
+
+    return 1;
+}
+
+int zlib_decompress(SSL *s,
+                    const unsigned char *in, size_t inlen,
+                    unsigned char *out, size_t outlen)
+{
+    size_t len = outlen;
+
+    if (uncompress(out, &len, in, inlen) != Z_OK)
+        return 0;
+
+    if (len != outlen)
+        return 0;
+
+    return 1;
+}
+# endif
+#endif

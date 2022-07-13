@@ -88,7 +88,11 @@ static int ossl_statem_server13_read_transition(SSL *s, int mt)
     case TLS_ST_SR_END_OF_EARLY_DATA:
     case TLS_ST_SW_FINISHED:
         if (s->s3.tmp.cert_request) {
-            if (mt == SSL3_MT_CERTIFICATE) {
+            if (mt == SSL3_MT_CERTIFICATE
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+                || mt == SSL3_MT_COMPRESSED_CERTIFICATE
+#endif
+               ) {
                 st->hand_state = TLS_ST_SR_CERT;
                 return 1;
             }
@@ -129,8 +133,11 @@ static int ossl_statem_server13_read_transition(SSL *s, int mt)
         if (s->early_data_state == SSL_EARLY_DATA_READING)
             break;
 
-        if (mt == SSL3_MT_CERTIFICATE
-                && s->post_handshake_auth == SSL_PHA_REQUESTED) {
+        if ((mt == SSL3_MT_CERTIFICATE
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+            || mt == SSL3_MT_COMPRESSED_CERTIFICATE
+#endif
+            ) && s->post_handshake_auth == SSL_PHA_REQUESTED) {
             st->hand_state = TLS_ST_SR_CERT;
             return 1;
         }
@@ -211,7 +218,11 @@ int ossl_statem_server_read_transition(SSL *s, int mt)
                 return 1;
             }
         } else if (s->s3.tmp.cert_request) {
-            if (mt == SSL3_MT_CERTIFICATE) {
+            if (mt == SSL3_MT_CERTIFICATE
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+                || mt == SSL3_MT_COMPRESSED_CERTIFICATE
+#endif
+            ) {
                 st->hand_state = TLS_ST_SR_CERT;
                 return 1;
             }
@@ -1063,8 +1074,17 @@ int ossl_statem_server_construct_message(SSL *s, WPACKET *pkt,
         break;
 
     case TLS_ST_SW_CERT:
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+        if (s->cert_comp_compress_id) {
+            *confunc = tls_construct_server_compressed_certificate;
+            *mt = SSL3_MT_COMPRESSED_CERTIFICATE;
+        } else {
+#endif
         *confunc = tls_construct_server_certificate;
         *mt = SSL3_MT_CERTIFICATE;
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+        }
+#endif
         break;
 
     case TLS_ST_SW_CERT_VRFY:
@@ -1206,6 +1226,11 @@ MSG_PROCESS_RETURN ossl_statem_server_process_message(SSL *s, PACKET *pkt)
         return tls_process_end_of_early_data(s, pkt);
 
     case TLS_ST_SR_CERT:
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+        if (s->s3.tmp.message_type == SSL3_MT_COMPRESSED_CERTIFICATE)
+            return tls_process_client_compressed_certificate(s, pkt);
+        else
+#endif
         return tls_process_client_certificate(s, pkt);
 
     case TLS_ST_SR_KEY_EXCH:
@@ -4333,3 +4358,18 @@ MSG_PROCESS_RETURN tls_process_end_of_early_data(SSL *s, PACKET *pkt)
 
     return MSG_PROCESS_CONTINUE_READING;
 }
+
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+int tls_construct_server_compressed_certificate(SSL *s, WPACKET *pkt)
+{
+    return tls_construct_compressed_certificate(s, pkt,
+                        tls_construct_server_certificate);
+}
+
+MSG_PROCESS_RETURN tls_process_client_compressed_certificate(SSL *s,
+                                                             PACKET *pkt)
+{
+    return tls_process_compressed_certificate(s, pkt,
+                                              tls_process_client_certificate);
+}
+#endif

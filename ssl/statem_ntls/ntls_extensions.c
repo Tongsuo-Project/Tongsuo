@@ -348,6 +348,7 @@ static const EXTENSION_DEFINITION ext_defs[] = {
     },
     INVALID_EXTENSION, /* TLSEXT_TYPE_quic_transport_parameters_draft */
     INVALID_EXTENSION, /* TLSEXT_TYPE_quic_transport_parameters */
+    INVALID_EXTENSION, /* TLSEXT_TYPE_compress_certificate */
     {
         /* Must be immediately before pre_shared_key */
         TLSEXT_TYPE_padding,
