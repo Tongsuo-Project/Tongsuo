@@ -50,6 +50,7 @@ B<openssl> B<s_server>
 [B<-ntls>]
 [B<-enable_ntls>]
 [B<-enable_sm_tls13_strict>]
+[B<-cert_comp>]
 [B<-state>]
 [B<-nocert>]
 [B<-quiet>]
@@ -380,6 +381,10 @@ Enable NTLS protocol, including TLCP and GM/T 0024-2014.
 Strictly check whether the SM2 certificate in TLS1.3 matches the cipher suite.
 Bucause the RFC 8998 demand that server can use "TLS_SM4_GCM_SM3" and
 "TLS_SM4_CCM_SM3" with sm2 cert only.
+
+=item B<-cert_comp>
+
+Enable TLS cert compression with the algorithm.
 
 =item B<-state>
 

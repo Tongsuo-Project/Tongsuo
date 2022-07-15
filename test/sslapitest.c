@@ -9767,6 +9767,254 @@ end:
 #endif
 }
 
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+#define CERT_COMPRESSION_XOR    16384
+#define CERT_COMPRESSION_ROL    65535
+
+#define ROL8(a, offset) (((a) << (offset)) | ((a) >> ((8 - (offset)) & 7)))
+
+static int cert_compress_xor(SSL *s,
+                             const unsigned char *in, size_t inlen,
+                             unsigned char *out, size_t *outlen)
+{
+    size_t i;
+
+    if (out == NULL) {
+        *outlen = inlen;
+        return 1;
+    }
+
+    for (i = 0; i < inlen; i++) {
+        out[i] = in[i] ^ 0x55;
+    }
+
+    *outlen = inlen;
+
+    return 1;
+}
+
+static int cert_decompress_xor(SSL *s,
+                               const unsigned char *in, size_t inlen,
+                               unsigned char *out, size_t outlen)
+{
+    size_t i;
+
+    if (inlen != outlen)
+        return 0;
+
+    for (i = 0; i < inlen; i++) {
+        out[i] = in[i] ^ 0x55;
+    }
+
+    return 1;
+}
+
+static int cert_compress_rol(SSL *s,
+                             const unsigned char *in, size_t inlen,
+                             unsigned char *out, size_t *outlen)
+{
+    size_t i;
+
+    if (out == NULL) {
+        *outlen = inlen;
+        return 1;
+    }
+
+    for (i = 0; i < inlen; i++) {
+        out[i] = ROL8(in[i], 4);
+    }
+
+    *outlen = inlen;
+
+    return 1;
+}
+
+static int cert_decompress_rol(SSL *s,
+                               const unsigned char *in, size_t inlen,
+                               unsigned char *out, size_t outlen)
+{
+    size_t i;
+
+    if (inlen != outlen)
+        return 0;
+
+    for (i = 0; i < inlen; i++) {
+        out[i] = ROL8(in[i], 4);
+    }
+
+    return 1;
+}
+
+/*
+ *  end:    conf-compress, conf-decompress, used-compress, used-decompress
+ * TEST 0: server auth
+ *  client:  XOR|ROL,        XOR|ROL,            0,          XOR
+ *  server:  XOR|ROL,        XOR|ROL,            XOR,        0
+ * TEST 1: no same algorithm
+ *  client:  XOR,            XOR,                0,          0
+ *  server:  ROL,            ROL,                0,          0
+ * TEST 2: server auth, prefer server order
+ *  client:  XOR|ROL,        XOR|ROL,            0,          ROL
+ *  server:  ROL|XOR,        ROL|XOR,            ROL,        0
+ * TEST 3: only cert compression when client auth
+ *  client:  XOR|ROL,        0,                  XOR,        0
+ *  server:  ROL|XOR,        ROL|XOR,            0,          XOR
+ * TEST 4: mutual auth
+ *  client:  XOR|ROL,        XOR|ROL,            XOR,        ROL
+ *  server:  ROL|XOR,        ROL|XOR,            ROL,        XOR
+ */
+static int test_tls_cert_compression_api(int tst)
+{
+    SSL_CTX *cctx = NULL, *sctx = NULL;
+    SSL *clientssl = NULL, *serverssl = NULL;
+    int testresult = 0;
+
+    if (!TEST_true(create_ssl_ctx_pair(libctx, TLS_server_method(),
+                                       TLS_client_method(),
+                                       TLS1_3_VERSION, 0,
+                                       &sctx, &cctx, cert, privkey)))
+        return 0;
+
+    if (tst == 0) {
+        if (!TEST_true(SSL_CTX_add_cert_compression_alg(cctx,
+                              CERT_COMPRESSION_XOR,
+                              cert_compress_xor, cert_decompress_xor))
+            || !TEST_true(SSL_CTX_add_cert_compression_alg(cctx,
+                              CERT_COMPRESSION_ROL,
+                              cert_compress_rol, cert_decompress_rol))
+            || !TEST_true(SSL_CTX_add_cert_compression_alg(sctx,
+                                 CERT_COMPRESSION_XOR,
+                                 cert_compress_xor, cert_decompress_xor))
+            || !TEST_true(SSL_CTX_add_cert_compression_alg(sctx,
+                              CERT_COMPRESSION_ROL,
+                              cert_compress_rol, cert_decompress_rol)))
+            goto end;
+    } else if (tst == 1) {
+        if (!TEST_true(SSL_CTX_add_cert_compression_alg(cctx,
+                              CERT_COMPRESSION_XOR,
+                              cert_compress_xor, cert_decompress_xor))
+            || !TEST_true(SSL_CTX_add_cert_compression_alg(sctx,
+                              CERT_COMPRESSION_ROL,
+                              cert_compress_rol, cert_decompress_rol)))
+            goto end;
+    } else if (tst == 2) {
+        if (!TEST_true(SSL_CTX_add_cert_compression_alg(cctx,
+                              CERT_COMPRESSION_XOR,
+                              cert_compress_xor, cert_decompress_xor))
+            || !TEST_true(SSL_CTX_add_cert_compression_alg(cctx,
+                                 CERT_COMPRESSION_ROL,
+                                 cert_compress_rol, cert_decompress_rol))
+            || !TEST_true(SSL_CTX_add_cert_compression_alg(sctx,
+                              CERT_COMPRESSION_ROL,
+                              cert_compress_rol, cert_decompress_rol))
+            || !TEST_true(SSL_CTX_add_cert_compression_alg(sctx,
+                                 CERT_COMPRESSION_XOR,
+                                 cert_compress_xor, cert_decompress_xor)))
+            goto end;
+    } else if (tst == 3) {
+        SSL_CTX_set_client_cert_cb(cctx, client_cert_cb);
+        SSL_CTX_set_verify(sctx,
+                           SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
+                           verify_cb);
+
+        if (!TEST_true(SSL_CTX_add_cert_compression_alg(cctx,
+                           CERT_COMPRESSION_XOR,
+                           cert_compress_xor, NULL))
+            || !TEST_true(SSL_CTX_add_cert_compression_alg(cctx,
+                              CERT_COMPRESSION_ROL,
+                              cert_compress_rol, NULL))
+            || !TEST_true(SSL_CTX_add_cert_compression_alg(sctx,
+                              CERT_COMPRESSION_ROL,
+                              cert_compress_rol, cert_decompress_rol))
+            || !TEST_true(SSL_CTX_add_cert_compression_alg(sctx,
+                                 CERT_COMPRESSION_XOR,
+                                 cert_compress_xor, cert_decompress_xor)))
+            goto end;
+    } else if (tst == 4) {
+        SSL_CTX_set_client_cert_cb(cctx, client_cert_cb);
+        SSL_CTX_set_verify(sctx,
+                           SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
+                           verify_cb);
+        if (!TEST_true(SSL_CTX_add_cert_compression_alg(cctx,
+                           CERT_COMPRESSION_XOR,
+                           cert_compress_xor, cert_decompress_xor))
+            || !TEST_true(SSL_CTX_add_cert_compression_alg(cctx,
+                              CERT_COMPRESSION_ROL,
+                              cert_compress_rol, cert_decompress_rol))
+            || !TEST_true(SSL_CTX_add_cert_compression_alg(sctx,
+                              CERT_COMPRESSION_ROL,
+                              cert_compress_rol, cert_decompress_rol))
+            || !TEST_true(SSL_CTX_add_cert_compression_alg(sctx,
+                              CERT_COMPRESSION_XOR,
+                              cert_compress_xor, cert_decompress_xor)))
+            goto end;
+    }
+
+    if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl, &clientssl,
+                                         NULL, NULL))
+        || !TEST_true(create_ssl_connection(serverssl, clientssl,
+                                            SSL_ERROR_NONE)))
+        goto end;
+
+    if (tst == 0) {
+        if (!TEST_int_eq(SSL_get_cert_compression_compress_id(clientssl), 0)
+            || !TEST_int_eq(SSL_get_cert_compression_decompress_id(clientssl),
+                            CERT_COMPRESSION_XOR)
+            || !TEST_int_eq(SSL_get_cert_compression_compress_id(serverssl),
+                            CERT_COMPRESSION_XOR)
+            || !TEST_int_eq(SSL_get_cert_compression_decompress_id(serverssl),
+                            0))
+            goto end;
+    } else if (tst == 1) {
+        if (!TEST_int_eq(SSL_get_cert_compression_compress_id(clientssl), 0)
+            || !TEST_int_eq(SSL_get_cert_compression_decompress_id(clientssl),
+                            0)
+            || !TEST_int_eq(SSL_get_cert_compression_compress_id(serverssl), 0)
+            || !TEST_int_eq(SSL_get_cert_compression_decompress_id(serverssl),
+                            0))
+            goto end;
+    } else if (tst == 2) {
+        if (!TEST_int_eq(SSL_get_cert_compression_compress_id(clientssl), 0)
+            || !TEST_int_eq(SSL_get_cert_compression_decompress_id(clientssl),
+                            CERT_COMPRESSION_ROL)
+            || !TEST_int_eq(SSL_get_cert_compression_compress_id(serverssl),
+                            CERT_COMPRESSION_ROL)
+            || !TEST_int_eq(SSL_get_cert_compression_decompress_id(serverssl),
+                            0))
+            goto end;
+    } else if (tst == 3) {
+        if (!TEST_int_eq(SSL_get_cert_compression_compress_id(clientssl),
+                         CERT_COMPRESSION_XOR)
+            || !TEST_int_eq(SSL_get_cert_compression_decompress_id(clientssl),
+                            0)
+            || !TEST_int_eq(SSL_get_cert_compression_compress_id(serverssl),
+                            0)
+            || !TEST_int_eq(SSL_get_cert_compression_decompress_id(serverssl),
+                            CERT_COMPRESSION_XOR))
+            goto end;
+    } else if (tst == 4) {
+        if (!TEST_int_eq(SSL_get_cert_compression_compress_id(clientssl),
+                         CERT_COMPRESSION_XOR)
+            || !TEST_int_eq(SSL_get_cert_compression_decompress_id(clientssl),
+                            CERT_COMPRESSION_ROL)
+            || !TEST_int_eq(SSL_get_cert_compression_compress_id(serverssl),
+                            CERT_COMPRESSION_ROL)
+            || !TEST_int_eq(SSL_get_cert_compression_decompress_id(serverssl),
+                            CERT_COMPRESSION_XOR))
+            goto end;
+    }
+
+    testresult = 1;
+end:
+    SSL_free(serverssl);
+    SSL_free(clientssl);
+    SSL_CTX_free(sctx);
+    SSL_CTX_free(cctx);
+
+    return testresult;
+}
+#endif
+
 OPT_TEST_DECLARE_USAGE("certfile privkeyfile srpvfile tmpfile provider config dhfile\n")
 
 int setup_tests(void)
@@ -10025,6 +10273,9 @@ int setup_tests(void)
 #ifndef OSSL_NO_USABLE_TLS1_3
     ADD_TEST(test_sni_tls13);
     ADD_ALL_TESTS(test_ticket_lifetime, 2);
+#endif
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+    ADD_ALL_TESTS(test_tls_cert_compression_api, 5);
 #endif
     ADD_TEST(test_inherit_verify_param);
     ADD_TEST(test_set_alpn);

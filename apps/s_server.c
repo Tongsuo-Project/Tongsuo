@@ -724,6 +724,9 @@ typedef enum OPTION_choice {
     OPT_SRTP_PROFILES, OPT_KEYMATEXPORT, OPT_KEYMATEXPORTLEN,
     OPT_KEYLOG_FILE, OPT_MAX_EARLY, OPT_RECV_MAX_EARLY, OPT_EARLY_DATA,
     OPT_S_NUM_TICKETS, OPT_ANTI_REPLAY, OPT_NO_ANTI_REPLAY, OPT_SCTP_LABEL_BUG,
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+    OPT_CERT_COMP,
+#endif
     OPT_HTTP_SERVER_BINMODE, OPT_NOCANAMES, OPT_IGNORE_UNEXPECTED_EOF,
     OPT_R_ENUM,
     OPT_S_ENUM,
@@ -991,6 +994,9 @@ const OPTIONS s_server_options[] = {
 #ifndef OPENSSL_NO_KTLS
     {"sendfile", OPT_SENDFILE, '-', "Use sendfile to response file with -WWW"},
 #endif
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+    {"cert_comp", OPT_CERT_COMP, 's', "Enable TLS cert compression with the algorithm"},
+#endif
 
     OPT_R_OPTIONS,
     OPT_S_OPTIONS,
@@ -1110,6 +1116,9 @@ int s_server_main(int argc, char *argv[])
     int no_ca_names = 0;
 #ifndef OPENSSL_NO_SCTP
     int sctp_label_bug = 0;
+#endif
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+    const char *cert_comp = NULL;
 #endif
     int ignore_unexpected_eof = 0;
 
@@ -1749,6 +1758,11 @@ int s_server_main(int argc, char *argv[])
             if (max_early_data == -1)
                 max_early_data = SSL3_RT_MAX_PLAIN_LENGTH;
             break;
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+        case OPT_CERT_COMP:
+            cert_comp = opt_arg();
+            break;
+#endif
         case OPT_HTTP_SERVER_BINMODE:
             http_server_binmode = 1;
             break;
@@ -2397,6 +2411,23 @@ skip:
         SSL_CTX_set_max_early_data(ctx, max_early_data);
     if (recv_max_early_data >= 0)
         SSL_CTX_set_recv_max_early_data(ctx, recv_max_early_data);
+
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+    if (cert_comp != NULL) {
+#if defined(ZLIB) && !defined(ZLIB_SHARED)
+        if (strncmp(cert_comp, "zlib", 4) == 0) {
+            SSL_CTX_add_cert_compression_alg(ctx, TLSEXT_cert_compression_zlib,
+                                             zlib_compress, zlib_decompress);
+        } else
+#endif
+        {
+            BIO_printf(bio_err,
+                       "cert compression algorithm %s not supported\n",
+                       cert_comp);
+            goto end;
+        }
+    }
+#endif
 
     if (rev)
         server_cb = rev_body;

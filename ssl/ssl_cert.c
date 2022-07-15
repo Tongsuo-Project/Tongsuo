@@ -1149,3 +1149,76 @@ const SSL_CERT_LOOKUP *ssl_cert_lookup_by_idx(size_t idx)
         return NULL;
     return &ssl_cert_info[idx];
 }
+
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+
+static int ssl_cert_add_compression_alg(STACK_OF(CERT_COMP) *cert_comp_algs,
+                                        int alg_id,
+                                        SSL_cert_compress_cb_fn compress,
+                                        SSL_cert_decompress_cb_fn decompress)
+{
+    CERT_COMP *comp = NULL;
+
+    comp = OPENSSL_malloc(sizeof(*comp));
+    if (comp == NULL) {
+        ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+        return 0;
+    }
+
+    comp->alg_id = alg_id;
+    comp->compress = compress;
+    comp->decompress = decompress;
+
+    if (!sk_CERT_COMP_push(cert_comp_algs, comp)) {
+        ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+        OPENSSL_free(comp);
+        return 0;
+    }
+
+    return 1;
+}
+
+
+int SSL_add_cert_compression_alg(SSL *s, int alg_id,
+                                 SSL_cert_compress_cb_fn compress,
+                                 SSL_cert_decompress_cb_fn decompress)
+{
+    if (s->cert_comp_algs == NULL) {
+        s->cert_comp_algs = sk_CERT_COMP_new_null();
+
+        if (s->cert_comp_algs == NULL) {
+            ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+            return 0;
+        }
+    }
+
+    return ssl_cert_add_compression_alg(s->cert_comp_algs, alg_id,
+                                        compress, decompress);
+}
+int SSL_CTX_add_cert_compression_alg(SSL_CTX *ctx, int alg_id,
+                                     SSL_cert_compress_cb_fn compress,
+                                     SSL_cert_decompress_cb_fn decompress)
+{
+    if (ctx->cert_comp_algs == NULL) {
+        ctx->cert_comp_algs = sk_CERT_COMP_new_null();
+
+        if (ctx->cert_comp_algs == NULL) {
+            ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+            return 0;
+        }
+    }
+
+    return ssl_cert_add_compression_alg(ctx->cert_comp_algs, alg_id,
+                                        compress, decompress);
+}
+
+int SSL_get_cert_compression_compress_id(SSL *s)
+{
+    return s->cert_comp_compress_id;
+}
+
+int SSL_get_cert_compression_decompress_id(SSL *s)
+{
+    return s->cert_comp_decompress_id;
+}
+#endif

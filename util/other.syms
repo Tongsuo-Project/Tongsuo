@@ -718,3 +718,5 @@ TONGSUO_VERSION_NUMBER                  define
 TONGSUO_VERSION_TEXT                    define
 BABASSL_VERSION_NUMBER                  define
 BABASSL_VERSION_TEXT                    define
+SSL_cert_compress_cb_fn                 datatype
+SSL_cert_decompress_cb_fn               datatype

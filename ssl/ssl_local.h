@@ -487,6 +487,16 @@ typedef enum {
     SSL_PHA_REQUESTED        /* request received by client, or sent by server */
 } SSL_PHA_STATE;
 
+# ifndef OPENSSL_NO_CERT_COMPRESSION
+typedef struct cert_comp_st {
+    unsigned int alg_id;
+    SSL_cert_compress_cb_fn compress;
+    SSL_cert_decompress_cb_fn decompress;
+} CERT_COMP;
+
+DEFINE_STACK_OF(CERT_COMP)
+# endif
+
 /* CipherSuite length. SSLv3 and all TLS versions. */
 # define TLS_CIPHER_LEN 2
 /* used to hold info on the particular ciphers used */
@@ -809,6 +819,7 @@ typedef enum tlsext_index_en {
     TLSEXT_IDX_certificate_authorities,
     TLSEXT_IDX_quic_transport_params_draft,
     TLSEXT_IDX_quic_transport_params,
+    TLSEXT_IDX_compress_certificate,
     TLSEXT_IDX_padding,
     TLSEXT_IDX_psk,
     /* Dummy index - must always be the last entry */
@@ -1264,6 +1275,9 @@ struct ssl_ctx_st {
 #endif
 #ifndef OPENSSL_NO_QUIC
     const SSL_QUIC_METHOD *quic_method;
+#endif
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+    STACK_OF(CERT_COMP) *cert_comp_algs;
 #endif
 };
 
@@ -1935,6 +1949,12 @@ struct ssl_st {
      * without sm2 cert at server. This tag set to 0 default
      */
     int enable_sm_tls13_strict;
+# endif
+
+# ifndef OPENSSL_NO_CERT_COMPRESSION
+    STACK_OF(CERT_COMP) *cert_comp_algs;
+    uint16_t cert_comp_compress_id;
+    uint16_t cert_comp_decompress_id;
 # endif
 };
 
