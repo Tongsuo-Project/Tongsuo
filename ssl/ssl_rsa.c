@@ -16,9 +16,6 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 #include <openssl/pem.h>
-#ifndef OPENSSL_NO_NTLS
-# include <openssl/x509v3.h>
-#endif
 
 static int ssl_set_cert(CERT *c, X509 *x509);
 static int ssl_set_pkey(CERT *c, EVP_PKEY *pkey);
@@ -1594,6 +1591,301 @@ int SSL_CTX_use_sign_certificate_file(SSL_CTX *ctx, const char *file, int type)
     ret = SSL_CTX_use_sign_certificate(ctx, x);
  end:
     X509_free(x);
+    BIO_free(in);
+    return ret;
+}
+#endif
+
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+static int ssl_set_dc(CERT *c, DELEGATED_CREDENTIAL *dc, int is_server)
+{
+    EVP_PKEY *pkey;
+    uint16_t sigalg;
+    size_t i;
+    const SIGALG_LOOKUP *lu;
+
+    pkey = DC_get0_publickey(dc);
+    if (pkey == NULL) {
+        ERR_raise(ERR_LIB_SSL, SSL_R_X509_LIB);
+        return 0;
+    }
+
+    /* DC public key MUST NOT use the rsaEncryption OID */
+    if (EVP_PKEY_is_a(pkey, "RSA")) {
+        ERR_raise(ERR_LIB_SSL, SSL_R_WRONG_PUBLIC_KEY_TYPE);
+        return 0;
+    }
+
+    if (ssl_cert_lookup_by_pkey(pkey, &i) == NULL) {
+        ERR_raise(ERR_LIB_SSL, SSL_R_UNKNOWN_CERTIFICATE_TYPE);
+        return 0;
+    }
+
+    if (i == SSL_PKEY_ECC && !EVP_PKEY_can_sign(pkey)) {
+        ERR_raise(ERR_LIB_SSL, SSL_R_ECC_CERT_NOT_FOR_SIGNING);
+        return 0;
+    }
+
+    sigalg = DC_get_signature_sign_algorithm(dc);
+
+    lu = ssl_sigalg_lookup(sigalg);
+    if (lu == NULL) {
+        ERR_raise(ERR_LIB_SSL, SSL_R_NO_SUITABLE_SIGNATURE_ALGORITHM);
+        return 0;
+    }
+
+    if (c->pkeys[lu->sig_idx].x509 == NULL) {
+        ERR_raise(ERR_LIB_SSL, SSL_R_EE_CERT_NOT_FOUND);
+        return 0;
+    }
+
+    if (!DC_check_valid(c->pkeys[lu->sig_idx].x509 , dc)) {
+        ERR_raise(ERR_LIB_SSL, SSL_R_CERTIFICATE_VERIFY_FAILED);
+        return 0;
+    }
+
+    if (SSL_verify_delegated_credential_signature(c->pkeys[lu->sig_idx].x509,
+                                                  dc, is_server) <= 0) {
+        ERR_raise(ERR_LIB_SSL, SSL_R_FAILED_TO_VERIFY_DC_SIGNATURE);
+        return 0;
+    }
+
+    if (c->dc_pkeys[i].privatekey != NULL) {
+        /*
+         * The return code from EVP_PKEY_copy_parameters is deliberately
+         * ignored. Some EVP_PKEY types cannot do this.
+         */
+        EVP_PKEY_copy_parameters(pkey, c->dc_pkeys[i].privatekey);
+        ERR_clear_error();
+
+        if (!DC_check_private_key(dc, c->dc_pkeys[i].privatekey)) {
+            /*
+             * don't fail for a dc/key mismatch, just free current private
+             * key (when switching to a different dc & key, first this
+             * function should be used, then ssl_set_pkey
+             */
+            EVP_PKEY_free(c->dc_pkeys[i].privatekey);
+            c->dc_pkeys[i].privatekey = NULL;
+            /* clear error queue */
+            ERR_clear_error();
+        }
+    }
+
+    DC_free(c->dc_pkeys[i].dc);
+    DC_up_ref(dc);
+    c->dc_pkeys[i].dc = dc;
+
+    return 1;
+}
+
+static int ssl_set_dc_pkey(CERT *c, EVP_PKEY *pkey)
+{
+    size_t i;
+
+    if (ssl_cert_lookup_by_pkey(pkey, &i) == NULL) {
+        ERR_raise(ERR_LIB_SSL, SSL_R_UNKNOWN_CERTIFICATE_TYPE);
+        return 0;
+    }
+
+    if (c->dc_pkeys[i].dc != NULL
+        && !DC_check_private_key(c->dc_pkeys[i].dc, pkey))
+        return 0;
+
+    EVP_PKEY_free(c->dc_pkeys[i].privatekey);
+    EVP_PKEY_up_ref(pkey);
+    c->dc_pkeys[i].privatekey = pkey;
+
+    return 1;
+}
+
+int SSL_use_dc(SSL *ssl, DELEGATED_CREDENTIAL *dc)
+{
+    if (ssl == NULL || dc == NULL) {
+        ERR_raise(ERR_LIB_SSL, ERR_R_PASSED_NULL_PARAMETER);
+        return 0;
+    }
+
+    return ssl_set_dc(ssl->cert, dc, SSL_is_server(ssl));
+}
+
+int SSL_use_dc_file(SSL *ssl, const char *file, int type)
+{
+    DELEGATED_CREDENTIAL *dc = NULL;
+    int ret = 0;
+
+    if (ssl == NULL || file == NULL) {
+        ERR_raise(ERR_LIB_SSL, ERR_R_PASSED_NULL_PARAMETER);
+        return 0;
+    }
+
+    /* only support raw type */
+    if (type == DC_FILETYPE_RAW) {
+        dc = DC_load_from_file_ex(file,
+                                  ssl->ctx->libctx,
+                                  ssl->ctx->propq);
+    } else {
+        ERR_raise(ERR_LIB_SSL, SSL_R_BAD_SSL_FILETYPE);
+        goto end;
+    }
+
+    if (dc == NULL) {
+        ERR_raise(ERR_LIB_SSL, SSL_R_BAD_SSL_FILETYPE);
+        goto end;
+    }
+
+    ret = ssl_set_dc(ssl->cert, dc, SSL_is_server(ssl));
+end:
+    DC_free(dc);
+    return ret;
+}
+
+int SSL_CTX_use_dc(SSL_CTX *ctx, DELEGATED_CREDENTIAL *dc)
+{
+    int is_server;
+
+    if (ctx == NULL || dc == NULL) {
+        ERR_raise(ERR_LIB_SSL, ERR_R_PASSED_NULL_PARAMETER);
+        return 0;
+    }
+
+    if (ctx->method == NULL) {
+        ERR_raise(ERR_LIB_SSL, SSL_R_SSL_CTX_HAS_NO_DEFAULT_SSL_VERSION);
+        return 0;
+    }
+
+    is_server = (ctx->method->ssl_accept == ssl_undefined_function) ? 0 : 1;
+
+    return ssl_set_dc(ctx->cert, dc, is_server);
+}
+
+int SSL_CTX_use_dc_file(SSL_CTX *ctx, const char *file, int type)
+{
+    int ret = 0;
+    int is_server;
+    DELEGATED_CREDENTIAL *dc = NULL;
+
+    if (ctx == NULL || file == NULL) {
+        ERR_raise(ERR_LIB_SSL, ERR_R_PASSED_NULL_PARAMETER);
+        return 0;
+    }
+
+    if (type == DC_FILETYPE_RAW) {
+        dc = DC_load_from_file_ex(file, ctx->libctx, ctx->propq);
+    } else {
+        ERR_raise(ERR_LIB_SSL, SSL_R_BAD_SSL_FILETYPE);
+        goto end;
+    }
+
+    if (dc == NULL) {
+        ERR_raise(ERR_LIB_SSL, SSL_R_BAD_SSL_FILETYPE);
+        goto end;
+    }
+
+    is_server = (ctx->method->ssl_accept == ssl_undefined_function) ? 0 : 1;
+
+    ret = ssl_set_dc(ctx->cert, dc, is_server);
+end:
+    DC_free(dc);
+    return ret;
+}
+
+int SSL_use_dc_PrivateKey(SSL *ssl, EVP_PKEY *pkey)
+{
+    if (ssl == NULL || pkey == NULL) {
+        ERR_raise(ERR_LIB_SSL, ERR_R_PASSED_NULL_PARAMETER);
+        return 0;
+    }
+
+    return ssl_set_dc_pkey(ssl->cert, pkey);
+}
+
+int SSL_use_dc_PrivateKey_file(SSL *ssl, const char *file, int type)
+{
+    BIO *in;
+    int j, ret = 0;
+    EVP_PKEY *pkey = NULL;
+
+    in = BIO_new(BIO_s_file());
+    if (in == NULL) {
+        ERR_raise(ERR_LIB_SSL, ERR_R_BUF_LIB);
+        goto end;
+    }
+
+    if (BIO_read_filename(in, file) <= 0) {
+        ERR_raise(ERR_LIB_SSL, ERR_R_SYS_LIB);
+        goto end;
+    }
+    if (type == SSL_FILETYPE_PEM) {
+        j = ERR_R_PEM_LIB;
+        pkey = PEM_read_bio_PrivateKey(in, NULL,
+                                       ssl->default_passwd_callback,
+                                       ssl->default_passwd_callback_userdata);
+    } else if (type == SSL_FILETYPE_ASN1) {
+        j = ERR_R_ASN1_LIB;
+        pkey = d2i_PrivateKey_bio(in, NULL);
+    } else {
+        ERR_raise(ERR_LIB_SSL, SSL_R_BAD_SSL_FILETYPE);
+        goto end;
+    }
+    if (pkey == NULL) {
+        ERR_raise(ERR_LIB_SSL, j);
+        goto end;
+    }
+
+    ret = ssl_set_dc_pkey(ssl->cert, pkey);
+    EVP_PKEY_free(pkey);
+end:
+    BIO_free(in);
+    return ret;
+}
+
+int SSL_CTX_use_dc_PrivateKey(SSL_CTX *ctx, EVP_PKEY *pkey)
+{
+    if (ctx == NULL || pkey == NULL) {
+        ERR_raise(ERR_LIB_SSL, ERR_R_PASSED_NULL_PARAMETER);
+        return 0;
+    }
+
+    return ssl_set_dc_pkey(ctx->cert, pkey);
+}
+
+int SSL_CTX_use_dc_PrivateKey_file(SSL_CTX *ctx, const char *file, int type)
+{
+    BIO *in;
+    int j, ret = 0;
+    EVP_PKEY *pkey = NULL;
+
+    in = BIO_new(BIO_s_file());
+    if (in == NULL) {
+        ERR_raise(ERR_LIB_SSL, ERR_R_BUF_LIB);
+        goto end;
+    }
+
+    if (BIO_read_filename(in, file) <= 0) {
+        ERR_raise(ERR_LIB_SSL, ERR_R_SYS_LIB);
+        goto end;
+    }
+    if (type == SSL_FILETYPE_PEM) {
+        j = ERR_R_PEM_LIB;
+        pkey = PEM_read_bio_PrivateKey_ex(in, NULL,
+                                          ctx->default_passwd_callback,
+                                          ctx->default_passwd_callback_userdata,
+                                          ctx->libctx, ctx->propq);
+    } else if (type == SSL_FILETYPE_ASN1) {
+        j = ERR_R_ASN1_LIB;
+        pkey = d2i_PrivateKey_ex_bio(in, NULL, ctx->libctx, ctx->propq);
+    } else {
+        ERR_raise(ERR_LIB_SSL, SSL_R_BAD_SSL_FILETYPE);
+        goto end;
+    }
+    if (pkey == NULL) {
+        ERR_raise(ERR_LIB_SSL, j);
+        goto end;
+    }
+
+    ret = ssl_set_dc_pkey(ctx->cert, pkey);
+    EVP_PKEY_free(pkey);
+end:
     BIO_free(in);
     return ret;
 }

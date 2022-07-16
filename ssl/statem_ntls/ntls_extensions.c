@@ -4,8 +4,9 @@
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
- * https://www.apache.org/licenses/LICENSE-2.0
+ * https://github.com/Tongsuo-Project/Tongsuo/blob/master/LICENSE.txt
  */
+
 
 #include <string.h>
 #include "internal/nelem.h"
@@ -250,6 +251,7 @@ static const EXTENSION_DEFINITION ext_defs[] = {
 #else
     INVALID_EXTENSION,
 #endif
+    INVALID_EXTENSION, /* TLSEXT_IDX_delegated_credential */
     {
         TLSEXT_TYPE_extended_master_secret,
         SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS1_2_SERVER_HELLO

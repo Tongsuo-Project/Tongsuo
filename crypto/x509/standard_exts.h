@@ -71,7 +71,10 @@ static const X509V3_EXT_METHOD *standard_exts[] = {
     &ossl_v3_utf8_list[0],
     &ossl_v3_issuer_sign_tool,
     &ossl_v3_tls_feature,
-    &ossl_v3_ext_admission
+    &ossl_v3_ext_admission,
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    &ossl_v3_dc_usage,
+#endif
 };
 
 /* Number of standard extensions */

@@ -10,7 +10,7 @@
  */
 
 /* Serialized OID's */
-static const unsigned char so[7620] = {
+static const unsigned char so[7629] = {
     0x2A,0x86,0x48,0x86,0xF7,0x0D,                 /* [    0] OBJ_rsadsi */
     0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,            /* [    6] OBJ_pkcs */
     0x2A,0x86,0x48,0x86,0xF7,0x0D,0x02,0x05,       /* [   13] OBJ_md5 */
@@ -1063,9 +1063,10 @@ static const unsigned char so[7620] = {
     0x2A,0x81,0x1C,0xCF,0x55,0x01,0x68,0x08,       /* [ 7595] OBJ_sm4_gcm */
     0x2A,0x81,0x1C,0xCF,0x55,0x01,0x68,0x09,       /* [ 7603] OBJ_sm4_ccm */
     0x2A,0x81,0x1C,0xCF,0x55,0x01,0x86,0x22,       /* [ 7611] OBJ_zuc_128_eia3 */
+    0x2B,0x06,0x01,0x04,0x01,0x82,0xDA,0x4B,0x2C,  /* [ 7619] OBJ_delegation_usage */
 };
 
-#define NUM_NID 1256
+#define NUM_NID 1257
 static const ASN1_OBJECT nid_objs[NUM_NID] = {
     {"UNDEF", "undefined", NID_undef},
     {"rsadsi", "RSA Data Security, Inc.", NID_rsadsi, 6, &so[0]},
@@ -2323,9 +2324,10 @@ static const ASN1_OBJECT nid_objs[NUM_NID] = {
     {"KxSM2DHE", "kx-sm2dhe", NID_kx_sm2dhe},
     {"AuthSM2", "auth-sm2", NID_auth_sm2},
     {"ZUC-128-EIA3", "zuc-128-eia3", NID_zuc_128_eia3, 8, &so[7611]},
+    {"delegationUsage", "X509v3 Delegation Usage", NID_delegation_usage, 9, &so[7619]},
 };
 
-#define NUM_SN 1178
+#define NUM_SN 1179
 static const unsigned int sn_objs[NUM_SN] = {
      364,    /* "AD_DVCS" */
      419,    /* "AES-128-CBC" */
@@ -2678,6 +2680,7 @@ static const unsigned int sn_objs[NUM_SN] = {
      495,    /* "dSAQuality" */
      434,    /* "data" */
      390,    /* "dcobject" */
+    1256,    /* "delegationUsage" */
      140,    /* "deltaCRL" */
      891,    /* "deltaRevocationList" */
      107,    /* "description" */
@@ -3507,7 +3510,7 @@ static const unsigned int sn_objs[NUM_SN] = {
     1093,    /* "x509ExtAdmission" */
 };
 
-#define NUM_LN 1178
+#define NUM_LN 1179
 static const unsigned int ln_objs[NUM_LN] = {
      363,    /* "AD Time Stamping" */
      405,    /* "ANSI X9.62" */
@@ -3715,6 +3718,7 @@ static const unsigned int ln_objs[NUM_LN] = {
      141,    /* "X509v3 CRL Reason Code" */
      771,    /* "X509v3 Certificate Issuer" */
       89,    /* "X509v3 Certificate Policies" */
+    1256,    /* "X509v3 Delegation Usage" */
      140,    /* "X509v3 Delta CRL Indicator" */
      126,    /* "X509v3 Extended Key Usage" */
      857,    /* "X509v3 Freshest CRL" */
@@ -4689,7 +4693,7 @@ static const unsigned int ln_objs[NUM_LN] = {
     1255,    /* "zuc-128-eia3" */
 };
 
-#define NUM_OBJ 1058
+#define NUM_OBJ 1059
 static const unsigned int obj_objs[NUM_OBJ] = {
        0,    /* OBJ_undef                        0 */
      181,    /* OBJ_iso                          1 */
@@ -5444,6 +5448,7 @@ static const unsigned int obj_objs[NUM_OBJ] = {
      683,    /* OBJ_X9_62_ppBasis                1 2 840 10045 1 2 3 3 */
      417,    /* OBJ_ms_csp_name                  1 3 6 1 4 1 311 17 1 */
      856,    /* OBJ_LocalKeySet                  1 3 6 1 4 1 311 17 2 */
+    1256,    /* OBJ_delegation_usage             1 3 6 1 4 1 44363 44 */
      390,    /* OBJ_dcObject                     1 3 6 1 4 1 1466 344 */
       91,    /* OBJ_bf_cbc                       1 3 6 1 4 1 3029 1 2 */
      973,    /* OBJ_id_scrypt                    1 3 6 1 4 1 11591 4 11 */

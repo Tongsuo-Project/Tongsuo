@@ -13,6 +13,7 @@
 #include <openssl/objects.h>
 #include <openssl/decoder.h>
 #include <openssl/core_dispatch.h>
+#include <openssl/ssl.h>
 #include "internal/nelem.h"
 
 /*
@@ -784,6 +785,69 @@ static int cmd_Enable_sm_tls13_strict(SSL_CONF_CTX *cctx, const char *value)
     return 1;
 }
 #endif
+
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+static int cmd_DC(SSL_CONF_CTX *cctx, const char *value)
+{
+    int rv = 1;
+
+    if (cctx->ctx != NULL)
+        rv = SSL_CTX_use_dc_file(cctx->ctx, value, 0);
+
+    if (cctx->ssl != NULL)
+        rv = SSL_use_dc_file(cctx->ssl, value, 0);
+
+    return rv > 0;
+}
+
+static int cmd_DCKey(SSL_CONF_CTX *cctx, const char *value)
+{
+    int rv = 1;
+    if (!(cctx->flags & SSL_CONF_FLAG_CERTIFICATE))
+        return -2;
+
+    if (cctx->ctx != NULL)
+        rv = SSL_CTX_use_dc_PrivateKey_file(cctx->ctx, value, SSL_FILETYPE_PEM);
+
+    if (cctx->ssl != NULL)
+        rv = SSL_use_dc_PrivateKey_file(cctx->ssl, value, SSL_FILETYPE_PEM);
+
+    return rv > 0;
+}
+
+static int cmd_Enable_verify_peer_by_dc(SSL_CONF_CTX *cctx, const char *value)
+{
+    if (strcmp(value, "on") == 0) {
+        if (cctx->ctx != NULL)
+            SSL_CTX_enable_verify_peer_by_dc(cctx->ctx);
+        if (cctx->ssl != NULL)
+            SSL_enable_verify_peer_by_dc(cctx->ssl);
+    } else {
+        if (cctx->ctx != NULL)
+            SSL_CTX_disable_verify_peer_by_dc(cctx->ctx);
+        if (cctx->ssl != NULL)
+            SSL_disable_verify_peer_by_dc(cctx->ssl);
+    }
+    return 1;
+}
+
+static int cmd_Enable_sign_by_dc(SSL_CONF_CTX *cctx, const char *value)
+{
+    if (strcmp(value, "on") == 0) {
+        if (cctx->ctx != NULL)
+            SSL_CTX_enable_sign_by_dc(cctx->ctx);
+        if (cctx->ssl != NULL)
+            SSL_enable_sign_by_dc(cctx->ssl);
+    } else {
+        if (cctx->ctx != NULL)
+            SSL_CTX_disable_sign_by_dc(cctx->ctx);
+        if (cctx->ssl != NULL)
+            SSL_disable_sign_by_dc(cctx->ssl);
+    }
+    return 1;
+}
+#endif
+
 typedef struct {
     int (*cmd) (SSL_CONF_CTX *cctx, const char *value);
     const char *str_file;
@@ -897,6 +961,13 @@ static const ssl_conf_cmd_tbl ssl_conf_cmds[] = {
 #endif
 #ifndef OPENSSL_NO_SM2
     SSL_CONF_CMD_STRING(Enable_sm_tls13_strict, "Enable_sm_tls13_strict", 0),
+#endif
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    SSL_CONF_CMD(DC, "dc", SSL_CONF_FLAG_CERTIFICATE, SSL_CONF_TYPE_FILE),
+    SSL_CONF_CMD(DCKey, "dc_key", SSL_CONF_FLAG_CERTIFICATE,
+                 SSL_CONF_TYPE_FILE),
+    SSL_CONF_CMD_STRING(Enable_verify_peer_by_dc, "Enable_verify_peer_by_dc", 0),
+    SSL_CONF_CMD_STRING(Enable_sign_by_dc, "Enable_sign_by_dc", 0),
 #endif
 };
 

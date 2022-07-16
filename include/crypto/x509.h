@@ -207,6 +207,26 @@ struct x509_st {
     char *propq;
 } /* X509 */ ;
 
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+struct delegated_credential_st{
+    OSSL_LIB_CTX *libctx;
+    char *propq;
+
+    unsigned long    valid_time;
+    unsigned int     expected_cert_verify_algorithm;
+    size_t           dc_publickey_raw_len;
+    unsigned char   *dc_publickey_raw;
+    unsigned int     signature_sign_algorithm;
+    size_t           dc_signature_len;
+    unsigned char   *dc_signature;
+    EVP_PKEY        *pkey;
+    unsigned char   *raw_byte;
+    size_t           raw_byte_len;
+    CRYPTO_REF_COUNT references;
+    CRYPTO_RWLOCK   *lock;
+} /* DC */;
+#endif
+
 /*
  * This is a used when verifying cert chains.  Since the gathering of the
  * cert chain can take some time (and have to be 'retried', this needs to be

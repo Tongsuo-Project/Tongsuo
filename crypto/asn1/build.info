@@ -21,3 +21,6 @@ ENDIF
 IF[{- !$disabled{'deprecated-3.0'} -}]
   SOURCE[../../libcrypto]=x_long.c
 ENDIF
+IF[{- !$disabled{'delegated-credential'} -}]
+  SOURCE[../../libcrypto]=x_delegated_credential.c
+ENDIF

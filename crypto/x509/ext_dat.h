@@ -25,3 +25,6 @@ extern const X509V3_EXT_METHOD ossl_v3_tls_feature;
 extern const X509V3_EXT_METHOD ossl_v3_ext_admission;
 extern const X509V3_EXT_METHOD ossl_v3_utf8_list[1];
 extern const X509V3_EXT_METHOD ossl_v3_issuer_sign_tool;
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+extern const X509V3_EXT_METHOD ossl_v3_dc_usage;
+#endif

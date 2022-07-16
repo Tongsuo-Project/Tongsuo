@@ -42,6 +42,30 @@ static int check_result(HANDSHAKE_RESULT *result, SSL_TEST_CTX *test_ctx)
     return 1;
 }
 
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+static int check_client_dc_usage(HANDSHAKE_RESULT *result, SSL_TEST_CTX *test_ctx)
+{
+    if (!TEST_int_eq(result->client_dc_usage, test_ctx->client_expected_dc_usage)) {
+        TEST_info("ExpectedDcUsaged mismatch: expected %s, got %s.",
+                  ssl_test_dc_usage(test_ctx->client_expected_dc_usage),
+                  ssl_test_dc_usage(result->client_dc_usage));
+        return 0;
+    }
+    return 1;
+}
+
+static int check_server_dc_usage(HANDSHAKE_RESULT *result, SSL_TEST_CTX *test_ctx)
+{
+    if (!TEST_int_eq(result->server_dc_usage, test_ctx->server_expected_dc_usage)) {
+        TEST_info("ExpectedDcUsaged mismatch: expected %s, got %s.",
+                  ssl_test_dc_usage(test_ctx->server_expected_dc_usage),
+                  ssl_test_dc_usage(result->server_dc_usage));
+        return 0;
+    }
+    return 1;
+}
+#endif
+
 static int check_alerts(HANDSHAKE_RESULT *result, SSL_TEST_CTX *test_ctx)
 {
     if (!TEST_int_eq(result->client_alert_sent,
@@ -400,6 +424,10 @@ static int check_test(HANDSHAKE_RESULT *result, SSL_TEST_CTX *test_ctx)
         ret &= check_client_sign_type(result, test_ctx);
         ret &= check_client_ca_names(result, test_ctx);
         ret &= check_hrr(result, test_ctx);
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+        ret &= check_client_dc_usage(result, test_ctx);
+        ret &= check_server_dc_usage(result, test_ctx);
+#endif
     }
     return ret;
 }

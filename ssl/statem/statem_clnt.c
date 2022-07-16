@@ -27,6 +27,7 @@
 #include <openssl/trace.h>
 #include <openssl/core_names.h>
 #include <openssl/param_build.h>
+#include <openssl/ssl.h>
 #include "internal/cryptlib.h"
 
 static MSG_PROCESS_RETURN tls_process_as_hello_retry_request(SSL *s, PACKET *pkt);
@@ -2054,7 +2055,28 @@ WORK_STATE tls_post_process_server_certificate(SSL *s, WORK_STATE wst)
     X509_up_ref(x);
     s->session->peer = x;
     s->session->verify_result = s->verify_result;
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    if (s->delegated_credential_tag & DC_HAS_BEEN_USED_FOR_VERIFY_PEER) {
+        if (!SSL_IS_TLS13(s)) {
+            SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER,
+                     SSL_R_UNKNOWN_CERTIFICATE_TYPE);
+            return WORK_ERROR;
+        }
 
+        if (!DC_check_valid(x, s->session->peer_dc)) {
+            SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER,
+                     SSL_R_CERTIFICATE_VERIFY_FAILED);
+            return WORK_ERROR;
+        }
+
+        if (SSL_verify_delegated_credential_signature(x, s->session->peer_dc,
+                                                      1) <= 0) {
+            SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER,
+                     SSL_R_CERTIFICATE_VERIFY_FAILED);
+            return WORK_ERROR;
+        }
+    }
+#endif
     /* Save the current hash state for when we receive the CertificateVerify */
     if (SSL_IS_TLS13(s)
             && !ssl_handshake_hash(s, s->cert_verify_hash,
