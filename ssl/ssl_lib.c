@@ -25,6 +25,9 @@
 #include "internal/refcount.h"
 #include "internal/ktls.h"
 
+#include "crypto/x509.h"
+#include "crypto/x509/x509_local.h"
+
 #ifndef OPENSSL_NO_CERT_COMPRESSION
 static CERT_COMP *CERT_COMP_copy(const CERT_COMP *p);
 static void CERT_COMP_free(CERT_COMP *p);
@@ -4317,6 +4320,420 @@ SSL *SSL_dup(SSL *s)
  err:
     SSL_free(ret);
     return NULL;
+}
+
+/*
+ * To be used only in certificate callback, which are not duplicated:
+ *
+ * 1) certificates and corresponding keys.
+ * 2) SNI callback, set to NULL
+ * 3) client cert engine stuff, set to NULL
+ * 4) PSK/SRP stuff...
+ * 5) something in cert
+ *
+ * This feature is in experimental status, use with caution!
+ */
+SSL_CTX *SSL_CTX_dup(SSL_CTX *ctx)
+{
+    SSL_CTX *ret = NULL;
+    X509_OBJECT *obj;
+    int i, num;
+
+    if (ctx == NULL) {
+        return NULL;
+    }
+
+    ret = OPENSSL_zalloc(sizeof(*ret));
+    if (ret == NULL)
+        goto err;
+
+    ret->references = 1;
+    ret->lock = CRYPTO_THREAD_lock_new();
+    if (ret->lock == NULL) {
+        ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+        OPENSSL_free(ret);
+        return NULL;
+    }
+
+#ifdef TSAN_REQUIRES_LOCKING
+    ret->tsan_lock = CRYPTO_THREAD_lock_new();
+    if (ret->tsan_lock == NULL) {
+        ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+#endif
+
+    ret->libctx = ctx->libctx;
+    if (ctx->propq != NULL) {
+        ret->propq = OPENSSL_strdup(ctx->propq);
+        if (ret->propq == NULL)
+            goto err;
+    }
+
+#ifndef OPENSSL_NO_NTLS
+    /* Tag of NTLS */
+    ret->enable_ntls = ctx->enable_ntls;
+#endif
+#ifndef OPENSSL_NO_SM2
+    ret->enable_sm_tls13_strict = ctx->enable_sm_tls13_strict ;
+#endif
+    ret->method = ctx->method;
+    ret->min_proto_version = ctx->min_proto_version;
+    ret->max_proto_version = ctx->max_proto_version;
+    ret->mode = ctx->mode;
+    ret->session_cache_mode = ctx->session_cache_mode;
+    ret->session_cache_size = ctx->session_cache_size;
+    ret->session_timeout = ctx->session_timeout;
+    ret->max_cert_list = ctx->max_cert_list;
+    ret->verify_mode = ctx->verify_mode;
+
+    if (ctx->cert)
+        ret->cert = ssl_cert_dup(ctx->cert);
+    else
+        ret->cert = ssl_cert_new();
+
+    if(ret->cert == NULL)
+        goto err;
+
+    ret->sessions = lh_SSL_SESSION_new(ssl_session_hash, ssl_session_cmp);
+    if (ret->sessions == NULL)
+        goto err;
+
+    /* we don't really support internal session cache... */
+    ret->session_cache_head = NULL;
+    ret->session_cache_tail = NULL;
+
+    /* dup cert_store */
+    ret->cert_store = X509_STORE_new();
+    if (ret->cert_store == NULL)
+        goto err;
+    /* dup cert_store->get_cert_methods */
+    if (ctx->cert_store && ctx->cert_store->get_cert_methods) {
+
+        sk_X509_LOOKUP_free(ret->cert_store->get_cert_methods);
+
+        ret->cert_store->get_cert_methods
+            = sk_X509_LOOKUP_dup(ctx->cert_store->get_cert_methods);
+    }
+    /* dup cert_store->objs */
+    if (ctx->cert_store && ctx->cert_store->objs) {
+
+        sk_X509_OBJECT_free(ret->cert_store->objs);
+
+        ret->cert_store->objs = sk_X509_OBJECT_dup(ctx->cert_store->objs);
+
+        num = sk_X509_OBJECT_num(ret->cert_store->objs);
+
+        for (i = 0; i < num; i++) {
+            obj = sk_X509_OBJECT_value(ret->cert_store->objs, i);
+
+            /* add reference count in case of double free */
+            if (obj->type == X509_LU_X509) {
+                X509_up_ref(obj->data.x509);
+            } else if (obj->type == X509_LU_CRL) {
+                X509_CRL_up_ref(obj->data.crl);
+            } else {
+                /* abort(); */
+            }
+        }
+    }
+
+#ifndef OPENSSL_NO_CT
+    ret->ctlog_store = CTLOG_STORE_new();
+    if (ret->ctlog_store == NULL)
+        goto err;
+
+    /* TODO: logs*/
+
+    ret->ct_validation_callback = ctx->ct_validation_callback;
+    ret->ct_validation_callback_arg = ctx->ct_validation_callback_arg;
+#endif
+
+    /* initialize cipher/digest methods table */
+    if (!ssl_load_ciphers(ret))
+        goto err2;
+    /* initialise sig algs */
+    if (!ssl_setup_sig_algs(ret))
+        goto err2;
+
+    if (!ssl_load_groups(ret))
+        goto err2;
+
+    /* dup the cipher_list and cipher_list_by_id stacks */
+    if (ctx->cipher_list) {
+        ret->cipher_list = sk_SSL_CIPHER_dup(ctx->cipher_list);
+        if (ret->cipher_list == NULL)
+            goto err;
+    }
+    if (ctx->cipher_list_by_id) {
+        ret->cipher_list_by_id = sk_SSL_CIPHER_dup(ctx->cipher_list_by_id);
+        if (ret->cipher_list_by_id == NULL)
+            goto err;
+    }
+
+    if (ctx->tls13_ciphersuites) {
+        ret->tls13_ciphersuites = sk_SSL_CIPHER_dup(ctx->tls13_ciphersuites);
+        if (ret->tls13_ciphersuites == NULL)
+            goto err;
+    }
+
+    if ((ret->param = X509_VERIFY_PARAM_new()) == NULL)
+        goto err;
+    X509_VERIFY_PARAM_inherit(ret->param, ctx->param);
+
+    SSL_CTX_set_verify_depth(ret, SSL_CTX_get_verify_depth(ctx));
+
+    /*
+     * If these aren't available from the provider we'll get NULL returns.
+     * That's fine but will cause errors later if SSLv3 is negotiated
+     */
+    ret->md5 = ssl_evp_md_fetch(ctx->libctx, NID_md5, ctx->propq);
+    ret->sha1 = ssl_evp_md_fetch(ctx->libctx, NID_sha1, ctx->propq);
+
+    if (ctx->extra_certs)
+        ret->extra_certs = sk_X509_dup(ctx->extra_certs);
+
+    if (ctx->ca_names)
+        ret->ca_names = sk_X509_NAME_dup(ctx->ca_names);
+    else
+        ret->ca_names = sk_X509_NAME_new_null();
+
+    if (ret->ca_names == NULL)
+        goto err;
+
+    if (ctx->client_ca_names)
+        ret->client_ca_names = sk_X509_NAME_dup(ctx->client_ca_names);
+    else
+        ret->client_ca_names = sk_X509_NAME_new_null();
+
+    if (ret->client_ca_names == NULL)
+        goto err;
+
+    /* copy app data, a little dangerous perhaps */
+    if (!CRYPTO_dup_ex_data(CRYPTO_EX_INDEX_SSL_CTX, &ret->ex_data, &ctx->ex_data))
+        goto err;
+
+    ret->ext.secure = OPENSSL_zalloc(sizeof(SSL_CTX_EXT_SECURE));
+    if (ret->ext.secure == NULL)
+        goto err;
+
+    /* No compression for DTLS */
+    if (!(ctx->method->ssl3_enc->enc_flags & SSL_ENC_FLAG_DTLS))
+        ret->comp_methods = SSL_COMP_get_compression_methods();
+
+    ret->max_send_fragment = ctx->max_send_fragment;
+    ret->split_send_fragment = ctx->split_send_fragment;
+
+    /* dup RFC4507 ticket keys */
+    memcpy(ret->ext.tick_key_name, ctx->ext.tick_key_name,
+           sizeof(ret->ext.tick_key_name));
+# ifndef OPENSSL_NO_DEPRECATED_3_0
+    ret->ext.ticket_key_cb = ctx->ext.ticket_key_cb;
+# endif
+    memcpy(ret->ext.secure->tick_hmac_key, ctx->ext.secure->tick_hmac_key,
+           sizeof(ret->ext.secure->tick_hmac_key));
+    memcpy(ret->ext.secure->tick_aes_key, ctx->ext.secure->tick_aes_key,
+           sizeof(ret->ext.secure->tick_aes_key));
+    memcpy(ret->ext.cookie_hmac_key, ctx->ext.cookie_hmac_key,
+           sizeof(ret->ext.cookie_hmac_key));
+
+    ret->options = ctx->options;
+
+#ifndef OPENSSL_NO_SRP
+    /* TODO: copy srp */
+    if (!ssl_ctx_srp_ctx_init_intern(ret))
+        goto err;
+#endif
+#ifndef OPENSSL_NO_ENGINE
+# ifdef OPENSSL_SSL_CLIENT_ENGINE_AUTO
+#  define eng_strx(x)     #x
+#  define eng_str(x)      eng_strx(x)
+    /* Use specific client engine automatically... ignore errors */
+    {
+        ENGINE *eng;
+        eng = ENGINE_by_id(eng_str(OPENSSL_SSL_CLIENT_ENGINE_AUTO));
+        if (!eng) {
+            ERR_clear_error();
+            ENGINE_load_builtin_engines();
+            eng = ENGINE_by_id(eng_str(OPENSSL_SSL_CLIENT_ENGINE_AUTO));
+        }
+        if (!eng || !SSL_CTX_set_client_cert_engine(ret, eng))
+            ERR_clear_error();
+    }
+# endif
+#endif
+
+    ret->ext.status_type = ctx->ext.status_type;
+    ret->ext.status_cb = ctx->ext.status_cb;
+    ret->ext.status_arg = ctx->ext.status_arg;
+
+    ret->max_early_data = ctx->max_early_data;
+    ret->recv_max_early_data = ctx->recv_max_early_data;
+
+    ret->num_tickets = ctx->num_tickets;
+
+    ret->new_session_cb = ctx->new_session_cb;
+    ret->remove_session_cb = ctx->remove_session_cb;
+    ret->get_session_cb = ctx->get_session_cb;
+
+    ret->stats = ctx->stats;
+
+    ret->app_verify_callback = ctx->app_verify_callback;
+    ret->app_verify_arg = ctx->app_verify_arg;
+
+    ret->default_passwd_callback = ctx->default_passwd_callback;
+    ret->default_passwd_callback_userdata = ctx->default_passwd_callback_userdata;
+
+    ret->client_cert_cb = ctx->client_cert_cb;
+    ret->app_gen_cookie_cb = ctx->app_gen_cookie_cb;
+    ret->app_verify_cookie_cb = ctx->app_verify_cookie_cb;
+
+    ret->gen_stateless_cookie_cb = ctx->gen_stateless_cookie_cb;
+    ret->verify_stateless_cookie_cb = ctx->verify_stateless_cookie_cb;
+
+    ret->info_callback = ctx->info_callback;
+
+    ret->read_ahead = ctx->read_ahead;
+
+    ret->msg_callback = ctx->msg_callback;
+    ret->msg_callback_arg = ctx->msg_callback_arg;
+
+    ret->sid_ctx_length = ctx->sid_ctx_length;
+    memcpy(ret->sid_ctx, ctx->sid_ctx, sizeof(ret->sid_ctx));
+    ret->default_verify_callback = ctx->default_verify_callback;
+
+    ret->generate_session_id = ctx->generate_session_id;
+
+    ret->quiet_shutdown = ctx->quiet_shutdown;
+
+    ret->max_pipelines = ctx->max_pipelines;
+    ret->default_read_buf_len = ctx->default_read_buf_len;
+
+#ifndef OPENSSL_NO_ENGINE
+    ret->client_cert_engine = NULL;
+#endif
+
+    ret->client_hello_cb = ctx->client_hello_cb;
+    ret->client_hello_cb_arg = ctx->client_hello_cb_arg;
+
+#ifndef OPENSSL_NO_TLSEXT
+    ret->ext.servername_cb = ctx->ext.servername_cb;
+    ret->ext.servername_arg = ctx->ext.servername_arg;
+
+    memcpy(ret->ext.tick_key_name, ctx->ext.tick_key_name,
+           sizeof(ret->ext.tick_key_name));
+
+    ret->ext.ticket_key_evp_cb = ctx->ext.ticket_key_evp_cb;
+    ret->ext.max_fragment_len_mode = ctx->ext.max_fragment_len_mode;
+
+# ifndef OPENSSL_NO_EC
+    if (ctx->ext.ecpointformats) {
+        ret->ext.ecpointformats = OPENSSL_memdup(ctx->ext.ecpointformats,
+                                                 ctx->ext.ecpointformats_len);
+        if (!ret->ext.ecpointformats)
+            goto err;
+
+        ret->ext.ecpointformats_len = ctx->ext.ecpointformats_len;
+    }
+    if (ctx->ext.supportedgroups) {
+        ret->ext.supportedgroups = OPENSSL_memdup(ctx->ext.supportedgroups,
+                                                  ctx->ext.supportedgroups_len
+                                                  * sizeof(*ctx->ext.supportedgroups));
+        if (!ret->ext.supportedgroups)
+            goto err;
+
+        ret->ext.supportedgroups_len = ctx->ext.supportedgroups_len;
+    }
+# endif
+
+    /* XXX: for ALPN, no need to duplicate client side paras */
+    ret->ext.alpn_select_cb = ctx->ext.alpn_select_cb;
+    ret->ext.alpn_select_cb_arg = ctx->ext.alpn_select_cb_arg;
+
+    if (ctx->ext.alpn) {
+        ret->ext.alpn = OPENSSL_malloc(ctx->ext.alpn_len);
+        if (ret->ext.alpn == NULL)
+            goto err;
+
+        memcpy(ret->ext.alpn, ctx->ext.alpn, ctx->ext.alpn_len);
+        ret->ext.alpn_len = ctx->ext.alpn_len;
+    }
+
+# ifndef OPENSSL_NO_NEXTPROTONEG
+    ret->ext.npn_advertised_cb = ctx->ext.npn_advertised_cb;
+    ret->ext.npn_advertised_cb_arg = ctx->ext.npn_advertised_cb_arg;
+    ret->ext.npn_select_cb = ctx->ext.npn_select_cb;
+    ret->ext.npn_select_cb_arg = ctx->ext.npn_select_cb_arg;
+# endif
+#endif
+
+#ifndef OPENSSL_NO_PSK
+    /* do we need to dup this char * ? */
+    ret->psk_client_callback = ctx->psk_client_callback;
+    ret->psk_server_callback = ctx->psk_server_callback;
+#endif
+    ret->psk_find_session_cb = ctx->psk_find_session_cb;
+    ret->psk_use_session_cb = ctx->psk_use_session_cb;
+
+    /* TODO: srp profiles; dane */
+    ret->dane = ctx->dane;
+
+# ifndef OPENSSL_NO_SRTP
+    /* SRTP profiles we are willing to do from RFC 5764 */
+    if (ctx->srtp_profiles)
+        ret->srtp_profiles = sk_SRTP_PROTECTION_PROFILE_dup(ctx->srtp_profiles);
+    else
+        ret->srtp_profiles = sk_SRTP_PROTECTION_PROFILE_new_null();
+
+    if (ret->srtp_profiles == NULL)
+        goto err;
+# endif
+
+    ret->not_resumable_session_cb = ctx->not_resumable_session_cb;
+
+    ret->keylog_callback = ctx->keylog_callback;
+
+    ret->record_padding_cb = ctx->record_padding_cb;
+    ret->record_padding_arg = ctx->record_padding_arg;
+    ret->block_padding = ctx->block_padding;
+
+    ret->generate_ticket_cb = ctx->generate_ticket_cb;
+    ret->decrypt_ticket_cb = ctx->decrypt_ticket_cb;
+    ret->ticket_cb_data = ctx->ticket_cb_data;
+
+    ret->allow_early_data_cb = ctx->allow_early_data_cb;
+    ret->allow_early_data_cb_data = ctx->allow_early_data_cb_data;
+
+    ret->pha_enabled = ctx->pha_enabled;
+
+    ret->async_cb = ctx->async_cb;
+    ret->async_cb_arg = ctx->async_cb_arg;
+
+#ifndef OPENSSL_NO_SM2
+    ret->enable_sm_tls13_strict = ctx->enable_sm_tls13_strict;
+#endif
+
+#ifndef OPENSSL_NO_QUIC
+    ret->quic_method = ctx->quic_method;
+#endif
+
+#ifndef OPENSSL_NO_CERT_COMPRESSION
+    if (ctx->cert_comp_algs) {
+        ret->cert_comp_algs = sk_CERT_COMP_deep_copy(ctx->cert_comp_algs,
+                                                     CERT_COMP_copy,
+                                                     CERT_COMP_free);
+        if (ret->cert_comp_algs == NULL)
+            goto err;
+    }
+#endif
+
+    return (ret);
+ err:
+    ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+ err2:
+    if (ret != NULL)
+        SSL_CTX_free(ret);
+    return (NULL);
 }
 
 void ssl_clear_cipher_ctx(SSL *s)

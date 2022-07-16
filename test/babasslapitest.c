@@ -1435,6 +1435,79 @@ err:
 }
 #endif
 
+#if !defined(OPENSSL_NO_TLS1_2) && !defined(OPENSSL_NO_TLS1_1)
+static int test_babassl_ssl_ctx_dup(void)
+{
+    SSL_CTX *cctx = NULL, *sctx = NULL, *sctx2 = NULL, *sctx3 = NULL;
+    SSL *clientssl = NULL, *serverssl = NULL;
+    int testresult = 0;
+
+    if (!TEST_true(create_ssl_ctx_pair(NULL, TLS_server_method(),
+                                       TLS_client_method(),
+                                       TLS1_VERSION, 0,
+                                       &sctx, &cctx, cert, privkey)))
+        goto end;
+
+    if (!TEST_true(create_ssl_ctx_pair(NULL, TLS_server_method(), NULL,
+                                       TLS1_VERSION, 0,
+                                       &sctx2, NULL, cert, privkey))
+        || !TEST_true(SSL_CTX_set_cipher_list(cctx, "DEFAULT:@SECLEVEL=0"))
+        || !TEST_true(SSL_CTX_set_cipher_list(sctx, "DEFAULT:@SECLEVEL=0"))
+        || !TEST_true(SSL_CTX_set_cipher_list(sctx2, "DEFAULT:@SECLEVEL=0")))
+        goto end;
+
+    SSL_CTX_set_options(sctx2, SSL_OP_NO_TLSv1_1);
+    SSL_CTX_set_options(sctx2, SSL_OP_NO_TLSv1);
+    SSL_CTX_set_options(sctx2, SSL_OP_NO_SSLv3);
+
+    sctx3 = SSL_CTX_dup(sctx2);
+
+    SSL_CTX_set_client_hello_cb(sctx, babassl_client_hello_callback, sctx3);
+
+    /* The gimpy cipher list we configure can't do TLS 1.3. */
+    SSL_CTX_set_max_proto_version(cctx, TLS1_2_VERSION);
+
+    SSL_CTX_set_options(cctx, SSL_OP_NO_TLSv1_2);
+    SSL_CTX_set_options(cctx, SSL_OP_NO_TLSv1);
+    SSL_CTX_set_options(cctx, SSL_OP_NO_SSLv3);
+
+    if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl, &clientssl,
+                                      NULL, NULL))
+            || !TEST_false(create_ssl_connection(serverssl, clientssl,
+                                                 SSL_ERROR_NONE)))
+        goto end;
+
+    SSL_free(serverssl);
+    SSL_free(clientssl);
+
+    serverssl = NULL;
+    clientssl = NULL;
+
+    SSL_CTX_clear_options(sctx3, SSL_OP_NO_TLSv1_1);
+
+    if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl, &clientssl,
+                                      NULL, NULL))
+            || !TEST_true(create_ssl_connection(serverssl, clientssl,
+                                                SSL_ERROR_NONE)))
+        goto end;
+
+    fflush(stdout);
+    setvbuf(stdout, NULL, _IONBF, 0);
+
+    testresult = 1;
+
+end:
+    SSL_free(serverssl);
+    SSL_free(clientssl);
+    SSL_CTX_free(sctx);
+    SSL_CTX_free(cctx);
+    SSL_CTX_free(sctx2);
+    SSL_CTX_free(sctx3);
+
+    return testresult;
+}
+#endif
+
 int setup_tests(void)
 {
     if (!test_skip_common_options()) {
@@ -1496,6 +1569,9 @@ int setup_tests(void)
 #endif
 #ifndef OPENSSL_NO_CRYPTO_MDEBUG_COUNT
     ADD_TEST(test_babassl_crypto_mdebug_count);
+#endif
+#if !defined(OPENSSL_NO_TLS1_2) && !defined(OPENSSL_NO_TLS1_1)
+    ADD_TEST(test_babassl_ssl_ctx_dup);
 #endif
     return 1;
 }

@@ -959,9 +959,9 @@ struct ssl_ctx_st {
                                                 * other processes - spooky
                                                 * :-) */
     } stats;
-#ifdef TSAN_REQUIRES_LOCKING
+# ifdef TSAN_REQUIRES_LOCKING
     CRYPTO_RWLOCK *tsan_lock;
-#endif
+# endif
 
     CRYPTO_REF_COUNT references;
 
@@ -1103,7 +1103,7 @@ struct ssl_ctx_st {
         int (*ticket_key_cb) (SSL *ssl,
                               unsigned char *name, unsigned char *iv,
                               EVP_CIPHER_CTX *ectx, HMAC_CTX *hctx, int enc);
-#endif
+# endif
         int (*ticket_key_evp_cb) (SSL *ssl,
                                   unsigned char *name, unsigned char *iv,
                                   EVP_CIPHER_CTX *ectx, EVP_MAC_CTX *hctx,

@@ -1572,6 +1572,7 @@ __owur SSL_CTX *SSL_CTX_new_ex(OSSL_LIB_CTX *libctx, const char *propq,
                                const SSL_METHOD *meth);
 int SSL_CTX_up_ref(SSL_CTX *ctx);
 void SSL_CTX_free(SSL_CTX *);
+SSL_CTX *SSL_CTX_dup(SSL_CTX *ctx);
 __owur long SSL_CTX_set_timeout(SSL_CTX *ctx, long t);
 __owur long SSL_CTX_get_timeout(const SSL_CTX *ctx);
 __owur X509_STORE *SSL_CTX_get_cert_store(const SSL_CTX *);

@@ -624,3 +624,4 @@ SSL_CTX_use_dc_PrivateKey               624	3_0_3	EXIST::FUNCTION:DELEGATED_CRED
 SSL_CTX_use_dc_PrivateKey_file          625	3_0_3	EXIST::FUNCTION:DELEGATED_CREDENTIAL
 DC_print                                626	3_0_3	EXIST::FUNCTION:DELEGATED_CREDENTIAL
 DC_sign                                 627	3_0_3	EXIST::FUNCTION:DELEGATED_CREDENTIAL
+SSL_CTX_dup                             628	3_0_3	EXIST::FUNCTION:
