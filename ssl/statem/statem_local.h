@@ -253,6 +253,10 @@ int tls_parse_ctos_key_share(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
                              size_t chainidx);
 int tls_parse_ctos_cookie(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
                           size_t chainidx);
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+int tls_parse_ctos_delegated_credential(SSL *s, PACKET *pkt, unsigned int context,
+                                        X509 *x, size_t chainidx);
+#endif
 int tls_parse_ctos_ems(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
                        size_t chainidx);
 int tls_parse_ctos_psk_kex_modes(SSL *s, PACKET *pkt, unsigned int context,
@@ -309,6 +313,10 @@ EXT_RETURN tls_construct_stoc_use_srtp(SSL *s, WPACKET *pkt, unsigned int contex
 #endif
 EXT_RETURN tls_construct_stoc_etm(SSL *s, WPACKET *pkt, unsigned int context,
                                   X509 *x, size_t chainidx);
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+EXT_RETURN tls_construct_stoc_delegated_credential(SSL *s, WPACKET *pkt, unsigned int context,
+                                                   X509 *x, size_t chainidx);
+#endif
 EXT_RETURN tls_construct_stoc_ems(SSL *s, WPACKET *pkt, unsigned int context,
                                   X509 *x, size_t chainidx);
 EXT_RETURN tls_construct_stoc_supported_versions(SSL *s, WPACKET *pkt,
@@ -388,6 +396,10 @@ EXT_RETURN tls_construct_ctos_etm(SSL *s, WPACKET *pkt, unsigned int context,
 EXT_RETURN tls_construct_ctos_sct(SSL *s, WPACKET *pkt, unsigned int context,
                                   X509 *x, size_t chainidx);
 #endif
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+EXT_RETURN tls_construct_ctos_delegated_credential(SSL *s, WPACKET *pkt, unsigned int context,
+                                                   X509 *x, size_t chainidx);
+#endif
 EXT_RETURN tls_construct_ctos_ems(SSL *s, WPACKET *pkt, unsigned int context,
                                   X509 *x, size_t chainidx);
 EXT_RETURN tls_construct_ctos_supported_versions(SSL *s, WPACKET *pkt,
@@ -450,6 +462,10 @@ int tls_parse_stoc_use_srtp(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
 #endif
 int tls_parse_stoc_etm(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
                        size_t chainidx);
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+int tls_parse_stoc_delegated_credential(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
+                                        size_t chainidx);
+#endif
 int tls_parse_stoc_ems(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
                        size_t chainidx);
 int tls_parse_stoc_supported_versions(SSL *s, PACKET *pkt, unsigned int context,
@@ -473,6 +489,7 @@ int tls_handle_alpn(SSL *s);
 
 int tls13_save_handshake_digest_for_pha(SSL *s);
 int tls13_restore_handshake_digest_for_pha(SSL *s);
+
 #ifndef OPENSSL_NO_CERT_COMPRESSION
 __owur EXT_RETURN tls_construct_compress_cert(SSL *s, WPACKET *pkt,
                                               unsigned int context,
@@ -492,3 +509,15 @@ __owur MSG_PROCESS_RETURN tls_process_client_compressed_certificate(SSL *s,
 __owur MSG_PROCESS_RETURN tls_process_server_compressed_certificate(SSL *s,
                                                                 PACKET *pkt);
 #endif
+
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+int tls_parse_dc_from_extension(SSL *s, PACKET *pkt, unsigned int context,
+                                X509 *x, size_t chainidx);
+int tls_process_dc_request(SSL *s, PACKET *pkt, unsigned int context,
+                           X509 *x, size_t chainidx);
+EXT_RETURN tls_construct_delegated_credential_raw(SSL *s, WPACKET *pkt, unsigned int context,
+                                                  X509 *x, size_t chainidx);
+EXT_RETURN tls_construct_delegated_credential_request(SSL *s, WPACKET *pkt, unsigned int context,
+                                                      X509 *x, size_t chainidx);
+#endif
+

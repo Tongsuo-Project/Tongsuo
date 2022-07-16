@@ -182,6 +182,34 @@ int set_cert_key_stuff(SSL_CTX *ctx, X509 *cert, EVP_PKEY *key,
     return 1;
 }
 
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+int set_dc_cert_key_stuff(SSL_CTX *ctx, X509 *cert, EVP_PKEY *key,
+                          DELEGATED_CREDENTIAL *dc, int is_server)
+{
+    if (SSL_CTX_use_certificate(ctx, cert) <= 0) {
+        BIO_printf(bio_err, "error setting certificate\n");
+        ERR_print_errors(bio_err);
+        return 0;
+    }
+
+    if (!SSL_CTX_use_dc(ctx, dc)) {
+        BIO_printf(bio_err, "error setting dc\n");
+        ERR_print_errors(bio_err);
+        return 0;
+    }
+
+    if (!SSL_CTX_use_dc_PrivateKey(ctx, key)) {
+        BIO_printf(bio_err, "error setting dc key\n");
+        ERR_print_errors(bio_err);
+        return 0;
+    }
+
+    SSL_CTX_enable_sign_by_dc(ctx);
+
+    return 1;
+}
+#endif
+
 #ifndef OPENSSL_NO_NTLS
 int set_sign_cert_key_stuff(SSL_CTX *ctx, X509 *cert, EVP_PKEY *key,
                             STACK_OF(X509) *chain, int build_chain)

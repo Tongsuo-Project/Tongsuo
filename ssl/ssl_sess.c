@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <openssl/rand.h>
 #include <openssl/engine.h>
+#include <openssl/x509.h>
 #include "internal/refcount.h"
 #include "internal/cryptlib.h"
 #include "ssl_local.h"
@@ -210,6 +211,14 @@ SSL_SESSION *ssl_session_dup(const SSL_SESSION *src, int ticket)
 
     if (!CRYPTO_new_ex_data(CRYPTO_EX_INDEX_SSL_SESSION, dest, &dest->ex_data))
         goto err;
+
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    if (src->peer_dc != NULL) {
+        if (!DC_up_ref(src->peer_dc))
+            goto err;
+        dest->peer_dc = src->peer_dc;
+    }
+#endif
 
     if (src->peer != NULL) {
         if (!X509_up_ref(src->peer))
@@ -896,6 +905,9 @@ void SSL_SESSION_free(SSL_SESSION *ss)
     OPENSSL_cleanse(ss->master_key, sizeof(ss->master_key));
     OPENSSL_cleanse(ss->session_id, sizeof(ss->session_id));
     X509_free(ss->peer);
+#ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+    DC_free(ss->peer_dc);
+#endif
     sk_X509_pop_free(ss->peer_chain, X509_free);
     OPENSSL_free(ss->ext.hostname);
     OPENSSL_free(ss->ext.tick);

@@ -124,6 +124,10 @@ B<openssl> B<s_client>
 [B<-srp_lateuser>]
 [B<-srp_moregroups>]
 [B<-srp_strength> I<number>]
+[B<-dc> I<filename>]
+[B<-dc_pkey> I<filename>]
+[B<-enable_sign_by_dc>]
+[B<-enable_verify_peer_by_dc>]
 {- $OpenSSL::safe::opt_name_synopsis -}
 {- $OpenSSL::safe::opt_version_synopsis -}
 {- $OpenSSL::safe::opt_x_synopsis -}
@@ -812,6 +816,23 @@ Tolerate other than the known B<g> and B<N> values.
 
 Set the minimal acceptable length, in bits, for B<N>.  This option is
 deprecated.
+
+=item B<-dc> I<filename>
+
+The client delegated credential to use, if one is requested by the server.
+The default is not to use a DC.
+
+=item B<-dc_pkey> I<filename>
+
+The client DC private key to use.
+
+=item B<-enable_sign_by_dc>
+
+Enable sign by delegated credential.
+
+=item B<-enable_verify_peer_by_dc>
+
+Enable verify peer by delegated credential.
 
 {- $OpenSSL::safe::opt_version_item -}
 

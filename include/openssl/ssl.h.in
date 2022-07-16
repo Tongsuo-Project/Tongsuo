@@ -1832,6 +1832,38 @@ void SSL_enable_sm_tls13_strict(SSL *s);
 void SSL_disable_sm_tls13_strict(SSL *s);
 # endif
 
+# ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+#  define DC_REQ_HAS_BEEN_SEND_TO_PEER          0x01
+#  define DC_HAS_BEEN_USED_FOR_VERIFY_PEER      0x02
+#  define DC_HAS_BEEN_USED_FOR_SIGN             0x04
+
+void SSL_CTX_enable_verify_peer_by_dc(SSL_CTX *ctx);
+void SSL_CTX_disable_verify_peer_by_dc(SSL_CTX *ctx);
+void SSL_enable_verify_peer_by_dc(SSL *s);
+void SSL_disable_verify_peer_by_dc(SSL *s);
+void SSL_CTX_enable_sign_by_dc(SSL_CTX *ctx);
+void SSL_CTX_disable_sign_by_dc(SSL_CTX *ctx);
+void SSL_enable_sign_by_dc(SSL *s);
+void SSL_disable_sign_by_dc(SSL *s);
+int SSL_get_delegated_credential_tag(SSL *s);
+int SSL_verify_delegated_credential_signature(X509 *parent_cert,
+                                              DELEGATED_CREDENTIAL *dc,
+                                              int is_server);
+int SSL_use_dc(SSL *ssl, DELEGATED_CREDENTIAL *dc);
+int SSL_use_dc_file(SSL *ssl, const char *file, int type);
+int SSL_use_dc_PrivateKey(SSL *ssl, EVP_PKEY *pkey);
+int SSL_use_dc_PrivateKey_file(SSL *ssl, const char *file, int type);
+int SSL_CTX_use_dc(SSL_CTX *ctx, DELEGATED_CREDENTIAL *dc);
+int SSL_CTX_use_dc_file(SSL_CTX *ctx, const char *file, int type);
+int SSL_CTX_use_dc_PrivateKey(SSL_CTX *ctx, EVP_PKEY *pkey);
+int SSL_CTX_use_dc_PrivateKey_file(SSL_CTX *ctx, const char *file, int type);
+int DC_print(BIO *bp, DELEGATED_CREDENTIAL *dc);
+int DC_sign(DELEGATED_CREDENTIAL *dc, EVP_PKEY *dc_pkey,
+            unsigned int valid_time, int expect_verify_hash,
+            X509 *ee_cert, EVP_PKEY *ee_pkey, const EVP_MD *md,
+            int is_server);
+# endif
+
 __owur int SSL_CTX_use_PrivateKey_ASN1(int pk, SSL_CTX *ctx,
                                        const unsigned char *d, long len);
 __owur int SSL_CTX_use_certificate(SSL_CTX *ctx, X509 *x);

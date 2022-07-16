@@ -12,6 +12,7 @@ rule 'MD046', :style => :consistent
 # Bug in mdl, https://github.com/markdownlint/markdownlint/issues/313
 exclude_rule 'MD007'
 
+exclude_rule 'MD003'
 exclude_rule 'MD004' # Unordered list style TODO(fix?)
 exclude_rule 'MD005' # Inconsistent indentation for list items at the same level
 exclude_rule 'MD006' # Consider starting bulleted lists at the beginning of the line
