@@ -241,9 +241,17 @@ int ecparam_main(int argc, char **argv)
             goto end;
         }
     } else {
-        params_key = load_keyparams(infile, informat, 1, "EC", "EC parameters");
-        if (params_key == NULL || !EVP_PKEY_is_a(params_key, "EC"))
+        params_key = load_keyparams_suppress(infile, informat, 1, "EC",
+                                             "EC parameters", 1);
+        if (params_key == NULL)
+            params_key = load_keyparams_suppress(infile, informat, 1, "SM2",
+                                                 "SM2 parameters", 1);
+
+        if (params_key == NULL) {
+            BIO_printf(bio_err, "Unable to load parameters from %s\n", infile);
             goto end;
+        }
+
         if (point_format
             && !EVP_PKEY_set_utf8_string_param(
                     params_key, OSSL_PKEY_PARAM_EC_POINT_CONVERSION_FORMAT,
@@ -284,7 +292,7 @@ int ecparam_main(int argc, char **argv)
                 goto end;
         }
         pctx = EVP_PKEY_CTX_new_from_pkey(NULL, params_key, NULL);
-        if (pctx == NULL || !EVP_PKEY_param_check(pctx)) {
+        if (pctx == NULL || EVP_PKEY_param_check(pctx) <= 0) {
             BIO_printf(bio_err, "failed\n");
             goto end;
         }
