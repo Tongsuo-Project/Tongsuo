@@ -356,4 +356,14 @@ EVP_PKEY *app_paramgen(EVP_PKEY_CTX *ctx, const char *alg);
 int build_vfyopt_compat_string(int option, char **ret, const char *value);
 int build_sigopt_compat_string(char **ret, const char *value);
 
+# ifndef OPENSSL_NO_CERT_COMPRESSION
+#  if defined(ZLIB) && !defined(ZLIB_SHARED)
+int zlib_compress(SSL *s,
+                  const unsigned char *in, size_t inlen,
+                  unsigned char *out, size_t *outlen);
+ int zlib_decompress(SSL *s,
+                     const unsigned char *in, size_t inlen,
+                     unsigned char *out, size_t outlen);
+#  endif
+# endif
 #endif
