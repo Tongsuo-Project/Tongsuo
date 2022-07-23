@@ -1,0 +1,16 @@
+commit: 2dffdb11fca89eaa2218c93835d45e2b794820c1
+date: 2022-07-23 09:48:53
+OpenSSL 1.1.1h  22 Sep 2020
+built on: Sat Jul 23 01:40:39 2022 UTC
+options:bn(64,64) rc4(16x,int) des(int) aes(partial) idea(int) blowfish(ptr) 
+compiler: gcc -fPIC -pthread -m64 -Wa,--noexecstack -Wall -O3 -DDEBUG_UNUSED -DPEDANTIC -pedantic -Wno-long-long -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wswitch -Wsign-compare -Wshadow -Wformat -Wtype-limits -Wundef -Werror -Wmissing-prototypes -Wstrict-prototypes -DOPENSSL_USE_NODELETE -DL_ENDIAN -DOPENSSL_PIC -DOPENSSL_CPUID_OBJ -DOPENSSL_IA32_SSE2 -DOPENSSL_BN_ASM_MONT -DOPENSSL_BN_ASM_MONT5 -DOPENSSL_BN_ASM_GF2m -DSHA1_ASM -DSHA256_ASM -DSHA512_ASM -DKECCAK1600_ASM -DRC4_ASM -DMD5_ASM -DAESNI_ASM -DVPAES_ASM -DGHASH_ASM -DECP_NISTZ256_ASM -DX25519_ASM -DPOLY1305_ASM -DNDEBUG 
+EC-ElGamal curve          init[+](s)     init[+-](s)
+nistp256                         0.5             2.2
+
+EC-ElGamal curve        a            b   encrypt(b)/s   decrypt(b)/s   add(a,b)/s   sub(a,b)/s   mul(a,b)/s
+nistp256                9           10        11853.5        13841.8     290148.6    177855.0       7737.6
+nistp256                9       100000        11052.1        12324.6     291657.8    249318.7       8423.4
+nistp256                9    100000000        11974.8           88.3     284273.3    247219.6       7855.2
+nistp256                9          -10        11156.2            3.4     293462.8    251267.8       7928.7
+nistp256                9      -100000        11107.8            3.6     285450.1    254995.5       7748.1
+nistp256                9   -100000000        11095.3           14.0     291712.1    256171.7       7813.9
