@@ -113,6 +113,8 @@ my $crypto_num= catfile($config{sourcedir},"util","libcrypto.num");
 my $ssl_num=    catfile($config{sourcedir},"util","libssl.num");
 my $libname;
 
+my $symbol_prefix = $config{symbol_prefix};
+
 my $do_update = 0;
 my $do_rewrite = 1;
 my $do_crypto = 0;
@@ -1230,9 +1232,9 @@ EOF
 							$prevprevsymversion = $prevsymversion;
 							$prevsymversion = $symversion;
 						}
-						print OUT "        $s2;\n";
+						print OUT "        $symbol_prefix$s2;\n";
 					} elsif ($aix) {
-						print OUT "$s2\n";
+						print OUT "$symbol_prefix$s2\n";
                                         } elsif ($VMS) {
                                             while(++$prevnum < $n) {
                                                 my $symline=" ,SPARE -\n  ,SPARE -\n";
@@ -1266,10 +1268,10 @@ EOF
                                             $symvtextcount += length($symline) - 2;
 					} elsif($v) {
 						printf OUT "    %s%-39s DATA\n",
-								($W32)?"":"_",$s2;
+								($W32)?"":"_","$symbol_prefix$s2";
 					} else {
 						printf OUT "    %s%s\n",
-								($W32)?"":"_",$s2;
+								($W32)?"":"_","$symbol_prefix$s2";
 					}
 				}
 			}

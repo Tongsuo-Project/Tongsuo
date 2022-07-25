@@ -30,7 +30,7 @@ int MD5_Init(MD5_CTX *c)
     return 1;
 }
 
-#ifndef md5_block_data_order
+#ifndef ASM_md5_block_data_order
 # ifdef X
 #  undef X
 # endif

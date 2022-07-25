@@ -65,6 +65,7 @@ static ossl_inline int async_fibre_swapcontext(async_fibre *o, async_fibre *n, i
     return 1;
 }
 
+#  undef async_fibre_init_dispatcher
 #  define async_fibre_init_dispatcher(d)
 
 int async_fibre_makecontext(async_fibre *fibre);

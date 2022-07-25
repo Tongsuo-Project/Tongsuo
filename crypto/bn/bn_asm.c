@@ -427,6 +427,9 @@ BN_ULONG bn_sub_words(BN_ULONG *r, const BN_ULONG *a, const BN_ULONG *b,
 # undef bn_sqr_comba8
 # undef bn_sqr_comba4
 
+# undef HEADER_SYMBOL_PREFIX_H
+# include <openssl/symbol_prefix.h>
+
 /* mul_add_c(a,b,c0,c1,c2)  -- c+=a*b for three word number c=(c2,c1,c0) */
 /* mul_add_c2(a,b,c0,c1,c2) -- c+=2*a*b for three word number c=(c2,c1,c0) */
 /* sqr_add_c(a,i,c0,c1,c2)  -- c+=a[i]^2 for three word number c=(c2,c1,c0) */
@@ -952,6 +955,10 @@ int bn_mul_mont(BN_ULONG *rp, const BN_ULONG *ap, const BN_ULONG *bp,
 /* hmm... is it faster just to do a multiply? */
 # undef bn_sqr_comba4
 # undef bn_sqr_comba8
+
+# undef HEADER_SYMBOL_PREFIX_H
+# include <openssl/symbol_prefix.h>
+
 void bn_sqr_comba4(BN_ULONG *r, const BN_ULONG *a)
 {
     BN_ULONG t[8];

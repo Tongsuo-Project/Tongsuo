@@ -795,8 +795,10 @@ typedef struct ASN1_STREAM_ARG_st {
 /* Macro to implement standard functions in terms of ASN1_ITEM structures */
 
 # define IMPLEMENT_ASN1_FUNCTIONS(stname) IMPLEMENT_ASN1_FUNCTIONS_fname(stname, stname, stname)
+# define IMPLEMENT_STATIC_ASN1_FUNCTIONS(stname) IMPLEMENT_ASN1_FUNCTIONS_pfname(static, stname, stname, stname)
 
 # define IMPLEMENT_ASN1_FUNCTIONS_name(stname, itname) IMPLEMENT_ASN1_FUNCTIONS_fname(stname, itname, itname)
+# define IMPLEMENT_STATIC_ASN1_FUNCTIONS_name(stname, itname) IMPLEMENT_ASN1_FUNCTIONS_pfname(static, stname, itname, itname)
 
 # define IMPLEMENT_ASN1_FUNCTIONS_ENCODE_name(stname, itname) \
                         IMPLEMENT_ASN1_FUNCTIONS_ENCODE_fname(stname, itname, itname)
@@ -831,12 +833,26 @@ typedef struct ASN1_STREAM_ARG_st {
         IMPLEMENT_ASN1_ENCODE_FUNCTIONS_fname(stname, itname, fname) \
         IMPLEMENT_ASN1_ALLOC_FUNCTIONS_fname(stname, itname, fname)
 
+# define IMPLEMENT_ASN1_FUNCTIONS_pfname(pre, stname, itname, fname) \
+        IMPLEMENT_ASN1_ENCODE_FUNCTIONS_pfname(pre, stname, itname, fname) \
+        IMPLEMENT_ASN1_ALLOC_FUNCTIONS_pfname(pre, stname, itname, fname)
+
 # define IMPLEMENT_ASN1_ENCODE_FUNCTIONS_fname(stname, itname, fname) \
         stname *d2i_##fname(stname **a, const unsigned char **in, long len) \
         { \
                 return (stname *)ASN1_item_d2i((ASN1_VALUE **)a, in, len, ASN1_ITEM_rptr(itname));\
         } \
         int i2d_##fname(stname *a, unsigned char **out) \
+        { \
+                return ASN1_item_i2d((ASN1_VALUE *)a, out, ASN1_ITEM_rptr(itname));\
+        }
+
+# define IMPLEMENT_ASN1_ENCODE_FUNCTIONS_pfname(pre, stname, itname, fname) \
+        pre stname *d2i_##fname(stname **a, const unsigned char **in, long len) \
+        { \
+                return (stname *)ASN1_item_d2i((ASN1_VALUE **)a, in, len, ASN1_ITEM_rptr(itname));\
+        } \
+        pre int i2d_##fname(stname *a, unsigned char **out) \
         { \
                 return ASN1_item_i2d((ASN1_VALUE *)a, out, ASN1_ITEM_rptr(itname));\
         }
@@ -874,6 +890,16 @@ typedef struct ASN1_STREAM_ARG_st {
                 return ASN1_item_i2d((ASN1_VALUE *)a, out, ASN1_ITEM_rptr(itname));\
         }
 
+# define IMPLEMENT_STATIC_ASN1_ENCODE_FUNCTIONS_const_fname(stname, itname, fname) \
+        static stname *d2i_##fname(stname **a, const unsigned char **in, long len) \
+        { \
+                return (stname *)ASN1_item_d2i((ASN1_VALUE **)a, in, len, ASN1_ITEM_rptr(itname));\
+        } \
+        static int i2d_##fname(const stname *a, unsigned char **out) \
+        { \
+                return ASN1_item_i2d((ASN1_VALUE *)a, out, ASN1_ITEM_rptr(itname));\
+        }
+
 # define IMPLEMENT_ASN1_DUP_FUNCTION(stname) \
         stname * stname##_dup(stname *x) \
         { \
@@ -894,9 +920,16 @@ typedef struct ASN1_STREAM_ARG_st {
 # define IMPLEMENT_ASN1_FUNCTIONS_const(name) \
                 IMPLEMENT_ASN1_FUNCTIONS_const_fname(name, name, name)
 
+# define IMPLEMENT_STATIC_ASN1_FUNCTIONS_const(name) \
+                IMPLEMENT_STATIC_ASN1_FUNCTIONS_const_fname(name, name, name)
+
 # define IMPLEMENT_ASN1_FUNCTIONS_const_fname(stname, itname, fname) \
         IMPLEMENT_ASN1_ENCODE_FUNCTIONS_const_fname(stname, itname, fname) \
         IMPLEMENT_ASN1_ALLOC_FUNCTIONS_fname(stname, itname, fname)
+
+# define IMPLEMENT_STATIC_ASN1_FUNCTIONS_const_fname(stname, itname, fname) \
+        IMPLEMENT_STATIC_ASN1_ENCODE_FUNCTIONS_const_fname(stname, itname, fname) \
+        IMPLEMENT_ASN1_ALLOC_FUNCTIONS_pfname(static, stname, itname, fname)
 
 /* external definitions for primitive types */
 

@@ -9,6 +9,8 @@
 
   *)
 
+  *) 支持新特性 - 添加导出符号前缀
+
  Changes between 8.3.0 and 8.3.1 [2022年4月2日]
 
   *) 修改EC-ElGamal的bug

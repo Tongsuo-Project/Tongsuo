@@ -9,6 +9,8 @@
 
   *)
 
+  *) Support new feature: add export symbol prefix
+
  Changes between 8.3.0 and 8.3.1 [02 Apr 2022]
 
   *) Fix a bug in EC-ElGamal
