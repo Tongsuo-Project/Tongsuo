@@ -193,6 +193,9 @@ providers/common/include/prov/der_sm2.h
 *.o
 *.obj
 
+# Mac debug symbols files
+*.dSYM
+
 # editor artefacts
 *.swp
 .#*
