@@ -34,7 +34,9 @@
 =========================
 
 铜锁使用钉钉群进行用户答疑和交流，欢迎扫码入群（也可直接搜索群号：44810299）：
-![QR](tongsuo-dingtalk.jpg)
+<img src=
+"https://github.com/Tongsuo-Project/Tongsuo/blob/master/tongsuo-dingtalk.jpg"
+width=50% height=50% />
 
 报告安全缺陷
 =========================
