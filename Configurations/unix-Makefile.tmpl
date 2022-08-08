@@ -129,7 +129,7 @@ GENERATED_PODS={- # common0.tmpl provides @generated
                        fill_lines(" ", $COLUMNS - 15,
                                   map { my $x = $_;
                                         (
-                                          grep { 
+                                          grep {
                                                  $unified_info{attributes}->{depends}
                                                  ->{$x}->{$_}->{pod} // 0
                                                }
@@ -908,6 +908,7 @@ install_programs: install_runtime_libs build_programs
 		chmod 755 $(DESTDIR)$(INSTALLTOP)/bin/$$fn.new; \
 		mv -f $(DESTDIR)$(INSTALLTOP)/bin/$$fn.new \
 		      $(DESTDIR)$(INSTALLTOP)/bin/$$fn; \
+		ln -sf $(DESTDIR)$(INSTALLTOP)/bin/$$fn $(DESTDIR)$(INSTALLTOP)/bin/tongsuo; \
 	done
 	@set -e; for x in dummy $(BIN_SCRIPTS); do \
 		if [ "$$x" = "dummy" ]; then continue; fi; \
@@ -929,6 +930,7 @@ uninstall_programs:
 		fn=`basename $$x`; \
 		$(ECHO) "$(RM) $(DESTDIR)$(INSTALLTOP)/bin/$$fn"; \
 		$(RM) $(DESTDIR)$(INSTALLTOP)/bin/$$fn; \
+		$(RM) $(DESTDIR)$(INSTALLTOP)/bin/tongsuo; \
 	done;
 	@set -e; for x in dummy $(BIN_SCRIPTS); \
 	do  \
