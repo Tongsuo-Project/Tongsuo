@@ -163,7 +163,7 @@ sub get_function_symbols {
     my @symbols = do_defs($name, $files, $symhacksfile, $debug, $trace, $verbose);
 
     foreach my $symbol (@symbols) {
-        if ($symbol =~ /{1}/) {
+        if ($symbol =~ /\{1\}/) {
             next;
         }
         $symbol =~ /(\S+)\\.*FUNCTION:(\S*)/;
