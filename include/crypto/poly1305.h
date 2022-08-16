@@ -12,6 +12,7 @@
 # pragma once
 
 #include <stddef.h>
+#include <openssl/opensslconf.h>
 
 #define POLY1305_BLOCK_SIZE  16
 #define POLY1305_DIGEST_SIZE 16

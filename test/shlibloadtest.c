@@ -15,6 +15,10 @@
 #include <openssl/types.h>
 #include "simpledynamic.h"
 
+#ifndef SYMBOL_PREFIX
+# define SYMBOL_PREFIX ""
+#endif
+
 typedef void DSO;
 
 typedef const SSL_METHOD * (*TLS_method_t)(void);
@@ -107,7 +111,7 @@ static int test_lib(void)
     if (test_type == NO_ATEXIT) {
         OPENSSL_init_crypto_t myOPENSSL_init_crypto;
 
-        if (!sd_sym(cryptolib, "OPENSSL_init_crypto", &symbols[0].sym)) {
+        if (!sd_sym(cryptolib, SYMBOL_PREFIX "OPENSSL_init_crypto", &symbols[0].sym)) {
             fprintf(stderr, "Failed to load OPENSSL_init_crypto symbol\n");
             goto end;
         }
@@ -121,9 +125,9 @@ static int test_lib(void)
     if (test_type != JUST_CRYPTO
             && test_type != DSO_REFTEST
             && test_type != NO_ATEXIT) {
-        if (!sd_sym(ssllib, "TLS_method", &symbols[0].sym)
-                || !sd_sym(ssllib, "SSL_CTX_new", &symbols[1].sym)
-                || !sd_sym(ssllib, "SSL_CTX_free", &symbols[2].sym)) {
+        if (!sd_sym(ssllib, SYMBOL_PREFIX "TLS_method", &symbols[0].sym)
+                || !sd_sym(ssllib, SYMBOL_PREFIX "SSL_CTX_new", &symbols[1].sym)
+                || !sd_sym(ssllib, SYMBOL_PREFIX "SSL_CTX_free", &symbols[2].sym)) {
             fprintf(stderr, "Failed to load libssl symbols\n");
             goto end;
         }
@@ -138,11 +142,11 @@ static int test_lib(void)
         mySSL_CTX_free(ctx);
     }
 
-    if (!sd_sym(cryptolib, "ERR_get_error", &symbols[0].sym)
-           || !sd_sym(cryptolib, "OPENSSL_version_major", &symbols[1].sym)
-           || !sd_sym(cryptolib, "OPENSSL_version_minor", &symbols[2].sym)
-           || !sd_sym(cryptolib, "OPENSSL_version_patch", &symbols[3].sym)
-           || !sd_sym(cryptolib, "OPENSSL_atexit", &symbols[4].sym)) {
+    if (!sd_sym(cryptolib, SYMBOL_PREFIX "ERR_get_error", &symbols[0].sym)
+           || !sd_sym(cryptolib, SYMBOL_PREFIX "OPENSSL_version_major", &symbols[1].sym)
+           || !sd_sym(cryptolib, SYMBOL_PREFIX "OPENSSL_version_minor", &symbols[2].sym)
+           || !sd_sym(cryptolib, SYMBOL_PREFIX "OPENSSL_version_patch", &symbols[3].sym)
+           || !sd_sym(cryptolib, SYMBOL_PREFIX "OPENSSL_atexit", &symbols[4].sym)) {
         fprintf(stderr, "Failed to load libcrypto symbols\n");
         goto end;
     }
@@ -182,8 +186,8 @@ static int test_lib(void)
          * will always return an error, because DSO_pathbyaddr() is not
          * implemented there.
          */
-        if (!sd_sym(cryptolib, "DSO_dsobyaddr", &symbols[0].sym)
-                || !sd_sym(cryptolib, "DSO_free", &symbols[1].sym)) {
+        if (!sd_sym(cryptolib, SYMBOL_PREFIX "DSO_dsobyaddr", &symbols[0].sym)
+                || !sd_sym(cryptolib, SYMBOL_PREFIX "DSO_free", &symbols[1].sym)) {
             fprintf(stderr, "Unable to load DSO symbols\n");
             goto end;
         }

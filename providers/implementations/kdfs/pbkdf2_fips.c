@@ -7,6 +7,7 @@
  * https://www.openssl.org/source/license.html
  */
 
+#include <openssl/opensslconf.h>
 #include "pbkdf2.h"
 
 /*

@@ -14,6 +14,7 @@
 #include "internal/deprecated.h"
 
 #include <stdio.h>
+#include <openssl/opensslconf.h>
 #include "rmd_local.h"
 #include <openssl/opensslv.h>
 
@@ -35,7 +36,7 @@ int RIPEMD160_Init(RIPEMD160_CTX *c)
     return 1;
 }
 
-#ifndef ripemd160_block_data_order
+#ifndef ASM_ripemd160_block_data_order
 # ifdef X
 #  undef X
 # endif

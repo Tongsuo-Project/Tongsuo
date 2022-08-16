@@ -66,13 +66,37 @@ void AES_xts_decrypt(const unsigned char *inp, unsigned char *out, size_t len,
 #    define VPAES_CAPABLE (OPENSSL_ppccap_P & PPC_ALTIVEC)
 #   endif
 #   define HWAES_CAPABLE  (OPENSSL_ppccap_P & PPC_CRYPTO207)
+#   ifdef HWAES_set_encrypt_key
+#    undef HWAES_set_encrypt_key
+#   endif
 #   define HWAES_set_encrypt_key aes_p8_set_encrypt_key
+#   ifdef HWAES_set_decrypt_key
+#    undef HWAES_set_decrypt_key
+#   endif
 #   define HWAES_set_decrypt_key aes_p8_set_decrypt_key
+#   ifdef HWAES_encrypt
+#    undef HWAES_encrypt
+#   endif
 #   define HWAES_encrypt aes_p8_encrypt
+#   ifdef HWAES_decrypt
+#    undef HWAES_decrypt
+#   endif
 #   define HWAES_decrypt aes_p8_decrypt
+#   ifdef HWAES_cbc_encrypt
+#    undef HWAES_cbc_encrypt
+#   endif
 #   define HWAES_cbc_encrypt aes_p8_cbc_encrypt
+#   ifdef HWAES_ctr32_encrypt_blocks
+#    undef HWAES_ctr32_encrypt_blocks
+#   endif
 #   define HWAES_ctr32_encrypt_blocks aes_p8_ctr32_encrypt_blocks
+#   ifdef HWAES_xts_encrypt
+#    undef HWAES_xts_encrypt
+#   endif
 #   define HWAES_xts_encrypt aes_p8_xts_encrypt
+#   ifdef HWAES_xts_decrypt
+#    undef HWAES_xts_decrypt
+#   endif
 #   define HWAES_xts_decrypt aes_p8_xts_decrypt
 #  endif /* PPC */
 
@@ -86,22 +110,55 @@ void AES_xts_decrypt(const unsigned char *inp, unsigned char *out, size_t len,
 #     define VPAES_CAPABLE (OPENSSL_armcap_P & ARMV7_NEON)
 #    endif
 #    define HWAES_CAPABLE (OPENSSL_armcap_P & ARMV8_AES)
+#    ifdef HWAES_set_encrypt_key
+#     undef HWAES_set_encrypt_key
+#    endif
 #    define HWAES_set_encrypt_key aes_v8_set_encrypt_key
+#    ifdef HWAES_set_decrypt_key
+#     undef HWAES_set_decrypt_key
+#    endif
 #    define HWAES_set_decrypt_key aes_v8_set_decrypt_key
+#    ifdef HWAES_encrypt
+#     undef HWAES_encrypt
+#    endif
 #    define HWAES_encrypt aes_v8_encrypt
+#    ifdef HWAES_decrypt
+#     undef HWAES_decrypt
+#    endif
 #    define HWAES_decrypt aes_v8_decrypt
+#    ifdef HWAES_cbc_encrypt
+#     undef HWAES_cbc_encrypt
+#    endif
 #    define HWAES_cbc_encrypt aes_v8_cbc_encrypt
+#    ifdef HWAES_ecb_encrypt
+#     undef HWAES_ecb_encrypt
+#    endif
 #    define HWAES_ecb_encrypt aes_v8_ecb_encrypt
 #    if __ARM_MAX_ARCH__>=8 && defined(__aarch64__)
+#    ifdef HWAES_xts_encrypt
+#     undef HWAES_xts_encrypt
+#    endif
 #     define HWAES_xts_encrypt aes_v8_xts_encrypt
+#    ifdef HWAES_xts_decrypt
+#     undef HWAES_xts_decrypt
+#    endif
 #     define HWAES_xts_decrypt aes_v8_xts_decrypt
+#    endif
+#    ifdef HWAES_ctr32_encrypt_blocks
+#     undef HWAES_ctr32_encrypt_blocks
 #    endif
 #    define HWAES_ctr32_encrypt_blocks aes_v8_ctr32_encrypt_blocks
 #    define AES_PMULL_CAPABLE ((OPENSSL_armcap_P & ARMV8_PMULL) && (OPENSSL_armcap_P & ARMV8_AES))
 #    define AES_GCM_ENC_BYTES 512
 #    define AES_GCM_DEC_BYTES 512
 #    if __ARM_MAX_ARCH__>=8 && defined(__aarch64__)
+#     ifdef AES_gcm_encrypt
+#      undef AES_gcm_encrypt
+#     endif
 #     define AES_gcm_encrypt armv8_aes_gcm_encrypt
+#     ifdef AES_gcm_decrypt
+#      undef AES_gcm_decrypt
+#     endif
 #     define AES_gcm_decrypt armv8_aes_gcm_decrypt
 #     define AES_GCM_ASM(gctx) ((gctx)->ctr==aes_v8_ctr32_encrypt_blocks && \
                                 (gctx)->gcm.ghash==gcm_ghash_v8)
@@ -223,7 +280,13 @@ size_t aesni_gcm_decrypt(const unsigned char *in, unsigned char *out, size_t len
                          const void *key, unsigned char ivec[16], u64 *Xi);
 void gcm_ghash_avx(u64 Xi[2], const u128 Htable[16], const u8 *in, size_t len);
 
+#   ifdef AES_gcm_encrypt
+#    undef AES_gcm_encrypt
+#   endif
 #   define AES_gcm_encrypt aesni_gcm_encrypt
+#   ifdef AES_gcm_decrypt
+#    undef AES_gcm_decrypt
+#   endif
 #   define AES_gcm_decrypt aesni_gcm_decrypt
 #   define AES_GCM_ASM(ctx)    (ctx->ctr == aesni_ctr32_encrypt_blocks && \
                                 ctx->gcm.ghash == gcm_ghash_avx)
@@ -352,7 +415,7 @@ void HWAES_xts_decrypt(const unsigned char *inp, unsigned char *out,
                        size_t len, const AES_KEY *key1,
                        const AES_KEY *key2, const unsigned char iv[16]);
 #  ifndef OPENSSL_NO_OCB
-#   ifdef HWAES_ocb_encrypt
+#   ifdef ASM_HWAES_ocb_encrypt
 void HWAES_ocb_encrypt(const unsigned char *in, unsigned char *out,
                        size_t blocks, const void *key,
                        size_t start_block_num,
@@ -360,9 +423,12 @@ void HWAES_ocb_encrypt(const unsigned char *in, unsigned char *out,
                        const unsigned char L_[][16],
                        unsigned char checksum[16]);
 #   else
+#     ifdef HWAES_ocb_encrypt
+#      undef HWAES_ocb_encrypt
+#     endif
 #     define HWAES_ocb_encrypt ((ocb128_f)NULL)
 #   endif
-#   ifdef HWAES_ocb_decrypt
+#   ifdef ASM_HWAES_ocb_decrypt
 void HWAES_ocb_decrypt(const unsigned char *in, unsigned char *out,
                        size_t blocks, const void *key,
                        size_t start_block_num,
@@ -370,6 +436,9 @@ void HWAES_ocb_decrypt(const unsigned char *in, unsigned char *out,
                        const unsigned char L_[][16],
                        unsigned char checksum[16]);
 #   else
+#     ifdef HWAES_ocb_decrypt
+#      undef HWAES_ocb_decrypt
+#     endif
 #     define HWAES_ocb_decrypt ((ocb128_f)NULL)
 #   endif
 #  endif /* OPENSSL_NO_OCB */

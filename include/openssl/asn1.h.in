@@ -301,6 +301,17 @@ typedef struct ASN1_VALUE_st ASN1_VALUE;
 # define DECLARE_ASN1_PRINT_FUNCTION_fname(stname, fname)                   \
     DECLARE_ASN1_PRINT_FUNCTION_fname_attr(extern, stname, fname)
 
+/* Declare ASN1 functions with static limit: the implement macro in in asn1t.h */
+
+# define DECLARE_STATIC_ASN1_FUNCTIONS(type)                                \
+    DECLARE_ASN1_FUNCTIONS_attr(static ossl_unused, type)
+
+# define DECLARE_STATIC_ASN1_ALLOC_FUNCTIONS(type)                          \
+    DECLARE_ASN1_ALLOC_FUNCTIONS_attr(static ossl_unused, type)
+
+# define DECLARE_STATIC_ASN1_ENCODE_FUNCTIONS_name(type, name) \
+    DECLARE_ASN1_ENCODE_FUNCTIONS_name_attr(static, type, name)
+
 # define D2I_OF(type) type *(*)(type **,const unsigned char **,long)
 # define I2D_OF(type) int (*)(const type *,unsigned char **)
 

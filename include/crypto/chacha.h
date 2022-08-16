@@ -12,6 +12,7 @@
 # pragma once
 
 #include <stddef.h>
+#include <openssl/opensslconf.h>
 
 /*
  * ChaCha20_ctr32 encrypts |len| bytes from |inp| with the given key and

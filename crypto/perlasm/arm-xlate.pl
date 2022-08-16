@@ -8,8 +8,12 @@
 
 use strict;
 
+use lib ".";
+use configdata;
+
 my $flavour = shift;
 my $output = shift;
+my $symbol_prefix = $config{symbol_prefix};
 open STDOUT,">$output" || die "can't open $output: $!";
 
 $flavour = "linux32" if (!$flavour or $flavour eq "void");
@@ -45,6 +49,9 @@ my $comm = sub {
     my $global = \$GLOBALS{$name};
     my $ret;
 
+    $name = "$symbol_prefix$name";
+    @args[0] = $name;
+
     if ($flavour =~ /ios32/)	{
 	$ret = ".comm\t_$name,@args[1]\n";
 	$ret .= ".non_lazy_symbol_pointer\n";
@@ -61,6 +68,8 @@ my $globl = sub {
     my $name = shift;
     my $global = \$GLOBALS{$name};
     my $ret;
+
+    $name = "$symbol_prefix$name";
 
     SWITCH: for ($flavour) {
 	/ios/		&& do { $name = "_$name";

@@ -43,7 +43,7 @@ sub all_conds {
 #                       [2]     A character that denotes what type of thing
 #                               this is: 'F' for function, 'S' for struct,
 #                               'T' for typedef, 'M' for macro, 'V' for
-#                               variable.
+#                               variable, 'e' for extern variable.
 #                       [3]     Return type (only for type 'F' and 'V')
 #                       [4]     Value (for type 'M') or signature (for type 'F',
 #                               'V', 'T' or 'S')
@@ -610,6 +610,43 @@ EOF
       },
     },
 
+    # Universal translator of attributed OBJ_BSEARCH_CMP_FN declarators
+    { regexp   => qr/DECLARE_OBJ_BSEARCH_GLOBAL_CMP_FN<<<\((\S*?),\s*(\S*?),\s*(\S*?)\)>>>;/,
+      massager => sub { return (<<"EOF");
+$2 *OBJ_bsearch_$3(void);
+EOF
+      },
+    },
+
+    # Universal translator of attributed DECLARE_RUN_ONCE declarators
+    { regexp   => qr/DECLARE_RUN_ONCE<<<\((\S*?)\)>>>/,
+      massager => sub { return (<<"EOF");
+extern int $1_ossl_ret_;
+void $1_ossl_(void);
+EOF
+      },
+    },
+
+    { regexp   => qr/PROV_CIPHER_FUNC<<<\(.*\)>>>;/,
+      massager => sub { return (); }
+    },
+
+    # Universal translator of attributed declare_dh_bn declarators
+    { regexp   => qr/declare_dh_bn<<<\((.*)\)>>>/,
+      massager => sub {
+          my $x = $1;
+          $x =~ s/ //g;
+          my $p = $x."_p";
+          my $q = $x."_q";
+          my $g = $x."_g";
+          return (<<"EOF");
+extern const BIGNUM ossl_bignum_dh$p;
+extern const BIGNUM ossl_bignum_dh$q;
+extern const BIGNUM ossl_bignum_dh$g;
+EOF
+      },
+    },
+
     # OpenSSL's declaration of externs with possible export linkage
     # (really only relevant on Windows)
     { regexp   => qr/OPENSSL_(?:EXPORT|EXTERN)/,
@@ -636,14 +673,47 @@ my @chandlers = (
     { regexp   => qr/^extern "C" (.*(?:;|>>>))/,
       massager => sub { return ($1); },
     },
-    # any other extern is just ignored
+    # extern variable declaration
     { regexp   => qr/^\s*                       # Any spaces before
                      extern                     # The keyword we look for
                      \b                         # word to non-word boundary
-                     .*                         # Anything after
+                     ((?:\w|\*|\s)*?)           # Type                  ($1)
+                     \s?                        # Possible space
+                     ([[:alpha:]_]\w*)          # Variable name         ($2)
+                     ((?:<<<\[[^\]]*\]>>>)*)    # Possible array declaration ($3)
                      ;
                     /x,
-      massager => sub { return (); },
+      massager => sub {
+          return ("", $2, 'e', $1.($3||""), $1.($3||""), all_conds());
+      },
+    },
+    # extern variable declaration, including arrays, or multi-variable
+    { regexp   => qr/^\s*                       # Any spaces before
+                     extern                     # The keyword we look for
+                     \s+                        # Any spaces
+                     ((?:\w+\s+)+)              # Type                  ($1)
+                     ([^(]*,[^(]*)              # Anything after        ($2)
+                     ;
+                    /x,
+      massager => sub {
+          my $t = $1;
+          my $t1 = "";
+          my @names = split(",", $2);
+          my $n0 = $names[0];
+          my $rest = "";
+          shift(@names);
+          if ($n0 =~ qr/([[:alpha:]_]\w*)(\*+)([[:alpha:]_]\w+)/x) {
+              $t = $t.$1;
+              $t1 = $2;
+              $n0 = $3;
+          }
+
+          foreach my $name (@names) {
+              $rest = sprintf("%sextern %s%s;", $rest, $t, $name);
+          }
+          $n0 =~ qr/([[:alpha:]_]\w*)((?:<<<\[[^\]]*\]>>>)*)/x;
+          return ("$rest", $1, 'e', $t.$t1.($2||""), $t.$t1.($2||""), all_conds());
+      },
     },
     # union, struct and enum definitions
     # Because this one might appear a little everywhere within type
@@ -684,7 +754,7 @@ my @chandlers = (
     },
     # Function returning function pointer declaration
     # This sort of declaration may have a body (inline functions, for example)
-    { regexp   => qr/(?:(typedef)\s?)?          # Possible typedef      ($1)
+    { regexp   => qr/\s*(?:(typedef)\s?)?       # Possible typedef      ($1)
                      ((?:\w|\*|\s)*?)           # Return type           ($2)
                      \s?                        # Possible space
                      <<<\(\*
@@ -701,7 +771,7 @@ my @chandlers = (
     },
     # Function pointer declaration, or typedef thereof
     # This sort of declaration never has a function body
-    { regexp   => qr/(?:(typedef)\s?)?          # Possible typedef      ($1)
+    { regexp   => qr/\s*(?:(typedef)\s?)?       # Possible typedef      ($1)
                      ((?:\w|\*|\s)*?)           # Return type           ($2)
                      <<<\(\*([[:alpha:]_]\w*)\)>>> # T.d. or var name   ($3)
                      <<<(\(.*\))>>>             # F.p. parameters       ($4)
@@ -715,7 +785,7 @@ my @chandlers = (
     },
     # Function declaration, or typedef thereof
     # This sort of declaration may have a body (inline functions, for example)
-    { regexp   => qr/(?:(typedef)\s?)?          # Possible typedef      ($1)
+    { regexp   => qr/\s*(?:(typedef)\s?)?       # Possible typedef      ($1)
                      ((?:\w|\*|\s)*?)           # Return type           ($2)
                      \s?                        # Possible space
                      ([[:alpha:]_]\w*)          # Function name         ($3)
@@ -729,7 +799,7 @@ my @chandlers = (
       },
     },
     # Variable declaration, including arrays, or typedef thereof
-    { regexp   => qr/(?:(typedef)\s?)?          # Possible typedef      ($1)
+    { regexp   => qr/\s*(?:(typedef)\s?)?       # Possible typedef      ($1)
                      ((?:\w|\*|\s)*?)           # Type                  ($2)
                      \s?                        # Possible space
                      ([[:alpha:]_]\w*)          # Variable name         ($3)
@@ -740,6 +810,26 @@ my @chandlers = (
           return ("", $3, 'T', "", $2.($4||""), all_conds())
               if defined $1;
           return ("", $3, 'V', $2.($4||""), $2.($4||""), all_conds());
+      },
+    },
+    # Multi-variable declaration, including arrays, or typedef thereof
+    { regexp   => qr/\s*(?:(typedef)\s?)?       # Possible typedef      ($1)
+                     ((?:\w+\s+)+)              # Type                  ($2)
+                     \s?                        # Possible space
+                     ([^{]*)                    # Variable name         ($3)
+                     ;
+                    /x,
+      massager => sub {
+          my @names = split(",", $3);
+          my $n0 = $names[0];
+          my $rest = "";
+          shift(@names);
+          foreach my $name (@names) {
+              $rest = sprintf("%s%s %s %s;", $rest, defined $1 ? $1 : "", $2, $name);
+          }
+          return ("$rest", $n0, 'T', "", $2, all_conds())
+              if defined $1;
+          return ("$rest", $n0, 'V', $2, $2, all_conds());
       },
     },
 );
@@ -987,6 +1077,15 @@ sub parse {
 
                 # Take care of inside string first.
                 if ($state{in_string}) {
+                    if (m/ (?:^|(?<=\\\\))      # Make sure it's escaped
+                           $state{in_string}    # Look for matching quote
+                         /x) {
+                        $normalized_line .= $`.$&;
+                        $state{in_string} = "";
+                        $_ = $';
+                        next;
+                    }
+
                     if (m/ (?:^|(?<!\\))        # Make sure it's not escaped
                            $state{in_string}    # Look for matching quote
                          /x) {

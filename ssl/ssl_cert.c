@@ -10,7 +10,7 @@
 
 #include <stdio.h>
 #include <sys/types.h>
-
+#include <openssl/opensslconf.h>
 #include "internal/nelem.h"
 #include "internal/o_dir.h"
 #include <openssl/bio.h>

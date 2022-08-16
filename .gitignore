@@ -152,6 +152,7 @@ providers/common/include/prov/der_sm2.h
 
 # Files created on other branches that are not held in git, and are not
 # needed on this branch
+/include/openssl/symbol_prefix.h
 /include/openssl/asn1_mac.h
 /include/openssl/des_old.h
 /include/openssl/fips.h
@@ -239,3 +240,6 @@ MAKE0[0-9][0-9][0-9].@@@
 # Windows manifest files
 *.manifest
 doc-nits
+
+# Mac .dSYM files
+*.dSYM

@@ -47,6 +47,7 @@ EOF
 #               directories bin, lib, include, share/man, share/doc/openssl
 #               This becomes the value of INSTALLTOP in Makefile
 #               (Default: /usr/local)
+# --symbol-prefix      symbol prefix for the OpenSSL export symbols
 # --openssldir  OpenSSL data area, such as openssl.cnf, certificates and keys.
 #               If it's a relative directory, it will be added on the directory
 #               given with --prefix.
@@ -386,6 +387,7 @@ $config{perl_version} = $Config{version};
 $config{perl_archname} = $Config{archname};
 
 $config{prefix}="";
+$config{symbol_prefix}="";
 $config{openssldir}="";
 $config{processor}="";
 $config{libdir}="";
@@ -960,6 +962,11 @@ while (@argvcopy)
                         $config{prefix}=$1;
                         die "Directory given with --prefix MUST be absolute\n"
                                 unless file_name_is_absolute($config{prefix});
+                        }
+                if (/^--symbol-prefix=(.*)$/)
+                        {
+                        $config{symbol_prefix}=$1;
+                        $disabled{'deprecated-0.9.8'}='config';
                         }
                 elsif (/^--api=(.*)$/)
                         {
