@@ -1647,7 +1647,6 @@ Supported ciphers are listed in:
 
 L<EVP_aes_128_gcm(3)>,
 L<EVP_bf_cbc(3)>,
-L<EVP_cast5_cbc(3)>,
 L<EVP_chacha20(3)>,
 L<EVP_des_cbc(3)>,
 L<EVP_desx_cbc(3)>,

@@ -292,13 +292,6 @@ standard data format and performs the needed key/iv/nonce management.
  bf-ecb             Blowfish in ECB mode
  bf-ofb             Blowfish in OFB mode
 
- cast-cbc           CAST in CBC mode
- cast               Alias for cast-cbc
- cast5-cbc          CAST5 in CBC mode
- cast5-cfb          CAST5 in CFB mode
- cast5-ecb          CAST5 in ECB mode
- cast5-ofb          CAST5 in OFB mode
-
  chacha20           ChaCha20 algorithm
 
  des-cbc            DES in CBC mode

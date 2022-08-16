@@ -37,7 +37,7 @@ my @ciphers =
          (map { split /\s+/ }
           run(app([$cmd, "enc", "-list"]),
               capture => 1, statusvar => \$ciphersstatus)));
-@ciphers = grep {!/^-(bf|blowfish|cast|des$|des-cbc|des-cfb|des-ecb|des-ofb
+@ciphers = grep {!/^-(bf|blowfish|des$|des-cbc|des-cfb|des-ecb|des-ofb
                       |desx|idea|rc2|rc4|seed)/x} @ciphers
     if disabled("legacy");
 

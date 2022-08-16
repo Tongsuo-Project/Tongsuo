@@ -83,12 +83,6 @@ static const OSSL_ALGORITHM legacy_digests[] = {
 };
 
 static const OSSL_ALGORITHM legacy_ciphers[] = {
-#ifndef OPENSSL_NO_CAST
-    ALG(PROV_NAMES_CAST5_ECB, ossl_cast5128ecb_functions),
-    ALG(PROV_NAMES_CAST5_CBC, ossl_cast5128cbc_functions),
-    ALG(PROV_NAMES_CAST5_OFB, ossl_cast5128ofb64_functions),
-    ALG(PROV_NAMES_CAST5_CFB, ossl_cast5128cfb64_functions),
-#endif /* OPENSSL_NO_CAST */
 #ifndef OPENSSL_NO_BF
     ALG(PROV_NAMES_BF_ECB, ossl_blowfish128ecb_functions),
     ALG(PROV_NAMES_BF_CBC, ossl_blowfish128cbc_functions),

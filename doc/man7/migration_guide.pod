@@ -1221,14 +1221,6 @@ See L</Deprecated low-level encryption functions>.
 
 =item *
 
-CAST_encrypt(), CAST_decrypt(), CAST_set_key(), CAST_cbc_encrypt(),
-CAST_cfb64_encrypt(), CAST_ecb_encrypt(), CAST_ofb64_encrypt()
-
-See L</Deprecated low-level encryption functions>.
-The CAST algorithm has been moved to the L<Legacy Provider|/Legacy Algorithms>.
-
-=item *
-
 CMAC_CTX_new(), CMAC_CTX_cleanup(), CMAC_CTX_copy(), CMAC_CTX_free(),
 CMAC_CTX_get0_cipher_ctx()
 

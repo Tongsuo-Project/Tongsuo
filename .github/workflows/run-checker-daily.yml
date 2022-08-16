@@ -31,7 +31,6 @@ jobs:
           no-bulk,
           no-cached-fetch,
           no-capieng,
-          no-cast,
           no-chacha,
           no-cmac,
           no-comp,

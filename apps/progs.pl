@@ -170,7 +170,6 @@ EOF
     my %cipher_disabler = (
         des3  => "des",
         desx  => "des",
-        cast5 => "cast",
     );
     foreach my $cmd (
         "aes-128-cbc", "aes-128-ecb",
@@ -178,7 +177,7 @@ EOF
         "aes-256-cbc", "aes-256-ecb",
         "base64", "zlib",
         "des", "des3", "desx", "idea", "rc4", "rc4-40",
-        "rc2", "bf", "cast", "rc5",
+        "rc2", "bf", "rc5",
         "des-ecb", "des-ede", "des-ede3",
         "des-cbc", "des-ede-cbc","des-ede3-cbc",
         "des-cfb", "des-ede-cfb","des-ede3-cfb",
@@ -186,8 +185,7 @@ EOF
         "idea-cbc","idea-ecb", "idea-cfb", "idea-ofb",
         "rc2-cbc", "rc2-ecb", "rc2-cfb","rc2-ofb", "rc2-64-cbc", "rc2-40-cbc",
         "bf-cbc", "bf-ecb", "bf-cfb", "bf-ofb",
-        "cast5-cbc","cast5-ecb", "cast5-cfb","cast5-ofb",
-        "cast-cbc", "rc5-cbc", "rc5-ecb", "rc5-cfb", "rc5-ofb",
+        "rc5-cbc", "rc5-ecb", "rc5-cfb", "rc5-ofb",
         "sm4-cbc", "sm4-ecb", "sm4-cfb", "sm4-ofb", "sm4-ctr"
     ) {
         my $str = "    {FT_cipher, \"$cmd\", enc_main, enc_options, NULL},\n";

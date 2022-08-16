@@ -68,15 +68,6 @@ const EVP_CIPHER *EVP_rc2_cfb(void)
 }
 #endif
 
-#ifndef OPENSSL_NO_CAST
-# undef EVP_cast5_cfb
-const EVP_CIPHER *EVP_cast5_cfb(void);
-const EVP_CIPHER *EVP_cast5_cfb(void)
-{
-    return EVP_cast5_cfb64();
-}
-#endif
-
 #ifndef OPENSSL_NO_RC5
 # undef EVP_rc5_32_12_16_cfb
 const EVP_CIPHER *EVP_rc5_32_12_16_cfb(void);

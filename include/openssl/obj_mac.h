@@ -494,27 +494,6 @@
 #define NID_wap_wsg_idm_ecid_wtls12             745
 #define OBJ_wap_wsg_idm_ecid_wtls12             OBJ_wap_wsg_idm_ecid,12L
 
-#define SN_cast5_cbc            "CAST5-CBC"
-#define LN_cast5_cbc            "cast5-cbc"
-#define NID_cast5_cbc           108
-#define OBJ_cast5_cbc           OBJ_ISO_US,113533L,7L,66L,10L
-
-#define SN_cast5_ecb            "CAST5-ECB"
-#define LN_cast5_ecb            "cast5-ecb"
-#define NID_cast5_ecb           109
-
-#define SN_cast5_cfb64          "CAST5-CFB"
-#define LN_cast5_cfb64          "cast5-cfb"
-#define NID_cast5_cfb64         110
-
-#define SN_cast5_ofb64          "CAST5-OFB"
-#define LN_cast5_ofb64          "cast5-ofb"
-#define NID_cast5_ofb64         111
-
-#define LN_pbeWithMD5AndCast5_CBC               "pbeWithMD5AndCast5CBC"
-#define NID_pbeWithMD5AndCast5_CBC              112
-#define OBJ_pbeWithMD5AndCast5_CBC              OBJ_ISO_US,113533L,7L,66L,12L
-
 #define SN_id_PasswordBasedMAC          "id-PasswordBasedMAC"
 #define LN_id_PasswordBasedMAC          "password based MAC"
 #define NID_id_PasswordBasedMAC         782
