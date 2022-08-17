@@ -105,12 +105,6 @@ extern const OSSL_DISPATCH ossl_idea128cbc_functions[];
 extern const OSSL_DISPATCH ossl_idea128ofb64_functions[];
 extern const OSSL_DISPATCH ossl_idea128cfb64_functions[];
 #endif /* OPENSSL_NO_IDEA */
-#ifndef OPENSSL_NO_CAST
-extern const OSSL_DISPATCH ossl_cast5128ecb_functions[];
-extern const OSSL_DISPATCH ossl_cast5128cbc_functions[];
-extern const OSSL_DISPATCH ossl_cast5128ofb64_functions[];
-extern const OSSL_DISPATCH ossl_cast5128cfb64_functions[];
-#endif /* OPENSSL_NO_CAST */
 #ifndef OPENSSL_NO_SM4
 extern const OSSL_DISPATCH ossl_sm4128ecb_functions[];
 extern const OSSL_DISPATCH ossl_sm4128cbc_functions[];

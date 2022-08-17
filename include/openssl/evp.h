@@ -998,13 +998,6 @@ const EVP_CIPHER *EVP_bf_cfb64(void);
 #  define EVP_bf_cfb EVP_bf_cfb64
 const EVP_CIPHER *EVP_bf_ofb(void);
 # endif
-# ifndef OPENSSL_NO_CAST
-const EVP_CIPHER *EVP_cast5_ecb(void);
-const EVP_CIPHER *EVP_cast5_cbc(void);
-const EVP_CIPHER *EVP_cast5_cfb64(void);
-#  define EVP_cast5_cfb EVP_cast5_cfb64
-const EVP_CIPHER *EVP_cast5_ofb(void);
-# endif
 # ifndef OPENSSL_NO_RC5
 const EVP_CIPHER *EVP_rc5_32_12_16_cbc(void);
 const EVP_CIPHER *EVP_rc5_32_12_16_ecb(void);

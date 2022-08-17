@@ -427,14 +427,6 @@ Base64 Encoding
 
 Blowfish Cipher
 
-=item B<cast>, B<cast-cbc>
-
-CAST Cipher
-
-=item B<cast5-cbc>, B<cast5-cfb>, B<cast5-ecb>, B<cast5-ofb>
-
-CAST5 Cipher
-
 =item B<chacha20>
 
 Chacha20 Cipher

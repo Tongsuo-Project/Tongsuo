@@ -103,11 +103,6 @@ md5WithRSA		104
 serialNumber		105
 title		106
 description		107
-cast5_cbc		108
-cast5_ecb		109
-cast5_cfb64		110
-cast5_ofb64		111
-pbeWithMD5AndCast5_CBC		112
 dsaWithSHA1		113
 md5_sha1		114
 sha1WithRSA		115

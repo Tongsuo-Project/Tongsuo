@@ -332,7 +332,6 @@ EVP_VerifyInit                          define
 EVP_VerifyInit_ex                       define
 EVP_VerifyUpdate                        define
 EVP_bf_cfb                              define
-EVP_cast5_cfb                           define
 EVP_cleanup                             define deprecated 1.1.0
 EVP_EC_gen                              define
 EVP_get_digestbynid                     define

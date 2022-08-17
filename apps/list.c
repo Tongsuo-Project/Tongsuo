@@ -1292,9 +1292,6 @@ static void list_disabled(void)
 #ifdef OPENSSL_NO_BLAKE2
     BIO_puts(bio_out, "BLAKE2\n");
 #endif
-#ifdef OPENSSL_NO_CAST
-    BIO_puts(bio_out, "CAST\n");
-#endif
 #ifdef OPENSSL_NO_CMAC
     BIO_puts(bio_out, "CMAC\n");
 #endif

@@ -58,8 +58,6 @@ Not all of these symmetric cipher algorithms are enabled by default.
 
 =item Blowfish, see L<EVP_CIPHER-BLOWFISH(7)>
 
-=item CAST, see L<EVP_CIPHER-CAST(7)>
-
 =item DES, see L<EVP_CIPHER-DES(7)>
 
 The algorithm names are: DES_ECB, DES_CBC, DES_OFB, DES_CFB, DES_CFB1, DES_CFB8

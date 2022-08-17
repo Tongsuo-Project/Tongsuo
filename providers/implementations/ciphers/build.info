@@ -14,7 +14,6 @@ $TDES_2_GOAL=../../libdefault.a
 $DES_GOAL=../../liblegacy.a
 $BLOWFISH_GOAL=../../liblegacy.a
 $IDEA_GOAL=../../liblegacy.a
-$CAST5_GOAL=../../liblegacy.a
 $RC2_GOAL=../../liblegacy.a
 $RC4_GOAL=../../liblegacy.a
 $RC5_GOAL=../../liblegacy.a
@@ -77,11 +76,6 @@ ENDIF
 IF[{- !$disabled{idea} -}]
   SOURCE[$IDEA_GOAL]=\
       cipher_idea.c cipher_idea_hw.c
-ENDIF
-
-IF[{- !$disabled{cast} -}]
-  SOURCE[$CAST5_GOAL]=\
-      cipher_cast5.c cipher_cast5_hw.c
 ENDIF
 
 IF[{- !$disabled{sm4} -}]

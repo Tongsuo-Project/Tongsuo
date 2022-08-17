@@ -222,7 +222,7 @@ IF[{- !$disabled{tests} -}]
   DEPEND[provider_status_test]=../libcrypto.a libtestutil.a
 
   IF[{- !$disabled{'deprecated-3.0'} -}]
-    PROGRAMS{noinst}=igetest bftest casttest
+    PROGRAMS{noinst}=igetest bftest
 
     SOURCE[igetest]=igetest.c
     INCLUDE[igetest]=../include ../apps/include
@@ -231,10 +231,6 @@ IF[{- !$disabled{tests} -}]
     SOURCE[bftest]=bftest.c
     INCLUDE[bftest]=../include ../apps/include
     DEPEND[bftest]=../libcrypto libtestutil.a
-
-    SOURCE[casttest]=casttest.c
-    INCLUDE[casttest]=../include ../apps/include
-    DEPEND[casttest]=../libcrypto libtestutil.a
   ENDIF
 
   SOURCE[v3nametest]=v3nametest.c

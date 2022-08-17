@@ -1339,10 +1339,6 @@ DEPEND[html/man3/EVP_blake2b512.html]=man3/EVP_blake2b512.pod
 GENERATE[html/man3/EVP_blake2b512.html]=man3/EVP_blake2b512.pod
 DEPEND[man/man3/EVP_blake2b512.3]=man3/EVP_blake2b512.pod
 GENERATE[man/man3/EVP_blake2b512.3]=man3/EVP_blake2b512.pod
-DEPEND[html/man3/EVP_cast5_cbc.html]=man3/EVP_cast5_cbc.pod
-GENERATE[html/man3/EVP_cast5_cbc.html]=man3/EVP_cast5_cbc.pod
-DEPEND[man/man3/EVP_cast5_cbc.3]=man3/EVP_cast5_cbc.pod
-GENERATE[man/man3/EVP_cast5_cbc.3]=man3/EVP_cast5_cbc.pod
 DEPEND[html/man3/EVP_chacha20.html]=man3/EVP_chacha20.pod
 GENERATE[html/man3/EVP_chacha20.html]=man3/EVP_chacha20.pod
 DEPEND[man/man3/EVP_chacha20.3]=man3/EVP_chacha20.pod
@@ -3082,7 +3078,6 @@ html/man3/EVP_VerifyInit.html \
 html/man3/EVP_aes_128_gcm.html \
 html/man3/EVP_bf_cbc.html \
 html/man3/EVP_blake2b512.html \
-html/man3/EVP_cast5_cbc.html \
 html/man3/EVP_chacha20.html \
 html/man3/EVP_des_cbc.html \
 html/man3/EVP_desx_cbc.html \
@@ -3681,7 +3676,6 @@ man/man3/EVP_VerifyInit.3 \
 man/man3/EVP_aes_128_gcm.3 \
 man/man3/EVP_bf_cbc.3 \
 man/man3/EVP_blake2b512.3 \
-man/man3/EVP_cast5_cbc.3 \
 man/man3/EVP_chacha20.3 \
 man/man3/EVP_des_cbc.3 \
 man/man3/EVP_desx_cbc.3 \
@@ -4093,10 +4087,6 @@ DEPEND[html/man7/EVP_CIPHER-BLOWFISH.html]=man7/EVP_CIPHER-BLOWFISH.pod
 GENERATE[html/man7/EVP_CIPHER-BLOWFISH.html]=man7/EVP_CIPHER-BLOWFISH.pod
 DEPEND[man/man7/EVP_CIPHER-BLOWFISH.7]=man7/EVP_CIPHER-BLOWFISH.pod
 GENERATE[man/man7/EVP_CIPHER-BLOWFISH.7]=man7/EVP_CIPHER-BLOWFISH.pod
-DEPEND[html/man7/EVP_CIPHER-CAST.html]=man7/EVP_CIPHER-CAST.pod
-GENERATE[html/man7/EVP_CIPHER-CAST.html]=man7/EVP_CIPHER-CAST.pod
-DEPEND[man/man7/EVP_CIPHER-CAST.7]=man7/EVP_CIPHER-CAST.pod
-GENERATE[man/man7/EVP_CIPHER-CAST.7]=man7/EVP_CIPHER-CAST.pod
 DEPEND[html/man7/EVP_CIPHER-CHACHA.html]=man7/EVP_CIPHER-CHACHA.pod
 GENERATE[html/man7/EVP_CIPHER-CHACHA.html]=man7/EVP_CIPHER-CHACHA.pod
 DEPEND[man/man7/EVP_CIPHER-CHACHA.7]=man7/EVP_CIPHER-CHACHA.pod
@@ -4568,7 +4558,6 @@ man7/img/rand.png
 HTMLDOCS[man7]=html/man7/EVP_ASYM_CIPHER-SM2.html \
 html/man7/EVP_CIPHER-AES.html \
 html/man7/EVP_CIPHER-BLOWFISH.html \
-html/man7/EVP_CIPHER-CAST.html \
 html/man7/EVP_CIPHER-CHACHA.html \
 html/man7/EVP_CIPHER-DES.html \
 html/man7/EVP_CIPHER-IDEA.html \
@@ -4687,7 +4676,6 @@ html/man7/x509.html
 MANDOCS[man7]=man/man7/EVP_ASYM_CIPHER-SM2.7 \
 man/man7/EVP_CIPHER-AES.7 \
 man/man7/EVP_CIPHER-BLOWFISH.7 \
-man/man7/EVP_CIPHER-CAST.7 \
 man/man7/EVP_CIPHER-CHACHA.7 \
 man/man7/EVP_CIPHER-DES.7 \
 man/man7/EVP_CIPHER-IDEA.7 \

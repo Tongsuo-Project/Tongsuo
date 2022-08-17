@@ -282,7 +282,7 @@ static const char *names[ALGOR_NUM] = {
     "mdc2", "md4", "md5", "sha1", "rmd160",
     "sha256", "sha512", "whirlpool", "hmac(md5)",
     "des-cbc", "des-ede3", "rc4", "idea-cbc",
-    "rc2-cbc", "rc5-cbc", "blowfish", "cast-cbc",
+    "rc2-cbc", "rc5-cbc", "blowfish",
     "aes-128-cbc", "aes-192-cbc", "aes-256-cbc",
     "evp", "ghash", "rand", "cmac", "sm3", "sm4"
 };
@@ -315,9 +315,6 @@ static const OPT_PAIR doit_choices[] = {
     {"bf-cbc", D_CBC_BF},
     {"blowfish", D_CBC_BF},
     {"bf", D_CBC_BF},
-    {"cast-cbc", D_CBC_CAST},
-    {"cast", D_CBC_CAST},
-    {"cast5", D_CBC_CAST},
     {"ghash", D_GHASH},
     {"rand", D_RAND},
 #ifndef OPENSSL_NO_SM3

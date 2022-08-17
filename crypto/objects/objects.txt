@@ -155,15 +155,6 @@ wap-wsg-idm-ecid 11	: wap-wsg-idm-ecid-wtls11
 wap-wsg-idm-ecid 12	: wap-wsg-idm-ecid-wtls12
 
 
-ISO-US 113533 7 66 10	: CAST5-CBC		: cast5-cbc
-			: CAST5-ECB		: cast5-ecb
-!Cname cast5-cfb64
-			: CAST5-CFB		: cast5-cfb
-!Cname cast5-ofb64
-			: CAST5-OFB		: cast5-ofb
-!Cname pbeWithMD5AndCast5-CBC
-ISO-US 113533 7 66 12	:			: pbeWithMD5AndCast5CBC
-
 # Macs for CMP and CRMF
 ISO-US 113533 7 66 13	: id-PasswordBasedMAC	: password based MAC
 ISO-US 113533 7 66 30	: id-DHBasedMac		: Diffie-Hellman based MAC
