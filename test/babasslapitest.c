@@ -17,6 +17,9 @@
 #include <openssl/srp.h>
 #include <openssl/txt_db.h>
 #include <openssl/aes.h>
+#ifdef __linux__
+# include <arpa/inet.h>
+#endif
 
 #include "helpers/ssltestlib.h"
 #include "testutil.h"
