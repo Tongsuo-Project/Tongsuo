@@ -965,7 +965,6 @@ while (@argvcopy)
                 if (/^--symbol-prefix=(.*)$/)
                         {
                         $config{symbol_prefix}=$1;
-                        $disabled{'deprecated-0.9.8'}='config';
                         }
                 elsif (/^--api=(.*)$/)
                         {
