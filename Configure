@@ -1346,8 +1346,6 @@ unless($disabled{threads}) {
 # With "deprecated" disable all deprecated features.
 if (defined($disabled{"deprecated"})) {
         $config{api} = $maxapi;
-} else {
-        $config{api} = "1.0.0";
 }
 
 my $no_shared_warn=0;
