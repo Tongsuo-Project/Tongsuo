@@ -193,7 +193,6 @@ int tls1_change_cipher_state(SSL *s, int which)
     const SSL_COMP *comp;
 #endif
     const EVP_MD *m;
-    int mac_type;
     size_t *mac_secret_size;
     EVP_MD_CTX *mac_ctx;
     EVP_PKEY *mac_key;
@@ -212,7 +211,6 @@ int tls1_change_cipher_state(SSL *s, int which)
 
     c = s->s3.tmp.new_sym_enc;
     m = s->s3.tmp.new_hash;
-    mac_type = s->s3.tmp.new_mac_pkey_type;
 #ifndef OPENSSL_NO_COMP
     comp = s->s3.tmp.new_compression;
 #endif
@@ -222,16 +220,6 @@ int tls1_change_cipher_state(SSL *s, int which)
             s->s3.flags |= TLS1_FLAGS_ENCRYPT_THEN_MAC_READ;
         else
             s->s3.flags &= ~TLS1_FLAGS_ENCRYPT_THEN_MAC_READ;
-
-        if (s->s3.tmp.new_cipher->algorithm2 & TLS1_STREAM_MAC)
-            s->mac_flags |= SSL_MAC_FLAG_READ_MAC_STREAM;
-        else
-            s->mac_flags &= ~SSL_MAC_FLAG_READ_MAC_STREAM;
-
-        if (s->s3.tmp.new_cipher->algorithm2 & TLS1_TLSTREE)
-            s->mac_flags |= SSL_MAC_FLAG_READ_MAC_TLSTREE;
-        else
-            s->mac_flags &= ~SSL_MAC_FLAG_READ_MAC_TLSTREE;
 
         if (s->enc_read_ctx != NULL) {
             reuse_dd = 1;
@@ -276,15 +264,6 @@ int tls1_change_cipher_state(SSL *s, int which)
         else
             s->s3.flags &= ~TLS1_FLAGS_ENCRYPT_THEN_MAC_WRITE;
 
-        if (s->s3.tmp.new_cipher->algorithm2 & TLS1_STREAM_MAC)
-            s->mac_flags |= SSL_MAC_FLAG_WRITE_MAC_STREAM;
-        else
-            s->mac_flags &= ~SSL_MAC_FLAG_WRITE_MAC_STREAM;
-
-        if (s->s3.tmp.new_cipher->algorithm2 & TLS1_TLSTREE)
-            s->mac_flags |= SSL_MAC_FLAG_WRITE_MAC_TLSTREE;
-        else
-            s->mac_flags &= ~SSL_MAC_FLAG_WRITE_MAC_TLSTREE;
         if (s->enc_write_ctx != NULL && !SSL_IS_DTLS(s)) {
             reuse_dd = 1;
         } else if ((s->enc_write_ctx = EVP_CIPHER_CTX_new()) == NULL) {
@@ -362,19 +341,10 @@ int tls1_change_cipher_state(SSL *s, int which)
     memcpy(mac_secret, ms, i);
 
     if (!(EVP_CIPHER_get_flags(c) & EVP_CIPH_FLAG_AEAD_CIPHER)) {
-        if (mac_type == EVP_PKEY_HMAC) {
-            mac_key = EVP_PKEY_new_raw_private_key_ex(s->ctx->libctx, "HMAC",
-                                                      s->ctx->propq, mac_secret,
-                                                      *mac_secret_size);
-        } else {
-            /*
-             * If its not HMAC then the only other types of MAC we support are
-             * the GOST MACs, so we need to use the old style way of creating
-             * a MAC key.
-             */
-            mac_key = EVP_PKEY_new_mac_key(mac_type, NULL, mac_secret,
-                                           (int)*mac_secret_size);
-        }
+        mac_key = EVP_PKEY_new_raw_private_key_ex(s->ctx->libctx, "HMAC",
+                                                  s->ctx->propq, mac_secret,
+                                                  *mac_secret_size);
+
         if (mac_key == NULL
             || EVP_DigestSignInit_ex(mac_ctx, NULL, EVP_MD_get0_name(m),
                                      s->ctx->libctx, s->ctx->propq, mac_key,
@@ -610,9 +580,6 @@ size_t tls1_final_finish_mac(SSL *s, const char *str, size_t slen,
     size_t hashlen;
     unsigned char hash[EVP_MAX_MD_SIZE];
     size_t finished_size = TLS1_FINISH_MAC_LENGTH;
-
-    if (s->s3.tmp.new_cipher->algorithm_mkey & SSL_kGOST18)
-        finished_size = 32;
 
     if (!ssl3_digest_cached_records(s, 0)) {
         /* SSLfatal() already called */

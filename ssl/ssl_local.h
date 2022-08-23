@@ -175,16 +175,12 @@
 # define SSL_kEECDH              SSL_kECDHE
 /* PSK */
 # define SSL_kPSK                0x00000008U
-/* GOST key exchange */
-# define SSL_kGOST               0x00000010U
 /* SRP */
 # define SSL_kSRP                0x00000020U
 
 # define SSL_kRSAPSK             0x00000040U
 # define SSL_kECDHEPSK           0x00000080U
 # define SSL_kDHEPSK             0x00000100U
-/* GOST KDF key exchange, draft-smyshlyaev-tls12-gost-suites */
-# define SSL_kGOST18             0x00000200U
 
 # define SSL_kSM2                0x00000400U
 # define SSL_kSM2DHE             0x00000800U
@@ -207,19 +203,15 @@
 # define SSL_aECDSA              0x00000008U
 /* PSK auth */
 # define SSL_aPSK                0x00000010U
-/* GOST R 34.10-2001 signature auth */
-# define SSL_aGOST01             0x00000020U
 /* SRP auth */
 # define SSL_aSRP                0x00000040U
-/* GOST R 34.10-2012 signature auth */
-# define SSL_aGOST12             0x00000080U
 /* Any appropriate signature auth (for TLS 1.3 ciphersuites) */
 # define SSL_aANY                0x00000000U
 /* SM2 auth */
 # define SSL_aSM2                0x00000100U
 /* All bits requiring a certificate */
 #define SSL_aCERT \
-    (SSL_aRSA | SSL_aDSS | SSL_aECDSA | SSL_aGOST01 | SSL_aGOST12 | SSL_aSM2)
+    (SSL_aRSA | SSL_aDSS | SSL_aECDSA | SSL_aSM2)
 
 /* Bits for algorithm_enc (symmetric encryption) */
 # define SSL_DES                 0x00000001U
@@ -231,7 +223,7 @@
 # define SSL_AES128              0x00000040U
 # define SSL_AES256              0x00000080U
 /* 0x100U & 0x200U are spared now due to the removal of Camellia */
-# define SSL_eGOST2814789CNT     0x00000400U
+/* 0x400U is spared now due to the removal of GOST */
 /* 0x800U is spared now due to the removal of SEED */
 # define SSL_AES128GCM           0x00001000U
 # define SSL_AES256GCM           0x00002000U
@@ -239,11 +231,10 @@
 # define SSL_AES256CCM           0x00008000U
 # define SSL_AES128CCM8          0x00010000U
 # define SSL_AES256CCM8          0x00020000U
-# define SSL_eGOST2814789CNT12   0x00040000U
+/* 0x40000U is spared now due to the removal of GOST */
 # define SSL_CHACHA20POLY1305    0x00080000U
 /* 0x100000U & 0x200000U are spared now due to the removal of ARIA */
-# define SSL_MAGMA               0x00400000U
-# define SSL_KUZNYECHIK          0x00800000U
+/* 0x400000U & 0x800000U are spared now due to the removal of GOST */
 
 # define SSL_SM4CCM              0x01000000U
 # define SSL_SM4GCM              0x02000000U
@@ -259,17 +250,10 @@
 
 # define SSL_MD5                 0x00000001U
 # define SSL_SHA1                0x00000002U
-# define SSL_GOST94      0x00000004U
-# define SSL_GOST89MAC   0x00000008U
 # define SSL_SHA256              0x00000010U
 # define SSL_SHA384              0x00000020U
 /* Not a real MAC, just an indication it is part of cipher */
 # define SSL_AEAD                0x00000040U
-# define SSL_GOST12_256          0x00000080U
-# define SSL_GOST89MAC12         0x00000100U
-# define SSL_GOST12_512          0x00000200U
-# define SSL_MAGMAOMAC           0x00000400U
-# define SSL_KUZNYECHIKOMAC      0x00000800U
 # define SSL_SM3                 0x00001000U
 
 /*
@@ -279,20 +263,13 @@
 
 # define SSL_MD_MD5_IDX  0
 # define SSL_MD_SHA1_IDX 1
-# define SSL_MD_GOST94_IDX 2
-# define SSL_MD_GOST89MAC_IDX 3
-# define SSL_MD_SHA256_IDX 4
-# define SSL_MD_SHA384_IDX 5
-# define SSL_MD_GOST12_256_IDX  6
-# define SSL_MD_GOST89MAC12_IDX 7
-# define SSL_MD_GOST12_512_IDX  8
-# define SSL_MD_MD5_SHA1_IDX 9
-# define SSL_MD_SHA224_IDX 10
-# define SSL_MD_SHA512_IDX 11
-# define SSL_MD_MAGMAOMAC_IDX 12
-# define SSL_MD_KUZNYECHIKOMAC_IDX 13
-# define SSL_MD_SM3_IDX 14
-# define SSL_MAX_DIGEST 15
+# define SSL_MD_SHA256_IDX 2
+# define SSL_MD_SHA384_IDX 3
+# define SSL_MD_MD5_SHA1_IDX 4
+# define SSL_MD_SHA224_IDX 5
+# define SSL_MD_SHA512_IDX 6
+# define SSL_MD_SM3_IDX 7
+# define SSL_MAX_DIGEST 8
 
 #define SSL_MD_NUM_IDX  SSL_MAX_DIGEST
 
@@ -303,9 +280,6 @@
 # define SSL_HANDSHAKE_MAC_MD5_SHA1 SSL_MD_MD5_SHA1_IDX
 # define SSL_HANDSHAKE_MAC_SHA256   SSL_MD_SHA256_IDX
 # define SSL_HANDSHAKE_MAC_SHA384   SSL_MD_SHA384_IDX
-# define SSL_HANDSHAKE_MAC_GOST94 SSL_MD_GOST94_IDX
-# define SSL_HANDSHAKE_MAC_GOST12_256 SSL_MD_GOST12_256_IDX
-# define SSL_HANDSHAKE_MAC_GOST12_512 SSL_MD_GOST12_512_IDX
 # define SSL_HANDSHAKE_MAC_DEFAULT  SSL_HANDSHAKE_MAC_MD5_SHA1
 # define SSL_HANDSHAKE_MAC_SM3 SSL_MD_SM3_IDX
 
@@ -314,22 +288,8 @@
 # define TLS1_PRF_SHA1_MD5 (SSL_MD_MD5_SHA1_IDX << TLS1_PRF_DGST_SHIFT)
 # define TLS1_PRF_SHA256 (SSL_MD_SHA256_IDX << TLS1_PRF_DGST_SHIFT)
 # define TLS1_PRF_SHA384 (SSL_MD_SHA384_IDX << TLS1_PRF_DGST_SHIFT)
-# define TLS1_PRF_GOST94 (SSL_MD_GOST94_IDX << TLS1_PRF_DGST_SHIFT)
-# define TLS1_PRF_GOST12_256 (SSL_MD_GOST12_256_IDX << TLS1_PRF_DGST_SHIFT)
-# define TLS1_PRF_GOST12_512 (SSL_MD_GOST12_512_IDX << TLS1_PRF_DGST_SHIFT)
 # define TLS1_PRF            (SSL_MD_MD5_SHA1_IDX << TLS1_PRF_DGST_SHIFT)
 # define TLS1_PRF_SM3 (SSL_MD_SM3_IDX << TLS1_PRF_DGST_SHIFT)
-
-/*
- * Stream MAC for GOST ciphersuites from cryptopro draft (currently this also
- * goes into algorithm2)
- */
-# define TLS1_STREAM_MAC 0x10000
-/*
- * TLSTREE cipher/mac key derivation from draft-smyshlyaev-tls12-gost-suites
- * (currently this also  goes into algorithm2)
- */
-# define TLS1_TLSTREE 0x20000
 
 # define SSL_STRONG_MASK         0x0000001FU
 # define SSL_DEFAULT_MASK        0X00000020U
@@ -420,20 +380,17 @@
 # define SSL_PKEY_RSA_PSS_SIGN   1
 # define SSL_PKEY_DSA_SIGN       2
 # define SSL_PKEY_ECC            3
-# define SSL_PKEY_GOST01         4
-# define SSL_PKEY_GOST12_256     5
-# define SSL_PKEY_GOST12_512     6
-# define SSL_PKEY_ED25519        7
-# define SSL_PKEY_ED448          8
-# define SSL_PKEY_SM2            9
+# define SSL_PKEY_ED25519        4
+# define SSL_PKEY_ED448          5
+# define SSL_PKEY_SM2            6
 # ifndef OPENSSL_NO_NTLS
-#  define SSL_PKEY_SM2_SIGN      10
-#  define SSL_PKEY_SM2_ENC       11
-#  define SSL_PKEY_RSA_SIGN      12
-#  define SSL_PKEY_RSA_ENC       13
-#  define SSL_PKEY_NUM           14
+#  define SSL_PKEY_SM2_SIGN      7
+#  define SSL_PKEY_SM2_ENC       8
+#  define SSL_PKEY_RSA_SIGN      9
+#  define SSL_PKEY_RSA_ENC       10
+#  define SSL_PKEY_NUM           11
 # else
-#  define SSL_PKEY_NUM           10
+#  define SSL_PKEY_NUM           7
 # endif
 
 # define SSL_ENC_DES_IDX         0
@@ -444,24 +401,20 @@
 # define SSL_ENC_NULL_IDX        5
 # define SSL_ENC_AES128_IDX      6
 # define SSL_ENC_AES256_IDX      7
-# define SSL_ENC_GOST89_IDX      8
-# define SSL_ENC_AES128GCM_IDX   9
-# define SSL_ENC_AES256GCM_IDX   10
-# define SSL_ENC_AES128CCM_IDX   11
-# define SSL_ENC_AES256CCM_IDX   12
-# define SSL_ENC_AES128CCM8_IDX  13
-# define SSL_ENC_AES256CCM8_IDX  14
-# define SSL_ENC_GOST8912_IDX    15
-# define SSL_ENC_CHACHA_IDX      16
-# define SSL_ENC_MAGMA_IDX       17
-# define SSL_ENC_KUZNYECHIK_IDX  18
-# define SSL_ENC_SM4_GCM_IDX     19
-# define SSL_ENC_SM4_CCM_IDX     20
+# define SSL_ENC_AES128GCM_IDX   8
+# define SSL_ENC_AES256GCM_IDX   9
+# define SSL_ENC_AES128CCM_IDX   10
+# define SSL_ENC_AES256CCM_IDX   11
+# define SSL_ENC_AES128CCM8_IDX  12
+# define SSL_ENC_AES256CCM8_IDX  13
+# define SSL_ENC_CHACHA_IDX      14
+# define SSL_ENC_SM4_GCM_IDX     15
+# define SSL_ENC_SM4_CCM_IDX     16
 # ifndef OPENSSL_NO_SM4
-#  define SSL_ENC_SM4_IDX        21
-#  define SSL_ENC_NUM_IDX        22
+#  define SSL_ENC_SM4_IDX        17
+#  define SSL_ENC_NUM_IDX        18
 # else
-#  define SSL_ENC_NUM_IDX        21
+#  define SSL_ENC_NUM_IDX        17
 # endif
 
 /*-
@@ -818,7 +771,6 @@ typedef enum tlsext_index_en {
     TLSEXT_IDX_psk_kex_modes,
     TLSEXT_IDX_key_share,
     TLSEXT_IDX_cookie,
-    TLSEXT_IDX_cryptopro_bug,
     TLSEXT_IDX_early_data,
     TLSEXT_IDX_certificate_authorities,
     TLSEXT_IDX_quic_transport_params_draft,
@@ -2367,11 +2319,6 @@ typedef enum downgrade_en {
 #define TLSEXT_SIGALG_dsa_sha512                                0x0602
 #define TLSEXT_SIGALG_dsa_sha224                                0x0302
 #define TLSEXT_SIGALG_dsa_sha1                                  0x0202
-#define TLSEXT_SIGALG_gostr34102012_256_intrinsic               0x0840
-#define TLSEXT_SIGALG_gostr34102012_512_intrinsic               0x0841
-#define TLSEXT_SIGALG_gostr34102012_256_gostr34112012_256       0xeeee
-#define TLSEXT_SIGALG_gostr34102012_512_gostr34112012_512       0xefef
-#define TLSEXT_SIGALG_gostr34102001_gostr3411                   0xeded
 
 #define TLSEXT_SIGALG_ed25519                                   0x0807
 #define TLSEXT_SIGALG_ed448                                     0x0808

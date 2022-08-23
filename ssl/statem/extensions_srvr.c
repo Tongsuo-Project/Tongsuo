@@ -1627,11 +1627,7 @@ EXT_RETURN tls_construct_stoc_etm(SSL *s, WPACKET *pkt, unsigned int context,
      * for other cases too.
      */
     if (s->s3.tmp.new_cipher->algorithm_mac == SSL_AEAD
-        || s->s3.tmp.new_cipher->algorithm_enc == SSL_RC4
-        || s->s3.tmp.new_cipher->algorithm_enc == SSL_eGOST2814789CNT
-        || s->s3.tmp.new_cipher->algorithm_enc == SSL_eGOST2814789CNT12
-        || s->s3.tmp.new_cipher->algorithm_enc == SSL_MAGMA
-        || s->s3.tmp.new_cipher->algorithm_enc == SSL_KUZNYECHIK) {
+        || s->s3.tmp.new_cipher->algorithm_enc == SSL_RC4) {
         s->ext.use_etm = 0;
         return EXT_RETURN_NOT_SENT;
     }
@@ -1951,32 +1947,6 @@ EXT_RETURN tls_construct_stoc_cookie(SSL *s, WPACKET *pkt, unsigned int context,
 #else
     return EXT_RETURN_FAIL;
 #endif
-}
-
-EXT_RETURN tls_construct_stoc_cryptopro_bug(SSL *s, WPACKET *pkt,
-                                            unsigned int context, X509 *x,
-                                            size_t chainidx)
-{
-    const unsigned char cryptopro_ext[36] = {
-        0xfd, 0xe8,         /* 65000 */
-        0x00, 0x20,         /* 32 bytes length */
-        0x30, 0x1e, 0x30, 0x08, 0x06, 0x06, 0x2a, 0x85,
-        0x03, 0x02, 0x02, 0x09, 0x30, 0x08, 0x06, 0x06,
-        0x2a, 0x85, 0x03, 0x02, 0x02, 0x16, 0x30, 0x08,
-        0x06, 0x06, 0x2a, 0x85, 0x03, 0x02, 0x02, 0x17
-    };
-
-    if (((s->s3.tmp.new_cipher->id & 0xFFFF) != 0x80
-         && (s->s3.tmp.new_cipher->id & 0xFFFF) != 0x81)
-            || (SSL_get_options(s) & SSL_OP_CRYPTOPRO_TLSEXT_BUG) == 0)
-        return EXT_RETURN_NOT_SENT;
-
-    if (!WPACKET_memcpy(pkt, cryptopro_ext, sizeof(cryptopro_ext))) {
-        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
-        return EXT_RETURN_FAIL;
-    }
-
-    return EXT_RETURN_SENT;
 }
 
 EXT_RETURN tls_construct_stoc_early_data(SSL *s, WPACKET *pkt,

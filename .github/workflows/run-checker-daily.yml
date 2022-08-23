@@ -60,7 +60,6 @@ jobs:
           enable-fips no-tls1_3,
           no-fuzz-afl,
           no-fuzz-libfuzzer,
-          no-gost,
           enable-heartbeats,
           no-heartbeats,
           no-hw,

@@ -180,8 +180,6 @@ static const ssl_trace_tbl ssl_ciphers_tbl[] = {
     {0x006B, "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256"},
     {0x006C, "TLS_DH_anon_WITH_AES_128_CBC_SHA256"},
     {0x006D, "TLS_DH_anon_WITH_AES_256_CBC_SHA256"},
-    {0x0081, "TLS_GOSTR341001_WITH_28147_CNT_IMIT"},
-    {0x0083, "TLS_GOSTR341001_WITH_NULL_GOSTR3411"},
     {0x008A, "TLS_PSK_WITH_RC4_128_SHA"},
     {0x008B, "TLS_PSK_WITH_3DES_EDE_CBC_SHA"},
     {0x008C, "TLS_PSK_WITH_AES_128_CBC_SHA"},
@@ -305,7 +303,6 @@ static const ssl_trace_tbl ssl_ciphers_tbl[] = {
     {0xC0AD, "TLS_ECDHE_ECDSA_WITH_AES_256_CCM"},
     {0xC0AE, "TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8"},
     {0xC0AF, "TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8"},
-    {0xC102, "IANA-GOST2012-GOST8912-GOST8912"},
     {0xCCA8, "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256"},
     {0xCCA9, "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256"},
     {0xCCAA, "TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256"},
@@ -320,11 +317,6 @@ static const ssl_trace_tbl ssl_ciphers_tbl[] = {
     {0x1305, "TLS_AES_128_CCM_8_SHA256"},
     {0xFEFE, "SSL_RSA_FIPS_WITH_DES_CBC_SHA"},
     {0xFEFF, "SSL_RSA_FIPS_WITH_3DES_EDE_CBC_SHA"},
-    {0xFF85, "LEGACY-GOST2012-GOST8912-GOST8912"},
-    {0xFF87, "GOST2012-NULL-GOST12"},
-    {0xC100, "GOST2012-KUZNYECHIK-KUZNYECHIKOMAC"},
-    {0xC101, "GOST2012-MAGMA-MAGMAOMAC"},
-    {0xC102, "GOST2012-GOST8912-IANA"},
 #ifndef OPENSSL_NO_NTLS
     {0xE011, "ECDHE_SM4_CBC_SM3"},
     {0xE051, "ECDHE_SM4_GCM_SM3"},
@@ -469,11 +461,6 @@ static const ssl_trace_tbl ssl_sigalg_tbl[] = {
     {TLSEXT_SIGALG_dsa_sha512, "dsa_sha512"},
     {TLSEXT_SIGALG_dsa_sha224, "dsa_sha224"},
     {TLSEXT_SIGALG_dsa_sha1, "dsa_sha1"},
-    {TLSEXT_SIGALG_gostr34102012_256_intrinsic, "gost2012_256"},
-    {TLSEXT_SIGALG_gostr34102012_512_intrinsic, "gost2012_512"},
-    {TLSEXT_SIGALG_gostr34102012_256_gostr34112012_256, "gost2012_256"},
-    {TLSEXT_SIGALG_gostr34102012_512_gostr34112012_512, "gost2012_512"},
-    {TLSEXT_SIGALG_gostr34102001_gostr3411, "gost2001_gost94"},
     {TLSEXT_SIGALG_sm2sig_sm3, "sm2sig_sm3"},
 };
 
@@ -488,8 +475,6 @@ static const ssl_trace_tbl ssl_ctype_tbl[] = {
     {64, "ecdsa_sign"},
     {65, "rsa_fixed_ecdh"},
     {66, "ecdsa_fixed_ecdh"},
-    {67, "gost_sign256"},
-    {68, "gost_sign512"},
 };
 
 static const ssl_trace_tbl ssl_psk_kex_modes_tbl[] = {
@@ -988,14 +973,6 @@ static int ssl_get_keyex(const char **pname, const SSL *ssl)
         *pname = "SRP";
         return SSL_kSRP;
     }
-    if (alg_k & SSL_kGOST) {
-        *pname = "GOST";
-        return SSL_kGOST;
-    }
-    if (alg_k & SSL_kGOST18) {
-        *pname = "GOST18";
-        return SSL_kGOST18;
-    }
     if (alg_k & SSL_kSM2) {
         *pname = "SM2";
         return SSL_kSM2;
@@ -1045,15 +1022,6 @@ static int ssl_print_client_keyex(BIO *bio, int indent, const SSL *ssl,
     case SSL_kECDHEPSK:
         if (!ssl_print_hexbuf(bio, indent + 2, "ecdh_Yc", 1, &msg, &msglen))
             return 0;
-        break;
-    case SSL_kGOST:
-        ssl_print_hex(bio, indent + 2, "GostKeyTransportBlob", msg, msglen);
-        msglen = 0;
-        break;
-    case SSL_kGOST18:
-        ssl_print_hex(bio, indent + 2,
-                      "GOST-wrapped PreMasterSecret", msg, msglen);
-        msglen = 0;
         break;
     case SSL_kSM2:
         if (!ssl_print_hexbuf(bio, indent + 2,

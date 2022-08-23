@@ -315,9 +315,6 @@ static int test_cipher_name(void)
     for (i = 0; i < sk_SSL_CIPHER_num(sk); i++) {
         c = sk_SSL_CIPHER_value(sk, i);
         id = SSL_CIPHER_get_id(c) & 0xFFFF;
-        if ((id == 0xC102) || (id == 0xFF85) ||(id == 0xFF87))
-            /* skip GOST2012-GOST8912-GOST891 and GOST2012-NULL-GOST12 */
-            continue;
         p = SSL_CIPHER_standard_name(c);
         q = get_std_name_by_id(id);
         if (!TEST_ptr(p)) {

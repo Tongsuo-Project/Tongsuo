@@ -86,7 +86,6 @@ use constant {
     EXT_SIG_ALGS_CERT => 50,
     EXT_RENEGOTIATE => 65281,
     EXT_NPN => 13172,
-    EXT_CRYPTOPRO_BUG_EXTENSION => 0xfde8,
     EXT_UNKNOWN => 0xfffe,
     #Unknown extension that should appear last
     EXT_FORCE_LAST => 0xffff

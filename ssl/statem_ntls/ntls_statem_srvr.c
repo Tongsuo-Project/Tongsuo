@@ -111,8 +111,7 @@ int ossl_statem_server_read_transition_ntls(SSL *s, int mt)
                 /*
                  * For the ECDH ciphersuites when the client sends its ECDH
                  * pub key in a certificate, the CertificateVerify message is
-                 * not sent. Also for GOST ciphersuites when the client uses
-                 * its key from the certificate for key exchange.
+                 * not sent.
                  */
                 st->hand_state = TLS_ST_SR_CHANGE;
                 return 1;

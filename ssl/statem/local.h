@@ -10,5 +10,3 @@
 /*
  * This header file is only used for the --symbol-prefix search export symbol.
  */
-
-DECLARE_ASN1_FUNCTIONS(GOST_KX_MESSAGE)
