@@ -414,17 +414,6 @@ int tls_construct_cert_verify(SSL *s, WPACKET *pkt)
         }
     }
 
-#ifndef OPENSSL_NO_GOST
-    {
-        int pktype = lu->sig;
-
-        if (pktype == NID_id_GostR3410_2001
-            || pktype == NID_id_GostR3410_2012_256
-            || pktype == NID_id_GostR3410_2012_512)
-            BUF_reverse(sig, NULL, siglen);
-    }
-#endif
-
     if (!WPACKET_sub_memcpy_u16(pkt, sig, siglen)) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
         goto err;
@@ -458,9 +447,6 @@ MSG_PROCESS_RETURN tls_process_cert_verify(SSL *s, PACKET *pkt)
 {
     EVP_PKEY *pkey = NULL;
     const unsigned char *data;
-#ifndef OPENSSL_NO_GOST
-    unsigned char *gost_data = NULL;
-#endif
     MSG_PROCESS_RETURN ret = MSG_PROCESS_ERROR;
     int j;
     unsigned int len;
@@ -550,21 +536,6 @@ MSG_PROCESS_RETURN tls_process_cert_verify(SSL *s, PACKET *pkt)
         OSSL_TRACE1(TLS, "USING TLSv1.2 HASH %s\n",
                     md == NULL ? "n/a" : EVP_MD_get0_name(md));
 
-    /* Check for broken implementations of GOST ciphersuites */
-    /*
-     * If key is GOST and len is exactly 64 or 128, it is signature without
-     * length field (CryptoPro implementations at least till TLS 1.2)
-     */
-#ifndef OPENSSL_NO_GOST
-    if (!SSL_USE_SIGALGS(s)
-        && ((PACKET_remaining(pkt) == 64
-             && (EVP_PKEY_get_id(pkey) == NID_id_GostR3410_2001
-                 || EVP_PKEY_get_id(pkey) == NID_id_GostR3410_2012_256))
-            || (PACKET_remaining(pkt) == 128
-                && EVP_PKEY_get_id(pkey) == NID_id_GostR3410_2012_512))) {
-        len = PACKET_remaining(pkt);
-    } else
-#endif
     if (!PACKET_get_net_2(pkt, &len)) {
         SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_R_LENGTH_MISMATCH);
         goto err;
@@ -608,21 +579,6 @@ MSG_PROCESS_RETURN tls_process_cert_verify(SSL *s, PACKET *pkt)
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_EVP_LIB);
         goto err;
     }
-#ifndef OPENSSL_NO_GOST
-    {
-        int pktype = EVP_PKEY_get_id(pkey);
-        if (pktype == NID_id_GostR3410_2001
-            || pktype == NID_id_GostR3410_2012_256
-            || pktype == NID_id_GostR3410_2012_512) {
-            if ((gost_data = OPENSSL_malloc(len)) == NULL) {
-                SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
-                goto err;
-            }
-            BUF_reverse(gost_data, data, len);
-            data = gost_data;
-        }
-    }
-#endif
 
     if (SSL_USE_PSS(s)) {
         if (EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PSS_PADDING) <= 0
@@ -668,9 +624,6 @@ MSG_PROCESS_RETURN tls_process_cert_verify(SSL *s, PACKET *pkt)
     BIO_free(s->s3.handshake_buffer);
     s->s3.handshake_buffer = NULL;
     EVP_MD_CTX_free(mctx);
-#ifndef OPENSSL_NO_GOST
-    OPENSSL_free(gost_data);
-#endif
 #ifndef OPENSSL_NO_SM2
     /*other sig call EVP_PKEY_CTX_free there may cause segfault */
     if (pkey != NULL && EVP_PKEY_is_sm2(pkey))
@@ -1677,9 +1630,6 @@ static int is_tls13_capable(const SSL *s)
         /* Skip over certs disallowed for TLSv1.3 */
         switch (i) {
         case SSL_PKEY_DSA_SIGN:
-        case SSL_PKEY_GOST01:
-        case SSL_PKEY_GOST12_256:
-        case SSL_PKEY_GOST12_512:
             continue;
         default:
             break;

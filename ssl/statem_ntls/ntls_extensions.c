@@ -321,17 +321,6 @@ static const EXTENSION_DEFINITION ext_defs[] = {
         tls_construct_stoc_cookie_ntls, tls_construct_ctos_cookie_ntls, NULL
     },
     {
-        /*
-         * Special unsolicited ServerHello extension only used when
-         * SSL_OP_CRYPTOPRO_TLSEXT_BUG is set. We allow it in a ClientHello but
-         * ignore it.
-         */
-        TLSEXT_TYPE_cryptopro_bug,
-        SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS1_2_SERVER_HELLO
-        | SSL_EXT_TLS1_2_AND_BELOW_ONLY,
-        NULL, NULL, NULL, tls_construct_stoc_cryptopro_bug_ntls, NULL, NULL
-    },
-    {
         TLSEXT_TYPE_early_data,
         SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS1_3_ENCRYPTED_EXTENSIONS
         | SSL_EXT_TLS1_3_NEW_SESSION_TICKET | SSL_EXT_TLS1_3_ONLY,
@@ -601,10 +590,6 @@ int tls_collect_extensions_ntls(SSL *s, PACKET *packet, unsigned int context,
                 && type != TLSEXT_TYPE_renegotiate
                 && type != TLSEXT_TYPE_signed_certificate_timestamp
                 && (s->ext.extflags[idx] & SSL_EXT_FLAG_SENT) == 0
-#ifndef OPENSSL_NO_GOST
-                && !((context & SSL_EXT_TLS1_2_SERVER_HELLO) != 0
-                     && type == TLSEXT_TYPE_cryptopro_bug)
-#endif
 								) {
             SSLfatal_ntls(s, SSL_AD_UNSUPPORTED_EXTENSION,
                      SSL_R_UNSOLICITED_EXTENSION);

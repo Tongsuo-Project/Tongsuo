@@ -299,8 +299,6 @@ static STRINT_PAIR cert_type_list[] = {
     {"ECDSA sign", TLS_CT_ECDSA_SIGN},
     {"RSA fixed ECDH", TLS_CT_RSA_FIXED_ECDH},
     {"ECDSA fixed ECDH", TLS_CT_ECDSA_FIXED_ECDH},
-    {"GOST01 Sign", TLS_CT_GOST01_SIGN},
-    {"GOST12 Sign", TLS_CT_GOST12_IANA_SIGN},
     {NULL}
 };
 
@@ -352,15 +350,6 @@ static const char *get_sigtype(int nid)
 
     case NID_ED448:
         return "Ed448";
-
-    case NID_id_GostR3410_2001:
-        return "gost2001";
-
-    case NID_id_GostR3410_2012_256:
-        return "gost2012_256";
-
-    case NID_id_GostR3410_2012_512:
-        return "gost2012_512";
 
     default:
         return NULL;
@@ -800,7 +789,7 @@ static STRINT_PAIR tlsext_types[] = {
     {NULL}
 };
 
-/* from rfc8446 4.2.3. + gost (https://tools.ietf.org/id/draft-smyshlyaev-tls12-gost-suites-04.html) */
+/* from rfc8446 4.2.3.) */
 static STRINT_PAIR signature_tls13_scheme_list[] = {
     {"rsa_pkcs1_sha1",         0x0201 /* TLSEXT_SIGALG_rsa_pkcs1_sha1 */},
     {"ecdsa_sha1",             0x0203 /* TLSEXT_SIGALG_ecdsa_sha1 */},
@@ -820,9 +809,6 @@ static STRINT_PAIR signature_tls13_scheme_list[] = {
     {"rsa_pss_pss_sha256",     0x0809 /* TLSEXT_SIGALG_rsa_pss_pss_sha256 */},
     {"rsa_pss_pss_sha384",     0x080a /* TLSEXT_SIGALG_rsa_pss_pss_sha384 */},
     {"rsa_pss_pss_sha512",     0x080b /* TLSEXT_SIGALG_rsa_pss_pss_sha512 */},
-    {"gostr34102001",          0xeded /* TLSEXT_SIGALG_gostr34102001_gostr3411 */},
-    {"gostr34102012_256",      0xeeee /* TLSEXT_SIGALG_gostr34102012_256_gostr34112012_256 */},
-    {"gostr34102012_512",      0xefef /* TLSEXT_SIGALG_gostr34102012_512_gostr34112012_512 */},
     {NULL}
 };
 

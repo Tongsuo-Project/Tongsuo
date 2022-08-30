@@ -37,12 +37,6 @@ unsigned char *PKCS12_pbe_crypt_ex(const X509_ALGOR *algor,
                                algor->parameter, ctx, en_de, libctx, propq))
         goto err;
 
-    /*
-     * GOST algorithm specifics:
-     * OMAC algorithm calculate and encrypt MAC of the encrypted objects
-     * It's appended to encrypted text on encrypting
-     * MAC should be processed on decrypting separately from plain text
-     */
     max_out_len = inlen + EVP_CIPHER_CTX_get_block_size(ctx);
     if ((EVP_CIPHER_get_flags(EVP_CIPHER_CTX_get0_cipher(ctx))
                 & EVP_CIPH_FLAG_CIPHER_WITH_MAC) != 0) {

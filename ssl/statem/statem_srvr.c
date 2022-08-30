@@ -31,20 +31,6 @@
 
 #define TICKET_NONCE_SIZE       8
 
-typedef struct {
-  ASN1_TYPE *kxBlob;
-  ASN1_TYPE *opaqueBlob;
-} GOST_KX_MESSAGE;
-
-DECLARE_ASN1_FUNCTIONS(GOST_KX_MESSAGE)
-
-ASN1_SEQUENCE(GOST_KX_MESSAGE) = {
-  ASN1_SIMPLE(GOST_KX_MESSAGE,  kxBlob, ASN1_ANY),
-  ASN1_OPT(GOST_KX_MESSAGE, opaqueBlob, ASN1_ANY),
-} ASN1_SEQUENCE_END(GOST_KX_MESSAGE)
-
-IMPLEMENT_ASN1_FUNCTIONS(GOST_KX_MESSAGE)
-
 static int tls_construct_encrypted_extensions(SSL *s, WPACKET *pkt);
 
 /*
@@ -251,8 +237,7 @@ int ossl_statem_server_read_transition(SSL *s, int mt)
                 /*
                  * For the ECDH ciphersuites when the client sends its ECDH
                  * pub key in a certificate, the CertificateVerify message is
-                 * not sent. Also for GOST ciphersuites when the client uses
-                 * its key from the certificate for key exchange.
+                 * not sent.
                  */
                 st->hand_state = TLS_ST_SR_CHANGE;
                 return 1;
@@ -3353,187 +3338,6 @@ static int tls_process_cke_srp(SSL *s, PACKET *pkt)
 #endif
 }
 
-static int tls_process_cke_gost(SSL *s, PACKET *pkt)
-{
-#ifndef OPENSSL_NO_GOST
-    EVP_PKEY_CTX *pkey_ctx;
-    EVP_PKEY *client_pub_pkey = NULL, *pk = NULL;
-    unsigned char premaster_secret[32];
-    const unsigned char *start;
-    size_t outlen = 32, inlen;
-    unsigned long alg_a;
-    GOST_KX_MESSAGE *pKX = NULL;
-    const unsigned char *ptr;
-    int ret = 0;
-
-    /* Get our certificate private key */
-    alg_a = s->s3.tmp.new_cipher->algorithm_auth;
-    if (alg_a & SSL_aGOST12) {
-        /*
-         * New GOST ciphersuites have SSL_aGOST01 bit too
-         */
-        pk = s->cert->pkeys[SSL_PKEY_GOST12_512].privatekey;
-        if (pk == NULL) {
-            pk = s->cert->pkeys[SSL_PKEY_GOST12_256].privatekey;
-        }
-        if (pk == NULL) {
-            pk = s->cert->pkeys[SSL_PKEY_GOST01].privatekey;
-        }
-    } else if (alg_a & SSL_aGOST01) {
-        pk = s->cert->pkeys[SSL_PKEY_GOST01].privatekey;
-    }
-
-    pkey_ctx = EVP_PKEY_CTX_new_from_pkey(s->ctx->libctx, pk, s->ctx->propq);
-    if (pkey_ctx == NULL) {
-        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
-        return 0;
-    }
-    if (EVP_PKEY_decrypt_init(pkey_ctx) <= 0) {
-        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
-        return 0;
-    }
-    /*
-     * If client certificate is present and is of the same type, maybe
-     * use it for key exchange.  Don't mind errors from
-     * EVP_PKEY_derive_set_peer, because it is completely valid to use a
-     * client certificate for authorization only.
-     */
-    client_pub_pkey = X509_get0_pubkey(s->session->peer);
-    if (client_pub_pkey) {
-        if (EVP_PKEY_derive_set_peer(pkey_ctx, client_pub_pkey) <= 0)
-            ERR_clear_error();
-    }
-
-    ptr = PACKET_data(pkt);
-    /* Some implementations provide extra data in the opaqueBlob
-     * We have nothing to do with this blob so we just skip it */
-    pKX = d2i_GOST_KX_MESSAGE(NULL, &ptr, PACKET_remaining(pkt));
-    if (pKX == NULL
-       || pKX->kxBlob == NULL
-       || ASN1_TYPE_get(pKX->kxBlob) != V_ASN1_SEQUENCE) {
-         SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_R_DECRYPTION_FAILED);
-         goto err;
-    }
-
-    if (!PACKET_forward(pkt, ptr - PACKET_data(pkt))) {
-        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_R_DECRYPTION_FAILED);
-        goto err;
-    }
-
-    if (PACKET_remaining(pkt) != 0) {
-        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_R_DECRYPTION_FAILED);
-        goto err;
-    }
-
-    inlen = pKX->kxBlob->value.sequence->length;
-    start = pKX->kxBlob->value.sequence->data;
-
-    if (EVP_PKEY_decrypt(pkey_ctx, premaster_secret, &outlen, start,
-                         inlen) <= 0) {
-        SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_R_DECRYPTION_FAILED);
-        goto err;
-    }
-    /* Generate master secret */
-    if (!ssl_generate_master_secret(s, premaster_secret,
-                                    sizeof(premaster_secret), 0)) {
-        /* SSLfatal() already called */
-        goto err;
-    }
-    /* Check if pubkey from client certificate was used */
-    if (EVP_PKEY_CTX_ctrl(pkey_ctx, -1, -1, EVP_PKEY_CTRL_PEER_KEY, 2,
-                          NULL) > 0)
-        s->statem.no_cert_verify = 1;
-
-    ret = 1;
- err:
-    EVP_PKEY_CTX_free(pkey_ctx);
-    GOST_KX_MESSAGE_free(pKX);
-    return ret;
-#else
-    /* Should never happen */
-    SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
-    return 0;
-#endif
-}
-
-static int tls_process_cke_gost18(SSL *s, PACKET *pkt)
-{
-#ifndef OPENSSL_NO_GOST
-    unsigned char rnd_dgst[32];
-    EVP_PKEY_CTX *pkey_ctx = NULL;
-    EVP_PKEY *pk = NULL;
-    unsigned char premaster_secret[32];
-    const unsigned char *start = NULL;
-    size_t outlen = 32, inlen = 0;
-    int ret = 0;
-    int cipher_nid = ossl_gost18_cke_cipher_nid(s);
-
-    if (cipher_nid == NID_undef) {
-        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
-        return 0;
-    }
-
-    if (ossl_gost_ukm(s, rnd_dgst) <= 0) {
-        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
-        goto err;
-    }
-
-    /* Get our certificate private key */
-    pk = s->cert->pkeys[SSL_PKEY_GOST12_512].privatekey != NULL ?
-         s->cert->pkeys[SSL_PKEY_GOST12_512].privatekey :
-         s->cert->pkeys[SSL_PKEY_GOST12_256].privatekey;
-    if (pk == NULL) {
-        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_R_BAD_HANDSHAKE_STATE);
-        goto err;
-    }
-
-    pkey_ctx = EVP_PKEY_CTX_new_from_pkey(s->ctx->libctx, pk, s->ctx->propq);
-    if (pkey_ctx == NULL) {
-        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
-        goto err;
-    }
-    if (EVP_PKEY_decrypt_init(pkey_ctx) <= 0) {
-        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
-        goto err;
-    }
-
-    /* Reuse EVP_PKEY_CTRL_SET_IV, make choice in engine code depending on size */
-    if (EVP_PKEY_CTX_ctrl(pkey_ctx, -1, EVP_PKEY_OP_DECRYPT,
-                          EVP_PKEY_CTRL_SET_IV, 32, rnd_dgst) <= 0) {
-        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_R_LIBRARY_BUG);
-        goto err;
-    }
-
-    if (EVP_PKEY_CTX_ctrl(pkey_ctx, -1, EVP_PKEY_OP_DECRYPT,
-                          EVP_PKEY_CTRL_CIPHER, cipher_nid, NULL) <= 0) {
-        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_R_LIBRARY_BUG);
-        goto err;
-    }
-    inlen = PACKET_remaining(pkt);
-    start = PACKET_data(pkt);
-
-    if (EVP_PKEY_decrypt(pkey_ctx, premaster_secret, &outlen, start, inlen) <= 0) {
-        SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_R_DECRYPTION_FAILED);
-        goto err;
-    }
-    /* Generate master secret */
-    if (!ssl_generate_master_secret(s, premaster_secret,
-         sizeof(premaster_secret), 0)) {
-         /* SSLfatal() already called */
-         goto err;
-    }
-    ret = 1;
-
- err:
-    EVP_PKEY_CTX_free(pkey_ctx);
-    return ret;
-#else
-    /* Should never happen */
-    SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
-    return 0;
-#endif
-}
-
 MSG_PROCESS_RETURN tls_process_client_key_exchange(SSL *s, PACKET *pkt)
 {
     unsigned long alg_k;
@@ -3574,16 +3378,6 @@ MSG_PROCESS_RETURN tls_process_client_key_exchange(SSL *s, PACKET *pkt)
         }
     } else if (alg_k & SSL_kSRP) {
         if (!tls_process_cke_srp(s, pkt)) {
-            /* SSLfatal() already called */
-            goto err;
-        }
-    } else if (alg_k & SSL_kGOST) {
-        if (!tls_process_cke_gost(s, pkt)) {
-            /* SSLfatal() already called */
-            goto err;
-        }
-    } else if (alg_k & SSL_kGOST18) {
-        if (!tls_process_cke_gost18(s, pkt)) {
             /* SSLfatal() already called */
             goto err;
         }
