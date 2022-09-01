@@ -11,7 +11,6 @@ $SM3_GOAL=../../libdefault.a
 $MD5_GOAL=../../libdefault.a
 $NULL_GOAL=../../libdefault.a
 
-$MDC2_GOAL=../../liblegacy.a
 $WHIRLPOOL_GOAL=../../liblegacy.a
 $RIPEMD_GOAL=../../liblegacy.a
 
@@ -33,10 +32,6 @@ ENDIF
 
 IF[{- !$disabled{md5} -}]
   SOURCE[$MD5_GOAL]=md5_prov.c md5_sha1_prov.c
-ENDIF
-
-IF[{- !$disabled{mdc2} -}]
-  SOURCE[$MDC2_GOAL]=mdc2_prov.c
 ENDIF
 
 IF[{- !$disabled{whirlpool} -}]

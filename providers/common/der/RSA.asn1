@@ -80,7 +80,3 @@ id-rsassa-pkcs1-v1_5-with-sha3-512 OBJECT IDENTIFIER ::= { sigAlgs 16 }
 ripemd160WithRSAEncryption    OBJECT IDENTIFIER ::= {
     iso(1) identified-organization(3) teletrust(36) algorithm(3) signatureAlgorithm(3) rsaSignature(1) 2
 }
-
-mdc2WithRSASignature OBJECT IDENTIFIER ::= {
-    iso(1) identified-organization(3) oiw(14) secsig(3) algorithms(2) mdc2WithRSASignature(14)
-}

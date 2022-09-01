@@ -2477,16 +2477,6 @@
 #define NID_rsa         19
 #define OBJ_rsa         OBJ_X500algorithms,1L,1L
 
-#define SN_mdc2WithRSA          "RSA-MDC2"
-#define LN_mdc2WithRSA          "mdc2WithRSA"
-#define NID_mdc2WithRSA         96
-#define OBJ_mdc2WithRSA         OBJ_X500algorithms,3L,100L
-
-#define SN_mdc2         "MDC2"
-#define LN_mdc2         "mdc2"
-#define NID_mdc2                95
-#define OBJ_mdc2                OBJ_X500algorithms,3L,101L
-
 #define SN_id_ce                "id-ce"
 #define NID_id_ce               81
 #define OBJ_id_ce               OBJ_X500,29L

@@ -154,7 +154,7 @@ EOF
         "sha512", "sha512-224", "sha512-256",
         "sha3-224", "sha3-256", "sha3-384", "sha3-512",
         "shake128", "shake256",
-        "mdc2", "rmd160", "blake2b512", "blake2s256",
+        "rmd160", "blake2b512", "blake2s256",
         "sm3"
     ) {
         my $str = "    {FT_md, \"$cmd\", dgst_main, NULL, NULL},\n";

@@ -21,8 +21,6 @@
     ossl_der_oid_id_rsassa_pkcs1_v1_5_with_sha3_384
 #define ossl_der_oid_sha3_512WithRSAEncryption \
     ossl_der_oid_id_rsassa_pkcs1_v1_5_with_sha3_512
-#define ossl_der_oid_mdc2WithRSAEncryption \
-    ossl_der_oid_mdc2WithRSASignature
 
 #define MD_with_RSA_CASE(name, var)                                     \
     case NID_##name:                                                    \
@@ -40,7 +38,6 @@ int ossl_DER_w_algorithmIdentifier_MDWithRSAEncryption(WPACKET *pkt, int tag,
 #ifndef FIPS_MODULE
         MD_with_RSA_CASE(md5, precompiled);
         MD_with_RSA_CASE(ripemd160, precompiled);
-        MD_with_RSA_CASE(mdc2, precompiled);
 #endif
         MD_with_RSA_CASE(sha1, precompiled);
         MD_with_RSA_CASE(sha224, precompiled);

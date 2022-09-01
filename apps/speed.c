@@ -270,7 +270,7 @@ const OPTIONS speed_options[] = {
 };
 
 enum {
-    D_MDC2, D_MD5, D_SHA1, D_RMD160,
+    D_MD5, D_SHA1, D_RMD160,
     D_SHA256, D_SHA512, D_WHIRLPOOL, D_HMAC,
     D_CBC_DES, D_EDE3_DES, D_RC4, D_CBC_IDEA,
     D_CBC_RC2, D_CBC_RC5, D_CBC_BF, D_CBC_CAST,
@@ -279,7 +279,7 @@ enum {
 };
 /* name of algorithms to test. MUST BE KEEP IN SYNC with above enum ! */
 static const char *names[ALGOR_NUM] = {
-    "mdc2", "md5", "sha1", "rmd160",
+    "md5", "sha1", "rmd160",
     "sha256", "sha512", "whirlpool", "hmac(md5)",
     "des-cbc", "des-ede3", "rc4",
     "rc2-cbc", "rc5-cbc", "blowfish",
@@ -289,7 +289,6 @@ static const char *names[ALGOR_NUM] = {
 
 /* list of configured algorithm (remaining), with some few alias */
 static const OPT_PAIR doit_choices[] = {
-    {"mdc2", D_MDC2},
     {"md5", D_MD5},
     {"hmac", D_HMAC},
     {"sha1", D_SHA1},
@@ -641,11 +640,6 @@ static int EVP_Digest_loop(const char *mdname, int algindex, void *args)
 static int EVP_Digest_md_loop(void *args)
 {
     return EVP_Digest_loop(evp_md_name, D_EVP, args);
-}
-
-static int EVP_Digest_MDC2_loop(void *args)
-{
-    return EVP_Digest_loop("mdc2", D_MDC2, args);
 }
 
 static int MD5_loop(void *args)
@@ -2026,7 +2020,7 @@ int speed_main(int argc, char **argv)
         memset(doit, 1, sizeof(doit));
         doit[D_EVP] = doit[D_EVP_CMAC] = 0;
         ERR_set_mark();
-        for (i = D_MDC2; i <= D_WHIRLPOOL; i++) {
+        for (i = D_MD5; i <= D_WHIRLPOOL; i++) {
             if (!have_md(names[i]))
                 doit[i] = 0;
         }
@@ -2214,19 +2208,6 @@ int speed_main(int argc, char **argv)
     ec_elgamal_c[R_EC_ELGAMAL_SM2][4] = count / 20000;
 # endif  /* OPENSSL_NO_SM2 */
 #endif   /* OPENSSL_NO_EC_ELGAMAL */
-
-    if (doit[D_MDC2]) {
-        for (testnum = 0; testnum < size_num; testnum++) {
-            print_message(names[D_MDC2], c[D_MDC2][testnum], lengths[testnum],
-                          seconds.sym);
-            Time_F(START);
-            count = run_benchmark(async_jobs, EVP_Digest_MDC2_loop, loopargs);
-            d = Time_F(STOP);
-            print_result(D_MDC2, testnum, count, d);
-            if (count < 0)
-                break;
-        }
-    }
 
     if (doit[D_MD5]) {
         for (testnum = 0; testnum < size_num; testnum++) {

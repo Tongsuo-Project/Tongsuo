@@ -230,7 +230,6 @@ OBJ_txt2nid                             240	3_0_0	EXIST::FUNCTION:
 EC_KEY_clear_flags                      242	3_0_0	EXIST::FUNCTION:DEPRECATEDIN_3_0,EC
 CMS_RecipientInfo_ktri_get0_algs        243	3_0_0	EXIST::FUNCTION:CMS
 i2d_EC_PUBKEY                           244	3_0_0	EXIST::FUNCTION:DEPRECATEDIN_3_0,EC
-MDC2                                    245	3_0_0	EXIST::FUNCTION:DEPRECATEDIN_3_0,MDC2
 BN_clear_free                           246	3_0_0	EXIST::FUNCTION:
 ENGINE_get_pkey_asn1_meths              247	3_0_0	EXIST::FUNCTION:DEPRECATEDIN_3_0,ENGINE
 DSO_merge                               248	3_0_0	EXIST::FUNCTION:
@@ -1090,7 +1089,6 @@ X509_set_issuer_name                    1138	3_0_0	EXIST::FUNCTION:
 RSA_new                                 1139	3_0_0	EXIST::FUNCTION:DEPRECATEDIN_3_0
 ASN1_STRING_set_by_NID                  1140	3_0_0	EXIST::FUNCTION:
 PEM_write_bio_PKCS7                     1141	3_0_0	EXIST::FUNCTION:
-MDC2_Final                              1142	3_0_0	EXIST::FUNCTION:DEPRECATEDIN_3_0,MDC2
 SMIME_crlf_copy                         1143	3_0_0	EXIST::FUNCTION:
 OCSP_REQUEST_get_ext_count              1144	3_0_0	EXIST::FUNCTION:OCSP
 OSSL_HTTP_REQ_CTX_new                   1145	3_0_0	EXIST::FUNCTION:
@@ -1161,7 +1159,6 @@ X509_policy_tree_free                   1210	3_0_0	EXIST::FUNCTION:
 EC_GFp_simple_method                    1211	3_0_0	EXIST::FUNCTION:DEPRECATEDIN_3_0,EC
 X509_it                                 1212	3_0_0	EXIST::FUNCTION:
 d2i_PROXY_POLICY                        1213	3_0_0	EXIST::FUNCTION:
-MDC2_Update                             1214	3_0_0	EXIST::FUNCTION:DEPRECATEDIN_3_0,MDC2
 EC_KEY_new_by_curve_name                1215	3_0_0	EXIST::FUNCTION:DEPRECATEDIN_3_0,EC
 X509_CRL_free                           1216	3_0_0	EXIST::FUNCTION:
 i2d_PKCS7_SIGN_ENVELOPE                 1217	3_0_0	EXIST::FUNCTION:
@@ -1988,7 +1985,6 @@ BIO_new_CMS                             2071	3_0_0	EXIST::FUNCTION:CMS
 i2d_ASN1_ENUMERATED                     2072	3_0_0	EXIST::FUNCTION:
 PEM_read_DSAparams                      2073	3_0_0	EXIST::FUNCTION:DEPRECATEDIN_3_0,DSA,STDIO
 TS_TST_INFO_set_ordering                2074	3_0_0	EXIST::FUNCTION:TS
-MDC2_Init                               2075	3_0_0	EXIST::FUNCTION:DEPRECATEDIN_3_0,MDC2
 i2o_SCT                                 2076	3_0_0	EXIST::FUNCTION:CT
 d2i_TS_STATUS_INFO                      2077	3_0_0	EXIST::FUNCTION:TS
 ERR_error_string_n                      2078	3_0_0	EXIST::FUNCTION:
@@ -2040,7 +2036,6 @@ X509V3_EXT_add_conf                     2123	3_0_0	EXIST::FUNCTION:
 ASN1_object_size                        2124	3_0_0	EXIST::FUNCTION:
 X509_REVOKED_free                       2125	3_0_0	EXIST::FUNCTION:
 BN_mod_exp_recp                         2126	3_0_0	EXIST::FUNCTION:
-EVP_mdc2                                2127	3_0_0	EXIST::FUNCTION:MDC2
 EVP_des_cfb64                           2128	3_0_0	EXIST::FUNCTION:DES
 PKCS7_sign                              2129	3_0_0	EXIST::FUNCTION:
 OCSP_SINGLERESP_get_ext_by_critical     2130	3_0_0	EXIST::FUNCTION:OCSP

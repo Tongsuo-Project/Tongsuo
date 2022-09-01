@@ -787,8 +787,6 @@ X509 100		:			: dnsName
 
 X500 8			: X500algorithms	: directory services - algorithms
 X500algorithms 1 1	: RSA			: rsa
-X500algorithms 3 100	: RSA-MDC2		: mdc2WithRSA
-X500algorithms 3 101	: MDC2			: mdc2
 
 X500 29			: id-ce
 !Cname subject-directory-attributes

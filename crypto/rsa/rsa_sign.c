@@ -22,9 +22,6 @@
 # ifndef OPENSSL_NO_MD5
 #  include <openssl/md5.h> /* uses MD5_DIGEST_LENGTH */
 # endif
-# ifndef OPENSSL_NO_MDC2
-#  include <openssl/mdc2.h> /* uses MDC2_DIGEST_LENGTH */
-# endif
 # ifndef OPENSSL_NO_RMD160
 #  include <openssl/ripemd.h> /* uses RIPEMD160_DIGEST_LENGTH */
 # endif
@@ -91,16 +88,6 @@ static const unsigned char digestinfo_##name##_der[] = {                       \
 # ifndef OPENSSL_NO_MD5
 ENCODE_DIGESTINFO_MD(md5, 0x05, MD5_DIGEST_LENGTH)
 # endif
-# ifndef OPENSSL_NO_MDC2
-/* MDC-2 (2 5 8 3 101) */
-static const unsigned char digestinfo_mdc2_der[] = {
-    ASN1_SEQUENCE, 0x0c + MDC2_DIGEST_LENGTH,
-      ASN1_SEQUENCE, 0x08,
-        ASN1_OID, 0x04, 2 * 40 + 5, 8, 3, 101,
-        ASN1_NULL, 0x00,
-      ASN1_OCTET_STRING, MDC2_DIGEST_LENGTH
-};
-# endif
 # ifndef OPENSSL_NO_RMD160
 /* RIPEMD160 (1 3 36 3 2 1) */
 static const unsigned char digestinfo_ripemd160_der[] = {
@@ -142,9 +129,6 @@ const unsigned char *ossl_rsa_digestinfo_encoding(int md_nid, size_t *len)
 {
     switch (md_nid) {
 #ifndef FIPS_MODULE
-# ifndef OPENSSL_NO_MDC2
-    MD_CASE(mdc2)
-# endif
 # ifndef OPENSSL_NO_MD5
     MD_CASE(md5)
 # endif
@@ -176,9 +160,6 @@ static int digest_sz_from_nid(int nid)
 {
     switch (nid) {
 #ifndef FIPS_MODULE
-# ifndef OPENSSL_NO_MDC2
-    MD_NID_CASE(mdc2, MDC2_DIGEST_LENGTH)
-# endif
 # ifndef OPENSSL_NO_MD5
     MD_NID_CASE(md5, MD5_DIGEST_LENGTH)
 # endif
@@ -352,26 +333,6 @@ int ossl_rsa_verify(int type, const unsigned char *m, unsigned int m_len,
             }
 
             if (memcmp(decrypt_buf, m, SSL_SIG_LENGTH) != 0) {
-                ERR_raise(ERR_LIB_RSA, RSA_R_BAD_SIGNATURE);
-                goto err;
-            }
-        }
-    } else if (type == NID_mdc2 && decrypt_len == 2 + 16
-               && decrypt_buf[0] == 0x04 && decrypt_buf[1] == 0x10) {
-        /*
-         * Oddball MDC2 case: signature can be OCTET STRING. check for correct
-         * tag and length octets.
-         */
-        if (rm != NULL) {
-            memcpy(rm, decrypt_buf + 2, 16);
-            *prm_len = 16;
-        } else {
-            if (m_len != 16) {
-                ERR_raise(ERR_LIB_RSA, RSA_R_INVALID_MESSAGE_LENGTH);
-                goto err;
-            }
-
-            if (memcmp(m, decrypt_buf + 2, 16) != 0) {
                 ERR_raise(ERR_LIB_RSA, RSA_R_BAD_SIGNATURE);
                 goto err;
             }

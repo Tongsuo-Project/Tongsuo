@@ -3938,10 +3938,6 @@ static int is_digest_disabled(const char *name)
     if (STR_STARTS_WITH(name, "BLAKE"))
         return 1;
 #endif
-#ifdef OPENSSL_NO_MDC2
-    if (OPENSSL_strcasecmp(name, "MDC2") == 0)
-        return 1;
-#endif
 #ifdef OPENSSL_NO_MD5
     if (OPENSSL_strcasecmp(name, "MD5") == 0)
         return 1;
