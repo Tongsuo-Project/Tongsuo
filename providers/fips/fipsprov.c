@@ -239,7 +239,7 @@ static int fips_self_test(void *provctx)
  *     ALGNAME[VERSION?][-SUBNAME[VERSION?]?][-SIZE?][-MODE?]
  *
  *     VERSION is only present if there are multiple versions of
- *     an alg (MD4, MD5).  It may be omitted if there is only
+ *     an alg (MD series).  It may be omitted if there is only
  *     one version (if a subsequent version is released in the future,
  *     we can always change the canonical name, and add the old name
  *     as an alias).
