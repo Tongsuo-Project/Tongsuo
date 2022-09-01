@@ -252,7 +252,6 @@
 -T HEAPENTRY32
 -T HEAPLIST32
 -T HMAC_CTX
--T IDEA_KEY_SCHEDULE
 -T IPAddrBlocks
 -T IPAddressFamily
 -T IPAddressOrRange

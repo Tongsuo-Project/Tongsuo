@@ -4040,10 +4040,6 @@ static int is_cipher_disabled(const char *name)
     if (STR_ENDS_WITH(name, "OCB"))
         return 1;
 #endif
-#ifdef OPENSSL_NO_IDEA
-    if (STR_STARTS_WITH(name, "IDEA"))
-        return 1;
-#endif
 #ifdef OPENSSL_NO_RC2
     if (STR_STARTS_WITH(name, "RC2"))
         return 1;

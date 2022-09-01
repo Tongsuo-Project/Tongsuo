@@ -397,24 +397,23 @@
 # define SSL_ENC_3DES_IDX        1
 # define SSL_ENC_RC4_IDX         2
 # define SSL_ENC_RC2_IDX         3
-# define SSL_ENC_IDEA_IDX        4
-# define SSL_ENC_NULL_IDX        5
-# define SSL_ENC_AES128_IDX      6
-# define SSL_ENC_AES256_IDX      7
-# define SSL_ENC_AES128GCM_IDX   8
-# define SSL_ENC_AES256GCM_IDX   9
-# define SSL_ENC_AES128CCM_IDX   10
-# define SSL_ENC_AES256CCM_IDX   11
-# define SSL_ENC_AES128CCM8_IDX  12
-# define SSL_ENC_AES256CCM8_IDX  13
-# define SSL_ENC_CHACHA_IDX      14
-# define SSL_ENC_SM4_GCM_IDX     15
-# define SSL_ENC_SM4_CCM_IDX     16
+# define SSL_ENC_NULL_IDX        4
+# define SSL_ENC_AES128_IDX      5
+# define SSL_ENC_AES256_IDX      6
+# define SSL_ENC_AES128GCM_IDX   7
+# define SSL_ENC_AES256GCM_IDX   8
+# define SSL_ENC_AES128CCM_IDX   9
+# define SSL_ENC_AES256CCM_IDX   10
+# define SSL_ENC_AES128CCM8_IDX  11
+# define SSL_ENC_AES256CCM8_IDX  12
+# define SSL_ENC_CHACHA_IDX      13
+# define SSL_ENC_SM4_GCM_IDX     14
+# define SSL_ENC_SM4_CCM_IDX     15
 # ifndef OPENSSL_NO_SM4
-#  define SSL_ENC_SM4_IDX        17
-#  define SSL_ENC_NUM_IDX        18
-# else
+#  define SSL_ENC_SM4_IDX        16
 #  define SSL_ENC_NUM_IDX        17
+# else
+#  define SSL_ENC_NUM_IDX        16
 # endif
 
 /*-

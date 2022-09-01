@@ -1311,23 +1311,6 @@
 #define NID_ms_upn              649
 #define OBJ_ms_upn              1L,3L,6L,1L,4L,1L,311L,20L,2L,3L
 
-#define SN_idea_cbc             "IDEA-CBC"
-#define LN_idea_cbc             "idea-cbc"
-#define NID_idea_cbc            34
-#define OBJ_idea_cbc            1L,3L,6L,1L,4L,1L,188L,7L,1L,1L,2L
-
-#define SN_idea_ecb             "IDEA-ECB"
-#define LN_idea_ecb             "idea-ecb"
-#define NID_idea_ecb            36
-
-#define SN_idea_cfb64           "IDEA-CFB"
-#define LN_idea_cfb64           "idea-cfb"
-#define NID_idea_cfb64          35
-
-#define SN_idea_ofb64           "IDEA-OFB"
-#define LN_idea_ofb64           "idea-ofb"
-#define NID_idea_ofb64          46
-
 #define SN_bf_cbc               "BF-CBC"
 #define LN_bf_cbc               "bf-cbc"
 #define NID_bf_cbc              91

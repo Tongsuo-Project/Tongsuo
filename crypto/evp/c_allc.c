@@ -61,15 +61,6 @@ void openssl_add_all_ciphers_int(void)
 # endif
 #endif
 
-#ifndef OPENSSL_NO_IDEA
-    EVP_add_cipher(EVP_idea_ecb());
-    EVP_add_cipher(EVP_idea_cfb());
-    EVP_add_cipher(EVP_idea_ofb());
-    EVP_add_cipher(EVP_idea_cbc());
-    EVP_add_cipher_alias(SN_idea_cbc, "IDEA");
-    EVP_add_cipher_alias(SN_idea_cbc, "idea");
-#endif
-
 #ifndef OPENSSL_NO_SM4
     EVP_add_cipher(EVP_sm4_ecb());
     EVP_add_cipher(EVP_sm4_cbc());
