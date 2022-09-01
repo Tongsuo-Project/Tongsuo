@@ -83,8 +83,6 @@ jobs:
           no-rc5,
           no-rdrand,
           no-rfc3779,
-          no-ripemd,
-          no-rmd160,
           no-scrypt,
           no-sctp,
           no-secure-memory,

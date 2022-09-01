@@ -101,8 +101,6 @@ dsaWithSHA1		113
 md5_sha1		114
 sha1WithRSA		115
 dsa		116
-ripemd160		117
-ripemd160WithRSA		119
 rc5_cbc		120
 rc5_ecb		121
 rc5_cfb64		122

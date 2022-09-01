@@ -270,7 +270,7 @@ const OPTIONS speed_options[] = {
 };
 
 enum {
-    D_MD5, D_SHA1, D_RMD160,
+    D_MD5, D_SHA1,
     D_SHA256, D_SHA512, D_WHIRLPOOL, D_HMAC,
     D_CBC_DES, D_EDE3_DES, D_RC4, D_CBC_IDEA,
     D_CBC_RC2, D_CBC_RC5, D_CBC_BF, D_CBC_CAST,
@@ -279,7 +279,7 @@ enum {
 };
 /* name of algorithms to test. MUST BE KEEP IN SYNC with above enum ! */
 static const char *names[ALGOR_NUM] = {
-    "md5", "sha1", "rmd160",
+    "md5", "sha1",
     "sha256", "sha512", "whirlpool", "hmac(md5)",
     "des-cbc", "des-ede3", "rc4",
     "rc2-cbc", "rc5-cbc", "blowfish",
@@ -295,9 +295,6 @@ static const OPT_PAIR doit_choices[] = {
     {"sha256", D_SHA256},
     {"sha512", D_SHA512},
     {"whirlpool", D_WHIRLPOOL},
-    {"ripemd", D_RMD160},
-    {"rmd160", D_RMD160},
-    {"ripemd160", D_RMD160},
     {"rc4", D_RC4},
     {"des-cbc", D_CBC_DES},
     {"des-ede3", D_EDE3_DES},
@@ -694,11 +691,6 @@ static int SHA512_loop(void *args)
 static int WHIRLPOOL_loop(void *args)
 {
     return EVP_Digest_loop("whirlpool", D_WHIRLPOOL, args);
-}
-
-static int EVP_Digest_RMD160_loop(void *args)
-{
-    return EVP_Digest_loop("ripemd160", D_RMD160, args);
 }
 
 #ifndef OPENSSL_NO_SM3
@@ -2269,19 +2261,6 @@ int speed_main(int argc, char **argv)
             count = run_benchmark(async_jobs, WHIRLPOOL_loop, loopargs);
             d = Time_F(STOP);
             print_result(D_WHIRLPOOL, testnum, count, d);
-            if (count < 0)
-                break;
-        }
-    }
-
-    if (doit[D_RMD160]) {
-        for (testnum = 0; testnum < size_num; testnum++) {
-            print_message(names[D_RMD160], c[D_RMD160][testnum],
-                          lengths[testnum], seconds.sym);
-            Time_F(START);
-            count = run_benchmark(async_jobs, EVP_Digest_RMD160_loop, loopargs);
-            d = Time_F(STOP);
-            print_result(D_RMD160, testnum, count, d);
             if (count < 0)
                 break;
         }

@@ -124,7 +124,6 @@ EOF
 #
 # MD5_ASM       use some extra md5 assembler,
 # SHA1_ASM      use some extra sha1 assembler, must define L_ENDIAN for x86
-# RMD160_ASM    use some extra ripemd160 assembler,
 # SHA256_ASM    sha256_block is implemented in assembler
 # SHA512_ASM    sha512_block is implemented in assembler
 # AES_ASM       AES_[en|de]crypt is implemented in assembler
@@ -307,7 +306,7 @@ $config{perlargv} = [ @argvcopy ];
 # 'unshift' adds at the front of the list (i.e. in reverse input order).
 foreach ( reverse sort( 'aes', 'bf', 'des', 'dh',
                         'dsa', 'ec', 'hmac', 'md5',
-                        'rc2', 'rc4', 'rc5', 'ripemd', 'sha',
+                        'rc2', 'rc4', 'rc5', 'sha',
                         'sm2', 'sm3', 'sm4', 'zuc', 'eia3') ) {
     unshift @argvcopy, "no-$_" if ! -d catdir($srcdir, 'crypto', $_);
 }
@@ -473,7 +472,6 @@ my @disablables = (
     "rc5",
     "rdrand",
     "rfc3779",
-    "rmd160",
     "scrypt",
     "sctp",
     "secure-memory",
@@ -537,7 +535,6 @@ my %deprecated_disablables = (
     "crypto-mdebug-backtrace" => undef,
     "hw" => "hw",               # causes cascade, but no macro
     "hw-padlock" => "padlockeng",
-    "ripemd" => "rmd160",
     "ui" => "ui-console",
     "heartbeats" => undef,
     );
@@ -591,7 +588,7 @@ my @disable_cascades = (
                              "ktls",
                              "multiblock", "nextprotoneg",
                              "ocsp", "ocb", "poly1305", "psk",
-                             "rc2", "rc4", "rmd160",
+                             "rc2", "rc4",
                              "siphash", "siv",
                              "sm3", "sm4", "srp",
                              "srtp", "ssl3-method", "ssl-trace",
@@ -1851,7 +1848,6 @@ foreach my $what (sort keys %disabled) {
         my $skipdir = $what;
 
         # fix-up crypto/directory name(s)
-        $skipdir = "ripemd" if $what eq "rmd160";
         $skipdir = "whrlpool" if $what eq "whirlpool";
 
         my $macro = $disabled_info{$what}->{macro} = "OPENSSL_NO_$WHAT";

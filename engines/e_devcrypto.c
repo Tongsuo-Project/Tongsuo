@@ -677,11 +677,6 @@ static const struct digest_data_st {
     { NID_md5, /* MD5_CBLOCK */ 64, 16, CRYPTO_MD5 },
 #endif
     { NID_sha1, SHA_CBLOCK, 20, CRYPTO_SHA1 },
-#ifndef OPENSSL_NO_RMD160
-# if !defined(CHECK_BSD_STYLE_MACROS) || defined(CRYPTO_RIPEMD160)
-    { NID_ripemd160, /* RIPEMD160_CBLOCK */ 64, 20, CRYPTO_RIPEMD160 },
-# endif
-#endif
 #if !defined(CHECK_BSD_STYLE_MACROS) || defined(CRYPTO_SHA2_224)
     { NID_sha224, SHA256_CBLOCK, 224 / 8, CRYPTO_SHA2_224 },
 #endif

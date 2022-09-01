@@ -70,9 +70,6 @@ static const OSSL_ALGORITHM legacy_digests[] = {
 #ifndef OPENSSL_NO_WHIRLPOOL
     ALG(PROV_NAMES_WHIRLPOOL, ossl_wp_functions),
 #endif /* OPENSSL_NO_WHIRLPOOL */
-#ifndef OPENSSL_NO_RMD160
-    ALG(PROV_NAMES_RIPEMD_160, ossl_ripemd160_functions),
-#endif /* OPENSSL_NO_RMD160 */
     { NULL, NULL, NULL }
 };
 

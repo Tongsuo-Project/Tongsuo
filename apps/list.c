@@ -1352,9 +1352,6 @@ static void list_disabled(void)
 #ifdef OPENSSL_NO_RC5
     BIO_puts(bio_out, "RC5\n");
 #endif
-#ifdef OPENSSL_NO_RMD160
-    BIO_puts(bio_out, "RMD160\n");
-#endif
 #ifdef OPENSSL_NO_SCRYPT
     BIO_puts(bio_out, "SCRYPT\n");
 #endif

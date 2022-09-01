@@ -12,7 +12,6 @@ $MD5_GOAL=../../libdefault.a
 $NULL_GOAL=../../libdefault.a
 
 $WHIRLPOOL_GOAL=../../liblegacy.a
-$RIPEMD_GOAL=../../liblegacy.a
 
 # This source is common for all digests in all our providers.
 SOURCE[$COMMON_GOAL]=digestcommon.c
@@ -36,8 +35,4 @@ ENDIF
 
 IF[{- !$disabled{whirlpool} -}]
   SOURCE[$WHIRLPOOL_GOAL]=wp_prov.c
-ENDIF
-
-IF[{- !$disabled{rmd160} -}]
-  SOURCE[$RIPEMD_GOAL]=ripemd_prov.c
 ENDIF
