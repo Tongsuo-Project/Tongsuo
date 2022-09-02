@@ -91,7 +91,7 @@ EOF
 # 386           generate 80386 code in assembly modules
 # no-sse2       disables IA-32 SSE2 code in assembly modules, the above
 #               mentioned '386' option implies this one
-# no-<cipher>   build without specified algorithm (dsa, idea, rc5, ...)
+# no-<cipher>   build without specified algorithm (dsa, rc5, ...)
 # -<xxx> +<xxx> All options which are unknown to the 'Configure' script are
 # /<xxx>        passed through to the compiler. Unix-style options beginning
 #               with a '-' or '+' are recognized, as well as Windows-style
@@ -306,7 +306,7 @@ $config{perlargv} = [ @argvcopy ];
 # We reverse the input list for cosmetic purely reasons, to compensate that
 # 'unshift' adds at the front of the list (i.e. in reverse input order).
 foreach ( reverse sort( 'aes', 'bf', 'des', 'dh',
-                        'dsa', 'ec', 'hmac', 'idea', 'md5', 'mdc2',
+                        'dsa', 'ec', 'hmac', 'md5', 'mdc2',
                         'rc2', 'rc4', 'rc5', 'ripemd', 'sha',
                         'sm2', 'sm3', 'sm4', 'zuc', 'eia3') ) {
     unshift @argvcopy, "no-$_" if ! -d catdir($srcdir, 'crypto', $_);
@@ -450,7 +450,6 @@ my @disablables = (
     "fips-securitychecks",
     "fuzz-afl",
     "fuzz-libfuzzer",
-    "idea",
     "ktls",
     "legacy",
     "loadereng",
@@ -591,7 +590,7 @@ my @disable_cascades = (
                              "des", "dgram", "dh", "dsa",
                              "ec", "engine",
                              "filenames",
-                             "idea", "ktls",
+                             "ktls",
                              "md4", "multiblock", "nextprotoneg",
                              "ocsp", "ocb", "poly1305", "psk",
                              "rc2", "rc4", "rmd160",

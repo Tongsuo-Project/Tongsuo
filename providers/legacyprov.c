@@ -89,12 +89,6 @@ static const OSSL_ALGORITHM legacy_ciphers[] = {
     ALG(PROV_NAMES_BF_OFB, ossl_blowfish64ofb64_functions),
     ALG(PROV_NAMES_BF_CFB, ossl_blowfish64cfb64_functions),
 #endif /* OPENSSL_NO_BF */
-#ifndef OPENSSL_NO_IDEA
-    ALG(PROV_NAMES_IDEA_ECB, ossl_idea128ecb_functions),
-    ALG(PROV_NAMES_IDEA_CBC, ossl_idea128cbc_functions),
-    ALG(PROV_NAMES_IDEA_OFB, ossl_idea128ofb64_functions),
-    ALG(PROV_NAMES_IDEA_CFB, ossl_idea128cfb64_functions),
-#endif /* OPENSSL_NO_IDEA */
 #ifndef OPENSSL_NO_RC2
     ALG(PROV_NAMES_RC2_ECB, ossl_rc2128ecb_functions),
     ALG(PROV_NAMES_RC2_CBC, ossl_rc2128cbc_functions),

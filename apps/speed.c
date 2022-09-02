@@ -281,7 +281,7 @@ enum {
 static const char *names[ALGOR_NUM] = {
     "mdc2", "md4", "md5", "sha1", "rmd160",
     "sha256", "sha512", "whirlpool", "hmac(md5)",
-    "des-cbc", "des-ede3", "rc4", "idea-cbc",
+    "des-cbc", "des-ede3", "rc4",
     "rc2-cbc", "rc5-cbc", "blowfish",
     "aes-128-cbc", "aes-192-cbc", "aes-256-cbc",
     "evp", "ghash", "rand", "cmac", "sm3", "sm4"
@@ -310,8 +310,6 @@ static const OPT_PAIR doit_choices[] = {
     {"rc2", D_CBC_RC2},
     {"rc5-cbc", D_CBC_RC5},
     {"rc5", D_CBC_RC5},
-    {"idea-cbc", D_CBC_IDEA},
-    {"idea", D_CBC_IDEA},
     {"bf-cbc", D_CBC_BF},
     {"blowfish", D_CBC_BF},
     {"bf", D_CBC_BF},

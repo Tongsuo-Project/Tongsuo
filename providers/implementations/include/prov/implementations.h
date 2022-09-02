@@ -99,12 +99,6 @@ extern const OSSL_DISPATCH ossl_blowfish128cbc_functions[];
 extern const OSSL_DISPATCH ossl_blowfish64ofb64_functions[];
 extern const OSSL_DISPATCH ossl_blowfish64cfb64_functions[];
 #endif /* OPENSSL_NO_BF */
-#ifndef OPENSSL_NO_IDEA
-extern const OSSL_DISPATCH ossl_idea128ecb_functions[];
-extern const OSSL_DISPATCH ossl_idea128cbc_functions[];
-extern const OSSL_DISPATCH ossl_idea128ofb64_functions[];
-extern const OSSL_DISPATCH ossl_idea128cfb64_functions[];
-#endif /* OPENSSL_NO_IDEA */
 #ifndef OPENSSL_NO_SM4
 extern const OSSL_DISPATCH ossl_sm4128ecb_functions[];
 extern const OSSL_DISPATCH ossl_sm4128cbc_functions[];

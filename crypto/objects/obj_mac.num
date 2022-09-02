@@ -29,9 +29,6 @@ des_cfb64		30
 des_cbc		31
 des_ede_ecb		32
 des_ede3_ecb		33
-idea_cbc		34
-idea_cfb64		35
-idea_ecb		36
 rc2_cbc		37
 rc2_ecb		38
 rc2_cfb64		39
@@ -41,7 +38,6 @@ shaWithRSAEncryption		42
 des_ede_cbc		43
 des_ede3_cbc		44
 des_ofb64		45
-idea_ofb64		46
 pkcs9		47
 pkcs9_emailAddress		48
 pkcs9_unstructuredName		49

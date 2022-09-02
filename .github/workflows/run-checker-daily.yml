@@ -64,7 +64,6 @@ jobs:
           no-heartbeats,
           no-hw,
           no-hw-padlock,
-          no-idea,
           no-makedepend,
           no-md4,
           no-mdc2,

@@ -13,7 +13,6 @@ $TDES_1_GOAL=../../libdefault.a ../../libfips.a
 $TDES_2_GOAL=../../libdefault.a
 $DES_GOAL=../../liblegacy.a
 $BLOWFISH_GOAL=../../liblegacy.a
-$IDEA_GOAL=../../liblegacy.a
 $RC2_GOAL=../../liblegacy.a
 $RC4_GOAL=../../liblegacy.a
 $RC5_GOAL=../../liblegacy.a
@@ -71,11 +70,6 @@ ENDIF
 IF[{- !$disabled{bf} -}]
   SOURCE[$BLOWFISH_GOAL]=\
       cipher_blowfish.c cipher_blowfish_hw.c
-ENDIF
-
-IF[{- !$disabled{idea} -}]
-  SOURCE[$IDEA_GOAL]=\
-      cipher_idea.c cipher_idea_hw.c
 ENDIF
 
 IF[{- !$disabled{sm4} -}]

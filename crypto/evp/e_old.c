@@ -50,15 +50,6 @@ const EVP_CIPHER *EVP_des_ede_cfb(void)
 }
 #endif
 
-#ifndef OPENSSL_NO_IDEA
-# undef EVP_idea_cfb
-const EVP_CIPHER *EVP_idea_cfb(void);
-const EVP_CIPHER *EVP_idea_cfb(void)
-{
-    return EVP_idea_cfb64();
-}
-#endif
-
 #ifndef OPENSSL_NO_RC2
 # undef EVP_rc2_cfb
 const EVP_CIPHER *EVP_rc2_cfb(void);

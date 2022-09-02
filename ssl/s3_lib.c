@@ -157,7 +157,7 @@ static SSL_CIPHER tls13_ciphers[] = {
  *      EC
  *      PSK
  *      SRP (within that: RSA EC PSK)
- *      Cipher families: Chacha/poly, Camellia, IDEA
+ *      Chacha/poly
  *      Weak ciphers
  */
 static SSL_CIPHER ssl3_ciphers[] = {
@@ -2180,23 +2180,6 @@ static SSL_CIPHER ssl3_ciphers[] = {
      SSL_HANDSHAKE_MAC_SHA256 | TLS1_PRF_SHA256,
      256,
      256,
-     },
-
-    {
-     1,
-     SSL3_TXT_RSA_IDEA_128_SHA,
-     SSL3_RFC_RSA_IDEA_128_SHA,
-     SSL3_CK_RSA_IDEA_128_SHA,
-     SSL_kRSA,
-     SSL_aRSA,
-     SSL_IDEA,
-     SSL_SHA1,
-     SSL3_VERSION, TLS1_1_VERSION,
-     DTLS1_BAD_VER, DTLS1_VERSION,
-     SSL_NOT_DEFAULT | SSL_MEDIUM,
-     SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
-     128,
-     128,
      },
 
 #ifndef OPENSSL_NO_WEAK_SSL_CIPHERS
