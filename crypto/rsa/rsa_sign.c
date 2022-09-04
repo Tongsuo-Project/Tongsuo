@@ -19,9 +19,6 @@
 #include <openssl/rsa.h>
 #include <openssl/objects.h>
 #ifndef FIPS_MODULE
-# ifndef OPENSSL_NO_MD4
-#  include <openssl/md4.h> /* uses MD4_DIGEST_LENGTH */
-# endif
 # ifndef OPENSSL_NO_MD5
 #  include <openssl/md5.h> /* uses MD5_DIGEST_LENGTH */
 # endif
@@ -80,7 +77,7 @@ static const unsigned char digestinfo_##name##_der[] = {                       \
       ASN1_OCTET_STRING, sz                                                    \
 };
 
-/* MD2, MD4 and MD5 OIDs are of the form: (1 2 840 113549 2 |n|) */
+/* MD5 OID is of the form: (1 2 840 113549 2 |n|) */
 #define ENCODE_DIGESTINFO_MD(name, n, sz)                                      \
 static const unsigned char digestinfo_##name##_der[] = {                       \
     ASN1_SEQUENCE, 0x10 + sz,                                                  \
@@ -91,9 +88,6 @@ static const unsigned char digestinfo_##name##_der[] = {                       \
 };
 
 #ifndef FIPS_MODULE
-# ifndef OPENSSL_NO_MD4
-ENCODE_DIGESTINFO_MD(md4, 0x03, MD4_DIGEST_LENGTH)
-# endif
 # ifndef OPENSSL_NO_MD5
 ENCODE_DIGESTINFO_MD(md5, 0x05, MD5_DIGEST_LENGTH)
 # endif
@@ -151,9 +145,6 @@ const unsigned char *ossl_rsa_digestinfo_encoding(int md_nid, size_t *len)
 # ifndef OPENSSL_NO_MDC2
     MD_CASE(mdc2)
 # endif
-# ifndef OPENSSL_NO_MD4
-    MD_CASE(md4)
-# endif
 # ifndef OPENSSL_NO_MD5
     MD_CASE(md5)
 # endif
@@ -187,9 +178,6 @@ static int digest_sz_from_nid(int nid)
 #ifndef FIPS_MODULE
 # ifndef OPENSSL_NO_MDC2
     MD_NID_CASE(mdc2, MDC2_DIGEST_LENGTH)
-# endif
-# ifndef OPENSSL_NO_MD4
-    MD_NID_CASE(md4, MD4_DIGEST_LENGTH)
 # endif
 # ifndef OPENSSL_NO_MD5
     MD_NID_CASE(md5, MD5_DIGEST_LENGTH)

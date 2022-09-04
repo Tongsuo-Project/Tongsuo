@@ -174,38 +174,6 @@ static int test_builtin_provider(void)
     return ok;
 }
 
-/* Test relies on fetching the MD4 digest from the legacy provider */
-#ifndef OPENSSL_NO_MD4
-static int test_builtin_provider_with_child(void)
-{
-    OSSL_LIB_CTX *libctx = OSSL_LIB_CTX_new();
-    const char *name = "p_test";
-    OSSL_PROVIDER *legacy;
-
-    if (!TEST_ptr(libctx))
-        return 0;
-
-    legacy = OSSL_PROVIDER_load(libctx, "legacy");
-    if (legacy == NULL) {
-        /*
-         * In this case we assume we've been built with "no-legacy" and skip
-         * this test (there is no OPENSSL_NO_LEGACY)
-         */
-        OSSL_LIB_CTX_free(libctx);
-        return 1;
-    }
-
-    if (!TEST_true(OSSL_PROVIDER_add_builtin(libctx, name,
-                                             PROVIDER_INIT_FUNCTION_NAME))) {
-        OSSL_LIB_CTX_free(libctx);
-        return 0;
-    }
-
-    /* test_provider will free libctx and unload legacy as part of the test */
-    return test_provider(&libctx, name, legacy);
-}
-#endif
-
 #ifndef NO_PROVIDER_MODULE
 static int test_loaded_provider(void)
 {
@@ -256,9 +224,6 @@ int setup_tests(void)
 
     if (!loaded) {
         ADD_TEST(test_builtin_provider);
-#ifndef OPENSSL_NO_MD4
-        ADD_TEST(test_builtin_provider_with_child);
-#endif
     }
 #ifndef NO_PROVIDER_MODULE
     else {

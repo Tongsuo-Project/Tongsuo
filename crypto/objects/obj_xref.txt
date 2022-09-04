@@ -5,7 +5,6 @@
 md5WithRSAEncryption	md5	rsaEncryption
 shaWithRSAEncryption	sha	rsaEncryption
 sha1WithRSAEncryption	sha1	rsaEncryption
-md4WithRSAEncryption	md4	rsaEncryption
 sha256WithRSAEncryption sha256	rsaEncryption
 sha384WithRSAEncryption	sha384	rsaEncryption
 sha512WithRSAEncryption	sha512	rsaEncryption

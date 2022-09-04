@@ -1331,9 +1331,6 @@ static void list_disabled(void)
 #if defined(OPENSSL_NO_ENGINE) && !defined(OPENSSL_NO_DEPRECATED_3_0)
     BIO_puts(bio_out, "ENGINE\n");
 #endif
-#ifdef OPENSSL_NO_MD4
-    BIO_puts(bio_out, "MD4\n");
-#endif
 #ifdef OPENSSL_NO_MD5
     BIO_puts(bio_out, "MD5\n");
 #endif

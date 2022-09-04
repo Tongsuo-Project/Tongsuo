@@ -165,7 +165,6 @@ rsadsi 1		: pkcs			: RSA Data Security, Inc. PKCS
 
 pkcs 1			: pkcs1
 pkcs1 1			:			: rsaEncryption
-pkcs1 3			: RSA-MD4		: md4WithRSAEncryption
 pkcs1 4			: RSA-MD5		: md5WithRSAEncryption
 pkcs1 5			: RSA-SHA1		: sha1WithRSAEncryption
 # According to PKCS #1 version 2.1
@@ -370,7 +369,6 @@ pkcs12-BagIds 4		:			: crlBag
 pkcs12-BagIds 5		:			: secretBag
 pkcs12-BagIds 6		:			: safeContentsBag
 
-rsadsi 2 4		: MD4			: md4
 rsadsi 2 5		: MD5			: md5
 			: MD5-SHA1		: md5-sha1
 rsadsi 2 6		:			: hmacWithMD5
