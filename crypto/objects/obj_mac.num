@@ -86,8 +86,6 @@ bf_cbc		91
 bf_ecb		92
 bf_cfb64		93
 bf_ofb64		94
-mdc2		95
-mdc2WithRSA		96
 rc4_40		97
 rc2_40_cbc		98
 givenName		99

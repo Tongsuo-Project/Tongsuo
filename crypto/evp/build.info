@@ -34,9 +34,6 @@ ENDIF
 IF[{- !$disabled{md5} -}]
   SOURCE[../../libcrypto]=legacy_md5.c legacy_md5_sha1.c
 ENDIF
-IF[{- !$disabled{mdc2} -}]
-  SOURCE[../../libcrypto]=legacy_mdc2.c
-ENDIF
 IF[{- !$disabled{blake2} -}]
   SOURCE[../../libcrypto]=legacy_blake2.c
 ENDIF

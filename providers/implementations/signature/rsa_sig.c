@@ -539,26 +539,6 @@ static int rsa_sign(void *vprsactx, unsigned char *sig, size_t *siglen,
             return 0;
         }
 
-#ifndef FIPS_MODULE
-        if (EVP_MD_is_a(prsactx->md, OSSL_DIGEST_NAME_MDC2)) {
-            unsigned int sltmp;
-
-            if (prsactx->pad_mode != RSA_PKCS1_PADDING) {
-                ERR_raise_data(ERR_LIB_PROV, PROV_R_INVALID_PADDING_MODE,
-                               "only PKCS#1 padding supported with MDC2");
-                return 0;
-            }
-            ret = RSA_sign_ASN1_OCTET_STRING(0, tbs, tbslen, sig, &sltmp,
-                                             prsactx->rsa);
-
-            if (ret <= 0) {
-                ERR_raise(ERR_LIB_PROV, ERR_R_RSA_LIB);
-                return 0;
-            }
-            ret = sltmp;
-            goto end;
-        }
-#endif
         switch (prsactx->pad_mode) {
         case RSA_X931_PADDING:
             if ((size_t)RSA_size(prsactx->rsa) < tbslen + 1) {
@@ -645,9 +625,6 @@ static int rsa_sign(void *vprsactx, unsigned char *sig, size_t *siglen,
                                   prsactx->pad_mode);
     }
 
-#ifndef FIPS_MODULE
- end:
-#endif
     if (ret <= 0) {
         ERR_raise(ERR_LIB_PROV, ERR_R_RSA_LIB);
         return 0;

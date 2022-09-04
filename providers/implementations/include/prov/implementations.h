@@ -31,7 +31,6 @@ extern const OSSL_DISPATCH ossl_blake2b512_functions[];
 extern const OSSL_DISPATCH ossl_md5_functions[];
 extern const OSSL_DISPATCH ossl_md5_sha1_functions[];
 extern const OSSL_DISPATCH ossl_sm3_functions[];
-extern const OSSL_DISPATCH ossl_mdc2_functions[];
 extern const OSSL_DISPATCH ossl_wp_functions[];
 extern const OSSL_DISPATCH ossl_ripemd160_functions[];
 extern const OSSL_DISPATCH ossl_nullmd_functions[];

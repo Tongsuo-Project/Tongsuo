@@ -149,16 +149,7 @@ static int pkey_rsa_sign(EVP_PKEY_CTX *ctx, unsigned char *sig,
             return -1;
         }
 
-        if (EVP_MD_get_type(rctx->md) == NID_mdc2) {
-            unsigned int sltmp;
-            if (rctx->pad_mode != RSA_PKCS1_PADDING)
-                return -1;
-            ret = RSA_sign_ASN1_OCTET_STRING(0, tbs, tbslen, sig, &sltmp, rsa);
-
-            if (ret <= 0)
-                return ret;
-            ret = sltmp;
-        } else if (rctx->pad_mode == RSA_X931_PADDING) {
+        if (rctx->pad_mode == RSA_X931_PADDING) {
             if ((size_t)RSA_size(rsa) < tbslen + 1) {
                 ERR_raise(ERR_LIB_RSA, RSA_R_KEY_SIZE_TOO_SMALL);
                 return -1;
@@ -405,7 +396,6 @@ static int check_padding_md(const EVP_MD *md, int padding)
         case NID_sha512_256:
         case NID_md5:
         case NID_md5_sha1:
-        case NID_mdc2:
         case NID_ripemd160:
         case NID_sha3_224:
         case NID_sha3_256:
