@@ -3942,10 +3942,6 @@ static int is_digest_disabled(const char *name)
     if (OPENSSL_strcasecmp(name, "MD5") == 0)
         return 1;
 #endif
-#ifdef OPENSSL_NO_RMD160
-    if (OPENSSL_strcasecmp(name, "RIPEMD160") == 0)
-        return 1;
-#endif
 #ifdef OPENSSL_NO_SM3
     if (OPENSSL_strcasecmp(name, "SM3") == 0)
         return 1;

@@ -9,7 +9,6 @@ sha256WithRSAEncryption sha256	rsaEncryption
 sha384WithRSAEncryption	sha384	rsaEncryption
 sha512WithRSAEncryption	sha512	rsaEncryption
 sha224WithRSAEncryption	sha224	rsaEncryption
-ripemd160WithRSA	ripemd160 rsaEncryption
 RSA_SHA3_224		sha3_224 rsaEncryption
 RSA_SHA3_256		sha3_256 rsaEncryption
 RSA_SHA3_384		sha3_384 rsaEncryption

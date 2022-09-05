@@ -40,9 +40,6 @@ ENDIF
 IF[{- !$disabled{whirlpool} -}]
   SOURCE[../../libcrypto]=legacy_wp.c
 ENDIF
-IF[{- !$disabled{rmd160} -}]
-  SOURCE[../../libcrypto]=legacy_ripemd.c
-ENDIF
 
 SOURCE[../../providers/libfips.a]=$COMMON
 

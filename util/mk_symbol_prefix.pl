@@ -63,7 +63,6 @@ if ("$prefix" eq "") {
 }
 
 @custom_symbols = (
-    "ripemd160_block_asm_data_order",
     "ossl_md5_block_asm_data_order",
     "sha256_block_data_order",
     "sha512_block_data_order",

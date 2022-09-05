@@ -2175,16 +2175,6 @@
 #define NID_sha1WithRSA         115
 #define OBJ_sha1WithRSA         OBJ_algorithm,29L
 
-#define SN_ripemd160            "RIPEMD160"
-#define LN_ripemd160            "ripemd160"
-#define NID_ripemd160           117
-#define OBJ_ripemd160           1L,3L,36L,3L,2L,1L
-
-#define SN_ripemd160WithRSA             "RSA-RIPEMD160"
-#define LN_ripemd160WithRSA             "ripemd160WithRSA"
-#define NID_ripemd160WithRSA            119
-#define OBJ_ripemd160WithRSA            1L,3L,36L,3L,3L,1L,2L
-
 #define SN_blake2bmac           "BLAKE2BMAC"
 #define LN_blake2bmac           "blake2bmac"
 #define NID_blake2bmac          1201
