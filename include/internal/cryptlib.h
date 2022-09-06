@@ -64,19 +64,11 @@ DEFINE_LHASH_OF(MEM);
 
 # define OPENSSL_CONF             "openssl.cnf"
 
-# ifndef OPENSSL_SYS_VMS
-#  define X509_CERT_AREA          OPENSSLDIR
-#  define X509_CERT_DIR           OPENSSLDIR "/certs"
-#  define X509_CERT_FILE          OPENSSLDIR "/cert.pem"
-#  define X509_PRIVATE_DIR        OPENSSLDIR "/private"
-#  define CTLOG_FILE              OPENSSLDIR "/ct_log_list.cnf"
-# else
-#  define X509_CERT_AREA          "OSSL$DATAROOT:[000000]"
-#  define X509_CERT_DIR           "OSSL$DATAROOT:[CERTS]"
-#  define X509_CERT_FILE          "OSSL$DATAROOT:[000000]cert.pem"
-#  define X509_PRIVATE_DIR        "OSSL$DATAROOT:[PRIVATE]"
-#  define CTLOG_FILE              "OSSL$DATAROOT:[000000]ct_log_list.cnf"
-# endif
+# define X509_CERT_AREA          "OSSL$DATAROOT:[000000]"
+# define X509_CERT_DIR           "OSSL$DATAROOT:[CERTS]"
+# define X509_CERT_FILE          "OSSL$DATAROOT:[000000]cert.pem"
+# define X509_PRIVATE_DIR        "OSSL$DATAROOT:[PRIVATE]"
+# define CTLOG_FILE              "OSSL$DATAROOT:[000000]ct_log_list.cnf"
 
 # define X509_CERT_DIR_EVP        "SSL_CERT_DIR"
 # define X509_CERT_FILE_EVP       "SSL_CERT_FILE"
@@ -233,10 +225,7 @@ static ossl_inline int ossl_ends_with_dirsep(const char *path)
 {
     if (*path != '\0')
         path += strlen(path) - 1;
-# if defined __VMS
-    if (*path == ']' || *path == '>' || *path == ':')
-        return 1;
-# elif defined _WIN32
+# if defined _WIN32
     if (*path == '\\')
         return 1;
 # endif
@@ -245,13 +234,7 @@ static ossl_inline int ossl_ends_with_dirsep(const char *path)
 
 static ossl_inline int ossl_is_absolute_path(const char *path)
 {
-# if defined __VMS
-    if (strchr(path, ':') != NULL
-        || ((path[0] == '[' || path[0] == '<')
-            && path[1] != '.' && path[1] != '-'
-            && path[1] != ']' && path[1] != '>'))
-        return 1;
-# elif defined _WIN32
+# if defined _WIN32
     if (path[0] == '\\'
         || (path[0] != '\0' && path[1] == ':'))
         return 1;

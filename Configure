@@ -367,13 +367,7 @@ foreach (sort glob($pattern)) {
 }
 
 if (defined env($local_config_envname)) {
-    if ($^O eq 'VMS') {
-        # VMS environment variables are logical names,
-        # which can be used as is
-        $pattern = $local_config_envname . ':' . '*.conf';
-    } else {
-        $pattern = catfile(env($local_config_envname), '*.conf');
-    }
+    $pattern = catfile(env($local_config_envname), '*.conf');
 
     foreach (sort glob($pattern)) {
         &read_config($_);
@@ -687,8 +681,7 @@ while ((my $first, my $second) = (shift @list, shift @list)) {
 # The default is the Unix like separator, :, but as an exception, we also
 # support the space as separator.
 my $list_separator_re =
-    { VMS           => qr/(?<!\^),/,
-      MSWin32       => qr/(?<!\\);/ } -> {$^O} // qr/(?<!\\)[:\s]/;
+    { MSWin32       => qr/(?<!\\);/ } -> {$^O} // qr/(?<!\\)[:\s]/;
 # All the "make variables" we support
 # Some get pre-populated for the sake of backward compatibility
 # (we supported those before the change to "make variable" support.
@@ -712,7 +705,7 @@ my %user = (
     LDLIBS      => [ env('LDLIBS') || () ],  # -l
     MT          => undef,
     MTFLAGS     => [],
-    PERL        => env('PERL') || ($^O ne "VMS" ? $^X : "perl"),
+    PERL        => env('PERL') || $^X,
     RANLIB      => env('RANLIB'),
     RC          => env('RC') || env('WINDRES'),
     RCFLAGS     => [ env('RCFLAGS') || () ],
@@ -796,14 +789,6 @@ while (@argvcopy)
                 #       $useradd{$1} = [];
                 #       }
                 next;
-                }
-
-        # VMS is a case insensitive environment, and depending on settings
-        # out of our control, we may receive options uppercased.  Let's
-        # downcase at least the part before any equal sign.
-        if ($^O eq "VMS")
-                {
-                s/^([^=]*)/lc($1)/e;
                 }
 
         # some people just can't read the instructions, clang people have to...
@@ -1617,7 +1602,7 @@ if (!$disabled{makedepend}) {
     disable('unavailable', 'makedepend') unless $config{makedep_scheme};
 }
 
-if (!$disabled{asm} && !$predefined_C{__MACH__} && $^O ne 'VMS') {
+if (!$disabled{asm} && !$predefined_C{__MACH__}) {
     # probe for -Wa,--noexecstack option...
     if ($predefined_C{__clang__}) {
         # clang has builtin assembler, which doesn't recognize --help,
@@ -1800,7 +1785,7 @@ $target{module_ldflags} = $target{shared_ldflag} unless defined $target{module_l
     # Some of the 'shared_target' values don't have any entries in
     # %shared_info.  That's perfectly fine, AS LONG AS the build file
     # template knows how to handle this.  That is currently the case for
-    # Windows and VMS.
+    # Windows.
     if (defined $si) {
         # Just as above, copy certain shared_* attributes to the corresponding
         # module_ attribute unless the latter is already defined
@@ -1877,7 +1862,7 @@ if ($builder eq "unified") {
         my $dir = shift;
         my $relativeto = shift || ".";
 
-        $dir = catdir($base,$dir) unless isabsolute($dir);
+        $dir = catdir($base,$dir) unless file_name_is_absolute($dir);
 
         # Make sure the directories we're building in exists
         mkpath($dir);
@@ -1892,7 +1877,7 @@ if ($builder eq "unified") {
         my $file = shift;
         my $relativeto = shift || ".";
 
-        $file = catfile($base,$file) unless isabsolute($file);
+        $file = catfile($base,$file) unless file_name_is_absolute($file);
 
         my $d = dirname($file);
         my $f = basename($file);
@@ -1916,13 +1901,7 @@ if ($builder eq "unified") {
     if (defined env($local_config_envname)) {
         @build_file_templates =
             map {
-                if ($^O eq 'VMS') {
-                    # VMS environment variables are logical names,
-                    # which can be used as is
-                    $local_config_envname . ':' . $_;
-                } else {
-                    catfile(env($local_config_envname), $_);
-                }
+                catfile(env($local_config_envname), $_);
             }
             @build_file_template_names;
     }
@@ -3219,8 +3198,6 @@ sub compiler_predefined {
     state %predefined;
     my $cc = shift;
 
-    return () if $^O eq 'VMS';
-
     die 'compiler_predefined called without a compiler command'
         unless $cc;
 
@@ -3360,38 +3337,12 @@ sub print_table_entry
 
 # Utility routines ###################################################
 
-# On VMS, if the given file is a logical name, File::Spec::Functions
-# will consider it an absolute path.  There are cases when we want a
-# purely syntactic check without checking the environment.
-sub isabsolute {
-    my $file = shift;
-
-    # On non-platforms, we just use file_name_is_absolute().
-    return file_name_is_absolute($file) unless $^O eq "VMS";
-
-    # If the file spec includes a device or a directory spec,
-    # file_name_is_absolute() is perfectly safe.
-    return file_name_is_absolute($file) if $file =~ m|[:\[]|;
-
-    # Here, we know the given file spec isn't absolute
-    return 0;
-}
-
 # Makes a directory absolute and cleans out /../ in paths like foo/../bar
 # On some platforms, this uses rel2abs(), while on others, realpath() is used.
 # realpath() requires that at least all path components except the last is an
-# existing directory.  On VMS, the last component of the directory spec must
-# exist.
+# existing directory.
 sub absolutedir {
     my $dir = shift;
-
-    # realpath() is quite buggy on VMS.  It uses LIB$FID_TO_NAME, which
-    # will return the volume name for the device, no matter what.  Also,
-    # it will return an incorrect directory spec if the argument is a
-    # directory that doesn't exist.
-    if ($^O eq "VMS") {
-        return rel2abs($dir);
-    }
 
     # We use realpath() on Unix, since no other will properly clean out
     # a directory spec.

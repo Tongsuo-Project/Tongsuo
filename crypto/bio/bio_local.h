@@ -36,22 +36,11 @@
 /*
  * Undefine AF_UNIX on systems that define it but don't support it.
  */
-# if defined(OPENSSL_SYS_WINDOWS) || defined(OPENSSL_SYS_VMS)
+# if defined(OPENSSL_SYS_WINDOWS)
 #  undef AF_UNIX
 # endif
 
 # ifdef AI_PASSIVE
-
-/*
- * There's a bug in VMS C header file netdb.h, where struct addrinfo
- * always is the P32 variant, but the functions that handle that structure,
- * such as getaddrinfo() and freeaddrinfo() adapt to the initial pointer
- * size.  The easiest workaround is to force struct addrinfo to be the
- * 64-bit variant when compiling in P64 mode.
- */
-#  if defined(OPENSSL_SYS_VMS) && __INITIAL_POINTER_SIZE == 64
-#   define addrinfo __addrinfo64
-#  endif
 
 #  define bio_addrinfo_st addrinfo
 #  define bai_family      ai_family
@@ -137,9 +126,6 @@ struct bio_st {
 };
 
 #ifndef OPENSSL_NO_SOCK
-# ifdef OPENSSL_SYS_VMS
-typedef unsigned int socklen_t;
-# endif
 
 extern CRYPTO_RWLOCK *bio_lookup_lock;
 

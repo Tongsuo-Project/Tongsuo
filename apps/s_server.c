@@ -25,17 +25,6 @@
 
 #ifndef OPENSSL_NO_SOCK
 
-/*
- * With IPv6, it looks like Digital has mixed up the proper order of
- * recursive header file inclusion, resulting in the compiler complaining
- * that u_int isn't defined, but only if _POSIX_C_SOURCE is defined, which is
- * needed to have fileno() declared correctly...  So let's define u_int
- */
-#if defined(OPENSSL_SYS_VMS_DECC) && !defined(__U_INT)
-# define __U_INT
-typedef unsigned int u_int;
-#endif
-
 #include <openssl/bn.h>
 #include "apps.h"
 #include "progs.h"
@@ -2803,13 +2792,6 @@ static int sv_body(int s, int stype, int prot, unsigned char *context)
             openssl_fdset(fileno_stdin(), &readfds);
 #endif
             openssl_fdset(s, &readfds);
-            /*
-             * Note: under VMS with SOCKETSHR the second parameter is
-             * currently of type (int *) whereas under other systems it is
-             * (void *) if you don't have a cast it will choke the compiler:
-             * if you do have a cast then you can either go for (int *) or
-             * (void *).
-             */
 #if defined(OPENSSL_SYS_WINDOWS) || defined(OPENSSL_SYS_MSDOS)
             /*
              * Under DOS (non-djgpp) and Windows we can't select on stdin:

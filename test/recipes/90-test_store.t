@@ -574,13 +574,11 @@ sub to_file_uri {
         $dir .= '/' if $dir ne '' && $dir !~ m|/$|;
     }
 
-    # If the file system has separate volumes (at present, Windows and VMS)
+    # If the file system has separate volumes (at present, Windows)
     # we need to handle them.  In URIs, they are invariably the first
     # component of the path, which is always absolute.
-    # On VMS, user:[foo.bar] translates to /user/foo/bar
     # On Windows, c:\Users\Foo translates to /c:/Users/Foo
     if ($vol ne '') {
-        $vol =~ s|:||g if ($^O eq "VMS");
         $dir = '/' . $dir if $dir ne '' && $dir !~ m|^/|;
         $dir = '/' . $vol . $dir;
     }

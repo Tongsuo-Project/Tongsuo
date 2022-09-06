@@ -22,13 +22,8 @@
 # define DIRSEP_PRESERVE 0
 #elif !defined(OPENSSL_NO_POSIX_IO)
 # include <unistd.h>
-# ifndef OPENSSL_SYS_VMS
-#  define DIRSEP "/"
-#  define DIRSEP_PRESERVE 0
-# else
-#  define DIRSEP "/]:"
-#  define DIRSEP_PRESERVE 1
-# endif
+# define DIRSEP "/]:"
+# define DIRSEP_PRESERVE 1
 #else
 /* the test does not work without chdir() */
 # define chdir(x) (-1);

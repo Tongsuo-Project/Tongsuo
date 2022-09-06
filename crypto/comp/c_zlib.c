@@ -212,8 +212,6 @@ DEFINE_RUN_ONCE_STATIC(ossl_comp_zlib_init)
 #  ifndef LIBZ
 #   if defined(OPENSSL_SYS_WINDOWS) || defined(OPENSSL_SYS_WIN32)
 #    define LIBZ "ZLIB1"
-#   elif defined(OPENSSL_SYS_VMS)
-#    define LIBZ "LIBZ"
 #   else
 #    define LIBZ "z"
 #   endif

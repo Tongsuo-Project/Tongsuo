@@ -162,8 +162,7 @@ In each table entry, the following keys are significant:
                            as well.  Valid values are "DLFCN"
                            (dlopen() et al), "DLFCN_NO_H" (for systems
                            that use dlopen() et al but do not have
-                           fcntl.h), "DL" (shl_load() et al), "WIN32"
-                           and "VMS".
+                           fcntl.h), "DL" (shl_load() et al) and "WIN32".
         asm_arch        => The architecture to be used for compiling assembly
                            source.  This acts as a selector in build.info files.
         uplink_arch     => The architecture to be used for compiling uplink
@@ -468,7 +467,7 @@ Build-file programming with the "unified" build system
 ======================================================
 
 "Build files" are called `Makefile` on Unix-like operating systems,
-`descrip.mms` for MMS on VMS, `makefile` for `nmake` on Windows, etc.
+`makefile` for `nmake` on Windows, etc.
 
 To use the "unified" build system, the target configuration needs to
 set the three items `build_scheme`, `build_file` and `build_command`.

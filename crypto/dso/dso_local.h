@@ -19,9 +19,8 @@
 struct dso_st {
     DSO_METHOD *meth;
     /*
-     * Standard dlopen uses a (void *). Win32 uses a HANDLE. VMS doesn't use
-     * anything but will need to cache the filename for use in the dso_bind
-     * handler. All in all, let each method control its own destiny.
+     * Standard dlopen uses a (void *). Win32 uses a HANDLE. All in all, let
+     * each method control its own destiny.
      * "Handles" and such go in a STACK.
      */
     STACK_OF(void) *meth_data;

@@ -37,8 +37,7 @@ void SHA3_squeeze(uint64_t A[5][5], unsigned char *out, size_t len, size_t r);
 #endif
 
 #if defined(__x86_64__) || defined(__aarch64__) || \
-    defined(__mips64) || defined(__ia64) || \
-    (defined(__VMS) && !defined(__vax))
+    defined(__mips64) || defined(__ia64)
 /*
  * These are available even in ILP32 flavours, but even then they are
  * capable of performing 64-bit operations as efficiently as in *P64.

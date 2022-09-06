@@ -13,15 +13,4 @@
 
 # include <openssl/e_os2.h>
 
-# if defined(OPENSSL_SYS_VMS)
-
-/* ossl_provider_gettable_params vs OSSL_PROVIDER_gettable_params */
-#  undef ossl_provider_gettable_params
-#  define ossl_provider_gettable_params            ossl_int_prov_gettable_params
-/* ossl_provider_get_params vs OSSL_PROVIDER_get_params */
-#  undef ossl_provider_get_params
-#  define ossl_provider_get_params                ossl_int_prov_get_params
-
-# endif
-
 #endif                          /* ! defined HEADER_VMS_IDHACKS_H */

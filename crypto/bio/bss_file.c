@@ -165,12 +165,6 @@ static int file_write(BIO *b, const char *in, int inl)
             ret = fwrite(in, (int)inl, 1, (FILE *)b->ptr);
         if (ret)
             ret = inl;
-        /* ret=fwrite(in,1,(int)inl,(FILE *)b->ptr); */
-        /*
-         * according to Tim Hudson <tjh@openssl.org>, the commented out
-         * version above can cause 'inl' write calls under some stupid stdio
-         * implementations (VMS)
-         */
     }
     return ret;
 }

@@ -22,7 +22,7 @@ $ENV{OPENSSL} = cmdstr(app(["openssl"]), display => 1);
 
 my $cnf = srctop_file("test","ca-and-certs.cnf");
 my $std_openssl_cnf = '"'
-    . srctop_file("apps", $^O eq "VMS" ? "openssl-vms.cnf" : "openssl.cnf")
+    . srctop_file("apps", "openssl.cnf")
     . '"';
 
 rmtree("demoCA", { safe => 0 });

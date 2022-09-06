@@ -139,7 +139,6 @@ escapes have been injected as necessary depending on the content of each
 LIST string.
 
 This can also be used to put quotes around the executable of a command.
-I<This must never ever be done on VMS.>
 
 =back
 
@@ -151,17 +150,7 @@ sub fixup_cmd_elements {
         sub { $_ = shift;
               ($_ eq '' || /\s|[\{\}\\\$\[\]\*\?\|\&:;<>]/) ? "'$_'" : $_ };
 
-    if ( $^O eq "VMS") {        # VMS setup
-        $arg_formatter = sub {
-            $_ = shift;
-            if ($_ eq '' || /\s|[!"[:upper:]]/) {
-                s/"/""/g;
-                '"'.$_.'"';
-            } else {
-                $_;
-            }
-        };
-    } elsif ( $^O eq "MSWin32") { # MSWin setup
+    if ( $^O eq "MSWin32") { # MSWin setup
         $arg_formatter = sub {
             $_ = shift;
             if ($_ eq '' || /\s|["\|\&\*\;<>]/) {
@@ -181,39 +170,14 @@ sub fixup_cmd_elements {
 =item fixup_cmd LIST
 
 This is a sibling of fixup_cmd_elements() that expects the LIST to be a
-complete command line.  It does the same thing as fixup_cmd_elements(),
-expect that it treats the first LIST element specially on VMS.
+complete command line.  It does the same thing as fixup_cmd_elements().
 
 =back
 
 =cut
 
 sub fixup_cmd {
-    return fixup_cmd_elements(@_) unless $^O eq 'VMS';
-
-    # The rest is VMS specific
-    my $prog = shift;
-
-    # On VMS, running random executables without having a command symbol
-    # means running them with the MCR command.  This is an old PDP-11
-    # command that stuck around.
-    # This assumes that we're passed the name of an executable.  This is a
-    # safe assumption for OpenSSL command lines
-    my $prefix = 'MCR';
-
-    if ($prog =~ /^MCR$/i) {
-        # If the first element is "MCR" (independent of case) already, then
-        # we assume that the program it runs is already written the way it
-        # should, and just grab it.
-        $prog = shift;
-    } else {
-        # If the command itself doesn't have a directory spec, make sure
-        # that there is one.  Otherwise, MCR assumes that the program
-        # resides in SYS$SYSTEM:
-        $prog = '[]' . $prog unless $prog =~ /^(?:[\$a-z0-9_]+:)?[<\[]/i;
-    }
-
-    return ( $prefix, $prog, fixup_cmd_elements(@_) );
+    return fixup_cmd_elements(@_);
 }
 
 =item dump_data REF, OPTS

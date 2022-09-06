@@ -86,36 +86,6 @@ char *opt_progname(const char *argv0)
     return prog;
 }
 
-#elif defined(OPENSSL_SYS_VMS)
-
-const char *opt_path_end(const char *filename)
-{
-    const char *p;
-
-    /* Find last special character sys:[foo.bar]openssl */
-    for (p = filename + strlen(filename); --p > filename;)
-        if (*p == ':' || *p == ']' || *p == '>') {
-            p++;
-            break;
-        }
-    return p;
-}
-
-char *opt_progname(const char *argv0)
-{
-    const char *p, *q;
-
-    /* Find last special character sys:[foo.bar]openssl */
-    p = opt_path_end(argv0);
-    q = strrchr(p, '.');
-    if (prog != p)
-        strncpy(prog, p, sizeof(prog) - 1);
-    prog[sizeof(prog) - 1] = '\0';
-    if (q != NULL && q - p < sizeof(prog))
-        prog[q - p] = '\0';
-    return prog;
-}
-
 #else
 
 const char *opt_path_end(const char *filename)

@@ -9,9 +9,6 @@ IF[{- $config{target} =~ /^(?:VC-|mingw|BC-)/ -}]
   # It's called 'init', but doesn't have much 'init' in it...
   $AUXLIBAPPSSRC=../apps/lib/win32_init.c
 ENDIF
-IF[{- $config{target} =~ /^vms-/ -}]
-  $AUXLIBAPPSSRC=../apps/lib/vms_term_sock.c ../apps/lib/vms_decc_argv.c
-ENDIF
 # Program init source, that don't have direct linkage with the rest of the
 # source, and can therefore not be part of a library.
 IF[{- !$disabled{uplink} -}]
@@ -581,8 +578,8 @@ IF[{- !$disabled{tests} -}]
 
   # Internal test programs.  These are essentially a collection of internal
   # test routines.  Some of them need to reach internal symbols that aren't
-  # available through the shared library (at least on Linux, Solaris, Windows
-  # and VMS, where the exported symbols are those listed in util/*.num), these
+  # available through the shared library (at least on Linux and Windows
+  # , where the exported symbols are those listed in util/*.num), these
   # programs are forcibly linked with the static libraries, where all symbols
   # are always available.
   IF[1]

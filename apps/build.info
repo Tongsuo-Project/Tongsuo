@@ -5,9 +5,6 @@ SUBDIRS=lib
 IF[{- !$disabled{uplink} -}]
   $INITSRC=../ms/applink.c
 ENDIF
-IF[{- $config{target} =~ /^vms-/ -}]
-  $INITSRC=vms_decc_init.c
-ENDIF
 
 # Source for the 'openssl' program
 $OPENSSLSRC=\

@@ -321,17 +321,7 @@ if (ref($ret) ne "TAP::Parser::Aggregator" || !$ret->has_errors) {
 # with an appropriate exit code when it isn't zero.
 if (ref($ret) eq "TAP::Parser::Aggregator") {
     exit 0 unless $ret->has_errors;
-    exit 1 unless $^O eq 'VMS';
-    # On VMS, perl converts an exit 1 to SS$_ABORT (%SYSTEM-F-ABORT), which
-    # is a bit harsh.  As per perl recommendations, we explicitly use the
-    # same VMS status code as typical C programs would for exit(1), except
-    # we set the error severity rather than success.
-    # Ref: https://perldoc.perl.org/perlport#exit
-    #      https://perldoc.perl.org/perlvms#$?
-    exit  0x35a000              # C facility code
-        + 8                     # 1 << 3 (to make space for the 3 severity bits)
-        + 2                     # severity: E(rror)
-        + 0x10000000;           # bit 28 set => the shell stays silent
+    exit 1;
 }
 
 # If this isn't a TAP::Parser::Aggregator, it's the pre-TAP test harness,

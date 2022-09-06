@@ -22,10 +22,6 @@
 # include <openssl/engine.h>
 #endif
 #include <openssl/err.h>
-/* Needed to get the other O_xxx flags. */
-#ifdef OPENSSL_SYS_VMS
-# include <unixio.h>
-#endif
 #include "apps.h"
 #include "progs.h"
 
@@ -251,9 +247,7 @@ int main(int argc, char *argv[])
     bio_out = dup_bio_out(FORMAT_TEXT);
     bio_err = dup_bio_err(FORMAT_TEXT);
 
-#if defined(OPENSSL_SYS_VMS) && defined(__DECC)
-    argv = copy_argv(&argc, argv);
-#elif defined(_WIN32)
+#if defined(_WIN32)
     /* Replace argv[] with UTF-8 encoded strings. */
     win32_utf8argv(&argc, &argv);
 #endif

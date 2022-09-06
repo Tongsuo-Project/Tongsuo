@@ -13,7 +13,7 @@
 #include <openssl/e_os2.h>
 #include "simpledynamic.h"
 
-#if defined(DSO_DLFCN) || defined(DSO_VMS)
+#if defined(DSO_DLFCN)
 
 int sd_load(const char *filename, SD *lib, int type)
 {

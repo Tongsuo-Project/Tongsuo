@@ -339,19 +339,6 @@ sub determine_compiler_settings {
 
     # Vendor specific overrides, only if we didn't determine the compiler here
     if ( ! $cc ) {
-        if ( $SYSTEM eq 'OpenVMS' ) {
-            my $v = `CC/VERSION NLA0:`;
-            if ($? == 0) {
-                my ($vendor, $version) =
-                    ( $v =~ m/^([A-Z]+) C V([0-9\.-]+) on / );
-                my ($major, $minor, $patch) =
-                    ( $version =~ m/^([0-9]+)\.([0-9]+)-0*?(0|[1-9][0-9]*)$/ );
-                $CC = 'CC';
-                $CCVENDOR = $vendor;
-                $CCVER = ( $major * 100 + $minor ) * 100 + $patch;
-            }
-        }
-
         if ( ${SYSTEM} eq 'AIX' ) {
             # favor vendor cc over gcc
             if (IPC::Cmd::can_run('cc')) {
@@ -745,14 +732,6 @@ EOF
       [ 'amd64-.*?-Windows NT',   { target => 'VC-WIN64A' } ],
       [ 'ia64-.*?-Windows NT',    { target => 'VC-WIN64I' } ],
       [ 'x86-.*?-Windows NT',     { target => 'VC-WIN32'  } ],
-
-      # VMS values found by observation on existing machinery.
-      # Unfortunately, the machine part is a bit...  overdone.  It seems,
-      # though, that 'Alpha' exists in that part for Alphas, making it
-      # distinguishable from Itanium.  It will be interesting to see what
-      # we'll get in the upcoming x86_64 port...
-      [ '.*Alpha.*?-.*?-OpenVMS', { target => 'vms-alpha' } ],
-      [ '.*?-.*?-OpenVMS',        { target => 'vms-ia64'  } ],
 
       # TODO: There are a few more choices among OpenSSL config targets, but
       # reaching them involves a bit more than just a host tripet.  Select
