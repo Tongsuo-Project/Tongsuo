@@ -19,10 +19,6 @@
 # ifdef WIN32
 #  define NO_SYS_UN_H
 # endif
-# ifdef OPENSSL_SYS_VMS
-#  define NO_SYS_PARAM_H
-#  define NO_SYS_UN_H
-# endif
 
 # ifdef OPENSSL_NO_SOCK
 
@@ -69,42 +65,26 @@ struct servent *PASCAL getservbyname(const char *, const char *);
 #  endif
 
 #  include <netdb.h>
-#  if defined(OPENSSL_SYS_VMS_NODECC)
-#   include <socket.h>
-#   include <in.h>
-#   include <inet.h>
-#  else
-#   include <sys/socket.h>
-#   ifndef NO_SYS_UN_H
-#    include <sys/un.h>
-#    ifndef UNIX_PATH_MAX
-#     define UNIX_PATH_MAX sizeof(((struct sockaddr_un *)NULL)->sun_path)
-#    endif
+
+#  include <sys/socket.h>
+#  ifndef NO_SYS_UN_H
+#   include <sys/un.h>
+#   ifndef UNIX_PATH_MAX
+#    define UNIX_PATH_MAX sizeof(((struct sockaddr_un *)NULL)->sun_path)
 #   endif
-#   ifdef FILIO_H
-#    include <sys/filio.h> /* FIONBIO in some SVR4, e.g. unixware, solaris */
-#   endif
-#   include <netinet/in.h>
-#   include <arpa/inet.h>
-#   include <netinet/tcp.h>
 #  endif
+#  ifdef FILIO_H
+#   include <sys/filio.h> /* FIONBIO in some SVR4, e.g. unixware, solaris */
+#  endif
+#  include <netinet/in.h>
+#  include <arpa/inet.h>
+#  include <netinet/tcp.h>
 
 #  ifdef OPENSSL_SYS_AIX
 #   include <sys/select.h>
 #  endif
 
-#  ifndef VMS
-#   include <sys/ioctl.h>
-#  else
-#   if !defined(TCPIP_TYPE_SOCKETSHR) && defined(__VMS_VER) && (__VMS_VER > 70000000)
-     /* ioctl is only in VMS > 7.0 and when socketshr is not used */
-#    include <sys/ioctl.h>
-#   endif
-#   include <unixio.h>
-#   if defined(TCPIP_TYPE_SOCKETSHR)
-#    include <socketshr.h>
-#   endif
-#  endif
+#  include <sys/ioctl.h>
 
 #  ifndef INVALID_SOCKET
 #   define INVALID_SOCKET      (-1)
@@ -139,11 +119,6 @@ struct servent *PASCAL getservbyname(const char *, const char *);
 #  define closesocket(s)          close_s(s)
 #  define readsocket(s,b,n)       read_s(s,b,n)
 #  define writesocket(s,b,n)      send(s,b,n,0)
-# elif defined(OPENSSL_SYS_VMS)
-#  define ioctlsocket(a,b,c)      ioctl(a,b,c)
-#  define closesocket(s)          close(s)
-#  define readsocket(s,b,n)       recv((s),(b),(n),0)
-#  define writesocket(s,b,n)      send((s),(b),(n),0)
 # elif defined(OPENSSL_SYS_VXWORKS)
 #  define ioctlsocket(a,b,c)          ioctl((a),(b),(int)(c))
 #  define closesocket(s)              close(s)

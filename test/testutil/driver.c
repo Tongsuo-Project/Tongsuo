@@ -115,9 +115,7 @@ int setup_test_framework(int argc, char *argv[])
         set_seed(0);
     }
 
-#if defined(OPENSSL_SYS_VMS) && defined(__DECC)
-    argv = copy_argv(&argc, argv);
-#elif defined(_WIN32)
+#if defined(_WIN32)
     /*
      * Replace argv[] with UTF-8 encoded strings.
      */
@@ -432,13 +430,7 @@ char *glue_strings(const char *list[], size_t *out_len)
 
 char *test_mk_file_path(const char *dir, const char *file)
 {
-# ifndef OPENSSL_SYS_VMS
     const char *sep = "/";
-# else
-    const char *sep = "";
-    char *dir_end;
-    char dir_end_sep;
-# endif
     size_t dirlen = dir != NULL ? strlen(dir) : 0;
     size_t len = dirlen + strlen(sep) + strlen(file) + 1;
     char *full_file = OPENSSL_zalloc(len);
@@ -446,26 +438,7 @@ char *test_mk_file_path(const char *dir, const char *file)
     if (full_file != NULL) {
         if (dir != NULL && dirlen > 0) {
             OPENSSL_strlcpy(full_file, dir, len);
-# ifdef OPENSSL_SYS_VMS
-            /*
-             * If |file| contains a directory spec, we need to do some
-             * careful merging.
-             * "vol:[dir.dir]" + "[.certs]sm2-root.crt" should become
-             * "vol:[dir.dir.certs]sm2-root.crt"
-             */
-            dir_end = &full_file[strlen(full_file) - 1];
-            dir_end_sep = *dir_end;
-            if ((dir_end_sep == ']' || dir_end_sep == '>')
-                && (file[0] == '[' || file[0] == '<')) {
-                file++;
-                if (file[0] == '.')
-                    *dir_end = '\0';
-                else
-                    *dir_end = '.';
-            }
-#else
             OPENSSL_strlcat(full_file, sep, len);
-#endif
         }
         OPENSSL_strlcat(full_file, file, len);
     }

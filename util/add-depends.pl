@@ -134,71 +134,6 @@ my %procedures = (
             $line =~ s/\s+$//;
             return ($objfile, $line);
         },
-    'VMS C' =>
-        sub {
-            state $abs_srcdir_shaved = undef;
-            state $srcdir_shaved = undef;
-
-            unless (defined $abs_srcdir_shaved) {
-                ($abs_srcdir_shaved = $abs_srcdir) =~ s|[>\]]$||;
-                ($srcdir_shaved = $srcdir) =~ s|[>\]]$||;
-            }
-
-            # current versions of DEC / Compaq / HP / VSI C strips away all
-            # directory information from the object file, so we must insert it
-            # back.  To make life simpler, we simply replace it with the
-            # corresponding .D file that's had its extension changed.  Since
-            # .D files are always written parallel to the object files, we
-            # thereby get the directory information for free.
-            (my $objfile = shift) =~ s|\.D$|.OBJ|i;
-            my $line = shift;
-
-            # Shave off the target.
-            #
-            # The pattern for target and dependencies will always take this
-            # form:
-            #
-            #   target SPACE : SPACE deps
-            #
-            # This is so a volume delimiter (a : without any spaces around it)
-            # won't get mixed up with the target / deps delimiter.  We use this
-            # to easily identify what needs to be removed.
-            m|\s:\s|; $line = $';
-
-            # We know that VMS has system header files in text libraries,
-            # extension .TLB.  We also know that our header files aren't stored
-            # in text libraries.  Finally, we know that VMS C produces exactly
-            # one dependency per line, so we simply discard any line ending with
-            # .TLB.
-            return undef if /\.TLB\s*$/;
-
-            # All we got now is a dependency, just shave off surrounding spaces
-            $line =~ s/^\s+//;
-            $line =~ s/\s+$//;
-
-            # VMS C gives us absolute paths, always.  Let's see if we can
-            # make them relative instead.
-            $line = canonpath($line);
-
-            unless (defined $depconv_cache{$line}) {
-                my $dep = $line;
-                # Since we have already pre-populated the cache with
-                # mappings for generated headers, we only need to deal
-                # with the source tree.
-                if ($dep =~ s|^\Q$abs_srcdir_shaved\E([\.>\]])?|$srcdir_shaved$1|i) {
-                    # Also check that the header actually exists
-                    if (-f $line) {
-                        $depconv_cache{$line} = $dep;
-                    }
-                }
-            }
-            return ($objfile, $depconv_cache{$line})
-                if defined $depconv_cache{$line};
-            print STDERR "DEBUG[$producer]: ignoring $objfile <- $line\n"
-                if $debug;
-
-            return undef;
-        },
     'VC' =>
         sub {
             # With Microsoft Visual C the flags /Zs /showIncludes give us the
@@ -308,7 +243,6 @@ my %procedures = (
 my %continuations = (
     'gcc' => "\\",
     'makedepend' => "\\",
-    'VMS C' => "-",
     'VC' => "\\",
     'embarcadero' => "\\",
 );
@@ -368,7 +302,7 @@ if (compare_text($buildfile_new, $buildfile) != 0) {
 }
 
 END {
-    # On VMS, we want to remove all generations of this file, in case there
+    # Obsolete: On VMS, we want to remove all generations of this file, in case there
     # are more than one, so we loop.
     if (defined $buildfile_new) {
         while (unlink $buildfile_new) {}

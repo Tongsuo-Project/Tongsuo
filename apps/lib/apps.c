@@ -7,14 +7,6 @@
  * https://www.openssl.org/source/license.html
  */
 
-#if !defined(_POSIX_C_SOURCE) && defined(OPENSSL_SYS_VMS)
-/*
- * On VMS, you need to define this to get the declaration of fileno().  The
- * value 2 is to make sure no function defined in POSIX-2 is left undefined.
- */
-# define _POSIX_C_SOURCE 2
-#endif
-
 #ifndef OPENSSL_NO_ENGINE
 /* We need to use some deprecated APIs */
 # define OPENSSL_SUPPRESS_DEPRECATED
@@ -1524,13 +1516,9 @@ int save_serial(const char *serialfile, const char *suffix, const BIGNUM *serial
 
     if (suffix == NULL)
         OPENSSL_strlcpy(buf[0], serialfile, BSIZE);
-    else {
-#ifndef OPENSSL_SYS_VMS
+    else
         j = BIO_snprintf(buf[0], sizeof(buf[0]), "%s.%s", serialfile, suffix);
-#else
-        j = BIO_snprintf(buf[0], sizeof(buf[0]), "%s-%s", serialfile, suffix);
-#endif
-    }
+
     out = BIO_new_file(buf[0], "w");
     if (out == NULL) {
         goto err;
@@ -1569,13 +1557,9 @@ int rotate_serial(const char *serialfile, const char *new_suffix,
         BIO_printf(bio_err, "File name too long\n");
         goto err;
     }
-#ifndef OPENSSL_SYS_VMS
     j = BIO_snprintf(buf[0], sizeof(buf[0]), "%s.%s", serialfile, new_suffix);
     j = BIO_snprintf(buf[1], sizeof(buf[1]), "%s.%s", serialfile, old_suffix);
-#else
-    j = BIO_snprintf(buf[0], sizeof(buf[0]), "%s-%s", serialfile, new_suffix);
-    j = BIO_snprintf(buf[1], sizeof(buf[1]), "%s-%s", serialfile, old_suffix);
-#endif
+
     if (rename(serialfile, buf[1]) < 0 && errno != ENOENT
 #ifdef ENOTDIR
         && errno != ENOTDIR
@@ -1651,11 +1635,7 @@ CA_DB *load_index(const char *dbfile, DB_ATTR *db_attr)
     if ((tmpdb = TXT_DB_read(in, DB_NUMBER)) == NULL)
         goto err;
 
-#ifndef OPENSSL_SYS_VMS
     BIO_snprintf(buf, sizeof(buf), "%s.attr", dbfile);
-#else
-    BIO_snprintf(buf, sizeof(buf), "%s-attr", dbfile);
-#endif
     dbattr_conf = app_load_config_quiet(buf);
 
     retdb = app_malloc(sizeof(*retdb), "new DB");
@@ -1726,15 +1706,11 @@ int save_index(const char *dbfile, const char *suffix, CA_DB *db)
         BIO_printf(bio_err, "File name too long\n");
         goto err;
     }
-#ifndef OPENSSL_SYS_VMS
+
     j = BIO_snprintf(buf[2], sizeof(buf[2]), "%s.attr", dbfile);
     j = BIO_snprintf(buf[1], sizeof(buf[1]), "%s.attr.%s", dbfile, suffix);
     j = BIO_snprintf(buf[0], sizeof(buf[0]), "%s.%s", dbfile, suffix);
-#else
-    j = BIO_snprintf(buf[2], sizeof(buf[2]), "%s-attr", dbfile);
-    j = BIO_snprintf(buf[1], sizeof(buf[1]), "%s-attr-%s", dbfile, suffix);
-    j = BIO_snprintf(buf[0], sizeof(buf[0]), "%s-%s", dbfile, suffix);
-#endif
+
     out = BIO_new_file(buf[0], "w");
     if (out == NULL) {
         perror(dbfile);
@@ -1776,19 +1752,13 @@ int rotate_index(const char *dbfile, const char *new_suffix,
         BIO_printf(bio_err, "File name too long\n");
         goto err;
     }
-#ifndef OPENSSL_SYS_VMS
+
     j = BIO_snprintf(buf[4], sizeof(buf[4]), "%s.attr", dbfile);
     j = BIO_snprintf(buf[3], sizeof(buf[3]), "%s.attr.%s", dbfile, old_suffix);
     j = BIO_snprintf(buf[2], sizeof(buf[2]), "%s.attr.%s", dbfile, new_suffix);
     j = BIO_snprintf(buf[1], sizeof(buf[1]), "%s.%s", dbfile, old_suffix);
     j = BIO_snprintf(buf[0], sizeof(buf[0]), "%s.%s", dbfile, new_suffix);
-#else
-    j = BIO_snprintf(buf[4], sizeof(buf[4]), "%s-attr", dbfile);
-    j = BIO_snprintf(buf[3], sizeof(buf[3]), "%s-attr-%s", dbfile, old_suffix);
-    j = BIO_snprintf(buf[2], sizeof(buf[2]), "%s-attr-%s", dbfile, new_suffix);
-    j = BIO_snprintf(buf[1], sizeof(buf[1]), "%s-%s", dbfile, old_suffix);
-    j = BIO_snprintf(buf[0], sizeof(buf[0]), "%s-%s", dbfile, new_suffix);
-#endif
+
     if (rename(dbfile, buf[1]) < 0 && errno != ENOENT
 #ifdef ENOTDIR
         && errno != ENOTDIR
@@ -2814,30 +2784,10 @@ int app_isdir(const char *name)
 }
 
 /* raw_read|write section */
-#if defined(__VMS)
-# include "vms_term_sock.h"
-static int stdin_sock = -1;
-
-static void close_stdin_sock(void)
-{
-    TerminalSocket (TERM_SOCK_DELETE, &stdin_sock);
-}
-
-int fileno_stdin(void)
-{
-    if (stdin_sock == -1) {
-        TerminalSocket(TERM_SOCK_CREATE, &stdin_sock);
-        atexit(close_stdin_sock);
-    }
-
-    return stdin_sock;
-}
-#else
 int fileno_stdin(void)
 {
     return fileno(stdin);
 }
-#endif
 
 int fileno_stdout(void)
 {
@@ -2852,13 +2802,6 @@ int raw_read_stdin(void *buf, int siz)
         return n;
     else
         return -1;
-}
-#elif defined(__VMS)
-# include <sys/socket.h>
-
-int raw_read_stdin(void *buf, int siz)
-{
-    return recv(fileno_stdin(), buf, siz, 0);
 }
 #else
 # if defined(__TANDEM)
@@ -2922,11 +2865,6 @@ BIO *dup_bio_out(int format)
                         BIO_NOCLOSE | (FMT_istext(format) ? BIO_FP_TEXT : 0));
     void *prefix = NULL;
 
-#ifdef OPENSSL_SYS_VMS
-    if (FMT_istext(format))
-        b = BIO_push(BIO_new(BIO_f_linebuffer()), b);
-#endif
-
     if (FMT_istext(format)
         && (prefix = getenv("HARNESS_OSSL_PREFIX")) != NULL) {
         b = BIO_push(BIO_new(BIO_f_prefix()), b);
@@ -2938,32 +2876,13 @@ BIO *dup_bio_out(int format)
 
 BIO *dup_bio_err(int format)
 {
-    BIO *b = BIO_new_fp(stderr,
-                        BIO_NOCLOSE | (FMT_istext(format) ? BIO_FP_TEXT : 0));
-#ifdef OPENSSL_SYS_VMS
-    if (FMT_istext(format))
-        b = BIO_push(BIO_new(BIO_f_linebuffer()), b);
-#endif
-    return b;
+    return BIO_new_fp(stderr,
+                      BIO_NOCLOSE | (FMT_istext(format) ? BIO_FP_TEXT : 0));
 }
 
 void unbuffer(FILE *fp)
 {
-/*
- * On VMS, setbuf() will only take 32-bit pointers, and a compilation
- * with /POINTER_SIZE=64 will give off a MAYLOSEDATA2 warning here.
- * However, we trust that the C RTL will never give us a FILE pointer
- * above the first 4 GB of memory, so we simply turn off the warning
- * temporarily.
- */
-#if defined(OPENSSL_SYS_VMS) && defined(__DECC)
-# pragma environment save
-# pragma message disable maylosedata2
-#endif
     setbuf(fp, NULL);
-#if defined(OPENSSL_SYS_VMS) && defined(__DECC)
-# pragma environment restore
-#endif
 }
 
 static const char *modestr(char mode, int format)
@@ -3027,17 +2946,7 @@ BIO *bio_open_owner(const char *filename, int format, int private)
 # endif
     }
 
-# ifdef OPENSSL_SYS_VMS
-    /* VMS doesn't have O_BINARY, it just doesn't make sense.  But,
-     * it still needs to know that we're going binary, or fdopen()
-     * will fail with "invalid argument"...  so we tell VMS what the
-     * context is.
-     */
-    if (!textmode)
-        fd = open(filename, mode, 0600, "ctx=bin");
-    else
-# endif
-        fd = open(filename, mode, 0600);
+    fd = open(filename, mode, 0600);
     if (fd < 0)
         goto err;
     fp = fdopen(fd, modestr('w', format));

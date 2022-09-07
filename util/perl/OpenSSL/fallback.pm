@@ -42,9 +42,6 @@ Just like with B<lib>, this only works with Unix filepaths.
 Just like with L<lib>, this doesn't mean that it only works on Unix, but that
 non-Unix users must first translate their file paths to Unix conventions.
 
-    # VMS users wanting to put [.my.stuff] into their @INC should write:
-    use fallback 'my/stuff';
-
 =head1 NOTES
 
 If you try to add a file to @INC as follows, you will be warned, and the file
@@ -91,19 +88,6 @@ sub import {
                 my $d = "$dir/$l";
                 my $checked = $d;
 
-                if ($^O eq 'VMS') {
-                    # Some VMS unpackers replace periods with underscores
-                    # We must be real careful not to convert the directories
-                    # '.' and '..', though.
-                    $checked =
-                        join('/',
-                             map { my $x = $_;
-                                   $x =~ s|\.|_|g
-                                       if ($x ne '..' && $x ne '.');
-                                   $x }
-                             split(m|/|, $checked))
-                        unless -e $checked && -d $checked;
-                }
                 croak "All lines in $path must be a directory, not a file: $l"
                     unless -e $checked && -d $checked;
                 push @INC, $checked;

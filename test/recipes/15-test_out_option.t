@@ -20,14 +20,6 @@ plan tests => 4;
 
 # Test 1
 SKIP: {
-    # Paths that should generate failure when trying to write to them.
-    # Directories are a safe bet for failure on most platforms.
-    # Notably, this isn't true on OpenVMS, as a default file name is
-    # appended under the hood when trying to "write" to a directory spec.
-    # From observation, that file is '.' (i.e. a file with no file name
-    # and no extension), so '[]' gets translated to '[].'
-    skip 'Directories become writable files on OpenVMS', 1 if $^O eq 'VMS';
-
     # Note that directories must end with a slash here, because of how
     # File::Spec massages them into directory specs on some platforms.
     my $path = File::Spec->canonpath('./');

@@ -12,8 +12,8 @@ use OpenSSL::Test::Utils;
 
 setup("locale tests");
 
-plan skip_all => "Locale tests not available on Windows or VMS"
-    if $^O =~ /^(VMS|MSWin32)$/;
+plan skip_all => "Locale tests not available on Windows"
+    if $^O =~ /^MSWin32$/;
 
 plan tests => 3;
 

@@ -435,33 +435,12 @@ sub run {
     return () if !$cmd;
 
     my $prefix = "";
-    if ( $^O eq "VMS" ) {	# VMS
-	$prefix = "pipe ";
-    }
-
     my @r = ();
     my $r = 0;
     my $e = 0;
 
     die "OpenSSL::Test::run(): statusvar value not a scalar reference"
         if $opts{statusvar} && ref($opts{statusvar}) ne "SCALAR";
-
-    # For some reason, program output, or even output from this function
-    # somehow isn't caught by TAP::Harness (TAP::Parser?) on VMS, so we're
-    # silencing it specifically there until further notice.
-    my $save_STDOUT;
-    my $save_STDERR;
-    if ($^O eq 'VMS') {
-        # In non-verbose, we want to shut up the command interpreter, in case
-        # it has something to complain about.  On VMS, it might complain both
-        # on stdout and stderr
-        if ($ENV{HARNESS_ACTIVE} && !$ENV{HARNESS_VERBOSE}) {
-            open $save_STDOUT, '>&', \*STDOUT or die "Can't dup STDOUT: $!";
-            open $save_STDERR, '>&', \*STDERR or die "Can't dup STDERR: $!";
-            open STDOUT, ">", devnull();
-            open STDERR, ">", devnull();
-        }
-    }
 
     $ENV{HARNESS_OSSL_LEVEL} = $level + 1;
 
@@ -494,20 +473,7 @@ sub run {
         ${$opts{statusvar}} = $r;
     }
 
-    # Restore STDOUT / STDERR on VMS
-    if ($^O eq 'VMS') {
-        if ($ENV{HARNESS_ACTIVE} && !$ENV{HARNESS_VERBOSE}) {
-            close STDOUT;
-            close STDERR;
-            open STDOUT, '>&', $save_STDOUT or die "Can't restore STDOUT: $!";
-            open STDERR, '>&', $save_STDERR or die "Can't restore STDERR: $!";
-        }
-
-        print STDERR "$prefix$display_cmd => $e\n"
-            if !$ENV{HARNESS_ACTIVE} || $ENV{HARNESS_VERBOSE};
-    } else {
-        print STDERR "$prefix$display_cmd => $e\n";
-    }
+    print STDERR "$prefix$display_cmd => $e\n";
 
     # At this point, $? stops being interesting, and unfortunately,
     # there are Test::More versions that get picky if we leave it
@@ -1006,9 +972,7 @@ sub __bldtop_dir {
 # if that one is defined.
 sub __exeext {
     my $ext = "";
-    if ($^O eq "VMS" ) {	# VMS
-	$ext = ".exe";
-    } elsif ($^O eq "MSWin32") { # Windows
+    if ($^O eq "MSWin32") { # Windows
 	$ext = ".exe";
     }
     return $ENV{"EXE_EXT"} || $ext;
@@ -1205,8 +1169,8 @@ sub __wrap_cmd {
         # Otherwise, use the standard wrapper
         my $std_wrapper = __bldtop_file("util", "wrap.pl");
 
-        if ($^O eq "VMS" || $^O eq "MSWin32") {
-            # On VMS and Windows, we run the perl executable explicitly,
+        if ($^O eq "MSWin32") {
+            # On Windows, we run the perl executable explicitly,
             # with necessary fixups.  We might not need that for Windows,
             # but that depends on if the user has associated the '.pl'
             # extension with a perl interpreter, so better be safe.
@@ -1262,12 +1226,6 @@ sub __decorate_cmd {
     $stderr=" 2> ".$fileornull->($opts{stderr}) if exists($opts{stderr});
 
     my $display_cmd = "$cmdstr$stdin$stdout$stderr";
-
-    # VMS program output escapes TAP::Parser
-    if ($^O eq 'VMS') {
-        $stderr=" 2> ".$null
-            unless $stderr || !$ENV{HARNESS_ACTIVE} || $ENV{HARNESS_VERBOSE};
-    }
 
     $cmdstr .= "$stdin$stdout$stderr";
 

@@ -169,11 +169,7 @@ static int def_load(CONF *conf, const char *name, long *line)
     int ret;
     BIO *in = NULL;
 
-#ifdef OPENSSL_SYS_VMS
-    in = BIO_new_file(name, "r");
-#else
     in = BIO_new_file(name, "rb");
-#endif
     if (in == NULL) {
         if (ERR_GET_REASON(ERR_peek_last_error()) == BIO_R_NO_SUCH_FILE)
             ERR_raise(ERR_LIB_CONF, CONF_R_NO_SUCH_FILE);
@@ -853,18 +849,6 @@ static BIO *get_next_file(const char *path, OPENSSL_DIR_CTX **dirctx)
                 ERR_raise(ERR_LIB_CONF, ERR_R_MALLOC_FAILURE);
                 break;
             }
-#ifdef OPENSSL_SYS_VMS
-            /*
-             * If the given path isn't clear VMS syntax,
-             * we treat it as on Unix.
-             */
-            if (path[pathlen - 1] == ']'
-                || path[pathlen - 1] == '>'
-                || path[pathlen - 1] == ':') {
-                /* Clear VMS directory syntax, just copy as is */
-                OPENSSL_strlcpy(newpath, path, newlen);
-            }
-#endif
             if (newpath[0] == '\0') {
                 OPENSSL_strlcpy(newpath, path, newlen);
                 OPENSSL_strlcat(newpath, "/", newlen);

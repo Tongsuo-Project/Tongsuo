@@ -178,8 +178,6 @@ const char *OPENSSL_info(int t)
     case OPENSSL_INFO_DIR_FILENAME_SEPARATOR:
 #if defined(_WIN32)
         return "\\";
-#elif defined(__VMS)
-        return "";
 #else  /* Assume POSIX */
         return "/";
 #endif

@@ -23,41 +23,27 @@
 #  include <sys/types.h>
 # endif
 
-# if !defined(_POSIX_C_SOURCE) && defined(OPENSSL_SYS_VMS)
-#  ifndef _POSIX_C_SOURCE
-#   define _POSIX_C_SOURCE 2
-#  endif
-# endif
 # include <signal.h>
 # include <stdio.h>
 # include <string.h>
 # include <errno.h>
 
-# if !defined(OPENSSL_SYS_MSDOS) && !defined(OPENSSL_SYS_VMS)
+# if !defined(OPENSSL_SYS_MSDOS)
 #  include <unistd.h>
 /*
  * If unistd.h defines _POSIX_VERSION, we conclude that we are on a POSIX
  * system and have sigaction and termios.
  */
 #  if defined(_POSIX_VERSION) && _POSIX_VERSION>=199309L
-
 #   define SIGACTION
 #   if !defined(TERMIOS) && !defined(TERMIO) && !defined(SGTTY)
 #    define TERMIOS
 #   endif
-
 #  endif
 # endif
 
 # include "ui_local.h"
 # include "internal/cryptlib.h"
-
-# ifdef OPENSSL_SYS_VMS          /* prototypes for sys$whatever */
-#  include <starlet.h>
-#  ifdef __DECC
-#   pragma message disable DOLLARID
-#  endif
-# endif
 
 # ifdef WIN_CONSOLE_BUG
 #  include <windows.h>
@@ -67,7 +53,7 @@
 # endif
 
 /*
- * There are 6 types of terminal interface supported, TERMIO, TERMIOS, VMS,
+ * There are 5 types of terminal interface supported, TERMIO, TERMIOS,
  * MSDOS, WIN32 Console and SGTTY.
  *
  * If someone defines one of the macros TERMIO, TERMIOS or SGTTY, it will
@@ -85,10 +71,9 @@
 #   define TERMIO
 #   undef  SGTTY
 /*
- * We know that VMS, MSDOS, VXWORKS, use entirely other mechanisms.
+ * We know that MSDOS, VXWORKS, use entirely other mechanisms.
  */
-#  elif !defined(OPENSSL_SYS_VMS) \
-        && !defined(OPENSSL_SYS_MSDOS) \
+#  elif !defined(OPENSSL_SYS_MSDOS) \
         && !defined(OPENSSL_SYS_VXWORKS)
 #   define TERMIOS
 #   undef  TERMIO
@@ -127,24 +112,12 @@
 #  define TTY_set(tty,data)      ioctl(tty,TIOCSETP,data)
 # endif
 
-# if !defined(_LIBC) && !defined(OPENSSL_SYS_MSDOS) && !defined(OPENSSL_SYS_VMS) && ! (defined(OPENSSL_SYS_TANDEM) && defined(_SPT_MODEL_))
+# if !defined(_LIBC) && !defined(OPENSSL_SYS_MSDOS) && !(defined(OPENSSL_SYS_TANDEM) && defined(_SPT_MODEL_))
 #  include <sys/ioctl.h>
 # endif
 
 # ifdef OPENSSL_SYS_MSDOS
 #  include <conio.h>
-# endif
-
-# ifdef OPENSSL_SYS_VMS
-#  include <ssdef.h>
-#  include <iodef.h>
-#  include <ttdef.h>
-#  include <descrip.h>
-struct IOSB {
-    short iosb$w_value;
-    short iosb$w_count;
-    long iosb$l_info;
-};
 # endif
 
 # ifndef NX509_SIG
@@ -158,20 +131,10 @@ static struct sigaction savsig[NX509_SIG];
 static void (*savsig[NX509_SIG]) (int);
 # endif
 
-# ifdef OPENSSL_SYS_VMS
-static struct IOSB iosb;
-static $DESCRIPTOR(terminal, "TT");
-static long tty_orig[3], tty_new[3]; /* XXX Is there any guarantee that this
-                                      * will always suffice for the actual
-                                      * structures? */
-static long status;
-static unsigned short channel = 0;
-# elif defined(_WIN32) && !defined(_WIN32_WCE)
+# if defined(_WIN32) && !defined(_WIN32_WCE)
 static DWORD tty_orig, tty_new;
 # else
-#  if !defined(OPENSSL_SYS_MSDOS) || defined(__DJGPP__)
 static TTY_STRUCT tty_orig, tty_new;
-#  endif
 # endif
 static FILE *tty_in, *tty_out;
 static int is_a_tty;
@@ -402,7 +365,7 @@ static int open_console(UI *ui)
         tty_out = stderr;
 # endif
 
-# if defined(TTY_get) && !defined(OPENSSL_SYS_VMS)
+# if defined(TTY_get)
     if (TTY_get(fileno(tty_in), &tty_orig) == -1) {
 #  ifdef ENOTTY
         if (errno == ENOTTY)
@@ -462,23 +425,6 @@ static int open_console(UI *ui)
             }
     }
 # endif
-# ifdef OPENSSL_SYS_VMS
-    status = sys$assign(&terminal, &channel, 0, 0);
-
-    /* if there isn't a TT device, something is very wrong */
-    if (status != SS$_NORMAL) {
-        ERR_raise_data(ERR_LIB_UI, UI_R_SYSASSIGN_ERROR,
-                       "status=%%X%08X", status);
-        return 0;
-    }
-
-    status = sys$qiow(0, channel, IO$_SENSEMODE, &iosb, 0, 0, tty_orig, 12,
-                      0, 0, 0, 0);
-
-    /* If IO$_SENSEMODE doesn't work, this is not a terminal device */
-    if ((status != SS$_NORMAL) || (iosb.iosb$w_value != SS$_NORMAL))
-        is_a_tty = 0;
-# endif
     return 1;
 }
 
@@ -489,24 +435,9 @@ static int noecho_console(UI *ui)
     tty_new.TTY_FLAGS &= ~ECHO;
 # endif
 
-# if defined(TTY_set) && !defined(OPENSSL_SYS_VMS)
+# if defined(TTY_set)
     if (is_a_tty && (TTY_set(fileno(tty_in), &tty_new) == -1))
         return 0;
-# endif
-# ifdef OPENSSL_SYS_VMS
-    if (is_a_tty) {
-        tty_new[0] = tty_orig[0];
-        tty_new[1] = tty_orig[1] | TT$M_NOECHO;
-        tty_new[2] = tty_orig[2];
-        status = sys$qiow(0, channel, IO$_SETMODE, &iosb, 0, 0, tty_new, 12,
-                          0, 0, 0, 0);
-        if ((status != SS$_NORMAL) || (iosb.iosb$w_value != SS$_NORMAL)) {
-            ERR_raise_data(ERR_LIB_UI, UI_R_SYSQIOW_ERROR,
-                           "status=%%X%08X, iosb.iosb$w_value=%%X%08X",
-                           status, iosb.iosb$w_value);
-            return 0;
-        }
-    }
 # endif
 # if defined(_WIN32) && !defined(_WIN32_WCE)
     if (is_a_tty) {
@@ -520,25 +451,10 @@ static int noecho_console(UI *ui)
 
 static int echo_console(UI *ui)
 {
-# if defined(TTY_set) && !defined(OPENSSL_SYS_VMS)
+# if defined(TTY_set)
     memcpy(&(tty_new), &(tty_orig), sizeof(tty_orig));
     if (is_a_tty && (TTY_set(fileno(tty_in), &tty_new) == -1))
         return 0;
-# endif
-# ifdef OPENSSL_SYS_VMS
-    if (is_a_tty) {
-        tty_new[0] = tty_orig[0];
-        tty_new[1] = tty_orig[1];
-        tty_new[2] = tty_orig[2];
-        status = sys$qiow(0, channel, IO$_SETMODE, &iosb, 0, 0, tty_new, 12,
-                          0, 0, 0, 0);
-        if ((status != SS$_NORMAL) || (iosb.iosb$w_value != SS$_NORMAL)) {
-            ERR_raise_data(ERR_LIB_UI, UI_R_SYSQIOW_ERROR,
-                           "status=%%X%08X, iosb.iosb$w_value=%%X%08X",
-                           status, iosb.iosb$w_value);
-            return 0;
-        }
-    }
 # endif
 # if defined(_WIN32) && !defined(_WIN32_WCE)
     if (is_a_tty) {
@@ -557,14 +473,6 @@ static int close_console(UI *ui)
         fclose(tty_in);
     if (tty_out != stderr)
         fclose(tty_out);
-# ifdef OPENSSL_SYS_VMS
-    status = sys$dassgn(channel);
-    if (status != SS$_NORMAL) {
-        ERR_raise_data(ERR_LIB_UI, UI_R_SYSDASSGN_ERROR,
-                       "status=%%X%08X", status);
-        ret = 0;
-    }
-# endif
     CRYPTO_THREAD_unlock(ui->lock);
 
     return ret;

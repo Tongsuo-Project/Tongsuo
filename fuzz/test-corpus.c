@@ -80,10 +80,7 @@ int main(int argc, char **argv) {
                 if (pathname == NULL)
                     break;
                 strcpy(pathname, argv[n]);
-#ifdef __VMS
-                if (strchr(":<]", pathname[dirname_len - 1]) == NULL)
-#endif
-                    pathname[dirname_len++] = '/';
+                pathname[dirname_len++] = '/';
                 pathname[dirname_len] = '\0';
             }
             strcpy(pathname + dirname_len, filename);

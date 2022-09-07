@@ -15,11 +15,6 @@
 /* On machines that dont support <inttypes.h> just disable the tests */
 #if !defined(OPENSSL_NO_INTTYPES_H)
 
-# ifdef OPENSSL_SYS_VMS
-#  define strtoumax strtoull
-#  define strtoimax strtoll
-# endif
-
 typedef struct {
     OSSL_PARAM *param;
     int32_t i32;

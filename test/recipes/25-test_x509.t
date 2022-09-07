@@ -44,7 +44,7 @@ is(cmp_text($out_utf8, $utf),
 
 SKIP: {
     skip "DES disabled", 1 if disabled("des");
-    skip "Platform doesn't support command line UTF-8", 1 if $^O =~ /^(VMS|msys)$/;
+    skip "Platform doesn't support command line UTF-8", 1 if $^O =~ /^msys$/;
 
     my $p12 = srctop_file("test", "shibboleth.pfx");
     my $p12pass = "σύνθημα γνώρισμα";

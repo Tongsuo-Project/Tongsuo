@@ -156,9 +156,6 @@
 #else
 #define	ADDP	add
 #endif
-#ifdef __VMS
-.alias abort, "decc$abort"
-#endif
 
 #if 1
 //
@@ -1430,7 +1427,7 @@ bn_div_words:
 	mov		ar.ec=0		// don't rotate at exit
 	mov		pr.rot=0	}
 { .mii;	mov		L=r33		// save l
-	mov		r25=r0		// needed if abort is called on VMS
+	mov		r25=r0		// obsolete: needed if abort is called on VMS
 	mov		r36=r0		};;
 
 .L_divw_shift:	// -vv- note signed comparison

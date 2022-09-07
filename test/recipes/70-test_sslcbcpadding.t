@@ -16,9 +16,6 @@ use TLSProxy::Proxy;
 my $test_name = "test_sslcbcpadding";
 setup($test_name);
 
-plan skip_all => "TLSProxy isn't usable on $^O"
-    if $^O =~ /^(VMS)$/;
-
 plan skip_all => "$test_name needs the dynamic engine feature enabled"
     if disabled("engine") || disabled("dynamic-engine");
 

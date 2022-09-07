@@ -188,61 +188,15 @@ FILE *__iob_func();
 #   include <sys/time.h>
 #  endif
 
-#  ifdef OPENSSL_SYS_VMS
-#   define VMS 1
-  /*
-   * some programs don't include stdlib, so exit() and others give implicit
-   * function warnings
-   */
-#   include <stdlib.h>
-#   if defined(__DECC)
-#    include <unistd.h>
-#   else
-#    include <unixlib.h>
-#   endif
-#   define LIST_SEPARATOR_CHAR ','
-  /* We don't have any well-defined random devices on VMS, yet... */
-#   undef DEVRANDOM
-  /*-
-     We need to do this since VMS has the following coding on status codes:
-
-     Bits 0-2: status type: 0 = warning, 1 = success, 2 = error, 3 = info ...
-               The important thing to know is that odd numbers are considered
-               good, while even ones are considered errors.
-     Bits 3-15: actual status number
-     Bits 16-27: facility number.  0 is considered "unknown"
-     Bits 28-31: control bits.  If bit 28 is set, the shell won't try to
-                 output the message (which, for random codes, just looks ugly)
-
-     So, what we do here is to change 0 to 1 to get the default success status,
-     and everything else is shifted up to fit into the status number field, and
-     the status is tagged as an error, which is what is wanted here.
-
-     Finally, we add the VMS C facility code 0x35a000, because there are some
-     programs, such as Perl, that will reinterpret the code back to something
-     POSIX.  'man perlvms' explains it further.
-
-     NOTE: the perlvms manual wants to turn all codes 2 to 255 into success
-     codes (status type = 1).  I couldn't disagree more.  Fortunately, the
-     status type doesn't seem to bother Perl.
-     -- Richard Levitte
-  */
-#   define EXIT(n)  exit((n) ? (((n) << 3) | 2 | 0x10000000 | 0x35a000) : 1)
-
-#   define DEFAULT_HOME "SYS$LOGIN:"
-
-#  else
-     /* !defined VMS */
-#   include <unistd.h>
-#   include <sys/types.h>
-#   ifdef OPENSSL_SYS_WIN32_CYGWIN
-#    include <io.h>
-#    include <fcntl.h>
-#   endif
-
-#   define LIST_SEPARATOR_CHAR ':'
-#   define EXIT(n)             exit(n)
+#  include <unistd.h>
+#  include <sys/types.h>
+#  ifdef OPENSSL_SYS_WIN32_CYGWIN
+#   include <io.h>
+#   include <fcntl.h>
 #  endif
+
+#  define LIST_SEPARATOR_CHAR ':'
+#  define EXIT(n)             exit(n)
 
 # endif
 

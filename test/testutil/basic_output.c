@@ -26,10 +26,6 @@ void test_open_streams(void)
 {
     tap_out = BIO_new_fp(stdout, BIO_NOCLOSE | BIO_FP_TEXT);
     tap_err = BIO_new_fp(stderr, BIO_NOCLOSE | BIO_FP_TEXT);
-#ifdef __VMS
-    tap_out = BIO_push(BIO_new(BIO_f_linebuffer()), tap_out);
-    tap_err = BIO_push(BIO_new(BIO_f_linebuffer()), tap_err);
-#endif
     tap_out = BIO_push(BIO_new(BIO_f_prefix()), tap_out);
     tap_err = BIO_push(BIO_new(BIO_f_prefix()), tap_err);
 

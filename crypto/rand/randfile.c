@@ -27,9 +27,6 @@
 #include <openssl/rand.h>
 #include <openssl/buffer.h>
 
-#ifdef OPENSSL_SYS_VMS
-# include <unixio.h>
-#endif
 #include <sys/types.h>
 #ifndef OPENSSL_NO_POSIX_IO
 # include <sys/stat.h>
@@ -59,22 +56,6 @@
 
 #define RAND_BUF_SIZE 1024
 #define RFILE ".rnd"
-
-#ifdef OPENSSL_SYS_VMS
-/*
- * __FILE_ptr32 is a type provided by DEC C headers (types.h specifically)
- * to make sure the FILE* is a 32-bit pointer no matter what.  We know that
- * stdio functions return this type (a study of stdio.h proves it).
- *
- * This declaration is a nasty hack to get around vms' extension to fopen for
- * passing in sharing options being disabled by /STANDARD=ANSI89
- */
-static __FILE_ptr32 (*const vms_fopen)(const char *, const char *, ...) =
-        (__FILE_ptr32 (*)(const char *, const char *, ...))fopen;
-# define VMS_OPEN_ATTRS \
-        "shr=get,put,upd,del","ctx=bin,stm","rfm=stm","rat=none","mrs=0"
-# define openssl_fopen(fname, mode) vms_fopen((fname), (mode), VMS_OPEN_ATTRS)
-#endif
 
 /*
  * Note that these functions are intended for seed files only. Entropy
@@ -124,25 +105,11 @@ int RAND_load_file(const char *file, long bytes)
     }
 #endif
     /*
-     * On VMS, setbuf() will only take 32-bit pointers, and a compilation
-     * with /POINTER_SIZE=64 will give off a MAYLOSEDATA2 warning here.
-     * However, we trust that the C RTL will never give us a FILE pointer
-     * above the first 4 GB of memory, so we simply turn off the warning
-     * temporarily.
-     */
-#if defined(OPENSSL_SYS_VMS) && defined(__DECC)
-# pragma environment save
-# pragma message disable maylosedata2
-#endif
-    /*
      * Don't buffer, because even if |file| is regular file, we have
      * no control over the buffer, so why would we want a copy of its
      * contents lying around?
      */
     setbuf(in, NULL);
-#if defined(OPENSSL_SYS_VMS) && defined(__DECC)
-# pragma environment restore
-#endif
 
     for ( ; ; ) {
         if (bytes > 0)
@@ -198,7 +165,7 @@ int RAND_write_file(const char *file)
         return  -1;
 
 #if defined(O_CREAT) && !defined(OPENSSL_NO_POSIX_IO) && \
-    !defined(OPENSSL_SYS_VMS) && !defined(OPENSSL_SYS_WINDOWS)
+    !defined(OPENSSL_SYS_WINDOWS)
     {
 # ifndef O_BINARY
 #  define O_BINARY 0
@@ -211,27 +178,6 @@ int RAND_write_file(const char *file)
         if (fd != -1)
             out = fdopen(fd, "wb");
     }
-#endif
-
-#ifdef OPENSSL_SYS_VMS
-    /*
-     * VMS NOTE: Prior versions of this routine created a _new_ version of
-     * the rand file for each call into this routine, then deleted all
-     * existing versions named ;-1, and finally renamed the current version
-     * as ';1'. Under concurrent usage, this resulted in an RMS race
-     * condition in rename() which could orphan files (see vms message help
-     * for RMS$_REENT). With the fopen() calls below, openssl/VMS now shares
-     * the top-level version of the rand file. Note that there may still be
-     * conditions where the top-level rand file is locked. If so, this code
-     * will then create a new version of the rand file. Without the delete
-     * and rename code, this can result in ascending file versions that stop
-     * at version 32767, and this routine will then return an error. The
-     * remedy for this is to recode the calling application to avoid
-     * concurrent use of the rand file, or synchronize usage at the
-     * application level. Also consider whether or not you NEED a persistent
-     * rand file in a concurrent use situation.
-     */
-    out = openssl_fopen(file, "rb+");
 #endif
 
     if (out == NULL)
@@ -311,9 +257,6 @@ const char *RAND_file_name(char *buf, size_t size)
         if (len + 1 + strlen(RFILE) + 1 >= size)
             return NULL;
         strcpy(buf, s);
-#ifndef OPENSSL_SYS_VMS
-        strcat(buf, "/");
-#endif
         strcat(buf, RFILE);
     }
 

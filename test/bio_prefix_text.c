@@ -147,10 +147,6 @@ static int setup(void)
     bio_in = BIO_new_fp(stdin, BIO_NOCLOSE | BIO_FP_TEXT);
     bio_out = BIO_new_fp(stdout, BIO_NOCLOSE | BIO_FP_TEXT);
     bio_err = BIO_new_fp(stderr, BIO_NOCLOSE | BIO_FP_TEXT);
-#ifdef __VMS
-    bio_out = BIO_push(BIO_new(BIO_f_linebuffer()), bio_out);
-    bio_err = BIO_push(BIO_new(BIO_f_linebuffer()), bio_err);
-#endif
 
     OPENSSL_assert(bio_in != NULL);
     OPENSSL_assert(bio_out != NULL);

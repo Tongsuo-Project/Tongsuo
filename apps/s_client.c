@@ -18,17 +18,6 @@
 
 #ifndef OPENSSL_NO_SOCK
 
-/*
- * With IPv6, it looks like Digital has mixed up the proper order of
- * recursive header file inclusion, resulting in the compiler complaining
- * that u_int isn't defined, but only if _POSIX_C_SOURCE is defined, which is
- * needed to have fileno() declared correctly...  So let's define u_int
- */
-#if defined(OPENSSL_SYS_VMS_DECC) && !defined(__U_INT)
-# define __U_INT
-typedef unsigned int u_int;
-#endif
-
 #include "apps.h"
 #include "progs.h"
 #include <openssl/x509.h>
@@ -3019,10 +3008,8 @@ int s_client_main(int argc, char **argv)
                  */
                 if (read_tty && !at_eof)
                     openssl_fdset(fileno_stdin(), &readfds);
-#if !defined(OPENSSL_SYS_VMS)
                 if (write_tty)
                     openssl_fdset(fileno_stdout(), &writefds);
-#endif
             }
             if (read_ssl)
                 openssl_fdset(SSL_get_fd(con), &readfds);
@@ -3037,13 +3024,6 @@ int s_client_main(int argc, char **argv)
             }
 #endif
 
-            /*
-             * Note: under VMS with SOCKETSHR the second parameter is
-             * currently of type (int *) whereas under other systems it is
-             * (void *) if you don't have a cast it will choke the compiler:
-             * if you do have a cast then you can either go for (int *) or
-             * (void *).
-             */
 #if defined(OPENSSL_SYS_WINDOWS) || defined(OPENSSL_SYS_MSDOS)
             /*
              * Under Windows/DOS we make the assumption that we can always
@@ -3145,7 +3125,7 @@ int s_client_main(int argc, char **argv)
                 goto shut;
             }
         }
-#if defined(OPENSSL_SYS_WINDOWS) || defined(OPENSSL_SYS_MSDOS) || defined(OPENSSL_SYS_VMS)
+#if defined(OPENSSL_SYS_WINDOWS) || defined(OPENSSL_SYS_MSDOS)
         /* Assume Windows/DOS/BeOS can always write */
         else if (!ssl_pending && write_tty)
 #else

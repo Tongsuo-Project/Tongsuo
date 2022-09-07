@@ -504,19 +504,7 @@ int EVP_DecryptInit_ex2(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *cipher,
 #ifdef PTRDIFF_T
 # undef PTRDIFF_T
 #endif
-#if defined(OPENSSL_SYS_VMS) && __INITIAL_POINTER_SIZE==64
-/*
- * Then we have VMS that distinguishes itself by adhering to
- * sizeof(size_t)==4 even in 64-bit builds, which means that
- * difference between two pointers might be truncated to 32 bits.
- * In the context one can even wonder how comparison for
- * equality is implemented. To be on the safe side we adhere to
- * PTRDIFF_T even for comparison for equality.
- */
-# define PTRDIFF_T uint64_t
-#else
-# define PTRDIFF_T size_t
-#endif
+#define PTRDIFF_T size_t
 
 int ossl_is_partially_overlapping(const void *ptr1, const void *ptr2, int len)
 {

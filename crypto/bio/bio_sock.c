@@ -33,11 +33,7 @@ static int wsa_init_done = 0;
 #  include <winsock.h> /* for type fd_set */
 # else
 #  include <unistd.h>
-#  if defined __VMS
-#   include <sys/socket.h>
-#  else
-#   include <sys/select.h>
-#  endif
+#  include <sys/select.h>
 # endif
 
 # ifndef OPENSSL_NO_DEPRECATED_1_1_0
@@ -174,35 +170,7 @@ int BIO_socket_ioctl(int fd, long type, void *arg)
 {
     int i;
 
-#  ifdef __DJGPP__
-    i = ioctlsocket(fd, type, (char *)arg);
-#  else
-#   if defined(OPENSSL_SYS_VMS)
-    /*-
-     * 2011-02-18 SMS.
-     * VMS ioctl() can't tolerate a 64-bit "void *arg", but we
-     * observe that all the consumers pass in an "unsigned long *",
-     * so we arrange a local copy with a short pointer, and use
-     * that, instead.
-     */
-#    if __INITIAL_POINTER_SIZE == 64
-#     define ARG arg_32p
-#     pragma pointer_size save
-#     pragma pointer_size 32
-    unsigned long arg_32;
-    unsigned long *arg_32p;
-#     pragma pointer_size restore
-    arg_32p = &arg_32;
-    arg_32 = *((unsigned long *)arg);
-#    else                       /* __INITIAL_POINTER_SIZE == 64 */
-#     define ARG arg
-#    endif                      /* __INITIAL_POINTER_SIZE == 64 [else] */
-#   else                        /* defined(OPENSSL_SYS_VMS) */
-#    define ARG arg
-#   endif                       /* defined(OPENSSL_SYS_VMS) [else] */
-
-    i = ioctlsocket(fd, type, ARG);
-#  endif                        /* __DJGPP__ */
+    i = ioctlsocket(fd, type, arg);
     if (i < 0)
         ERR_raise_data(ERR_LIB_SYS, get_last_socket_error(),
                        "calling ioctlsocket()");

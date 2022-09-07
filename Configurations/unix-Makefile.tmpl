@@ -896,7 +896,7 @@ uninstall_runtime_libs:
 # is sensitive to build.info changes.
 update: generate errors ordinals
 
-generate: generate_apps generate_crypto_bn generate_crypto_objects \
+generate: generate_crypto_bn generate_crypto_objects \
           generate_crypto_conf generate_crypto_asn1 generate_fuzz_oids
 
 # Test coverage is a good idea for the future
@@ -905,10 +905,6 @@ generate: generate_apps generate_crypto_bn generate_crypto_objects \
 
 lint:
 	lint -DLINT $(INCLUDES) $(SRCS)
-
-generate_apps:
-	( cd $(SRCDIR); $(PERL) VMS/VMSify-conf.pl \
-				< apps/openssl.cnf > apps/openssl-vms.cnf )
 
 generate_crypto_bn:
 	( cd $(SRCDIR); $(PERL) crypto/bn/bn_prime.pl > crypto/bn/bn_prime.h )

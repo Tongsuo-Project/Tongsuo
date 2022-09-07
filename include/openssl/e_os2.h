@@ -101,22 +101,6 @@ extern "C" {
 #  endif
 # endif
 
-/* ------------------------------- OpenVMS -------------------------------- */
-# if defined(__VMS) || defined(VMS)
-#  if !defined(OPENSSL_SYS_VMS)
-#   undef OPENSSL_SYS_UNIX
-#   define OPENSSL_SYS_VMS
-#  endif
-#  if defined(__DECC)
-#   define OPENSSL_SYS_VMS_DECC
-#  elif defined(__DECCXX)
-#   define OPENSSL_SYS_VMS_DECC
-#   define OPENSSL_SYS_VMS_DECCXX
-#  else
-#   define OPENSSL_SYS_VMS_NODECC
-#  endif
-# endif
-
 /* -------------------------------- Unix ---------------------------------- */
 # ifdef OPENSSL_SYS_UNIX
 #  if defined(linux) || defined(__linux__) && !defined(OPENSSL_SYS_LINUX)
@@ -229,8 +213,7 @@ typedef UINT32 uint32_t;
 typedef INT64 int64_t;
 typedef UINT64 uint64_t;
 # elif (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) || \
-     defined(__osf__) || defined(__sgi) || \
-     defined(OPENSSL_SYS_VMS) || defined (__OpenBSD__)
+     defined(__osf__) || defined(__sgi) || defined (__OpenBSD__)
 #  include <inttypes.h>
 #  undef OPENSSL_NO_INTTYPES_H
 /* Because the specs say that inttypes.h includes stdint.h if present */

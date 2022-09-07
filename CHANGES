@@ -4,6 +4,8 @@
 
  Changes between 8.3.0 and 8.4.0 [xx XXX xxxx]
 
+  *) 删除对VMS系统的支持
+
   *) 删除多种文档相关、工具类代码
 
   *) 删除RIPEMD算法

@@ -13,7 +13,7 @@ $VERSION = '0.1';
 @EXPORT = qw(glob);
 
 sub glob {
-    goto &File::Glob::bsd_glob if $^O ne "VMS";
+    goto &File::Glob::bsd_glob;
     goto &CORE::glob;
 }
 

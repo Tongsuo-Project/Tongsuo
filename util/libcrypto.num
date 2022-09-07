@@ -1598,8 +1598,7 @@ X509_ATTRIBUTE_create_by_NID            1669	3_0_0	EXIST::FUNCTION:
 TS_VERIFY_CTX_free                      1670	3_0_0	EXIST::FUNCTION:TS
 EC_KEY_up_ref                           1671	3_0_0	EXIST::FUNCTION:DEPRECATEDIN_3_0,EC
 EC_GROUP_get_basis_type                 1672	3_0_0	EXIST::FUNCTION:EC
-OCSP_crlID_new                          1673	3_0_0	EXIST:!VMS:FUNCTION:OCSP
-OCSP_crlID2_new                         1673	3_0_0	EXIST:VMS:FUNCTION:OCSP
+OCSP_crlID_new                          1673	3_0_0	EXIST::FUNCTION:OCSP
 PEM_write_PKCS7                         1674	3_0_0	EXIST::FUNCTION:STDIO
 PKCS7_add_signer                        1675	3_0_0	EXIST::FUNCTION:
 X509_SIG_it                             1676	3_0_0	EXIST::FUNCTION:
@@ -2018,8 +2017,7 @@ ENGINE_register_pkey_meths              2108	3_0_0	EXIST::FUNCTION:DEPRECATEDIN_
 ENGINE_load_public_key                  2109	3_0_0	EXIST::FUNCTION:DEPRECATEDIN_3_0,ENGINE
 ASIdOrRange_it                          2110	3_0_0	EXIST::FUNCTION:RFC3779
 DHparams_print_fp                       2111	3_0_0	EXIST::FUNCTION:DEPRECATEDIN_3_0,DH,STDIO
-ERR_load_CRYPTO_strings                 2112	3_0_0	EXIST:!VMS:FUNCTION:DEPRECATEDIN_3_0
-ERR_load_CRYPTOlib_strings              2112	3_0_0	EXIST:VMS:FUNCTION:DEPRECATEDIN_3_0
+ERR_load_CRYPTO_strings                 2112	3_0_0	EXIST::FUNCTION:DEPRECATEDIN_3_0
 X509_REQ_set_version                    2113	3_0_0	EXIST::FUNCTION:
 d2i_ASN1_GENERALSTRING                  2114	3_0_0	EXIST::FUNCTION:
 i2d_ASIdentifiers                       2115	3_0_0	EXIST::FUNCTION:RFC3779

@@ -12,15 +12,6 @@
 
 # include <openssl/e_os2.h>
 
-# if defined(OPENSSL_SYS_VMS) && defined(__DECC)
-/*
- * VMS C only for now, implemented in vms_decc_init.c
- * If other C compilers forget to terminate argv with NULL, this function
- * can be re-used.
- */
-char **copy_argv(int *argc, char *argv[]);
-# endif
-
 # ifdef _WIN32
 /*
  * Win32-specific argv initialization that splits OS-supplied UNICODE

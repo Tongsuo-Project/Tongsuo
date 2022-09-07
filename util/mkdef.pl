@@ -35,18 +35,14 @@ my $debug = 0;
 
 my $symbol_prefix = $config{symbol_prefix}||"";
 
-# For VMS, some modules may have case insensitive names
-my $case_insensitive = 0;
-
 GetOptions('name=s'     => \$name,
            'ordinals=s' => \$ordinals_file,
            'version=s'  => \$version,
            'OS=s'       => \$OS,
            'ctest'      => \$ctest,
            'verbose'    => \$verbose,
-           'debug'      => \$debug,
-           # For VMS
-           'case-insensitive' => \$case_insensitive)
+           'debug'      => \$debug
+          )
     or die "Error in command line arguments\n";
 
 die "Please supply arguments\n"
@@ -116,10 +112,6 @@ my %OS_data = (
     aix         => { writer     => \&writer_aix,
                      sort       => sorter_unix(),
                      platforms  => { UNIX                       => 1 } },
-    VMS         => { writer     => \&writer_VMS,
-                     sort       => OpenSSL::Ordinals::by_number(),
-                     platforms  => { VMS                        => 1 } },
-    vms         => 'VMS',       # alias
     WINDOWS     => { writer     => \&writer_windows,
                      sort       => OpenSSL::Ordinals::by_name(),
                      platforms  => { WIN32                      => 1,
@@ -329,109 +321,6 @@ _____
             print "=". platform->export2internal($symbol_prefix.$_->name());
         }
         print "\n";
-    }
-}
-
-sub collect_VMS_mixedcase {
-    return [ 'SPARE', 'SPARE' ] unless @_;
-
-    my $s = shift;
-    my $s_uc = uc($s);
-    my $type = shift;
-
-    return [ "$s=$type", 'SPARE' ] if $s_uc eq $s;
-    return [ "$s_uc/$s=$type", "$s=$type" ];
-}
-
-sub collect_VMS_uppercase {
-    return [ 'SPARE' ] unless @_;
-
-    my $s = shift;
-    my $s_uc = uc($s);
-    my $type = shift;
-
-    return [ "$s_uc=$type" ];
-}
-
-sub writer_VMS {
-    my @slot_collection = ();
-    my $collector =
-        $case_insensitive ? \&collect_VMS_uppercase : \&collect_VMS_mixedcase;
-
-    my $last_num = 0;
-    foreach (@_) {
-        my $this_num = $_->number();
-        $this_num = $last_num + 1 if $this_num =~ m|^\?|;
-
-        while (++$last_num < $this_num) {
-            push @slot_collection, $collector->(); # Just occupy a slot
-        }
-        my $type = {
-            FUNCTION    => 'PROCEDURE',
-            VARIABLE    => 'DATA'
-           } -> {$_->type()};
-        push @slot_collection, $collector->(alias($_->name()), $type);
-    }
-
-    print <<"_____" if defined $version;
-IDENTIFICATION=$version
-_____
-    print <<"_____" unless $case_insensitive;
-CASE_SENSITIVE=YES
-_____
-    print <<"_____";
-SYMBOL_VECTOR=(-
-_____
-    # It's uncertain how long aggregated lines the linker can handle,
-    # but it has been observed that at least 1024 characters is ok.
-    # Either way, this means that we need to keep track of the total
-    # line length of each "SYMBOL_VECTOR" statement.  Fortunately, we
-    # can have more than one of those...
-    my $symvtextcount = 16;     # The length of "SYMBOL_VECTOR=("
-    while (@slot_collection) {
-        my $set = shift @slot_collection;
-        my $settextlength = 0;
-        foreach (@$set) {
-            $settextlength +=
-                + 3             # two space indentation and comma
-                + length($_)
-                + 1             # postdent
-                ;
-        }
-        $settextlength--;       # only one space indentation on the first one
-        my $firstcomma = ',';
-
-        if ($symvtextcount + $settextlength > 1024) {
-            print <<"_____";
-)
-SYMBOL_VECTOR=(-
-_____
-            $symvtextcount = 16; # The length of "SYMBOL_VECTOR=("
-        }
-        if ($symvtextcount == 16) {
-            $firstcomma = '';
-        }
-
-        my $indent = ' '.$firstcomma;
-        foreach (@$set) {
-            print <<"_____";
-$indent$_ -
-_____
-            $symvtextcount += length($indent) + length($_) + 1;
-            $indent = '  ,';
-        }
-    }
-    print <<"_____";
-)
-_____
-
-    if (defined $version) {
-        $version =~ /^(\d+)\.(\d+)\.(\d+)/;
-        my $libvmajor = $1;
-        my $libvminor = $2 * 100 + $3;
-        print <<"_____";
-GSMATCH=LEQUAL,$libvmajor,$libvminor
-_____
     }
 }
 

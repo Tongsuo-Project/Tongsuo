@@ -12,7 +12,7 @@ package ssltests;
 
 sub test_run
 {
-    my $dir_sep = $^O ne "VMS" ? "/" : "";
+    my $dir_sep = "/";
     my $ret = "\${ENV::TEST_RUNS_DIR}";
 
     foreach (@_) {
@@ -24,7 +24,7 @@ sub test_run
 
 sub test_pem
 {
-    my $dir_sep = $^O ne "VMS" ? "/" : "";
+    my $dir_sep = "/";
     my $ret = "\${ENV::TEST_CERTS_DIR}";
 
     foreach (@_) {

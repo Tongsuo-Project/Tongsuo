@@ -617,16 +617,6 @@ static int file_name_check(struct file_ctx_st *ctx, const char *name)
     while (isdigit(*p))
         p++;
 
-#ifdef __VMS
-    /*
-     * One extra step here, check for a possible generation number.
-     */
-    if (*p == ';')
-        for (p++; *p != '\0'; p++)
-            if (!ossl_isdigit(*p))
-                break;
-#endif
-
     /*
      * If we've reached the end of the string at this point, we've successfully
      * found a fitting file name.

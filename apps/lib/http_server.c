@@ -9,14 +9,6 @@
 
 /* Very basic HTTP server */
 
-#if !defined(_POSIX_C_SOURCE) && defined(OPENSSL_SYS_VMS)
-/*
- * On VMS, you need to define this to get the declaration of fileno().  The
- * value 2 is to make sure no function defined in POSIX-2 is left undefined.
- */
-# define _POSIX_C_SOURCE 2
-#endif
-
 #include <string.h>
 #include <ctype.h>
 #include "http_server.h"

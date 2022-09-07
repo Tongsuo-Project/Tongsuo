@@ -9,34 +9,11 @@
  use File::Spec::Unix;
  use File::Spec;
  use Cwd qw(abs_path);
- sub _fixup_path {
-     my $path = shift;
-
-     # Make the path absolute at all times
-     $path = abs_path($path);
-
-     if ($^O eq 'VMS') {
-         # Convert any path of the VMS form VOLUME:[DIR1.DIR2]FILE to the
-         # Unix form /VOLUME/DIR1/DIR2/FILE, which is what VMS perl supports
-         # for 'use lib'.
-
-         # Start with spliting the native path
-         (my $vol, my $dirs, my $file) = File::Spec->splitpath($path);
-         my @dirs = File::Spec->splitdir($dirs);
-
-         # Reassemble it as a Unix path
-         $vol =~ s|:$||;
-         $dirs = File::Spec::Unix->catdir('', $vol, @dirs);
-         $path = File::Spec::Unix->catpath('', $dirs, $file);
-     }
-
-     return $path;
- }
  sub sourcedir {
-     return _fixup_path(File::Spec->catdir($config{sourcedir}, @_))
+     return abs_path(File::Spec->catdir($config{sourcedir}, @_))
  }
  sub sourcefile {
-     return _fixup_path(File::Spec->catfile($config{sourcedir}, @_))
+     return abs_path(File::Spec->catfile($config{sourcedir}, @_))
  }
  use lib sourcedir('util', 'perl');
  use OpenSSL::Util;
