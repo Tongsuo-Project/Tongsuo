@@ -144,24 +144,17 @@ EOF
         }
     }
 
-    my %md_disabler = (
-        blake2b512 => "blake2",
-        blake2s256 => "blake2",
-    );
     foreach my $cmd (
         "md5",
         "sha1", "sha224", "sha256", "sha384",
         "sha512", "sha512-224", "sha512-256",
         "sha3-224", "sha3-256", "sha3-384", "sha3-512",
         "shake128", "shake256",
-        "blake2b512", "blake2s256",
         "sm3"
     ) {
         my $str = "    {FT_md, \"$cmd\", dgst_main, NULL, NULL},\n";
         if (grep { $cmd eq $_ } @disablables) {
             print "#ifndef OPENSSL_NO_" . uc($cmd) . "\n${str}#endif\n";
-        } elsif (my $disabler = $md_disabler{$cmd}) {
-            print "#ifndef OPENSSL_NO_" . uc($disabler) . "\n${str}#endif\n";
         } else {
             print $str;
         }

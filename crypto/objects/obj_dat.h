@@ -10,7 +10,7 @@
  */
 
 /* Serialized OID's */
-static const unsigned char so[6641] = {
+static const unsigned char so[6599] = {
     0x2A,0x86,0x48,0x86,0xF7,0x0D,                 /* [    0] OBJ_rsadsi */
     0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,            /* [    6] OBJ_pkcs */
     0x2A,0x86,0x48,0x86,0xF7,0x0D,0x02,0x05,       /* [   13] OBJ_md5 */
@@ -821,117 +821,113 @@ static const unsigned char so[6641] = {
     0x2B,0x06,0x01,0x05,0x02,0x03,0x05,            /* [ 5672] OBJ_pkInitKDC */
     0x2B,0x65,0x6E,                                /* [ 5679] OBJ_X25519 */
     0x2B,0x65,0x6F,                                /* [ 5682] OBJ_X448 */
-    0x2B,0x06,0x01,0x04,0x01,0x8D,0x3A,0x0C,0x02,0x01,0x10,  /* [ 5685] OBJ_blake2b512 */
-    0x2B,0x06,0x01,0x04,0x01,0x8D,0x3A,0x0C,0x02,0x02,0x08,  /* [ 5696] OBJ_blake2s256 */
-    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x09,0x10,0x01,0x13,  /* [ 5707] OBJ_id_smime_ct_contentCollection */
-    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x09,0x10,0x01,0x17,  /* [ 5718] OBJ_id_smime_ct_authEnvelopedData */
-    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x09,0x10,0x01,0x1C,  /* [ 5729] OBJ_id_ct_xml */
-    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x09,0x10,0x02,0x2F,  /* [ 5740] OBJ_id_smime_aa_signingCertificateV2 */
-    0x2B,0x65,0x70,                                /* [ 5751] OBJ_ED25519 */
-    0x2B,0x65,0x71,                                /* [ 5754] OBJ_ED448 */
-    0x55,0x04,0x61,                                /* [ 5757] OBJ_organizationIdentifier */
-    0x55,0x04,0x62,                                /* [ 5760] OBJ_countryCode3c */
-    0x55,0x04,0x63,                                /* [ 5763] OBJ_countryCode3n */
-    0x55,0x04,0x64,                                /* [ 5766] OBJ_dnsName */
-    0x2B,0x24,0x08,0x03,0x03,                      /* [ 5769] OBJ_x509ExtAdmission */
-    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x05,  /* [ 5774] OBJ_sha512_224 */
-    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x06,  /* [ 5783] OBJ_sha512_256 */
-    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x07,  /* [ 5792] OBJ_sha3_224 */
-    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x08,  /* [ 5801] OBJ_sha3_256 */
-    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x09,  /* [ 5810] OBJ_sha3_384 */
-    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x0A,  /* [ 5819] OBJ_sha3_512 */
-    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x0B,  /* [ 5828] OBJ_shake128 */
-    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x0C,  /* [ 5837] OBJ_shake256 */
-    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x0D,  /* [ 5846] OBJ_hmac_sha3_224 */
-    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x0E,  /* [ 5855] OBJ_hmac_sha3_256 */
-    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x0F,  /* [ 5864] OBJ_hmac_sha3_384 */
-    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x10,  /* [ 5873] OBJ_hmac_sha3_512 */
-    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x03,  /* [ 5882] OBJ_dsa_with_SHA384 */
-    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x04,  /* [ 5891] OBJ_dsa_with_SHA512 */
-    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x05,  /* [ 5900] OBJ_dsa_with_SHA3_224 */
-    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x06,  /* [ 5909] OBJ_dsa_with_SHA3_256 */
-    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x07,  /* [ 5918] OBJ_dsa_with_SHA3_384 */
-    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x08,  /* [ 5927] OBJ_dsa_with_SHA3_512 */
-    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x09,  /* [ 5936] OBJ_ecdsa_with_SHA3_224 */
-    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x0A,  /* [ 5945] OBJ_ecdsa_with_SHA3_256 */
-    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x0B,  /* [ 5954] OBJ_ecdsa_with_SHA3_384 */
-    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x0C,  /* [ 5963] OBJ_ecdsa_with_SHA3_512 */
-    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x0D,  /* [ 5972] OBJ_RSA_SHA3_224 */
-    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x0E,  /* [ 5981] OBJ_RSA_SHA3_256 */
-    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x0F,  /* [ 5990] OBJ_RSA_SHA3_384 */
-    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x10,  /* [ 5999] OBJ_RSA_SHA3_512 */
-    0x2B,0x06,0x01,0x05,0x05,0x07,0x03,0x1B,       /* [ 6008] OBJ_cmcCA */
-    0x2B,0x06,0x01,0x05,0x05,0x07,0x03,0x1C,       /* [ 6016] OBJ_cmcRA */
-    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x68,0x01,       /* [ 6024] OBJ_sm4_ecb */
-    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x68,0x02,       /* [ 6032] OBJ_sm4_cbc */
-    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x68,0x03,       /* [ 6040] OBJ_sm4_ofb128 */
-    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x68,0x05,       /* [ 6048] OBJ_sm4_cfb1 */
-    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x68,0x04,       /* [ 6056] OBJ_sm4_cfb128 */
-    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x68,0x06,       /* [ 6064] OBJ_sm4_cfb8 */
-    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x68,0x07,       /* [ 6072] OBJ_sm4_ctr */
-    0x2A,0x81,0x1C,                                /* [ 6080] OBJ_ISO_CN */
-    0x2A,0x81,0x1C,0xCF,0x55,                      /* [ 6083] OBJ_oscca */
-    0x2A,0x81,0x1C,0xCF,0x55,0x01,                 /* [ 6088] OBJ_sm_scheme */
-    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x83,0x11,       /* [ 6094] OBJ_sm3 */
-    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x83,0x78,       /* [ 6102] OBJ_sm3WithRSAEncryption */
-    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x01,0x0F,  /* [ 6110] OBJ_sha512_224WithRSAEncryption */
-    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x01,0x10,  /* [ 6119] OBJ_sha512_256WithRSAEncryption */
-    0x2A,0x86,0x24,                                /* [ 6128] OBJ_ISO_UA */
-    0x2A,0x86,0x24,0x02,0x01,0x01,0x01,            /* [ 6131] OBJ_ua_pki */
-    0x2A,0x86,0x24,0x02,0x01,0x01,0x01,0x01,0x03,0x01,0x01,  /* [ 6138] OBJ_dstu4145le */
-    0x2A,0x86,0x24,0x02,0x01,0x01,0x01,0x01,0x03,0x01,0x01,0x01,0x01,  /* [ 6149] OBJ_dstu4145be */
-    0x2A,0x86,0x24,0x02,0x01,0x01,0x01,0x01,0x03,0x01,0x01,0x02,0x00,  /* [ 6162] OBJ_uacurve0 */
-    0x2A,0x86,0x24,0x02,0x01,0x01,0x01,0x01,0x03,0x01,0x01,0x02,0x01,  /* [ 6175] OBJ_uacurve1 */
-    0x2A,0x86,0x24,0x02,0x01,0x01,0x01,0x01,0x03,0x01,0x01,0x02,0x02,  /* [ 6188] OBJ_uacurve2 */
-    0x2A,0x86,0x24,0x02,0x01,0x01,0x01,0x01,0x03,0x01,0x01,0x02,0x03,  /* [ 6201] OBJ_uacurve3 */
-    0x2A,0x86,0x24,0x02,0x01,0x01,0x01,0x01,0x03,0x01,0x01,0x02,0x04,  /* [ 6214] OBJ_uacurve4 */
-    0x2A,0x86,0x24,0x02,0x01,0x01,0x01,0x01,0x03,0x01,0x01,0x02,0x05,  /* [ 6227] OBJ_uacurve5 */
-    0x2A,0x86,0x24,0x02,0x01,0x01,0x01,0x01,0x03,0x01,0x01,0x02,0x06,  /* [ 6240] OBJ_uacurve6 */
-    0x2A,0x86,0x24,0x02,0x01,0x01,0x01,0x01,0x03,0x01,0x01,0x02,0x07,  /* [ 6253] OBJ_uacurve7 */
-    0x2A,0x86,0x24,0x02,0x01,0x01,0x01,0x01,0x03,0x01,0x01,0x02,0x08,  /* [ 6266] OBJ_uacurve8 */
-    0x2A,0x86,0x24,0x02,0x01,0x01,0x01,0x01,0x03,0x01,0x01,0x02,0x09,  /* [ 6279] OBJ_uacurve9 */
-    0x2B,0x6F,                                     /* [ 6292] OBJ_ieee */
-    0x2B,0x6F,0x02,0x8C,0x53,                      /* [ 6294] OBJ_ieee_siswg */
-    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x82,0x2D,       /* [ 6299] OBJ_sm2 */
-    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x02,0x0C,       /* [ 6307] OBJ_hmacWithSHA512_224 */
-    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x02,0x0D,       /* [ 6315] OBJ_hmacWithSHA512_256 */
-    0x28,0xCC,0x45,0x03,0x04,                      /* [ 6323] OBJ_gmac */
-    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x13,  /* [ 6328] OBJ_kmac128 */
-    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x14,  /* [ 6337] OBJ_kmac256 */
-    0x2B,0x06,0x01,0x04,0x01,0x8D,0x3A,0x0C,0x02,0x01,  /* [ 6346] OBJ_blake2bmac */
-    0x2B,0x06,0x01,0x04,0x01,0x8D,0x3A,0x0C,0x02,0x02,  /* [ 6356] OBJ_blake2smac */
-    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x83,0x75,       /* [ 6366] OBJ_SM2_with_SM3 */
-    0x2B,0x06,0x01,0x05,0x05,0x07,0x08,0x09,       /* [ 6374] OBJ_id_on_SmtpUTF8Mailbox */
-    0x2B,0x06,0x01,0x05,0x05,0x07,0x08,0x05,       /* [ 6382] OBJ_XmppAddr */
-    0x2B,0x06,0x01,0x05,0x05,0x07,0x08,0x07,       /* [ 6390] OBJ_SRVName */
-    0x2B,0x06,0x01,0x05,0x05,0x07,0x08,0x08,       /* [ 6398] OBJ_NAIRealm */
-    0x2B,0x06,0x01,0x05,0x05,0x07,0x03,0x1D,       /* [ 6406] OBJ_cmcArchive */
-    0x2B,0x06,0x01,0x05,0x05,0x07,0x03,0x1E,       /* [ 6414] OBJ_id_kp_bgpsec_router */
-    0x2B,0x06,0x01,0x05,0x05,0x07,0x03,0x1F,       /* [ 6422] OBJ_id_kp_BrandIndicatorforMessageIdentification */
-    0x2B,0x06,0x01,0x05,0x05,0x07,0x03,0x20,       /* [ 6430] OBJ_cmKGA */
-    0x2B,0x06,0x01,0x05,0x05,0x07,0x04,0x11,       /* [ 6438] OBJ_id_it_caCerts */
-    0x2B,0x06,0x01,0x05,0x05,0x07,0x04,0x12,       /* [ 6446] OBJ_id_it_rootCaKeyUpdate */
-    0x2B,0x06,0x01,0x05,0x05,0x07,0x04,0x13,       /* [ 6454] OBJ_id_it_certReqTemplate */
-    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x09,0x10,0x01,0x18,  /* [ 6462] OBJ_id_ct_routeOriginAuthz */
-    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x09,0x10,0x01,0x1A,  /* [ 6473] OBJ_id_ct_rpkiManifest */
-    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x09,0x10,0x01,0x23,  /* [ 6484] OBJ_id_ct_rpkiGhostbusters */
-    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x09,0x10,0x01,0x24,  /* [ 6495] OBJ_id_ct_resourceTaggedAttest */
-    0x2B,0x06,0x01,0x05,0x05,0x07,0x0E,            /* [ 6506] OBJ_id_cp */
-    0x2B,0x06,0x01,0x05,0x05,0x07,0x01,0x1C,       /* [ 6513] OBJ_sbgp_ipAddrBlockv2 */
-    0x2B,0x06,0x01,0x05,0x05,0x07,0x01,0x1D,       /* [ 6521] OBJ_sbgp_autonomousSysNumv2 */
-    0x2B,0x06,0x01,0x05,0x05,0x07,0x0E,0x02,       /* [ 6529] OBJ_ipAddr_asNumber */
-    0x2B,0x06,0x01,0x05,0x05,0x07,0x0E,0x03,       /* [ 6537] OBJ_ipAddr_asNumberv2 */
-    0x2B,0x06,0x01,0x05,0x05,0x07,0x30,0x0A,       /* [ 6545] OBJ_rpkiManifest */
-    0x2B,0x06,0x01,0x05,0x05,0x07,0x30,0x0B,       /* [ 6553] OBJ_signedObject */
-    0x2B,0x06,0x01,0x05,0x05,0x07,0x30,0x0D,       /* [ 6561] OBJ_rpkiNotify */
-    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x09,0x10,0x01,0x2F,  /* [ 6569] OBJ_id_ct_geofeedCSVwithCRLF */
-    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x09,0x10,0x01,0x30,  /* [ 6580] OBJ_id_ct_signedChecklist */
-    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x81,0x49,       /* [ 6591] OBJ_zuc */
-    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x86,0x21,       /* [ 6599] OBJ_zuc_128_eea3 */
-    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x68,0x08,       /* [ 6607] OBJ_sm4_gcm */
-    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x68,0x09,       /* [ 6615] OBJ_sm4_ccm */
-    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x86,0x22,       /* [ 6623] OBJ_zuc_128_eia3 */
-    0x2B,0x06,0x01,0x04,0x01,0x82,0xDA,0x4B,0x2C,  /* [ 6631] OBJ_delegation_usage */
+    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x09,0x10,0x01,0x13,  /* [ 5685] OBJ_id_smime_ct_contentCollection */
+    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x09,0x10,0x01,0x17,  /* [ 5696] OBJ_id_smime_ct_authEnvelopedData */
+    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x09,0x10,0x01,0x1C,  /* [ 5707] OBJ_id_ct_xml */
+    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x09,0x10,0x02,0x2F,  /* [ 5718] OBJ_id_smime_aa_signingCertificateV2 */
+    0x2B,0x65,0x70,                                /* [ 5729] OBJ_ED25519 */
+    0x2B,0x65,0x71,                                /* [ 5732] OBJ_ED448 */
+    0x55,0x04,0x61,                                /* [ 5735] OBJ_organizationIdentifier */
+    0x55,0x04,0x62,                                /* [ 5738] OBJ_countryCode3c */
+    0x55,0x04,0x63,                                /* [ 5741] OBJ_countryCode3n */
+    0x55,0x04,0x64,                                /* [ 5744] OBJ_dnsName */
+    0x2B,0x24,0x08,0x03,0x03,                      /* [ 5747] OBJ_x509ExtAdmission */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x05,  /* [ 5752] OBJ_sha512_224 */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x06,  /* [ 5761] OBJ_sha512_256 */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x07,  /* [ 5770] OBJ_sha3_224 */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x08,  /* [ 5779] OBJ_sha3_256 */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x09,  /* [ 5788] OBJ_sha3_384 */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x0A,  /* [ 5797] OBJ_sha3_512 */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x0B,  /* [ 5806] OBJ_shake128 */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x0C,  /* [ 5815] OBJ_shake256 */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x0D,  /* [ 5824] OBJ_hmac_sha3_224 */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x0E,  /* [ 5833] OBJ_hmac_sha3_256 */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x0F,  /* [ 5842] OBJ_hmac_sha3_384 */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x10,  /* [ 5851] OBJ_hmac_sha3_512 */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x03,  /* [ 5860] OBJ_dsa_with_SHA384 */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x04,  /* [ 5869] OBJ_dsa_with_SHA512 */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x05,  /* [ 5878] OBJ_dsa_with_SHA3_224 */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x06,  /* [ 5887] OBJ_dsa_with_SHA3_256 */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x07,  /* [ 5896] OBJ_dsa_with_SHA3_384 */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x08,  /* [ 5905] OBJ_dsa_with_SHA3_512 */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x09,  /* [ 5914] OBJ_ecdsa_with_SHA3_224 */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x0A,  /* [ 5923] OBJ_ecdsa_with_SHA3_256 */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x0B,  /* [ 5932] OBJ_ecdsa_with_SHA3_384 */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x0C,  /* [ 5941] OBJ_ecdsa_with_SHA3_512 */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x0D,  /* [ 5950] OBJ_RSA_SHA3_224 */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x0E,  /* [ 5959] OBJ_RSA_SHA3_256 */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x0F,  /* [ 5968] OBJ_RSA_SHA3_384 */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x10,  /* [ 5977] OBJ_RSA_SHA3_512 */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x03,0x1B,       /* [ 5986] OBJ_cmcCA */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x03,0x1C,       /* [ 5994] OBJ_cmcRA */
+    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x68,0x01,       /* [ 6002] OBJ_sm4_ecb */
+    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x68,0x02,       /* [ 6010] OBJ_sm4_cbc */
+    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x68,0x03,       /* [ 6018] OBJ_sm4_ofb128 */
+    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x68,0x05,       /* [ 6026] OBJ_sm4_cfb1 */
+    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x68,0x04,       /* [ 6034] OBJ_sm4_cfb128 */
+    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x68,0x06,       /* [ 6042] OBJ_sm4_cfb8 */
+    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x68,0x07,       /* [ 6050] OBJ_sm4_ctr */
+    0x2A,0x81,0x1C,                                /* [ 6058] OBJ_ISO_CN */
+    0x2A,0x81,0x1C,0xCF,0x55,                      /* [ 6061] OBJ_oscca */
+    0x2A,0x81,0x1C,0xCF,0x55,0x01,                 /* [ 6066] OBJ_sm_scheme */
+    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x83,0x11,       /* [ 6072] OBJ_sm3 */
+    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x83,0x78,       /* [ 6080] OBJ_sm3WithRSAEncryption */
+    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x01,0x0F,  /* [ 6088] OBJ_sha512_224WithRSAEncryption */
+    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x01,0x10,  /* [ 6097] OBJ_sha512_256WithRSAEncryption */
+    0x2A,0x86,0x24,                                /* [ 6106] OBJ_ISO_UA */
+    0x2A,0x86,0x24,0x02,0x01,0x01,0x01,            /* [ 6109] OBJ_ua_pki */
+    0x2A,0x86,0x24,0x02,0x01,0x01,0x01,0x01,0x03,0x01,0x01,  /* [ 6116] OBJ_dstu4145le */
+    0x2A,0x86,0x24,0x02,0x01,0x01,0x01,0x01,0x03,0x01,0x01,0x01,0x01,  /* [ 6127] OBJ_dstu4145be */
+    0x2A,0x86,0x24,0x02,0x01,0x01,0x01,0x01,0x03,0x01,0x01,0x02,0x00,  /* [ 6140] OBJ_uacurve0 */
+    0x2A,0x86,0x24,0x02,0x01,0x01,0x01,0x01,0x03,0x01,0x01,0x02,0x01,  /* [ 6153] OBJ_uacurve1 */
+    0x2A,0x86,0x24,0x02,0x01,0x01,0x01,0x01,0x03,0x01,0x01,0x02,0x02,  /* [ 6166] OBJ_uacurve2 */
+    0x2A,0x86,0x24,0x02,0x01,0x01,0x01,0x01,0x03,0x01,0x01,0x02,0x03,  /* [ 6179] OBJ_uacurve3 */
+    0x2A,0x86,0x24,0x02,0x01,0x01,0x01,0x01,0x03,0x01,0x01,0x02,0x04,  /* [ 6192] OBJ_uacurve4 */
+    0x2A,0x86,0x24,0x02,0x01,0x01,0x01,0x01,0x03,0x01,0x01,0x02,0x05,  /* [ 6205] OBJ_uacurve5 */
+    0x2A,0x86,0x24,0x02,0x01,0x01,0x01,0x01,0x03,0x01,0x01,0x02,0x06,  /* [ 6218] OBJ_uacurve6 */
+    0x2A,0x86,0x24,0x02,0x01,0x01,0x01,0x01,0x03,0x01,0x01,0x02,0x07,  /* [ 6231] OBJ_uacurve7 */
+    0x2A,0x86,0x24,0x02,0x01,0x01,0x01,0x01,0x03,0x01,0x01,0x02,0x08,  /* [ 6244] OBJ_uacurve8 */
+    0x2A,0x86,0x24,0x02,0x01,0x01,0x01,0x01,0x03,0x01,0x01,0x02,0x09,  /* [ 6257] OBJ_uacurve9 */
+    0x2B,0x6F,                                     /* [ 6270] OBJ_ieee */
+    0x2B,0x6F,0x02,0x8C,0x53,                      /* [ 6272] OBJ_ieee_siswg */
+    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x82,0x2D,       /* [ 6277] OBJ_sm2 */
+    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x02,0x0C,       /* [ 6285] OBJ_hmacWithSHA512_224 */
+    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x02,0x0D,       /* [ 6293] OBJ_hmacWithSHA512_256 */
+    0x28,0xCC,0x45,0x03,0x04,                      /* [ 6301] OBJ_gmac */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x13,  /* [ 6306] OBJ_kmac128 */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x14,  /* [ 6315] OBJ_kmac256 */
+    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x83,0x75,       /* [ 6324] OBJ_SM2_with_SM3 */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x08,0x09,       /* [ 6332] OBJ_id_on_SmtpUTF8Mailbox */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x08,0x05,       /* [ 6340] OBJ_XmppAddr */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x08,0x07,       /* [ 6348] OBJ_SRVName */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x08,0x08,       /* [ 6356] OBJ_NAIRealm */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x03,0x1D,       /* [ 6364] OBJ_cmcArchive */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x03,0x1E,       /* [ 6372] OBJ_id_kp_bgpsec_router */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x03,0x1F,       /* [ 6380] OBJ_id_kp_BrandIndicatorforMessageIdentification */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x03,0x20,       /* [ 6388] OBJ_cmKGA */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x04,0x11,       /* [ 6396] OBJ_id_it_caCerts */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x04,0x12,       /* [ 6404] OBJ_id_it_rootCaKeyUpdate */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x04,0x13,       /* [ 6412] OBJ_id_it_certReqTemplate */
+    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x09,0x10,0x01,0x18,  /* [ 6420] OBJ_id_ct_routeOriginAuthz */
+    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x09,0x10,0x01,0x1A,  /* [ 6431] OBJ_id_ct_rpkiManifest */
+    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x09,0x10,0x01,0x23,  /* [ 6442] OBJ_id_ct_rpkiGhostbusters */
+    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x09,0x10,0x01,0x24,  /* [ 6453] OBJ_id_ct_resourceTaggedAttest */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x0E,            /* [ 6464] OBJ_id_cp */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x01,0x1C,       /* [ 6471] OBJ_sbgp_ipAddrBlockv2 */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x01,0x1D,       /* [ 6479] OBJ_sbgp_autonomousSysNumv2 */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x0E,0x02,       /* [ 6487] OBJ_ipAddr_asNumber */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x0E,0x03,       /* [ 6495] OBJ_ipAddr_asNumberv2 */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x30,0x0A,       /* [ 6503] OBJ_rpkiManifest */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x30,0x0B,       /* [ 6511] OBJ_signedObject */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x30,0x0D,       /* [ 6519] OBJ_rpkiNotify */
+    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x09,0x10,0x01,0x2F,  /* [ 6527] OBJ_id_ct_geofeedCSVwithCRLF */
+    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x09,0x10,0x01,0x30,  /* [ 6538] OBJ_id_ct_signedChecklist */
+    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x81,0x49,       /* [ 6549] OBJ_zuc */
+    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x86,0x21,       /* [ 6557] OBJ_zuc_128_eea3 */
+    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x68,0x08,       /* [ 6565] OBJ_sm4_gcm */
+    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x68,0x09,       /* [ 6573] OBJ_sm4_ccm */
+    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x86,0x22,       /* [ 6581] OBJ_zuc_128_eia3 */
+    0x2B,0x06,0x01,0x04,0x01,0x82,0xDA,0x4B,0x2C,  /* [ 6589] OBJ_delegation_usage */
 };
 
 #define NUM_NID 1257
@@ -1992,11 +1988,11 @@ static const ASN1_OBJECT nid_objs[NUM_NID] = {
     {"AuthNULL", "auth-null", NID_auth_null},
     { NULL, NULL, NID_undef },
     { NULL, NULL, NID_undef },
-    {"BLAKE2b512", "blake2b512", NID_blake2b512, 11, &so[5685]},
-    {"BLAKE2s256", "blake2s256", NID_blake2s256, 11, &so[5696]},
-    {"id-smime-ct-contentCollection", "id-smime-ct-contentCollection", NID_id_smime_ct_contentCollection, 11, &so[5707]},
-    {"id-smime-ct-authEnvelopedData", "id-smime-ct-authEnvelopedData", NID_id_smime_ct_authEnvelopedData, 11, &so[5718]},
-    {"id-ct-xml", "id-ct-xml", NID_id_ct_xml, 11, &so[5729]},
+    { NULL, NULL, NID_undef },
+    { NULL, NULL, NID_undef },
+    {"id-smime-ct-contentCollection", "id-smime-ct-contentCollection", NID_id_smime_ct_contentCollection, 11, &so[5685]},
+    {"id-smime-ct-authEnvelopedData", "id-smime-ct-authEnvelopedData", NID_id_smime_ct_authEnvelopedData, 11, &so[5696]},
+    {"id-ct-xml", "id-ct-xml", NID_id_ct_xml, 11, &so[5707]},
     {"Poly1305", "poly1305", NID_poly1305},
     {"SipHash", "siphash", NID_siphash},
     {"KxANY", "kx-any", NID_kx_any},
@@ -2022,40 +2018,40 @@ static const ASN1_OBJECT nid_objs[NUM_NID] = {
     { NULL, NULL, NID_undef },
     { NULL, NULL, NID_undef },
     { NULL, NULL, NID_undef },
-    {"id-smime-aa-signingCertificateV2", "id-smime-aa-signingCertificateV2", NID_id_smime_aa_signingCertificateV2, 11, &so[5740]},
-    {"ED25519", "ED25519", NID_ED25519, 3, &so[5751]},
-    {"ED448", "ED448", NID_ED448, 3, &so[5754]},
-    {"organizationIdentifier", "organizationIdentifier", NID_organizationIdentifier, 3, &so[5757]},
-    {"c3", "countryCode3c", NID_countryCode3c, 3, &so[5760]},
-    {"n3", "countryCode3n", NID_countryCode3n, 3, &so[5763]},
-    {"dnsName", "dnsName", NID_dnsName, 3, &so[5766]},
-    {"x509ExtAdmission", "Professional Information or basis for Admission", NID_x509ExtAdmission, 5, &so[5769]},
-    {"SHA512-224", "sha512-224", NID_sha512_224, 9, &so[5774]},
-    {"SHA512-256", "sha512-256", NID_sha512_256, 9, &so[5783]},
-    {"SHA3-224", "sha3-224", NID_sha3_224, 9, &so[5792]},
-    {"SHA3-256", "sha3-256", NID_sha3_256, 9, &so[5801]},
-    {"SHA3-384", "sha3-384", NID_sha3_384, 9, &so[5810]},
-    {"SHA3-512", "sha3-512", NID_sha3_512, 9, &so[5819]},
-    {"SHAKE128", "shake128", NID_shake128, 9, &so[5828]},
-    {"SHAKE256", "shake256", NID_shake256, 9, &so[5837]},
-    {"id-hmacWithSHA3-224", "hmac-sha3-224", NID_hmac_sha3_224, 9, &so[5846]},
-    {"id-hmacWithSHA3-256", "hmac-sha3-256", NID_hmac_sha3_256, 9, &so[5855]},
-    {"id-hmacWithSHA3-384", "hmac-sha3-384", NID_hmac_sha3_384, 9, &so[5864]},
-    {"id-hmacWithSHA3-512", "hmac-sha3-512", NID_hmac_sha3_512, 9, &so[5873]},
-    {"id-dsa-with-sha384", "dsa_with_SHA384", NID_dsa_with_SHA384, 9, &so[5882]},
-    {"id-dsa-with-sha512", "dsa_with_SHA512", NID_dsa_with_SHA512, 9, &so[5891]},
-    {"id-dsa-with-sha3-224", "dsa_with_SHA3-224", NID_dsa_with_SHA3_224, 9, &so[5900]},
-    {"id-dsa-with-sha3-256", "dsa_with_SHA3-256", NID_dsa_with_SHA3_256, 9, &so[5909]},
-    {"id-dsa-with-sha3-384", "dsa_with_SHA3-384", NID_dsa_with_SHA3_384, 9, &so[5918]},
-    {"id-dsa-with-sha3-512", "dsa_with_SHA3-512", NID_dsa_with_SHA3_512, 9, &so[5927]},
-    {"id-ecdsa-with-sha3-224", "ecdsa_with_SHA3-224", NID_ecdsa_with_SHA3_224, 9, &so[5936]},
-    {"id-ecdsa-with-sha3-256", "ecdsa_with_SHA3-256", NID_ecdsa_with_SHA3_256, 9, &so[5945]},
-    {"id-ecdsa-with-sha3-384", "ecdsa_with_SHA3-384", NID_ecdsa_with_SHA3_384, 9, &so[5954]},
-    {"id-ecdsa-with-sha3-512", "ecdsa_with_SHA3-512", NID_ecdsa_with_SHA3_512, 9, &so[5963]},
-    {"id-rsassa-pkcs1-v1_5-with-sha3-224", "RSA-SHA3-224", NID_RSA_SHA3_224, 9, &so[5972]},
-    {"id-rsassa-pkcs1-v1_5-with-sha3-256", "RSA-SHA3-256", NID_RSA_SHA3_256, 9, &so[5981]},
-    {"id-rsassa-pkcs1-v1_5-with-sha3-384", "RSA-SHA3-384", NID_RSA_SHA3_384, 9, &so[5990]},
-    {"id-rsassa-pkcs1-v1_5-with-sha3-512", "RSA-SHA3-512", NID_RSA_SHA3_512, 9, &so[5999]},
+    {"id-smime-aa-signingCertificateV2", "id-smime-aa-signingCertificateV2", NID_id_smime_aa_signingCertificateV2, 11, &so[5718]},
+    {"ED25519", "ED25519", NID_ED25519, 3, &so[5729]},
+    {"ED448", "ED448", NID_ED448, 3, &so[5732]},
+    {"organizationIdentifier", "organizationIdentifier", NID_organizationIdentifier, 3, &so[5735]},
+    {"c3", "countryCode3c", NID_countryCode3c, 3, &so[5738]},
+    {"n3", "countryCode3n", NID_countryCode3n, 3, &so[5741]},
+    {"dnsName", "dnsName", NID_dnsName, 3, &so[5744]},
+    {"x509ExtAdmission", "Professional Information or basis for Admission", NID_x509ExtAdmission, 5, &so[5747]},
+    {"SHA512-224", "sha512-224", NID_sha512_224, 9, &so[5752]},
+    {"SHA512-256", "sha512-256", NID_sha512_256, 9, &so[5761]},
+    {"SHA3-224", "sha3-224", NID_sha3_224, 9, &so[5770]},
+    {"SHA3-256", "sha3-256", NID_sha3_256, 9, &so[5779]},
+    {"SHA3-384", "sha3-384", NID_sha3_384, 9, &so[5788]},
+    {"SHA3-512", "sha3-512", NID_sha3_512, 9, &so[5797]},
+    {"SHAKE128", "shake128", NID_shake128, 9, &so[5806]},
+    {"SHAKE256", "shake256", NID_shake256, 9, &so[5815]},
+    {"id-hmacWithSHA3-224", "hmac-sha3-224", NID_hmac_sha3_224, 9, &so[5824]},
+    {"id-hmacWithSHA3-256", "hmac-sha3-256", NID_hmac_sha3_256, 9, &so[5833]},
+    {"id-hmacWithSHA3-384", "hmac-sha3-384", NID_hmac_sha3_384, 9, &so[5842]},
+    {"id-hmacWithSHA3-512", "hmac-sha3-512", NID_hmac_sha3_512, 9, &so[5851]},
+    {"id-dsa-with-sha384", "dsa_with_SHA384", NID_dsa_with_SHA384, 9, &so[5860]},
+    {"id-dsa-with-sha512", "dsa_with_SHA512", NID_dsa_with_SHA512, 9, &so[5869]},
+    {"id-dsa-with-sha3-224", "dsa_with_SHA3-224", NID_dsa_with_SHA3_224, 9, &so[5878]},
+    {"id-dsa-with-sha3-256", "dsa_with_SHA3-256", NID_dsa_with_SHA3_256, 9, &so[5887]},
+    {"id-dsa-with-sha3-384", "dsa_with_SHA3-384", NID_dsa_with_SHA3_384, 9, &so[5896]},
+    {"id-dsa-with-sha3-512", "dsa_with_SHA3-512", NID_dsa_with_SHA3_512, 9, &so[5905]},
+    {"id-ecdsa-with-sha3-224", "ecdsa_with_SHA3-224", NID_ecdsa_with_SHA3_224, 9, &so[5914]},
+    {"id-ecdsa-with-sha3-256", "ecdsa_with_SHA3-256", NID_ecdsa_with_SHA3_256, 9, &so[5923]},
+    {"id-ecdsa-with-sha3-384", "ecdsa_with_SHA3-384", NID_ecdsa_with_SHA3_384, 9, &so[5932]},
+    {"id-ecdsa-with-sha3-512", "ecdsa_with_SHA3-512", NID_ecdsa_with_SHA3_512, 9, &so[5941]},
+    {"id-rsassa-pkcs1-v1_5-with-sha3-224", "RSA-SHA3-224", NID_RSA_SHA3_224, 9, &so[5950]},
+    {"id-rsassa-pkcs1-v1_5-with-sha3-256", "RSA-SHA3-256", NID_RSA_SHA3_256, 9, &so[5959]},
+    {"id-rsassa-pkcs1-v1_5-with-sha3-384", "RSA-SHA3-384", NID_RSA_SHA3_384, 9, &so[5968]},
+    {"id-rsassa-pkcs1-v1_5-with-sha3-512", "RSA-SHA3-512", NID_RSA_SHA3_512, 9, &so[5977]},
     { NULL, NULL, NID_undef },
     { NULL, NULL, NID_undef },
     { NULL, NULL, NID_undef },
@@ -2067,52 +2063,48 @@ static const ASN1_OBJECT nid_objs[NUM_NID] = {
     {"ffdhe4096", "ffdhe4096", NID_ffdhe4096},
     {"ffdhe6144", "ffdhe6144", NID_ffdhe6144},
     {"ffdhe8192", "ffdhe8192", NID_ffdhe8192},
-    {"cmcCA", "CMC Certificate Authority", NID_cmcCA, 8, &so[6008]},
-    {"cmcRA", "CMC Registration Authority", NID_cmcRA, 8, &so[6016]},
-    {"SM4-ECB", "sm4-ecb", NID_sm4_ecb, 8, &so[6024]},
-    {"SM4-CBC", "sm4-cbc", NID_sm4_cbc, 8, &so[6032]},
-    {"SM4-OFB", "sm4-ofb", NID_sm4_ofb128, 8, &so[6040]},
-    {"SM4-CFB1", "sm4-cfb1", NID_sm4_cfb1, 8, &so[6048]},
-    {"SM4-CFB", "sm4-cfb", NID_sm4_cfb128, 8, &so[6056]},
-    {"SM4-CFB8", "sm4-cfb8", NID_sm4_cfb8, 8, &so[6064]},
-    {"SM4-CTR", "sm4-ctr", NID_sm4_ctr, 8, &so[6072]},
-    {"ISO-CN", "ISO CN Member Body", NID_ISO_CN, 3, &so[6080]},
-    {"oscca", "oscca", NID_oscca, 5, &so[6083]},
-    {"sm-scheme", "sm-scheme", NID_sm_scheme, 6, &so[6088]},
-    {"SM3", "sm3", NID_sm3, 8, &so[6094]},
-    {"RSA-SM3", "sm3WithRSAEncryption", NID_sm3WithRSAEncryption, 8, &so[6102]},
-    {"RSA-SHA512/224", "sha512-224WithRSAEncryption", NID_sha512_224WithRSAEncryption, 9, &so[6110]},
-    {"RSA-SHA512/256", "sha512-256WithRSAEncryption", NID_sha512_256WithRSAEncryption, 9, &so[6119]},
+    {"cmcCA", "CMC Certificate Authority", NID_cmcCA, 8, &so[5986]},
+    {"cmcRA", "CMC Registration Authority", NID_cmcRA, 8, &so[5994]},
+    {"SM4-ECB", "sm4-ecb", NID_sm4_ecb, 8, &so[6002]},
+    {"SM4-CBC", "sm4-cbc", NID_sm4_cbc, 8, &so[6010]},
+    {"SM4-OFB", "sm4-ofb", NID_sm4_ofb128, 8, &so[6018]},
+    {"SM4-CFB1", "sm4-cfb1", NID_sm4_cfb1, 8, &so[6026]},
+    {"SM4-CFB", "sm4-cfb", NID_sm4_cfb128, 8, &so[6034]},
+    {"SM4-CFB8", "sm4-cfb8", NID_sm4_cfb8, 8, &so[6042]},
+    {"SM4-CTR", "sm4-ctr", NID_sm4_ctr, 8, &so[6050]},
+    {"ISO-CN", "ISO CN Member Body", NID_ISO_CN, 3, &so[6058]},
+    {"oscca", "oscca", NID_oscca, 5, &so[6061]},
+    {"sm-scheme", "sm-scheme", NID_sm_scheme, 6, &so[6066]},
+    {"SM3", "sm3", NID_sm3, 8, &so[6072]},
+    {"RSA-SM3", "sm3WithRSAEncryption", NID_sm3WithRSAEncryption, 8, &so[6080]},
+    {"RSA-SHA512/224", "sha512-224WithRSAEncryption", NID_sha512_224WithRSAEncryption, 9, &so[6088]},
+    {"RSA-SHA512/256", "sha512-256WithRSAEncryption", NID_sha512_256WithRSAEncryption, 9, &so[6097]},
     { NULL, NULL, NID_undef },
     { NULL, NULL, NID_undef },
     { NULL, NULL, NID_undef },
-    {"ISO-UA", "ISO-UA", NID_ISO_UA, 3, &so[6128]},
-    {"ua-pki", "ua-pki", NID_ua_pki, 7, &so[6131]},
-    { NULL, NULL, NID_undef },
-    { NULL, NULL, NID_undef },
-    { NULL, NULL, NID_undef },
-    { NULL, NULL, NID_undef },
-    { NULL, NULL, NID_undef },
-    { NULL, NULL, NID_undef },
-    {"dstu4145le", "DSTU 4145-2002 little endian", NID_dstu4145le, 11, &so[6138]},
-    {"dstu4145be", "DSTU 4145-2002 big endian", NID_dstu4145be, 13, &so[6149]},
-    {"uacurve0", "DSTU curve 0", NID_uacurve0, 13, &so[6162]},
-    {"uacurve1", "DSTU curve 1", NID_uacurve1, 13, &so[6175]},
-    {"uacurve2", "DSTU curve 2", NID_uacurve2, 13, &so[6188]},
-    {"uacurve3", "DSTU curve 3", NID_uacurve3, 13, &so[6201]},
-    {"uacurve4", "DSTU curve 4", NID_uacurve4, 13, &so[6214]},
-    {"uacurve5", "DSTU curve 5", NID_uacurve5, 13, &so[6227]},
-    {"uacurve6", "DSTU curve 6", NID_uacurve6, 13, &so[6240]},
-    {"uacurve7", "DSTU curve 7", NID_uacurve7, 13, &so[6253]},
-    {"uacurve8", "DSTU curve 8", NID_uacurve8, 13, &so[6266]},
-    {"uacurve9", "DSTU curve 9", NID_uacurve9, 13, &so[6279]},
-    {"ieee", "ieee", NID_ieee, 2, &so[6292]},
-    {"ieee-siswg", "IEEE Security in Storage Working Group", NID_ieee_siswg, 5, &so[6294]},
-    {"SM2", "sm2", NID_sm2, 8, &so[6299]},
+    {"ISO-UA", "ISO-UA", NID_ISO_UA, 3, &so[6106]},
+    {"ua-pki", "ua-pki", NID_ua_pki, 7, &so[6109]},
     { NULL, NULL, NID_undef },
     { NULL, NULL, NID_undef },
     { NULL, NULL, NID_undef },
     { NULL, NULL, NID_undef },
+    { NULL, NULL, NID_undef },
+    { NULL, NULL, NID_undef },
+    {"dstu4145le", "DSTU 4145-2002 little endian", NID_dstu4145le, 11, &so[6116]},
+    {"dstu4145be", "DSTU 4145-2002 big endian", NID_dstu4145be, 13, &so[6127]},
+    {"uacurve0", "DSTU curve 0", NID_uacurve0, 13, &so[6140]},
+    {"uacurve1", "DSTU curve 1", NID_uacurve1, 13, &so[6153]},
+    {"uacurve2", "DSTU curve 2", NID_uacurve2, 13, &so[6166]},
+    {"uacurve3", "DSTU curve 3", NID_uacurve3, 13, &so[6179]},
+    {"uacurve4", "DSTU curve 4", NID_uacurve4, 13, &so[6192]},
+    {"uacurve5", "DSTU curve 5", NID_uacurve5, 13, &so[6205]},
+    {"uacurve6", "DSTU curve 6", NID_uacurve6, 13, &so[6218]},
+    {"uacurve7", "DSTU curve 7", NID_uacurve7, 13, &so[6231]},
+    {"uacurve8", "DSTU curve 8", NID_uacurve8, 13, &so[6244]},
+    {"uacurve9", "DSTU curve 9", NID_uacurve9, 13, &so[6257]},
+    {"ieee", "ieee", NID_ieee, 2, &so[6270]},
+    {"ieee-siswg", "IEEE Security in Storage Working Group", NID_ieee_siswg, 5, &so[6272]},
+    {"SM2", "sm2", NID_sm2, 8, &so[6277]},
     { NULL, NULL, NID_undef },
     { NULL, NULL, NID_undef },
     { NULL, NULL, NID_undef },
@@ -2129,25 +2121,29 @@ static const ASN1_OBJECT nid_objs[NUM_NID] = {
     { NULL, NULL, NID_undef },
     { NULL, NULL, NID_undef },
     { NULL, NULL, NID_undef },
-    {"hmacWithSHA512-224", "hmacWithSHA512-224", NID_hmacWithSHA512_224, 8, &so[6307]},
-    {"hmacWithSHA512-256", "hmacWithSHA512-256", NID_hmacWithSHA512_256, 8, &so[6315]},
-    {"GMAC", "gmac", NID_gmac, 5, &so[6323]},
-    {"KMAC128", "kmac128", NID_kmac128, 9, &so[6328]},
-    {"KMAC256", "kmac256", NID_kmac256, 9, &so[6337]},
+    { NULL, NULL, NID_undef },
+    { NULL, NULL, NID_undef },
+    { NULL, NULL, NID_undef },
+    { NULL, NULL, NID_undef },
+    {"hmacWithSHA512-224", "hmacWithSHA512-224", NID_hmacWithSHA512_224, 8, &so[6285]},
+    {"hmacWithSHA512-256", "hmacWithSHA512-256", NID_hmacWithSHA512_256, 8, &so[6293]},
+    {"GMAC", "gmac", NID_gmac, 5, &so[6301]},
+    {"KMAC128", "kmac128", NID_kmac128, 9, &so[6306]},
+    {"KMAC256", "kmac256", NID_kmac256, 9, &so[6315]},
     {"AES-128-SIV", "aes-128-siv", NID_aes_128_siv},
     {"AES-192-SIV", "aes-192-siv", NID_aes_192_siv},
     {"AES-256-SIV", "aes-256-siv", NID_aes_256_siv},
-    {"BLAKE2BMAC", "blake2bmac", NID_blake2bmac, 10, &so[6346]},
-    {"BLAKE2SMAC", "blake2smac", NID_blake2smac, 10, &so[6356]},
+    { NULL, NULL, NID_undef },
+    { NULL, NULL, NID_undef },
     {"SSHKDF", "sshkdf", NID_sshkdf},
-    {"SM2-SM3", "SM2-with-SM3", NID_SM2_with_SM3, 8, &so[6366]},
+    {"SM2-SM3", "SM2-with-SM3", NID_SM2_with_SM3, 8, &so[6324]},
     {"SSKDF", "sskdf", NID_sskdf},
     {"X963KDF", "x963kdf", NID_x963kdf},
     {"X942KDF", "x942kdf", NID_x942kdf},
-    {"id-on-SmtpUTF8Mailbox", "Smtp UTF8 Mailbox", NID_id_on_SmtpUTF8Mailbox, 8, &so[6374]},
-    {"id-on-xmppAddr", "XmppAddr", NID_XmppAddr, 8, &so[6382]},
-    {"id-on-dnsSRV", "SRVName", NID_SRVName, 8, &so[6390]},
-    {"id-on-NAIRealm", "NAIRealm", NID_NAIRealm, 8, &so[6398]},
+    {"id-on-SmtpUTF8Mailbox", "Smtp UTF8 Mailbox", NID_id_on_SmtpUTF8Mailbox, 8, &so[6332]},
+    {"id-on-xmppAddr", "XmppAddr", NID_XmppAddr, 8, &so[6340]},
+    {"id-on-dnsSRV", "SRVName", NID_SRVName, 8, &so[6348]},
+    {"id-on-NAIRealm", "NAIRealm", NID_NAIRealm, 8, &so[6356]},
     {"modp_1536", "modp_1536", NID_modp_1536},
     {"modp_2048", "modp_2048", NID_modp_2048},
     {"modp_3072", "modp_3072", NID_modp_3072},
@@ -2155,13 +2151,13 @@ static const ASN1_OBJECT nid_objs[NUM_NID] = {
     {"modp_6144", "modp_6144", NID_modp_6144},
     {"modp_8192", "modp_8192", NID_modp_8192},
     { NULL, NULL, NID_undef },
-    {"cmcArchive", "CMC Archive Server", NID_cmcArchive, 8, &so[6406]},
-    {"id-kp-bgpsec-router", "BGPsec Router", NID_id_kp_bgpsec_router, 8, &so[6414]},
-    {"id-kp-BrandIndicatorforMessageIdentification", "Brand Indicator for Message Identification", NID_id_kp_BrandIndicatorforMessageIdentification, 8, &so[6422]},
-    {"cmKGA", "Certificate Management Key Generation Authority", NID_cmKGA, 8, &so[6430]},
-    {"id-it-caCerts", "id-it-caCerts", NID_id_it_caCerts, 8, &so[6438]},
-    {"id-it-rootCaKeyUpdate", "id-it-rootCaKeyUpdate", NID_id_it_rootCaKeyUpdate, 8, &so[6446]},
-    {"id-it-certReqTemplate", "id-it-certReqTemplate", NID_id_it_certReqTemplate, 8, &so[6454]},
+    {"cmcArchive", "CMC Archive Server", NID_cmcArchive, 8, &so[6364]},
+    {"id-kp-bgpsec-router", "BGPsec Router", NID_id_kp_bgpsec_router, 8, &so[6372]},
+    {"id-kp-BrandIndicatorforMessageIdentification", "Brand Indicator for Message Identification", NID_id_kp_BrandIndicatorforMessageIdentification, 8, &so[6380]},
+    {"cmKGA", "Certificate Management Key Generation Authority", NID_cmKGA, 8, &so[6388]},
+    {"id-it-caCerts", "id-it-caCerts", NID_id_it_caCerts, 8, &so[6396]},
+    {"id-it-rootCaKeyUpdate", "id-it-rootCaKeyUpdate", NID_id_it_rootCaKeyUpdate, 8, &so[6404]},
+    {"id-it-certReqTemplate", "id-it-certReqTemplate", NID_id_it_certReqTemplate, 8, &so[6412]},
     { NULL, NULL, NID_undef },
     { NULL, NULL, NID_undef },
     { NULL, NULL, NID_undef },
@@ -2170,32 +2166,32 @@ static const ASN1_OBJECT nid_objs[NUM_NID] = {
     { NULL, NULL, NID_undef },
     { NULL, NULL, NID_undef },
     { NULL, NULL, NID_undef },
-    {"id-ct-routeOriginAuthz", "id-ct-routeOriginAuthz", NID_id_ct_routeOriginAuthz, 11, &so[6462]},
-    {"id-ct-rpkiManifest", "id-ct-rpkiManifest", NID_id_ct_rpkiManifest, 11, &so[6473]},
-    {"id-ct-rpkiGhostbusters", "id-ct-rpkiGhostbusters", NID_id_ct_rpkiGhostbusters, 11, &so[6484]},
-    {"id-ct-resourceTaggedAttest", "id-ct-resourceTaggedAttest", NID_id_ct_resourceTaggedAttest, 11, &so[6495]},
-    {"id-cp", "id-cp", NID_id_cp, 7, &so[6506]},
-    {"sbgp-ipAddrBlockv2", "sbgp-ipAddrBlockv2", NID_sbgp_ipAddrBlockv2, 8, &so[6513]},
-    {"sbgp-autonomousSysNumv2", "sbgp-autonomousSysNumv2", NID_sbgp_autonomousSysNumv2, 8, &so[6521]},
-    {"ipAddr-asNumber", "ipAddr-asNumber", NID_ipAddr_asNumber, 8, &so[6529]},
-    {"ipAddr-asNumberv2", "ipAddr-asNumberv2", NID_ipAddr_asNumberv2, 8, &so[6537]},
-    {"rpkiManifest", "RPKI Manifest", NID_rpkiManifest, 8, &so[6545]},
-    {"signedObject", "Signed Object", NID_signedObject, 8, &so[6553]},
-    {"rpkiNotify", "RPKI Notify", NID_rpkiNotify, 8, &so[6561]},
-    {"id-ct-geofeedCSVwithCRLF", "id-ct-geofeedCSVwithCRLF", NID_id_ct_geofeedCSVwithCRLF, 11, &so[6569]},
-    {"id-ct-signedChecklist", "id-ct-signedChecklist", NID_id_ct_signedChecklist, 11, &so[6580]},
-    {"ZUC", "zuc", NID_zuc, 8, &so[6591]},
-    {"ZUC-128-EEA3", "zuc-128-eea3", NID_zuc_128_eea3, 8, &so[6599]},
-    {"SM4-GCM", "sm4-gcm", NID_sm4_gcm, 8, &so[6607]},
-    {"SM4-CCM", "sm4-ccm", NID_sm4_ccm, 8, &so[6615]},
+    {"id-ct-routeOriginAuthz", "id-ct-routeOriginAuthz", NID_id_ct_routeOriginAuthz, 11, &so[6420]},
+    {"id-ct-rpkiManifest", "id-ct-rpkiManifest", NID_id_ct_rpkiManifest, 11, &so[6431]},
+    {"id-ct-rpkiGhostbusters", "id-ct-rpkiGhostbusters", NID_id_ct_rpkiGhostbusters, 11, &so[6442]},
+    {"id-ct-resourceTaggedAttest", "id-ct-resourceTaggedAttest", NID_id_ct_resourceTaggedAttest, 11, &so[6453]},
+    {"id-cp", "id-cp", NID_id_cp, 7, &so[6464]},
+    {"sbgp-ipAddrBlockv2", "sbgp-ipAddrBlockv2", NID_sbgp_ipAddrBlockv2, 8, &so[6471]},
+    {"sbgp-autonomousSysNumv2", "sbgp-autonomousSysNumv2", NID_sbgp_autonomousSysNumv2, 8, &so[6479]},
+    {"ipAddr-asNumber", "ipAddr-asNumber", NID_ipAddr_asNumber, 8, &so[6487]},
+    {"ipAddr-asNumberv2", "ipAddr-asNumberv2", NID_ipAddr_asNumberv2, 8, &so[6495]},
+    {"rpkiManifest", "RPKI Manifest", NID_rpkiManifest, 8, &so[6503]},
+    {"signedObject", "Signed Object", NID_signedObject, 8, &so[6511]},
+    {"rpkiNotify", "RPKI Notify", NID_rpkiNotify, 8, &so[6519]},
+    {"id-ct-geofeedCSVwithCRLF", "id-ct-geofeedCSVwithCRLF", NID_id_ct_geofeedCSVwithCRLF, 11, &so[6527]},
+    {"id-ct-signedChecklist", "id-ct-signedChecklist", NID_id_ct_signedChecklist, 11, &so[6538]},
+    {"ZUC", "zuc", NID_zuc, 8, &so[6549]},
+    {"ZUC-128-EEA3", "zuc-128-eea3", NID_zuc_128_eea3, 8, &so[6557]},
+    {"SM4-GCM", "sm4-gcm", NID_sm4_gcm, 8, &so[6565]},
+    {"SM4-CCM", "sm4-ccm", NID_sm4_ccm, 8, &so[6573]},
     {"KxSM2", "kx-sm2", NID_kx_sm2},
     {"KxSM2DHE", "kx-sm2dhe", NID_kx_sm2dhe},
     {"AuthSM2", "auth-sm2", NID_auth_sm2},
-    {"ZUC-128-EIA3", "zuc-128-eia3", NID_zuc_128_eia3, 8, &so[6623]},
-    {"delegationUsage", "X509v3 Delegation Usage", NID_delegation_usage, 9, &so[6631]},
+    {"ZUC-128-EIA3", "zuc-128-eia3", NID_zuc_128_eia3, 8, &so[6581]},
+    {"delegationUsage", "X509v3 Delegation Usage", NID_delegation_usage, 9, &so[6589]},
 };
 
-#define NUM_SN 1011
+#define NUM_SN 1007
 static const unsigned int sn_objs[NUM_SN] = {
      364,    /* "AD_DVCS" */
      419,    /* "AES-128-CBC" */
@@ -2241,10 +2237,6 @@ static const unsigned int sn_objs[NUM_SN] = {
     1046,    /* "AuthRSA" */
     1254,    /* "AuthSM2" */
     1052,    /* "AuthSRP" */
-    1201,    /* "BLAKE2BMAC" */
-    1202,    /* "BLAKE2SMAC" */
-    1056,    /* "BLAKE2b512" */
-    1057,    /* "BLAKE2s256" */
       14,    /* "C" */
      894,    /* "CMAC" */
       13,    /* "CN" */
@@ -3210,7 +3202,7 @@ static const unsigned int sn_objs[NUM_SN] = {
     1093,    /* "x509ExtAdmission" */
 };
 
-#define NUM_LN 1011
+#define NUM_LN 1007
 static const unsigned int ln_objs[NUM_LN] = {
      363,    /* "AD Time Stamping" */
      405,    /* "ANSI X9.62" */
@@ -3447,10 +3439,6 @@ static const unsigned int ln_objs[NUM_LN] = {
     1254,    /* "auth-sm2" */
     1052,    /* "auth-srp" */
      882,    /* "authorityRevocationList" */
-    1056,    /* "blake2b512" */
-    1201,    /* "blake2bmac" */
-    1057,    /* "blake2s256" */
-    1202,    /* "blake2smac" */
      921,    /* "brainpoolP160r1" */
      922,    /* "brainpoolP160t1" */
      923,    /* "brainpoolP192r1" */
@@ -4225,7 +4213,7 @@ static const unsigned int ln_objs[NUM_LN] = {
     1255,    /* "zuc-128-eia3" */
 };
 
-#define NUM_OBJ 927
+#define NUM_OBJ 923
 static const unsigned int obj_objs[NUM_OBJ] = {
        0,    /* OBJ_undef                        0 */
      181,    /* OBJ_iso                          1 */
@@ -5053,8 +5041,6 @@ static const unsigned int obj_objs[NUM_OBJ] = {
      138,    /* OBJ_ms_efs                       1 3 6 1 4 1 311 10 3 4 */
      648,    /* OBJ_ms_smartcard_login           1 3 6 1 4 1 311 20 2 2 */
      649,    /* OBJ_ms_upn                       1 3 6 1 4 1 311 20 2 3 */
-    1201,    /* OBJ_blake2bmac                   1 3 6 1 4 1 1722 12 2 1 */
-    1202,    /* OBJ_blake2smac                   1 3 6 1 4 1 1722 12 2 2 */
      951,    /* OBJ_ct_precert_scts              1 3 6 1 4 1 11129 2 4 2 */
      952,    /* OBJ_ct_precert_poison            1 3 6 1 4 1 11129 2 4 3 */
      953,    /* OBJ_ct_precert_signer            1 3 6 1 4 1 11129 2 4 4 */
@@ -5141,8 +5127,6 @@ static const unsigned int obj_objs[NUM_OBJ] = {
      955,    /* OBJ_jurisdictionLocalityName     1 3 6 1 4 1 311 60 2 1 1 */
      956,    /* OBJ_jurisdictionStateOrProvinceName 1 3 6 1 4 1 311 60 2 1 2 */
      957,    /* OBJ_jurisdictionCountryName      1 3 6 1 4 1 311 60 2 1 3 */
-    1056,    /* OBJ_blake2b512                   1 3 6 1 4 1 1722 12 2 1 16 */
-    1057,    /* OBJ_blake2s256                   1 3 6 1 4 1 1722 12 2 2 8 */
     1159,    /* OBJ_dstu4145be                   1 2 804 2 1 1 1 1 3 1 1 1 1 */
     1160,    /* OBJ_uacurve0                     1 2 804 2 1 1 1 1 3 1 1 2 0 */
     1161,    /* OBJ_uacurve1                     1 2 804 2 1 1 1 1 3 1 1 2 1 */

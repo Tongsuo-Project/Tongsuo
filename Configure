@@ -405,7 +405,6 @@ my @disablables = (
     "autoalginit",
     "autoerrinit",
     "autoload-config",
-    "blake2",
     "buildtest-c++",
     "bulk",
     "cached-fetch",
@@ -571,7 +570,7 @@ my @disable_cascades = (
     # "what"            => [ "cascade", ... ]
     "bulk"              => [ "shared", "dso",
                              "async", "autoload-config",
-                             "blake2", "chacha",
+                             "chacha",
                              "cmac", "cms", "cmp", "comp", "ct",
                              "des", "dgram", "dh", "dsa",
                              "ec", "engine",

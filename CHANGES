@@ -4,6 +4,8 @@
 
  Changes between 8.3.0 and 8.4.0 [xx XXX xxxx]
 
+  *) 删除Blake2算法
+
   *) 删除Blowfish算法
 
   *) 删除Whirlpool算法

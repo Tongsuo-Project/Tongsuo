@@ -127,18 +127,6 @@ static const OSSL_ALGORITHM deflt_digests[] = {
     { PROV_NAMES_SHAKE_128, "provider=default", ossl_shake_128_functions },
     { PROV_NAMES_SHAKE_256, "provider=default", ossl_shake_256_functions },
 
-#ifndef OPENSSL_NO_BLAKE2
-    /*
-     * https://blake2.net/ doesn't specify size variants,
-     * but mentions that Bouncy Castle uses the names
-     * BLAKE2b-160, BLAKE2b-256, BLAKE2b-384, and BLAKE2b-512
-     * If we assume that "2b" and "2s" are versions, that pattern
-     * fits with ours.  We also add our historical names.
-     */
-    { PROV_NAMES_BLAKE2S_256, "provider=default", ossl_blake2s256_functions },
-    { PROV_NAMES_BLAKE2B_512, "provider=default", ossl_blake2b512_functions },
-#endif /* OPENSSL_NO_BLAKE2 */
-
 #ifndef OPENSSL_NO_SM3
     { PROV_NAMES_SM3, "provider=default", ossl_sm3_functions },
 #endif /* OPENSSL_NO_SM3 */
@@ -252,10 +240,6 @@ static const OSSL_ALGORITHM_CAPABLE deflt_ciphers[] = {
 static OSSL_ALGORITHM exported_ciphers[OSSL_NELEM(deflt_ciphers)];
 
 static const OSSL_ALGORITHM deflt_macs[] = {
-#ifndef OPENSSL_NO_BLAKE2
-    { PROV_NAMES_BLAKE2BMAC, "provider=default", ossl_blake2bmac_functions },
-    { PROV_NAMES_BLAKE2SMAC, "provider=default", ossl_blake2smac_functions },
-#endif
 #ifndef OPENSSL_NO_CMAC
     { PROV_NAMES_CMAC, "provider=default", ossl_cmac_functions },
 #endif

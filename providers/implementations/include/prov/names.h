@@ -158,15 +158,6 @@
  */
 #define PROV_NAMES_KECCAK_KMAC_128 "KECCAK-KMAC-128:KECCAK-KMAC128"
 #define PROV_NAMES_KECCAK_KMAC_256 "KECCAK-KMAC-256:KECCAK-KMAC256"
-/*
- * https://blake2.net/ doesn't specify size variants, but mentions that
- * Bouncy Castle uses the names BLAKE2b-160, BLAKE2b-256, BLAKE2b-384, and
- * BLAKE2b-512
- * If we assume that "2b" and "2s" are versions, that pattern fits with ours.
- *  We also add our historical names.
- */
-#define PROV_NAMES_BLAKE2S_256 "BLAKE2S-256:BLAKE2s256:1.3.6.1.4.1.1722.12.2.2.8"
-#define PROV_NAMES_BLAKE2B_512 "BLAKE2B-512:BLAKE2b512:1.3.6.1.4.1.1722.12.2.1.16"
 #define PROV_NAMES_SM3 "SM3:1.2.156.10197.1.401"
 #define PROV_NAMES_MD5 "MD5:SSL3-MD5:1.2.840.113549.2.5"
 #define PROV_NAMES_MD5_SHA1 "MD5-SHA1"
@@ -207,8 +198,6 @@
 #define PROV_NAMES_GMAC "GMAC:1.0.9797.3.4"
 #define PROV_NAMES_KMAC_128 "KMAC-128:KMAC128:2.16.840.1.101.3.4.2.19"
 #define PROV_NAMES_KMAC_256 "KMAC-256:KMAC256:2.16.840.1.101.3.4.2.20"
-#define PROV_NAMES_BLAKE2BMAC "BLAKE2BMAC:1.3.6.1.4.1.1722.12.2.1"
-#define PROV_NAMES_BLAKE2SMAC "BLAKE2SMAC:1.3.6.1.4.1.1722.12.2.2"
 #define PROV_NAMES_EIA3 "EIA3"
 #define PROV_DESCS_EIA3_SIGN "Tongsuo EIA3 via EVP_PKEY implementation"
 

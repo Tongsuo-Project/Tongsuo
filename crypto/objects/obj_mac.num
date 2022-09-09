@@ -886,8 +886,6 @@ auth_srp		1052
 auth_null		1053
 fips_none		1054
 fips_140_2		1055
-blake2b512		1056
-blake2s256		1057
 id_smime_ct_contentCollection		1058
 id_smime_ct_authEnvelopedData		1059
 id_ct_xml		1060
@@ -981,8 +979,6 @@ kmac256		1197
 aes_128_siv		1198
 aes_192_siv		1199
 aes_256_siv		1200
-blake2bmac		1201
-blake2smac		1202
 sshkdf		1203
 SM2_with_SM3		1204
 sskdf		1205

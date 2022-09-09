@@ -26,8 +26,6 @@ extern const OSSL_DISPATCH ossl_keccak_kmac_128_functions[];
 extern const OSSL_DISPATCH ossl_keccak_kmac_256_functions[];
 extern const OSSL_DISPATCH ossl_shake_128_functions[];
 extern const OSSL_DISPATCH ossl_shake_256_functions[];
-extern const OSSL_DISPATCH ossl_blake2s256_functions[];
-extern const OSSL_DISPATCH ossl_blake2b512_functions[];
 extern const OSSL_DISPATCH ossl_md5_functions[];
 extern const OSSL_DISPATCH ossl_md5_sha1_functions[];
 extern const OSSL_DISPATCH ossl_sm3_functions[];
@@ -156,8 +154,6 @@ extern const OSSL_DISPATCH ossl_aes256siv_functions[];
 #endif /* OPENSSL_NO_SIV */
 
 /* MACs */
-extern const OSSL_DISPATCH ossl_blake2bmac_functions[];
-extern const OSSL_DISPATCH ossl_blake2smac_functions[];
 extern const OSSL_DISPATCH ossl_cmac_functions[];
 extern const OSSL_DISPATCH ossl_gmac_functions[];
 extern const OSSL_DISPATCH ossl_hmac_functions[];

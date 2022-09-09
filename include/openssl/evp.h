@@ -902,10 +902,6 @@ const EVP_MD *EVP_md_null(void);
 const EVP_MD *EVP_md5(void);
 const EVP_MD *EVP_md5_sha1(void);
 # endif
-# ifndef OPENSSL_NO_BLAKE2
-const EVP_MD *EVP_blake2b512(void);
-const EVP_MD *EVP_blake2s256(void);
-# endif
 const EVP_MD *EVP_sha1(void);
 const EVP_MD *EVP_sha224(void);
 const EVP_MD *EVP_sha256(void);
