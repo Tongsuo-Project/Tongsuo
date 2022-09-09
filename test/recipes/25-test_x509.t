@@ -16,7 +16,7 @@ use OpenSSL::Test qw/:DEFAULT srctop_file/;
 
 setup("test_x509");
 
-plan tests => 21;
+plan tests => 20;
 
 # Prevent MSys2 filename munging for arguments that look like file paths but
 # aren't
@@ -151,8 +151,6 @@ sub test_errors { # actually tests diagnostics of OSSL_STORE
 # This requires provoking a failure exit of the app after reading input files.
 ok(test_errors("Bad output format", "root-cert.pem", '-outform', 'http'),
    "load root-cert errors");
-ok(test_errors("RC2-40-CBC", "v3-certs-RC2.p12", '-passin', 'pass:v3-certs'),
-   "load v3-certs-RC2 no asn1 errors"); # error msg should mention "RC2-40-CBC"
 SKIP: {
     skip "sm2 not disabled", 1 if !disabled("sm2");
 

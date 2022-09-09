@@ -273,7 +273,7 @@ enum {
     D_MD5, D_SHA1,
     D_SHA256, D_SHA512, D_WHIRLPOOL, D_HMAC,
     D_CBC_DES, D_EDE3_DES, D_RC4, D_CBC_IDEA,
-    D_CBC_RC2, D_CBC_RC5, D_CBC_BF, D_CBC_CAST,
+    D_CBC_RC5, D_CBC_BF, D_CBC_CAST,
     D_CBC_128_AES, D_CBC_192_AES, D_CBC_256_AES,
     D_EVP, D_GHASH, D_RAND, D_EVP_CMAC, D_SM3, D_CBC_SM4, ALGOR_NUM
 };
@@ -282,7 +282,7 @@ static const char *names[ALGOR_NUM] = {
     "md5", "sha1",
     "sha256", "sha512", "whirlpool", "hmac(md5)",
     "des-cbc", "des-ede3", "rc4",
-    "rc2-cbc", "rc5-cbc", "blowfish",
+    "rc5-cbc", "blowfish",
     "aes-128-cbc", "aes-192-cbc", "aes-256-cbc",
     "evp", "ghash", "rand", "cmac", "sm3", "sm4"
 };
@@ -301,8 +301,6 @@ static const OPT_PAIR doit_choices[] = {
     {"aes-128-cbc", D_CBC_128_AES},
     {"aes-192-cbc", D_CBC_192_AES},
     {"aes-256-cbc", D_CBC_256_AES},
-    {"rc2-cbc", D_CBC_RC2},
-    {"rc2", D_CBC_RC2},
     {"rc5-cbc", D_CBC_RC5},
     {"rc5", D_CBC_RC5},
     {"bf-cbc", D_CBC_BF},

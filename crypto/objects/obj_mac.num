@@ -29,10 +29,6 @@ des_cfb64		30
 des_cbc		31
 des_ede_ecb		32
 des_ede3_ecb		33
-rc2_cbc		37
-rc2_ecb		38
-rc2_cfb64		39
-rc2_ofb64		40
 sha		41
 shaWithRSAEncryption		42
 des_ede_cbc		43
@@ -59,7 +55,6 @@ sha1		64
 sha1WithRSAEncryption		65
 dsaWithSHA		66
 dsa_2		67
-pbeWithSHA1AndRC2_CBC		68
 id_pbkdf2		69
 dsaWithSHA1_2		70
 netscape_cert_type		71
@@ -87,7 +82,6 @@ bf_ecb		92
 bf_cfb64		93
 bf_ofb64		94
 rc4_40		97
-rc2_40_cbc		98
 givenName		99
 surname		100
 initials		101
@@ -129,8 +123,6 @@ pbe_WithSHA1And128BitRC4		144
 pbe_WithSHA1And40BitRC4		145
 pbe_WithSHA1And3_Key_TripleDES_CBC		146
 pbe_WithSHA1And2_Key_TripleDES_CBC		147
-pbe_WithSHA1And128BitRC2_CBC		148
-pbe_WithSHA1And40BitRC2_CBC		149
 keyBag		150
 pkcs8ShroudedKeyBag		151
 certBag		152
@@ -147,9 +139,7 @@ pbmac1		162
 hmacWithSHA1		163
 id_qt_cps		164
 id_qt_unotice		165
-rc2_64_cbc		166
 SMIMECapabilities		167
-pbeWithMD5AndRC2_CBC		169
 pbeWithSHA1AndDES_CBC		170
 ms_ext_req		171
 ext_req		172
@@ -222,12 +212,9 @@ id_smime_aa_ets_archiveTimeStamp		238
 id_smime_aa_signatureType		239
 id_smime_aa_dvcs_dvc		240
 id_smime_alg_ESDHwith3DES		241
-id_smime_alg_ESDHwithRC2		242
 id_smime_alg_3DESwrap		243
-id_smime_alg_RC2wrap		244
 id_smime_alg_ESDH		245
 id_smime_alg_CMS3DESwrap		246
-id_smime_alg_CMSRC2wrap		247
 id_smime_cd_ldap		248
 id_smime_spq_ets_sqt_uri		249
 id_smime_spq_ets_sqt_unotice		250

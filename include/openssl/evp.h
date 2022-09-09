@@ -364,8 +364,6 @@ OSSL_DEPRECATEDIN_3_0 int
 
 # define         EVP_CTRL_INIT                   0x0
 # define         EVP_CTRL_SET_KEY_LENGTH         0x1
-# define         EVP_CTRL_GET_RC2_KEY_BITS       0x2
-# define         EVP_CTRL_SET_RC2_KEY_BITS       0x3
 # define         EVP_CTRL_GET_RC5_ROUNDS         0x4
 # define         EVP_CTRL_SET_RC5_ROUNDS         0x5
 # define         EVP_CTRL_RAND_KEY               0x6
@@ -965,15 +963,6 @@ const EVP_CIPHER *EVP_rc4_40(void);
 #  ifndef OPENSSL_NO_MD5
 const EVP_CIPHER *EVP_rc4_hmac_md5(void);
 #  endif
-# endif
-# ifndef OPENSSL_NO_RC2
-const EVP_CIPHER *EVP_rc2_ecb(void);
-const EVP_CIPHER *EVP_rc2_cbc(void);
-const EVP_CIPHER *EVP_rc2_40_cbc(void);
-const EVP_CIPHER *EVP_rc2_64_cbc(void);
-const EVP_CIPHER *EVP_rc2_cfb64(void);
-#  define EVP_rc2_cfb EVP_rc2_cfb64
-const EVP_CIPHER *EVP_rc2_ofb(void);
 # endif
 # ifndef OPENSSL_NO_BF
 const EVP_CIPHER *EVP_bf_ecb(void);

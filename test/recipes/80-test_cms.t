@@ -45,10 +45,8 @@ my $datadir = srctop_dir("test", "recipes", "80-test_cms_data");
 my $smdir    = srctop_dir("test", "smime-certs");
 my $smcont   = srctop_file("test", "smcont.txt");
 my $smcont_zero = srctop_file("test", "smcont_zero.txt");
-my ($no_des, $no_dh, $no_dsa, $no_ec, $no_ec2m, $no_rc2, $no_zlib)
-    = disabled qw/des dh dsa ec ec2m rc2 zlib/;
-
-$no_rc2 = 1 if disabled("legacy");
+my ($no_des, $no_dh, $no_dsa, $no_ec, $no_ec2m, $no_zlib)
+    = disabled qw/des dh dsa ec ec2m zlib/;
 
 plan tests => 12;
 
@@ -344,29 +342,6 @@ my @smime_cms_tests = (
         "-nodetach", "-stream", "-out", "{output}.cms" ],
       [ "{cmd2}", @prov, "-data_out", "-in", "{output}.cms", "-inform", "PEM",
         "-out", "{output}.txt" ],
-      \&final_compare
-    ],
-
-    [ "encrypted content test streaming PEM format, 128 bit RC2 key",
-      [ "{cmd1}", @legacyprov, "-EncryptedData_encrypt",
-        "-in", $smcont, "-outform", "PEM",
-        "-rc2", "-secretkey", "000102030405060708090A0B0C0D0E0F",
-        "-stream", "-out", "{output}.cms" ],
-      [ "{cmd2}", @legacyprov, "-EncryptedData_decrypt", "-in", "{output}.cms",
-        "-inform", "PEM",
-        "-secretkey", "000102030405060708090A0B0C0D0E0F",
-        "-out", "{output}.txt" ],
-      \&final_compare
-    ],
-
-    [ "encrypted content test streaming PEM format, 40 bit RC2 key",
-      [ "{cmd1}", @legacyprov, "-EncryptedData_encrypt",
-        "-in", $smcont, "-outform", "PEM",
-        "-rc2", "-secretkey", "0001020304",
-        "-stream", "-out", "{output}.cms" ],
-      [ "{cmd2}", @legacyprov, "-EncryptedData_decrypt", "-in", "{output}.cms",
-        "-inform", "PEM",
-        "-secretkey", "0001020304", "-out", "{output}.txt" ],
       \&final_compare
     ],
 
@@ -858,8 +833,6 @@ sub check_availability {
         if ($no_ec2m && $tnam =~ /K-283/);
     return "$tnam: skipped, DH disabled\n"
         if ($no_dh && $tnam =~ /X9\.42/);
-    return "$tnam: skipped, RC2 disabled\n"
-        if ($no_rc2 && $tnam =~ /RC2/);
     return "$tnam: skipped, DES disabled\n"
         if ($no_des && $tnam =~ /DES/);
     return "$tnam: skipped, DSA disabled\n"

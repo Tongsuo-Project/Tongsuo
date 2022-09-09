@@ -98,12 +98,7 @@ X509_ALGOR *PKCS5_pbe2_set_iv_ex(const EVP_CIPHER *cipher, int iter,
     EVP_CIPHER_CTX_free(ctx);
     ctx = NULL;
 
-    /* If its RC2 then we'd better setup the key length */
-
-    if (alg_nid == NID_rc2_cbc)
-        keylen = EVP_CIPHER_get_key_length(cipher);
-    else
-        keylen = -1;
+    keylen = -1;
 
     /* Setup keyfunc */
 

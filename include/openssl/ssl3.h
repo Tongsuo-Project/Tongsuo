@@ -43,7 +43,6 @@ extern "C" {
 # define SSL3_CK_RSA_RC4_40_MD5                  0x03000003
 # define SSL3_CK_RSA_RC4_128_MD5                 0x03000004
 # define SSL3_CK_RSA_RC4_128_SHA                 0x03000005
-# define SSL3_CK_RSA_RC2_40_MD5                  0x03000006
 # define SSL3_CK_RSA_DES_40_CBC_SHA              0x03000008
 # define SSL3_CK_RSA_DES_64_CBC_SHA              0x03000009
 # define SSL3_CK_RSA_DES_192_CBC3_SHA            0x0300000A
@@ -90,7 +89,6 @@ extern "C" {
 # define SSL3_TXT_RSA_RC4_40_MD5                 "EXP-RC4-MD5"
 # define SSL3_TXT_RSA_RC4_128_MD5                "RC4-MD5"
 # define SSL3_TXT_RSA_RC4_128_SHA                "RC4-SHA"
-# define SSL3_TXT_RSA_RC2_40_MD5                 "EXP-RC2-CBC-MD5"
 # define SSL3_TXT_RSA_DES_40_CBC_SHA             "EXP-DES-CBC-SHA"
 # define SSL3_TXT_RSA_DES_64_CBC_SHA             "DES-CBC-SHA"
 # define SSL3_TXT_RSA_DES_192_CBC3_SHA           "DES-CBC3-SHA"

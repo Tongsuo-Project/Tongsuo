@@ -185,9 +185,7 @@ pkcs3 1			:			: dhKeyAgreement
 
 pkcs 5			: pkcs5
 pkcs5 3			: PBE-MD5-DES		: pbeWithMD5AndDES-CBC
-pkcs5 6			: PBE-MD5-RC2-64	: pbeWithMD5AndRC2-CBC
 pkcs5 10		: PBE-SHA1-DES		: pbeWithSHA1AndDES-CBC
-pkcs5 11		: PBE-SHA1-RC2-64	: pbeWithSHA1AndRC2-CBC
 !Cname id_pbkdf2
 pkcs5 12		:			: PBKDF2
 !Cname pbes2
@@ -308,14 +306,10 @@ id-smime-aa 47		: id-smime-aa-signingCertificateV2
 # obsolete
 id-smime-alg 1		: id-smime-alg-ESDHwith3DES
 # obsolete
-id-smime-alg 2		: id-smime-alg-ESDHwithRC2
-# obsolete
 id-smime-alg 3		: id-smime-alg-3DESwrap
 # obsolete
-id-smime-alg 4		: id-smime-alg-RC2wrap
 id-smime-alg 5		: id-smime-alg-ESDH
 id-smime-alg 6		: id-smime-alg-CMS3DESwrap
-id-smime-alg 7		: id-smime-alg-CMSRC2wrap
 id-smime-alg 9		: id-alg-PWRI-KEK
 
 # S/MIME Certificate Distribution
@@ -355,10 +349,6 @@ pkcs12-pbeids 2		: PBE-SHA1-RC4-40	: pbeWithSHA1And40BitRC4
 pkcs12-pbeids 3		: PBE-SHA1-3DES		: pbeWithSHA1And3-KeyTripleDES-CBC
 !Cname pbe-WithSHA1And2_Key_TripleDES-CBC
 pkcs12-pbeids 4		: PBE-SHA1-2DES		: pbeWithSHA1And2-KeyTripleDES-CBC
-!Cname pbe-WithSHA1And128BitRC2-CBC
-pkcs12-pbeids 5		: PBE-SHA1-RC2-128	: pbeWithSHA1And128BitRC2-CBC
-!Cname pbe-WithSHA1And40BitRC2-CBC
-pkcs12-pbeids 6		: PBE-SHA1-RC2-40	: pbeWithSHA1And40BitRC2-CBC
 
 !Alias pkcs12-Version1 pkcs12 10
 !Alias pkcs12-BagIds pkcs12-Version1 1
@@ -396,14 +386,6 @@ rsadsi 2 11		:			: hmacWithSHA512
 rsadsi 2 12             :                       : hmacWithSHA512-224
 rsadsi 2 13             :                       : hmacWithSHA512-256
 
-rsadsi 3 2		: RC2-CBC		: rc2-cbc
-			: RC2-ECB		: rc2-ecb
-!Cname rc2-cfb64
-			: RC2-CFB		: rc2-cfb
-!Cname rc2-ofb64
-			: RC2-OFB		: rc2-ofb
-			: RC2-40-CBC		: rc2-40-cbc
-			: RC2-64-CBC		: rc2-64-cbc
 rsadsi 3 4		: RC4			: rc4
 			: RC4-40		: rc4-40
 rsadsi 3 7		: DES-EDE3-CBC		: des-ede3-cbc

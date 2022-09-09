@@ -279,12 +279,6 @@ int EVP_CIPHER_get_type(const EVP_CIPHER *cipher)
 
     switch (nid) {
 
-    case NID_rc2_cbc:
-    case NID_rc2_64_cbc:
-    case NID_rc2_40_cbc:
-
-        return NID_rc2_cbc;
-
     case NID_rc4:
     case NID_rc4_40:
 

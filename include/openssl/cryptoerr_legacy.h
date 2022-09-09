@@ -892,7 +892,6 @@ OSSL_DEPRECATEDIN_3_0 int ERR_load_X509V3_strings(void);
 #  define EVP_F_PKCS5_V2_PBKDF2_KEYIVGEN                   0
 #  define EVP_F_PKCS5_V2_SCRYPT_KEYIVGEN                   0
 #  define EVP_F_PKEY_SET_TYPE                              0
-#  define EVP_F_RC2_MAGIC_TO_METH                          0
 #  define EVP_F_RC5_CTRL                                   0
 #  define EVP_F_R_32_12_16_INIT_KEY                        0
 #  define EVP_F_S390X_AES_GCM_CTRL                         0

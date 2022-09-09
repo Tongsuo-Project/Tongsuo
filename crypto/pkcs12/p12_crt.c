@@ -252,11 +252,7 @@ int PKCS12_add_safe_ex(STACK_OF(PKCS7) **psafes, STACK_OF(PKCS12_SAFEBAG) *bags,
     }
 
     if (nid_safe == 0)
-#ifdef OPENSSL_NO_RC2
         nid_safe = NID_pbe_WithSHA1And3_Key_TripleDES_CBC;
-#else
-        nid_safe = NID_pbe_WithSHA1And40BitRC2_CBC;
-#endif
 
     if (nid_safe == -1)
         p7 = PKCS12_pack_p7data(bags);
