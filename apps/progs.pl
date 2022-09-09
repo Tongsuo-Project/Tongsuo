@@ -177,12 +177,11 @@ EOF
         "aes-256-cbc", "aes-256-ecb",
         "base64", "zlib",
         "des", "des3", "desx", "rc4", "rc4-40",
-        "bf", "rc5",
+        "rc5",
         "des-ecb", "des-ede", "des-ede3",
         "des-cbc", "des-ede-cbc","des-ede3-cbc",
         "des-cfb", "des-ede-cfb","des-ede3-cfb",
         "des-ofb", "des-ede-ofb","des-ede3-ofb",
-        "bf-cbc", "bf-ecb", "bf-cfb", "bf-ofb",
         "rc5-cbc", "rc5-ecb", "rc5-cfb", "rc5-ofb",
         "sm4-cbc", "sm4-ecb", "sm4-cfb", "sm4-ofb", "sm4-ctr"
     ) {

@@ -18,15 +18,6 @@
  * location, not by name.
  */
 
-#ifndef OPENSSL_NO_BF
-# undef EVP_bf_cfb
-const EVP_CIPHER *EVP_bf_cfb(void);
-const EVP_CIPHER *EVP_bf_cfb(void)
-{
-    return EVP_bf_cfb64();
-}
-#endif
-
 #ifndef OPENSSL_NO_DES
 # undef EVP_des_cfb
 const EVP_CIPHER *EVP_des_cfb(void);

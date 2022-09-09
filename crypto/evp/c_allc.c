@@ -71,16 +71,6 @@ void openssl_add_all_ciphers_int(void)
     EVP_add_cipher_alias(SN_sm4_cbc, "sm4");
 #endif
 
-#ifndef OPENSSL_NO_BF
-    EVP_add_cipher(EVP_bf_ecb());
-    EVP_add_cipher(EVP_bf_cfb());
-    EVP_add_cipher(EVP_bf_ofb());
-    EVP_add_cipher(EVP_bf_cbc());
-    EVP_add_cipher_alias(SN_bf_cbc, "BF");
-    EVP_add_cipher_alias(SN_bf_cbc, "bf");
-    EVP_add_cipher_alias(SN_bf_cbc, "blowfish");
-#endif
-
 #ifndef OPENSSL_NO_RC5
     EVP_add_cipher(EVP_rc5_32_12_16_ecb());
     EVP_add_cipher(EVP_rc5_32_12_16_cfb());
