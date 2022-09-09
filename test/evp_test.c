@@ -523,7 +523,6 @@ typedef struct cipher_data_st {
     int aead;
     unsigned char *key;
     size_t key_len;
-    size_t key_bits; /* Used by RC2 */
     unsigned char *iv;
     unsigned char *next_iv; /* Expected IV state after operation */
     unsigned int rounds;
@@ -631,13 +630,6 @@ static int cipher_test_parse(EVP_TEST *t, const char *keyword,
         return parse_bin(value, &cdat->plaintext, &cdat->plaintext_len);
     if (strcmp(keyword, "Ciphertext") == 0)
         return parse_bin(value, &cdat->ciphertext, &cdat->ciphertext_len);
-    if (strcmp(keyword, "KeyBits") == 0) {
-        i = atoi(value);
-        if (i < 0)
-            return -1;
-        cdat->key_bits = (size_t)i;
-        return 1;
-    }
     if (cdat->aead) {
         int tls_aad = 0;
 
@@ -797,14 +789,6 @@ static int cipher_test_enc(EVP_TEST *t, int enc,
     if (!EVP_CIPHER_CTX_set_key_length(ctx_base, expected->key_len)) {
         t->err = "INVALID_KEY_LENGTH";
         goto err;
-    }
-    if (expected->key_bits > 0) {
-        int bits = (int)expected->key_bits;
-
-        if (!EVP_CIPHER_CTX_ctrl(ctx_base, EVP_CTRL_SET_RC2_KEY_BITS, bits, NULL)) {
-            t->err = "INVALID KEY BITS";
-            goto err;
-        }
     }
     if (!EVP_CipherInit_ex(ctx_base, NULL, NULL, expected->key, expected->iv, -1)) {
         t->err = "KEY_SET_ERROR";
@@ -4026,10 +4010,6 @@ static int is_cipher_disabled(const char *name)
 #endif
 #ifdef OPENSSL_NO_OCB
     if (STR_ENDS_WITH(name, "OCB"))
-        return 1;
-#endif
-#ifdef OPENSSL_NO_RC2
-    if (STR_STARTS_WITH(name, "RC2"))
         return 1;
 #endif
 #ifdef OPENSSL_NO_RC4

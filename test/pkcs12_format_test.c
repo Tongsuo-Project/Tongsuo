@@ -235,25 +235,14 @@ static const int enc_nids_all[] = {
 #ifndef OPENSSL_NO_RC4
     NID_rc4,
 #endif
-#ifndef OPENSSL_NO_RC2
-    NID_rc2_cbc,
-#endif
 
 #ifndef OPENSSL_NO_MD5
 # ifndef OPENSSL_NO_DES
     NID_pbeWithMD5AndDES_CBC,
 # endif
-# ifndef OPENSSL_NO_RC2
-    NID_pbeWithMD5AndRC2_CBC,
-# endif
 #endif
 #ifndef OPENSSL_NO_DES
     NID_pbeWithSHA1AndDES_CBC,
-#endif
-#ifndef OPENSSL_NO_RC2
-    NID_pbe_WithSHA1And128BitRC2_CBC,
-    NID_pbe_WithSHA1And40BitRC2_CBC,
-    NID_pbeWithSHA1AndRC2_CBC,
 #endif
 #ifndef OPENSSL_NO_RC4
     NID_pbe_WithSHA1And128BitRC4,

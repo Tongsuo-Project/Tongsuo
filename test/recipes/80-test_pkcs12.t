@@ -54,7 +54,7 @@ if (eval { require Win32::API; 1; }) {
 }
 $ENV{OPENSSL_WIN32_UTF8}=1;
 
-plan tests => 13;
+plan tests => 12;
 
 # Test different PKCS#12 formats
 ok(run(test(["pkcs12_format_test"])), "test pkcs12 formats");
@@ -95,19 +95,6 @@ SKIP: {
             "-nokeys", "-passout", "pass:v3-certs", "-descert",
             "-out", $outfile2])),
    "test_pkcs12_passcerts");
-}
-
-SKIP: {
-    skip "Skipping legacy PKCS#12 test because the required algorithms are disabled", 1
-        if disabled("des") || disabled("rc2") || disabled("legacy");
-    # Test reading legacy PKCS#12 file
-    ok(run(app(["openssl", "pkcs12", "-export",
-                "-in", srctop_file(@path, "v3-certs-RC2.p12"),
-                "-passin", "pass:v3-certs",
-                "-provider", "default", "-provider", "legacy",
-                "-nokeys", "-passout", "pass:v3-certs", "-descert",
-                "-out", $outfile3])),
-    "test_pkcs12_passcerts_legacy");
 }
 
 # Test export of PEM file with both cert and key

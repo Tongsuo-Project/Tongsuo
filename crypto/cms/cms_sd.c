@@ -1071,10 +1071,7 @@ int CMS_add_standard_smimecap(STACK_OF(X509_ALGOR) **smcap)
         || !cms_add_cipher_smcap(smcap, NID_aes_192_cbc, -1)
         || !cms_add_cipher_smcap(smcap, NID_aes_128_cbc, -1)
         || !cms_add_cipher_smcap(smcap, NID_des_ede3_cbc, -1)
-        || !cms_add_cipher_smcap(smcap, NID_rc2_cbc, 128)
-        || !cms_add_cipher_smcap(smcap, NID_rc2_cbc, 64)
-        || !cms_add_cipher_smcap(smcap, NID_des_cbc, -1)
-        || !cms_add_cipher_smcap(smcap, NID_rc2_cbc, 40))
+        || !cms_add_cipher_smcap(smcap, NID_des_cbc, -1))
         return 0;
     return 1;
 }

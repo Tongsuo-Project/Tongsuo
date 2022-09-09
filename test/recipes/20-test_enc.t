@@ -38,7 +38,7 @@ my @ciphers =
     run(app([$cmd, "list", "-cipher-commands"]),
         capture => 1, statusvar => \$ciphersstatus);
 @ciphers = grep {!/^(bf|des$|des-cbc|des-cfb|des-ecb|des-ofb|desx
-                     |rc2|rc4|seed)/x} @ciphers
+                     |rc4)/x} @ciphers
     if disabled("legacy");
 
 plan tests => 2 + (scalar @ciphers)*2;

@@ -87,11 +87,7 @@ const OPTIONS pkcs12_options[] = {
     {"noout", OPT_NOOUT, '-', "Don't output anything, just verify PKCS#12 input"},
 #ifndef OPENSSL_NO_DES
     {"legacy", OPT_LEGACY_ALG, '-',
-# ifdef OPENSSL_NO_RC2
      "Use legacy encryption algorithm 3DES_CBC for keys and certs"
-# else
-     "Use legacy encryption: 3DES_CBC for keys, RC2_CBC for certs"
-# endif
     },
 #endif
 #ifndef OPENSSL_NO_ENGINE
@@ -439,11 +435,7 @@ int pkcs12_main(int argc, char **argv)
         }
         if (cert_pbe == NID_undef) {
             /* Adapt default algorithm */
-# ifndef OPENSSL_NO_RC2
-            cert_pbe = NID_pbe_WithSHA1And40BitRC2_CBC;
-# else
             cert_pbe = NID_pbe_WithSHA1And3_Key_TripleDES_CBC;
-# endif
         }
 
         if (key_pbe == NID_undef)

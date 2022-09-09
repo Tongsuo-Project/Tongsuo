@@ -599,20 +599,10 @@
 #define NID_pbeWithMD5AndDES_CBC                10
 #define OBJ_pbeWithMD5AndDES_CBC                OBJ_pkcs5,3L
 
-#define SN_pbeWithMD5AndRC2_CBC         "PBE-MD5-RC2-64"
-#define LN_pbeWithMD5AndRC2_CBC         "pbeWithMD5AndRC2-CBC"
-#define NID_pbeWithMD5AndRC2_CBC                169
-#define OBJ_pbeWithMD5AndRC2_CBC                OBJ_pkcs5,6L
-
 #define SN_pbeWithSHA1AndDES_CBC                "PBE-SHA1-DES"
 #define LN_pbeWithSHA1AndDES_CBC                "pbeWithSHA1AndDES-CBC"
 #define NID_pbeWithSHA1AndDES_CBC               170
 #define OBJ_pbeWithSHA1AndDES_CBC               OBJ_pkcs5,10L
-
-#define SN_pbeWithSHA1AndRC2_CBC                "PBE-SHA1-RC2-64"
-#define LN_pbeWithSHA1AndRC2_CBC                "pbeWithSHA1AndRC2-CBC"
-#define NID_pbeWithSHA1AndRC2_CBC               68
-#define OBJ_pbeWithSHA1AndRC2_CBC               OBJ_pkcs5,11L
 
 #define LN_id_pbkdf2            "PBKDF2"
 #define NID_id_pbkdf2           69
@@ -969,17 +959,9 @@
 #define NID_id_smime_alg_ESDHwith3DES           241
 #define OBJ_id_smime_alg_ESDHwith3DES           OBJ_id_smime_alg,1L
 
-#define SN_id_smime_alg_ESDHwithRC2             "id-smime-alg-ESDHwithRC2"
-#define NID_id_smime_alg_ESDHwithRC2            242
-#define OBJ_id_smime_alg_ESDHwithRC2            OBJ_id_smime_alg,2L
-
 #define SN_id_smime_alg_3DESwrap                "id-smime-alg-3DESwrap"
 #define NID_id_smime_alg_3DESwrap               243
 #define OBJ_id_smime_alg_3DESwrap               OBJ_id_smime_alg,3L
-
-#define SN_id_smime_alg_RC2wrap         "id-smime-alg-RC2wrap"
-#define NID_id_smime_alg_RC2wrap                244
-#define OBJ_id_smime_alg_RC2wrap                OBJ_id_smime_alg,4L
 
 #define SN_id_smime_alg_ESDH            "id-smime-alg-ESDH"
 #define NID_id_smime_alg_ESDH           245
@@ -988,10 +970,6 @@
 #define SN_id_smime_alg_CMS3DESwrap             "id-smime-alg-CMS3DESwrap"
 #define NID_id_smime_alg_CMS3DESwrap            246
 #define OBJ_id_smime_alg_CMS3DESwrap            OBJ_id_smime_alg,6L
-
-#define SN_id_smime_alg_CMSRC2wrap              "id-smime-alg-CMSRC2wrap"
-#define NID_id_smime_alg_CMSRC2wrap             247
-#define OBJ_id_smime_alg_CMSRC2wrap             OBJ_id_smime_alg,7L
 
 #define SN_id_alg_PWRI_KEK              "id-alg-PWRI-KEK"
 #define NID_id_alg_PWRI_KEK             893
@@ -1090,16 +1068,6 @@
 #define LN_pbe_WithSHA1And2_Key_TripleDES_CBC           "pbeWithSHA1And2-KeyTripleDES-CBC"
 #define NID_pbe_WithSHA1And2_Key_TripleDES_CBC          147
 #define OBJ_pbe_WithSHA1And2_Key_TripleDES_CBC          OBJ_pkcs12_pbeids,4L
-
-#define SN_pbe_WithSHA1And128BitRC2_CBC         "PBE-SHA1-RC2-128"
-#define LN_pbe_WithSHA1And128BitRC2_CBC         "pbeWithSHA1And128BitRC2-CBC"
-#define NID_pbe_WithSHA1And128BitRC2_CBC                148
-#define OBJ_pbe_WithSHA1And128BitRC2_CBC                OBJ_pkcs12_pbeids,5L
-
-#define SN_pbe_WithSHA1And40BitRC2_CBC          "PBE-SHA1-RC2-40"
-#define LN_pbe_WithSHA1And40BitRC2_CBC          "pbeWithSHA1And40BitRC2-CBC"
-#define NID_pbe_WithSHA1And40BitRC2_CBC         149
-#define OBJ_pbe_WithSHA1And40BitRC2_CBC         OBJ_pkcs12_pbeids,6L
 
 #define OBJ_pkcs12_Version1             OBJ_pkcs12,10L
 
@@ -1204,31 +1172,6 @@
 #define LN_hmacWithSHA512_256           "hmacWithSHA512-256"
 #define NID_hmacWithSHA512_256          1194
 #define OBJ_hmacWithSHA512_256          OBJ_rsadsi,2L,13L
-
-#define SN_rc2_cbc              "RC2-CBC"
-#define LN_rc2_cbc              "rc2-cbc"
-#define NID_rc2_cbc             37
-#define OBJ_rc2_cbc             OBJ_rsadsi,3L,2L
-
-#define SN_rc2_ecb              "RC2-ECB"
-#define LN_rc2_ecb              "rc2-ecb"
-#define NID_rc2_ecb             38
-
-#define SN_rc2_cfb64            "RC2-CFB"
-#define LN_rc2_cfb64            "rc2-cfb"
-#define NID_rc2_cfb64           39
-
-#define SN_rc2_ofb64            "RC2-OFB"
-#define LN_rc2_ofb64            "rc2-ofb"
-#define NID_rc2_ofb64           40
-
-#define SN_rc2_40_cbc           "RC2-40-CBC"
-#define LN_rc2_40_cbc           "rc2-40-cbc"
-#define NID_rc2_40_cbc          98
-
-#define SN_rc2_64_cbc           "RC2-64-CBC"
-#define LN_rc2_64_cbc           "rc2-64-cbc"
-#define NID_rc2_64_cbc          166
 
 #define SN_rc4          "RC4"
 #define LN_rc4          "rc4"

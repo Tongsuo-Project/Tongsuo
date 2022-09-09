@@ -217,8 +217,6 @@
 # define SSL_DES                 0x00000001U
 # define SSL_3DES                0x00000002U
 # define SSL_RC4                 0x00000004U
-# define SSL_RC2                 0x00000008U
-# define SSL_IDEA                0x00000010U
 # define SSL_eNULL               0x00000020U
 # define SSL_AES128              0x00000040U
 # define SSL_AES256              0x00000080U
@@ -243,7 +241,7 @@
 # define SSL_AESCCM              (SSL_AES128CCM | SSL_AES256CCM | SSL_AES128CCM8 | SSL_AES256CCM8)
 # define SSL_AES                 (SSL_AES128|SSL_AES256|SSL_AESGCM|SSL_AESCCM)
 # define SSL_CHACHA20            (SSL_CHACHA20POLY1305)
-# define SSL_CBC                 (SSL_DES | SSL_3DES | SSL_RC2 | SSL_IDEA \
+# define SSL_CBC                 (SSL_DES | SSL_3DES \
                                   | SSL_AES128 | SSL_AES256)
 
 /* Bits for algorithm_mac (symmetric authentication) */
@@ -396,24 +394,23 @@
 # define SSL_ENC_DES_IDX         0
 # define SSL_ENC_3DES_IDX        1
 # define SSL_ENC_RC4_IDX         2
-# define SSL_ENC_RC2_IDX         3
-# define SSL_ENC_NULL_IDX        4
-# define SSL_ENC_AES128_IDX      5
-# define SSL_ENC_AES256_IDX      6
-# define SSL_ENC_AES128GCM_IDX   7
-# define SSL_ENC_AES256GCM_IDX   8
-# define SSL_ENC_AES128CCM_IDX   9
-# define SSL_ENC_AES256CCM_IDX   10
-# define SSL_ENC_AES128CCM8_IDX  11
-# define SSL_ENC_AES256CCM8_IDX  12
-# define SSL_ENC_CHACHA_IDX      13
-# define SSL_ENC_SM4_GCM_IDX     14
-# define SSL_ENC_SM4_CCM_IDX     15
+# define SSL_ENC_NULL_IDX        3
+# define SSL_ENC_AES128_IDX      4
+# define SSL_ENC_AES256_IDX      5
+# define SSL_ENC_AES128GCM_IDX   6
+# define SSL_ENC_AES256GCM_IDX   7
+# define SSL_ENC_AES128CCM_IDX   8
+# define SSL_ENC_AES256CCM_IDX   9
+# define SSL_ENC_AES128CCM8_IDX  10
+# define SSL_ENC_AES256CCM8_IDX  11
+# define SSL_ENC_CHACHA_IDX      12
+# define SSL_ENC_SM4_GCM_IDX     13
+# define SSL_ENC_SM4_CCM_IDX     14
 # ifndef OPENSSL_NO_SM4
-#  define SSL_ENC_SM4_IDX        16
-#  define SSL_ENC_NUM_IDX        17
-# else
+#  define SSL_ENC_SM4_IDX        15
 #  define SSL_ENC_NUM_IDX        16
+# else
+#  define SSL_ENC_NUM_IDX        15
 # endif
 
 /*-

@@ -100,11 +100,6 @@ X509_ALGOR *PKCS5_pbe2_set_scrypt(const EVP_CIPHER *cipher,
     EVP_CIPHER_CTX_free(ctx);
     ctx = NULL;
 
-    /* If its RC2 then we'd better setup the key length */
-
-    if (alg_nid == NID_rc2_cbc)
-        keylen = EVP_CIPHER_get_key_length(cipher);
-
     /* Setup keyfunc */
 
     X509_ALGOR_free(pbe2->keyfunc);

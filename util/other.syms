@@ -338,7 +338,6 @@ EVP_get_digestbynid                     define
 EVP_get_digestbyobj                     define
 EVP_get_macbynid                        define
 EVP_get_macbyobj                        define
-EVP_rc2_cfb                             define
 EVP_rc5_32_12_16_cfb                    define
 EVP_RSA_gen                             define
 EVP_seed_cfb                            define

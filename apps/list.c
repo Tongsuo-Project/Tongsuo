@@ -1343,9 +1343,6 @@ static void list_disabled(void)
 #ifdef OPENSSL_NO_PSK
     BIO_puts(bio_out, "PSK\n");
 #endif
-#ifdef OPENSSL_NO_RC2
-    BIO_puts(bio_out, "RC2\n");
-#endif
 #ifdef OPENSSL_NO_RC4
     BIO_puts(bio_out, "RC4\n");
 #endif
