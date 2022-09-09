@@ -493,7 +493,6 @@ my @disablables = (
     "unit-test",
     "uplink",
     "weak-ssl-ciphers",
-    "whirlpool",
     "zlib",
     "zlib-dynamic",
     "skip-scsv",
@@ -585,7 +584,7 @@ my @disable_cascades = (
                              "siphash", "siv",
                              "sm3", "sm4", "srp",
                              "srtp", "ssl3-method", "ssl-trace",
-                             "ts", "ui-console", "whirlpool",
+                             "ts", "ui-console",
                              "fips-securitychecks" ],
     sub { $config{processor} eq "386" }
                         => [ "sse2" ],
@@ -1830,9 +1829,6 @@ foreach my $what (sort keys %disabled) {
                                 'zlib-dynamic', 'zlib', 'sse2', 'legacy' )) {
         (my $WHAT = uc $what) =~ s|-|_|g;
         my $skipdir = $what;
-
-        # fix-up crypto/directory name(s)
-        $skipdir = "whrlpool" if $what eq "whirlpool";
 
         my $macro = $disabled_info{$what}->{macro} = "OPENSSL_NO_$WHAT";
         push @{$config{openssl_feature_defines}}, $macro;

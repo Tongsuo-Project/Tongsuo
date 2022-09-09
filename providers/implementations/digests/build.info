@@ -11,8 +11,6 @@ $SM3_GOAL=../../libdefault.a
 $MD5_GOAL=../../libdefault.a
 $NULL_GOAL=../../libdefault.a
 
-$WHIRLPOOL_GOAL=../../liblegacy.a
-
 # This source is common for all digests in all our providers.
 SOURCE[$COMMON_GOAL]=digestcommon.c
 
@@ -31,8 +29,4 @@ ENDIF
 
 IF[{- !$disabled{md5} -}]
   SOURCE[$MD5_GOAL]=md5_prov.c md5_sha1_prov.c
-ENDIF
-
-IF[{- !$disabled{whirlpool} -}]
-  SOURCE[$WHIRLPOOL_GOAL]=wp_prov.c
 ENDIF

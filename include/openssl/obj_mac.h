@@ -3943,10 +3943,6 @@
 #define LN_ipsec4               "ipsec4"
 #define NID_ipsec4              750
 
-#define SN_whirlpool            "whirlpool"
-#define NID_whirlpool           804
-#define OBJ_whirlpool           OBJ_iso,0L,10118L,3L,0L,55L
-
 #define SN_sm4_ecb              "SM4-ECB"
 #define LN_sm4_ecb              "sm4-ecb"
 #define NID_sm4_ecb             1133

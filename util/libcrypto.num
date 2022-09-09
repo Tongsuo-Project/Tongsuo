@@ -107,7 +107,6 @@ OCSP_CERTID_dup                         111	3_0_0	EXIST::FUNCTION:OCSP
 RSA_PSS_PARAMS_free                     112	3_0_0	EXIST::FUNCTION:
 i2d_TS_MSG_IMPRINT                      113	3_0_0	EXIST::FUNCTION:TS
 EC_POINT_mul                            114	3_0_0	EXIST::FUNCTION:EC
-WHIRLPOOL_Final                         115	3_0_0	EXIST::FUNCTION:DEPRECATEDIN_3_0,WHIRLPOOL
 CMS_get1_ReceiptRequest                 116	3_0_0	EXIST::FUNCTION:CMS
 BIO_sock_non_fatal_error                117	3_0_0	EXIST::FUNCTION:SOCK
 HMAC_Update                             118	3_0_0	EXIST::FUNCTION:DEPRECATEDIN_3_0
@@ -249,7 +248,6 @@ EC_POINT_get_affine_coordinates_GFp     266	3_0_0	EXIST::FUNCTION:DEPRECATEDIN_3
 BIO_dgram_sctp_wait_for_dry             268	3_0_0	EXIST::FUNCTION:DGRAM,SCTP
 ASN1_OCTET_STRING_NDEF_it               269	3_0_0	EXIST::FUNCTION:
 EVP_PKEY_asn1_get_count                 270	3_0_0	EXIST::FUNCTION:
-WHIRLPOOL_Init                          271	3_0_0	EXIST::FUNCTION:DEPRECATEDIN_3_0,WHIRLPOOL
 EVP_OpenInit                            272	3_0_0	EXIST::FUNCTION:
 OCSP_response_get1_basic                273	3_0_0	EXIST::FUNCTION:OCSP
 CRYPTO_gcm128_tag                       274	3_0_0	EXIST::FUNCTION:
@@ -302,7 +300,6 @@ DH_get_1024_160                         320	3_0_0	EXIST::FUNCTION:DEPRECATEDIN_3
 i2d_ASN1_UNIVERSALSTRING                321	3_0_0	EXIST::FUNCTION:
 d2i_OCSP_RESPID                         322	3_0_0	EXIST::FUNCTION:OCSP
 BIO_s_accept                            323	3_0_0	EXIST::FUNCTION:SOCK
-EVP_whirlpool                           324	3_0_0	EXIST::FUNCTION:WHIRLPOOL
 OCSP_ONEREQ_get1_ext_d2i                325	3_0_0	EXIST::FUNCTION:OCSP
 d2i_ESS_SIGNING_CERT                    326	3_0_0	EXIST::FUNCTION:
 EC_KEY_set_default_method               327	3_0_0	EXIST::FUNCTION:DEPRECATEDIN_3_0,EC
@@ -468,7 +465,6 @@ BN_get_rfc3526_prime_3072               496	3_0_0	EXIST::FUNCTION:
 X509_INFO_new                           497	3_0_0	EXIST::FUNCTION:
 OCSP_RESPDATA_it                        498	3_0_0	EXIST::FUNCTION:OCSP
 X509_CRL_print                          499	3_0_0	EXIST::FUNCTION:
-WHIRLPOOL_Update                        500	3_0_0	EXIST::FUNCTION:DEPRECATEDIN_3_0,WHIRLPOOL
 DSA_get_ex_data                         501	3_0_0	EXIST::FUNCTION:DEPRECATEDIN_3_0,DSA
 BN_copy                                 502	3_0_0	EXIST::FUNCTION:
 X509_VERIFY_PARAM_add0_policy           504	3_0_0	EXIST::FUNCTION:
@@ -2096,7 +2092,6 @@ TS_ACCURACY_set_millis                  2204	3_0_0	EXIST::FUNCTION:TS
 X509V3_EXT_conf                         2205	3_0_0	EXIST::FUNCTION:
 i2d_DHxparams                           2206	3_0_0	EXIST::FUNCTION:DEPRECATEDIN_3_0,DH
 EVP_CIPHER_CTX_free                     2207	3_0_0	EXIST::FUNCTION:
-WHIRLPOOL_BitUpdate                     2208	3_0_0	EXIST::FUNCTION:DEPRECATEDIN_3_0,WHIRLPOOL
 i2d_TS_ACCURACY                         2210	3_0_0	EXIST::FUNCTION:TS
 ASN1_VISIBLESTRING_free                 2211	3_0_0	EXIST::FUNCTION:
 NCONF_load_bio                          2212	3_0_0	EXIST::FUNCTION:
@@ -2412,7 +2407,6 @@ CMS_signed_get0_data_by_OBJ             2536	3_0_0	EXIST::FUNCTION:CMS
 X509_PURPOSE_add                        2537	3_0_0	EXIST::FUNCTION:
 PKCS7_ENVELOPE_free                     2538	3_0_0	EXIST::FUNCTION:
 PKCS12_key_gen_uni                      2539	3_0_0	EXIST::FUNCTION:
-WHIRLPOOL                               2540	3_0_0	EXIST::FUNCTION:DEPRECATEDIN_3_0,WHIRLPOOL
 UI_set_default_method                   2542	3_0_0	EXIST::FUNCTION:
 EC_POINT_is_at_infinity                 2543	3_0_0	EXIST::FUNCTION:EC
 i2d_NOTICEREF                           2544	3_0_0	EXIST::FUNCTION:
