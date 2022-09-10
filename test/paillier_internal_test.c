@@ -1,0 +1,326 @@
+/*
+ * Copyright 2022 The Tongsuo Project Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
+ * this file except in compliance with the License.  You can obtain a copy
+ * in the file LICENSE in the source distribution or at
+ * https://github.com/Tongsuo-Project/Tongsuo/blob/master/LICENSE.txt
+ */
+
+#include "internal/deprecated.h"
+#include "internal/nelem.h"
+#include "testutil.h"
+#include <openssl/conf.h>
+#include <openssl/opensslconf.h>
+#include <openssl/bio.h>
+#include <openssl/pem.h>
+#include <openssl/objects.h>
+#include <time.h>
+#include <openssl/paillier.h>
+#include "../crypto/paillier/paillier_local.h"
+
+#define PAILLIER_PUB_FILE_PATH    "paillier-pub.pem"
+#define PAILLIER_KEY_FILE_PATH    "paillier-key.pem"
+
+static size_t paillier_encrypt(PAILLIER_CTX *ctx,
+                               unsigned char **out, int32_t plaintext)
+{
+    size_t size, ret = 0;
+    unsigned char *buf = NULL;
+    PAILLIER_CIPHERTEXT *r = NULL;
+
+    if (!TEST_ptr(r = PAILLIER_CIPHERTEXT_new(ctx)))
+        goto err;
+
+    if (!TEST_true(PAILLIER_encrypt(ctx, r, plaintext)))
+        goto err;
+
+    size = PAILLIER_CIPHERTEXT_encode(ctx, NULL, 0, r, 0);
+    if (!TEST_ptr(buf = OPENSSL_zalloc(size)))
+        goto err;
+
+    if (!TEST_true(PAILLIER_CIPHERTEXT_encode(ctx, buf, size, r, 0)))
+        goto err;
+
+    *out = buf;
+    buf = NULL;
+    ret = size;
+
+err:
+    PAILLIER_CIPHERTEXT_free(r);
+    return ret;
+}
+
+static uint32_t paillier_decrypt(PAILLIER_CTX *ctx,
+                                 unsigned char *in, size_t size)
+{
+    int32_t r = 0;
+    PAILLIER_CIPHERTEXT *c = NULL;
+
+    if (!TEST_ptr(c = PAILLIER_CIPHERTEXT_new(ctx)))
+        goto err;
+
+    if (!TEST_true(PAILLIER_CIPHERTEXT_decode(ctx, c, in, size)))
+        goto err;
+
+    if (!TEST_true(PAILLIER_decrypt(ctx, &r, c)))
+        goto err;
+
+err:
+    PAILLIER_CIPHERTEXT_free(c);
+    return r;
+}
+
+static size_t paillier_add(PAILLIER_CTX *ctx, unsigned char **out,
+                           unsigned char *in1, size_t in1_size,
+                           unsigned char *in2, size_t in2_size)
+{
+    size_t size, ret = 0;
+    unsigned char *buf = NULL;
+    PAILLIER_CIPHERTEXT *r = NULL, *c1 = NULL, *c2 = NULL;
+
+    if (!TEST_ptr(r = PAILLIER_CIPHERTEXT_new(ctx)))
+        goto err;
+
+    if (!TEST_ptr(c1 = PAILLIER_CIPHERTEXT_new(ctx)))
+        goto err;
+
+    if (!TEST_ptr(c2 = PAILLIER_CIPHERTEXT_new(ctx)))
+        goto err;
+
+    if (!TEST_true(PAILLIER_CIPHERTEXT_decode(ctx, c1, in1, in1_size)))
+        goto err;
+
+    if (!TEST_true(PAILLIER_CIPHERTEXT_decode(ctx, c2, in2, in2_size)))
+        goto err;
+
+    if (!TEST_true(PAILLIER_add(ctx, r, c1, c2)))
+        goto err;
+
+    size = PAILLIER_CIPHERTEXT_encode(ctx, NULL, 0, r, 0);
+    if (!TEST_ptr(buf = OPENSSL_zalloc(size)))
+        goto err;
+
+    if (!TEST_true(PAILLIER_CIPHERTEXT_encode(ctx, buf, size, r, 0)))
+        goto err;
+
+    *out = buf;
+    buf = NULL;
+    ret = size;
+
+err:
+    PAILLIER_CIPHERTEXT_free(c1);
+    PAILLIER_CIPHERTEXT_free(c2);
+    PAILLIER_CIPHERTEXT_free(r);
+    return ret;
+}
+
+#if 1
+static size_t paillier_sub(PAILLIER_CTX *ctx, unsigned char **out,
+                           unsigned char *in1, size_t in1_size,
+                           unsigned char *in2, size_t in2_size)
+{
+    size_t size, ret = 0;
+    unsigned char *buf = NULL;
+    PAILLIER_CIPHERTEXT *r = NULL, *c1 = NULL, *c2 = NULL;
+
+    if (!TEST_ptr(r = PAILLIER_CIPHERTEXT_new(ctx)))
+        goto err;
+
+    if (!TEST_ptr(c1 = PAILLIER_CIPHERTEXT_new(ctx)))
+        goto err;
+
+    if (!TEST_ptr(c2 = PAILLIER_CIPHERTEXT_new(ctx)))
+        goto err;
+
+    if (!TEST_true(PAILLIER_CIPHERTEXT_decode(ctx, c1, in1, in1_size)))
+        goto err;
+
+    if (!TEST_true(PAILLIER_CIPHERTEXT_decode(ctx, c2, in2, in2_size)))
+        goto err;
+
+    if (!TEST_true(PAILLIER_sub(ctx, r, c1, c2)))
+        goto err;
+
+    size = PAILLIER_CIPHERTEXT_encode(ctx, NULL, 0, r, 0);
+    if (!TEST_ptr(buf = OPENSSL_zalloc(size)))
+        goto err;
+
+    if (!TEST_true(PAILLIER_CIPHERTEXT_encode(ctx, buf, size, r, 0)))
+        goto err;
+
+    *out = buf;
+    buf = NULL;
+    ret = size;
+
+err:
+    PAILLIER_CIPHERTEXT_free(c1);
+    PAILLIER_CIPHERTEXT_free(c2);
+    PAILLIER_CIPHERTEXT_free(r);
+    return ret;
+}
+#endif
+
+static size_t paillier_mul(PAILLIER_CTX *ctx, unsigned char **out,
+                           unsigned char *in, size_t in_size, uint32_t m)
+{
+    size_t size, ret = 0;
+    unsigned char *buf = NULL;
+    PAILLIER_CIPHERTEXT *r = NULL, *c = NULL;
+
+    if (!TEST_ptr(r = PAILLIER_CIPHERTEXT_new(ctx)))
+        goto err;
+
+    if (!TEST_ptr(c = PAILLIER_CIPHERTEXT_new(ctx)))
+        goto err;
+
+    if (!TEST_true(PAILLIER_CIPHERTEXT_decode(ctx, c, in, in_size)))
+        goto err;
+
+    if (!TEST_true(PAILLIER_mul(ctx, r, c, m)))
+        goto err;
+
+    size = PAILLIER_CIPHERTEXT_encode(ctx, NULL, 0, r, 0);
+    if (!TEST_ptr(buf = OPENSSL_zalloc(size)))
+        goto err;
+
+    if (!TEST_true(PAILLIER_CIPHERTEXT_encode(ctx, buf, size, r, 0)))
+        goto err;
+
+    *out = buf;
+    buf = NULL;
+    ret = size;
+
+err:
+    PAILLIER_CIPHERTEXT_free(c);
+    PAILLIER_CIPHERTEXT_free(r);
+    return ret;
+}
+
+static int paillier_test()
+{
+    int ret = 0;
+    BIO *bio = NULL;
+    PAILLIER_KEY *pail_key = NULL, *pail_pub_key = NULL, *pail_pri_key = NULL;
+    int32_t p1 = 1111111, p2 = 555555, m = 3, r;
+    unsigned char *buf = NULL, *buf1 = NULL, *buf2 = NULL;
+    size_t size, size1, size2;
+    PAILLIER_CTX *ectx = NULL, *dctx = NULL;
+
+    TEST_info("Testing encrypt/decrypt of paillier\n");
+
+    if (!TEST_ptr(pail_key = PAILLIER_KEY_new()))
+        goto err;
+
+    if (!TEST_true(PAILLIER_KEY_generate_key(pail_key, 255)))
+        goto err;
+
+    /*
+     * saving paillier public key to pem file for this test
+     */
+    if (!TEST_ptr(bio = BIO_new(BIO_s_file()))
+        || !TEST_true(BIO_write_filename(bio, PAILLIER_PUB_FILE_PATH))
+        || !TEST_true(PEM_write_bio_PAILLIER_PublicKey(bio, pail_key)))
+        goto err;
+    BIO_free(bio);
+
+    if (!TEST_ptr(bio = BIO_new(BIO_s_file()))
+        || !TEST_true(BIO_read_filename(bio, PAILLIER_PUB_FILE_PATH))
+        || !TEST_ptr(pail_pub_key = PEM_read_bio_PAILLIER_PublicKey(bio, NULL,
+                                                                    NULL, NULL)))
+        goto err;
+    BIO_free(bio);
+
+    if (!TEST_ptr(ectx = PAILLIER_CTX_new(pail_pub_key)))
+        goto err;
+
+    /*
+     * saving ec secret key to pem file for this test
+     */
+    if (!TEST_ptr(bio = BIO_new(BIO_s_file()))
+        || !TEST_true(BIO_write_filename(bio, PAILLIER_KEY_FILE_PATH))
+        || !TEST_true(PEM_write_bio_PAILLIER_PrivateKey(bio, pail_key)))
+        goto err;
+    BIO_free(bio);
+
+    if (!TEST_ptr(bio = BIO_new(BIO_s_file()))
+        || !TEST_true(BIO_read_filename(bio, PAILLIER_KEY_FILE_PATH))
+        || !TEST_true(pail_pri_key = PEM_read_bio_PAILLIER_PrivateKey(bio, NULL,
+                                                                      NULL, NULL)))
+        goto err;
+    BIO_free(bio);
+
+    if (!TEST_ptr(dctx = PAILLIER_CTX_new(pail_pri_key)))
+        goto err;
+
+    size1 = paillier_encrypt(ectx, &buf1, p1);
+    if (!TEST_ptr(buf1))
+        goto err;
+
+    r = paillier_decrypt(dctx, buf1, size1);
+    if (!TEST_int_eq(r, p1))
+        goto err;
+
+    size2 = paillier_encrypt(ectx, &buf2, p2);
+    if (!TEST_ptr(buf2))
+        goto err;
+
+    size = paillier_add(ectx, &buf, buf1, size1, buf2, size2);
+    if (!TEST_ptr(buf))
+        goto err;
+
+    r = paillier_decrypt(dctx, buf, size);
+    if (!TEST_int_eq(r, p1 + p2))
+        goto err;
+
+    OPENSSL_free(buf);
+    size = paillier_sub(ectx, &buf, buf1, size1, buf2, size2);
+    if (!TEST_ptr(buf))
+        goto err;
+
+    r = paillier_decrypt(dctx, buf, size);
+    if (!TEST_int_eq(r, p1 - p2))
+        goto err;
+
+    OPENSSL_free(buf);
+    size = paillier_mul(ectx, &buf, buf2, size2, m);
+    if (!TEST_ptr(buf))
+        goto err;
+
+    r = paillier_decrypt(dctx, buf, size);
+    if (!TEST_int_eq(r, m * p2))
+        goto err;
+
+    ret = 1;
+
+err:
+    OPENSSL_free(buf1);
+    OPENSSL_free(buf2);
+    OPENSSL_free(buf);
+    PAILLIER_KEY_free(pail_key);
+    PAILLIER_KEY_free(pail_pub_key);
+    PAILLIER_KEY_free(pail_pri_key);
+
+    PAILLIER_CTX_free(ectx);
+    PAILLIER_CTX_free(dctx);
+
+    return ret;
+}
+
+static int paillier_tests(void)
+{
+    if (!TEST_true(paillier_test()))
+        return 0;
+
+    return 1;
+}
+
+int setup_tests(void)
+{
+    ADD_TEST(paillier_tests);
+    return 1;
+}
+
+void cleanup_tests(void)
+{
+}

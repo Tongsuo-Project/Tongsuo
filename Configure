@@ -503,7 +503,8 @@ my @disablables = (
     "status",
     "evp-cipher-api-compat",
     "crypto-mdebug-count",
-    "cert-compression"
+    "cert-compression",
+    "paillier"
     );
 foreach my $proto ((@tls, @dtls))
         {
@@ -563,6 +564,7 @@ our %disabled = ( # "what"         => "comment"
                   "status"              => "default",
                   "evp-cipher-api-compat"      => "default",
                   "cert-compression"    => "default",
+                  "paillier"            => "default",
                 );
 
 # Note: => pair form used for aesthetics, not to truly make a hash table

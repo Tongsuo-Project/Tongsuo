@@ -1,0 +1,5 @@
+LIBS=../../libcrypto
+
+#IF[{- !$disabled{paillier} -}]
+  SOURCE[../../libcrypto]=paillier_key.c paillier_crypt.c paillier_asn1.c paillier_ctx.c paillier_encode.c
+#ENDIF
