@@ -1111,9 +1111,6 @@ typedef struct mac_data_st {
     size_t output_len;
     unsigned char *custom;
     size_t custom_len;
-    /* MAC salt (blake2) */
-    unsigned char *salt;
-    size_t salt_len;
     /* XOF mode? */
     int xof;
     /* Reinitialization fails */
@@ -1204,7 +1201,6 @@ static void mac_test_cleanup(EVP_TEST *t)
     OPENSSL_free(mdat->key);
     OPENSSL_free(mdat->iv);
     OPENSSL_free(mdat->custom);
-    OPENSSL_free(mdat->salt);
     OPENSSL_free(mdat->input);
     OPENSSL_free(mdat->output);
 }
@@ -1220,8 +1216,6 @@ static int mac_test_parse(EVP_TEST *t,
         return parse_bin(value, &mdata->iv, &mdata->iv_len);
     if (strcmp(keyword, "Custom") == 0)
         return parse_bin(value, &mdata->custom, &mdata->custom_len);
-    if (strcmp(keyword, "Salt") == 0)
-        return parse_bin(value, &mdata->salt, &mdata->salt_len);
     if (strcmp(keyword, "Algorithm") == 0) {
         mdata->alg = OPENSSL_strdup(value);
         if (!mdata->alg)
@@ -1433,11 +1427,6 @@ static int mac_test_run_mac(EVP_TEST *t)
             OSSL_PARAM_construct_octet_string(OSSL_MAC_PARAM_CUSTOM,
                                               expected->custom,
                                               expected->custom_len);
-    if (expected->salt != NULL)
-        params[params_n++] =
-            OSSL_PARAM_construct_octet_string(OSSL_MAC_PARAM_SALT,
-                                              expected->salt,
-                                              expected->salt_len);
     if (expected->iv != NULL)
         params[params_n++] =
             OSSL_PARAM_construct_octet_string(OSSL_MAC_PARAM_IV,
@@ -3918,10 +3907,6 @@ strlen(str) < strlen(pre) ? 0 : (OPENSSL_strcasecmp(pre, str + strlen(str) - str
 
 static int is_digest_disabled(const char *name)
 {
-#ifdef OPENSSL_NO_BLAKE2
-    if (STR_STARTS_WITH(name, "BLAKE"))
-        return 1;
-#endif
 #ifdef OPENSSL_NO_MD5
     if (OPENSSL_strcasecmp(name, "MD5") == 0)
         return 1;
@@ -3952,11 +3937,6 @@ static int is_pkey_disabled(const char *name)
 
 static int is_mac_disabled(const char *name)
 {
-#ifdef OPENSSL_NO_BLAKE2
-    if (STR_STARTS_WITH(name, "BLAKE2BMAC")
-        || STR_STARTS_WITH(name, "BLAKE2SMAC"))
-        return 1;
-#endif
 #ifdef OPENSSL_NO_CMAC
     if (STR_STARTS_WITH(name, "CMAC"))
         return 1;

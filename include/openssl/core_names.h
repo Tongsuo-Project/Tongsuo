@@ -170,8 +170,6 @@ extern "C" {
 #define OSSL_MAC_PARAM_TLS_DATA_SIZE    "tls-data-size"           /* size_t */
 
 /* Known MAC names */
-#define OSSL_MAC_NAME_BLAKE2BMAC    "BLAKE2BMAC"
-#define OSSL_MAC_NAME_BLAKE2SMAC    "BLAKE2SMAC"
 #define OSSL_MAC_NAME_CMAC          "CMAC"
 #define OSSL_MAC_NAME_GMAC          "GMAC"
 #define OSSL_MAC_NAME_HMAC          "HMAC"

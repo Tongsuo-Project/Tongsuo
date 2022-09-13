@@ -3715,8 +3715,6 @@ ECPARAMETERS_it                         3922	3_0_0	EXIST::FUNCTION:EC
 ECPKPARAMETERS_it                       3923	3_0_0	EXIST::FUNCTION:EC
 EC_GROUP_get_ecparameters               3924	3_0_0	EXIST::FUNCTION:EC
 DHparams_it                             3925	3_0_0	EXIST::FUNCTION:DH
-EVP_blake2s256                          3926	3_0_0	EXIST::FUNCTION:BLAKE2
-EVP_blake2b512                          3927	3_0_0	EXIST::FUNCTION:BLAKE2
 X509_SIG_get0                           3928	3_0_0	EXIST::FUNCTION:
 BIO_meth_new                            3929	3_0_0	EXIST::FUNCTION:
 BIO_meth_get_puts                       3930	3_0_0	EXIST::FUNCTION:
