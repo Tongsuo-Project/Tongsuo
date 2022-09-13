@@ -413,13 +413,6 @@ rsadsi 3 8		: RC5-CBC		: rc5-cbc
 !Cname ms-upn
 1 3 6 1 4 1 311 20 2 3	: msUPN			: Microsoft User Principal Name
 
-1 3 6 1 4 1 3029 1 2	: BF-CBC		: bf-cbc
-			: BF-ECB		: bf-ecb
-!Cname bf-cfb64
-			: BF-CFB		: bf-cfb
-!Cname bf-ofb64
-			: BF-OFB		: bf-ofb
-
 !Cname id-pkix
 1 3 6 1 5 5 7		: PKIX
 

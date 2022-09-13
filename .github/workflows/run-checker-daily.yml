@@ -25,7 +25,6 @@ jobs:
           no-autoalginit,
           no-autoerrinit,
           no-autoload-config,
-          no-bf,
           no-blake2,
           no-buildtest-c++,
           no-bulk,

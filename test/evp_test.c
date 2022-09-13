@@ -3986,10 +3986,6 @@ static int is_kdf_disabled(const char *name)
 
 static int is_cipher_disabled(const char *name)
 {
-#ifdef OPENSSL_NO_BF
-    if (STR_STARTS_WITH(name, "BF"))
-        return 1;
-#endif
 #ifdef OPENSSL_NO_CHACHA
     if (STR_STARTS_WITH(name, "CHACHA"))
         return 1;

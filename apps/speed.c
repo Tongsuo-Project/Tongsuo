@@ -272,8 +272,8 @@ const OPTIONS speed_options[] = {
 enum {
     D_MD5, D_SHA1,
     D_SHA256, D_SHA512, D_HMAC,
-    D_CBC_DES, D_EDE3_DES, D_RC4, D_CBC_IDEA,
-    D_CBC_RC5, D_CBC_BF, D_CBC_CAST,
+    D_CBC_DES, D_EDE3_DES, D_RC4,
+    D_CBC_RC5,
     D_CBC_128_AES, D_CBC_192_AES, D_CBC_256_AES,
     D_EVP, D_GHASH, D_RAND, D_EVP_CMAC, D_SM3, D_CBC_SM4, ALGOR_NUM
 };
@@ -282,7 +282,7 @@ static const char *names[ALGOR_NUM] = {
     "md5", "sha1",
     "sha256", "sha512", "hmac(md5)",
     "des-cbc", "des-ede3", "rc4",
-    "rc5-cbc", "blowfish",
+    "rc5-cbc",
     "aes-128-cbc", "aes-192-cbc", "aes-256-cbc",
     "evp", "ghash", "rand", "cmac", "sm3", "sm4"
 };
@@ -302,9 +302,6 @@ static const OPT_PAIR doit_choices[] = {
     {"aes-256-cbc", D_CBC_256_AES},
     {"rc5-cbc", D_CBC_RC5},
     {"rc5", D_CBC_RC5},
-    {"bf-cbc", D_CBC_BF},
-    {"blowfish", D_CBC_BF},
-    {"bf", D_CBC_BF},
     {"ghash", D_GHASH},
     {"rand", D_RAND},
 #ifndef OPENSSL_NO_SM3
@@ -2374,7 +2371,7 @@ int speed_main(int argc, char **argv)
         }
     }
 
-    for (algindex = D_RC4; algindex <= D_CBC_CAST; algindex++) {
+    for (algindex = D_RC4; algindex <= D_CBC_RC5; algindex++) {
         if (doit[algindex]) {
             int st = 1;
 

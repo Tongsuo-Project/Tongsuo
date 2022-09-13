@@ -1244,23 +1244,6 @@
 #define NID_ms_upn              649
 #define OBJ_ms_upn              1L,3L,6L,1L,4L,1L,311L,20L,2L,3L
 
-#define SN_bf_cbc               "BF-CBC"
-#define LN_bf_cbc               "bf-cbc"
-#define NID_bf_cbc              91
-#define OBJ_bf_cbc              1L,3L,6L,1L,4L,1L,3029L,1L,2L
-
-#define SN_bf_ecb               "BF-ECB"
-#define LN_bf_ecb               "bf-ecb"
-#define NID_bf_ecb              92
-
-#define SN_bf_cfb64             "BF-CFB"
-#define LN_bf_cfb64             "bf-cfb"
-#define NID_bf_cfb64            93
-
-#define SN_bf_ofb64             "BF-OFB"
-#define LN_bf_ofb64             "bf-ofb"
-#define NID_bf_ofb64            94
-
 #define SN_id_pkix              "PKIX"
 #define NID_id_pkix             127
 #define OBJ_id_pkix             1L,3L,6L,1L,5L,5L,7L

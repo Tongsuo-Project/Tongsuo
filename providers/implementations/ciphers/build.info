@@ -12,7 +12,6 @@ $AES_GOAL=../../libdefault.a ../../libfips.a
 $TDES_1_GOAL=../../libdefault.a ../../libfips.a
 $TDES_2_GOAL=../../libdefault.a
 $DES_GOAL=../../liblegacy.a
-$BLOWFISH_GOAL=../../liblegacy.a
 $RC4_GOAL=../../liblegacy.a
 $RC5_GOAL=../../liblegacy.a
 $SM4_GOAL=../../libdefault.a
@@ -64,11 +63,6 @@ IF[{- !$disabled{des} -}]
    SOURCE[$DES_GOAL]=\
        cipher_tdes_common.c
  ENDIF
-ENDIF
-
-IF[{- !$disabled{bf} -}]
-  SOURCE[$BLOWFISH_GOAL]=\
-      cipher_blowfish.c cipher_blowfish_hw.c
 ENDIF
 
 IF[{- !$disabled{sm4} -}]

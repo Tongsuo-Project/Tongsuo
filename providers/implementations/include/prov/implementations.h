@@ -90,12 +90,6 @@ extern const OSSL_DISPATCH ossl_aes128cbc_hmac_sha1_functions[];
 extern const OSSL_DISPATCH ossl_aes256cbc_hmac_sha256_functions[];
 extern const OSSL_DISPATCH ossl_aes128cbc_hmac_sha256_functions[];
 
-#ifndef OPENSSL_NO_BF
-extern const OSSL_DISPATCH ossl_blowfish128ecb_functions[];
-extern const OSSL_DISPATCH ossl_blowfish128cbc_functions[];
-extern const OSSL_DISPATCH ossl_blowfish64ofb64_functions[];
-extern const OSSL_DISPATCH ossl_blowfish64cfb64_functions[];
-#endif /* OPENSSL_NO_BF */
 #ifndef OPENSSL_NO_SM4
 extern const OSSL_DISPATCH ossl_sm4128ecb_functions[];
 extern const OSSL_DISPATCH ossl_sm4128cbc_functions[];
