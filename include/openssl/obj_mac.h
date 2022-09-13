@@ -1134,6 +1134,10 @@
 #define NID_SM2_with_SM3                1204
 #define OBJ_SM2_with_SM3                OBJ_sm_scheme,501L
 
+#define LN_hmacWithSM3          "hmacWithSM3"
+#define NID_hmacWithSM3         1257
+#define OBJ_hmacWithSM3         OBJ_sm3,3L,1L
+
 #define SN_zuc          "ZUC"
 #define LN_zuc          "zuc"
 #define NID_zuc         1248

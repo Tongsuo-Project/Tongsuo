@@ -371,6 +371,9 @@ sm-scheme 504           : RSA-SM3		: sm3WithRSAEncryption
 
 sm-scheme 501           : SM2-SM3               : SM2-with-SM3
 
+# From GM/T 0091-2020
+sm3 3 1			:			: hmacWithSM3
+
 # ZUC stream cipher
 sm-scheme 201           : ZUC                   : zuc
 sm-scheme 801           : ZUC-128-EEA3          : zuc-128-eea3
