@@ -37,9 +37,6 @@ ENDIF
 IF[{- !$disabled{blake2} -}]
   SOURCE[../../libcrypto]=legacy_blake2.c
 ENDIF
-IF[{- !$disabled{whirlpool} -}]
-  SOURCE[../../libcrypto]=legacy_wp.c
-ENDIF
 
 SOURCE[../../providers/libfips.a]=$COMMON
 

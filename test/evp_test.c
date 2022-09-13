@@ -3930,10 +3930,6 @@ static int is_digest_disabled(const char *name)
     if (OPENSSL_strcasecmp(name, "SM3") == 0)
         return 1;
 #endif
-#ifdef OPENSSL_NO_WHIRLPOOL
-    if (OPENSSL_strcasecmp(name, "WHIRLPOOL") == 0)
-        return 1;
-#endif
     return 0;
 }
 

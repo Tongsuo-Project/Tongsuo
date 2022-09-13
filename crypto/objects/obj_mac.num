@@ -747,7 +747,6 @@ hmacWithSHA384		800
 hmacWithSHA512		801
 dsa_with_SHA224		802
 dsa_with_SHA256		803
-whirlpool		804
 hmac		855
 LocalKeySet		856
 freshest_crl		857

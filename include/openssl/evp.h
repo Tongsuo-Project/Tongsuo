@@ -920,9 +920,6 @@ const EVP_MD *EVP_sha3_512(void);
 const EVP_MD *EVP_shake128(void);
 const EVP_MD *EVP_shake256(void);
 
-# ifndef OPENSSL_NO_WHIRLPOOL
-const EVP_MD *EVP_whirlpool(void);
-# endif
 # ifndef OPENSSL_NO_SM3
 const EVP_MD *EVP_sm3(void);
 # endif

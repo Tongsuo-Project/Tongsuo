@@ -67,9 +67,6 @@ static int legacy_get_params(void *provctx, OSSL_PARAM params[])
 }
 
 static const OSSL_ALGORITHM legacy_digests[] = {
-#ifndef OPENSSL_NO_WHIRLPOOL
-    ALG(PROV_NAMES_WHIRLPOOL, ossl_wp_functions),
-#endif /* OPENSSL_NO_WHIRLPOOL */
     { NULL, NULL, NULL }
 };
 

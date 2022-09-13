@@ -1235,8 +1235,6 @@ rsadsi 1 1 6		: rsaOAEPEncryptionSET
 			: Oakley-EC2N-3		: ipsec3
 			: Oakley-EC2N-4		: ipsec4
 
-iso 0 10118 3 0 55	: whirlpool
-
 # Definitions for SM4 cipher
 
 sm-scheme 104 1         : SM4-ECB             : sm4-ecb

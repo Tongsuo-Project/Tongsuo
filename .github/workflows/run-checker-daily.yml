@@ -111,7 +111,6 @@ jobs:
           enable-unit-test,
           no-uplink,
           no-weak-ssl-ciphers,
-          no-whirlpool,
           no-zlib,
           enable-zlib-dynamic,
           no-zlib-dynamic,
