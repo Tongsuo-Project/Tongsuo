@@ -10,8 +10,9 @@
 #include <openssl/err.h>
 #include "paillier_local.h"
 
-PAILLIER_CTX *PAILLIER_CTX_new(PAILLIER_KEY *key)
+PAILLIER_CTX *PAILLIER_CTX_new(PAILLIER_KEY *key, int64_t threshold)
 {
+    char tmp[20];
     PAILLIER_CTX *ctx = NULL;
 
     ctx = OPENSSL_zalloc(sizeof(*key));
@@ -20,14 +21,25 @@ PAILLIER_CTX *PAILLIER_CTX_new(PAILLIER_KEY *key)
         return NULL;
     }
 
-    if (!PAILLIER_KEY_up_ref(key)) {
-        OPENSSL_free(ctx);
-        return NULL;
-    }
+    if (!PAILLIER_KEY_up_ref(key))
+        goto err;
 
     ctx->key = key;
+    ctx->threshold = BN_new();
+    if (ctx->threshold == NULL)
+        goto err;
+
+    memset(tmp, 0, sizeof(tmp));
+    snprintf(tmp, sizeof(tmp), "%lld", threshold);
+
+    if (!BN_dec2bn(&ctx->threshold, (char *)tmp))
+        goto err;
 
     return ctx;
+
+err:
+    OPENSSL_free(ctx);
+    return NULL;
 }
 
 void PAILLIER_CTX_free(PAILLIER_CTX *ctx)
@@ -36,6 +48,7 @@ void PAILLIER_CTX_free(PAILLIER_CTX *ctx)
         return;
 
     PAILLIER_KEY_free(ctx->key);
+    BN_free(ctx->threshold);
     OPENSSL_clear_free((void *)ctx, sizeof(PAILLIER_CTX));
 }
 

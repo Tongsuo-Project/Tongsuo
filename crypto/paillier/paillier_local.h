@@ -52,6 +52,7 @@ struct paillier_ciphertext_st {
 
 struct paillier_ctx_st {
     PAILLIER_KEY *key;
+    BIGNUM *threshold;
 };
 
 int paillier_g_check(BIGNUM *g, BIGNUM *n_square, BN_CTX *ctx);

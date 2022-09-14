@@ -52,15 +52,13 @@ size_t PAILLIER_CIPHERTEXT_encode(PAILLIER_CTX *ctx, unsigned char *out,
         return ret;
     }
 
-    len = BN_num_bytes(ciphertext->data) + 1;
+    len = BN_num_bytes(ciphertext->data);
 
     if (out == NULL)
         return len;
 
     if (size < len)
         goto end;
-
-    *out++ = BN_is_negative(ciphertext->data) ? '1' : '0';
 
     if (!BN_bn2bin(ciphertext->data, out))
         goto end;
@@ -74,22 +72,13 @@ end:
 int PAILLIER_CIPHERTEXT_decode(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
                                unsigned char *in, size_t size)
 {
-    int is_negative = 0;
-
     if (ctx == NULL || ctx->key == NULL || r == NULL || r->data == NULL) {
         ERR_raise(ERR_LIB_PAILLIER, ERR_R_PASSED_NULL_PARAMETER);
         return 0;
     }
 
-    is_negative = (*in == '1' ? 1 : 0);
-
-    in++;
-    size--;
-
     if (!BN_bin2bn(in, (int)size, r->data))
         return 0;
-
-    BN_set_negative(r->data, is_negative);
 
     return 1;
 }

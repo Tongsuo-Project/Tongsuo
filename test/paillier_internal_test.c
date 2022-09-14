@@ -22,6 +22,38 @@
 #define PAILLIER_PUB_FILE_PATH    "paillier-pub.pem"
 #define PAILLIER_KEY_FILE_PATH    "paillier-key.pem"
 
+typedef struct paillier_operands_st {
+    int32_t x;
+    int32_t y;
+} paillier_operands_t;
+
+paillier_operands_t test_operands[] = {
+    {1111, 0},
+    {-1111, 0},
+    {1111, 9999},
+    {-1111, 9999},
+    {1111, -9999},
+    {-1111, -9999},
+    {0, 9999},
+    {0, -9999},
+    {9999, 1111},
+    {-9999, 1111},
+    {9999, -1111},
+    {-9999, -1111},
+};
+
+typedef enum operation_e {
+    ADD,
+    SUB,
+    MUL
+} operation_t;
+
+char *operation_str[] = {
+    "add",
+    "sub",
+    "mul"
+};
+
 static size_t paillier_encrypt(PAILLIER_CTX *ctx,
                                unsigned char **out, int32_t plaintext)
 {
@@ -197,17 +229,18 @@ err:
     return ret;
 }
 
-static int paillier_test()
+static int paillier_test(operation_t op)
 {
-    int ret = 0;
+    int ret = 0, i;
     BIO *bio = NULL;
     PAILLIER_KEY *pail_key = NULL, *pail_pub_key = NULL, *pail_pri_key = NULL;
-    int32_t p1 = 1111111, p2 = 555555, m = 3, r;
-    unsigned char *buf = NULL, *buf1 = NULL, *buf2 = NULL;
-    size_t size, size1, size2;
+    int64_t threshold = (int64_t)(1ULL<<63) - 1;
+    int32_t x, y, r;
+    unsigned char *er = NULL, *ex = NULL, *ey = NULL;
+    size_t sr, sx, sy;
     PAILLIER_CTX *ectx = NULL, *dctx = NULL;
 
-    TEST_info("Testing encrypt/decrypt of paillier\n");
+    TEST_info("Testing %s of paillier\n", operation_str[op]);
 
     if (!TEST_ptr(pail_key = PAILLIER_KEY_new()))
         goto err;
@@ -231,7 +264,7 @@ static int paillier_test()
         goto err;
     BIO_free(bio);
 
-    if (!TEST_ptr(ectx = PAILLIER_CTX_new(pail_pub_key)))
+    if (!TEST_ptr(ectx = PAILLIER_CTX_new(pail_pub_key, threshold)))
         goto err;
 
     /*
@@ -250,53 +283,66 @@ static int paillier_test()
         goto err;
     BIO_free(bio);
 
-    if (!TEST_ptr(dctx = PAILLIER_CTX_new(pail_pri_key)))
+    if (!TEST_ptr(dctx = PAILLIER_CTX_new(pail_pri_key, threshold)))
         goto err;
 
-    size1 = paillier_encrypt(ectx, &buf1, p1);
-    if (!TEST_ptr(buf1))
-        goto err;
+    for (i = 0; i < sizeof(test_operands)/sizeof(test_operands[0]); i++) {
+        x = test_operands[i].x;
+        y = test_operands[i].y;
 
-    r = paillier_decrypt(dctx, buf1, size1);
-    if (!TEST_int_eq(r, p1))
-        goto err;
+        sx = paillier_encrypt(ectx, &ex, x);
+        if (!TEST_ptr(ex))
+            goto err;
 
-    size2 = paillier_encrypt(ectx, &buf2, p2);
-    if (!TEST_ptr(buf2))
-        goto err;
+        r = paillier_decrypt(dctx, ex, sx);
+        if (!TEST_int_eq(r, x))
+            goto err;
 
-    size = paillier_add(ectx, &buf, buf1, size1, buf2, size2);
-    if (!TEST_ptr(buf))
-        goto err;
+        sy = paillier_encrypt(ectx, &ey, y);
+        if (!TEST_ptr(ey))
+            goto err;
 
-    r = paillier_decrypt(dctx, buf, size);
-    if (!TEST_int_eq(r, p1 + p2))
-        goto err;
+        if (op == ADD) {
+            sr = paillier_add(ectx, &er, ex, sx, ey, sy);
+            if (!TEST_ptr(er))
+                goto err;
+        } else if (op == SUB) {
+            sr = paillier_sub(ectx, &er, ex, sx, ey, sy);
+            if (!TEST_ptr(er))
+                goto err;
+        } else if (op == MUL) {
+            sr = paillier_mul(ectx, &er, ex, sx, y);
+            if (!TEST_ptr(er))
+                goto err;
+        } else {
+            goto err;
+        }
 
-    OPENSSL_free(buf);
-    size = paillier_sub(ectx, &buf, buf1, size1, buf2, size2);
-    if (!TEST_ptr(buf))
-        goto err;
+        r = paillier_decrypt(dctx, er, sr);
 
-    r = paillier_decrypt(dctx, buf, size);
-    if (!TEST_int_eq(r, p1 - p2))
-        goto err;
+        if (op == ADD) {
+            if (!TEST_int_eq(r, x + y))
+                goto err;
+        } else if (op == SUB) {
+            if (!TEST_int_eq(r, x - y))
+                goto err;
+        } else if (op == MUL) {
+            if (!TEST_int_eq(r, x * y))
+                goto err;
+        }
 
-    OPENSSL_free(buf);
-    size = paillier_mul(ectx, &buf, buf2, size2, m);
-    if (!TEST_ptr(buf))
-        goto err;
-
-    r = paillier_decrypt(dctx, buf, size);
-    if (!TEST_int_eq(r, m * p2))
-        goto err;
+        OPENSSL_free(ex);
+        OPENSSL_free(ey);
+        OPENSSL_free(er);
+        ex = ey = er = NULL;
+    }
 
     ret = 1;
 
 err:
-    OPENSSL_free(buf1);
-    OPENSSL_free(buf2);
-    OPENSSL_free(buf);
+    OPENSSL_free(ex);
+    OPENSSL_free(ey);
+    OPENSSL_free(er);
     PAILLIER_KEY_free(pail_key);
     PAILLIER_KEY_free(pail_pub_key);
     PAILLIER_KEY_free(pail_pri_key);
@@ -309,7 +355,9 @@ err:
 
 static int paillier_tests(void)
 {
-    if (!TEST_true(paillier_test()))
+    if (!TEST_true(paillier_test(ADD))
+        || !TEST_true(paillier_test(SUB))
+        || !TEST_true(paillier_test(MUL)))
         return 0;
 
     return 1;

@@ -35,8 +35,7 @@ int PAILLIER_encrypt(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *out, int32_t m)
     if (g_exp_m == NULL)
         goto err;
 
-    BN_set_word(bn_plain, (BN_ULONG)(m > 0 ? m : -(int64_t)m));
-    BN_set_negative(bn_plain, m < 0 ? 1 : 0);
+    BN_set_word(bn_plain, (BN_ULONG)(m > 0 ? m : -m));
 
     if (!BN_rand_range(r, key->n))
         goto err;
@@ -44,11 +43,11 @@ int PAILLIER_encrypt(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *out, int32_t m)
     if (!BN_mod_exp(r_exp_n, r, key->n, key->n_square, bn_ctx))
         goto err;
 
-    if (!BN_mod_exp(g_exp_m, g_exp_m, bn_plain, key->n_square, bn_ctx))
-        goto err;
-
     if (!BN_mod_exp(g_exp_m, key->g, bn_plain, key->n_square, bn_ctx))
         goto err;
+
+    if (m < 0)
+        ret = BN_mod_inverse(g_exp_m, g_exp_m, key->n_square, bn_ctx);
 
     if (!BN_mod_mul(out->data, g_exp_m, r_exp_n, key->n_square, bn_ctx))
         goto err;
@@ -94,6 +93,11 @@ int PAILLIER_decrypt(PAILLIER_CTX *ctx, int32_t *out, PAILLIER_CIPHERTEXT *c)
 
     if (!BN_mod_mul(bn_out, l_ret, key->u, key->n, bn_ctx))
         goto err;
+
+    if (BN_cmp(bn_out, ctx->threshold) == 1) {
+        if (!BN_sub(bn_out, bn_out, key->n))
+            goto err;
+    }
 
     p = BN_bn2dec(bn_out);
     if (p == NULL)
@@ -172,6 +176,7 @@ int PAILLIER_sub(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
 {
     int ret = 0;
     BN_CTX *bn_ctx = NULL;
+    BIGNUM *inv;
 
     if (ctx == NULL || r == NULL || c1 == NULL || c2 == NULL) {
         ERR_raise(ERR_LIB_PAILLIER, ERR_R_PASSED_NULL_PARAMETER);
@@ -182,8 +187,6 @@ int PAILLIER_sub(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
     if (bn_ctx == NULL)
         return 0;
 
-#if 1
-    BIGNUM *inv;
     inv = BN_CTX_get(bn_ctx);
     if (inv == NULL)
         goto err;
@@ -192,26 +195,6 @@ int PAILLIER_sub(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
         goto err;
 
     ret = BN_mod_mul(r->data, c1->data, inv, ctx->key->n_square, bn_ctx);
-
-    fprintf(stderr, "sub result is negative: %d\n", BN_is_negative(r->data));
-#else
-#if 0
-    BIGNUM *neg_c2;
-    neg_c2 = BN_CTX_get(bn_ctx);
-    if (neg_c2 == NULL)
-        goto err;
-
-    BN_one(neg_c2);
-    BN_set_negative(neg_c2, 1);
-
-    if (!BN_mod_exp(neg_c2, c2, neg_c2, ctx->key->n_square, bn_ctx))
-        goto err;
-#endif
-    if (!PAILLIER_mul(ctx, r, c2, -1))
-        goto err;
-
-    ret = BN_mod_mul(r->data, c1->data, r->data, ctx->key->n_square, bn_ctx);
-#endif
 
 err:
     BN_CTX_free(bn_ctx);
@@ -238,10 +221,12 @@ int PAILLIER_mul(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
     if (bn_plain == NULL)
         goto err;
 
-    BN_set_word(bn_plain, (BN_ULONG)(m > 0 ? m : -(int64_t)m));
-    BN_set_negative(bn_plain, m < 0 ? 1 : 0);
+    BN_set_word(bn_plain, (BN_ULONG)(m > 0 ? m : -m));
 
     ret = BN_mod_exp(r->data, c->data, bn_plain, ctx->key->n_square, bn_ctx);
+    if (m < 0)
+        ret = BN_mod_inverse(r->data, r->data, ctx->key->n_square, bn_ctx);
+
 err:
     BN_CTX_free(bn_ctx);
     return ret;
