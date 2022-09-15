@@ -36,6 +36,7 @@ int PAILLIER_encrypt(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *out, int32_t m)
         goto err;
 
     BN_set_word(bn_plain, (BN_ULONG)(m > 0 ? m : -m));
+    BN_set_negative(bn_plain, m < 0 ? 1 : 0);
 
     if (!BN_rand_range(r, key->n))
         goto err;
@@ -43,11 +44,22 @@ int PAILLIER_encrypt(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *out, int32_t m)
     if (!BN_mod_exp(r_exp_n, r, key->n, key->n_square, bn_ctx))
         goto err;
 
-    if (!BN_mod_exp(g_exp_m, key->g, bn_plain, key->n_square, bn_ctx))
-        goto err;
+    if (key->flag & PAILLIER_FLAG_G_OPTIMIZE) {
+        if (!BN_mul(g_exp_m, bn_plain, key->n, bn_ctx))
+            goto err;
 
-    if (m < 0)
-        ret = BN_mod_inverse(g_exp_m, g_exp_m, key->n_square, bn_ctx);
+        if (!BN_add_word(g_exp_m, (BN_ULONG)1))
+            goto err;
+
+        if (!BN_mod(g_exp_m, g_exp_m, key->n_square, bn_ctx))
+            goto err;
+    } else {
+        if (!BN_mod_exp(g_exp_m, key->g, bn_plain, key->n_square, bn_ctx))
+            goto err;
+
+        if (m < 0)
+            ret = BN_mod_inverse(g_exp_m, g_exp_m, key->n_square, bn_ctx);
+    }
 
     if (!BN_mod_mul(out->data, g_exp_m, r_exp_n, key->n_square, bn_ctx))
         goto err;
@@ -225,7 +237,7 @@ int PAILLIER_mul(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
 
     ret = BN_mod_exp(r->data, c->data, bn_plain, ctx->key->n_square, bn_ctx);
     if (m < 0)
-        ret = BN_mod_inverse(r->data, r->data, ctx->key->n_square, bn_ctx);
+        ret = BN_mod_inverse(r->data, r->data, ctx->key->n_square, bn_ctx) != NULL;
 
 err:
     BN_CTX_free(bn_ctx);

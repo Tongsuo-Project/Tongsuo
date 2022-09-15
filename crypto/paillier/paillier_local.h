@@ -20,19 +20,6 @@ extern "C" {
 # include <openssl/paillier.h>
 # include "internal/refcount.h"
 
-#if 0
-struct paillier_pub_key_st {
-    BIGNUM *n;
-    BIGNUM *n_square;
-    BIGNUM *g;
-};
-
-struct paillier_priv_key_st {
-    BIGNUM *lambda;
-    BIGNUM *u;
-};
-#endif
-
 struct paillier_key_st {
     int32_t version;
     BIGNUM *p;
@@ -42,6 +29,7 @@ struct paillier_key_st {
     BIGNUM *g;
     BIGNUM *lambda;
     BIGNUM *u;
+    int32_t flag;
     CRYPTO_REF_COUNT references;
     CRYPTO_RWLOCK *lock;
 };

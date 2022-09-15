@@ -220,6 +220,7 @@ int PAILLIER_KEY_generate_key(PAILLIER_KEY *key, int strength)
     key->version = PAILLIER_ASN1_VERSION_DEFAULT;
     key->p = BN_dup(p);
     key->q = BN_dup(q);
+    key->flag |= PAILLIER_FLAG_G_OPTIMIZE;
     ret = 1;
 err:
     BN_CTX_free(bn_ctx);

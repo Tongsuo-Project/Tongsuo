@@ -27,6 +27,8 @@ extern "C" {
 # define PAILLIER_ASN1_VERSION_DEFAULT        0
 # define PAILLIER_ASN1_VERSION_MULTI          1
 
+# define PAILLIER_FLAG_G_OPTIMIZE             0x01
+
 typedef struct paillier_key_st PAILLIER_KEY;
 typedef struct paillier_ctx_st PAILLIER_CTX;
 typedef struct paillier_ciphertext_st PAILLIER_CIPHERTEXT;
