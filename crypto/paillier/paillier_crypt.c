@@ -57,8 +57,8 @@ int PAILLIER_encrypt(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *out, int32_t m)
         if (!BN_mod_exp(g_exp_m, key->g, bn_plain, key->n_square, bn_ctx))
             goto err;
 
-        if (m < 0)
-            ret = BN_mod_inverse(g_exp_m, g_exp_m, key->n_square, bn_ctx);
+        if (m < 0 && !BN_mod_inverse(g_exp_m, g_exp_m, key->n_square, bn_ctx))
+            goto err;
     }
 
     if (!BN_mod_mul(out->data, g_exp_m, r_exp_n, key->n_square, bn_ctx))
@@ -154,7 +154,7 @@ int PAILLIER_add_plain(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
 {
     int ret = 0;
     BN_CTX *bn_ctx = NULL;
-    BIGNUM *g_exp_p, *l_ret, *bn_plain;
+    BIGNUM *g_exp_p, *bn_plain;
 
     if (ctx == NULL || r == NULL || c == NULL) {
         ERR_raise(ERR_LIB_PAILLIER, ERR_R_PASSED_NULL_PARAMETER);
@@ -170,10 +170,13 @@ int PAILLIER_add_plain(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
     if (g_exp_p == NULL)
         goto err;
 
-    BN_set_word(bn_plain, (BN_ULONG)(m > 0 ? m : -(int64_t)m));
-    BN_set_negative(bn_plain, m < 0 ? 1 : 0);
+    BN_set_word(bn_plain, (BN_ULONG)(m > 0 ? m : -m));
+    //BN_set_negative(bn_plain, m < 0 ? 1 : 0);
 
     if (!BN_mod_exp(g_exp_p, ctx->key->g, bn_plain, ctx->key->n_square, bn_ctx))
+        goto err;
+
+    if (m < 0 && !BN_mod_inverse(g_exp_p, g_exp_p, ctx->key->n_square, bn_ctx))
         goto err;
 
     ret = BN_mod_mul(r->data, c->data, g_exp_p, ctx->key->n_square, bn_ctx);

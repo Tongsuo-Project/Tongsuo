@@ -29,6 +29,11 @@ extern "C" {
 
 # define PAILLIER_FLAG_G_OPTIMIZE             0x01
 
+# define PAILLIER_KEY_TYPE_PUBLIC             0
+# define PAILLIER_KEY_TYPE_PRIVATE            1
+
+# define PAILLIER_MAX_THRESHOLD               (int64_t)(1ULL<<63) - 1
+
 typedef struct paillier_key_st PAILLIER_KEY;
 typedef struct paillier_ctx_st PAILLIER_CTX;
 typedef struct paillier_ciphertext_st PAILLIER_CIPHERTEXT;
@@ -42,6 +47,7 @@ PAILLIER_KEY *PAILLIER_KEY_copy(PAILLIER_KEY *dest, PAILLIER_KEY *src);
 PAILLIER_KEY *PAILLIER_KEY_dup(PAILLIER_KEY *key);
 int PAILLIER_KEY_up_ref(PAILLIER_KEY *key);
 int PAILLIER_KEY_generate_key(PAILLIER_KEY *key, int strength);
+int PAILLIER_KEY_type(PAILLIER_KEY *key);
 
 int PAILLIER_encrypt(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *out, int32_t m);
 int PAILLIER_decrypt(PAILLIER_CTX *ctx, int32_t *out, PAILLIER_CIPHERTEXT *c);
@@ -67,6 +73,9 @@ size_t PAILLIER_CIPHERTEXT_encode(PAILLIER_CTX *ctx, unsigned char *out,
                                   int flag);
 int PAILLIER_CIPHERTEXT_decode(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
                                unsigned char *in, size_t size);
+
+int PAILLIER_KEY_print_fp(FILE *fp, const PAILLIER_KEY *key, int off);
+int PAILLIER_KEY_print(BIO *bp, const PAILLIER_KEY *key, int off);
 
 # ifdef  __cplusplus
 }

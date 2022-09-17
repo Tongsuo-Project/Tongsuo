@@ -227,6 +227,15 @@ err:
     return ret;
 }
 
+int PAILLIER_KEY_type(PAILLIER_KEY *key)
+{
+    if (key != NULL && key->p != NULL && key->q != NULL
+        && key->lambda != NULL && key->u != NULL)
+        return PAILLIER_KEY_TYPE_PRIVATE;
+
+    return PAILLIER_KEY_TYPE_PUBLIC;
+}
+
 int paillier_g_check(BIGNUM *g, BIGNUM *n_square, BN_CTX *ctx)
 {
     int ret = 0;

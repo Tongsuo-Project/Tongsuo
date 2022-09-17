@@ -15,6 +15,11 @@ PAILLIER_CTX *PAILLIER_CTX_new(PAILLIER_KEY *key, int64_t threshold)
     char tmp[20];
     PAILLIER_CTX *ctx = NULL;
 
+    if (key == NULL) {
+        ERR_raise(ERR_LIB_PAILLIER, ERR_R_PASSED_NULL_PARAMETER);
+        return NULL;
+    }
+
     ctx = OPENSSL_zalloc(sizeof(*key));
     if (ctx == NULL) {
         ERR_raise(ERR_LIB_PAILLIER, ERR_R_MALLOC_FAILURE);

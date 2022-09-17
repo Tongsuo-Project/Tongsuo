@@ -234,7 +234,6 @@ static int paillier_test(operation_t op)
     int ret = 0, i;
     BIO *bio = NULL;
     PAILLIER_KEY *pail_key = NULL, *pail_pub_key = NULL, *pail_pri_key = NULL;
-    int64_t threshold = (int64_t)(1ULL<<63) - 1;
     int32_t x, y, r;
     unsigned char *er = NULL, *ex = NULL, *ey = NULL;
     size_t sr, sx, sy;
@@ -264,11 +263,11 @@ static int paillier_test(operation_t op)
         goto err;
     BIO_free(bio);
 
-    if (!TEST_ptr(ectx = PAILLIER_CTX_new(pail_pub_key, threshold)))
+    if (!TEST_ptr(ectx = PAILLIER_CTX_new(pail_pub_key, PAILLIER_MAX_THRESHOLD)))
         goto err;
 
     /*
-     * saving ec secret key to pem file for this test
+     * saving paillier private key to pem file for this test
      */
     if (!TEST_ptr(bio = BIO_new(BIO_s_file()))
         || !TEST_true(BIO_write_filename(bio, PAILLIER_KEY_FILE_PATH))
@@ -283,7 +282,7 @@ static int paillier_test(operation_t op)
         goto err;
     BIO_free(bio);
 
-    if (!TEST_ptr(dctx = PAILLIER_CTX_new(pail_pri_key, threshold)))
+    if (!TEST_ptr(dctx = PAILLIER_CTX_new(pail_pri_key, PAILLIER_MAX_THRESHOLD)))
         goto err;
 
     for (i = 0; i < sizeof(test_operands)/sizeof(test_operands[0]); i++) {
