@@ -44,6 +44,7 @@ paillier_operands_t test_operands[] = {
 
 typedef enum operation_e {
     ADD,
+    ADD_PLAIN,
     SUB,
     MUL
 } operation_t;
@@ -147,7 +148,42 @@ err:
     return ret;
 }
 
-#if 1
+static size_t paillier_add_plain(PAILLIER_CTX *ctx, unsigned char **out,
+                                 unsigned char *in, size_t in_size, uint32_t m)
+{
+    size_t size, ret = 0;
+    unsigned char *buf = NULL;
+    PAILLIER_CIPHERTEXT *r = NULL, *c = NULL;
+
+    if (!TEST_ptr(r = PAILLIER_CIPHERTEXT_new(ctx)))
+        goto err;
+
+    if (!TEST_ptr(c = PAILLIER_CIPHERTEXT_new(ctx)))
+        goto err;
+
+    if (!TEST_true(PAILLIER_CIPHERTEXT_decode(ctx, c, in, in_size)))
+        goto err;
+
+    if (!TEST_true(PAILLIER_add_plain(ctx, r, c, m)))
+        goto err;
+
+    size = PAILLIER_CIPHERTEXT_encode(ctx, NULL, 0, r, 0);
+    if (!TEST_ptr(buf = OPENSSL_zalloc(size)))
+        goto err;
+
+    if (!TEST_true(PAILLIER_CIPHERTEXT_encode(ctx, buf, size, r, 0)))
+        goto err;
+
+    *out = buf;
+    buf = NULL;
+    ret = size;
+
+err:
+    PAILLIER_CIPHERTEXT_free(c);
+    PAILLIER_CIPHERTEXT_free(r);
+    return ret;
+}
+
 static size_t paillier_sub(PAILLIER_CTX *ctx, unsigned char **out,
                            unsigned char *in1, size_t in1_size,
                            unsigned char *in2, size_t in2_size)
@@ -191,7 +227,6 @@ err:
     PAILLIER_CIPHERTEXT_free(r);
     return ret;
 }
-#endif
 
 static size_t paillier_mul(PAILLIER_CTX *ctx, unsigned char **out,
                            unsigned char *in, size_t in_size, uint32_t m)
@@ -305,6 +340,10 @@ static int paillier_test(operation_t op)
             sr = paillier_add(ectx, &er, ex, sx, ey, sy);
             if (!TEST_ptr(er))
                 goto err;
+        } else if (op == ADD_PLAIN) {
+            sr = paillier_add_plain(ectx, &er, ex, sx, y);
+            if (!TEST_ptr(er))
+                goto err;
         } else if (op == SUB) {
             sr = paillier_sub(ectx, &er, ex, sx, ey, sy);
             if (!TEST_ptr(er))
@@ -320,6 +359,9 @@ static int paillier_test(operation_t op)
         r = paillier_decrypt(dctx, er, sr);
 
         if (op == ADD) {
+            if (!TEST_int_eq(r, x + y))
+                goto err;
+        } else if (op == ADD_PLAIN) {
             if (!TEST_int_eq(r, x + y))
                 goto err;
         } else if (op == SUB) {
@@ -355,6 +397,7 @@ err:
 static int paillier_tests(void)
 {
     if (!TEST_true(paillier_test(ADD))
+        || !TEST_true(paillier_test(ADD_PLAIN))
         || !TEST_true(paillier_test(SUB))
         || !TEST_true(paillier_test(MUL)))
         return 0;
