@@ -10,6 +10,13 @@
 #include <openssl/err.h>
 #include "paillier_local.h"
 
+/** Encrypts an Integer with additadive homomorphic Paillier
+ *  \param  ctx        PAILLIER_CTX object.
+ *  \param  r          PAILLIER_CIPHERTEXT object that stores the result of
+ *                     the encryption
+ *  \param  m          The plaintext integer to be encrypted
+ *  \return 1 on success and 0 otherwise
+ */
 int PAILLIER_encrypt(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *out, int32_t m)
 {
     int ret = 0;
@@ -71,6 +78,12 @@ err:
     return ret;
 }
 
+/** Decrypts the ciphertext
+ *  \param  ctx        PAILLIER_CTX object
+ *  \param  r          The resulting plaintext integer
+ *  \param  c          PAILLIER_CIPHERTEXT object to be decrypted
+ *  \return 1 on success and 0 otherwise
+ */
 int PAILLIER_decrypt(PAILLIER_CTX *ctx, int32_t *out, PAILLIER_CIPHERTEXT *c)
 {
     int ret = 0;
@@ -128,6 +141,14 @@ err:
     return ret;
 }
 
+/** Adds two paillier ciphertext and stores it in r: E(r) = E(c1) + E(c2)
+ *  \param  ctx        PAILLIER_CTX object
+ *  \param  r          The PAILLIER_CIPHERTEXT object that stores the addition
+ *                     result
+ *  \param  c1         PAILLIER_CIPHERTEXT object
+ *  \param  c2         PAILLIER_CIPHERTEXT object
+ *  \return 1 on success and 0 otherwise
+ */
 int PAILLIER_add(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
                  PAILLIER_CIPHERTEXT *c1, PAILLIER_CIPHERTEXT *c2)
 {
@@ -149,6 +170,14 @@ int PAILLIER_add(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
     return ret;
 }
 
+/** Add a paillier ciphertext to a plaintext, and stores it in r: E(r) = E(c1) + m
+ *  \param  ctx        PAILLIER_CTX object
+ *  \param  r          The PAILLIER_CIPHERTEXT object that stores the addition
+ *                     result
+ *  \param  c1         PAILLIER_CIPHERTEXT object
+ *  \param  m          The plaintext integer to be added
+ *  \return 1 on success and 0 otherwise
+ */
 int PAILLIER_add_plain(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
                        PAILLIER_CIPHERTEXT *c, int32_t m)
 {
@@ -186,6 +215,14 @@ err:
     return ret;
 }
 
+/** Substracts two paillier ciphertext and stores it in r: E(r) = E(c1) - E(c2)
+ *  \param  ctx        PAILLIER_CTX object
+ *  \param  r          The PAILLIER_CIPHERTEXT object that stores the
+ *                     subtraction result
+ *  \param  c1         PAILLIER_CIPHERTEXT object
+ *  \param  c2         PAILLIER_CIPHERTEXT object
+ *  \return 1 on success and 0 otherwise
+ */
 int PAILLIER_sub(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
                  PAILLIER_CIPHERTEXT *c1, PAILLIER_CIPHERTEXT *c2)
 {
@@ -216,6 +253,14 @@ err:
     return ret;
 }
 
+/** Ciphertext multiplication, computes E(r) = E(c) * m
+ *  \param  ctx        PAILLIER_CTX object
+ *  \param  r          The PAILLIER_CIPHERTEXT object that stores the
+ *                     multiplication result
+ *  \param  c1         PAILLIER_CIPHERTEXT object
+ *  \param  m          The plaintext integer to be multiplied
+ *  \return 1 on success and 0 otherwise
+ */
 int PAILLIER_mul(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
                  PAILLIER_CIPHERTEXT *c, int32_t m)
 {

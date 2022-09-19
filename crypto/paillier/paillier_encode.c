@@ -10,6 +10,10 @@
 #include <openssl/err.h>
 #include "paillier_local.h"
 
+/** Creates a new PAILLIER_CIPHERTEXT object for paillier oparations
+ *  \param  ctx        PAILLIER_CTX object
+ *  \return newly created PAILLIER_CIPHERTEXT object or NULL in case of an error
+ */
 PAILLIER_CIPHERTEXT *PAILLIER_CIPHERTEXT_new(PAILLIER_CTX *ctx)
 {
     PAILLIER_CIPHERTEXT *ciphertext = NULL;
@@ -30,6 +34,9 @@ err:
     return NULL;
 }
 
+/** Frees a PAILLIER_CIPHERTEXT object
+ *  \param  ciphertext  PAILLIER_CIPHERTEXT object to be freed
+ */
 void PAILLIER_CIPHERTEXT_free(PAILLIER_CIPHERTEXT *ciphertext)
 {
     if (ciphertext == NULL)
@@ -39,6 +46,15 @@ void PAILLIER_CIPHERTEXT_free(PAILLIER_CIPHERTEXT *ciphertext)
     OPENSSL_clear_free((void *)ciphertext, sizeof(PAILLIER_CIPHERTEXT));
 }
 
+/** Encodes PAILLIER_CIPHERTEXT to binary
+ *  \param  ctx        PAILLIER_CTX object
+ *  \param  out        the buffer for the result (if NULL the function returns
+ *                     number of bytes needed).
+ *  \param  size       The memory size of the out pointer object
+ *  \param  ciphertext PAILLIER_CIPHERTEXT object
+ *  \param  compressed Whether to compress the encoding (either 0 or 1)
+ *  \return the length of the encoded octet string or 0 if an error occurred
+ */
 size_t PAILLIER_CIPHERTEXT_encode(PAILLIER_CTX *ctx, unsigned char *out,
                                   size_t size,
                                   const PAILLIER_CIPHERTEXT *ciphertext,
@@ -69,6 +85,14 @@ end:
     return ret;
 }
 
+/** Decodes binary to PAILLIER_CIPHERTEXT
+ *  \param  ctx        PAILLIER_CTX object
+ *  \param  r          the resulting ciphertext
+ *  \param  in         Memory buffer with the encoded PAILLIER_CIPHERTEXT
+ *                     object
+ *  \param  size       The memory size of the in pointer object
+ *  \return 1 on success and 0 otherwise
+ */
 int PAILLIER_CIPHERTEXT_decode(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
                                unsigned char *in, size_t size)
 {

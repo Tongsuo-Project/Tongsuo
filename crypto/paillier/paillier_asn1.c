@@ -14,11 +14,6 @@
 #include <openssl/paillier.h>
 #include "paillier_local.h"
 
-/*
- * Override the default free and new methods,
- * and calculate helper products for multi-prime
- * PAILLIER keys.
- */
 static int paillier_cb(int operation, ASN1_VALUE **pval, const ASN1_ITEM *it,
                        void *exarg)
 {

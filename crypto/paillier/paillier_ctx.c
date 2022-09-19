@@ -10,6 +10,12 @@
 #include <openssl/err.h>
 #include "paillier_local.h"
 
+/** Creates a new PAILLIER object
+ *  \param  key        PAILLIER_KEY to use
+ *  \param  threshold  The threshold should be greater than the maximum integer
+ *                     that will be encrypted.
+ *  \return newly created PAILLIER_CTX object or NULL in case of an error
+ */
 PAILLIER_CTX *PAILLIER_CTX_new(PAILLIER_KEY *key, int64_t threshold)
 {
     char tmp[20];
@@ -47,6 +53,9 @@ err:
     return NULL;
 }
 
+/** Frees a PAILLIER_CTX object
+ *  \param  ctx  PAILLIER_CTX object to be freed
+ */
 void PAILLIER_CTX_free(PAILLIER_CTX *ctx)
 {
     if (ctx == NULL)
@@ -57,6 +66,11 @@ void PAILLIER_CTX_free(PAILLIER_CTX *ctx)
     OPENSSL_clear_free((void *)ctx, sizeof(PAILLIER_CTX));
 }
 
+/** Copies a PAILLIER_KEY object.
+ *  \param  dst  destination PAILLIER_KEY object
+ *  \param  src  src PAILLIER_KEY object
+ *  \return dst or NULL if an error occurred.
+ */
 PAILLIER_CTX *PAILLIER_CTX_copy(PAILLIER_CTX *dest, PAILLIER_CTX *src)
 {
     if (dest == NULL || src == NULL) {
@@ -73,11 +87,15 @@ PAILLIER_CTX *PAILLIER_CTX_copy(PAILLIER_CTX *dest, PAILLIER_CTX *src)
     return dest;
 }
 
-PAILLIER_CTX *PAILLIER_CTX_dup(PAILLIER_CTX *ctx)
+/** Creates a new PAILLIER_KEY object and copies the content from src to it.
+ *  \param  src  the source PAILLIER_KEY object
+ *  \return newly created PAILLIER_KEY object or NULL if an error occurred.
+ */
+PAILLIER_CTX *PAILLIER_CTX_dup(PAILLIER_CTX *src)
 {
     PAILLIER_CTX *ret = NULL;
 
-    if (ctx == NULL) {
+    if (src == NULL) {
         ERR_raise(ERR_LIB_PAILLIER, ERR_R_PASSED_NULL_PARAMETER);
         return NULL;
     }
@@ -88,7 +106,7 @@ PAILLIER_CTX *PAILLIER_CTX_dup(PAILLIER_CTX *ctx)
         return NULL;
     }
 
-    ret->key = PAILLIER_KEY_dup(ctx->key);
+    ret->key = PAILLIER_KEY_dup(src->key);
     if (ret->key == NULL)
         goto err;
 

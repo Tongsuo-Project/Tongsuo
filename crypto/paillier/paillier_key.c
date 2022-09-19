@@ -10,6 +10,10 @@
 #include <openssl/err.h>
 #include "paillier_local.h"
 
+/**
+ *  Creates a new PAILLIER_KEY object.
+ *  \return PAILLIER_KEY object or NULL if an error occurred.
+ */
 PAILLIER_KEY *PAILLIER_KEY_new()
 {
     PAILLIER_KEY *key = NULL;
@@ -53,6 +57,9 @@ err:
     return NULL;
 }
 
+/** Frees a PAILLIER_KEY object.
+ *  \param  key  PAILLIER_KEY object to be freed.
+ */
 void PAILLIER_KEY_free(PAILLIER_KEY *key)
 {
     int i;
@@ -79,6 +86,11 @@ void PAILLIER_KEY_free(PAILLIER_KEY *key)
     OPENSSL_clear_free((void *)key, sizeof(PAILLIER_KEY));
 }
 
+/** Copies a PAILLIER_KEY object.
+ *  \param  dst  destination PAILLIER_KEY object
+ *  \param  src  src PAILLIER_KEY object
+ *  \return dst or NULL if an error occurred.
+ */
 PAILLIER_KEY *PAILLIER_KEY_copy(PAILLIER_KEY *dest, PAILLIER_KEY *src)
 {
     if (dest == NULL || src == NULL) {
@@ -105,6 +117,10 @@ PAILLIER_KEY *PAILLIER_KEY_copy(PAILLIER_KEY *dest, PAILLIER_KEY *src)
     return dest;
 }
 
+/** Creates a new PAILLIER_KEY object and copies the content from src to it.
+ *  \param  src  the source PAILLIER_KEY object
+ *  \return newly created PAILLIER_KEY object or NULL if an error occurred.
+ */
 PAILLIER_KEY *PAILLIER_KEY_dup(PAILLIER_KEY *key)
 {
     PAILLIER_KEY *ret = NULL;
@@ -154,6 +170,10 @@ err:
     return NULL;
 }
 
+/** Increases the internal reference count of a PAILLIER_KEY object.
+ *  \param  key  PAILLIER_KEY object
+ *  \return 1 on success and 0 if an error occurred.
+ */
 int PAILLIER_KEY_up_ref(PAILLIER_KEY *key)
 {
     int i;
@@ -166,7 +186,13 @@ int PAILLIER_KEY_up_ref(PAILLIER_KEY *key)
     return ((i > 1) ? 1 : 0);
 }
 
-int PAILLIER_KEY_generate_key(PAILLIER_KEY *key, int strength)
+/** Creates a new paillier private (and optional a new public) key.
+ *  \param  key  PAILLIER_KEY object
+ *  \param  bits use BN_generate_prime_ex() to generate a pseudo-random prime number
+ *  of bit length
+ *  \return 1 on success and 0 if an error occurred.
+ */
+int PAILLIER_KEY_generate_key(PAILLIER_KEY *key, int bits)
 {
     int ret = 0;
     BIGNUM *p, *q, *g_exp_lambda;
@@ -187,10 +213,10 @@ int PAILLIER_KEY_generate_key(PAILLIER_KEY *key, int strength)
     if (g_exp_lambda == NULL)
         goto err;
 
-    if (!BN_generate_prime_ex(p, strength, 1, NULL, NULL, NULL))
+    if (!BN_generate_prime_ex(p, bits, 1, NULL, NULL, NULL))
         goto err;
 
-    if (!BN_generate_prime_ex(q, strength, 1, NULL, NULL, NULL))
+    if (!BN_generate_prime_ex(q, bits, 1, NULL, NULL, NULL))
         goto err;
 
     if (!BN_mul(key->n, p, q, bn_ctx))
@@ -227,6 +253,10 @@ err:
     return ret;
 }
 
+/** Returns the type of the PAILLIER_KEY.
+ *  \param  key  PAILLIER_KEY object
+ *  \return PAILLIER_KEY_TYPE_PRIVATE or PAILLIER_KEY_TYPE_PUBLIC.
+ */
 int PAILLIER_KEY_type(PAILLIER_KEY *key)
 {
     if (key != NULL && key->p != NULL && key->q != NULL
@@ -432,5 +462,5 @@ err:
 int ossl_paillier_multip_calc_product(PAILLIER_KEY *pail)
 {
     /* TODO */
-    return 1;
+    return 0;
 }
