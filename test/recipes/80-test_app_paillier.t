@@ -16,8 +16,8 @@ use File::Spec::Functions qw/catfile catdir/;
 use Cwd qw/getcwd/;
 
 my $PAILLIER_TEST_D = getcwd();
-my $PAILLIER_TEST_KEY_D = catdir($PAILLIER_TEST_D, "key");
-my $PAILLIER_TEST_OUT_D = catdir($PAILLIER_TEST_D, "out");
+my $PAILLIER_TEST_KEY_D = catdir($PAILLIER_TEST_D, "paillier_test_keys");
+my $PAILLIER_TEST_OUT_D = catdir($PAILLIER_TEST_D, "paillier_test_outs");
 
 rmtree(${PAILLIER_TEST_KEY_D}, { safe => 0 });
 rmtree(${PAILLIER_TEST_OUT_D}, { safe => 0 });

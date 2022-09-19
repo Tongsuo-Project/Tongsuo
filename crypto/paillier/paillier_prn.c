@@ -13,7 +13,7 @@
 #include "paillier_local.h"
 
 #ifndef OPENSSL_NO_STDIO
-int PAILLIER_KEY_print_fp(FILE *fp, const PAILLIER_KEY *key, int off)
+int PAILLIER_KEY_print_fp(FILE *fp, const PAILLIER_KEY *key, int indent)
 {
     BIO *b;
     int ret;
@@ -23,13 +23,13 @@ int PAILLIER_KEY_print_fp(FILE *fp, const PAILLIER_KEY *key, int off)
         return 0;
     }
     BIO_set_fp(b, fp, BIO_NOCLOSE);
-    ret = PAILLIER_KEY_print(b, key, off);
+    ret = PAILLIER_KEY_print(b, key, indent);
     BIO_free(b);
     return ret;
 }
 #endif
 
-int PAILLIER_KEY_print(BIO *bp, const PAILLIER_KEY *key, int off)
+int PAILLIER_KEY_print(BIO *bp, const PAILLIER_KEY *key, int indent)
 {
     int ret = 0, is_pub = 1;
 
@@ -43,23 +43,23 @@ int PAILLIER_KEY_print(BIO *bp, const PAILLIER_KEY *key, int off)
         BIO_printf(bp, "Paillier Public Key: \n");
     }
 
-    if (!ASN1_bn_print(bp, "n:", key->n, NULL, off))
+    if (!ASN1_bn_print(bp, "n:", key->n, NULL, indent))
         goto end;
 
-    if (!ASN1_bn_print(bp, "g:", key->g, NULL, off))
+    if (!ASN1_bn_print(bp, "g:", key->g, NULL, indent))
         goto end;
 
     if (!is_pub) {
-        if (!ASN1_bn_print(bp, "p:", key->p, NULL, off))
+        if (!ASN1_bn_print(bp, "p:", key->p, NULL, indent))
             goto end;
 
-        if (!ASN1_bn_print(bp, "q:", key->q, NULL, off))
+        if (!ASN1_bn_print(bp, "q:", key->q, NULL, indent))
             goto end;
 
-        if (!ASN1_bn_print(bp, "lambda:", key->lambda, NULL, off))
+        if (!ASN1_bn_print(bp, "lambda:", key->lambda, NULL, indent))
             goto end;
 
-        if (!ASN1_bn_print(bp, "u:", key->u, NULL, off))
+        if (!ASN1_bn_print(bp, "u:", key->u, NULL, indent))
             goto end;
     }
 

@@ -14,7 +14,7 @@
  *  Creates a new PAILLIER_KEY object.
  *  \return PAILLIER_KEY object or NULL if an error occurred.
  */
-PAILLIER_KEY *PAILLIER_KEY_new()
+PAILLIER_KEY *PAILLIER_KEY_new(void)
 {
     PAILLIER_KEY *key = NULL;
 
@@ -24,29 +24,15 @@ PAILLIER_KEY *PAILLIER_KEY_new()
         return NULL;
     }
 
-    key->n = BN_new();
-    if (key->n == NULL)
-        goto err;
-
-    key->n_square = BN_new();
-    if (key->n_square == NULL)
-        goto err;
-
-    key->g = BN_new();
-    if (key->g == NULL)
-        goto err;
-
-    key->lambda = BN_new();
-    if (key->lambda == NULL)
-        goto err;
-
-    key->u = BN_new();
-    if (key->u == NULL)
+    if ((key->n = BN_new()) == NULL
+        || (key->n_square = BN_new()) == NULL
+        || (key->g = BN_new()) == NULL
+        || (key->lambda = BN_new()) == NULL
+        || (key->u = BN_new()) == NULL)
         goto err;
 
     key->references = 1;
-    key->lock = CRYPTO_THREAD_lock_new();
-    if (key->lock == NULL) {
+    if ((key->lock = CRYPTO_THREAD_lock_new()) == NULL) {
         ERR_raise(ERR_LIB_PAILLIER, ERR_R_MALLOC_FAILURE);
         goto err;
     }
@@ -136,38 +122,18 @@ PAILLIER_KEY *PAILLIER_KEY_dup(PAILLIER_KEY *key)
         return NULL;
     }
 
-    ret->p = BN_dup(key->p);
-    if (ret->p == NULL)
-        goto err;
-
-    ret->q = BN_dup(key->q);
-    if (ret->q == NULL)
-        goto err;
-
-    ret->n = BN_dup(key->n);
-    if (ret->n == NULL)
-        goto err;
-
-    ret->n_square = BN_dup(key->n_square);
-    if (ret->n_square == NULL)
-        goto err;
-
-    ret->g = BN_dup(key->g);
-    if (ret->g == NULL)
-        goto err;
-
-    ret->lambda = BN_dup(key->lambda);
-    if (ret->lambda == NULL)
-        goto err;
-
-    ret->u = BN_dup(key->u);
-    if (ret->u == NULL)
-        goto err;
+    if ((ret->p = BN_dup(key->p)) == NULL
+        || (ret->q = BN_dup(key->q)) == NULL
+        || (ret->n = BN_dup(key->n)) == NULL
+        || (ret->n_square = BN_dup(key->n_square)) == NULL
+        || (ret->g = BN_dup(key->g)) == NULL
+        || (ret->lambda = BN_dup(key->lambda)) == NULL
+        || (ret->u = BN_dup(key->u)) == NULL) {
+        OPENSSL_free(ret);
+        return NULL;
+    }
 
     return ret;
-err:
-    OPENSSL_free(ret);
-    return NULL;
 }
 
 /** Increases the internal reference count of a PAILLIER_KEY object.
@@ -207,48 +173,32 @@ int PAILLIER_KEY_generate_key(PAILLIER_KEY *key, int bits)
     if (bn_ctx == NULL)
         goto err;
 
+    BN_CTX_start(bn_ctx);
     p = BN_CTX_get(bn_ctx);
     q = BN_CTX_get(bn_ctx);
     g_exp_lambda = BN_CTX_get(bn_ctx);
     if (g_exp_lambda == NULL)
         goto err;
 
-    if (!BN_generate_prime_ex(p, bits, 1, NULL, NULL, NULL))
-        goto err;
-
-    if (!BN_generate_prime_ex(q, bits, 1, NULL, NULL, NULL))
-        goto err;
-
-    if (!BN_mul(key->n, p, q, bn_ctx))
-        goto err;
-
-    if (!BN_sqr(key->n_square, key->n, bn_ctx))
-        goto err;
-
-    if (!BN_add(key->g, key->n, BN_value_one()))
-        goto err;
-
-    if (!paillier_g_check(key->g, key->n_square, bn_ctx))
-        goto err;
-
-    if (!paillier_lambda_calc(key->lambda, p, q, bn_ctx))
-        goto err;
-
-    if (!BN_mod_exp(g_exp_lambda, key->g, key->lambda, key->n_square, bn_ctx))
-        goto err;
-
-    if (!paillier_l_func(key->u, g_exp_lambda, key->n, bn_ctx))
-        goto err;
-
-    if (!BN_mod_inverse(key->u, key->u, key->n, bn_ctx))
+    if (!BN_generate_prime_ex(p, bits, 1, NULL, NULL, NULL)
+        || !BN_generate_prime_ex(q, bits, 1, NULL, NULL, NULL)
+        || !BN_mul(key->n, p, q, bn_ctx)
+        || !BN_sqr(key->n_square, key->n, bn_ctx)
+        || !BN_add(key->g, key->n, BN_value_one())
+        || !paillier_g_check(key->g, key->n_square, bn_ctx)
+        || !paillier_lambda_calc(key->lambda, p, q, bn_ctx)
+        || !BN_mod_exp(g_exp_lambda, key->g, key->lambda, key->n_square, bn_ctx)
+        || !paillier_l_func(key->u, g_exp_lambda, key->n, bn_ctx)
+        || !BN_mod_inverse(key->u, key->u, key->n, bn_ctx)
+        || (key->p = BN_dup(p)) == NULL
+        || (key->q = BN_dup(q)) == NULL)
         goto err;
 
     key->version = PAILLIER_ASN1_VERSION_DEFAULT;
-    key->p = BN_dup(p);
-    key->q = BN_dup(q);
     key->flag |= PAILLIER_FLAG_G_OPTIMIZE;
     ret = 1;
 err:
+    BN_CTX_end(bn_ctx);
     BN_CTX_free(bn_ctx);
     return ret;
 }
@@ -283,6 +233,7 @@ int paillier_g_check(BIGNUM *g, BIGNUM *n_square, BN_CTX *ctx)
             goto err;
     }
 
+    BN_CTX_start(ctx);
     gcd = BN_CTX_get(ctx);
     if (gcd == NULL)
         goto err;
@@ -293,6 +244,7 @@ int paillier_g_check(BIGNUM *g, BIGNUM *n_square, BN_CTX *ctx)
     ret = BN_is_one(gcd);
 
 err:
+    BN_CTX_end(ctx);
     BN_CTX_free(bn_ctx);
     return ret;
 }
@@ -317,6 +269,7 @@ int paillier_lambda_calc(BIGNUM *out, BIGNUM *p, BIGNUM *q, BN_CTX *ctx)
             goto err;
     }
 
+    BN_CTX_start(ctx);
     lambda = out ? out : BN_CTX_get(ctx);
     gcd = BN_CTX_get(ctx);
     p_1 = BN_CTX_get(ctx);
@@ -351,6 +304,7 @@ int paillier_lambda_calc(BIGNUM *out, BIGNUM *p, BIGNUM *q, BN_CTX *ctx)
     ret = 1;
 
 err:
+    BN_CTX_end(ctx);
     BN_CTX_free(bn_ctx);
     return ret;
 }
@@ -375,6 +329,7 @@ int paillier_lambda_check(BIGNUM *lambda, BIGNUM *n, BN_CTX *ctx)
             goto err;
     }
 
+    BN_CTX_start(ctx);
     n_square = BN_CTX_get(ctx);
     n_lambda = BN_CTX_get(ctx);
     r = BN_CTX_get(ctx);
@@ -413,6 +368,7 @@ int paillier_lambda_check(BIGNUM *lambda, BIGNUM *n, BN_CTX *ctx)
     ret = BN_cmp(r_exp_lambda, r_exp_n_lambda) == 0;
 
 err:
+    BN_CTX_end(ctx);
     BN_CTX_free(bn_ctx);
     return ret;
 }
@@ -440,6 +396,7 @@ int paillier_l_func(BIGNUM *out, BIGNUM *x, BIGNUM *n, BN_CTX *ctx)
             goto err;
     }
 
+    BN_CTX_start(ctx);
     x_1 = BN_CTX_get(ctx);
     if (x_1 == NULL)
         goto err;
@@ -455,6 +412,7 @@ int paillier_l_func(BIGNUM *out, BIGNUM *x, BIGNUM *n, BN_CTX *ctx)
     ret = 1;
 
 err:
+    BN_CTX_end(ctx);
     BN_CTX_free(bn_ctx);
     return ret;
 }

@@ -32,7 +32,7 @@ extern "C" {
 # define PAILLIER_KEY_TYPE_PUBLIC             0
 # define PAILLIER_KEY_TYPE_PRIVATE            1
 
-# define PAILLIER_MAX_THRESHOLD               (int64_t)(1ULL<<63) - 1
+# define PAILLIER_MAX_THRESHOLD               ((((uint64_t)1) << 63) - 1)
 
 typedef struct paillier_key_st PAILLIER_KEY;
 typedef struct paillier_ctx_st PAILLIER_CTX;
@@ -40,12 +40,14 @@ typedef struct paillier_ciphertext_st PAILLIER_CIPHERTEXT;
 
 DECLARE_PEM_rw(PAILLIER_PrivateKey, PAILLIER_KEY)
 DECLARE_PEM_rw(PAILLIER_PublicKey, PAILLIER_KEY)
+DECLARE_ASN1_ENCODE_FUNCTIONS_only(PAILLIER_KEY, PAILLIER_PrivateKey)
+DECLARE_ASN1_ENCODE_FUNCTIONS_only(PAILLIER_KEY, PAILLIER_PublicKey)
 
 /**
  *  Creates a new PAILLIER_KEY object.
  *  \return PAILLIER_KEY object or NULL if an error occurred.
  */
-PAILLIER_KEY *PAILLIER_KEY_new();
+PAILLIER_KEY *PAILLIER_KEY_new(void);
 
 /** Frees a PAILLIER_KEY object.
  *  \param  key  PAILLIER_KEY object to be freed.
@@ -102,7 +104,8 @@ int PAILLIER_encrypt(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *out, int32_t m);
  */
 int PAILLIER_decrypt(PAILLIER_CTX *ctx, int32_t *out, PAILLIER_CIPHERTEXT *c);
 
-/** Adds two paillier ciphertext and stores it in r: E(r) = E(c1) + E(c2)
+/** Adds two paillier ciphertext and stores it in r:
+ *  E(r) = E(c1 + c2) = E(c1) * E(c2)
  *  \param  ctx        PAILLIER_CTX object
  *  \param  r          The PAILLIER_CIPHERTEXT object that stores the addition
  *                     result
@@ -113,7 +116,8 @@ int PAILLIER_decrypt(PAILLIER_CTX *ctx, int32_t *out, PAILLIER_CIPHERTEXT *c);
 int PAILLIER_add(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
                  PAILLIER_CIPHERTEXT *c1, PAILLIER_CIPHERTEXT *c2);
 
-/** Add a paillier ciphertext to a plaintext, and stores it in r: E(r) = E(c1) + m
+/** Add a paillier ciphertext to a plaintext, and stores it in r:
+ *  E(r) = E(c1 + m) = E(c1) * g^m
  *  \param  ctx        PAILLIER_CTX object
  *  \param  r          The PAILLIER_CIPHERTEXT object that stores the addition
  *                     result
@@ -124,7 +128,8 @@ int PAILLIER_add(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
 int PAILLIER_add_plain(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
                        PAILLIER_CIPHERTEXT *c1, int32_t m);
 
-/** Substracts two paillier ciphertext and stores it in r: E(r) = E(c1) - E(c2)
+/** Substracts two paillier ciphertext and stores it in r:
+ *  E(r) = E(c1 - c2) = E(c1) * E(-c2) = E(c1) / E(c2)
  *  \param  ctx        PAILLIER_CTX object
  *  \param  r          The PAILLIER_CIPHERTEXT object that stores the
  *                     subtraction result
@@ -135,7 +140,7 @@ int PAILLIER_add_plain(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
 int PAILLIER_sub(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
                  PAILLIER_CIPHERTEXT *c1, PAILLIER_CIPHERTEXT *c2);
 
-/** Ciphertext multiplication, computes E(r) = E(c) * m
+/** Ciphertext multiplication, computes E(r) = E(c * m) = E(c) ^ m
  *  \param  ctx        PAILLIER_CTX object
  *  \param  r          The PAILLIER_CIPHERTEXT object that stores the
  *                     multiplication result
@@ -208,8 +213,8 @@ size_t PAILLIER_CIPHERTEXT_encode(PAILLIER_CTX *ctx, unsigned char *out,
 int PAILLIER_CIPHERTEXT_decode(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
                                unsigned char *in, size_t size);
 
-int PAILLIER_KEY_print_fp(FILE *fp, const PAILLIER_KEY *key, int off);
-int PAILLIER_KEY_print(BIO *bp, const PAILLIER_KEY *key, int off);
+int PAILLIER_KEY_print_fp(FILE *fp, const PAILLIER_KEY *key, int indent);
+int PAILLIER_KEY_print(BIO *bp, const PAILLIER_KEY *key, int indent);
 
 # ifdef  __cplusplus
 }

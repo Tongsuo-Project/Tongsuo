@@ -4101,7 +4101,7 @@ int speed_main(int argc, char **argv)
 
         for (k = 0; k < sizeof(paillier_plaintexts) / sizeof(int); k++) {
             if (mr)
-                printf("+F11:%u:%ld:%s:%d:%d:%f:%f:%f:%f:%f\n", i, k,
+                printf("+F11:%u:%d:%s:%d:%d:%f:%f:%f:%f:%f\n", i, k,
                        test_paillier_names[i], paillier_plaintext_a,
                        paillier_plaintexts[k], paillier_results[i][k][1],
                        paillier_results[i][k][2], paillier_results[i][k][3],

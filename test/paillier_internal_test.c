@@ -27,7 +27,7 @@ typedef struct paillier_operands_st {
     int32_t y;
 } paillier_operands_t;
 
-paillier_operands_t test_operands[] = {
+static paillier_operands_t test_operands[] = {
     {1111, 0},
     {-1111, 0},
     {1111, 9999},
@@ -49,7 +49,7 @@ typedef enum operation_e {
     MUL
 } operation_t;
 
-char *operation_str[] = {
+static char *operation_str[] = {
     "add",
     "sub",
     "mul"
@@ -320,7 +320,7 @@ static int paillier_test(operation_t op)
     if (!TEST_ptr(dctx = PAILLIER_CTX_new(pail_pri_key, PAILLIER_MAX_THRESHOLD)))
         goto err;
 
-    for (i = 0; i < sizeof(test_operands)/sizeof(test_operands[0]); i++) {
+    for (i = 0; i < (int)(sizeof(test_operands)/sizeof(test_operands[0])); i++) {
         x = test_operands[i].x;
         y = test_operands[i].y;
 

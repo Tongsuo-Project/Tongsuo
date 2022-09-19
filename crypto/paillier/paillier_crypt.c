@@ -35,6 +35,7 @@ int PAILLIER_encrypt(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *out, int32_t m)
 
     key = ctx->key;
 
+    BN_CTX_start(bn_ctx);
     bn_plain = BN_CTX_get(bn_ctx);
     r = BN_CTX_get(bn_ctx);
     r_exp_n = BN_CTX_get(bn_ctx);
@@ -74,6 +75,7 @@ int PAILLIER_encrypt(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *out, int32_t m)
     ret = 1;
 
 err:
+    BN_CTX_end(bn_ctx);
     BN_CTX_free(bn_ctx);
     return ret;
 }
@@ -104,6 +106,7 @@ int PAILLIER_decrypt(PAILLIER_CTX *ctx, int32_t *out, PAILLIER_CIPHERTEXT *c)
 
     key = ctx->key;
 
+    BN_CTX_start(bn_ctx);
     bn_out = BN_CTX_get(bn_ctx);
     c_exp_lambda = BN_CTX_get(bn_ctx);
     l_ret = BN_CTX_get(bn_ctx);
@@ -137,11 +140,13 @@ int PAILLIER_decrypt(PAILLIER_CTX *ctx, int32_t *out, PAILLIER_CIPHERTEXT *c)
 
 err:
     OPENSSL_free(p);
+    BN_CTX_end(bn_ctx);
     BN_CTX_free(bn_ctx);
     return ret;
 }
 
-/** Adds two paillier ciphertext and stores it in r: E(r) = E(c1) + E(c2)
+/** Adds two paillier ciphertext and stores it in r:
+ *  E(r) = E(c1 + c2) = E(c1) * E(c2)
  *  \param  ctx        PAILLIER_CTX object
  *  \param  r          The PAILLIER_CIPHERTEXT object that stores the addition
  *                     result
@@ -170,7 +175,8 @@ int PAILLIER_add(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
     return ret;
 }
 
-/** Add a paillier ciphertext to a plaintext, and stores it in r: E(r) = E(c1) + m
+/** Add a paillier ciphertext to a plaintext, and stores it in r:
+ *  E(r) = E(c1 + m) = E(c1) * g^m
  *  \param  ctx        PAILLIER_CTX object
  *  \param  r          The PAILLIER_CIPHERTEXT object that stores the addition
  *                     result
@@ -194,6 +200,7 @@ int PAILLIER_add_plain(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
     if (bn_ctx == NULL)
         goto err;
 
+    BN_CTX_start(bn_ctx);
     bn_plain = BN_CTX_get(bn_ctx);
     g_exp_p = BN_CTX_get(bn_ctx);
     if (g_exp_p == NULL)
@@ -211,11 +218,13 @@ int PAILLIER_add_plain(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
     ret = BN_mod_mul(r->data, c->data, g_exp_p, ctx->key->n_square, bn_ctx);
 
 err:
+    BN_CTX_end(bn_ctx);
     BN_CTX_free(bn_ctx);
     return ret;
 }
 
-/** Substracts two paillier ciphertext and stores it in r: E(r) = E(c1) - E(c2)
+/** Substracts two paillier ciphertext and stores it in r:
+ *  E(r) = E(c1 - c2) = E(c1) * E(-c2) = E(c1) / E(c2)
  *  \param  ctx        PAILLIER_CTX object
  *  \param  r          The PAILLIER_CIPHERTEXT object that stores the
  *                     subtraction result
@@ -239,6 +248,7 @@ int PAILLIER_sub(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
     if (bn_ctx == NULL)
         return 0;
 
+    BN_CTX_start(bn_ctx);
     inv = BN_CTX_get(bn_ctx);
     if (inv == NULL)
         goto err;
@@ -249,11 +259,12 @@ int PAILLIER_sub(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
     ret = BN_mod_mul(r->data, c1->data, inv, ctx->key->n_square, bn_ctx);
 
 err:
+    BN_CTX_end(bn_ctx);
     BN_CTX_free(bn_ctx);
     return ret;
 }
 
-/** Ciphertext multiplication, computes E(r) = E(c) * m
+/** Ciphertext multiplication, computes E(r) = E(c * m) = E(c) ^ m
  *  \param  ctx        PAILLIER_CTX object
  *  \param  r          The PAILLIER_CIPHERTEXT object that stores the
  *                     multiplication result
@@ -277,6 +288,7 @@ int PAILLIER_mul(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
     if (bn_ctx == NULL)
         goto err;
 
+    BN_CTX_start(bn_ctx);
     bn_plain = BN_CTX_get(bn_ctx);
     if (bn_plain == NULL)
         goto err;
@@ -288,6 +300,7 @@ int PAILLIER_mul(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
         ret = BN_mod_inverse(r->data, r->data, ctx->key->n_square, bn_ctx) != NULL;
 
 err:
+    BN_CTX_end(bn_ctx);
     BN_CTX_free(bn_ctx);
     return ret;
 }

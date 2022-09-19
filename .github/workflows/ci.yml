@@ -251,12 +251,12 @@ jobs:
       run: make -s -j4
     - name: make test
       run: make test HARNESS_JOBS=${HARNESS_JOBS:-4}
-  ec_elgamal_test:
+  phe_test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: config
-        run: ./config --strict-warnings enable-ssl-trace enable-zlib enable-zlib-dynamic enable-fips enable-ec_elgamal && perl configdata.pm --dump
+        run: ./config --strict-warnings enable-ssl-trace enable-zlib enable-zlib-dynamic enable-fips enable-ec_elgamal enable-paillier && perl configdata.pm --dump
       - name: make
         run: make -s -j4
       - name: make test

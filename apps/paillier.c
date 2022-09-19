@@ -66,7 +66,7 @@ const OPTIONS paillier_options[] = {
 
     OPT_PARAMETERS(),
     {"arg1", 0, 0, "Argument for encryption/decryption, or the first argument of a homomorphic operation"},
-    {"arg2", 0, 0, "The first argument of a homomorphic operation"},
+    {"arg2", 0, 0, "The second argument of a homomorphic operation"},
 
     {NULL}
 };
@@ -74,7 +74,8 @@ const OPTIONS paillier_options[] = {
 static int paillier_buf2hexstr_print(BIO *bio, unsigned char *buf, size_t size,
                                      char *field, int text)
 {
-    char *out = NULL;
+    unsigned char *out = NULL;
+    size_t out_n;
     BIO_printf(bio, "%s: ", field);
 
     if (text) {
@@ -82,10 +83,13 @@ static int paillier_buf2hexstr_print(BIO *bio, unsigned char *buf, size_t size,
         BIO_indent(bio, 4, 4);
         BIO_hex_string(bio, 4, 16, buf, size);
     } else {
-        out = ossl_buf2hexstr_sep(buf, size, '\0');
-        if (out == NULL)
+        out_n = size * 2 + 1;
+        if (!(out = OPENSSL_zalloc(out_n))
+            || !OPENSSL_buf2hexstr_ex((char *)out, out_n, NULL, buf, size, '\0')) {
+            OPENSSL_free(out);
             return 0;
-        BIO_puts(bio, out);
+        }
+        BIO_printf(bio, "%s", out);
         OPENSSL_free(out);
     }
 
@@ -115,21 +119,24 @@ end:
     return ret;
 }
 
-static int paillier_keygen(PAILLIER_KEY *key, char *outfile, int text)
+static int paillier_keygen(char *outfile, int text)
 {
     int ret = 0;
     BIO *bio = NULL;
     PAILLIER_KEY *pail_key = NULL;
 
     pail_key = PAILLIER_KEY_new();
-    if (pail_key == NULL)
+    if (pail_key == NULL
+        || !PAILLIER_KEY_generate_key(pail_key, 255))
         goto end;
 
-    if (!PAILLIER_KEY_generate_key(pail_key, 255))
+    if (!(bio = bio_open_owner(outfile, FORMAT_PEM, 1)))
         goto end;
 
-    if (!(bio = bio_open_owner(outfile, FORMAT_PEM, 1))
-        || !PEM_write_bio_PAILLIER_PrivateKey(bio, pail_key))
+    if (text && !PAILLIER_KEY_print(bio, pail_key, 0))
+        goto end;
+
+    if (!PEM_write_bio_PAILLIER_PrivateKey(bio, pail_key))
         goto end;
 
     ret = 1;
@@ -145,9 +152,13 @@ static int paillier_pubgen(PAILLIER_KEY *key, char *outfile, int text)
     int ret = 0;
     BIO *bio = NULL;
 
-    if (key == NULL
-        || !(bio = bio_open_owner(outfile, FORMAT_PEM, 1))
-        || !PEM_write_bio_PAILLIER_PublicKey(bio, key))
+    if (key == NULL || !(bio = bio_open_owner(outfile, FORMAT_PEM, 1)))
+        goto end;
+
+    if (text && !PAILLIER_KEY_print(bio, key, 0))
+        goto end;
+
+    if (!PEM_write_bio_PAILLIER_PublicKey(bio, key))
         goto end;
 
     ret = 1;
@@ -218,23 +229,22 @@ static int paillier_decrypt(PAILLIER_CTX *ctx, char *ciphertext,
     BIO *bio = NULL;
     int ret = 0;
     unsigned char *buf = NULL;
-    long len = 0;
+    size_t buf_n, len;
     int32_t r = 0;
     PAILLIER_CIPHERTEXT *c = NULL;
 
     if (ctx == NULL || ciphertext == NULL || !(bio = bio_open_owner(outfile, FORMAT_PEM, 1)))
         goto end;
 
-    if (!(c = PAILLIER_CIPHERTEXT_new(ctx)))
+    buf_n = strlen(ciphertext) / 2;
+    if (buf_n < 1)
         goto end;
 
-    if (!(buf = ossl_hexstr2buf_sep(ciphertext, &len, '\0')))
-        goto end;
-
-    if (!PAILLIER_CIPHERTEXT_decode(ctx, c, buf, len))
-        goto end;
-
-    if (!PAILLIER_decrypt(ctx, &r, c))
+    if (!(buf = OPENSSL_zalloc(buf_n))
+        || !OPENSSL_hexstr2buf_ex(buf, buf_n, &len, ciphertext, '\0')
+        || !(c = PAILLIER_CIPHERTEXT_new(ctx))
+        || !PAILLIER_CIPHERTEXT_decode(ctx, c, buf, len)
+        || !PAILLIER_decrypt(ctx, &r, c))
         goto end;
 
     BIO_puts(bio, "paillier decrypt\n");
@@ -255,35 +265,28 @@ static int paillier_add(PAILLIER_CTX *ctx, char *in1, char *in2,
 {
     BIO *bio = NULL;
     int ret = 0;
-    long len1, len2;
+    size_t buf1_n, buf2_n, len1, len2;
     unsigned char *buf1 = NULL, *buf2 = NULL;
     PAILLIER_CIPHERTEXT *r = NULL, *c1 = NULL, *c2 = NULL;
 
     if (ctx == NULL || in1 == NULL || in2 == NULL || !(bio = bio_open_owner(outfile, FORMAT_PEM, 1)))
         goto end;
 
-    if (!(r = PAILLIER_CIPHERTEXT_new(ctx)))
+    buf1_n = strlen(in1) / 2;
+    buf2_n = strlen(in2) / 2;
+    if (buf1_n <= 1 || buf2_n <= 1)
         goto end;
 
-    if (!(c1 = PAILLIER_CIPHERTEXT_new(ctx)))
-        goto end;
-
-    if (!(c2 = PAILLIER_CIPHERTEXT_new(ctx)))
-        goto end;
-
-    if (!(buf1 = ossl_hexstr2buf_sep(in1, &len1, '\0')))
-        goto end;
-
-    if (!(buf2 = ossl_hexstr2buf_sep(in2, &len2, '\0')))
-        goto end;
-
-    if (!PAILLIER_CIPHERTEXT_decode(ctx, c1, buf1, len1))
-        goto end;
-
-    if (!PAILLIER_CIPHERTEXT_decode(ctx, c2, buf2, len2))
-        goto end;
-
-    if (!PAILLIER_add(ctx, r, c1, c2))
+    if (!(buf1 = OPENSSL_zalloc(buf1_n))
+        || !(buf2 = OPENSSL_zalloc(buf2_n))
+        || !OPENSSL_hexstr2buf_ex(buf1, buf1_n, &len1, in1, '\0')
+        || !OPENSSL_hexstr2buf_ex(buf2, buf2_n, &len2, in2, '\0')
+        || !(r = PAILLIER_CIPHERTEXT_new(ctx))
+        || !(c1 = PAILLIER_CIPHERTEXT_new(ctx))
+        || !(c2 = PAILLIER_CIPHERTEXT_new(ctx))
+        || !PAILLIER_CIPHERTEXT_decode(ctx, c1, buf1, len1)
+        || !PAILLIER_CIPHERTEXT_decode(ctx, c2, buf2, len2)
+        || !PAILLIER_add(ctx, r, c1, c2))
         goto end;
 
     BIO_puts(bio, "paillier add (result = c1 + c2)\n");
@@ -291,8 +294,6 @@ static int paillier_add(PAILLIER_CTX *ctx, char *in1, char *in2,
     BIO_printf(bio, "c2: %s\n", in2);
 
     ret = paillier_ciphertext_print(bio, ctx, r, "result", text);
-
-    ret = 1;
 
 end:
     OPENSSL_free(buf1);
@@ -309,26 +310,23 @@ static int paillier_add_plain(PAILLIER_CTX *ctx, char *in1, int32_t plain,
 {
     BIO *bio = NULL;
     int ret = 0;
-    long len1;
+    size_t buf1_n, len1;
     unsigned char *buf1 = NULL;
     PAILLIER_CIPHERTEXT *r = NULL, *c1 = NULL;
 
     if (ctx == NULL || in1 == NULL || !(bio = bio_open_owner(outfile, FORMAT_PEM, 1)))
         goto end;
 
-    if (!(r = PAILLIER_CIPHERTEXT_new(ctx)))
+    buf1_n = strlen(in1) / 2;
+    if (buf1_n <= 1)
         goto end;
 
-    if (!(c1 = PAILLIER_CIPHERTEXT_new(ctx)))
-        goto end;
-
-    if (!(buf1 = ossl_hexstr2buf_sep(in1, &len1, '\0')))
-        goto end;
-
-    if (!PAILLIER_CIPHERTEXT_decode(ctx, c1, buf1, len1))
-        goto end;
-
-    if (!PAILLIER_add_plain(ctx, r, c1, plain))
+    if (!(buf1 = OPENSSL_zalloc(buf1_n))
+        || !OPENSSL_hexstr2buf_ex(buf1, buf1_n, &len1, in1, '\0')
+        || !(r = PAILLIER_CIPHERTEXT_new(ctx))
+        || !(c1 = PAILLIER_CIPHERTEXT_new(ctx))
+        || !PAILLIER_CIPHERTEXT_decode(ctx, c1, buf1, len1)
+        || !PAILLIER_add_plain(ctx, r, c1, plain))
         goto end;
 
     BIO_puts(bio, "paillier addition (result = c1 + plaintext)\n");
@@ -336,8 +334,6 @@ static int paillier_add_plain(PAILLIER_CTX *ctx, char *in1, int32_t plain,
     BIO_printf(bio, "plaintext: %d\n", plain);
 
     ret = paillier_ciphertext_print(bio, ctx, r, "result", text);
-
-    ret = 1;
 
 end:
     OPENSSL_free(buf1);
@@ -352,35 +348,28 @@ static int paillier_sub(PAILLIER_CTX *ctx, char *in1, char *in2,
 {
     BIO *bio = NULL;
     int ret = 0;
-    long len1, len2;
+    size_t buf1_n, buf2_n, len1, len2;
     unsigned char *buf1 = NULL, *buf2 = NULL;
     PAILLIER_CIPHERTEXT *r = NULL, *c1 = NULL, *c2 = NULL;
 
     if (ctx == NULL || in1 == NULL || in2 == NULL || !(bio = bio_open_owner(outfile, FORMAT_PEM, 1)))
         goto end;
 
-    if (!(r = PAILLIER_CIPHERTEXT_new(ctx)))
+    buf1_n = strlen(in1) / 2;
+    buf2_n = strlen(in2) / 2;
+    if (buf1_n <= 1 || buf2_n <= 1)
         goto end;
 
-    if (!(c1 = PAILLIER_CIPHERTEXT_new(ctx)))
-        goto end;
-
-    if (!(c2 = PAILLIER_CIPHERTEXT_new(ctx)))
-        goto end;
-
-    if (!(buf1 = ossl_hexstr2buf_sep(in1, &len1, '\0')))
-        goto end;
-
-    if (!(buf2 = ossl_hexstr2buf_sep(in2, &len2, '\0')))
-        goto end;
-
-    if (!PAILLIER_CIPHERTEXT_decode(ctx, c1, buf1, len1))
-        goto end;
-
-    if (!PAILLIER_CIPHERTEXT_decode(ctx, c2, buf2, len2))
-        goto end;
-
-    if (!PAILLIER_sub(ctx, r, c1, c2))
+    if (!(buf1 = OPENSSL_zalloc(buf1_n))
+        || !(buf2 = OPENSSL_zalloc(buf2_n))
+        || !OPENSSL_hexstr2buf_ex(buf1, buf1_n, &len1, in1, '\0')
+        || !OPENSSL_hexstr2buf_ex(buf2, buf2_n, &len2, in2, '\0')
+        || !(r = PAILLIER_CIPHERTEXT_new(ctx))
+        || !(c1 = PAILLIER_CIPHERTEXT_new(ctx))
+        || !(c2 = PAILLIER_CIPHERTEXT_new(ctx))
+        || !PAILLIER_CIPHERTEXT_decode(ctx, c1, buf1, len1)
+        || !PAILLIER_CIPHERTEXT_decode(ctx, c2, buf2, len2)
+        || !PAILLIER_sub(ctx, r, c1, c2))
         goto end;
 
     BIO_puts(bio, "paillier subtraction (result = c1 - c2)\n");
@@ -406,26 +395,23 @@ static int paillier_mul(PAILLIER_CTX *ctx, char *in1, int32_t plain,
 {
     BIO *bio = NULL;
     int ret = 0;
-    long len1;
+    size_t buf1_n, len1;
     unsigned char *buf1 = NULL;
     PAILLIER_CIPHERTEXT *r = NULL, *c1 = NULL;
 
     if (ctx == NULL || in1 == NULL || !(bio = bio_open_owner(outfile, FORMAT_PEM, 1)))
         goto end;
 
-    if (!(r = PAILLIER_CIPHERTEXT_new(ctx)))
+    buf1_n = strlen(in1) / 2;
+    if (buf1_n <= 1)
         goto end;
 
-    if (!(c1 = PAILLIER_CIPHERTEXT_new(ctx)))
-        goto end;
-
-    if (!(buf1 = ossl_hexstr2buf_sep(in1, &len1, '\0')))
-        goto end;
-
-    if (!PAILLIER_CIPHERTEXT_decode(ctx, c1, buf1, len1))
-        goto end;
-
-    if (!PAILLIER_mul(ctx, r, c1, plain))
+    if (!(buf1 = OPENSSL_zalloc(buf1_n))
+        || !OPENSSL_hexstr2buf_ex(buf1, buf1_n, &len1, in1, '\0')
+        || !(r = PAILLIER_CIPHERTEXT_new(ctx))
+        || !(c1 = PAILLIER_CIPHERTEXT_new(ctx))
+        || !PAILLIER_CIPHERTEXT_decode(ctx, c1, buf1, len1)
+        || !PAILLIER_mul(ctx, r, c1, plain))
         goto end;
 
     BIO_puts(bio, "paillier scalar multiplication (result = c1 * plaintext)\n");
@@ -607,7 +593,7 @@ opthelp2:
     }
 
     if (keygen)
-        ret = paillier_keygen(NULL, outfile, text);
+        ret = paillier_keygen(outfile, text);
     else if (pubgen)
         ret = paillier_pubgen(pail_key, outfile, text);
     else if (key || pub)
