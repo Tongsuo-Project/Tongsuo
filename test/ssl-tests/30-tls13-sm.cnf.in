@@ -49,7 +49,7 @@ our @tests = (
         client => {
             "MinProtocol" => "TLSv1.3",
             "MaxProtocol" => "TLSv1.3",
-            "Ciphersuites" => "TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256:TLS_SM4_GCM_SM3",
+            "Ciphersuites" => "TLS_AES_128_GCM_SHA256:TLS_SM4_GCM_SM3",
             "VerifyCAFile" => test_pem("sm2-root.crt"),
         },
         test   => {
@@ -91,7 +91,7 @@ our @tests = (
         client => {
             "MinProtocol" => "TLSv1.3",
             "MaxProtocol" => "TLSv1.3",
-            "Ciphersuites" => "TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256:TLS_SM4_CCM_SM3",
+            "Ciphersuites" => "TLS_AES_128_GCM_SHA256:TLS_SM4_CCM_SM3",
             "VerifyCAFile" => test_pem("sm2-root.crt"),
         },
         test   => {
@@ -139,27 +139,6 @@ our @tests = (
         test   => {
             "ExpectedResult" => "Success",
             "ExpectedCipher" => "TLS_AES_256_GCM_SHA384",
-        },
-    },
-
-    {
-        name => "test sm2-sm3 signature working well in TLS_CHACHA20_POLY1305_SHA256",
-        server => {
-            "MinProtocol" => "TLSv1.3",
-            "MaxProtocol" => "TLSv1.3",
-            "Ciphersuites" => "TLS_CHACHA20_POLY1305_SHA256",
-            "Certificate" => test_pem("sm2-first-crt.pem"),
-            "PrivateKey" => test_pem("sm2-first-key.pem"),
-        },
-        client => {
-            "MinProtocol" => "TLSv1.3",
-            "MaxProtocol" => "TLSv1.3",
-            "Ciphersuites" => "TLS_CHACHA20_POLY1305_SHA256",
-            "VerifyCAFile" => test_pem("sm2-root.crt"),
-        },
-        test   => {
-            "ExpectedResult" => "Success",
-            "ExpectedCipher" => "TLS_CHACHA20_POLY1305_SHA256",
         },
     },
 
