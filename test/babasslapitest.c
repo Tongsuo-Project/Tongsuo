@@ -1071,7 +1071,7 @@ end:
 }
 #endif
 
-#if !defined(OPENSSL_NO_TLS1_2) && !defined(OPENSSL_NO_CHACHA) && !defined(OPENSSL_NO_EC)
+#if !defined(OPENSSL_NO_TLS1_2) && !defined(OPENSSL_NO_CHACHA) && !defined(OPENSSL_NO_POLY1305) && !defined(OPENSSL_NO_EC)
 static int test_babassl_optimize_chacha_choose(void)
 {
     SSL_CTX *cctx = NULL, *sctx = NULL;
@@ -1564,7 +1564,7 @@ int setup_tests(void)
 #ifndef OPENSSL_NO_SESSION_REUSED_TYPE
     ADD_TEST(test_babassl_session_reused_type);
 #endif
-#if !defined(OPENSSL_NO_TLS1_2) && !defined(OPENSSL_NO_CHACHA) && !defined(OPENSSL_NO_EC)
+#if !defined(OPENSSL_NO_TLS1_2) && !defined(OPENSSL_NO_CHACHA) && !defined(OPENSSL_NO_POLY1305) && !defined(OPENSSL_NO_EC)
     ADD_TEST(test_babassl_optimize_chacha_choose);
 #endif
 #if !defined(OPENSSL_NO_STATUS) && !defined(OPENSSL_NO_EC)
