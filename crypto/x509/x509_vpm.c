@@ -23,6 +23,9 @@
 #define SET_HOST 0
 #define ADD_HOST 1
 
+static int int_x509_param_set1(char **pdest, size_t *pdestlen,
+                               const char *src, size_t srclen);
+
 static char *str_copy(const char *s)
 {
     return OPENSSL_strdup(s);
@@ -105,6 +108,48 @@ void X509_VERIFY_PARAM_free(X509_VERIFY_PARAM *param)
     OPENSSL_free(param->email);
     OPENSSL_free(param->ip);
     OPENSSL_free(param);
+}
+
+int X509_VERIFY_PARAM_copy(X509_VERIFY_PARAM *dest, const X509_VERIFY_PARAM *src)
+{
+    if (dest == NULL || src == NULL || dest == src)
+        return 0;
+
+    if (src->name && !X509_VERIFY_PARAM_set1_name(dest, src->name))
+        return 0;
+
+    dest->check_time = src->check_time;
+    dest->inh_flags = src->inh_flags;
+    dest->flags = src->flags;
+    dest->purpose = src->purpose;
+    dest->trust = src->trust;
+    dest->depth = src->depth;
+    dest->auth_level = src->auth_level;
+
+    if (src->policies && !X509_VERIFY_PARAM_set1_policies(dest, src->policies))
+        return 0;
+
+    if (src->hosts) {
+        sk_OPENSSL_STRING_pop_free(dest->hosts, str_free);
+        dest->hosts = sk_OPENSSL_STRING_deep_copy(src->hosts, str_copy, str_free);
+        if (dest->hosts == NULL)
+            return 0;
+        dest->hostflags = src->hostflags;
+    }
+
+    if (src->peername && !int_x509_param_set1(&dest->peername, NULL,
+                                              src->peername,
+                                              strlen(src->peername)))
+        return 0;
+
+    if (src->email && !X509_VERIFY_PARAM_set1_email(dest, src->email,
+                                                    src->emaillen))
+        return 0;
+
+    if (src->ip && !X509_VERIFY_PARAM_set1_ip(dest, src->ip, src->iplen))
+        return 0;
+
+    return 1;
 }
 
 /*-

@@ -4144,8 +4144,6 @@ SSL *SSL_dup(SSL *s)
 SSL_CTX *SSL_CTX_dup(SSL_CTX *ctx)
 {
     SSL_CTX *ret = NULL;
-    X509_OBJECT *obj;
-    int i, num;
 
     if (ctx == NULL) {
         SSLerr(SSL_F_SSL_CTX_DUP, SSL_R_NULL_SSL_CTX_PASSED);
@@ -4174,36 +4172,9 @@ SSL_CTX *SSL_CTX_dup(SSL_CTX *ctx)
     ret->cert_store = X509_STORE_new();
     if (ret->cert_store == NULL)
         goto err;
-    /* dup cert_store->get_cert_methods */
-    if (ctx->cert_store && ctx->cert_store->get_cert_methods) {
 
-        sk_X509_LOOKUP_free(ret->cert_store->get_cert_methods);
-
-        ret->cert_store->get_cert_methods
-            = sk_X509_LOOKUP_dup(ctx->cert_store->get_cert_methods);
-    }
-    /* dup cert_store->objs */
-    if (ctx->cert_store && ctx->cert_store->objs) {
-
-        sk_X509_OBJECT_free(ret->cert_store->objs);
-
-        ret->cert_store->objs = sk_X509_OBJECT_dup(ctx->cert_store->objs);
-
-        num = sk_X509_OBJECT_num(ret->cert_store->objs);
-
-        for (i = 0; i < num; i++) {
-            obj = sk_X509_OBJECT_value(ret->cert_store->objs, i);
-
-            /* add reference count in case of double free */
-            if (obj->type == X509_LU_X509) {
-                X509_up_ref(obj->data.x509);
-            } else if (obj->type == X509_LU_CRL) {
-                X509_CRL_up_ref(obj->data.crl);
-            } else {
-                /* abort(); */
-            }
-        }
-    }
+    if (ctx->cert_store && !X509_STORE_copy(ret->cert_store, ctx->cert_store))
+        goto err;
 
     ret->sessions = lh_SSL_SESSION_new(ssl_session_hash, ssl_session_cmp);
     if (ret->sessions == NULL)
