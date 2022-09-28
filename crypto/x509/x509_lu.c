@@ -261,6 +261,60 @@ int X509_STORE_up_ref(X509_STORE *vfy)
     return ((i > 1) ? 1 : 0);
 }
 
+int X509_STORE_copy(X509_STORE *dest, const X509_STORE *src)
+{
+    X509_OBJECT *obj;
+    X509_LOOKUP *lu;
+    int i, num;
+
+    if (dest == NULL || src == NULL || dest == src)
+        return 0;
+
+    if (src->get_cert_methods) {
+        num = sk_X509_LOOKUP_num(src->get_cert_methods);
+        for (i = 0; i < num; i++) {
+            lu = sk_X509_LOOKUP_value(src->get_cert_methods, i);
+            if (!X509_STORE_add_lookup(dest, lu->method))
+                return 0;
+        }
+    }
+
+    if (src->objs) {
+        num = sk_X509_OBJECT_num(src->objs);
+        for (i = 0; i < num; i++) {
+            obj = sk_X509_OBJECT_value(src->objs, i);
+            if (obj->type == X509_LU_X509) {
+                X509_STORE_add_cert(dest, obj->data.x509);
+            } else if (obj->type == X509_LU_CRL) {
+                X509_STORE_add_crl(dest, obj->data.crl);
+            } else {
+                /* abort(); */
+            }
+        }
+    }
+
+    if (src->param && !X509_VERIFY_PARAM_copy(dest->param, src->param))
+        return 0;
+
+    dest->verify = src->verify;
+    dest->verify_cb = src->verify_cb;
+    dest->get_issuer = src->get_issuer;
+    dest->check_issued = src->check_issued;
+    dest->check_revocation = src->check_revocation;
+    dest->get_crl = src->get_crl;
+    dest->check_crl = src->check_crl;
+    dest->cert_crl = src->cert_crl;
+    dest->check_policy = src->check_policy;
+    dest->lookup_certs = src->lookup_certs;
+    dest->lookup_crls = src->lookup_crls;
+    dest->cleanup = src->cleanup;
+
+    if (!CRYPTO_dup_ex_data(CRYPTO_EX_INDEX_X509_STORE, &dest->ex_data, &src->ex_data))
+        return 0;
+
+    return 1;
+}
+
 X509_LOOKUP *X509_STORE_add_lookup(X509_STORE *v, X509_LOOKUP_METHOD *m)
 {
     int i;

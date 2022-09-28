@@ -5398,3 +5398,5 @@ d2i_PAILLIER_PrivateKey                 5682	3_0_3	EXIST::FUNCTION:PAILLIER
 i2d_PAILLIER_PrivateKey                 5683	3_0_3	EXIST::FUNCTION:PAILLIER
 d2i_PAILLIER_PublicKey                  5684	3_0_3	EXIST::FUNCTION:PAILLIER
 i2d_PAILLIER_PublicKey                  5685	3_0_3	EXIST::FUNCTION:PAILLIER
+X509_STORE_copy                         5686	3_0_3	EXIST::FUNCTION:
+X509_VERIFY_PARAM_copy                  5687	3_0_3	EXIST::FUNCTION:
