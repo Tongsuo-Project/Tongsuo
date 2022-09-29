@@ -55,6 +55,10 @@ IF[{- !$disabled{'delegated-credential'} -}]
   $OPENSSLSRC=$OPENSSLSRC delecred.c
 ENDIF
 
+IF[{- !$disabled{'paillier'} -}]
+  $OPENSSLSRC=$OPENSSLSRC paillier.c
+ENDIF
+
 IF[{- !$disabled{apps} -}]
   PROGRAMS=openssl
   SOURCE[openssl]=$INITSRC $OPENSSLSRC
