@@ -1080,9 +1080,21 @@ static int ssl_security_default_callback(const SSL *s, const SSL_CTX *ctx,
     case SSL_SECOP_VERSION:
         if (!SSL_IS_DTLS(s)) {
 #ifndef OPENSSL_NO_NTLS
-            /* NTLS v1.1 not allowed at level 3 */
-            if (nid == NTLS_VERSION && level >= 3)
-                return 0;
+            /* NTLS v1.1 not suitable for above level 3 */
+            if (nid == NTLS_VERSION)
+            {
+                //https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_set_security_level.html
+                //level 3: Security level set to 128 bits of security. As a result RSA, DSA and DH keys shorter than 3072 bits and ECC keys shorter than 256 bits are prohibited. 
+                //In addition to the level 2 exclusions cipher suites not offering forward secrecy are prohibited. TLS versions below 1.1 are not permitted. Session tickets are disabled.
+                if(level > 3)
+                {
+                    return 0;
+                }
+                else
+                {
+                    return 1;
+                }
+            }
 #endif
             /* SSLv3 not allowed at level 2 */
             if (nid <= SSL3_VERSION && level >= 2)
