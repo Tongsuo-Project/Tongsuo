@@ -395,6 +395,7 @@ X509_CRL *X509_OBJECT_get0_X509_CRL(const X509_OBJECT *a);
 int X509_OBJECT_set1_X509_CRL(X509_OBJECT *a, X509_CRL *obj);
 X509_STORE *X509_STORE_new(void);
 void X509_STORE_free(X509_STORE *v);
+int X509_STORE_copy(X509_STORE *dest, const X509_STORE *src);
 int X509_STORE_lock(X509_STORE *ctx);
 int X509_STORE_unlock(X509_STORE *ctx);
 int X509_STORE_up_ref(X509_STORE *v);
@@ -696,6 +697,7 @@ void X509_STORE_CTX_set0_dane(X509_STORE_CTX *ctx, SSL_DANE *dane);
 
 X509_VERIFY_PARAM *X509_VERIFY_PARAM_new(void);
 void X509_VERIFY_PARAM_free(X509_VERIFY_PARAM *param);
+int X509_VERIFY_PARAM_copy(X509_VERIFY_PARAM *dest, const X509_VERIFY_PARAM *src);
 int X509_VERIFY_PARAM_inherit(X509_VERIFY_PARAM *to,
                               const X509_VERIFY_PARAM *from);
 int X509_VERIFY_PARAM_set1(X509_VERIFY_PARAM *to,

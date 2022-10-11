@@ -1509,6 +1509,33 @@ end:
 
     return testresult;
 }
+
+static int test_babassl_ssl_ctx_dup_mem(void)
+{
+    int ret = 0;
+    SSL_CTX *ctx1 = NULL, *ctx2 = NULL;
+    X509_LOOKUP *lookup;
+
+    if (!TEST_ptr(ctx1 = SSL_CTX_new(TLS_method()))
+        || !TEST_true(SSL_CTX_set_default_verify_file(ctx1)))
+        goto err;
+
+    if (!TEST_ptr(lookup = X509_STORE_add_lookup(ctx1->cert_store, X509_LOOKUP_file())))
+        goto err;
+
+    X509_LOOKUP_load_file(lookup, cert, X509_FILETYPE_PEM);
+
+    if (!TEST_ptr(ctx2 = SSL_CTX_dup(ctx1)))
+        goto err;
+
+    ret = 1;
+
+err:
+    SSL_CTX_free(ctx1);
+    SSL_CTX_free(ctx2);
+    return ret;
+}
+
 #endif
 
 int setup_tests(void)
@@ -1575,6 +1602,7 @@ int setup_tests(void)
 #endif
 #if !defined(OPENSSL_NO_TLS1_2) && !defined(OPENSSL_NO_TLS1_1)
     ADD_TEST(test_babassl_ssl_ctx_dup);
+    ADD_TEST(test_babassl_ssl_ctx_dup_mem);
 #endif
     return 1;
 }
