@@ -522,7 +522,7 @@ size_t EC_ELGAMAL_CIPHERTEXT_encode(EC_ELGAMAL_CTX *ctx, unsigned char *out,
                                     const EC_ELGAMAL_CIPHERTEXT *ciphertext,
                                     int compressed)
 {
-    size_t point_len, ret = 0, len;
+    size_t point_len, ret = 0, len, plen;
     unsigned char *p = out;
     point_conversion_form_t form = compressed ? POINT_CONVERSION_COMPRESSED :
                                                 POINT_CONVERSION_UNCOMPRESSED;
@@ -554,14 +554,16 @@ size_t EC_ELGAMAL_CIPHERTEXT_encode(EC_ELGAMAL_CTX *ctx, unsigned char *out,
     if (ciphertext == NULL || ciphertext->C1 == NULL || ciphertext->C2 == NULL)
         goto end;
 
-    if (EC_POINT_point2oct(ctx->key->group, ciphertext->C1, form, p, point_len,
-                           bn_ctx) != point_len)
+    plen = EC_POINT_point2oct(ctx->key->group, ciphertext->C1, form, p,
+                              point_len, bn_ctx);
+    if (plen != 1 && plen != point_len)
         goto end;
 
     p += point_len;
 
-    if (EC_POINT_point2oct(ctx->key->group, ciphertext->C2, form, p, point_len,
-                           bn_ctx) != point_len)
+    plen = EC_POINT_point2oct(ctx->key->group, ciphertext->C2, form, p,
+                              point_len, bn_ctx);
+    if (plen != 1 && plen != point_len)
         goto end;
 
     ret = len;
@@ -867,26 +869,31 @@ int EC_ELGAMAL_mul(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r,
     bn_ctx = BN_CTX_new();
     if (bn_ctx == NULL) {
         ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
-        goto err;
+        goto end;
+    }
+
+    if (m == 0) {
+        ret = EC_ELGAMAL_encrypt(ctx, r, 0);
+        goto end;
     }
 
     bn_m = BN_CTX_get(bn_ctx);
     if (bn_m == NULL) {
         ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
-        goto err;
+        goto end;
     }
     BN_set_word(bn_m, (BN_ULONG)(m > 0 ? m : -(int64_t)m));
     BN_set_negative(bn_m, m < 0 ? 1 : 0);
 
     if (!EC_POINT_mul(ctx->key->group, r->C1, NULL, c->C1, bn_m, bn_ctx))
-        goto err;
+        goto end;
 
     if (!EC_POINT_mul(ctx->key->group, r->C2, NULL, c->C2, bn_m, bn_ctx))
-        goto err;
+        goto end;
 
     ret = 1;
 
-err:
+end:
     BN_CTX_free(bn_ctx);
     return ret;
 }
