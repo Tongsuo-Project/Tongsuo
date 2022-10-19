@@ -59,6 +59,10 @@ IF[{- !$disabled{'paillier'} -}]
   $OPENSSLSRC=$OPENSSLSRC paillier.c
 ENDIF
 
+IF[{- !$disabled{'ec_elgamal'} -}]
+  $OPENSSLSRC=$OPENSSLSRC ec_elgamal.c
+ENDIF
+
 IF[{- !$disabled{apps} -}]
   PROGRAMS=openssl
   SOURCE[openssl]=$INITSRC $OPENSSLSRC
