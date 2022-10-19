@@ -257,6 +257,7 @@ const char *RAND_file_name(char *buf, size_t size)
         if (len + 1 + strlen(RFILE) + 1 >= size)
             return NULL;
         strcpy(buf, s);
+        strcat(buf, "/");
         strcat(buf, RFILE);
     }
 
