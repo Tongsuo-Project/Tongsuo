@@ -64,11 +64,11 @@ DEFINE_LHASH_OF(MEM);
 
 # define OPENSSL_CONF             "openssl.cnf"
 
-# define X509_CERT_AREA          "OSSL$DATAROOT:[000000]"
-# define X509_CERT_DIR           "OSSL$DATAROOT:[CERTS]"
-# define X509_CERT_FILE          "OSSL$DATAROOT:[000000]cert.pem"
-# define X509_PRIVATE_DIR        "OSSL$DATAROOT:[PRIVATE]"
-# define CTLOG_FILE              "OSSL$DATAROOT:[000000]ct_log_list.cnf"
+# define X509_CERT_AREA          OPENSSLDIR
+# define X509_CERT_DIR           OPENSSLDIR "/certs"
+# define X509_CERT_FILE          OPENSSLDIR "/cert.pem"
+# define X509_PRIVATE_DIR        OPENSSLDIR "/private"
+# define CTLOG_FILE              OPENSSLDIR "/ct_log_list.cnf"
 
 # define X509_CERT_DIR_EVP        "SSL_CERT_DIR"
 # define X509_CERT_FILE_EVP       "SSL_CERT_FILE"
