@@ -32,7 +32,7 @@
 static long long get_time();
 
 /* iteration number, could be adjusted as required */
-#define ITR_NUM 50
+#define ITR_NUM 1000
 #define RND_DATA_SIZE 1024 * 1024
 
 /* time difference on each index */
@@ -150,7 +150,7 @@ int main(void)
             goto err;
         }
         end = get_time();
-        indices[i].sm2_enc = 1000 * 1000 / (end - start);
+        indices[i].sm2_enc = 1000 * 1000 * 8 / (end - start);
 
         EVP_PKEY_CTX_free(sm2_ctx);
         sm2_ctx = EVP_PKEY_CTX_new(sm2_key, NULL);
@@ -171,7 +171,7 @@ int main(void)
             goto err;
         }
         end = get_time();
-        indices[i].sm2_dec = 1000 * 1000 / (end - start);
+        indices[i].sm2_dec = 1000 * 1000 * 8 / (end - start);
 
         /* SM3 hash */
         start = get_time();
@@ -179,7 +179,7 @@ int main(void)
             goto err;
         }
         end = get_time();
-        indices[i].sm3_hash = 1000 * 1000 / (end - start);
+        indices[i].sm3_hash = 1000 * 1000 * 8 / (end - start);
 
         EVP_PKEY_CTX_free(sm2_ctx);
         sm2_ctx = EVP_PKEY_CTX_new(sm2_key, NULL);
@@ -251,7 +251,7 @@ int main(void)
             goto err;
         }
         end = get_time();
-        indices[i].sm4_ecb_enc = 1000 * 1000 / (end - start);
+        indices[i].sm4_ecb_enc = 1000 * 1000 * 8 / (end - start);
  
         outlen += tmplen;
 
@@ -277,7 +277,7 @@ int main(void)
             goto err;
         }
         end = get_time();
-        indices[i].sm4_ecb_dec = 1000 * 1000 / (end - start);
+        indices[i].sm4_ecb_dec = 1000 * 1000 * 8 / (end - start);
         EVP_CIPHER_CTX_free(sm4_ctx);
 
         sm4_ctx = EVP_CIPHER_CTX_new();
@@ -296,7 +296,7 @@ int main(void)
             goto err;
         }
         end = get_time();
-        indices[i].sm4_cbc_enc = 1000 * 1000 / (end - start);
+        indices[i].sm4_cbc_enc = 1000 * 1000 * 8 / (end - start);
  
         outlen += tmplen;
         EVP_CIPHER_CTX_free(sm4_ctx);
@@ -317,7 +317,7 @@ int main(void)
             goto err;
         }
         end = get_time();
-        indices[i].sm4_cbc_dec = 1000 * 1000 / (end - start);
+        indices[i].sm4_cbc_dec = 1000 * 1000 * 8 / (end - start);
         EVP_CIPHER_CTX_free(sm4_ctx);
         sm4_ctx = NULL;
 
@@ -326,6 +326,7 @@ int main(void)
         out = NULL;
         out2 = NULL;
 
+#if 1
         fprintf(stdout, "sm2-enc: %d, "
                         "sm2-dec: %d, "
                         "sm2-sign: %d, "
@@ -341,6 +342,7 @@ int main(void)
                         indices[i].sm2_keygen, indices[i].sm3_hash,
                         indices[i].sm4_ecb_enc, indices[i].sm4_cbc_enc,
                         indices[i].sm4_ecb_dec, indices[i].sm4_cbc_dec);
+#endif
     }
 
     /* calculate the final average result */
@@ -379,11 +381,11 @@ int main(void)
             "sm4-cbc-enc: %d Mbps\n"
             "sm4-ecb-dec: %d Mbps\n"
             "sm4-cbc-dec: %d Mbps\n",
-            result.sm2_enc_avg * 8, result.sm2_dec_avg * 8,
+            result.sm2_enc_avg, result.sm2_dec_avg,
             result.sm2_sign_avg, result.sm2_verify_avg,
-            result.sm2_keygen_avg, result.sm3_hash_avg * 8,
-            result.sm4_ecb_enc_avg * 8, result.sm4_cbc_enc_avg * 8,
-            result.sm4_ecb_dec_avg * 8, result.sm4_cbc_dec_avg * 8);
+            result.sm2_keygen_avg, result.sm3_hash_avg,
+            result.sm4_ecb_enc_avg, result.sm4_cbc_enc_avg,
+            result.sm4_ecb_dec_avg, result.sm4_cbc_dec_avg);
 
     free(rnd_data);
     return 0;
