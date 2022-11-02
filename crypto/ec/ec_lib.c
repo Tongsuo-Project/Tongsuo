@@ -19,6 +19,7 @@
 #include <openssl/core_names.h>
 #include <openssl/err.h>
 #include <openssl/opensslv.h>
+#include <openssl/sha.h>
 #include "crypto/ec.h"
 #include "internal/nelem.h"
 #include "ec_local.h"

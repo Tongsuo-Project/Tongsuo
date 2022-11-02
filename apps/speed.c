@@ -111,7 +111,7 @@ static int usertime = 1;
 #ifndef OPENSSL_NO_EC_ELGAMAL
 static int EC_ELGAMAL_loop(void *args);
 static void ec_elgamal_print_message(const char *str, const char *str2,
-                                     long num, int tm);
+                                     long num, int tm, int flag);
 #endif
 
 #ifndef OPENSSL_NO_PAILLIER
@@ -1750,6 +1750,7 @@ int speed_main(int argc, char **argv)
 # endif
     };
     int ec_elgamal_doit[EC_ELGAMAL_NUM] = { 0 };
+    int ec_elgamal_flag[EC_ELGAMAL_NUM] = { 0 };
 #endif
 
 #ifndef OPENSSL_NO_PAILLIER
@@ -2014,7 +2015,11 @@ int speed_main(int argc, char **argv)
         }
 #endif
 #ifndef OPENSSL_NO_EC_ELGAMAL
-        if (strcmp(algo, "ecelgamal") == 0) {
+        if (strcmp(algo, "ecelgamal") == 0
+# ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
+            ||strcmp(algo, "twisted-ecelgamal") == 0
+# endif
+            ) {
             for (i = 0; i < OSSL_NELEM(ec_elgamal_doit); i++)
                 ec_elgamal_doit[i] = 1;
 # ifndef OPENSSL_NO_EC2M
@@ -2023,8 +2028,28 @@ int speed_main(int argc, char **argv)
             for (i = R_EC_ELGAMAL_BRP256R1; i <= R_EC_ELGAMAL_BRP512T1; i++)
 # endif
                 ec_elgamal_doit[i] = 0;
+
+# ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
+            if (strcmp(algo, "twisted-ecelgamal") == 0 ) {
+                for (i = 0; i < EC_ELGAMAL_NUM; i++) {
+                    ec_elgamal_flag[i] = EC_ELGAMAL_FLAG_TWISTED;
+                }
+            }
+# endif
             continue;
         }
+
+# ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
+        if (strncmp(algo, "twisted-ecelgamal", sizeof("twisted-ecelgamal")-1) == 0) {
+            algo += sizeof("twisted-")-1;
+            if (opt_found(algo, ec_elgamal_choices, &i)) {
+                ec_elgamal_doit[i] = 2;
+                ec_elgamal_flag[i] = EC_ELGAMAL_FLAG_TWISTED;
+                continue;
+            }
+        }
+# endif
+
         if (opt_found(algo, ec_elgamal_choices, &i)) {
             ec_elgamal_doit[i] = 2;
             continue;
@@ -3544,7 +3569,8 @@ int speed_main(int argc, char **argv)
             EC_KEY_precompute_mult(loopargs[i].ec_elgamal_key[testnum], NULL);
             EC_KEY_generate_key(loopargs[i].ec_elgamal_key[testnum]);
 
-            ectx = EC_ELGAMAL_CTX_new(loopargs[i].ec_elgamal_key[testnum]);
+            ectx = EC_ELGAMAL_CTX_new(loopargs[i].ec_elgamal_key[testnum],
+                                      ec_elgamal_flag[testnum]);
             if (ectx == NULL) {
                 st = 0;
                 break;
@@ -3557,7 +3583,8 @@ int speed_main(int argc, char **argv)
             loopargs[i].ciphertext_r[testnum] = EC_ELGAMAL_CIPHERTEXT_new(ectx);
 
             if (!mr)
-                BIO_printf(bio_err, "Doing ec_elgamal init with curve %s: ",
+                BIO_printf(bio_err, "Doing %s ec_elgamal init with curve %s: ",
+                           ec_elgamal_flag[testnum] == EC_ELGAMAL_FLAG_TWISTED ? "twisted" : "",
                            test_ec_elgamal_curves[testnum].name);
 
             Time_F(START);
@@ -3613,7 +3640,8 @@ int speed_main(int argc, char **argv)
                 ec_elgamal_print_message("encrypt",
                                          test_ec_elgamal_curves[testnum].name,
                                          ec_elgamal_c[testnum][0],
-                                         seconds.ec_elgamal);
+                                         seconds.ec_elgamal,
+                                         ec_elgamal_flag[testnum]);
                 ec_elgamal_decrypt = 0;
                 ec_elgamal_add = 0;
                 ec_elgamal_sub = 0;
@@ -3636,7 +3664,8 @@ int speed_main(int argc, char **argv)
                 ec_elgamal_print_message("decrypt",
                                          test_ec_elgamal_curves[testnum].name,
                                          ec_elgamal_c[testnum][1],
-                                         seconds.ec_elgamal);
+                                         seconds.ec_elgamal,
+                                         ec_elgamal_flag[testnum]);
                 ec_elgamal_decrypt = 1;
                 Time_F(START);
                 count = run_benchmark(async_jobs, EC_ELGAMAL_loop, loopargs);
@@ -3653,7 +3682,8 @@ int speed_main(int argc, char **argv)
                 ec_elgamal_print_message("add",
                                          test_ec_elgamal_curves[testnum].name,
                                          ec_elgamal_c[testnum][2],
-                                         seconds.ec_elgamal);
+                                         seconds.ec_elgamal,
+                                         ec_elgamal_flag[testnum]);
                 ec_elgamal_add = 1;
                 Time_F(START);
                 count = run_benchmark(async_jobs, EC_ELGAMAL_loop, loopargs);
@@ -3670,7 +3700,8 @@ int speed_main(int argc, char **argv)
                 ec_elgamal_print_message("sub",
                                          test_ec_elgamal_curves[testnum].name,
                                          ec_elgamal_c[testnum][3],
-                                         seconds.ec_elgamal);
+                                         seconds.ec_elgamal,
+                                         ec_elgamal_flag[testnum]);
                 ec_elgamal_sub = 1;
                 Time_F(START);
                 count = run_benchmark(async_jobs, EC_ELGAMAL_loop, loopargs);
@@ -3687,7 +3718,8 @@ int speed_main(int argc, char **argv)
                 ec_elgamal_print_message("mul",
                                          test_ec_elgamal_curves[testnum].name,
                                          ec_elgamal_c[testnum][4],
-                                         seconds.ec_elgamal);
+                                         seconds.ec_elgamal,
+                                         ec_elgamal_flag[testnum]);
                 ec_elgamal_mul = 1;
                 Time_F(START);
                 count = run_benchmark(async_jobs, EC_ELGAMAL_loop, loopargs);
@@ -4268,21 +4300,21 @@ static void print_result(int alg, int run_no, int count, double time_used)
 
 #ifndef OPENSSL_NO_EC_ELGAMAL
 static void ec_elgamal_print_message(const char *str, const char *str2,
-                                     long num, int tm)
+                                     long num, int tm, int flag)
 {
 # ifdef SIGALRM
     BIO_printf(bio_err,
-               mr ? "+DTP:%s:%s:%d\n"
-               : "Doing ec_elgamal %s with curve %s for %ds: ",
-               str, str2, tm);
+               mr ? "+DTP:%s:%s:%s:%d\n"
+               : "Doing %s ec_elgamal %s with curve %s for %ds: ",
+               flag == EC_ELGAMAL_FLAG_TWISTED ? "twisted" : "", str, str2, tm);
     (void)BIO_flush(bio_err);
     run = 1;
     alarm(tm);
 # else
     BIO_printf(bio_err,
-               mr ? "+DTP:%s:%s:%d\n"
-               : "Doing ec_elgamal %s with curve %s for %ld times: ",
-               str, str2, num);
+               mr ? "+DTP:%s:%s:%s:%d\n"
+               : "Doing %s ec_elgamal %s with curve %s for %ld times: ",
+               flag == EC_ELGAMAL_FLAG_TWISTED ? "twisted" : "", str, str2, num);
     (void)BIO_flush(bio_err);
 # endif
 }

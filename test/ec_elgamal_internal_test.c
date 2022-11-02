@@ -22,6 +22,43 @@
 #define EC_PUB_FILE_PATH    "ec-pub.pem"
 #define EC_KEY_FILE_PATH    "ec-key.pem"
 
+typedef struct ec_elgamal_operands_st {
+    int32_t x;
+    int32_t y;
+} ec_elgamal_operands_t;
+
+static ec_elgamal_operands_t test_operands[] = {
+    {1111, 0},
+    {-1111, 0},
+    {1111, 9999},
+    {-1111, 9999},
+    {1111, -9999},
+    {-1111, -9999},
+    {0, 9999},
+    {0, -9999},
+    {9999, 1111},
+    {-9999, 1111},
+    {9999, -1111},
+    {-9999, -1111},
+};
+
+typedef enum operation_e {
+    ADD,
+    SUB,
+    MUL
+} operation_t;
+
+static char *operation_str[] = {
+    "add",
+    "sub",
+    "mul"
+};
+
+static char *algo_str[] = {
+    "default",
+    "twisted",
+};
+
 static size_t ec_elgamal_encrypt(EC_ELGAMAL_CTX *ctx,
                                  unsigned char **out, int32_t plaintext)
 {
@@ -35,7 +72,7 @@ static size_t ec_elgamal_encrypt(EC_ELGAMAL_CTX *ctx,
     if (!TEST_true(EC_ELGAMAL_encrypt(ctx, r, plaintext)))
         goto err;
 
-    size = EC_ELGAMAL_CIPHERTEXT_encode(ctx, NULL, 0, NULL, 1);
+    size = EC_ELGAMAL_CIPHERTEXT_encode(ctx, NULL, 0, r, 1);
     if (!TEST_ptr(buf = OPENSSL_zalloc(size)))
         goto err;
 
@@ -97,7 +134,7 @@ static size_t ec_elgamal_add(EC_ELGAMAL_CTX *ctx, unsigned char **out,
     if (!TEST_true(EC_ELGAMAL_add(ctx, r, c1, c2)))
         goto err;
 
-    size = EC_ELGAMAL_CIPHERTEXT_encode(ctx, NULL, 0, NULL, 1);
+    size = EC_ELGAMAL_CIPHERTEXT_encode(ctx, NULL, 0, r, 1);
     if (!TEST_ptr(buf = OPENSSL_zalloc(size)))
         goto err;
 
@@ -141,7 +178,7 @@ static size_t ec_elgamal_sub(EC_ELGAMAL_CTX *ctx, unsigned char **out,
     if (!TEST_true(EC_ELGAMAL_sub(ctx, r, c1, c2)))
         goto err;
 
-    size = EC_ELGAMAL_CIPHERTEXT_encode(ctx, NULL, 0, NULL, 1);
+    size = EC_ELGAMAL_CIPHERTEXT_encode(ctx, NULL, 0, r, 1);
     if (!TEST_ptr(buf = OPENSSL_zalloc(size)))
         goto err;
 
@@ -178,7 +215,7 @@ static size_t ec_elgamal_mul(EC_ELGAMAL_CTX *ctx, unsigned char **out,
     if (!TEST_true(EC_ELGAMAL_mul(ctx, r, c, m)))
         goto err;
 
-    size = EC_ELGAMAL_CIPHERTEXT_encode(ctx, NULL, 0, NULL, 1);
+    size = EC_ELGAMAL_CIPHERTEXT_encode(ctx, NULL, 0, r, 1);
     if (!TEST_ptr(buf = OPENSSL_zalloc(size)))
         goto err;
 
@@ -195,18 +232,20 @@ err:
     return ret;
 }
 
-static int ec_elgamal_test(int curve_id)
+static int ec_elgamal_test(int curve_id, operation_t op, int flag)
 {
-    int ret = 0;
+    int ret = 0, i;
     BIO *bio = NULL;
     EC_KEY *eckey = NULL, *ec_pub_key = NULL, *ec_pri_key = NULL;
-    int32_t p1 = 111111, p2 = 555555, m = 3, r;
-    unsigned char *buf = NULL, *buf1 = NULL, *buf2 = NULL;
-    size_t size, size1, size2;
+    int32_t x, y, r;
+    unsigned char *er = NULL, *ex = NULL, *ey = NULL;
+    size_t sr, sx, sy;
     EC_ELGAMAL_CTX *ectx = NULL, *dctx = NULL;
     EC_ELGAMAL_DECRYPT_TABLE *dtable = NULL;
 
-    TEST_info("Testing encrypt/descrypt of EC-ElGamal for curve_id: %d\n", curve_id);
+    TEST_info("Testing encrypt/descrypt of EC-ElGamal for curve_id: %d, "
+              "operation: %s, flag: %s\n", curve_id, operation_str[op],
+              algo_str[flag]);
 
     if (!TEST_ptr(eckey = EC_KEY_new_by_curve_name(curve_id)))
         goto err;
@@ -230,7 +269,7 @@ static int ec_elgamal_test(int curve_id)
         goto err;
     BIO_free(bio);
 
-    if (!TEST_ptr(ectx = EC_ELGAMAL_CTX_new(ec_pub_key)))
+    if (!TEST_ptr(ectx = EC_ELGAMAL_CTX_new(ec_pub_key, flag)))
         goto err;
 
     /*
@@ -250,7 +289,7 @@ static int ec_elgamal_test(int curve_id)
         goto err;
     BIO_free(bio);
 
-    if (!TEST_ptr(dctx = EC_ELGAMAL_CTX_new(ec_pri_key)))
+    if (!TEST_ptr(dctx = EC_ELGAMAL_CTX_new(ec_pri_key, flag)))
         goto err;
 
     if (!TEST_ptr(dtable = EC_ELGAMAL_DECRYPT_TABLE_new(dctx, 1)))
@@ -258,52 +297,69 @@ static int ec_elgamal_test(int curve_id)
 
     EC_ELGAMAL_CTX_set_decrypt_table(dctx, dtable);
 
-    size1 = ec_elgamal_encrypt(ectx, &buf1, p1);
-    if (!TEST_ptr(buf1))
-        goto err;
+    for (i = 0; i < (int)(sizeof(test_operands)/sizeof(test_operands[0])); i++) {
+        x = test_operands[i].x;
+        y = test_operands[i].y;
 
-    r = ec_elgamal_decrypt(dctx, buf1, size1);
-    if (!TEST_uint_eq(r, p1))
-        goto err;
+        sx = ec_elgamal_encrypt(dctx, &ex, x);
+        if (!TEST_ptr(ex))
+            goto err;
 
-    size2 = ec_elgamal_encrypt(ectx, &buf2, p2);
-    if (!TEST_ptr(buf2))
-        goto err;
+        r = ec_elgamal_decrypt(dctx, ex, sx);
+        if (!TEST_int_eq(r, x))
+            goto err;
 
-    size = ec_elgamal_add(ectx, &buf, buf1, size1, buf2, size2);
-    if (!TEST_ptr(buf))
-        goto err;
+        sy = ec_elgamal_encrypt(ectx, &ey, y);
+        if (!TEST_ptr(ey))
+            goto err;
 
-    r = ec_elgamal_decrypt(dctx, buf, size);
-    if (!TEST_uint_eq(r, p1 + p2))
-        goto err;
+        r = ec_elgamal_decrypt(dctx, ey, sy);
+        if (!TEST_int_eq(r, y))
+            goto err;
 
-    OPENSSL_free(buf);
-    size = ec_elgamal_sub(ectx, &buf, buf1, size1, buf2, size2);
-    if (!TEST_ptr(buf))
-        goto err;
+        if (op == ADD) {
+            sr = ec_elgamal_add(ectx, &er, ex, sx, ey, sy);
+            if (!TEST_ptr(er))
+                goto err;
+        } else if (op == SUB) {
+            sr = ec_elgamal_sub(ectx, &er, ex, sx, ey, sy);
+            if (!TEST_ptr(er))
+                goto err;
+        } else if (op == MUL) {
+            sr = ec_elgamal_mul(ectx, &er, ex, sx, y);
+            if (!TEST_ptr(er))
+                goto err;
+        } else {
+            goto err;
+        }
 
-    r = ec_elgamal_decrypt(dctx, buf, size);
-    if (!TEST_uint_eq(r, p1 - p2))
-        goto err;
+        r = ec_elgamal_decrypt(dctx, er, sr);
 
-    OPENSSL_free(buf);
-    size = ec_elgamal_mul(ectx, &buf, buf2, size2, m);
-    if (!TEST_ptr(buf))
-        goto err;
+        if (op == ADD) {
+            if (!TEST_int_eq(r, x + y))
+                goto err;
+        } else if (op == SUB) {
+            if (!TEST_int_eq(r, x - y))
+                goto err;
+        } else if (op == MUL) {
+            if (!TEST_int_eq(r, x * y))
+                goto err;
+        }
 
-    r = ec_elgamal_decrypt(dctx, buf, size);
-    if (!TEST_uint_eq(r, m * p2))
-        goto err;
+        OPENSSL_free(ex);
+        OPENSSL_free(ey);
+        OPENSSL_free(er);
+        ex = ey = er = NULL;
+    }
 
     ret = 1;
 
 err:
     EC_ELGAMAL_DECRYPT_TABLE_free(dtable);
 
-    OPENSSL_free(buf1);
-    OPENSSL_free(buf2);
-    OPENSSL_free(buf);
+    OPENSSL_free(ex);
+    OPENSSL_free(ey);
+    OPENSSL_free(er);
     EC_KEY_free(eckey);
     EC_KEY_free(ec_pub_key);
     EC_KEY_free(ec_pri_key);
@@ -316,11 +372,27 @@ err:
 
 static int ec_elgamal_tests(void)
 {
-    if (!TEST_true(ec_elgamal_test(NID_X9_62_prime256v1)))
+    if (!TEST_true(ec_elgamal_test(NID_X9_62_prime256v1, ADD, 0))
+        || !TEST_true(ec_elgamal_test(NID_X9_62_prime256v1, SUB, 0))
+        || !TEST_true(ec_elgamal_test(NID_X9_62_prime256v1, MUL, 0))
+#ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
+        || !TEST_true(ec_elgamal_test(NID_X9_62_prime256v1, ADD, EC_ELGAMAL_FLAG_TWISTED))
+        || !TEST_true(ec_elgamal_test(NID_X9_62_prime256v1, SUB, EC_ELGAMAL_FLAG_TWISTED))
+        || !TEST_true(ec_elgamal_test(NID_X9_62_prime256v1, MUL, EC_ELGAMAL_FLAG_TWISTED))
+#endif
+        )
         return 0;
 
 #ifndef OPENSSL_NO_SM2
-    if (!TEST_true(ec_elgamal_test(NID_sm2)))
+    if (!TEST_true(ec_elgamal_test(NID_sm2, ADD, 0))
+        || !TEST_true(ec_elgamal_test(NID_sm2, SUB, 0))
+        || !TEST_true(ec_elgamal_test(NID_sm2, MUL, 0))
+# ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
+        || !TEST_true(ec_elgamal_test(NID_sm2, ADD, EC_ELGAMAL_FLAG_TWISTED))
+        || !TEST_true(ec_elgamal_test(NID_sm2, SUB, EC_ELGAMAL_FLAG_TWISTED))
+        || !TEST_true(ec_elgamal_test(NID_sm2, MUL, EC_ELGAMAL_FLAG_TWISTED))
+# endif
+        )
         return 0;
 #endif
 

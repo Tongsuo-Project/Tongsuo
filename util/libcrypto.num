@@ -5430,3 +5430,5 @@ ENGINE_set_bn_meth                      5714	3_0_3	EXIST::FUNCTION:BN_METHOD,ENG
 ENGINE_get_bn_meth                      5715	3_0_3	EXIST::FUNCTION:BN_METHOD,ENGINE
 ENGINE_set_default_bn_meth              5716	3_0_3	EXIST::FUNCTION:BN_METHOD,ENGINE
 ENGINE_get_default_bn_meth              5717	3_0_3	EXIST::FUNCTION:BN_METHOD,ENGINE
+EC_ELGAMAL_DECRYPT_TABLE_new_ex         5718	3_0_3	EXIST::FUNCTION:EC,EC_ELGAMAL
+EC_POINT_from_string                    5719	3_0_3	EXIST::FUNCTION:EC,EC_ELGAMAL
