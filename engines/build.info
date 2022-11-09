@@ -69,6 +69,16 @@ IF[{- !$disabled{"engine"} -}]
         GENERATE[ecptest.ld]=../util/engines.num
       ENDIF
     ENDIF
+    IF[{- !$disabled{'bn-method'} -}]
+      MODULES{engine}=bntest
+      SOURCE[bntest]=e_bntest.c
+      DEPEND[bntest]=../libcrypto
+      INCLUDE[bntest]= ../include
+      IF[{- defined $target{shared_defflag} -}]
+        SOURCE[bntest]=bntest.ld
+        GENERATE[bntest.ld]=../util/engines.num
+      ENDIF
+    ENDIF
 
     IF[{- !$disabled{"devcryptoeng"} -}]
       MODULES{engine}=devcrypto

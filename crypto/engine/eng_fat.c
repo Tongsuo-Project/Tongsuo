@@ -36,6 +36,10 @@ int ENGINE_set_default(ENGINE *e, unsigned int flags)
 #endif
     if ((flags & ENGINE_METHOD_RAND) && !ENGINE_set_default_RAND(e))
         return 0;
+#ifndef OPENSSL_NO_BN_METHOD
+    if ((flags & ENGINE_METHOD_BN) && !ENGINE_set_default_bn_meth(e))
+        return 0;
+#endif
     if ((flags & ENGINE_METHOD_PKEY_METHS)
         && !ENGINE_set_default_pkey_meths(e))
         return 0;
@@ -74,6 +78,10 @@ static int int_def_cb(const char *alg, int len, void *arg)
         *pflags |= ENGINE_METHOD_PKEY_METHS;
     else if (strncmp(alg, "PKEY_ASN1", len) == 0)
         *pflags |= ENGINE_METHOD_PKEY_ASN1_METHS;
+#ifndef OPENSSL_NO_BN_METHOD
+    else if (strncmp(alg, "BN", len) == 0)
+        *pflags |= ENGINE_METHOD_BN;
+#endif
     else
         return 0;
     return 1;
@@ -108,6 +116,9 @@ int ENGINE_register_complete(ENGINE *e)
     ENGINE_register_RAND(e);
     ENGINE_register_pkey_meths(e);
     ENGINE_register_pkey_asn1_meths(e);
+#ifndef OPENSSL_NO_BN_METHOD
+    ENGINE_register_bn_meth(e);
+#endif
     return 1;
 }
 

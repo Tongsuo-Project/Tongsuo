@@ -504,7 +504,8 @@ my @disablables = (
     "evp-cipher-api-compat",
     "crypto-mdebug-count",
     "cert-compression",
-    "paillier"
+    "paillier",
+    "bn-method"
     );
 foreach my $proto ((@tls, @dtls))
         {
@@ -565,6 +566,7 @@ our %disabled = ( # "what"         => "comment"
                   "evp-cipher-api-compat"      => "default",
                   "cert-compression"    => "default",
                   "paillier"            => "default",
+                  "bn-method"           => "default",
                 );
 
 # Note: => pair form used for aesthetics, not to truly make a hash table
@@ -1084,6 +1086,12 @@ while (@argvcopy)
 # If enable-ec_elgamal has been set, we must set the api to 1.1.1 and disable deperated.
 if (!defined($disabled{'ec_elgamal'})) {
     die "ec_elgamal only supports api with 1.1.1\n"
+        if ($config{api} && $config{api} != $apitable->{"1.1.1"});
+    $config{api}=$apitable->{"1.1.1"};
+}
+
+if (!defined($disabled{'bn-method'})) {
+    die "bn-method only supports api with 1.1.1\n"
         if ($config{api} && $config{api} != $apitable->{"1.1.1"});
     $config{api}=$apitable->{"1.1.1"};
 }

@@ -618,6 +618,82 @@ unsigned __int64 _umul128(unsigned __int64 a, unsigned __int64 b,
         }
 # endif                         /* !BN_LLONG */
 
+/* How many bignums are in each "pool item"; */
+# define BN_CTX_POOL_SIZE        16
+/* The stack frame info is resizing, set a first-time expansion size; */
+# define BN_CTX_START_FRAMES     32
+
+/***********/
+/* BN_POOL */
+/***********/
+
+/* A bundle of bignums that can be linked with other bundles */
+typedef struct bignum_pool_item {
+    /* The bignum values */
+    BIGNUM vals[BN_CTX_POOL_SIZE];
+    /* Linked-list admin */
+    struct bignum_pool_item *prev, *next;
+} BN_POOL_ITEM;
+/* A linked-list of bignums grouped in bundles */
+typedef struct bignum_pool {
+    /* Linked-list admin */
+    BN_POOL_ITEM *head, *current, *tail;
+    /* Stack depth and allocation size */
+    unsigned used, size;
+} BN_POOL;
+
+/************/
+/* BN_STACK */
+/************/
+
+/* A wrapper to manage the "stack frames" */
+typedef struct bignum_ctx_stack {
+    /* Array of indexes into the bignum stack */
+    unsigned int *indexes;
+    /* Number of stack frames, and the size of the allocated array */
+    unsigned int depth, size;
+} BN_STACK;
+
+/**********/
+/* BN_CTX */
+/**********/
+
+/* The opaque BN_CTX type */
+struct bignum_ctx {
+    /* The bignum bundles */
+    BN_POOL pool;
+    /* The "stack frames", if you will */
+    BN_STACK stack;
+    /* The number of bignums currently assigned */
+    unsigned int used;
+    /* Depth of stack overflow */
+    int err_stack;
+    /* Block "gets" until an "end" (compatibility behaviour) */
+    int too_many;
+    /* Flags. */
+    int flags;
+    /* The library context */
+    OSSL_LIB_CTX *libctx;
+# ifndef OPENSSL_NO_BN_METHOD
+    ENGINE *engine;
+    const BN_METHOD *bn_meth;
+# endif
+};
+
+# ifndef OPENSSL_NO_BN_METHOD
+struct bn_method_st {
+    char *name;
+    int (*mod_add)(BIGNUM *r, const BIGNUM *a, const BIGNUM *b, const BIGNUM *m, BN_CTX *ctx);
+    int (*mod_sub)(BIGNUM *r, const BIGNUM *a, const BIGNUM *b, const BIGNUM *m, BN_CTX *ctx);
+    int (*mod_mul)(BIGNUM *r, const BIGNUM *a, const BIGNUM *b, const BIGNUM *m, BN_CTX *ctx);
+    int (*mod_exp)(BIGNUM *r, const BIGNUM *a, const BIGNUM *p, const BIGNUM *m, BN_CTX *ctx);
+    int (*mod_sqr)(BIGNUM *r, const BIGNUM *a, const BIGNUM *m, BN_CTX *ctx);
+    BIGNUM *(*mod_sqrt)(BIGNUM *r, const BIGNUM *a, const BIGNUM *n, BN_CTX *ctx);
+    BIGNUM *(*mod_inverse)(BIGNUM *r, const BIGNUM *a, const BIGNUM *n, BN_CTX *ctx);
+    int (*div)(BIGNUM *dv, BIGNUM *rem, const BIGNUM *m, const BIGNUM *d, BN_CTX *ctx);
+};
+# endif
+
 void BN_RECP_CTX_init(BN_RECP_CTX *recp);
 void BN_MONT_CTX_init(BN_MONT_CTX *ctx);
 

@@ -10,72 +10,19 @@
 #include <openssl/trace.h>
 #include "internal/cryptlib.h"
 #include "bn_local.h"
+#ifndef OPENSSL_NO_BN_METHOD
+# include <openssl/engine.h>
+#endif
 
-/* How many bignums are in each "pool item"; */
-#define BN_CTX_POOL_SIZE        16
-/* The stack frame info is resizing, set a first-time expansion size; */
-#define BN_CTX_START_FRAMES     32
-
-/***********/
-/* BN_POOL */
-/***********/
-
-/* A bundle of bignums that can be linked with other bundles */
-typedef struct bignum_pool_item {
-    /* The bignum values */
-    BIGNUM vals[BN_CTX_POOL_SIZE];
-    /* Linked-list admin */
-    struct bignum_pool_item *prev, *next;
-} BN_POOL_ITEM;
-/* A linked-list of bignums grouped in bundles */
-typedef struct bignum_pool {
-    /* Linked-list admin */
-    BN_POOL_ITEM *head, *current, *tail;
-    /* Stack depth and allocation size */
-    unsigned used, size;
-} BN_POOL;
 static void BN_POOL_init(BN_POOL *);
 static void BN_POOL_finish(BN_POOL *);
 static BIGNUM *BN_POOL_get(BN_POOL *, int);
 static void BN_POOL_release(BN_POOL *, unsigned int);
 
-/************/
-/* BN_STACK */
-/************/
-
-/* A wrapper to manage the "stack frames" */
-typedef struct bignum_ctx_stack {
-    /* Array of indexes into the bignum stack */
-    unsigned int *indexes;
-    /* Number of stack frames, and the size of the allocated array */
-    unsigned int depth, size;
-} BN_STACK;
 static void BN_STACK_init(BN_STACK *);
 static void BN_STACK_finish(BN_STACK *);
 static int BN_STACK_push(BN_STACK *, unsigned int);
 static unsigned int BN_STACK_pop(BN_STACK *);
-
-/**********/
-/* BN_CTX */
-/**********/
-
-/* The opaque BN_CTX type */
-struct bignum_ctx {
-    /* The bignum bundles */
-    BN_POOL pool;
-    /* The "stack frames", if you will */
-    BN_STACK stack;
-    /* The number of bignums currently assigned */
-    unsigned int used;
-    /* Depth of stack overflow */
-    int err_stack;
-    /* Block "gets" until an "end" (compatibility behaviour) */
-    int too_many;
-    /* Flags. */
-    int flags;
-    /* The library context */
-    OSSL_LIB_CTX *libctx;
-};
 
 #ifndef FIPS_MODULE
 /* Debugging functionality */
@@ -175,8 +122,47 @@ void BN_CTX_free(BN_CTX *ctx)
 #endif
     BN_STACK_finish(&ctx->stack);
     BN_POOL_finish(&ctx->pool);
+#if !defined(OPENSSL_NO_BN_METHOD) && !defined(OPENSSL_NO_ENGINE) && !defined(FIPS_MODULE)
+    ENGINE_finish(ctx->engine);
+#endif
     OPENSSL_free(ctx);
 }
+
+#ifndef OPENSSL_NO_BN_METHOD
+# if !defined(OPENSSL_NO_ENGINE) && !defined(FIPS_MODULE)
+int BN_CTX_set_engine(BN_CTX *ctx, ENGINE *engine)
+{
+    const BN_METHOD *bn_meth;
+
+    if (!ENGINE_init(engine)) {
+        ERR_raise(ERR_LIB_BN, ERR_R_ENGINE_LIB);
+        return 0;
+    }
+
+    bn_meth = ENGINE_get_bn_meth(engine);
+    if (bn_meth == NULL) {
+        ERR_raise(ERR_LIB_BN, BN_R_BN_METHOD_NOT_FOUND);
+        return 0;
+    }
+
+    ctx->engine = engine;
+    ctx->bn_meth = bn_meth;
+
+    return 1;
+}
+
+const ENGINE *BN_CTX_get0_engine(BN_CTX *ctx)
+{
+    return ctx->engine;
+}
+# endif
+
+int BN_CTX_set_method(BN_CTX *ctx, const BN_METHOD *method)
+{
+    ctx->bn_meth = method;
+    return 1;
+}
+#endif
 
 void BN_CTX_start(BN_CTX *ctx)
 {

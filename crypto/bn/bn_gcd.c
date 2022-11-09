@@ -517,6 +517,11 @@ BIGNUM *BN_mod_inverse(BIGNUM *in,
     BIGNUM *rv;
     int noinv = 0;
 
+#ifndef OPENSSL_NO_BN_METHOD
+    if (ctx && ctx->bn_meth && ctx->bn_meth->mod_inverse)
+        return ctx->bn_meth->mod_inverse(in, a, n, ctx);
+#endif
+
     if (ctx == NULL) {
         ctx = new_ctx = BN_CTX_new_ex(NULL);
         if (ctx == NULL) {

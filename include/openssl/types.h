@@ -155,6 +155,10 @@ typedef struct ec_point_method_st EC_POINT_METHOD;
 typedef struct rand_meth_st RAND_METHOD;
 typedef struct rand_drbg_st RAND_DRBG;
 
+# ifndef OPENSSL_NO_BN_METHOD
+typedef struct bn_method_st BN_METHOD;
+# endif
+
 typedef struct ssl_dane_st SSL_DANE;
 typedef struct x509_st X509;
 typedef struct X509_algor_st X509_ALGOR;

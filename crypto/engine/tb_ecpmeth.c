@@ -46,8 +46,10 @@ static int ecpmeth_set_data_ctx(ENGINE *e, ecpmeth_data_ctx **ctx)
         return 0;
     }
 
-    if (!CRYPTO_THREAD_write_lock(global_engine_lock))
+    if (!CRYPTO_THREAD_write_lock(global_engine_lock)) {
+        OPENSSL_free(c);
         return 0;
+    }
 
     if ((*ctx = (ecpmeth_data_ctx *)ENGINE_get_ex_data(e, ecpmeth_ex_data_idx))
         == NULL) {
@@ -181,7 +183,7 @@ const EC_POINT_METHOD *ENGINE_get_ecp_meth(ENGINE *e, int curve_id)
     return ret;
 }
 
-/* Gets the pkey_meth callback from an ENGINE structure */
+/* Gets the ecp_meths callback from an ENGINE structure */
 ENGINE_ECP_METHS_PTR ENGINE_get_ecp_meths(ENGINE *e)
 {
     ecpmeth_data_ctx *ctx = ecpmeth_get_data_ctx(e);
@@ -190,7 +192,7 @@ ENGINE_ECP_METHS_PTR ENGINE_get_ecp_meths(ENGINE *e)
     return ctx->ecpmeths;
 }
 
-/* Sets the ecp_meth callback in an ENGINE structure */
+/* Sets the ecp_meths callback in an ENGINE structure */
 int ENGINE_set_ecp_meths(ENGINE *e, ENGINE_ECP_METHS_PTR f)
 {
     ecpmeth_data_ctx *ctx = ecpmeth_get_data_ctx(e);
