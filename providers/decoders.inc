@@ -22,6 +22,7 @@
 #define DECODER_STRUCTURE_DHX                           "dhx"
 #define DECODER_STRUCTURE_DSA                           "dsa"
 #define DECODER_STRUCTURE_EC                            "ec"
+#define DECODER_STRUCTURE_SM2                           "sm2"
 #define DECODER_STRUCTURE_RSA                           "rsa"
 
 /* Arguments are prefixed with '_' to avoid build breaks on certain platforms */

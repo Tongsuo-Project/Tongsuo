@@ -22,6 +22,7 @@
 #define ENCODER_STRUCTURE_DHX                           "dhx"
 #define ENCODER_STRUCTURE_DSA                           "dsa"
 #define ENCODER_STRUCTURE_EC                            "ec"
+#define ENCODER_STRUCTURE_SM2                           "sm2"
 #define ENCODER_STRUCTURE_RSA                           "rsa"
 #define ENCODER_STRUCTURE_PKCS1                         "pkcs1"
 #define ENCODER_STRUCTURE_PKCS3                         "pkcs3"

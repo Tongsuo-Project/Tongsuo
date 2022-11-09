@@ -27,6 +27,7 @@ my @invalid = glob(data_file("invalid", "*.pem"));
 
 if (disabled("sm2")) {
     @valid = grep { !/sm2-.*\.pem/} @valid;
+    @noncanon = grep { !/sm2-.*\.pem/} @noncanon;
 }
 
 plan tests => 12;

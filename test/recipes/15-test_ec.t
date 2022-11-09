@@ -18,7 +18,7 @@ setup("test_ec");
 
 plan skip_all => 'EC is not supported in this build' if disabled('ec');
 
-plan tests => 14;
+plan tests => 21;
 
 require_ok(srctop_file('test','recipes','tconversion.pl'));
 
@@ -41,7 +41,48 @@ subtest 'EC conversions -- public key' => sub {
                  -in => srctop_file("test","testecpub-p256.pem"),
                  -args => [ "ec", "-pubin", "-pubout" ] );
 };
+subtest 'SM2 conversions -- private key' => sub {
+    SKIP: {
+        plan skip_all => "SM2 is not supported by this OpenSSL build"
+            if disabled('sm2');
 
+        tconversion( -type => 'ec', -prefix => 'sm2-begin-ec',
+                     -in => srctop_file("test", "certs", "sm2_begin_ec.key") );
+    }
+};
+subtest 'SM2 conversions -- private key PKCS#8' => sub {
+    SKIP: {
+        plan skip_all => "SM2 is not supported by this OpenSSL build"
+            if disabled("sm2");
+
+        tconversion( -type => 'ec', -prefix => 'sm2-pkcs8',
+                     -in => srctop_file("test", "certs", "sm2_begin_ec.key"),
+                     -args => "pkey" );
+    }
+};
+subtest 'SM2 conversions -- public key' => sub {
+    SKIP: {
+        plan skip_all => "SM2 is not supported by this OpenSSL build"
+            if disabled("sm2");
+
+        tconversion( -type => 'ec', -prefix => 'sm2-pub',
+                     -in => srctop_file("test", "certs", "sm2pub.key"),
+                     -args => [ "ec", "-pubin", "-pubout" ] );
+    }
+};
+subtest 'SM2 conversions -- private key PKCS#8 to PKCS#1' => sub {
+    SKIP: {
+        plan skip_all => "SM2 is not supported by this OpenSSL build"
+            if disabled("sm2");
+
+        ok(run(app(['openssl', 'ec',
+                    '-in', srctop_file("test", "certs", "sm2.key"),
+                    '-out', "sm2_begin_ec.key"])));
+        is(cmp_text("sm2_begin_ec.key",
+                    srctop_file("test", "certs", "sm2_begin_ec.key")),
+           0, "Comparing PKCS#1 output with sm2_begin_ec.key");
+    }
+};
 subtest 'PKEY conversions -- private key' => sub {
     tconversion( -type => 'pkey', -prefix => 'ec-pkey-priv',
                  -in => srctop_file("test","testec-p256.pem") );
@@ -56,7 +97,35 @@ subtest 'PKEY conversions -- public key' => sub {
                  -in => srctop_file("test","testecpub-p256.pem"),
                  -args => [ "pkey", "-pubin", "-pubout" ] );
 };
+subtest 'PKEY conversions -- SM2 private key' => sub {
+    SKIP: {
+        plan skip_all => "SM2 is not supported by this OpenSSL build"
+            if disabled("sm2");
 
+        tconversion( -type => 'pkey', -prefix => 'sm2-pkey-priv',
+                     -in => srctop_file("test", "certs", "sm2_begin_ec.key") );
+    }
+};
+subtest 'PKEY conversions -- SM2 private key PKCS#8' => sub {
+    SKIP: {
+        plan skip_all => "SM2 is not supported by this OpenSSL build"
+            if disabled("sm2");
+
+        tconversion( -type => 'pkey', -prefix => 'sm2-pkey-pkcs8',
+                     -in => srctop_file("test", "certs", "sm2_begin_ec.key"),
+                     -args => "pkey" );
+    }
+};
+subtest 'PKEY conversions -- SM2 public key' => sub {
+    SKIP: {
+        plan skip_all => "SM2 is not supported by this OpenSSL build"
+            if disabled("sm2");
+
+        tconversion( -type => 'pkey', -prefix => 'sm2-pkey-pub',
+                     -in => srctop_file("test", "certs", "sm2pub.key"),
+                     -args => [ "pkey", "-pubin", "-pubout" ] );
+    }
+};
 subtest 'Ed25519 conversions -- private key' => sub {
     tconversion( -type => "pkey", -prefix => "ed25519-pkey-priv",
                  -in => srctop_file("test", "tested25519.pem") );

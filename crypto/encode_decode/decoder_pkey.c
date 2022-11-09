@@ -309,13 +309,14 @@ int ossl_decoder_ctx_setup_for_pkey(OSSL_DECODER_CTX *ctx,
     const char *input_type = ctx->start_input_type;
     const char *input_structure = ctx->input_structure;
     int ok = 0;
-    int isecoid = 0;
+    int is_ec = 0;
     int i, end;
 
     if (keytype != NULL
             && (strcmp(keytype, "id-ecPublicKey") == 0
-                || strcmp(keytype, "1.2.840.10045.2.1") == 0))
-        isecoid = 1;
+                || strcmp(keytype, "1.2.840.10045.2.1") == 0
+                || OPENSSL_strcasecmp(keytype, "EC") == 0))
+        is_ec = 1;
 
     OSSL_TRACE_BEGIN(DECODER) {
         BIO_printf(trc_out,
@@ -354,13 +355,13 @@ int ossl_decoder_ctx_setup_for_pkey(OSSL_DECODER_CTX *ctx,
         /*
          * If the key type is given by the caller, we only use the matching
          * KEYMGMTs, otherwise we use them all.
-         * We have to special case SM2 here because of its abuse of the EC OID.
-         * The EC OID can be used to identify an EC key or an SM2 key - so if
-         * we have seen that OID we try both key types
+         * Note: special case SM2 here because SM2 can be wrapped by EC with
+         * the EC OID and EC pem header. So if we see EC OID or literal, we try
+         * both key types.
          */
         if (keytype == NULL
                 || EVP_KEYMGMT_is_a(keymgmt, keytype)
-                || (isecoid && EVP_KEYMGMT_is_a(keymgmt, "SM2"))) {
+                || (is_ec && EVP_KEYMGMT_is_a(keymgmt, "SM2"))) {
             if (!EVP_KEYMGMT_names_do_all(keymgmt, collect_name, names)) {
                 ERR_raise(ERR_LIB_OSSL_DECODER, ERR_R_INTERNAL_ERROR);
                 goto err;
