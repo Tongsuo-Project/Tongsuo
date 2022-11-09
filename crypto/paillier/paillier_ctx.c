@@ -41,7 +41,7 @@ PAILLIER_CTX *PAILLIER_CTX_new(PAILLIER_KEY *key, int64_t threshold)
         goto err;
 
     memset(tmp, 0, sizeof(tmp));
-    snprintf(tmp, sizeof(tmp), "%" PRId64, threshold);
+    BIO_snprintf(tmp, sizeof(tmp), "%lld", (long long int)threshold);
 
     if (!BN_dec2bn(&ctx->threshold, (char *)tmp))
         goto err;
