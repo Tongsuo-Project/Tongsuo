@@ -51,6 +51,7 @@ typedef enum operation_e {
 
 static char *operation_str[] = {
     "add",
+    "add_plain",
     "sub",
     "mul"
 };

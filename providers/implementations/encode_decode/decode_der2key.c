@@ -105,10 +105,22 @@ static void *der2key_decode_p8(const unsigned char **input_der,
     const X509_ALGOR *alg = NULL;
     void *key = NULL;
 
-    if ((p8inf = d2i_PKCS8_PRIV_KEY_INFO(NULL, input_der, input_der_len)) != NULL
-        && PKCS8_pkey_get0(NULL, NULL, NULL, &alg, p8inf)
-        && OBJ_obj2nid(alg->algorithm) == ctx->desc->evp_type)
-        key = key_from_pkcs8(p8inf, PROV_LIBCTX_OF(ctx->provctx), NULL);
+    if ((p8inf = d2i_PKCS8_PRIV_KEY_INFO(NULL, input_der, input_der_len))
+        != NULL && PKCS8_pkey_get0(NULL, NULL, NULL, &alg, p8inf)) {
+        int nid = OBJ_obj2nid(alg->algorithm);
+
+        /* Note: algorithm with EC oid and SM2 parameter is identified as SM2 */
+        if (nid == EVP_PKEY_EC && ctx->desc->evp_type == EVP_PKEY_SM2) {
+            int ptype;
+            const void *pval = NULL;
+            X509_ALGOR_get0(NULL, &ptype, &pval, alg);
+            if (ptype == V_ASN1_OBJECT && OBJ_obj2nid(pval) == NID_sm2)
+                nid = NID_sm2;
+        }
+
+        if (nid == ctx->desc->evp_type)
+            key = key_from_pkcs8(p8inf, PROV_LIBCTX_OF(ctx->provctx), NULL);
+    }
     PKCS8_PRIV_KEY_INFO_free(p8inf);
 
     return key;
@@ -486,9 +498,13 @@ static void *sm2_d2i_PKCS8(void **key, const unsigned char **der, long der_len,
                              (key_from_pkcs8_t *)ossl_ec_key_from_pkcs8);
 }
 
+static int sm2_check(void *key, struct der2key_ctx_st *ctx)
+{
+    return (EC_KEY_get_flags(key) & EC_FLAG_SM2_RANGE) != 0;
+}
+
 #  define sm2_d2i_PUBKEY                (d2i_of_void *)d2i_EC_PUBKEY
 #  define sm2_free                      (free_key_fn *)EC_KEY_free
-#  define sm2_check                     ec_check
 #  define sm2_adjust                    ec_adjust
 # endif
 #endif
@@ -783,7 +799,7 @@ MAKE_DECODER("ED448", ed448, ecx, SubjectPublicKeyInfo);
 # ifndef OPENSSL_NO_SM2
 MAKE_DECODER("SM2", sm2, ec, PrivateKeyInfo);
 MAKE_DECODER("SM2", sm2, ec, SubjectPublicKeyInfo);
-MAKE_DECODER("SM2", sm2, sm2, type_specific_no_pub);
+MAKE_DECODER("SM2", sm2, ec, type_specific_no_pub);
 # endif
 #endif
 MAKE_DECODER("RSA", rsa, rsa, PrivateKeyInfo);

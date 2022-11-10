@@ -1550,6 +1550,7 @@ static int pkey_set_type(EVP_PKEY *pkey, ENGINE *e, int type, const char *str,
         ameth = EVP_PKEY_asn1_find_str(eptr, str, len);
     else if (type != EVP_PKEY_NONE)
         ameth = EVP_PKEY_asn1_find(eptr, type);
+
 # ifndef OPENSSL_NO_ENGINE
     if (pkey == NULL && eptr != NULL)
         ENGINE_finish(e);
@@ -1601,7 +1602,15 @@ static int pkey_set_type(EVP_PKEY *pkey, ENGINE *e, int type, const char *str,
             if (type == EVP_PKEY_NONE)
                 pkey->type = ameth->pkey_id;
         } else {
-            pkey->type = EVP_PKEY_KEYMGMT;
+            /*
+             * Note: ameth for SM2 is NULL due to ASN1_PKEY_ALIAS flag.
+             * The key type of SM2 pkey maybe used by legacy functions, such as
+             * EVP_PKEY_get0_EC_KEY, so we set it.
+             */
+            if (keymgmt != NULL && EVP_KEYMGMT_is_a(keymgmt, "SM2"))
+                pkey->type = EVP_PKEY_SM2;
+            else
+                pkey->type = EVP_PKEY_KEYMGMT;
         }
 # ifndef OPENSSL_NO_ENGINE
         if (eptr == NULL && e != NULL && !ENGINE_init(e)) {

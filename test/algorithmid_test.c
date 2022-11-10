@@ -66,7 +66,13 @@ static int test_spki_aid(X509_PUBKEY *pubkey, const char *filename)
         goto end;
     }
 
-    if (!TEST_true(EVP_KEYMGMT_is_a(keymgmt, name))) {
+    /* SM2 should be wrapped by EC */
+    if (EVP_KEYMGMT_is_a(keymgmt, "SM2")) {
+        if (!TEST_true(OBJ_obj2nid(oid) == NID_X9_62_id_ecPublicKey)) {
+            TEST_info("The AlgorithmID (%s) for SM2 pkey is not EC oid", name);
+            goto end;
+        }
+    } else if (!TEST_true(EVP_KEYMGMT_is_a(keymgmt, name))) {
         TEST_info("The AlgorithmID key type (%s) for the public key found in"
                   " '%s' doesn't match the key type of the extracted public"
                   " key.",

@@ -29,7 +29,7 @@
 static long long get_time();
 
 /* iteration number, could be adjusted as required */
-#define ITR_NUM 1000
+#define ITR_NUM 100
 #define RND_DATA_SIZE 1024 * 1024
 
 /* time difference on each index */
@@ -106,6 +106,7 @@ int main(void)
     rnd_data = malloc(RND_DATA_SIZE);
     if (rnd_data == NULL) {
         fprintf(stderr, "malloc error - rnd data\n");
+        free(indices);
         return -1;
     }
 
@@ -276,6 +277,7 @@ int main(void)
         outlen += tmplen;
 
         EVP_CIPHER_CTX_free(sm4_ctx);
+        sm4_ctx = NULL;
 
         out2 = OPENSSL_malloc(inlen * 2);
         if (out2 == NULL) {
