@@ -20,13 +20,10 @@
 #include <sys/time.h>
 #include <string.h>
 
-#include <openssl/opensslconf.h>
 #include <openssl/evp.h>
-#include <openssl/encoder.h>
-#include <openssl/decoder.h>
-#include <openssl/core_names.h>
-#include <openssl/core_dispatch.h>
+#include <openssl/rand.h>
 #include <openssl/params.h>
+#include <openssl/core_names.h>
 #include <openssl/err.h>
 
 static long long get_time();
@@ -93,6 +90,10 @@ int main(void)
                             0xFE, 0xDC, 0xBA, 0x98, 0x76, 0x54, 0x32, 0x10 };
     unsigned char iv[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
                            0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F };
+    EVP_RAND *rand;
+    EVP_RAND_CTX *rctx;
+    OSSL_PARAM params[2], *p = NULL;
+    unsigned int strength = 128;
 
     memset(&result, 0, sizeof(result));
     indices = malloc(sizeof(struct perf_index) * ITR_NUM);
@@ -102,7 +103,7 @@ int main(void)
     }
     memset(indices, 0, sizeof(struct perf_index) * ITR_NUM);
 
-    rnd_data = malloc(inlen);
+    rnd_data = malloc(RND_DATA_SIZE);
     if (rnd_data == NULL) {
         fprintf(stderr, "malloc error - rnd data\n");
         return -1;
@@ -128,7 +129,26 @@ int main(void)
         /* We simply calculate "1sec / one-key's-usec" as the result */
         indices[i].sm2_keygen = 1000 * 1000 / (end - start);
 
-        /*TODO: prepare and fill-in the random data */
+        /* fill-in the random data, as per GM/T 0105 */
+        rand = EVP_RAND_fetch(NULL, "HASH-DRBG", NULL);
+        if (rand == NULL) {
+            goto err;
+        }
+        rctx = EVP_RAND_CTX_new(rand, NULL);
+        if (rctx == NULL) {
+            goto err;
+        }
+        EVP_RAND_free(rand);
+        p = params;
+        *p++ = OSSL_PARAM_construct_utf8_string(OSSL_DRBG_PARAM_DIGEST, SN_sm3, 0);
+        *p = OSSL_PARAM_construct_end();
+        if (!EVP_RAND_instantiate(rctx, strength, 0, NULL, 0, params)) {
+            goto err;
+        }
+        if (!EVP_RAND_generate(rctx, rnd_data, RND_DATA_SIZE, strength, 0, NULL, 0)) {
+            goto err;
+        }
+        EVP_RAND_CTX_free(rctx);
 
         sm2_ctx = EVP_PKEY_CTX_new(sm2_key, NULL);
         if (sm2_ctx == NULL) {
