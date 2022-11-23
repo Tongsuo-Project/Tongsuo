@@ -30,7 +30,7 @@
 一般来说，典型的编译和安装过程如下：
 
 ~~~
-./Configure --prefix=/path/to/install/dir
+./config --prefix=/path/to/install/dir
 make
 make install
 ~~~
@@ -38,7 +38,7 @@ make install
 如果是Windows，则需要：
 
 ~~~
-perl Configure
+perl config
 nmake
 nmake install
 ~~~
@@ -47,7 +47,7 @@ nmake install
 
 ~~~
 cd tongsuo-build
-/path/to/Tongsuo/source/Configure --prefix=/path/to/dest
+/path/to/Tongsuo/source/config --prefix=/path/to/dest
 make
 make install
 ~~~
