@@ -2072,6 +2072,13 @@ int SSL_connection_is_ntls(SSL *s, int is_server)
                     return -1;
                 }
                 memcpy(buf, data, PEEK_HEADER_LENGTH);
+            } else if (BIO_method_type(s->rbio) == BIO_TYPE_BIO) {
+                ret = BIO_nread0(s->rbio, &data);
+                if (ret < PEEK_HEADER_LENGTH) {
+                    s->rwstate = SSL_READING;
+                    return -1;
+                }
+                memcpy(buf, data, PEEK_HEADER_LENGTH);
             } else {
                 ret = BIO_get_fd(s->rbio, &fd);
 
