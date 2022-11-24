@@ -15,6 +15,10 @@
 #include <openssl/params.h>
 #include <openssl/bn.h>
 
+#if defined(__GNUC__) && (__GNUC__ > 6)
+# pragma GCC diagnostic ignored "-Wstringop-overflow="
+#endif
+
 /* The maximum size of the static buffers used to test most things */
 #define MAX_LEN 20
 
