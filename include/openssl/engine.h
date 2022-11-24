@@ -46,6 +46,9 @@ extern "C" {
 #  define ENGINE_METHOD_DSA               (unsigned int)0x0002
 #  define ENGINE_METHOD_DH                (unsigned int)0x0004
 #  define ENGINE_METHOD_RAND              (unsigned int)0x0008
+#  ifndef OPENSSL_NO_BN_METHOD
+#   define ENGINE_METHOD_BN               (unsigned int)0x0010
+#  endif
 #  define ENGINE_METHOD_CIPHERS           (unsigned int)0x0040
 #  define ENGINE_METHOD_DIGESTS           (unsigned int)0x0080
 #  define ENGINE_METHOD_PKEY_METHS        (unsigned int)0x0200
@@ -410,6 +413,11 @@ int ENGINE_register_ecp_meths(ENGINE *e);
 void ENGINE_unregister_ecp_meths(ENGINE *e);
 void ENGINE_register_all_ecp_meths(void);
 
+#  ifndef OPENSSL_NO_BN_METHOD
+int ENGINE_register_bn_meth(ENGINE *e);
+void ENGINE_unregister_bn_meth(ENGINE *e);
+void ENGINE_register_all_bn_meth(void);
+#  endif
 
 /*
  * These functions register all support from the above categories. Note, use
@@ -534,6 +542,9 @@ OSSL_DEPRECATEDIN_3_0 int ENGINE_set_cmd_defns(ENGINE *e,
                                                const ENGINE_CMD_DEFN *defns);
 #  endif
 int ENGINE_set_ecp_meths(ENGINE *e, ENGINE_ECP_METHS_PTR f);
+#  ifndef OPENSSL_NO_BN_METHOD
+int ENGINE_set_bn_meth(ENGINE *e, const BN_METHOD *bn_meth);
+#  endif
 
 /* These functions allow control over any per-structure ENGINE data. */
 #  define ENGINE_get_ex_new_index(l, p, newf, dupf, freef) \
@@ -609,6 +620,10 @@ OSSL_DEPRECATEDIN_3_0 int ENGINE_get_flags(const ENGINE *e);
 
 ENGINE_ECP_METHS_PTR ENGINE_get_ecp_meths(ENGINE *e);
 const EC_POINT_METHOD *ENGINE_get_ecp_meth(ENGINE *e, int curve_id);
+
+#  ifndef OPENSSL_NO_BN_METHOD
+const BN_METHOD *ENGINE_get_bn_meth(ENGINE *e);
+#  endif
 
 /*
  * FUNCTIONAL functions. These functions deal with ENGINE structures that
@@ -712,6 +727,11 @@ OSSL_DEPRECATEDIN_3_0 int ENGINE_set_default_pkey_asn1_meths(ENGINE *e);
 #  endif
 
 int ENGINE_set_default_ecp_meths(ENGINE *e);
+
+#  ifndef OPENSSL_NO_BN_METHOD
+int ENGINE_set_default_bn_meth(ENGINE *e);
+ENGINE *ENGINE_get_default_bn_meth(void);
+#  endif
 
 /*
  * The combination "set" - the flags are bitwise "OR"d from the

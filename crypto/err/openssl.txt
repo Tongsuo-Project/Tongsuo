@@ -170,6 +170,7 @@ BN_R_ARG2_LT_ARG3:100:arg2 lt arg3
 BN_R_BAD_RECIPROCAL:101:bad reciprocal
 BN_R_BIGNUM_TOO_LONG:114:bignum too long
 BN_R_BITS_TOO_SMALL:118:bits too small
+BN_R_BN_METHOD_NOT_FOUND:121:bn method not found
 BN_R_CALLED_WITH_EVEN_MODULUS:102:called with even modulus
 BN_R_DIV_BY_ZERO:103:div by zero
 BN_R_ENCODING_ERROR:104:encoding error

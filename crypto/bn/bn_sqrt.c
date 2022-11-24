@@ -25,6 +25,11 @@ BIGNUM *BN_mod_sqrt(BIGNUM *in, const BIGNUM *a, const BIGNUM *p, BN_CTX *ctx)
     int e, i, j;
     int used_ctx = 0;
 
+#ifndef OPENSSL_NO_BN_METHOD
+    if (ctx && ctx->bn_meth && ctx->bn_meth->mod_sqrt)
+        return ctx->bn_meth->mod_sqrt(in, a, p, ctx);
+#endif
+
     if (!BN_is_odd(p) || BN_abs_is_word(p, 1)) {
         if (BN_abs_is_word(p, 2)) {
             if (ret == NULL)

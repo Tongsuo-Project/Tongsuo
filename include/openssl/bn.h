@@ -211,6 +211,57 @@ BN_CTX *BN_CTX_new(void);
 BN_CTX *BN_CTX_secure_new_ex(OSSL_LIB_CTX *ctx);
 BN_CTX *BN_CTX_secure_new(void);
 void BN_CTX_free(BN_CTX *c);
+# ifndef OPENSSL_NO_BN_METHOD
+#  if !defined(OPENSSL_NO_ENGINE) && !defined(FIPS_MODULE)
+int BN_CTX_set_engine(BN_CTX *ctx, ENGINE *engine);
+const ENGINE *BN_CTX_get0_engine(BN_CTX *ctx);
+#  endif
+int BN_CTX_set_method(BN_CTX *ctx, const BN_METHOD *method);
+BN_METHOD *BN_METHOD_new(const char *name);
+void BN_METHOD_free(BN_METHOD *meth);
+int BN_METHOD_copy(BN_METHOD *dst, const BN_METHOD *src);
+char *BN_METHOD_name(BN_METHOD *meth);
+int (*BN_METHOD_get_add(BN_METHOD *meth))
+    (BIGNUM *r, const BIGNUM *a, const BIGNUM *b, const BIGNUM *m, BN_CTX *ctx);
+void BN_METHOD_set_add(BN_METHOD *meth,
+                       int (*mod_add)(BIGNUM *r, const BIGNUM *a, const BIGNUM *b,
+                                      const BIGNUM *m, BN_CTX *ctx));
+int (*BN_METHOD_get_sub(BN_METHOD *meth))
+    (BIGNUM *r, const BIGNUM *a, const BIGNUM *b, const BIGNUM *m, BN_CTX *ctx);
+void BN_METHOD_set_sub(BN_METHOD *meth,
+                       int (*mod_sub)(BIGNUM *r, const BIGNUM *a, const BIGNUM *b,
+                                      const BIGNUM *m, BN_CTX *ctx));
+int (*BN_METHOD_get_mul(BN_METHOD *meth))
+    (BIGNUM *r, const BIGNUM *a, const BIGNUM *b, const BIGNUM *m, BN_CTX *ctx);
+void BN_METHOD_set_mul(BN_METHOD *meth,
+                       int (*mod_mul)(BIGNUM *r, const BIGNUM *a, const BIGNUM *b,
+                                      const BIGNUM *m, BN_CTX *ctx));
+int (*BN_METHOD_get_exp(BN_METHOD *meth))
+    (BIGNUM *r, const BIGNUM *a, const BIGNUM *b, const BIGNUM *m, BN_CTX *ctx);
+void BN_METHOD_set_exp(BN_METHOD *meth,
+                       int (*mod_exp)(BIGNUM *r, const BIGNUM *a, const BIGNUM *b,
+                                      const BIGNUM *m, BN_CTX *ctx));
+int (*BN_METHOD_get_sqr(BN_METHOD *meth))
+    (BIGNUM *r, const BIGNUM *a, const BIGNUM *m, BN_CTX *ctx);
+void BN_METHOD_set_sqr(BN_METHOD *meth,
+                       int (*mod_sqr)(BIGNUM *r, const BIGNUM *a, const BIGNUM *m,
+                                      BN_CTX *ctx));
+BIGNUM *(*BN_METHOD_get_sqrt(BN_METHOD *meth))
+    (BIGNUM *r, const BIGNUM *a, const BIGNUM *n, BN_CTX *ctx);
+void BN_METHOD_set_sqrt(BN_METHOD *meth,
+                        BIGNUM *(*mod_sqrt)(BIGNUM *r, const BIGNUM *a,
+                                            const BIGNUM *n, BN_CTX *ctx));
+BIGNUM *(*BN_METHOD_get_inverse(BN_METHOD *meth))
+    (BIGNUM *r, const BIGNUM *a, const BIGNUM *n, BN_CTX *ctx);
+void BN_METHOD_set_inverse(BN_METHOD *meth,
+                           BIGNUM *(*mod_inverse)(BIGNUM *r, const BIGNUM *a,
+                                                  const BIGNUM *n, BN_CTX *ctx));
+int (*BN_METHOD_get_div(BN_METHOD *meth))
+    (BIGNUM *dv, BIGNUM *rem, const BIGNUM *m, const BIGNUM *d, BN_CTX *ctx);
+void BN_METHOD_set_div(BN_METHOD *meth,
+                       int (*div)(BIGNUM *dv, BIGNUM *rem, const BIGNUM *m,
+                                  const BIGNUM *d, BN_CTX *ctx));
+# endif
 void BN_CTX_start(BN_CTX *ctx);
 BIGNUM *BN_CTX_get(BN_CTX *ctx);
 void BN_CTX_end(BN_CTX *ctx);
