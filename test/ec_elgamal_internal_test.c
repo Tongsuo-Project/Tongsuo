@@ -370,6 +370,31 @@ err:
     return ret;
 }
 
+static int ec_point_from_string_test(int curve_id, const char *str)
+{
+    int ret = 0;
+    EC_KEY *key = NULL;
+    EC_POINT *r = NULL;
+
+    if (!TEST_ptr(key = EC_KEY_new_by_curve_name(curve_id)))
+        goto err;
+
+    if (!TEST_true(EC_KEY_generate_key(key)))
+        goto err;
+
+    if (!TEST_ptr(r = EC_POINT_new(key->group)))
+        goto err;
+
+    if (!TEST_true(EC_POINT_from_string(key->group, r, (const unsigned char *)str, strlen(str))))
+        goto err;
+
+    ret = 1;
+err:
+    EC_POINT_free(r);
+    EC_KEY_free(key);
+    return ret;
+}
+
 static int ec_elgamal_tests(void)
 {
     if (!TEST_true(ec_elgamal_test(NID_X9_62_prime256v1, ADD, 0))
@@ -382,6 +407,17 @@ static int ec_elgamal_tests(void)
 #endif
         )
         return 0;
+
+#ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
+    if (!TEST_true(ec_point_from_string_test(NID_X9_62_prime256v1, "tongsuov587!"))
+        || !TEST_true(ec_point_from_string_test(NID_X9_62_prime256v1, "tongsuo+++++===="))
+# ifndef OPENSSL_NO_SM2
+        || !TEST_true(ec_point_from_string_test(NID_sm2, "tongsuov587!"))
+        || !TEST_true(ec_point_from_string_test(NID_sm2, "tongsuo+++++===="))
+# endif
+        )
+        return 0;
+#endif
 
 #ifndef OPENSSL_NO_SM2
     if (!TEST_true(ec_elgamal_test(NID_sm2, ADD, 0))
