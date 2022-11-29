@@ -370,6 +370,7 @@ err:
     return ret;
 }
 
+#ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
 static int ec_point_from_string_test(int curve_id, const char *str)
 {
     int ret = 0;
@@ -394,6 +395,7 @@ err:
     EC_KEY_free(key);
     return ret;
 }
+#endif
 
 static int ec_elgamal_tests(void)
 {
