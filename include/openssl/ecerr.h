@@ -36,6 +36,7 @@
 #  define EC_R_DISCRIMINANT_IS_ZERO                        118
 #  define EC_R_EC_GROUP_NEW_BY_NAME_FAILURE                119
 #  define EC_R_EC_POINT_METHOD_NOT_FOUND                   176
+#  define EC_R_ELGAMAL_DLOG_FAILED                         177
 #  define EC_R_EXPLICIT_PARAMS_NOT_SUPPORTED               127
 #  define EC_R_FAILED_MAKING_PUBLIC_KEY                    166
 #  define EC_R_FIELD_TOO_LARGE                             143

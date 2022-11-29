@@ -1817,7 +1817,12 @@ OSSL_DEPRECATEDIN_3_0 void EC_KEY_METHOD_get_verify
 /********************************************************************/
 /*           EC_ELGAMAL for curves over GF(p)                       */
 /********************************************************************/
-#   define EC_ELGAMAL_MAX_BITS                       32
+#   define EC_ELGAMAL_MAX_BITS                                      32
+#   define EC_ELGAMAL_FLAG_DEFAULT                                  0x00
+#   define EC_ELGAMAL_FLAG_TWISTED                                  0x01
+#   define EC_ELGAMAL_DECRYPT_TABLE_FLAG_NEGATIVE                   0x01
+#   define EC_ELGAMAL_DECRYPT_TABLE_FLAG_NEGATIVE_FIRST             0x02
+#   define EC_ELGAMAL_DECRYPT_TABLE_FLAG_NEGATIVE_ONLY              0x03
 
 typedef struct ec_elgamal_ctx_st EC_ELGAMAL_CTX;
 typedef struct ec_elgamal_ciphertext_st EC_ELGAMAL_CIPHERTEXT;
@@ -1831,7 +1836,7 @@ typedef struct ec_elgamal_decrypt_table_st EC_ELGAMAL_DECRYPT_TABLE;
  *  \param  key  EC_KEY to use
  *  \return newly created EC_ELGAMAL_CTX object or NULL in case of an error
  */
-EC_ELGAMAL_CTX *EC_ELGAMAL_CTX_new(EC_KEY *key);
+EC_ELGAMAL_CTX *EC_ELGAMAL_CTX_new(EC_KEY *key, int32_t flag);
 
 /** Frees a EC_ELGAMAL_CTX object
  *  \param  ctx  EC_ELGAMAL_CTX object to be freed
@@ -1845,6 +1850,18 @@ void EC_ELGAMAL_CTX_free(EC_ELGAMAL_CTX *ctx);
  */
 EC_ELGAMAL_DECRYPT_TABLE *EC_ELGAMAL_DECRYPT_TABLE_new(EC_ELGAMAL_CTX *ctx,
                                                        int32_t decrypt_negative);
+
+/** Creates a new EC_ELGAMAL_DECRYPT_TABLE object with some extra paramers
+ *  \param  ctx             EC_ELGAMAL_CTX object
+ *  \param  flag            the flag of decrypt table
+ *  \param  baby_step_bits  baby step exponent/bits
+ *  \param  giant_step_bits giant step exponent/bits
+ *  \return newly created EC_ELGAMAL_DECRYPT_TABLE object or NULL in case of an error
+ */
+EC_ELGAMAL_DECRYPT_TABLE *EC_ELGAMAL_DECRYPT_TABLE_new_ex(EC_ELGAMAL_CTX *ctx,
+                                                          int32_t flag,
+                                                          uint32_t baby_step_bits,
+                                                          uint32_t giant_step_bits);
 
 /** Frees a EC_ELGAMAL_DECRYPT_TABLE object
  *  \param  table  EC_ELGAMAL_DECRYPT_TABLE object to be freed
@@ -1947,6 +1964,17 @@ size_t EC_ELGAMAL_CIPHERTEXT_encode(EC_ELGAMAL_CTX *ctx, unsigned char *out,
  */
 int EC_ELGAMAL_CIPHERTEXT_decode(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r,
                                  unsigned char *in, size_t size);
+
+/*
+ * Functions for convert string to ec_point on the elliptic curve.
+ *  \param  group   underlying EC_GROUP object
+ *  \param  r       EC_POINT object for the result
+ *  \param  str     string pointer
+ *  \param  len     length of the string
+ *  \return 1 on success and 0 if an error occurred
+ */
+int EC_POINT_from_string(const EC_GROUP *group, EC_POINT *r,
+                         const unsigned char *str, size_t len);
 
 #  endif
 
