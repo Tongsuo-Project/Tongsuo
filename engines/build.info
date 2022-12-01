@@ -78,6 +78,17 @@ IF[{- !$disabled{"engine"} -}]
         SOURCE[bntest]=bntest.ld
         GENERATE[bntest.ld]=../util/engines.num
       ENDIF
+
+      IF[{- !$disabled{'paillier'} -}]
+        MODULES{engine}=bnsoft
+        SOURCE[bnsoft]=e_bnsoft.c
+        DEPEND[bnsoft]=../libcrypto
+        INCLUDE[bnsoft]= ../include
+        IF[{- defined $target{shared_defflag} -}]
+          SOURCE[bnsoft]=bnsoft.ld
+          GENERATE[bnsoft.ld]=../util/engines.num
+        ENDIF
+      ENDIF
     ENDIF
 
     IF[{- !$disabled{"devcryptoeng"} -}]

@@ -115,3 +115,20 @@ err:
     OPENSSL_free(ret);
     return NULL;
 }
+
+#ifndef OPENSSL_NO_ENGINE
+/** set ENGINE pointer to the PAILLIER object
+ *  \param  ctx        PAILLIER_CTX object.
+ *  \param  engine     ENGINE object to use
+ *  \return 1 on success and 0 otherwise
+ */
+int PAILLIER_CTX_set_engine(PAILLIER_CTX *ctx, ENGINE *engine)
+{
+# ifndef OPENSSL_NO_BN_METHOD
+    ctx->engine = engine;
+    return 1;
+# else
+    return 0;
+# endif
+}
+#endif

@@ -637,7 +637,7 @@ IF[{- !$disabled{tests} -}]
 
     SOURCE[paillier_internal_test]=paillier_internal_test.c
     INCLUDE[paillier_internal_test]=.. ../include ../crypto/ec ../apps/include
-    DEPEND[paillier_internal_test]=../libcrypto.a libtestutil.a
+    DEPEND[paillier_internal_test]=../libcrypto libtestutil.a
 
     SOURCE[chacha_internal_test]=chacha_internal_test.c
     INCLUDE[chacha_internal_test]=.. ../include ../apps/include

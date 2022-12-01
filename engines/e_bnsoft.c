@@ -19,83 +19,59 @@
 #include <openssl/bn.h>
 
 /* Engine Id and Name */
-static const char *engine_bntest_id = "bntest";
-static const char *engine_bntest_name = "Tongsuo Test engine support";
+static const char *engine_bnsoft_id = "bnsoft";
+static const char *engine_bnsoft_name = "Tongsuo Test engine support";
 
 static BN_METHOD *bn_method = NULL;
 static BN_CTX *bn_ctx = NULL;
 
 /* Engine Lifetime functions */
-static int bntest_destroy(ENGINE *e);
-static int bntest_init(ENGINE *e);
-static int bntest_finish(ENGINE *e);
+static int bnsoft_destroy(ENGINE *e);
+static int bnsoft_init(ENGINE *e);
+static int bnsoft_finish(ENGINE *e);
 
 static int bn_add(BIGNUM *r, const BIGNUM *a, const BIGNUM *b, const BIGNUM *m, BN_CTX *ctx)
 {
-    int ret = 0;
-    ret = BN_mod_add(r, a, b, m, bn_ctx);
-    BN_add_word(r, 1);
-    return ret;
+    return BN_mod_add(r, a, b, m, bn_ctx);
 }
 
 static int bn_sub(BIGNUM *r, const BIGNUM *a, const BIGNUM *b, const BIGNUM *m, BN_CTX *ctx)
 {
-    int ret = 0;
-    ret = BN_mod_sub(r, a, b, m, bn_ctx);
-    BN_add_word(r, 1);
-    return ret;
+    return BN_mod_sub(r, a, b, m, bn_ctx);
 }
 
 static int bn_mul(BIGNUM *r, const BIGNUM *a, const BIGNUM *b, const BIGNUM *m, BN_CTX *ctx)
 {
-    int ret = 0;
-    ret = BN_mod_mul(r, a, b, m, bn_ctx);
-    BN_add_word(r, 1);
-    return ret;
+    return BN_mod_mul(r, a, b, m, bn_ctx);
 }
 
 static int bn_exp(BIGNUM *r, const BIGNUM *a, const BIGNUM *p, const BIGNUM *m, BN_CTX *ctx)
 {
-    int ret = 0;
-    ret = BN_mod_exp(r, a, p, m, bn_ctx);
-    BN_add_word(r, 1);
-    return ret;
+    return BN_mod_exp(r, a, p, m, bn_ctx);
 }
 
 static int bn_sqr(BIGNUM *r, const BIGNUM *a, const BIGNUM *m, BN_CTX *ctx)
 {
-    int ret = 0;
-    ret = BN_mod_sqr(r, a, m, bn_ctx);
-    BN_add_word(r, 1);
-    return ret;
+    return BN_mod_sqr(r, a, m, bn_ctx);
 }
 
 static int bn_div(BIGNUM *dv, BIGNUM *rem, const BIGNUM *m, const BIGNUM *d, BN_CTX *ctx)
 {
-    int ret = 0;
-    ret = BN_div(dv, rem, m, d, bn_ctx);
-    BN_add_word(dv, 1);
-    return ret;
+    return BN_div(dv, rem, m, d, bn_ctx);
 }
 
 static BIGNUM *bn_sqrt(BIGNUM *r, const BIGNUM *a, const BIGNUM *n, BN_CTX *ctx)
 {
-    BIGNUM *ret;
-    ret = BN_mod_sqrt(r, a, n, bn_ctx);
-    BN_add_word(r, 1);
-    return ret;
+    return BN_mod_sqrt(r, a, n, bn_ctx);
 }
 
 static BIGNUM *bn_inverse(BIGNUM *r, const BIGNUM *a, const BIGNUM *n, BN_CTX *ctx)
 {
-    BIGNUM *ret;
-    ret = BN_mod_inverse(r, a, n, bn_ctx);
-    BN_add_word(r, 1);
-    return ret;
+    return BN_mod_inverse(r, a, n, bn_ctx);
 }
 
 #ifndef OPENSSL_NO_DYNAMIC_ENGINE
-static int bind_bntest(ENGINE *e)
+static int bind_bnsoft(ENGINE *e)
 {
     bn_method = BN_METHOD_new("test");
     if (bn_method == NULL)
@@ -105,16 +81,14 @@ static int bind_bntest(ENGINE *e)
     if (bn_ctx == NULL)
         return 0;
 
-    /* Ensure the bntest error handling is set up */
-
-    if (!ENGINE_set_id(e, engine_bntest_id)
-        || !ENGINE_set_name(e, engine_bntest_name)
+    if (!ENGINE_set_id(e, engine_bnsoft_id)
+        || !ENGINE_set_name(e, engine_bnsoft_name)
 #ifndef OPENSSL_NO_BN_METHOD
         || !ENGINE_set_bn_meth(e, bn_method)
 #endif
-        || !ENGINE_set_destroy_function(e, bntest_destroy)
-        || !ENGINE_set_init_function(e, bntest_init)
-        || !ENGINE_set_finish_function(e, bntest_finish)) {
+        || !ENGINE_set_destroy_function(e, bnsoft_destroy)
+        || !ENGINE_set_init_function(e, bnsoft_init)
+        || !ENGINE_set_finish_function(e, bnsoft_finish)) {
         return 0;
     }
 
@@ -123,9 +97,9 @@ static int bind_bntest(ENGINE *e)
 
 static int bind_helper(ENGINE *e, const char *id)
 {
-    if (id && (strcmp(id, engine_bntest_id) != 0))
+    if (id && (strcmp(id, engine_bnsoft_id) != 0))
         return 0;
-    if (!bind_bntest(e))
+    if (!bind_bnsoft(e))
         return 0;
     return 1;
 }
@@ -134,7 +108,7 @@ IMPLEMENT_DYNAMIC_CHECK_FN()
 IMPLEMENT_DYNAMIC_BIND_FN(bind_helper)
 #endif
 
-static int bntest_init(ENGINE *e)
+static int bnsoft_init(ENGINE *e)
 {
     BN_METHOD_set_add(bn_method, bn_add);
     BN_METHOD_set_sub(bn_method, bn_sub);
@@ -148,12 +122,12 @@ static int bntest_init(ENGINE *e)
     return 1;
 }
 
-static int bntest_finish(ENGINE *e)
+static int bnsoft_finish(ENGINE *e)
 {
     return 1;
 }
 
-static int bntest_destroy(ENGINE *e)
+static int bnsoft_destroy(ENGINE *e)
 {
     BN_CTX_free(bn_ctx);
     BN_METHOD_free(bn_method);
