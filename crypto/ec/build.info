@@ -55,7 +55,7 @@ IF[{- !$disabled{'ec_nistp_64_gcc_128'} -}]
 ENDIF
 
 IF[{- !$disabled{'ec_elgamal'} -}]
-  $COMMON=$COMMON ec_elgamal.c
+  $COMMON=$COMMON ec_elgamal_crypt.c ec_elgamal_dlog.c ec_elgamal_encode.c
 ENDIF
 
 SOURCE[../../libcrypto]=$COMMON ec_ameth.c ec_pmeth.c ecx_meth.c \

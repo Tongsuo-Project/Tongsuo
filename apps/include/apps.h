@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -10,7 +10,7 @@
 #ifndef OSSL_APPS_H
 # define OSSL_APPS_H
 
-# include "e_os.h" /* struct timeval for DTLS */
+# include "internal/e_os.h" /* struct timeval for DTLS */
 # include "internal/nelem.h"
 # include "internal/sockets.h" /* for openssl_fdset() */
 # include <assert.h>

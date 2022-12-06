@@ -41,16 +41,27 @@ DEFINE_LHASH_OF(EC_ELGAMAL_dec_tbl_entry);
 struct ec_elgamal_decrypt_table_st {
     CRYPTO_REF_COUNT references;
     CRYPTO_RWLOCK *lock;
-    int32_t decrypt_negative;
+    int32_t flag;
     int32_t size;
+    uint32_t baby_step_bits;
+    uint32_t giant_step_bits;
     EC_POINT *mG_inv;
-    LHASH_OF(EC_ELGAMAL_dec_tbl_entry) *entries;
+    LHASH_OF(EC_ELGAMAL_dec_tbl_entry) *positive_entries;
+    LHASH_OF(EC_ELGAMAL_dec_tbl_entry) *negative_entries;
 };
 
 struct ec_elgamal_ctx_st {
     EC_KEY *key;
     EC_ELGAMAL_DECRYPT_TABLE *decrypt_table;
+    int32_t flag;
+# ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
+    EC_POINT *h;
+    BIGNUM *sk_inv;
+# endif
 };
+
+int EC_ELGAMAL_dlog_brute(EC_ELGAMAL_CTX *ctx, int32_t *r, EC_POINT *M);
+int EC_ELGAMAL_dlog_bsgs(EC_ELGAMAL_CTX *ctx, int32_t *r, EC_POINT *M);
 
 # ifdef  __cplusplus
 }

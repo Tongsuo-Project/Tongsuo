@@ -84,6 +84,11 @@ int BN_mod_exp(BIGNUM *r, const BIGNUM *a, const BIGNUM *p, const BIGNUM *m,
 {
     int ret;
 
+#ifndef OPENSSL_NO_BN_METHOD
+    if (ctx && ctx->bn_meth && ctx->bn_meth->mod_exp)
+        return ctx->bn_meth->mod_exp(r, a, p, m, ctx);
+#endif
+
     bn_check_top(a);
     bn_check_top(p);
     bn_check_top(m);

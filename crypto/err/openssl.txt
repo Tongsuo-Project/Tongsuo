@@ -170,6 +170,7 @@ BN_R_ARG2_LT_ARG3:100:arg2 lt arg3
 BN_R_BAD_RECIPROCAL:101:bad reciprocal
 BN_R_BIGNUM_TOO_LONG:114:bignum too long
 BN_R_BITS_TOO_SMALL:118:bits too small
+BN_R_BN_METHOD_NOT_FOUND:121:bn method not found
 BN_R_CALLED_WITH_EVEN_MODULUS:102:called with even modulus
 BN_R_DIV_BY_ZERO:103:div by zero
 BN_R_ENCODING_ERROR:104:encoding error
@@ -538,6 +539,7 @@ EC_R_DECODE_ERROR:142:decode error
 EC_R_DISCRIMINANT_IS_ZERO:118:discriminant is zero
 EC_R_EC_GROUP_NEW_BY_NAME_FAILURE:119:ec group new by name failure
 EC_R_EC_POINT_METHOD_NOT_FOUND:176:ec point method not found
+EC_R_ELGAMAL_DLOG_FAILED:177:elgamal dlog failed
 EC_R_EXPLICIT_PARAMS_NOT_SUPPORTED:127:explicit params not supported
 EC_R_FAILED_MAKING_PUBLIC_KEY:166:failed making public key
 EC_R_FIELD_TOO_LARGE:143:field too large

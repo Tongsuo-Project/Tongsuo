@@ -37,6 +37,7 @@ static const ERR_STRING_DATA EC_str_reasons[] = {
     "ec group new by name failure"},
     {ERR_PACK(ERR_LIB_EC, 0, EC_R_EC_POINT_METHOD_NOT_FOUND),
     "ec point method not found"},
+    {ERR_PACK(ERR_LIB_EC, 0, EC_R_ELGAMAL_DLOG_FAILED), "elgamal dlog failed"},
     {ERR_PACK(ERR_LIB_EC, 0, EC_R_EXPLICIT_PARAMS_NOT_SUPPORTED),
     "explicit params not supported"},
     {ERR_PACK(ERR_LIB_EC, 0, EC_R_FAILED_MAKING_PUBLIC_KEY),

@@ -4,6 +4,10 @@
 
  Changes between 8.3.0 and 8.4.0 [xx XXX xxxx]
 
+  *) BIGNUM 运算支持 method 机制
+
+  *) 支持半同态加密算法 Twisted-EC-ElGamal
+
   *) 修复CVE-2022-3786和CVE-2022-3602
 
   *) 支持半同态加密算法 EC-ElGamal 命令行

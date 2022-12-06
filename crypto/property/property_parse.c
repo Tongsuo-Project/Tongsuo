@@ -17,7 +17,7 @@
 #include "crypto/ctype.h"
 #include "internal/nelem.h"
 #include "property_local.h"
-#include "e_os.h"
+#include "internal/e_os.h"
 
 DEFINE_STACK_OF(OSSL_PROPERTY_DEFINITION)
 
@@ -601,7 +601,7 @@ static void put_str(const char *str, char **buf, size_t *remain, size_t *needed)
         len = *remain - 1;
 
     if(len > 0) {
-        strncpy(*buf, str, len);
+        memcpy(*buf, str, len);
         *buf += len;
         *remain -= len;
     }

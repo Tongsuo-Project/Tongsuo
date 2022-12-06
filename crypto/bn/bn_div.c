@@ -211,6 +211,11 @@ int BN_div(BIGNUM *dv, BIGNUM *rm, const BIGNUM *num, const BIGNUM *divisor,
 {
     int ret;
 
+#ifndef OPENSSL_NO_BN_METHOD
+    if (ctx && ctx->bn_meth && ctx->bn_meth->div)
+        return ctx->bn_meth->div(dv, rm, num, divisor, ctx);
+#endif
+
     if (BN_is_zero(divisor)) {
         ERR_raise(ERR_LIB_BN, BN_R_DIV_BY_ZERO);
         return 0;

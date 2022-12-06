@@ -34,6 +34,9 @@ my %ignore_symbols = (
     "HASH_TRANSFORM" => 1,
     "HASH_FINAL" => 1,
     "HASH_BLOCK_DATA_ORDER" => 1,
+    "gethostbyname" => 1,
+    "gethostbyaddr" => 1,
+    "getservbyname" => 1,
 );
 
 foreach my $f (catfile($config{sourcedir}, "util/engines.num"),

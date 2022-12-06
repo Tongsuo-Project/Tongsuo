@@ -430,6 +430,7 @@ my @disablables = (
     "ec2m",
     "ec_nistp_64_gcc_128",
     "ec_elgamal",
+    "twisted_ec_elgamal",
     "ecdh",
     "ecdsa",
     "egd",
@@ -504,7 +505,8 @@ my @disablables = (
     "evp-cipher-api-compat",
     "crypto-mdebug-count",
     "cert-compression",
-    "paillier"
+    "paillier",
+    "bn-method"
     );
 foreach my $proto ((@tls, @dtls))
         {
@@ -560,11 +562,13 @@ our %disabled = ( # "what"         => "comment"
                   "zlib"                => "default",
                   "zlib-dynamic"        => "default",
                   "ec_elgamal"          => "default",
+                  "twisted_ec_elgamal"  => "default",
                   "optimize-chacha-choose"     => "default",
                   "status"              => "default",
                   "evp-cipher-api-compat"      => "default",
                   "cert-compression"    => "default",
                   "paillier"            => "default",
+                  "bn-method"           => "default",
                 );
 
 # Note: => pair form used for aesthetics, not to truly make a hash table
@@ -592,6 +596,7 @@ my @disable_cascades = (
     "ssl3-method"       => [ "ssl3" ],
     "zlib"              => [ "zlib-dynamic" ],
     "ec"                => [ "ec2m", "ecdsa", "ecdh", "sm2" ],
+    "ec_elgamal"        => [ "twisted_ec_elgamal" ],
     "dgram"             => [ "dtls", "sctp" ],
     "sock"              => [ "dgram" ],
     "dtls"              => [ @dtls ],
@@ -1084,6 +1089,12 @@ while (@argvcopy)
 # If enable-ec_elgamal has been set, we must set the api to 1.1.1 and disable deperated.
 if (!defined($disabled{'ec_elgamal'})) {
     die "ec_elgamal only supports api with 1.1.1\n"
+        if ($config{api} && $config{api} != $apitable->{"1.1.1"});
+    $config{api}=$apitable->{"1.1.1"};
+}
+
+if (!defined($disabled{'bn-method'})) {
+    die "bn-method only supports api with 1.1.1\n"
         if ($config{api} && $config{api} != $apitable->{"1.1.1"});
     $config{api}=$apitable->{"1.1.1"};
 }

@@ -1,4 +1,4 @@
-# Copyright 2021 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2021-2022 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -9,6 +9,7 @@ name: Coverage
 
 #Run once a day
 on:
+  workflow_dispatch:
   schedule:
     - cron:  '49 0 * * *'
 
@@ -21,7 +22,7 @@ jobs:
       run: |
         sudo apt-get -yq install lcov
     - name: config
-      run: CC=gcc ./config --banner=Configured --debug --coverage no-asm enable-fips enable-rc5 enable-ssl3 enable-nextprotoneg enable-ssl3-method enable-weak-ssl-ciphers enable-zlib enable-ec_nistp_64_gcc_128 no-shared enable-buildtest-c++ enable-external-tests -DPEDANTIC -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+      run: CC=gcc ./config --banner=Configured --debug --coverage no-asm enable-rc5 enable-ssl3 enable-nextprotoneg enable-ssl3-method enable-weak-ssl-ciphers enable-zlib enable-ec_nistp_64_gcc_128 no-shared enable-buildtest-c++ enable-external-tests -DPEDANTIC -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION enable-ntls enable-cert-compression enable-delegated-credential enable-status enable-ec_elgamal enable-paillier
     - name: config dump
       run: ./configdata.pm --dump
     - name: make
