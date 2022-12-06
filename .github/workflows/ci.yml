@@ -207,3 +207,33 @@ jobs:
         run: make clean
       - name: check dirty
         run: test $(git status --porcelain | wc -l) -eq "0"
+
+  ntls-and-gm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: config
+        run: ./config enable-ntls enable-gm --strict-warnings && perl configdata.pm --dump
+      - name: make
+        run: make -s -j4
+      - name: make test
+        run: make test
+      - name: make clean
+        run: make clean
+      - name: check dirty
+        run: test $(git status --porcelain | wc -l) -eq "0"
+
+  ntls-and-gm-sanitizers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: config
+        run: ./config enable-ntls enable-gm --strict-warnings enable-asan -fsanitize=address -static-libasan enable-crypto-mdebug  enable-crypto-mdebug-backtrace && perl configdata.pm --dump
+      - name: make
+        run: make -s -j4
+      - name: make test
+        run: make test
+      - name: make clean
+        run: make clean
+      - name: check dirty
+        run: test $(git status --porcelain | wc -l) -eq "0"

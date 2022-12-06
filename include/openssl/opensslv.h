@@ -40,7 +40,7 @@ extern "C" {
  *  major minor fix final patch/beta)
  */
 # define OPENSSL_VERSION_NUMBER  0x10101080L
-# define OPENSSL_VERSION_TEXT    "OpenSSL 1.1.1h-dev  xx XXX xxxx"
+# define OPENSSL_VERSION_TEXT    "OpenSSL 1.1.1h  xx XXX xxxx"
 
 /*-
  * The macros below are to be used for shared library (.so, .dll, ...)
@@ -108,8 +108,8 @@ extern "C" {
  * 1.9.5          0x1090500f
  */
 
-# define BABASSL_VERSION_NUMBER  0x80202000L
-# define BABASSL_VERSION_TEXT    "BabaSSL 8.2.2-dev"
+# define BABASSL_VERSION_NUMBER  0x80201000L
+# define BABASSL_VERSION_TEXT    "BabaSSL 8.2.1"
 
 #ifdef  __cplusplus
 }

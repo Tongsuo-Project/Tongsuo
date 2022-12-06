@@ -1184,6 +1184,10 @@
 #define NID_sm3WithRSAEncryption                1144
 #define OBJ_sm3WithRSAEncryption                OBJ_sm_scheme,504L
 
+#define LN_hmacWithSM3          "hmacWithSM3"
+#define NID_hmacWithSM3         1209
+#define OBJ_hmacWithSM3         OBJ_sm3,3L,1L
+
 #define LN_hmacWithSHA224               "hmacWithSHA224"
 #define NID_hmacWithSHA224              798
 #define OBJ_hmacWithSHA224              OBJ_rsadsi,2L,8L

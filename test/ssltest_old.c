@@ -59,6 +59,9 @@
 #ifndef OPENSSL_NO_CT
 # include <openssl/ct.h>
 #endif
+#ifndef OPENSSL_NO_GM
+#include <openssl/rand_drbg.h>
+#endif
 
 /*
  * Or gethostname won't be declared properly
@@ -917,6 +920,11 @@ int main(int argc, char *argv[])
     SSL_CONF_CTX *s_cctx = NULL, *c_cctx = NULL, *s_cctx2 = NULL;
     STACK_OF(OPENSSL_STRING) *conf_args = NULL;
     char *arg = NULL, *argn = NULL;
+
+#ifndef OPENSSL_NO_GM
+    /* disable period self test */
+    RAND_DRBG_set_self_test_period_time_default(0);
+#endif
 
     verbose = 0;
     debug = 0;

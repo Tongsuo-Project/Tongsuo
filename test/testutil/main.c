@@ -11,7 +11,7 @@
 #include "internal/nelem.h"
 #include "output.h"
 #include "tu_local.h"
-
+#include <openssl/rand_drbg.h>
 #include <string.h>
 
 static size_t arg_count;
@@ -34,6 +34,10 @@ static void check_arg_usage(void)
 int main(int argc, char *argv[])
 {
     int ret = EXIT_FAILURE;
+#ifndef OPENSSL_NO_GM
+    /* disable period self test */
+    RAND_DRBG_set_self_test_period_time_default(0);
+#endif
 
     test_open_streams();
 

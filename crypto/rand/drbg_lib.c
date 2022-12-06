@@ -82,6 +82,10 @@ static unsigned int slave_reseed_interval  = SLAVE_RESEED_INTERVAL;
 static time_t master_reseed_time_interval = MASTER_RESEED_TIME_INTERVAL;
 static time_t slave_reseed_time_interval  = SLAVE_RESEED_TIME_INTERVAL;
 
+#ifndef OPENSSL_NO_GM
+static time_t self_test_period_time_interval = MAX_SELF_TEST_PERIOD_TIME;
+#endif
+
 /* A logical OR of all used DRBG flag bits (currently there is only one) */
 static const unsigned int rand_drbg_used_flags =
     RAND_DRBG_FLAG_CTR_NO_DF;
@@ -136,6 +140,18 @@ int RAND_DRBG_set(RAND_DRBG *drbg, int type, unsigned int flags)
     case NID_aes_256_ctr:
         ret = drbg_ctr_init(drbg);
         break;
+    case NID_sha1:
+    case NID_sha224:
+    case NID_sha256:
+    case NID_sha384:
+    case NID_sha512:
+    case NID_sha512_224:
+    case NID_sha512_256:
+#ifndef OPENSSL_NO_SM3
+    case NID_sm3:
+#endif
+        ret = drbg_hash_init(drbg);
+        break;
     }
 
     if (ret == 0) {
@@ -161,6 +177,16 @@ int RAND_DRBG_set_defaults(int type, unsigned int flags)
     case NID_aes_128_ctr:
     case NID_aes_192_ctr:
     case NID_aes_256_ctr:
+    case NID_sha1:
+    case NID_sha224:
+    case NID_sha256:
+    case NID_sha384:
+    case NID_sha512:
+    case NID_sha512_224:
+    case NID_sha512_256:
+#ifndef OPENSSL_NO_SM3
+    case NID_sm3:
+#endif
         break;
     }
 
@@ -221,6 +247,10 @@ static RAND_DRBG *rand_drbg_new(int secure,
         drbg->reseed_interval = slave_reseed_interval;
         drbg->reseed_time_interval = slave_reseed_time_interval;
     }
+
+#ifndef OPENSSL_NO_GM
+    drbg->self_test_time_interval = self_test_period_time_interval;
+#endif
 
     if (RAND_DRBG_set(drbg, type, flags) == 0)
         goto err;
@@ -645,6 +675,20 @@ int RAND_DRBG_generate(RAND_DRBG *drbg, unsigned char *out, size_t outlen,
     }
 
     drbg->reseed_gen_counter++;
+
+#ifndef OPENSSL_NO_GM
+    if (drbg->self_test_time_interval > 0) {
+        time_t now = time(NULL);
+        if (now < drbg->self_test_time
+            || now - drbg->self_test_time >= drbg->self_test_time_interval) {
+            drbg->self_test_time = now;
+            if (!RAND_DRBG_self_test_period(drbg)) {
+                RANDerr(RAND_F_RAND_DRBG_GENERATE, RAND_R_SELFTEST_FAILURE);
+                return 0;
+            }
+        }
+    }
+#endif
 
     return 1;
 }
@@ -1160,3 +1204,57 @@ RAND_METHOD *RAND_OpenSSL(void)
 {
     return &rand_meth;
 }
+
+#ifndef OPENSSL_NO_GM
+int RAND_DRBG_self_test_period(RAND_DRBG *drbg)
+{
+    int nbit = 20000;
+    unsigned char buf[20000 / 8];
+    int fail[12] = {0};
+    size_t i = 0, j, k;
+    int retry = 1;
+
+    while(i++ < 20) {
+        if (!drbg->meth->generate(drbg, buf, sizeof(buf), NULL, 0)) {
+            drbg->state = DRBG_ERROR;
+            return 0;
+        }
+
+        j = 0;
+        fail[j++] += rand_self_test_frequency(buf, nbit, NULL) ^ 1;
+        fail[j++] += rand_self_test_block_frequency(buf, nbit, 1000, NULL) ^ 1;
+        fail[j++] += rand_self_test_poker(buf, nbit, 8, NULL) ^ 1;
+        fail[j++] += rand_self_test_serial(buf, nbit, 5, NULL, NULL) ^ 1;
+        fail[j++] += rand_self_test_runs(buf, nbit, NULL) ^ 1;
+        fail[j++] += rand_self_test_runs_distribution(buf, nbit, NULL) ^ 1;
+        fail[j++] += rand_self_test_longest_run_of_ones(buf, nbit, NULL) ^ 1;
+        fail[j++] += rand_self_test_binary_derivation(buf, nbit, 7, NULL) ^ 1;
+        fail[j++] += rand_self_test_self_correlation(buf, nbit, 16, NULL) ^ 1;
+        fail[j++] += rand_self_test_binary_matrix_rank(buf, nbit, NULL) ^ 1;
+        fail[j++] += rand_self_test_cumulative_sums(buf, nbit, NULL, NULL) ^ 1;
+        fail[j++] += rand_self_test_approximate_entropy(buf, nbit, 5, NULL) ^ 1;
+
+        for (k = 0; k < OSSL_NELEM(fail); k++) {
+            if (fail[k] >= 2) {
+                if (--retry < 0)
+                    return 0;
+
+                i = 0;
+                memset(fail, 0, sizeof(fail));
+                break;
+            }
+        }
+    }
+
+    return 1;
+}
+
+int RAND_DRBG_set_self_test_period_time_default(time_t interval)
+{
+    if (interval > MAX_SELF_TEST_PERIOD_TIME)
+        return 0;
+
+    self_test_period_time_interval = interval;
+    return 1;
+}
+#endif

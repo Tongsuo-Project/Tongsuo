@@ -33,6 +33,9 @@
 # define MASTER_RESEED_TIME_INTERVAL             (60*60)   /* 1 hour */
 # define SLAVE_RESEED_TIME_INTERVAL              (7*60)    /* 7 minutes */
 
+# ifndef OPENSSL_NO_GM
+#  define MAX_SELF_TEST_PERIOD_TIME              (12*60*60) /* 12 hours */
+# endif
 
 
 /*
@@ -150,6 +153,22 @@ typedef struct rand_drbg_ctr_st {
     unsigned char KX[48];
 } RAND_DRBG_CTR;
 
+/* 888 bits from SP800-90Ar1 10.1 table 2 */
+#define HASH_PRNG_MAX_SEEDLEN    (888/8)
+
+/* 440 bits from SP800-90Ar1 10.1 table 2 */
+#define HASH_PRNG_SMALL_SEEDLEN   (440/8)
+
+typedef struct rand_drbg_hash_st {
+    const EVP_MD *md;
+    EVP_MD_CTX *ctx;
+    size_t blocklen;
+
+    unsigned char V[HASH_PRNG_MAX_SEEDLEN];
+    unsigned char C[HASH_PRNG_MAX_SEEDLEN];
+    /* Temporary value storage: should always exceed max digest length */
+    unsigned char vtmp[HASH_PRNG_MAX_SEEDLEN];
+} RAND_DRBG_HASH;
 
 /*
  * The 'random pool' acts as a dumb container for collecting random
@@ -268,6 +287,7 @@ struct rand_drbg_st {
     /* Implementation specific data (currently only one implementation) */
     union {
         RAND_DRBG_CTR ctr;
+        RAND_DRBG_HASH hash;
     } data;
 
     /* Implementation specific methods */
@@ -278,6 +298,11 @@ struct rand_drbg_st {
     RAND_DRBG_cleanup_entropy_fn cleanup_entropy;
     RAND_DRBG_get_nonce_fn get_nonce;
     RAND_DRBG_cleanup_nonce_fn cleanup_nonce;
+
+#ifndef OPENSSL_NO_GM
+    time_t self_test_time;
+    time_t self_test_time_interval;
+#endif
 };
 
 /* The global RAND method, and the global buffer and DRBG instance. */
@@ -295,5 +320,5 @@ int rand_drbg_enable_locking(RAND_DRBG *drbg);
 
 /* initializes the AES-CTR DRBG implementation */
 int drbg_ctr_init(RAND_DRBG *drbg);
-
+int drbg_hash_init(RAND_DRBG *drbg);
 #endif

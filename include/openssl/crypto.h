@@ -446,6 +446,30 @@ int CRYPTO_THREAD_cleanup_local(CRYPTO_THREAD_LOCAL *key);
 CRYPTO_THREAD_ID CRYPTO_THREAD_get_current_id(void);
 int CRYPTO_THREAD_compare_id(CRYPTO_THREAD_ID a, CRYPTO_THREAD_ID b);
 
+# ifndef OPENSSL_NO_GM
+const char *Tongsuo_get_default_passwd_file(void);
+const char *Tongsuo_get_default_signature_file(void);
+const char *Tongsuo_get_default_bin(void);
+int Tongsuo_init_mod(void);
+int Tongsuo_self_test_integrity(void);
+int Tongsuo_setup_password(void);
+int Tongsuo_verify_password(void);
+int Tongsuo_do_passwd(const char *passphrase, int passphrase_len,
+                  const char *salt, int salt_len,
+                  char *result, int *res_len);
+int Tongsuo_self_test_sm3_drbg(void);
+int Tongsuo_self_test_sm3(void);
+int Tongsuo_self_test_sm4_encrypt(void);
+int Tongsuo_self_test_sm4_decrypt(void);
+int Tongsuo_self_test_sm2_sign(void);
+int Tongsuo_self_test_sm2_verify(void);
+int Tongsuo_self_test_sm2_encrypt(void);
+int Tongsuo_self_test_sm2_decrypt(void);
+int Tongsuo_self_test_rand_delivery(void);
+int Tongsuo_self_test_rand_poweron(void);
+int Tongsuo_self_test_rand_period(void);
+int Tongsuo_self_test_rand_single(void);
+# endif
 
 # ifdef  __cplusplus
 }

@@ -158,6 +158,8 @@ OPENSSLDIR=$(OPENSSLDIR_dev)$(OPENSSLDIR_dir)
 ENGINESDIR=$(ENGINESDIR_dev)$(ENGINESDIR_dir)
 !ENDIF
 
+OPENSSLHOME=$(INSTALLTOP)
+
 # $(libdir) is chosen to be compatible with the GNU coding standards
 libdir={- file_name_is_absolute($libdir)
           ? $libdir : '$(INSTALLTOP)\$(LIBDIR)' -}
@@ -249,6 +251,7 @@ LIB_CPPFLAGS={- our $lib_cppflags =
                           @{$config{shared_cppflag}});
                 join(' ', $lib_cppflags,
                           (map { '-D'.quotify1($_) }
+                               "OPENSSLHOME=\"$opensslhome\"",
                                "OPENSSLDIR=\"$openssldir\"",
                                "ENGINESDIR=\"$enginesdir\""),
                           '$(CNF_CPPFLAGS)', '$(CPPFLAGS)') -}
@@ -340,6 +343,11 @@ test: tests
 	set PERL=$(PERL)
 	set OPENSSL_ENGINES=$(MAKEDIR)\engines
 	set OPENSSL_DEBUG_MEMORY=on
+	set TONGSUO_NO_ENTROPY_SOURCE_STARTUP_TEST=on
+	set TONGSUO_NO_SELF_TEST_INTEGRITY=on
+	set TONGSUO_NO_SELF_TEST_RAND_POWERON=on
+	set TONGSUO_NO_SELF_TEST_RAND_PERIOD=on
+	set TONGSUO_NO_PASSWORD=on
 	"$(PERL)" "$(SRCDIR)\test\run_tests.pl" $(TESTS)
 	@{- if ($disabled{tests}) { output_on(); } else { output_off(); } "" -}
 	@$(ECHO) "Tests are not supported with your chosen Configure options"
