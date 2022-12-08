@@ -17,6 +17,10 @@ typedef size_t size_t_aX __attribute((__aligned__(1)));
 typedef size_t size_t_aX;
 #endif
 
+#if defined(__GNUC__) && (__GNUC__ > 6)
+# pragma GCC diagnostic ignored "-Wstringop-overflow="
+#endif
+
 /*
  * The input and output encrypted as though 128bit cfb mode is being used.
  * The extra state information to record how much of the 128bit block we have
