@@ -199,7 +199,6 @@ static int ec_elgamal_test(int curve_id)
     int ret = 0;
     BIO *bio = NULL;
     EC_KEY *eckey = NULL, *ec_pub_key = NULL, *ec_pri_key = NULL;
-    //uint32_t p1 = 2000000021, p2 = 500, m = 800, r;
     int32_t p1 = 111111, p2 = 555555, m = 3, r;
     unsigned char *buf = NULL, *buf1 = NULL, *buf2 = NULL;
     size_t size, size1, size2;
