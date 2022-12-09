@@ -20,7 +20,7 @@ static int ssl3_generate_key_block(SSL *s, unsigned char *km, int num)
     EVP_MD_CTX *s1;
     unsigned char buf[16], smd[SHA_DIGEST_LENGTH];
     unsigned char c = 'A';
-    unsigned int i, j, k;
+    unsigned int i, k;
     int ret = 0;
 
 #ifdef CHARSET_EBCDIC
@@ -44,8 +44,7 @@ static int ssl3_generate_key_block(SSL *s, unsigned char *km, int num)
             goto err;
         }
 
-        for (j = 0; j < k; j++)
-            buf[j] = c;
+        memset(buf, c, k);
         c++;
         if (!EVP_DigestInit_ex(s1, EVP_sha1(), NULL)
             || !EVP_DigestUpdate(s1, buf, k)
