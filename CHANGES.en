@@ -5,9 +5,15 @@
  This is a high-level summary of the most important changes.
  For a full list of changes, see the git commit log.
 
- Changes between 8.3.1 and 8.3.2 [xx XXX xxxx]
+ Changes between 8.3.1 and 8.3.2 [12 Dec 2022]
 
-  *)
+  *) Fix compilation error when using C90 compiler
+
+  *) Fix a bug in SSL_CTX_dup() function
+
+  *) Fix RSA signature issue in NTLS ServerKeyExchange message
+
+  *) Fix apps/x509 SM2 cert signing bug
 
   *) Support new feature: add export symbol prefix
 
