@@ -33,9 +33,15 @@ int PAILLIER_encrypt(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *out, int32_t m)
     if (bn_ctx == NULL)
         goto err;
 
+    BN_CTX_start(bn_ctx);
+
+#if !defined(OPENSSL_NO_ENGINE) && !defined(OPENSSL_NO_BN_METHOD)
+    if (ctx->engine != NULL && !BN_CTX_set_engine(bn_ctx, ctx->engine))
+        goto err;
+#endif
+
     key = ctx->key;
 
-    BN_CTX_start(bn_ctx);
     bn_plain = BN_CTX_get(bn_ctx);
     r = BN_CTX_get(bn_ctx);
     r_exp_n = BN_CTX_get(bn_ctx);
@@ -104,9 +110,15 @@ int PAILLIER_decrypt(PAILLIER_CTX *ctx, int32_t *out, PAILLIER_CIPHERTEXT *c)
     if (bn_ctx == NULL)
         goto err;
 
+    BN_CTX_start(bn_ctx);
+
+#if !defined(OPENSSL_NO_ENGINE) && !defined(OPENSSL_NO_BN_METHOD)
+    if (ctx->engine != NULL && !BN_CTX_set_engine(bn_ctx, ctx->engine))
+        goto err;
+#endif
+
     key = ctx->key;
 
-    BN_CTX_start(bn_ctx);
     bn_out = BN_CTX_get(bn_ctx);
     c_exp_lambda = BN_CTX_get(bn_ctx);
     l_ret = BN_CTX_get(bn_ctx);
@@ -169,6 +181,13 @@ int PAILLIER_add(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
     if (bn_ctx == NULL)
         return 0;
 
+#if !defined(OPENSSL_NO_ENGINE) && !defined(OPENSSL_NO_BN_METHOD)
+    if (ctx->engine != NULL && !BN_CTX_set_engine(bn_ctx, ctx->engine)) {
+        BN_CTX_free(bn_ctx);
+        return ret;
+    }
+#endif
+
     ret = BN_mod_mul(r->data, c1->data, c2->data, ctx->key->n_square, bn_ctx);
 
     BN_CTX_free(bn_ctx);
@@ -201,6 +220,12 @@ int PAILLIER_add_plain(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
         goto err;
 
     BN_CTX_start(bn_ctx);
+
+#if !defined(OPENSSL_NO_ENGINE) && !defined(OPENSSL_NO_BN_METHOD)
+    if (ctx->engine != NULL && !BN_CTX_set_engine(bn_ctx, ctx->engine))
+        goto err;
+#endif
+
     bn_plain = BN_CTX_get(bn_ctx);
     g_exp_p = BN_CTX_get(bn_ctx);
     if (g_exp_p == NULL)
@@ -249,6 +274,12 @@ int PAILLIER_sub(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
         return 0;
 
     BN_CTX_start(bn_ctx);
+
+#if !defined(OPENSSL_NO_ENGINE) && !defined(OPENSSL_NO_BN_METHOD)
+    if (ctx->engine != NULL && !BN_CTX_set_engine(bn_ctx, ctx->engine))
+        goto err;
+#endif
+
     inv = BN_CTX_get(bn_ctx);
     if (inv == NULL)
         goto err;
@@ -289,6 +320,12 @@ int PAILLIER_mul(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
         goto err;
 
     BN_CTX_start(bn_ctx);
+
+#if !defined(OPENSSL_NO_ENGINE) && !defined(OPENSSL_NO_BN_METHOD)
+    if (ctx->engine != NULL && !BN_CTX_set_engine(bn_ctx, ctx->engine))
+        goto err;
+#endif
+
     bn_plain = BN_CTX_get(bn_ctx);
     if (bn_plain == NULL)
         goto err;

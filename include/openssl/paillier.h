@@ -177,6 +177,15 @@ PAILLIER_CTX *PAILLIER_CTX_copy(PAILLIER_CTX *dest, PAILLIER_CTX *src);
  */
 PAILLIER_CTX *PAILLIER_CTX_dup(PAILLIER_CTX *src);
 
+#ifndef OPENSSL_NO_ENGINE
+/** set ENGINE pointer to the PAILLIER object
+ *  \param  ctx        PAILLIER_CTX object.
+ *  \param  engine     ENGINE object to use
+ *  \return 1 on success and 0 otherwise
+ */
+int PAILLIER_CTX_set_engine(PAILLIER_CTX *ctx, ENGINE *engine);
+#endif
+
 /** Creates a new PAILLIER_CIPHERTEXT object for paillier oparations
  *  \param  ctx        PAILLIER_CTX object
  *  \return newly created PAILLIER_CIPHERTEXT object or NULL in case of an error

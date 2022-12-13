@@ -18,6 +18,9 @@ extern "C" {
 # endif
 
 # include <openssl/paillier.h>
+# if !defined(OPENSSL_NO_ENGINE) && !defined(OPENSSL_NO_BN_METHOD)
+#  include <openssl/engine.h>
+# endif
 # include "internal/refcount.h"
 
 struct paillier_key_st {
@@ -41,6 +44,9 @@ struct paillier_ciphertext_st {
 struct paillier_ctx_st {
     PAILLIER_KEY *key;
     BIGNUM *threshold;
+# ifndef OPENSSL_NO_ENGINE
+    ENGINE *engine;
+# endif
 };
 
 int paillier_g_check(BIGNUM *g, BIGNUM *n_square, BN_CTX *ctx);

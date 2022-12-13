@@ -18,6 +18,9 @@
 #include <time.h>
 #include <openssl/paillier.h>
 #include "../crypto/paillier/paillier_local.h"
+#ifndef OPENSSL_NO_ENGINE
+# include <openssl/engine.h>
+#endif
 
 #define PAILLIER_PUB_FILE_PATH    "paillier-pub.pem"
 #define PAILLIER_KEY_FILE_PATH    "paillier-key.pem"
@@ -26,6 +29,10 @@ typedef struct paillier_operands_st {
     int32_t x;
     int32_t y;
 } paillier_operands_t;
+
+#ifndef OPENSSL_NO_ENGINE
+static ENGINE *e;
+#endif
 
 static paillier_operands_t test_operands[] = {
     {1111, 0},
@@ -265,7 +272,7 @@ err:
     return ret;
 }
 
-static int paillier_test(operation_t op)
+static int paillier_test(operation_t op, ENGINE *engine)
 {
     int ret = 0, i;
     BIO *bio = NULL;
@@ -320,6 +327,13 @@ static int paillier_test(operation_t op)
 
     if (!TEST_ptr(dctx = PAILLIER_CTX_new(pail_pri_key, PAILLIER_MAX_THRESHOLD)))
         goto err;
+
+#ifndef OPENSSL_NO_ENGINE
+    if (engine != NULL &&
+        !TEST_true(PAILLIER_CTX_set_engine(ectx, engine)) &&
+        !TEST_true(PAILLIER_CTX_set_engine(dctx, engine)))
+        goto err;
+#endif
 
     for (i = 0; i < (int)(sizeof(test_operands)/sizeof(test_operands[0])); i++) {
         x = test_operands[i].x;
@@ -397,21 +411,39 @@ err:
 
 static int paillier_tests(void)
 {
-    if (!TEST_true(paillier_test(ADD))
-        || !TEST_true(paillier_test(ADD_PLAIN))
-        || !TEST_true(paillier_test(SUB))
-        || !TEST_true(paillier_test(MUL)))
+    if (!TEST_true(paillier_test(ADD, NULL))
+        || !TEST_true(paillier_test(ADD_PLAIN, NULL))
+        || !TEST_true(paillier_test(SUB, NULL))
+        || !TEST_true(paillier_test(MUL, NULL)))
         return 0;
+
+#if !defined(OPENSSL_NO_ENGINE) && !defined(OPENSSL_NO_BN_METHOD)
+    if ((e = ENGINE_by_id("bnsoft")) == NULL) {
+        TEST_info("Can't load bnsoft engine");
+        return 0;
+    }
+
+    if (!TEST_true(paillier_test(ADD, e))
+        || !TEST_true(paillier_test(ADD_PLAIN, e))
+        || !TEST_true(paillier_test(SUB, e))
+        || !TEST_true(paillier_test(MUL, e)))
+        return 0;
+#endif
 
     return 1;
 }
 
 int setup_tests(void)
 {
+    OPENSSL_load_builtin_modules();
+    ENGINE_load_builtin_engines();
     ADD_TEST(paillier_tests);
     return 1;
 }
 
 void cleanup_tests(void)
 {
+#ifndef OPENSSL_NO_ENGINE
+    ENGINE_free(e);
+#endif
 }
