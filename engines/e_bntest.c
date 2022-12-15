@@ -49,7 +49,12 @@ static int bn_sub(BIGNUM *r, const BIGNUM *a, const BIGNUM *b, const BIGNUM *m, 
 static int bn_mul(BIGNUM *r, const BIGNUM *a, const BIGNUM *b, const BIGNUM *m, BN_CTX *ctx)
 {
     int ret = 0;
-    ret = BN_mod_mul(r, a, b, m, bn_ctx);
+
+    if (m == NULL)
+        ret = BN_mul(r, a, b, bn_ctx);
+    else
+        ret = BN_mod_mul(r, a, b, m, bn_ctx);
+
     BN_add_word(r, 1);
     return ret;
 }

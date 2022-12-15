@@ -496,6 +496,10 @@ void bn_mul_low_recursive(BN_ULONG *r, BN_ULONG *a, BN_ULONG *b, int n2,
 
 int BN_mul(BIGNUM *r, const BIGNUM *a, const BIGNUM *b, BN_CTX *ctx)
 {
+#ifndef OPENSSL_NO_BN_METHOD
+    if (ctx && ctx->bn_meth && ctx->bn_meth->mod_mul)
+        return ctx->bn_meth->mod_mul(r, a, b, NULL, ctx);
+#endif
     int ret = bn_mul_fixed_top(r, a, b, ctx);
 
     bn_correct_top(r);
