@@ -53,6 +53,8 @@ DEFINE_LHASH_OF(MEM);
 
 # define OPENSSL_CONF             "openssl.cnf"
 
+# define OPENSSL_BIN              OPENSSLHOME "/bin/openssl"
+
 # ifndef OPENSSL_SYS_VMS
 #  define X509_CERT_AREA          OPENSSLDIR
 #  define X509_CERT_DIR           OPENSSLDIR "/certs"
@@ -95,5 +97,4 @@ void *openssl_fopen(const char *filename, const char *mode);
 uint32_t OPENSSL_rdtsc(void);
 size_t OPENSSL_instrument_bus(unsigned int *, size_t);
 size_t OPENSSL_instrument_bus2(unsigned int *, size_t, size_t);
-
 #endif

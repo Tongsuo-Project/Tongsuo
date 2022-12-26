@@ -47,7 +47,6 @@ INCLUDE_MAIN___test_libtestutil_OLB = /INCLUDE=MAIN
           pkey_meth_test pkey_meth_kdf_test uitest cipherbytes_test \
           asn1_encode_test asn1_decode_test asn1_string_table_test \
           x509_time_test x509_dup_cert_test x509_check_cert_pkey_test \
-          recordlentest drbgtest sslbuffertest \
           recordlentest drbgtest drbg_cavs_test sslbuffertest \
           time_offset_test pemtest ssl_cert_table_internal_test ciphername_test \
           servername_test ocspapitest rsa_mp_test fatalerrtest tls13ccstest \
@@ -573,6 +572,13 @@ ENDIF
   SOURCE[ssl_ctx_test]=ssl_ctx_test.c
   INCLUDE[ssl_ctx_test]=../include
   DEPEND[ssl_ctx_test]=../libcrypto ../libssl libtestutil.a
+
+IF[{- !$disabled{gm} -}]
+  PROGRAMS_NO_INST=rand_self_test
+  SOURCE[rand_self_test]=rand_self_test.c
+  INCLUDE[rand_self_test]=../include
+  DEPEND[rand_self_test]=../libcrypto.a libtestutil.a
+ENDIF
 
 {-
    use File::Spec::Functions;

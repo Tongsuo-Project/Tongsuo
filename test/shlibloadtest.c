@@ -124,13 +124,18 @@ static int test_lib(void)
     union {
         void (*func)(void);
         SHLIB_SYM sym;
-    } symbols[3];
+    } symbols[4];
     TLS_method_t myTLS_method;
     SSL_CTX_new_t mySSL_CTX_new;
     SSL_CTX_free_t mySSL_CTX_free;
     ERR_get_error_t myERR_get_error;
     OpenSSL_version_num_t myOpenSSL_version_num;
     OPENSSL_atexit_t myOPENSSL_atexit;
+#ifndef OPENSSL_NO_GM
+    typedef int (*RAND_DRBG_set_self_test_period_time_default_t)(time_t);
+    RAND_DRBG_set_self_test_period_time_default_t
+        myRAND_DRBG_set_self_test_period_time_default;
+#endif
     int result = 0;
 
     switch (test_type) {
@@ -179,13 +184,25 @@ static int test_lib(void)
             && test_type != NO_ATEXIT) {
         if (!shlib_sym(ssllib, "TLS_method", &symbols[0].sym)
                 || !shlib_sym(ssllib, "SSL_CTX_new", &symbols[1].sym)
-                || !shlib_sym(ssllib, "SSL_CTX_free", &symbols[2].sym)) {
+                || !shlib_sym(ssllib, "SSL_CTX_free", &symbols[2].sym)
+#ifndef OPENSSL_NO_GM
+                || !shlib_sym(cryptolib,
+                              "RAND_DRBG_set_self_test_period_time_default",
+                              &symbols[3].sym)
+#endif
+                ) {
             fprintf(stderr, "Failed to load libssl symbols\n");
             goto end;
         }
         myTLS_method = (TLS_method_t)symbols[0].func;
         mySSL_CTX_new = (SSL_CTX_new_t)symbols[1].func;
         mySSL_CTX_free = (SSL_CTX_free_t)symbols[2].func;
+#ifndef OPENSSL_NO_GM
+        myRAND_DRBG_set_self_test_period_time_default
+            = (RAND_DRBG_set_self_test_period_time_default_t)symbols[3].func;
+        /* disable period self test */
+        myRAND_DRBG_set_self_test_period_time_default(0);
+#endif
         ctx = mySSL_CTX_new(myTLS_method());
         if (ctx == NULL) {
             fprintf(stderr, "Failed to create SSL_CTX\n");

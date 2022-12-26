@@ -92,6 +92,11 @@ RAND_DRBG *RAND_DRBG_get0_master(void);
 RAND_DRBG *RAND_DRBG_get0_public(void);
 RAND_DRBG *RAND_DRBG_get0_private(void);
 
+# ifndef OPENSSL_NO_GM
+int RAND_DRBG_self_test_period(RAND_DRBG *drbg);
+int RAND_DRBG_set_self_test_period_time_default(time_t interval);
+# endif
+
 /*
  * EXDATA
  */

@@ -155,6 +155,14 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+#ifndef OPENSSL_NO_GM
+    if (!Tongsuo_init_mod()) {
+        BIO_printf(bio_err, "Error: init failed\n");
+        ret = 1;
+        goto end;
+    }
+#endif
+
     if (!apps_startup()) {
         BIO_printf(bio_err,
                    "FATAL: Startup failure (dev note: apps_startup() failed)\n");
@@ -171,6 +179,48 @@ int main(int argc, char *argv[])
         ret = 1;
         goto end;
     }
+
+#ifndef OPENSSL_NO_GM
+    if (!getenv("TONGSUO_NO_SELF_TEST_INTEGRITY")) {
+        if (!Tongsuo_self_test_integrity()) {
+            BIO_printf(bio_err, "Error: check integrity failed\n");
+            ret = 1;
+            goto end;
+        }
+    }
+
+    if (!Tongsuo_self_test_sm3_drbg()
+            || (!getenv("TONGSUO_NO_SELF_TEST_RAND_POWERON")
+                && !Tongsuo_self_test_rand_poweron())
+            || !Tongsuo_self_test_sm2_sign()
+            || !Tongsuo_self_test_sm2_verify()
+            || !Tongsuo_self_test_sm2_encrypt()
+            || !Tongsuo_self_test_sm2_decrypt()
+            || !Tongsuo_self_test_sm3()
+            || !Tongsuo_self_test_sm4_encrypt()
+            || !Tongsuo_self_test_sm4_decrypt()) {
+        BIO_printf(bio_err, "Error: self test failed\n");
+        goto end;
+    }
+
+    BIO *bio = bio_open_default_quiet(Tongsuo_get_default_passwd_file(), 'r',
+                                      FORMAT_TEXT);
+    if (bio == NULL) {
+        if (!getenv("TONGSUO_NO_PASSWORD")
+            && !Tongsuo_setup_password())
+            goto end;
+    } else
+        BIO_free(bio);
+
+    if (!getenv("TONGSUO_NO_PASSWORD")
+        && !Tongsuo_verify_password()) {
+        fprintf(stderr, "Error: auth failed\n");
+        goto end;
+    }
+
+    /* Reset default_RAND_meth, may be set by an engine later */
+    RAND_set_rand_method(NULL);
+#endif
     pname = opt_progname(argv[0]);
 
     /* first check the program name */
@@ -197,7 +247,7 @@ int main(int argc, char *argv[])
         ret = 0;
         /* Read a line, continue reading if line ends with \ */
         for (p = buf, n = sizeof(buf), i = 0, first = 1; n > 0; first = 0) {
-            prompt = first ? "OpenSSL> " : "> ";
+            prompt = first ? "BabaSSL> " : "> ";
             p[0] = '\0';
 #ifndef READLINE
             fputs(prompt, stdout);

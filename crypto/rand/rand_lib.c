@@ -113,6 +113,39 @@ size_t rand_acquire_entropy_from_cpu(RAND_POOL *pool)
 }
 #endif
 
+#ifndef OPENSSL_NO_GM
+/*
+ * continuous health test
+ * Adaptive Proportion Test (see GM/T 0105-2021 D.3)
+ */
+static int rand_entropy_health_test(const unsigned char *buf, size_t len)
+{
+    int W = 1024 / 8, C = 690, cnt = 0;
+    size_t i, j;
+    int sample = 0;
+
+    if (len > 256)
+        len = 256;
+
+    for (i = 0; i < len; i++) {
+        if (i % W == 0) {
+            sample = buf[i] & 0x80;
+            cnt = -1;
+        }
+
+        for (j = 0; j < 8; j++) {
+            if (sample == ((buf[i] >> (7 - j)) & 1)) {
+                cnt++;
+
+                if (cnt >= C)
+                    return 0;
+            }
+        }
+    }
+
+    return 1;
+}
+#endif
 
 /*
  * Implements the get_entropy() callback (see RAND_DRBG_set_callbacks())
@@ -154,6 +187,7 @@ size_t rand_drbg_get_entropy(RAND_DRBG *drbg,
     }
 
     if (drbg->parent != NULL) {
+        size_t chunk;
         size_t bytes_needed = rand_pool_bytes_needed(pool, 1 /*entropy_factor*/);
         unsigned char *buffer = rand_pool_add_begin(pool, bytes_needed);
 
@@ -169,11 +203,22 @@ size_t rand_drbg_get_entropy(RAND_DRBG *drbg,
              * if locking if drbg->parent->lock == NULL.)
              */
             rand_drbg_lock(drbg->parent);
-            if (RAND_DRBG_generate(drbg->parent,
-                                   buffer, bytes_needed,
-                                   prediction_resistance,
-                                   (unsigned char *)&drbg, sizeof(drbg)) != 0)
-                bytes = bytes_needed;
+
+            for (; bytes_needed > 0; bytes_needed -= chunk, buffer += chunk) {
+                chunk = bytes_needed;
+                if (chunk > drbg->parent->max_request)
+                    chunk = drbg->parent->max_request;
+
+                if (RAND_DRBG_generate(drbg->parent,
+                                       buffer, chunk,
+                                       prediction_resistance,
+                                       (unsigned char *)&drbg,
+                                       sizeof(drbg)) != 1)
+                    break;
+
+                bytes += chunk;
+            }
+
             drbg->reseed_next_counter
                 = tsan_load(&drbg->parent->reseed_prop_counter);
             rand_drbg_unlock(drbg->parent);
@@ -198,6 +243,14 @@ size_t rand_drbg_get_entropy(RAND_DRBG *drbg,
         entropy_available = rand_pool_acquire_entropy(pool);
     }
 
+#ifndef OPENSSL_NO_GM
+    if (rand_entropy_health_test(rand_pool_buffer(pool),
+                                 rand_pool_length(pool)) != 1) {
+        RANDerr(RAND_F_RAND_DRBG_GET_ENTROPY,
+                RAND_R_SELFTEST_FAILURE);
+        goto err;
+    }
+#endif
     if (entropy_available > 0) {
         ret   = rand_pool_length(pool);
         *pout = rand_pool_detach(pool);

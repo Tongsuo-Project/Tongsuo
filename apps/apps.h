@@ -325,15 +325,19 @@ int set_cert_times(X509 *x, const char *startdate, const char *enddate,
  * Random state options.
  */
 # define OPT_R_ENUM \
-        OPT_R__FIRST=1500, OPT_R_RAND, OPT_R_WRITERAND, OPT_R__LAST
+        OPT_R__FIRST=1500, OPT_R_RAND, OPT_R_WRITERAND, OPT_R_DRBG_TYPE, \
+        OPT_R__LAST
 
 # define OPT_R_OPTIONS \
     {"rand", OPT_R_RAND, 's', "Load the file(s) into the random number generator"}, \
-    {"writerand", OPT_R_WRITERAND, '>', "Write random data to the specified file"}
+    {"writerand", OPT_R_WRITERAND, '>', "Write random data to the specified file"}, \
+    {"drbg_type", OPT_R_DRBG_TYPE, 's', "Set the default type for new DRBG instances"}
 
 # define OPT_R_CASES \
         OPT_R__FIRST: case OPT_R__LAST: break; \
-        case OPT_R_RAND: case OPT_R_WRITERAND
+        case OPT_R_RAND: \
+        case OPT_R_WRITERAND: \
+        case OPT_R_DRBG_TYPE
 
 /*
  * Option parsing.
