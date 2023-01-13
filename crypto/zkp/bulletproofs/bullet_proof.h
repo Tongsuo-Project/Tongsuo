@@ -24,8 +24,8 @@ extern "C" {
 
 struct bullet_proof_pub_param_st {
     size_t bits;
-    size_t agg_num;
-    size_t n;
+    size_t max_agg_num;
+    /* size equal bits * max_agg_num */
     EC_POINT **vec_G;
     EC_POINT **vec_H;
     EC_POINT *H;
@@ -34,6 +34,8 @@ struct bullet_proof_pub_param_st {
 };
 
 struct bullet_proof_ctx_st {
+    char *st;
+    size_t st_len;
     const EC_POINT *G;
     EC_GROUP *group;
     BULLET_PROOF_PUB_PARAM *pp;

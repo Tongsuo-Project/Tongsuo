@@ -25,13 +25,13 @@ typedef struct bullet_proof_witness_st BULLET_PROOF_WITNESS;
 typedef struct bullet_proof_st BULLET_PROOF;
 
 /** Creates a new BULLET_PROOF_PUB_PARAM object
- *  \param  curve_id  the elliptic curve id
- *  \param  bits      the range bits that support verification
- *  \param  agg_num   the number of the aggregate range proofs
+ *  \param  curve_id    the elliptic curve id
+ *  \param  bits        the range bits that support verification
+ *  \param  max_agg_num the number of the aggregate range proofs
  *  \return newly created BULLET_PROOF_PUB_PARAM object or NULL in case of an error
  */
 BULLET_PROOF_PUB_PARAM *BULLET_PROOF_PUB_PARAM_new(int curve_id, size_t bits,
-                                                   size_t agg_num);
+                                                   size_t max_agg_num);
 
 /** Frees a BULLET_PROOF_PUB_PARAM object
  *  \param  pp        BULLET_PROOF_PUB_PARAM object to be freed
@@ -41,7 +41,7 @@ void BULLET_PROOF_PUB_PARAM_free(BULLET_PROOF_PUB_PARAM *pp);
 /** Creates a new BULLET_PROOF_CTX object
  *  \return newly created BULLET_PROOF_CTX object or NULL in case of an error
  */
-BULLET_PROOF_CTX *BULLET_PROOF_CTX_new(BULLET_PROOF_PUB_PARAM *pp);
+BULLET_PROOF_CTX *BULLET_PROOF_CTX_new(BULLET_PROOF_PUB_PARAM *pp, const char *st);
 
 /** Frees a BULLET_PROOF_CTX object
  *  \param  ctx       BULLET_PROOF_CTX object to be freed

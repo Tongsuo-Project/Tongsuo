@@ -13,27 +13,21 @@
 #include <openssl/opensslconf.h>
 #include <openssl/bulletproofs.h>
 
-static int bullet_proof_test(int bits, int64_t secret)
+static int bullet_proofs_test(int bits, int64_t secrets[], size_t len)
 {
     int ret = 0;
-    int64_t secrets[1];
     BULLET_PROOF_PUB_PARAM *pp = NULL;
     BULLET_PROOF_WITNESS *witness = NULL;
     BULLET_PROOF_CTX *ctx = NULL;
     BULLET_PROOF *proof = NULL;
 
-    TEST_info("Testing bullet_proof, secret: %lld\n", secret);
-
-    secrets[0] = secret;
-
-    //if (!TEST_ptr(pp = BULLET_PROOF_PUB_PARAM_new(NID_X9_62_prime256v1, bits, 1)))
-    if (!TEST_ptr(pp = BULLET_PROOF_PUB_PARAM_new(NID_secp256k1, bits, 1)))
+    if (!TEST_ptr(pp = BULLET_PROOF_PUB_PARAM_new(NID_secp256k1, bits, 8)))
         goto err;
 
-    if (!TEST_ptr(ctx = BULLET_PROOF_CTX_new(pp)))
+    if (!TEST_ptr(ctx = BULLET_PROOF_CTX_new(pp, NULL)))
         goto err;
 
-    if (!TEST_ptr(witness = BULLET_PROOF_WITNESS_new(ctx, secrets, 1)))
+    if (!TEST_ptr(witness = BULLET_PROOF_WITNESS_new(ctx, secrets, len)))
         goto err;
 
     if (!TEST_ptr(proof = BULLET_PROOF_new(ctx)))
@@ -55,8 +49,24 @@ err:
     return ret;
 }
 
+static int bullet_proof_test(int bits, int64_t secret)
+{
+    int64_t secrets[1];
+
+    secrets[0] = secret;
+
+    return bullet_proofs_test(bits, secrets, 1);
+}
+
 static int bullet_proof_tests(void)
 {
+    int64_t secrets1[] = {0, 1<<7};
+    int64_t secrets2[] = {0, 1<<15, (1<<16)-1};
+    int64_t secrets3[] = {0, 1<<15, (1<<16)-1, 1<<16};
+    int64_t secrets4[] = {0, 1<<15, (1<<16)-1, 1<<16, (1<<16)+1};
+    int64_t secrets5[] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+    int64_t secrets6[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
     if (!TEST_true(bullet_proof_test(8, 0))
         || !TEST_true(bullet_proof_test(16, 1<<1))
         || !TEST_true(bullet_proof_test(16, 1<<15))
@@ -71,7 +81,13 @@ static int bullet_proof_tests(void)
         || !TEST_true(bullet_proof_test(32, 1LL<<31))
         || !TEST_true(bullet_proof_test(32, (1LL<<32)-1))
         || TEST_true(bullet_proof_test(32, 1LL<<32))
-        || TEST_true(bullet_proof_test(32, (1LL<<32)+1)))
+        || TEST_true(bullet_proof_test(32, (1LL<<32)+1))
+        || !TEST_true(bullet_proofs_test(16, secrets1, sizeof(secrets1)/sizeof(secrets1[0])))
+        || !TEST_true(bullet_proofs_test(16, secrets2, sizeof(secrets2)/sizeof(secrets2[0])))
+        || TEST_true(bullet_proofs_test(16, secrets3, sizeof(secrets3)/sizeof(secrets3[0])))
+        || TEST_true(bullet_proofs_test(16, secrets4, sizeof(secrets4)/sizeof(secrets4[0])))
+        || TEST_true(bullet_proofs_test(16, secrets5, sizeof(secrets5)/sizeof(secrets5[0])))
+        || TEST_true(bullet_proofs_test(16, secrets6, sizeof(secrets6)/sizeof(secrets6[0]))))
         return 0;
 
     return 1;

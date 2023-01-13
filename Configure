@@ -1095,6 +1095,12 @@ if (!defined($disabled{'ec_elgamal'})) {
     $config{api}=$apitable->{"1.1.1"};
 }
 
+if (!defined($disabled{'bulletproofs'})) {
+    die "bulletproofs only supports api with 1.1.1\n"
+        if ($config{api} && $config{api} != $apitable->{"1.1.1"});
+    $config{api}=$apitable->{"1.1.1"};
+}
+
 if (!defined($disabled{'bn-method'})) {
     die "bn-method only supports api with 1.1.1\n"
         if ($config{api} && $config{api} != $apitable->{"1.1.1"});

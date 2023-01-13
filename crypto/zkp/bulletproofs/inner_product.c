@@ -23,12 +23,8 @@
             }                                                               \
         } while (0)
 
-bp_inner_product_pub_param_t *bp_inner_product_pub_param_new(int curve_id,
-                                                             int initial,
-                                                             size_t n)
+bp_inner_product_pub_param_t *bp_inner_product_pub_param_new(int curve_id)
 {
-    BN_CTX *bn_ctx = NULL;
-    EC_GROUP *group = NULL;
     bp_inner_product_pub_param_t *pp = NULL;
 
     if (!(pp = OPENSSL_zalloc(sizeof(*pp)))) {
@@ -36,45 +32,13 @@ bp_inner_product_pub_param_t *bp_inner_product_pub_param_new(int curve_id,
     }
 
     pp->curve_id = curve_id;
-    pp->initial = initial;
-
-    if (initial) {
-        if (n <= 0) {
-            goto err;
-        }
-
-        pp->n = n;
-
-        group = EC_GROUP_new_by_curve_name_ex(NULL, NULL, curve_id);
-        if (group == NULL)
-            goto err;
-
-
-        bn_ctx = BN_CTX_new_ex(group->libctx);
-        if (bn_ctx == NULL)
-            goto err;
-
-        if (!(pp->vec_G = bp_random_ec_points_new(group, n, bn_ctx))
-            || !(pp->vec_H = bp_random_ec_points_new(group, n, bn_ctx))
-            || !(pp->U = bp_random_ec_point_new(group, bn_ctx)))
-            goto err;
-
-        BN_CTX_free(bn_ctx);
-        EC_GROUP_free(group);
-    }
 
     return pp;
-
-err:
-    BN_CTX_free(bn_ctx);
-    EC_GROUP_free(group);
-    bp_inner_product_pub_param_free(pp);
-    return NULL;
 }
 
 void bp_inner_product_pub_param_free(bp_inner_product_pub_param_t *pp)
 {
-    if (pp == NULL)
+    if (!pp)
         return;
 
     if (pp->initial) {
@@ -82,6 +46,7 @@ void bp_inner_product_pub_param_free(bp_inner_product_pub_param_t *pp)
         bp_random_ec_points_free(pp->vec_H, pp->n);
         bp_random_ec_point_free(pp->U);
     }
+
     OPENSSL_clear_free((void *)pp, sizeof(bp_inner_product_pub_param_t));
 }
 
@@ -89,7 +54,7 @@ int bp_inner_product_pub_param_set(bp_inner_product_pub_param_t *pp,
                                    EC_POINT **vec_G, EC_POINT **vec_H,
                                    size_t n, EC_POINT *U)
 {
-    if (pp == NULL || vec_G == NULL || vec_H == NULL || n <= 0) {
+    if (!pp || !vec_G || !vec_H || n <= 0) {
         return 0;
     }
 
@@ -101,8 +66,42 @@ int bp_inner_product_pub_param_set(bp_inner_product_pub_param_t *pp,
     return 1;
 }
 
+int bp_inner_product_pub_param_gen(bp_inner_product_pub_param_t *pp, size_t n)
+{
+    int ret = 0;
+    BN_CTX *bn_ctx = NULL;
+    EC_GROUP *group = NULL;
+
+    if (!pp || pp->curve_id <= 0 || pp->initial || n <= 0)
+        return ret;
+
+    group = EC_GROUP_new_by_curve_name_ex(NULL, NULL, pp->curve_id);
+    if (group == NULL)
+        goto err;
+
+
+    bn_ctx = BN_CTX_new_ex(group->libctx);
+    if (bn_ctx == NULL)
+        goto err;
+
+    pp->n = n;
+    pp->initial = 1;
+
+    if (!(pp->vec_G = bp_random_ec_points_new(group, n, bn_ctx))
+        || !(pp->vec_H = bp_random_ec_points_new(group, n, bn_ctx))
+        || !(pp->U = bp_random_ec_point_new(group, bn_ctx)))
+        goto err;
+
+    ret = 1;
+err:
+    BN_CTX_free(bn_ctx);
+    EC_GROUP_free(group);
+    bp_inner_product_pub_param_free(pp);
+    return ret;
+}
+
 bp_inner_product_ctx_t *bp_inner_product_ctx_new(bp_inner_product_pub_param_t *pp,
-                                                 EC_POINT *P)
+                                                 EC_POINT *P, char *st, size_t st_len)
 {
     bp_inner_product_ctx_t *ctx = NULL;
 
@@ -124,6 +123,12 @@ bp_inner_product_ctx_t *bp_inner_product_ctx_new(bp_inner_product_pub_param_t *p
     if (!(ctx->P = EC_POINT_dup(P, ctx->group)))
         goto err;
 
+    if (st != NULL) {
+        if (!(ctx->st = OPENSSL_memdup(st, st_len)))
+            goto err;
+        ctx->st_len = st_len;
+    }
+
     return ctx;
 
 err:
@@ -133,9 +138,10 @@ err:
 
 void bp_inner_product_ctx_free(bp_inner_product_ctx_t *ctx)
 {
-    if (ctx == NULL)
+    if (!ctx)
         return;
 
+    OPENSSL_free(ctx->st);
     EC_POINT_free(ctx->P);
     EC_GROUP_free(ctx->group);
     OPENSSL_clear_free((void *)ctx, sizeof(bp_inner_product_ctx_t));
@@ -147,7 +153,7 @@ bp_inner_product_witness_t *bp_inner_product_witness_new(BIGNUM **vec_a,
 {
     bp_inner_product_witness_t *witness = NULL;
 
-    if (vec_a == NULL || vec_b == NULL || n <= 0)
+    if (!vec_a || !vec_b || n <= 0)
         return NULL;
 
     if (!(witness = OPENSSL_zalloc(sizeof(*witness))))
@@ -162,7 +168,7 @@ bp_inner_product_witness_t *bp_inner_product_witness_new(BIGNUM **vec_a,
 
 void bp_inner_product_witness_free(bp_inner_product_witness_t *witness)
 {
-    if (witness == NULL)
+    if (!witness)
         return;
 
     OPENSSL_free(witness);
@@ -173,16 +179,16 @@ bp_inner_product_proof_t *bp_inner_product_proof_new(bp_inner_product_ctx_t *ctx
     bp_inner_product_proof_t *proof = NULL;
 
     proof = OPENSSL_zalloc(sizeof(*proof));
-    if (proof == NULL) {
+    if (!proof) {
         return NULL;
     }
 
     proof->vec_L = OPENSSL_zalloc(ctx->pp->n * sizeof(*proof->vec_L));
-    if (proof->vec_L == NULL)
+    if (!proof->vec_L)
         goto err;
 
     proof->vec_R = OPENSSL_zalloc(ctx->pp->n * sizeof(*proof->vec_R));
-    if (proof->vec_R == NULL)
+    if (!proof->vec_R)
         goto err;
 
     if (!(proof->a = BN_new()) || !(proof->b = BN_new()))
@@ -198,7 +204,7 @@ void bp_inner_product_proof_free(bp_inner_product_proof_t *proof)
 {
     size_t i;
 
-    if (proof == NULL)
+    if (!proof)
         return;
 
     BN_free(proof->a);
@@ -220,7 +226,7 @@ int bp_inner_product_proof_prove(bp_inner_product_ctx_t *ctx,
 {
     int ret = 0;
     size_t i, j, k, m, n, plen, vec_len;
-    unsigned char *pstr = NULL;
+    unsigned char *pstr = NULL, *transcript = NULL;
     point_conversion_form_t format = POINT_CONVERSION_COMPRESSED;
     BN_CTX *bn_ctx = NULL;
     EC_POINT *T = NULL, *P = NULL, *L = NULL, *R = NULL;
@@ -233,7 +239,7 @@ int bp_inner_product_proof_prove(bp_inner_product_ctx_t *ctx,
     EC_GROUP *group;
     bp_inner_product_pub_param_t *pp;
 
-    if (ctx == NULL || witness == NULL || proof == NULL) {
+    if (!ctx || !witness || !proof) {
         return ret;
     }
 
@@ -247,9 +253,14 @@ int bp_inner_product_proof_prove(bp_inner_product_ctx_t *ctx,
     if (plen <= 0)
         goto end;
 
-    pstr = OPENSSL_zalloc(plen * 2);
-    if (pstr == NULL)
+    pstr = transcript = OPENSSL_zalloc(plen * pp->n * 2 + ctx->st_len);
+    if (!pstr)
         goto end;
+
+    if (ctx->st) {
+        memcpy(pstr, ctx->st, ctx->st_len);
+        pstr += ctx->st_len;
+    }
 
     if (!(T = EC_POINT_new(group))
         || !(L = EC_POINT_new(group))
@@ -341,6 +352,26 @@ int bp_inner_product_proof_prove(bp_inner_product_ctx_t *ctx,
             goto end;
 
         /* compute the challenge */
+#if 1
+        if (bp_point2oct(group, L, pstr, bn_ctx) <= 0)
+            goto end;
+
+        pstr += plen;
+
+        if (bp_point2oct(group, R, pstr, bn_ctx) <= 0)
+            goto end;
+
+        pstr += plen;
+
+        if (!bp_bin_hash2bn(transcript, pstr - transcript, x))
+            goto end;
+
+        /* (26, 27) */
+        if (!BN_mod_inverse(x_inv, x, order, bn_ctx)
+            || !BN_mod_sqr(x2, x, order, bn_ctx)
+            || !BN_mod_inverse(x2_inv, x2, order, bn_ctx))
+            goto end;
+#else
         if (EC_POINT_point2oct(group, L, format, pstr, plen, bn_ctx) <= 0
             || EC_POINT_point2oct(group, R, format, pstr + plen, plen,
                                   bn_ctx) <= 0)
@@ -352,6 +383,7 @@ int bp_inner_product_proof_prove(bp_inner_product_ctx_t *ctx,
             || !BN_mod_sqr(x2, x, order, bn_ctx)
             || !BN_mod_inverse(x2_inv, x2, order, bn_ctx))
             goto end;
+#endif
 
         for (i = 0; i < m; i++) {
             /* (29) */
@@ -418,7 +450,7 @@ end:
     OPENSSL_free(vec_H);
     OPENSSL_free(vec_a);
     OPENSSL_free(vec_b);
-    OPENSSL_free(pstr);
+    OPENSSL_free(transcript);
     EC_POINT_free(L);
     EC_POINT_free(R);
     EC_POINT_free(T);
@@ -435,7 +467,7 @@ int bp_inner_product_proof_verify(bp_inner_product_ctx_t *ctx,
     int ret = 0;
     size_t i, j, m, plen, n, k;
     EC_POINT *P = NULL, **vec_A = NULL;;
-    unsigned char *pstr = NULL;
+    unsigned char *pstr = NULL, *transcript = NULL;
     point_conversion_form_t format = POINT_CONVERSION_COMPRESSED;
     BN_CTX *bn_ctx = NULL;
     BIGNUM **vec_x = NULL, **vec_x_inv = NULL, *s, *s_inv, *x2, *x2_inv, **vec_a = NULL;
@@ -443,7 +475,7 @@ int bp_inner_product_proof_verify(bp_inner_product_ctx_t *ctx,
     const BIGNUM *order;
     bp_inner_product_pub_param_t *pp;
 
-    if (ctx == NULL || proof == NULL) {
+    if (!ctx || !proof) {
         return ret;
     }
 
@@ -466,12 +498,17 @@ int bp_inner_product_proof_verify(bp_inner_product_ctx_t *ctx,
     if (plen <= 0)
         goto end;
 
-    pstr = OPENSSL_zalloc(plen * 2);
-    if (pstr == NULL)
+    pstr = transcript = OPENSSL_zalloc(plen * proof->n * 2 + ctx->st_len);
+    if (!pstr)
         goto end;
 
+    if (ctx->st) {
+        memcpy(pstr, ctx->st, ctx->st_len);
+        pstr += ctx->st_len;
+    }
+
     bn_ctx = BN_CTX_new_ex(group->libctx);
-    if (bn_ctx == NULL)
+    if (!bn_ctx)
         goto end;
 
     BN_CTX_start(bn_ctx);
@@ -487,6 +524,25 @@ int bp_inner_product_proof_verify(bp_inner_product_ctx_t *ctx,
             goto end;
 
         /* compute hash */
+#if 1
+        if (bp_point2oct(group, proof->vec_L[i], pstr, bn_ctx) <= 0)
+            goto end;
+
+        pstr += plen;
+
+        if (bp_point2oct(group, proof->vec_R[i], pstr, bn_ctx) <= 0)
+            goto end;
+
+        pstr += plen;
+
+        if (!bp_bin_hash2bn(transcript, pstr - transcript, vec_x[i]))
+            goto end;
+
+        if (!BN_mod_inverse(vec_x_inv[i], vec_x[i], order, bn_ctx)
+            || !BN_mod_sqr(x2, vec_x[i], order, bn_ctx)
+            || !BN_mod_inverse(x2_inv, x2, order, bn_ctx))
+            goto end;
+#else
         if (EC_POINT_point2oct(group, proof->vec_L[i], format, pstr, plen,
                                bn_ctx) <= 0
             || EC_POINT_point2oct(group, proof->vec_R[i], format,
@@ -498,6 +554,7 @@ int bp_inner_product_proof_verify(bp_inner_product_ctx_t *ctx,
             || !BN_mod_sqr(x2, vec_x[i], order, bn_ctx)
             || !BN_mod_inverse(x2_inv, x2, order, bn_ctx))
             goto end;
+#endif
 
         if (!(vec_A[k] = EC_POINT_dup(proof->vec_L[i], group))
             || !(vec_A[k+1] = EC_POINT_dup(proof->vec_R[i], group))
@@ -549,7 +606,6 @@ int bp_inner_product_proof_verify(bp_inner_product_ctx_t *ctx,
 end:
     BN_CTX_end(bn_ctx);
     BN_CTX_free(bn_ctx);
-    OPENSSL_free(pstr);
     EC_POINT_free(P);
 
     for (i = 0; i < n; i++) {
@@ -561,5 +617,6 @@ end:
     OPENSSL_free(vec_a);
     OPENSSL_free(vec_x);
     OPENSSL_free(vec_x_inv);
+    OPENSSL_free(transcript);
     return ret;
 }

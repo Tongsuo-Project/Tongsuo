@@ -20,7 +20,7 @@ EC_POINT **bp_random_ec_points_new(const EC_GROUP *group, size_t n, BN_CTX *bn_c
     EC_POINT **P = NULL;
     const BIGNUM *order;
 
-    if (group == NULL || n > 32)
+    if (group == NULL || (n % 2) != 0)
         return NULL;
 
     if (!(P = OPENSSL_zalloc(n * sizeof(*P))))
@@ -205,6 +205,84 @@ end:
     return ret;
 }
 
+/* r = SHA256(str_st, bin(P)) */
+int bp_bin_point_hash2bn(const EC_GROUP *group, const char *st, size_t len,
+                         const EC_POINT *P, BIGNUM *r, BN_CTX *bn_ctx)
+{
+    int ret = 0;
+    size_t plen;
+    unsigned char *buf = NULL;
+    unsigned char hash_res[SHA256_DIGEST_LENGTH];
+    point_conversion_form_t format = POINT_CONVERSION_COMPRESSED;
+    EVP_MD *sha256 = NULL;
+    EVP_MD_CTX *md_ctx = NULL;
+    BN_CTX *bctx = NULL;
+
+    if (group == NULL || P == NULL || r == NULL)
+        return ret;
+
+    if (bn_ctx == NULL) {
+        if (!(bctx = bn_ctx = BN_CTX_new()))
+            goto end;
+    }
+
+    plen = EC_POINT_point2oct(group, EC_GROUP_get0_generator(group),
+                              format, NULL, 0, bn_ctx);
+    if (plen <= 0)
+        goto end;
+
+    buf = OPENSSL_zalloc(plen);
+    if (buf == NULL)
+        goto end;
+
+    if (!(md_ctx = EVP_MD_CTX_new())
+        || !(sha256 = EVP_MD_fetch(group->libctx, "sha256", NULL))
+        || !EVP_DigestInit_ex(md_ctx, sha256, NULL))
+        goto end;
+
+    if (st && len > 0 && !EVP_DigestUpdate(md_ctx, st, len))
+        goto end;
+
+    if (EC_POINT_point2oct(group, P, format, buf, plen, bn_ctx) <= 0
+        || !EVP_DigestUpdate(md_ctx, buf, plen)
+        || !EVP_DigestFinal(md_ctx, hash_res, NULL))
+        goto end;
+
+    if (!BN_bin2bn(hash_res, SHA256_DIGEST_LENGTH, r))
+        goto end;
+
+    ret = 1;
+end:
+    OPENSSL_free(buf);
+    BN_CTX_free(bctx);
+    return ret;
+}
+
+/* r = SHA256(bin(bn_st), bin(P)) */
+int bp_bn_point_hash2bn(const EC_GROUP *group, const BIGNUM *bn_st,
+                        const EC_POINT *P, BIGNUM *r, BN_CTX *bn_ctx)
+{
+    int ret = 0;
+    size_t n;
+    char *buf = NULL;
+
+    if (group == NULL || P == NULL || r == NULL)
+        goto end;
+
+    if (bn_st == NULL)
+        return bp_bin_point_hash2bn(group, NULL, 0, P, r, bn_ctx);
+
+    n = BN_num_bytes(bn_st);
+    if (!(buf = OPENSSL_zalloc(n))
+        || (n = BN_bn2bin(bn_st, (unsigned char *)buf)) <= 0)
+        goto end;
+
+    ret = bp_bin_point_hash2bn(group, buf, n, P, r, bn_ctx);
+end:
+    OPENSSL_free(buf);
+    return ret;
+}
+
 int bp_random_bn_gen(const EC_GROUP *group, BIGNUM **r, size_t n, BN_CTX *bn_ctx)
 {
     size_t i;
@@ -221,4 +299,86 @@ int bp_random_bn_gen(const EC_GROUP *group, BIGNUM **r, size_t n, BN_CTX *bn_ctx
     }
 
     return 1;
+}
+
+int bp_str2point(const EC_GROUP *group, const unsigned char *str, size_t len,
+                 EC_POINT *r, BN_CTX *bn_ctx)
+{
+    int ret = 0, i = 0;
+    unsigned char hash_res[SHA256_DIGEST_LENGTH];
+    unsigned char *p = (unsigned char *)str;
+    BN_CTX *ctx = NULL;
+    BIGNUM *x;
+
+    memset(hash_res, 0, sizeof(hash_res));
+
+    if (bn_ctx == NULL) {
+        if ((ctx = bn_ctx = BN_CTX_new_ex(group->libctx)) == NULL)
+            goto end;
+    }
+
+    BN_CTX_start(bn_ctx);
+    if ((x = BN_CTX_get(bn_ctx)) == NULL)
+        goto end;
+
+    do {
+        if (!SHA256(p, len, hash_res))
+            goto end;
+
+        BN_bin2bn(hash_res, SHA256_DIGEST_LENGTH, x);
+
+        p  = &hash_res[0];
+        len = sizeof(hash_res);
+
+        if(EC_POINT_set_compressed_coordinates(group, r, x, 0, bn_ctx) == 1) {
+            ret = 1;
+            break;
+        }
+
+        ERR_clear_error();
+    } while (i++ < 10);
+
+end:
+    BN_CTX_end(bn_ctx);
+    BN_CTX_free(ctx);
+    return ret;
+}
+
+size_t bp_point2oct(const EC_GROUP *group, const EC_POINT *P,
+                    unsigned char *buf, BN_CTX *bn_ctx)
+{
+    size_t plen;
+    point_conversion_form_t format = POINT_CONVERSION_COMPRESSED;
+
+    if (group == NULL || P == NULL || bn_ctx == NULL)
+        return -1;
+
+    plen = EC_POINT_point2oct(group, EC_GROUP_get0_generator(group),
+                              format, NULL, 0, bn_ctx);
+    if (plen <= 0 || buf == NULL)
+        return plen;
+
+    if (EC_POINT_point2oct(group, P, format, buf, plen, bn_ctx) <= 0)
+        return -1;
+
+    return plen;
+}
+
+int bp_bin_hash2bn(const unsigned char *data, size_t len, BIGNUM *r)
+{
+    int ret = 0;
+    unsigned char hash_res[SHA256_DIGEST_LENGTH];
+
+    if (data == NULL || len <= 0 || r == NULL)
+        return ret;
+
+    if (!SHA256(data, len, hash_res))
+        goto end;
+
+    if (!BN_bin2bn(hash_res, SHA256_DIGEST_LENGTH, r))
+        goto end;
+
+    ret = 1;
+end:
+    return ret;
 }

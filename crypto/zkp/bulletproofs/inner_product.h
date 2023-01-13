@@ -23,7 +23,6 @@ extern "C" {
 typedef struct bp_inner_product_pub_param_st {
     int curve_id;
     int initial;
-    size_t m;
     size_t n;
     EC_POINT **vec_G;
     EC_POINT **vec_H;
@@ -31,6 +30,8 @@ typedef struct bp_inner_product_pub_param_st {
 } bp_inner_product_pub_param_t;
 
 typedef struct bp_inner_product_ctx_st {
+    char *st;
+    size_t st_len;
     EC_GROUP *group;
     EC_POINT *P;
     bp_inner_product_pub_param_t *pp;
@@ -50,15 +51,14 @@ typedef struct bp_inner_product_proof_st {
     BIGNUM *b;
 } bp_inner_product_proof_t;
 
-bp_inner_product_pub_param_t *bp_inner_product_pub_param_new(int curve_id,
-                                                             int initial,
-                                                             size_t n);
+bp_inner_product_pub_param_t *bp_inner_product_pub_param_new(int curve_id);
 int bp_inner_product_pub_param_set(bp_inner_product_pub_param_t *pp,
                                    EC_POINT **vec_G, EC_POINT **vec_H,
                                    size_t n, EC_POINT *U);
+int bp_inner_product_pub_param_gen(bp_inner_product_pub_param_t *pp, size_t n);
 void bp_inner_product_pub_param_free(bp_inner_product_pub_param_t *pp);
 bp_inner_product_ctx_t *bp_inner_product_ctx_new(bp_inner_product_pub_param_t *pp,
-                                                 EC_POINT *P);
+                                                 EC_POINT *P, char *st, size_t st_len);
 void bp_inner_product_ctx_free(bp_inner_product_ctx_t *ctx);
 bp_inner_product_witness_t *bp_inner_product_witness_new(BIGNUM **vec_a,
                                                          BIGNUM **vec_b,

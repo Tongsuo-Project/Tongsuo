@@ -13,22 +13,22 @@
 #include "util.h"
 
 /** Creates a new BULLET_PROOF_PUB_PARAM object
- *  \param  curve_id  the elliptic curve id
- *  \param  bits      the range bits that support verification
- *  \param  agg_num   the number of the aggregate range proofs
+ *  \param  curve_id    the elliptic curve id
+ *  \param  bits        the range bits that support verification
+ *  \param  max_agg_num the number of the aggregate range proofs
  *  \return newly created BULLET_PROOF_PUB_PARAM object or NULL in case of an error
  */
 BULLET_PROOF_PUB_PARAM *BULLET_PROOF_PUB_PARAM_new(int curve_id, size_t bits,
-                                                   size_t agg_num)
+                                                   size_t max_agg_num)
 {
-    size_t plen;
+    size_t plen, n;
     unsigned char *pstr = NULL;
     BN_CTX *bn_ctx = NULL;
     EC_GROUP *group = NULL;
     BULLET_PROOF_PUB_PARAM *pp = NULL;
     point_conversion_form_t format = POINT_CONVERSION_COMPRESSED;
 
-    if (curve_id <= 0 || bits <= 0 || bits > 32 || agg_num <= 0) {
+    if (curve_id <= 0 || bits <= 0 || bits > 32 || max_agg_num <= 0) {
         return NULL;
     }
 
@@ -64,15 +64,15 @@ BULLET_PROOF_PUB_PARAM *BULLET_PROOF_PUB_PARAM_new(int curve_id, size_t bits,
                            plen, bn_ctx) <= 0)
         goto err;
 
-    if (!EC_POINT_from_string(group, pp->H, pstr, plen))
+    if (!bp_str2point(group, pstr, plen, pp->H, bn_ctx))
         goto err;
 
     pp->bits = bits;
-    pp->agg_num = agg_num;
-    pp->n = bits * agg_num;
+    pp->max_agg_num = max_agg_num;
+    n = bits * max_agg_num;
 
-    if (!(pp->vec_G = bp_random_ec_points_new(group, pp->n, bn_ctx))
-        || !(pp->vec_H = bp_random_ec_points_new(group, pp->n, bn_ctx))
+    if (!(pp->vec_G = bp_random_ec_points_new(group, n, bn_ctx))
+        || !(pp->vec_H = bp_random_ec_points_new(group, n, bn_ctx))
         || !(pp->U = bp_random_ec_point_new(group, bn_ctx)))
         goto err;
 
@@ -95,8 +95,8 @@ void BULLET_PROOF_PUB_PARAM_free(BULLET_PROOF_PUB_PARAM *pp)
     if (pp == NULL)
         return;
 
-    bp_random_ec_points_free(pp->vec_G, pp->n);
-    bp_random_ec_points_free(pp->vec_H, pp->n);
+    bp_random_ec_points_free(pp->vec_G, pp->bits * pp->max_agg_num);
+    bp_random_ec_points_free(pp->vec_H, pp->bits * pp->max_agg_num);
     bp_random_ec_point_free(pp->U);
     EC_POINT_free(pp->H);
     OPENSSL_clear_free((void *)pp, sizeof(BULLET_PROOF_CTX));
@@ -105,9 +105,8 @@ void BULLET_PROOF_PUB_PARAM_free(BULLET_PROOF_PUB_PARAM *pp)
 /** Creates a new BULLET_PROOF_CTX object
  *  \return newly created BULLET_PROOF_CTX object or NULL in case of an error
  */
-BULLET_PROOF_CTX *BULLET_PROOF_CTX_new(BULLET_PROOF_PUB_PARAM *pp)
+BULLET_PROOF_CTX *BULLET_PROOF_CTX_new(BULLET_PROOF_PUB_PARAM *pp, const char *st)
 {
-    BN_CTX *bn_ctx = NULL;
     BULLET_PROOF_CTX *ctx = NULL;
 
     if (pp == NULL) {
@@ -127,16 +126,15 @@ BULLET_PROOF_CTX *BULLET_PROOF_CTX_new(BULLET_PROOF_PUB_PARAM *pp)
 
     ctx->G = EC_GROUP_get0_generator(ctx->group);
 
-    bn_ctx = BN_CTX_new_ex(ctx->group->libctx);
-    if (bn_ctx == NULL)
-        goto err;
+    if (st != NULL) {
+        if (!(ctx->st = OPENSSL_strdup(st)))
+            goto err;
+        ctx->st_len = strlen(st);
+    }
 
-
-    BN_CTX_free(bn_ctx);
     return ctx;
 
 err:
-    BN_CTX_free(bn_ctx);
     BULLET_PROOF_CTX_free(ctx);
     return NULL;
 }
@@ -148,6 +146,8 @@ void BULLET_PROOF_CTX_free(BULLET_PROOF_CTX *ctx)
 {
     if (ctx == NULL)
         return;
+
+    OPENSSL_free(ctx->st);
 
     //BULLET_PROOF_PUB_PARAM_free(ctx->pp);
     EC_GROUP_free(ctx->group);
@@ -163,29 +163,47 @@ void BULLET_PROOF_CTX_free(BULLET_PROOF_CTX *ctx)
 BULLET_PROOF_WITNESS *BULLET_PROOF_WITNESS_new(BULLET_PROOF_CTX *ctx,
                                                int64_t secrets[], size_t agg_num)
 {
-    size_t i;
+    size_t i, padding_len = 0;
     const BIGNUM *order;
     BULLET_PROOF_WITNESS *witness = NULL;
 
-    if (ctx == NULL || agg_num <= 0)
+    if (ctx == NULL || agg_num <= 0 || agg_num > 32)
         return NULL;
+
+    if (agg_num > ctx->pp->max_agg_num)
+        return NULL;
+
+    if ((agg_num & (agg_num - 1)) != 0) {
+        for (i = agg_num; i <= ctx->pp->max_agg_num; i++) {
+            if ((i & (i - 1)) == 0) {
+                padding_len = i - agg_num;
+                break;
+            }
+        }
+    }
 
     order = EC_GROUP_get0_order(ctx->group);
 
     if (!(witness = OPENSSL_zalloc(sizeof(*witness))))
         return NULL;
 
-    witness->n = agg_num;
-    if (!(witness->vec_r = OPENSSL_zalloc(sizeof(*witness->vec_r) * agg_num))
-        || !(witness->vec_v = OPENSSL_zalloc(sizeof(*witness->vec_v) * agg_num)))
+    witness->n = agg_num + padding_len;
+    if (!(witness->vec_r = OPENSSL_zalloc(sizeof(*witness->vec_r) * witness->n))
+        || !(witness->vec_v = OPENSSL_zalloc(sizeof(*witness->vec_v) * witness->n)))
         goto err;
 
     for (i = 0; i < witness->n; i++) {
         if (!(witness->vec_r[i] = BN_new()) || !(witness->vec_v[i] = BN_new())
-            || !bp_rand_range(witness->vec_r[i], order)
-            || !BN_lebin2bn((const unsigned char *)&secrets[i], sizeof(secrets[i]),
-                            witness->vec_v[i]))
+            || !bp_rand_range(witness->vec_r[i], order))
             goto err;
+
+        if (i < agg_num) {
+            if (!BN_lebin2bn((const unsigned char *)&secrets[i],
+                             sizeof(secrets[i]), witness->vec_v[i]))
+                goto err;
+        } else {
+            BN_zero(witness->vec_v[i]);
+        }
     }
 
     return witness;
@@ -284,8 +302,9 @@ void BULLET_PROOF_free(BULLET_PROOF *proof)
 int BULLET_PROOF_prove(BULLET_PROOF_CTX *ctx, BULLET_PROOF_WITNESS *witness,
                        BULLET_PROOF *proof)
 {
-    size_t i, j, k, m, len, vec_p_len;
+    size_t i, j, k, m, n, plen, vec_p_len;
     int ret = 0, *aL = NULL, *aR = NULL;
+    unsigned char *pstr, *transcript = NULL;
     BIGNUM *alpha, *rho, *tau1, *tau2, *bn0, *bn1, *bn2, *bn_1;
     BIGNUM *x, *y, *y_inv, *pow_y_inv, *z, *z2, *pow_zn, **pow_y = NULL;
     BIGNUM *pow_2, *dv, *t, *t1, *t2, *pv, *r0, *r1, **sL = NULL, **sR = NULL;
@@ -300,15 +319,16 @@ int BULLET_PROOF_prove(BULLET_PROOF_CTX *ctx, BULLET_PROOF_WITNESS *witness,
     bp_inner_product_pub_param_t *ip_pp = NULL;
     bp_inner_product_witness_t *ip_witness = NULL;
 
-    if (ctx == NULL || witness == NULL || proof == NULL) {
+    if (ctx == NULL || witness == NULL || proof == NULL
+        || witness->n > ctx->pp->max_agg_num) {
         return ret;
     }
 
     pp = ctx->pp;
     group = ctx->group;
     order = EC_GROUP_get0_order(group);
-    len = pp->n;
-    vec_p_len = len * 2  + 1;
+    n = pp->bits * witness->n;
+    vec_p_len = n * 2  + 1;
 
     /* (69) */
     if (!(proof->V = OPENSSL_zalloc(witness->n * sizeof(*proof->V))))
@@ -325,20 +345,20 @@ int BULLET_PROOF_prove(BULLET_PROOF_CTX *ctx, BULLET_PROOF_WITNESS *witness,
             goto end;
     }
 
-    if (!(aL = OPENSSL_zalloc(sizeof(*aL) * len))
-        || !(aR = OPENSSL_zalloc(sizeof(*aL) * len))
-        || !(sL = OPENSSL_zalloc(sizeof(*sL) * len))
-        || !(sR = OPENSSL_zalloc(sizeof(*sR) * len))
-        || !(vec_H = OPENSSL_zalloc(sizeof(*vec_H) * len))
+    if (!(aL = OPENSSL_zalloc(sizeof(*aL) * n))
+        || !(aR = OPENSSL_zalloc(sizeof(*aL) * n))
+        || !(sL = OPENSSL_zalloc(sizeof(*sL) * n))
+        || !(sR = OPENSSL_zalloc(sizeof(*sR) * n))
+        || !(vec_H = OPENSSL_zalloc(sizeof(*vec_H) * n))
         || !(vec_P = OPENSSL_zalloc(sizeof(*vec_P) * vec_p_len))
         || !(vec_p = OPENSSL_zalloc(sizeof(*vec_p) * vec_p_len))
         || !(vec_s = OPENSSL_zalloc(sizeof(*vec_s) * vec_p_len))
-        || !(pow_y = OPENSSL_zalloc(sizeof(*pow_y) * len))
-        || !(ll0 = OPENSSL_zalloc(sizeof(*ll0) * len))
-        || !(rr1 = OPENSSL_zalloc(sizeof(*rr1) * len))
-        || !(rr2 = OPENSSL_zalloc(sizeof(*rr2) * len))
-        || !(ll = OPENSSL_zalloc(sizeof(*ll) * len))
-        || !(rr = OPENSSL_zalloc(sizeof(*rr) * len)))
+        || !(pow_y = OPENSSL_zalloc(sizeof(*pow_y) * n))
+        || !(ll0 = OPENSSL_zalloc(sizeof(*ll0) * n))
+        || !(rr1 = OPENSSL_zalloc(sizeof(*rr1) * n))
+        || !(rr2 = OPENSSL_zalloc(sizeof(*rr2) * n))
+        || !(ll = OPENSSL_zalloc(sizeof(*ll) * n))
+        || !(rr = OPENSSL_zalloc(sizeof(*rr) * n)))
         goto end;
 
     if (!(P = EC_POINT_new(group))
@@ -391,9 +411,22 @@ int BULLET_PROOF_prove(BULLET_PROOF_CTX *ctx, BULLET_PROOF_WITNESS *witness,
         || !bp_rand_range(tau2, order))
         goto end;
 
+    plen = bp_point2oct(group, ctx->G, NULL, bn_ctx);
+    if (plen <= 0)
+        goto end;
+
+    pstr = transcript = OPENSSL_zalloc(4 * plen + ctx->st_len);
+    if (pstr == NULL)
+        goto end;
+
+    if (ctx->st) {
+        memcpy(pstr, ctx->st, ctx->st_len);
+        pstr += ctx->st_len;
+    }
+
     /* (45) */
-    if (!bp_random_bn_gen(group, sL, len, bn_ctx)
-        || !bp_random_bn_gen(group, sR, len, bn_ctx))
+    if (!bp_random_bn_gen(group, sL, n, bn_ctx)
+        || !bp_random_bn_gen(group, sR, n, bn_ctx))
         goto end;
 
     for (i = 0, k = 0; i < proof->n; i++) {
@@ -431,10 +464,23 @@ int BULLET_PROOF_prove(BULLET_PROOF_CTX *ctx, BULLET_PROOF_WITNESS *witness,
                           (const BIGNUM **)vec_s, bn_ctx))
         goto end;
 
-    if (!bp_points_hash2bn(group, proof->A, proof->S, y, z, bn_ctx))
+    if (bp_point2oct(group, proof->A, pstr, bn_ctx) <= 0)
         goto end;
 
-    if (!BN_sqr(z2, z, bn_ctx) || !BN_copy(pow_zn, z2)
+    pstr += plen;
+
+    if (!bp_bin_hash2bn(transcript, pstr - transcript, y))
+        goto end;
+
+    if (bp_point2oct(group, proof->S, pstr, bn_ctx) <= 0)
+        goto end;
+
+    pstr += plen;
+
+    if (!bp_bin_hash2bn(transcript, pstr - transcript, z))
+        goto end;
+
+    if (!BN_mod_sqr(z2, z, order, bn_ctx) || !BN_copy(pow_zn, z2)
         || !BN_mod_inverse(y_inv, y, order, bn_ctx))
         goto end;
 
@@ -455,6 +501,7 @@ int BULLET_PROOF_prove(BULLET_PROOF_CTX *ctx, BULLET_PROOF_WITNESS *witness,
      */
     for (i = 0; i < proof->n; i++) {
         BN_one(pow_2);
+
         for (j = 0; j < pp->bits; j++) {
             m = i * pp->bits + j;
             if (m > 0) {
@@ -462,9 +509,6 @@ int BULLET_PROOF_prove(BULLET_PROOF_CTX *ctx, BULLET_PROOF_WITNESS *witness,
                     goto end;
 
                 if (!BN_mod_mul(pow_y[m], pow_y[m-1], y, order, bn_ctx))
-                    goto end;
-
-                if (!BN_mod_mul(pow_2, pow_2, bn2, order, bn_ctx))
                     goto end;
             }
 
@@ -488,8 +532,10 @@ int BULLET_PROOF_prove(BULLET_PROOF_CTX *ctx, BULLET_PROOF_WITNESS *witness,
                 || !BN_mod_mul(t, r1, sL[m], order, bn_ctx)
                 || !BN_mod_add(t2, t2, t, order, bn_ctx))
                 goto end;
-        }
 
+            if (!BN_mod_mul(pow_2, pow_2, bn2, order, bn_ctx))
+                goto end;
+        }
 
         if (!BN_mul(t, pow_zn, witness->vec_r[i], bn_ctx)
             || !BN_mod_add(proof->taux, proof->taux, t, order, bn_ctx))
@@ -505,7 +551,17 @@ int BULLET_PROOF_prove(BULLET_PROOF_CTX *ctx, BULLET_PROOF_WITNESS *witness,
         goto end;
 
     /* (55, 56) */
-    if (!bp_points_hash2bn(group, proof->T1, proof->T2, x, NULL, bn_ctx))
+    if (bp_point2oct(group, proof->T1, pstr, bn_ctx) <= 0)
+        goto end;
+
+    pstr += plen;
+
+    if (bp_point2oct(group, proof->T2, pstr, bn_ctx) <= 0)
+        goto end;
+
+    pstr += plen;
+
+    if (!bp_bin_hash2bn(transcript, pstr - transcript, x))
         goto end;
 
     BN_zero(proof->tx);
@@ -563,10 +619,11 @@ int BULLET_PROOF_prove(BULLET_PROOF_CTX *ctx, BULLET_PROOF_WITNESS *witness,
                        (const BIGNUM **)vec_p, bn_ctx))
         goto end;
 
-    if (!(ip_pp = bp_inner_product_pub_param_new(pp->curve_id, 0, 0))
-        || !bp_inner_product_pub_param_set(ip_pp, pp->vec_G, vec_H, len, U)
-        || !(ip_ctx = bp_inner_product_ctx_new(ip_pp, P))
-        || !(ip_witness = bp_inner_product_witness_new(ll, rr, len))
+    if (!(ip_pp = bp_inner_product_pub_param_new(pp->curve_id))
+        || !bp_inner_product_pub_param_set(ip_pp, pp->vec_G, vec_H, n, U)
+        || !(ip_ctx = bp_inner_product_ctx_new(ip_pp, P, (char *)transcript,
+                                               pstr - transcript))
+        || !(ip_witness = bp_inner_product_witness_new(ll, rr, n))
         || !(proof->ip_proof = bp_inner_product_proof_new(ip_ctx)))
         goto end;
 
@@ -577,7 +634,7 @@ end:
     bp_inner_product_pub_param_free(ip_pp);
     bp_inner_product_ctx_free(ip_ctx);
 
-    for (i = 0; i < len; i++) {
+    for (i = 0; i < n; i++) {
         EC_POINT_free(vec_H[i]);
     }
     for (i = 0; i < vec_p_len; i++) {
@@ -605,6 +662,7 @@ end:
     EC_POINT_free(U);
     BN_CTX_end(bn_ctx);
     BN_CTX_free(bn_ctx);
+    OPENSSL_free(transcript);
     return ret;
 }
 
@@ -617,7 +675,8 @@ end:
 int BULLET_PROOF_verify(BULLET_PROOF_CTX *ctx, BULLET_PROOF *proof)
 {
     int ret = 0;
-    size_t i = 0, j, m, k, vec_h_len, vec_p_len, vec_r_len;
+    size_t i = 0, j, m, n, k, plen, vec_h_len, vec_p_len, vec_r_len;
+    unsigned char *pstr, *transcript = NULL;
     BIGNUM *bn1, *bn2, *x, *x2, *y, *y_inv, *z, *z2, *nz, *t, *z_pow_y, *delta;
     BIGNUM *pow_y, *pow_y_inv, *pow_z, *pow_2, *sum_pow_y, *sum_pow_z, *sum_pow_2;
     BIGNUM **vec_p = NULL, **vec_r = NULL;
@@ -635,9 +694,10 @@ int BULLET_PROOF_verify(BULLET_PROOF_CTX *ctx, BULLET_PROOF *proof)
     }
 
     pp = ctx->pp;
-    vec_h_len = pp->n;
-    vec_p_len = pp->n * 2 + 4;
-    vec_r_len = pp->n + 3;
+    n = pp->bits * proof->n;
+    vec_h_len = n;
+    vec_p_len = n * 2 + 4;
+    vec_r_len = n + 3;
     group = ctx->group;
     order = EC_GROUP_get0_order(group);
 
@@ -686,13 +746,50 @@ int BULLET_PROOF_verify(BULLET_PROOF_CTX *ctx, BULLET_PROOF *proof)
     BN_zero(sum_pow_2);
     BN_one(pow_y);
     BN_one(pow_y_inv);
-    BN_one(pow_2);
     BN_one(bn1);
     BN_set_word(bn2, 2);
 
-    if (!bp_points_hash2bn(group, proof->T1, proof->T2, x, NULL, bn_ctx)
-        || !bp_points_hash2bn(group, proof->A, proof->S, y, z, bn_ctx)
+    plen = bp_point2oct(group, ctx->G, NULL, bn_ctx);
+    if (plen <= 0)
+        goto end;
+
+    pstr = transcript = OPENSSL_zalloc(4 * plen + ctx->st_len);
+    if (pstr == NULL)
+        goto end;
+
+    if (ctx->st) {
+        memcpy(pstr, ctx->st, ctx->st_len);
+        pstr += ctx->st_len;
+    }
+
+    if (bp_point2oct(group, proof->A, pstr, bn_ctx) <= 0)
+        goto end;
+
+    pstr += plen;
+
+    if (!bp_bin_hash2bn(transcript, pstr - transcript, y)
         || !BN_mod_inverse(y_inv, y, order, bn_ctx))
+        goto end;
+
+    if (bp_point2oct(group, proof->S, pstr, bn_ctx) <= 0)
+        goto end;
+
+    pstr += plen;
+
+    if (!bp_bin_hash2bn(transcript, pstr - transcript, z))
+        goto end;
+
+    if (bp_point2oct(group, proof->T1, pstr, bn_ctx) <= 0)
+        goto end;
+
+    pstr += plen;
+
+    if (bp_point2oct(group, proof->T2, pstr, bn_ctx) <= 0)
+        goto end;
+
+    pstr += plen;
+
+    if (!bp_bin_hash2bn(transcript, pstr - transcript, x))
         goto end;
 
     if (!BN_mod_sqr(x2, x, order, bn_ctx)
@@ -702,6 +799,8 @@ int BULLET_PROOF_verify(BULLET_PROOF_CTX *ctx, BULLET_PROOF *proof)
         goto end;
 
     for (i = 0, k = 0; i < proof->n; i++) {
+        BN_one(pow_2);
+
         if (!BN_mod_mul(pow_z, pow_z, z, order, bn_ctx)
             || !BN_mod_add(sum_pow_z, sum_pow_z, pow_z, order, bn_ctx))
             goto end;
@@ -724,15 +823,15 @@ int BULLET_PROOF_verify(BULLET_PROOF_CTX *ctx, BULLET_PROOF *proof)
                                  pow_y_inv, bn_ctx))
                 goto end;
 
-            if (!BN_mod_mul(pow_y, pow_y, y, order, bn_ctx)
-                || !BN_mod_mul(pow_y_inv, pow_y_inv, y_inv, order, bn_ctx)
-                || !BN_mod_mul(pow_2, pow_2, bn2, order, bn_ctx))
-                goto end;
-
             if (!(vec_P[k] = EC_POINT_dup(pp->vec_G[m], group))
                 || !(vec_p[k] = BN_dup(nz))
                 || !(vec_P[k + 1] = EC_POINT_dup(vec_H[m], group))
                 || !(vec_p[k + 1] = BN_dup(t)))
+                goto end;
+
+            if (!BN_mod_mul(pow_y, pow_y, y, order, bn_ctx)
+                || !BN_mod_mul(pow_y_inv, pow_y_inv, y_inv, order, bn_ctx)
+                || !BN_mod_mul(pow_2, pow_2, bn2, order, bn_ctx))
                 goto end;
         }
 
@@ -794,9 +893,10 @@ int BULLET_PROOF_verify(BULLET_PROOF_CTX *ctx, BULLET_PROOF *proof)
                        (const BIGNUM **)vec_p, bn_ctx))
         goto end;
 
-    if (!(ip_pp = bp_inner_product_pub_param_new(pp->curve_id, 0, 0))
+    if (!(ip_pp = bp_inner_product_pub_param_new(pp->curve_id))
         || !bp_inner_product_pub_param_set(ip_pp, pp->vec_G, vec_H, vec_h_len, U)
-        || !(ip_ctx = bp_inner_product_ctx_new(ip_pp, P)))
+        || !(ip_ctx = bp_inner_product_ctx_new(ip_pp, P, (char *)transcript,
+                                               pstr - transcript)))
         goto end;
 
     ret = bp_inner_product_proof_verify(ip_ctx, proof->ip_proof);
@@ -830,5 +930,6 @@ end:
     OPENSSL_free(vec_R);
     OPENSSL_free(vec_p);
     OPENSSL_free(vec_r);
+    OPENSSL_free(transcript);
     return ret;
 }
