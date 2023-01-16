@@ -41,7 +41,8 @@ use constant {
     VERS_TLS_1_1 => 0x0302,
     VERS_TLS_1_0 => 0x0301,
     VERS_SSL_3_0 => 0x0300,
-    VERS_SSL_LT_3_0 => 0x02ff
+    VERS_SSL_LT_3_0 => 0x02ff,
+    VERS_TLCP_1_1 => 0x0101,
 };
 
 my %tls_version = (
@@ -50,7 +51,8 @@ my %tls_version = (
     VERS_TLS_1_1, "TLS1.1",
     VERS_TLS_1_0, "TLS1.0",
     VERS_SSL_3_0, "SSL3",
-    VERS_SSL_LT_3_0, "SSL<3"
+    VERS_SSL_LT_3_0, "SSL<3",
+    VERS_TLCP_1_1, "TLCP1.1",
 );
 
 #Class method to extract records from a packet of data
@@ -242,7 +244,8 @@ sub decrypt()
             return $data if (length($data) == 2);
         }
         $mactaglen = 16;
-    } elsif ($self->version >= VERS_TLS_1_1()) {
+    } elsif ($self->version >= VERS_TLS_1_1()
+             or $self->version == VERS_TLCP_1_1()) {
         #16 bytes for a standard IV
         $data = substr($data, 16);
 
@@ -251,6 +254,11 @@ sub decrypt()
 
         #Throw away the padding
         $data = substr($data, 0, length($data) - ($padval + 1));
+    }
+
+    if ($self->version == VERS_TLCP_1_1()) {
+        # HMAC-SM3
+        $mactaglen = 32;
     }
 
     #Throw away the MAC or TAG

@@ -3,6 +3,7 @@
  _______________
 
  Changes between 8.3.0 and 8.4.0 [xx XXX xxxx]
+  *) s_server支持配置多证书测试TLCP SNI功能
 
   *) 修复CVE-2022-3996
 
