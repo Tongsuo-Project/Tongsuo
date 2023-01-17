@@ -9,6 +9,7 @@
 
 #include <openssl/err.h>
 #include <openssl/ec.h>
+#include <openssl/zkpbperr.h>
 #include <crypto/ec/ec_local.h>
 #include "util.h"
 
@@ -23,8 +24,10 @@ EC_POINT **bp_random_ec_points_new(const EC_GROUP *group, size_t n, BN_CTX *bn_c
     if (group == NULL || (n % 2) != 0)
         return NULL;
 
-    if (!(P = OPENSSL_zalloc(n * sizeof(*P))))
+    if (!(P = OPENSSL_zalloc(n * sizeof(*P)))) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         goto err;
+    }
 
     order = EC_GROUP_get0_order(group);
 
@@ -151,11 +154,15 @@ int bp_points_hash2bn(const EC_GROUP *group, EC_POINT *A, EC_POINT *B,
     EVP_MD *sha256 = NULL;
     EVP_MD_CTX *md_ctx1 = NULL, *md_ctx2 = NULL;
 
-    if (group == NULL || A == NULL || B == NULL || bn_ctx == NULL)
+    if (group == NULL || A == NULL || B == NULL || bn_ctx == NULL) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return ret;
+    }
 
-    if (ra == NULL && rb == NULL)
+    if (ra == NULL && rb == NULL) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return ret;
+    }
 
     BN_CTX_start(bn_ctx);
     a = BN_CTX_get(bn_ctx);
@@ -168,8 +175,10 @@ int bp_points_hash2bn(const EC_GROUP *group, EC_POINT *A, EC_POINT *B,
         goto end;
 
     transcript_str = OPENSSL_zalloc(plen);
-    if (transcript_str == NULL)
+    if (transcript_str == NULL) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         goto end;
+    }
 
     if (!(md_ctx1 = EVP_MD_CTX_new())
         || !(md_ctx2 = EVP_MD_CTX_new())
@@ -218,8 +227,10 @@ int bp_bin_point_hash2bn(const EC_GROUP *group, const char *st, size_t len,
     EVP_MD_CTX *md_ctx = NULL;
     BN_CTX *bctx = NULL;
 
-    if (group == NULL || P == NULL || r == NULL)
+    if (group == NULL || P == NULL || r == NULL) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return ret;
+    }
 
     if (bn_ctx == NULL) {
         if (!(bctx = bn_ctx = BN_CTX_new()))
@@ -232,8 +243,10 @@ int bp_bin_point_hash2bn(const EC_GROUP *group, const char *st, size_t len,
         goto end;
 
     buf = OPENSSL_zalloc(plen);
-    if (buf == NULL)
+    if (buf == NULL) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         goto end;
+    }
 
     if (!(md_ctx = EVP_MD_CTX_new())
         || !(sha256 = EVP_MD_fetch(group->libctx, "sha256", NULL))
@@ -273,8 +286,12 @@ int bp_bn_point_hash2bn(const EC_GROUP *group, const BIGNUM *bn_st,
         return bp_bin_point_hash2bn(group, NULL, 0, P, r, bn_ctx);
 
     n = BN_num_bytes(bn_st);
-    if (!(buf = OPENSSL_zalloc(n))
-        || (n = BN_bn2bin(bn_st, (unsigned char *)buf)) <= 0)
+    if (!(buf = OPENSSL_zalloc(n))) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
+        goto end;
+    }
+
+    if ((n = BN_bn2bin(bn_st, (unsigned char *)buf)) <= 0)
         goto end;
 
     ret = bp_bin_point_hash2bn(group, buf, n, P, r, bn_ctx);

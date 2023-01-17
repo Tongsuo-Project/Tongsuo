@@ -8,6 +8,7 @@
  */
 
 #include <openssl/err.h>
+#include <openssl/zkpbperr.h>
 #include <crypto/ec/ec_local.h>
 #include "inner_product.h"
 #include "util.h"
@@ -28,6 +29,7 @@ bp_inner_product_pub_param_t *bp_inner_product_pub_param_new(int curve_id)
     bp_inner_product_pub_param_t *pp = NULL;
 
     if (!(pp = OPENSSL_zalloc(sizeof(*pp)))) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
 
@@ -55,6 +57,7 @@ int bp_inner_product_pub_param_set(bp_inner_product_pub_param_t *pp,
                                    size_t n, EC_POINT *U)
 {
     if (!pp || !vec_G || !vec_H || n <= 0) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return 0;
     }
 
@@ -72,8 +75,10 @@ int bp_inner_product_pub_param_gen(bp_inner_product_pub_param_t *pp, size_t n)
     BN_CTX *bn_ctx = NULL;
     EC_GROUP *group = NULL;
 
-    if (!pp || pp->curve_id <= 0 || pp->initial || n <= 0)
+    if (!pp || pp->curve_id <= 0 || pp->initial || n <= 0) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_INVALID_ARGUMENT);
         return ret;
+    }
 
     group = EC_GROUP_new_by_curve_name_ex(NULL, NULL, pp->curve_id);
     if (group == NULL)
@@ -106,10 +111,12 @@ bp_inner_product_ctx_t *bp_inner_product_ctx_new(bp_inner_product_pub_param_t *p
     bp_inner_product_ctx_t *ctx = NULL;
 
     if (pp == NULL || P == NULL) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return NULL;
     }
 
     if (!(ctx = OPENSSL_zalloc(sizeof(*ctx)))) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
 
@@ -124,8 +131,10 @@ bp_inner_product_ctx_t *bp_inner_product_ctx_new(bp_inner_product_pub_param_t *p
         goto err;
 
     if (st != NULL) {
-        if (!(ctx->st = OPENSSL_memdup(st, st_len)))
+        if (!(ctx->st = OPENSSL_memdup(st, st_len))) {
+            ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
             goto err;
+        }
         ctx->st_len = st_len;
     }
 
@@ -153,11 +162,15 @@ bp_inner_product_witness_t *bp_inner_product_witness_new(BIGNUM **vec_a,
 {
     bp_inner_product_witness_t *witness = NULL;
 
-    if (!vec_a || !vec_b || n <= 0)
+    if (!vec_a || !vec_b || n <= 0) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_INVALID_ARGUMENT);
         return NULL;
+    }
 
-    if (!(witness = OPENSSL_zalloc(sizeof(*witness))))
+    if (!(witness = OPENSSL_zalloc(sizeof(*witness)))) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
 
     witness->vec_a = vec_a;
     witness->vec_b = vec_b;
@@ -180,16 +193,21 @@ bp_inner_product_proof_t *bp_inner_product_proof_new(bp_inner_product_ctx_t *ctx
 
     proof = OPENSSL_zalloc(sizeof(*proof));
     if (!proof) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
 
     proof->vec_L = OPENSSL_zalloc(ctx->pp->n * sizeof(*proof->vec_L));
-    if (!proof->vec_L)
+    if (!proof->vec_L) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         goto err;
+    }
 
     proof->vec_R = OPENSSL_zalloc(ctx->pp->n * sizeof(*proof->vec_R));
-    if (!proof->vec_R)
+    if (!proof->vec_R) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         goto err;
+    }
 
     if (!(proof->a = BN_new()) || !(proof->b = BN_new()))
         goto err;
@@ -240,6 +258,7 @@ int bp_inner_product_proof_prove(bp_inner_product_ctx_t *ctx,
     bp_inner_product_pub_param_t *pp;
 
     if (!ctx || !witness || !proof) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return ret;
     }
 
@@ -254,8 +273,10 @@ int bp_inner_product_proof_prove(bp_inner_product_ctx_t *ctx,
         goto end;
 
     pstr = transcript = OPENSSL_zalloc(plen * pp->n * 2 + ctx->st_len);
-    if (!pstr)
+    if (!pstr) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         goto end;
+    }
 
     if (ctx->st) {
         memcpy(pstr, ctx->st, ctx->st_len);
@@ -274,8 +295,10 @@ int bp_inner_product_proof_prove(bp_inner_product_ctx_t *ctx,
         || !(vec_L = OPENSSL_zalloc(vec_len * sizeof(*vec_L)))
         || !(vec_l = OPENSSL_zalloc(vec_len * sizeof(*vec_l)))
         || !(vec_R = OPENSSL_zalloc(vec_len * sizeof(*vec_R)))
-        || !(vec_r = OPENSSL_zalloc(vec_len * sizeof(*vec_r))))
+        || !(vec_r = OPENSSL_zalloc(vec_len * sizeof(*vec_r)))) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         goto end;
+    }
 
     bn_ctx = BN_CTX_new_ex(group->libctx);
     if (bn_ctx == NULL)
@@ -352,7 +375,6 @@ int bp_inner_product_proof_prove(bp_inner_product_ctx_t *ctx,
             goto end;
 
         /* compute the challenge */
-#if 1
         if (bp_point2oct(group, L, pstr, bn_ctx) <= 0)
             goto end;
 
@@ -371,19 +393,6 @@ int bp_inner_product_proof_prove(bp_inner_product_ctx_t *ctx,
             || !BN_mod_sqr(x2, x, order, bn_ctx)
             || !BN_mod_inverse(x2_inv, x2, order, bn_ctx))
             goto end;
-#else
-        if (EC_POINT_point2oct(group, L, format, pstr, plen, bn_ctx) <= 0
-            || EC_POINT_point2oct(group, R, format, pstr + plen, plen,
-                                  bn_ctx) <= 0)
-            goto end;
-
-        /* (26, 27) */
-        if (!bp_str2bn(pstr, 2 * plen, x)
-            || !BN_mod_inverse(x_inv, x, order, bn_ctx)
-            || !BN_mod_sqr(x2, x, order, bn_ctx)
-            || !BN_mod_inverse(x2_inv, x2, order, bn_ctx))
-            goto end;
-#endif
 
         for (i = 0; i < m; i++) {
             /* (29) */
@@ -476,6 +485,7 @@ int bp_inner_product_proof_verify(bp_inner_product_ctx_t *ctx,
     bp_inner_product_pub_param_t *pp;
 
     if (!ctx || !proof) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return ret;
     }
 
@@ -487,8 +497,10 @@ int bp_inner_product_proof_verify(bp_inner_product_ctx_t *ctx,
     if (!(vec_x = OPENSSL_zalloc(proof->n * sizeof(*vec_x)))
         || !(vec_x_inv = OPENSSL_zalloc(proof->n * sizeof(*vec_x_inv)))
         || !(vec_A = OPENSSL_zalloc(n * sizeof(*vec_A)))
-        || !(vec_a = OPENSSL_zalloc(n * sizeof(*vec_a))))
+        || !(vec_a = OPENSSL_zalloc(n * sizeof(*vec_a)))) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         goto end;
+    }
 
     if (!(P = EC_POINT_new(group)))
         goto end;
@@ -499,8 +511,10 @@ int bp_inner_product_proof_verify(bp_inner_product_ctx_t *ctx,
         goto end;
 
     pstr = transcript = OPENSSL_zalloc(plen * proof->n * 2 + ctx->st_len);
-    if (!pstr)
+    if (!pstr) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         goto end;
+    }
 
     if (ctx->st) {
         memcpy(pstr, ctx->st, ctx->st_len);
@@ -524,7 +538,6 @@ int bp_inner_product_proof_verify(bp_inner_product_ctx_t *ctx,
             goto end;
 
         /* compute hash */
-#if 1
         if (bp_point2oct(group, proof->vec_L[i], pstr, bn_ctx) <= 0)
             goto end;
 
@@ -542,19 +555,6 @@ int bp_inner_product_proof_verify(bp_inner_product_ctx_t *ctx,
             || !BN_mod_sqr(x2, vec_x[i], order, bn_ctx)
             || !BN_mod_inverse(x2_inv, x2, order, bn_ctx))
             goto end;
-#else
-        if (EC_POINT_point2oct(group, proof->vec_L[i], format, pstr, plen,
-                               bn_ctx) <= 0
-            || EC_POINT_point2oct(group, proof->vec_R[i], format,
-                                  pstr + plen, plen, bn_ctx) <= 0)
-            goto end;
-
-        if (!bp_str2bn(pstr, 2 * plen, vec_x[i])
-            || !BN_mod_inverse(vec_x_inv[i], vec_x[i], order, bn_ctx)
-            || !BN_mod_sqr(x2, vec_x[i], order, bn_ctx)
-            || !BN_mod_inverse(x2_inv, x2, order, bn_ctx))
-            goto end;
-#endif
 
         if (!(vec_A[k] = EC_POINT_dup(proof->vec_L[i], group))
             || !(vec_A[k+1] = EC_POINT_dup(proof->vec_R[i], group))

@@ -28,12 +28,24 @@ BULLET_PROOF_PUB_PARAM *BULLET_PROOF_PUB_PARAM_new(int curve_id, size_t bits,
     BULLET_PROOF_PUB_PARAM *pp = NULL;
     point_conversion_form_t format = POINT_CONVERSION_COMPRESSED;
 
-    if (curve_id <= 0 || bits <= 0 || bits > 32 || max_agg_num <= 0) {
+    if (curve_id <= 0 || bits <= 0 || max_agg_num <= 0) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_INVALID_ARGUMENT);
+        return NULL;
+    }
+
+    if (bits > BULLET_PROOF_MAX_BITS) {
+        ERR_raise(ERR_LIB_ZKP_BP, ZKP_BP_R_EXCEEDS_MAX_BITS);
+        return NULL;
+    }
+
+    if (max_agg_num > BULLET_PROOF_MAX_AGG_NUM) {
+        ERR_raise(ERR_LIB_ZKP_BP, ZKP_BP_R_EXCEEDS_MAX_AGG_NUM);
         return NULL;
     }
 
     pp = OPENSSL_zalloc(sizeof(*pp));
     if (pp == NULL) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
 
@@ -57,8 +69,10 @@ BULLET_PROOF_PUB_PARAM *BULLET_PROOF_PUB_PARAM_new(int curve_id, size_t bits,
         goto err;
 
     pstr = OPENSSL_zalloc(plen);
-    if (pstr == NULL)
+    if (pstr == NULL) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         goto err;
+    }
 
     if (EC_POINT_point2oct(group, EC_GROUP_get0_generator(group), format, pstr,
                            plen, bn_ctx) <= 0)
@@ -115,11 +129,11 @@ BULLET_PROOF_CTX *BULLET_PROOF_CTX_new(BULLET_PROOF_PUB_PARAM *pp, const char *s
 
     ctx = OPENSSL_zalloc(sizeof(*ctx));
     if (ctx == NULL) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
 
     ctx->pp = pp;
-    //ctx->group = EC_GROUP_new_by_curve_name_ex(NULL, NULL, NID_X9_62_prime256v1);
     ctx->group = EC_GROUP_new_by_curve_name_ex(NULL, NULL, pp->curve_id);
     if (ctx->group == NULL)
         goto err;
@@ -127,8 +141,10 @@ BULLET_PROOF_CTX *BULLET_PROOF_CTX_new(BULLET_PROOF_PUB_PARAM *pp, const char *s
     ctx->G = EC_GROUP_get0_generator(ctx->group);
 
     if (st != NULL) {
-        if (!(ctx->st = OPENSSL_strdup(st)))
+        if (!(ctx->st = OPENSSL_strdup(st))) {
+            ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
             goto err;
+        }
         ctx->st_len = strlen(st);
     }
 
@@ -167,11 +183,15 @@ BULLET_PROOF_WITNESS *BULLET_PROOF_WITNESS_new(BULLET_PROOF_CTX *ctx,
     const BIGNUM *order;
     BULLET_PROOF_WITNESS *witness = NULL;
 
-    if (ctx == NULL || agg_num <= 0 || agg_num > 32)
+    if (ctx == NULL || agg_num <= 0) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_INVALID_ARGUMENT);
         return NULL;
+    }
 
-    if (agg_num > ctx->pp->max_agg_num)
+    if (agg_num > ctx->pp->max_agg_num) {
+        ERR_raise(ERR_LIB_ZKP_BP, ZKP_BP_R_EXCEEDS_MAX_AGG_NUM);
         return NULL;
+    }
 
     if ((agg_num & (agg_num - 1)) != 0) {
         for (i = agg_num; i <= ctx->pp->max_agg_num; i++) {
@@ -184,13 +204,17 @@ BULLET_PROOF_WITNESS *BULLET_PROOF_WITNESS_new(BULLET_PROOF_CTX *ctx,
 
     order = EC_GROUP_get0_order(ctx->group);
 
-    if (!(witness = OPENSSL_zalloc(sizeof(*witness))))
+    if (!(witness = OPENSSL_zalloc(sizeof(*witness)))) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
 
     witness->n = agg_num + padding_len;
     if (!(witness->vec_r = OPENSSL_zalloc(sizeof(*witness->vec_r) * witness->n))
-        || !(witness->vec_v = OPENSSL_zalloc(sizeof(*witness->vec_v) * witness->n)))
+        || !(witness->vec_v = OPENSSL_zalloc(sizeof(*witness->vec_v) * witness->n))) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         goto err;
+    }
 
     for (i = 0; i < witness->n; i++) {
         if (!(witness->vec_r[i] = BN_new()) || !(witness->vec_v[i] = BN_new())
@@ -244,11 +268,13 @@ BULLET_PROOF *BULLET_PROOF_new(BULLET_PROOF_CTX *ctx)
     BULLET_PROOF *proof = NULL;
 
     if (ctx == NULL) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return NULL;
     }
 
     proof = OPENSSL_zalloc(sizeof(*proof));
     if (proof == NULL) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
 
@@ -319,8 +345,13 @@ int BULLET_PROOF_prove(BULLET_PROOF_CTX *ctx, BULLET_PROOF_WITNESS *witness,
     bp_inner_product_pub_param_t *ip_pp = NULL;
     bp_inner_product_witness_t *ip_witness = NULL;
 
-    if (ctx == NULL || witness == NULL || proof == NULL
-        || witness->n > ctx->pp->max_agg_num) {
+    if (ctx == NULL || witness == NULL || proof == NULL) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
+        return ret;
+    }
+
+    if (witness->n > ctx->pp->max_agg_num) {
+        ERR_raise(ERR_LIB_ZKP_BP, ZKP_BP_R_EXCEEDS_MAX_AGG_NUM);
         return ret;
     }
 
@@ -330,22 +361,13 @@ int BULLET_PROOF_prove(BULLET_PROOF_CTX *ctx, BULLET_PROOF_WITNESS *witness,
     n = pp->bits * witness->n;
     vec_p_len = n * 2  + 1;
 
-    /* (69) */
-    if (!(proof->V = OPENSSL_zalloc(witness->n * sizeof(*proof->V))))
+    if (!(P = EC_POINT_new(group))
+        || !(T = EC_POINT_new(group))
+        || !(U = EC_POINT_new(group)))
         goto end;
 
-    proof->n = witness->n;
-
-    for (i = 0; i < proof->n; i++) {
-        if (!(proof->V[i] = EC_POINT_new(group)))
-            goto end;
-
-        if (!EC_POINT_mul(group, proof->V[i], witness->vec_r[i],
-                          pp->H, witness->vec_v[i], NULL))
-            goto end;
-    }
-
-    if (!(aL = OPENSSL_zalloc(sizeof(*aL) * n))
+    if (!(proof->V = OPENSSL_zalloc(witness->n * sizeof(*proof->V)))
+        || !(aL = OPENSSL_zalloc(sizeof(*aL) * n))
         || !(aR = OPENSSL_zalloc(sizeof(*aL) * n))
         || !(sL = OPENSSL_zalloc(sizeof(*sL) * n))
         || !(sR = OPENSSL_zalloc(sizeof(*sR) * n))
@@ -358,13 +380,10 @@ int BULLET_PROOF_prove(BULLET_PROOF_CTX *ctx, BULLET_PROOF_WITNESS *witness,
         || !(rr1 = OPENSSL_zalloc(sizeof(*rr1) * n))
         || !(rr2 = OPENSSL_zalloc(sizeof(*rr2) * n))
         || !(ll = OPENSSL_zalloc(sizeof(*ll) * n))
-        || !(rr = OPENSSL_zalloc(sizeof(*rr) * n)))
+        || !(rr = OPENSSL_zalloc(sizeof(*rr) * n))) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         goto end;
-
-    if (!(P = EC_POINT_new(group))
-        || !(T = EC_POINT_new(group))
-        || !(U = EC_POINT_new(group)))
-        goto end;
+    }
 
     bn_ctx = BN_CTX_new_ex(group->libctx);
     if (bn_ctx == NULL)
@@ -416,12 +435,25 @@ int BULLET_PROOF_prove(BULLET_PROOF_CTX *ctx, BULLET_PROOF_WITNESS *witness,
         goto end;
 
     pstr = transcript = OPENSSL_zalloc(4 * plen + ctx->st_len);
-    if (pstr == NULL)
+    if (pstr == NULL) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         goto end;
+    }
 
     if (ctx->st) {
         memcpy(pstr, ctx->st, ctx->st_len);
         pstr += ctx->st_len;
+    }
+
+    proof->n = witness->n;
+    /* (69) */
+    for (i = 0; i < proof->n; i++) {
+        if (!(proof->V[i] = EC_POINT_new(group)))
+            goto end;
+
+        if (!EC_POINT_mul(group, proof->V[i], witness->vec_r[i],
+                          pp->H, witness->vec_v[i], NULL))
+            goto end;
     }
 
     /* (45) */
@@ -690,6 +722,7 @@ int BULLET_PROOF_verify(BULLET_PROOF_CTX *ctx, BULLET_PROOF *proof)
     BULLET_PROOF_PUB_PARAM *pp;
 
     if (ctx == NULL || proof == NULL) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return ret;
     }
 
@@ -705,8 +738,10 @@ int BULLET_PROOF_verify(BULLET_PROOF_CTX *ctx, BULLET_PROOF *proof)
         || !(vec_P = OPENSSL_zalloc(sizeof(*vec_P) * vec_p_len))
         || !(vec_R = OPENSSL_zalloc(sizeof(*vec_R) * vec_r_len))
         || !(vec_p = OPENSSL_zalloc(sizeof(*vec_p) * vec_p_len))
-        || !(vec_r = OPENSSL_zalloc(sizeof(*vec_r) * vec_r_len)))
+        || !(vec_r = OPENSSL_zalloc(sizeof(*vec_r) * vec_r_len))) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         goto end;
+    }
 
     if (!(P = EC_POINT_new(group))
         || !(U = EC_POINT_new(group))
@@ -754,8 +789,10 @@ int BULLET_PROOF_verify(BULLET_PROOF_CTX *ctx, BULLET_PROOF *proof)
         goto end;
 
     pstr = transcript = OPENSSL_zalloc(4 * plen + ctx->st_len);
-    if (pstr == NULL)
+    if (pstr == NULL) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         goto end;
+    }
 
     if (ctx->st) {
         memcpy(pstr, ctx->st, ctx->st_len);

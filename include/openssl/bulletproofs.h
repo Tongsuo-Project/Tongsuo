@@ -13,11 +13,15 @@
 # include <stdlib.h>
 # include <openssl/macros.h>
 # include <openssl/opensslconf.h>
+# include <openssl/zkpbperr.h>
 
 # ifndef OPENSSL_NO_BULLETPROOFS
 # ifdef  __cplusplus
 extern "C" {
 # endif
+
+# define BULLET_PROOF_MAX_BITS          64
+# define BULLET_PROOF_MAX_AGG_NUM       32
 
 typedef struct bullet_proof_pub_param_st BULLET_PROOF_PUB_PARAM;
 typedef struct bullet_proof_ctx_st BULLET_PROOF_CTX;

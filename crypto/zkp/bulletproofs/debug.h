@@ -22,8 +22,6 @@ extern "C" {
 # include "bullet_proof.h"
 # include "inner_product.h"
 
-//# define bp_rand_range BN_rand_range
-
 int bp_rand_range(BIGNUM *rnd, const BIGNUM *range);
 
 void BN_print2(BIO *b, const BIGNUM *n, const char *name);

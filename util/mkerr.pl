@@ -116,7 +116,7 @@ my @source;
 if ( $internal ) {
     die "Cannot mix -internal and -static\n" if $static;
     die "Extra parameters given.\n" if @ARGV;
-    @source = ( glob('crypto/*.c'), glob('crypto/*/*.c'),
+    @source = ( glob('crypto/*.c'), glob('crypto/*/*.c'), glob('crypto/zkp/bulletproofs/*.c'),
                 glob('ssl/*.c'), glob('ssl/*/*.c'), glob('providers/*.c'),
                 glob('providers/*/*.c'), glob('providers/*/*/*.c') );
 } else {
@@ -208,7 +208,7 @@ if ( ! $reindex && $statefile ) {
             die "Bad line in $statefile:\n$_\n";
         }
         my $lib = $name;
-        $lib =~ s/^((?:OSSL_|OPENSSL_)?[^_]{2,}).*$/$1/;
+        $lib =~ s/^((?:OSSL_|OPENSSL_|ZKP_)?[^_]{2,}).*$/$1/;
         $lib = "SSL" if $lib =~ /TLS/;
         if ( !defined $errorfile{$lib} ) {
             print "Skipping $_";
@@ -216,7 +216,7 @@ if ( ! $reindex && $statefile ) {
             next;
         }
         next if $errorfile{$lib} eq 'NONE';
-        if ( $name =~ /^(?:OSSL_|OPENSSL_)?[A-Z0-9]{2,}_R_/ ) {
+        if ( $name =~ /^(?:OSSL_|OPENSSL_|ZKP_)?[A-Z0-9]{2,}_R_/ ) {
             die "$lib reason code $code collision at $name\n"
                 if $rassigned{$lib} =~ /:$code:/;
             $rassigned{$lib} .= "$code:";
@@ -224,7 +224,7 @@ if ( ! $reindex && $statefile ) {
                 $rmax{$lib} = $code if $code > $rmax{$lib};
             }
             $rcodes{$name} = $code;
-        } elsif ( $name =~ /^(?:OSSL_|OPENSSL_)?[A-Z0-9]{2,}_F_/ ) {
+        } elsif ( $name =~ /^(?:OSSL_|OPENSSL_|ZKP_)?[A-Z0-9]{2,}_F_/ ) {
             # We do nothing with the function codes, just let them go away
         } else {
             die "Bad line in $statefile:\n$_\n";
@@ -269,7 +269,7 @@ foreach my $file ( @source ) {
         last if /^#error\s+obsolete/;
         $linenr++;
 
-        if ( /(((?:OSSL_|OPENSSL_)?[A-Z0-9]{2,})_R_[A-Z0-9_]+)/ ) {
+        if ( /(((?:OSSL_|OPENSSL_|ZKP_)?[A-Z0-9]{2,})_R_[A-Z0-9_]+)/ ) {
             next unless exists $errorfile{$2};
             next if $errorfile{$2} eq 'NONE';
             $usedreasons{$1} = 1;
