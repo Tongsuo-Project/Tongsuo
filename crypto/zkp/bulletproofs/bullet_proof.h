@@ -31,6 +31,8 @@ struct bullet_proof_pub_param_st {
     EC_POINT *H;
     EC_POINT *U;
     int curve_id;
+    CRYPTO_RWLOCK *lock;
+    CRYPTO_REF_COUNT references;
 };
 
 struct bullet_proof_ctx_st {
@@ -58,6 +60,8 @@ struct bullet_proof_st {
     BIGNUM *mu;
     BIGNUM *tx;
     bp_inner_product_proof_t *ip_proof;
+    CRYPTO_RWLOCK *lock;
+    CRYPTO_REF_COUNT references;
 };
 
 # ifdef  __cplusplus

@@ -42,6 +42,18 @@ BULLET_PROOF_PUB_PARAM *BULLET_PROOF_PUB_PARAM_new(int curve_id, size_t bits,
  */
 void BULLET_PROOF_PUB_PARAM_free(BULLET_PROOF_PUB_PARAM *pp);
 
+/** Increases the internal reference count of a BULLET_PROOF_PUB_PARAM object.
+ *  \param  pp  BULLET_PROOF_PUB_PARAM object
+ *  \return 1 on success and 0 if an error occurred.
+ */
+int BULLET_PROOF_PUB_PARAM_up_ref(BULLET_PROOF_PUB_PARAM *pp);
+
+/** Decreases the internal reference count of a BULLET_PROOF_PUB_PARAM object.
+ *  \param  pp  BULLET_PROOF_PUB_PARAM object
+ *  \return 1 on success and 0 if an error occurred.
+ */
+int BULLET_PROOF_PUB_PARAM_down_ref(BULLET_PROOF_PUB_PARAM *pp);
+
 /** Creates a new BULLET_PROOF_CTX object
  *  \return newly created BULLET_PROOF_CTX object or NULL in case of an error
  */
@@ -76,6 +88,18 @@ BULLET_PROOF *BULLET_PROOF_new(BULLET_PROOF_CTX *ctx);
  *  \param  proof     BULLET_PROOF object to be freed
  */
 void BULLET_PROOF_free(BULLET_PROOF *proof);
+
+/** Increases the internal reference count of a BULLET_PROOF object.
+ *  \param  proof  BULLET_PROOF object
+ *  \return 1 on success and 0 if an error occurred.
+ */
+int BULLET_PROOF_up_ref(BULLET_PROOF *proof);
+
+/** Decreases the internal reference count of a BULLET_PROOF object.
+ *  \param  proof  BULLET_PROOF object
+ *  \return 1 on success and 0 if an error occurred.
+ */
+int BULLET_PROOF_down_ref(BULLET_PROOF *proof);
 
 /** Prove computes the ZK rangeproof.
  *  \param  ctx       BULLET_PROOF_CTX object

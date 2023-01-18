@@ -90,6 +90,12 @@ BULLET_PROOF_PUB_PARAM *BULLET_PROOF_PUB_PARAM_new(int curve_id, size_t bits,
         || !(pp->U = bp_random_ec_point_new(group, bn_ctx)))
         goto err;
 
+    pp->references = 1;
+    if ((pp->lock = CRYPTO_THREAD_lock_new()) == NULL) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+
     BN_CTX_free(bn_ctx);
     EC_GROUP_free(group);
     return pp;
@@ -106,14 +112,55 @@ err:
  */
 void BULLET_PROOF_PUB_PARAM_free(BULLET_PROOF_PUB_PARAM *pp)
 {
+    int ref;
+
     if (pp == NULL)
         return;
+
+    CRYPTO_DOWN_REF(&pp->references, &ref, pp->lock);
+    REF_PRINT_COUNT("BULLET_PROOF_PUB_PARAM", pp);
+    if (ref > 0)
+        return;
+    REF_ASSERT_ISNT(ref < 0);
 
     bp_random_ec_points_free(pp->vec_G, pp->bits * pp->max_agg_num);
     bp_random_ec_points_free(pp->vec_H, pp->bits * pp->max_agg_num);
     bp_random_ec_point_free(pp->U);
     EC_POINT_free(pp->H);
+    CRYPTO_THREAD_lock_free(pp->lock);
     OPENSSL_clear_free((void *)pp, sizeof(BULLET_PROOF_CTX));
+}
+
+/** Increases the internal reference count of a BULLET_PROOF_PUB_PARAM object.
+ *  \param  pp  BULLET_PROOF_PUB_PARAM object
+ *  \return 1 on success and 0 if an error occurred.
+ */
+int BULLET_PROOF_PUB_PARAM_up_ref(BULLET_PROOF_PUB_PARAM *pp)
+{
+    int ref;
+
+    if (CRYPTO_UP_REF(&pp->references, &ref, pp->lock) <= 0)
+        return 0;
+
+    REF_PRINT_COUNT("BULLET_PROOF_PUB_PARAM", pp);
+    REF_ASSERT_ISNT(ref < 2);
+    return ((ref > 1) ? 1 : 0);
+}
+
+/** Decreases the internal reference count of a BULLET_PROOF_PUB_PARAM object.
+ *  \param  pp  BULLET_PROOF_PUB_PARAM object
+ *  \return 1 on success and 0 if an error occurred.
+ */
+int BULLET_PROOF_PUB_PARAM_down_ref(BULLET_PROOF_PUB_PARAM *pp)
+{
+    int ref;
+
+    if (CRYPTO_DOWN_REF(&pp->references, &ref, pp->lock) <= 0)
+        return 0;
+
+    REF_PRINT_COUNT("BULLET_PROOF_PUB_PARAM", proof);
+    REF_ASSERT_ISNT(ref > 0);
+    return ((ref > 0) ? 1 : 0);
 }
 
 /** Creates a new BULLET_PROOF_CTX object
@@ -133,7 +180,11 @@ BULLET_PROOF_CTX *BULLET_PROOF_CTX_new(BULLET_PROOF_PUB_PARAM *pp, const char *s
         return NULL;
     }
 
+    if (!BULLET_PROOF_PUB_PARAM_up_ref(pp))
+        goto err;
+
     ctx->pp = pp;
+
     ctx->group = EC_GROUP_new_by_curve_name_ex(NULL, NULL, pp->curve_id);
     if (ctx->group == NULL)
         goto err;
@@ -165,7 +216,7 @@ void BULLET_PROOF_CTX_free(BULLET_PROOF_CTX *ctx)
 
     OPENSSL_free(ctx->st);
 
-    //BULLET_PROOF_PUB_PARAM_free(ctx->pp);
+    BULLET_PROOF_PUB_PARAM_free(ctx->pp);
     EC_GROUP_free(ctx->group);
     OPENSSL_clear_free((void *)ctx, sizeof(BULLET_PROOF_CTX));
 }
@@ -287,6 +338,12 @@ BULLET_PROOF *BULLET_PROOF_new(BULLET_PROOF_CTX *ctx)
         || !(proof->tx = BN_new()))
         goto err;
 
+    proof->references = 1;
+    if ((proof->lock = CRYPTO_THREAD_lock_new()) == NULL) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+
     return proof;
 err:
     BULLET_PROOF_free(proof);
@@ -298,10 +355,17 @@ err:
  */
 void BULLET_PROOF_free(BULLET_PROOF *proof)
 {
+    int ref;
     size_t i;
 
     if (proof == NULL)
         return;
+
+    CRYPTO_DOWN_REF(&proof->references, &ref, proof->lock);
+    REF_PRINT_COUNT("BULLET_PROOF", proof);
+    if (ref > 0)
+        return;
+    REF_ASSERT_ISNT(ref < 0);
 
     for (i = 0; i < proof->n; i++) {
         EC_POINT_free(proof->V[i]);
@@ -316,7 +380,40 @@ void BULLET_PROOF_free(BULLET_PROOF *proof)
     BN_free(proof->mu);
     BN_free(proof->tx);
     bp_inner_product_proof_free(proof->ip_proof);
+    CRYPTO_THREAD_lock_free(proof->lock);
     OPENSSL_free(proof);
+}
+
+/** Increases the internal reference count of a BULLET_PROOF object.
+ *  \param  proof  BULLET_PROOF object
+ *  \return 1 on success and 0 if an error occurred.
+ */
+int BULLET_PROOF_up_ref(BULLET_PROOF *proof)
+{
+    int ref;
+
+    if (CRYPTO_UP_REF(&proof->references, &ref, proof->lock) <= 0)
+        return 0;
+
+    REF_PRINT_COUNT("BULLET_PROOF", proof);
+    REF_ASSERT_ISNT(ref < 2);
+    return ((ref > 1) ? 1 : 0);
+}
+
+/** Decreases the internal reference count of a BULLET_PROOF object.
+ *  \param  proof  BULLET_PROOF object
+ *  \return 1 on success and 0 if an error occurred.
+ */
+int BULLET_PROOF_down_ref(BULLET_PROOF *proof)
+{
+    int ref;
+
+    if (CRYPTO_DOWN_REF(&proof->references, &ref, proof->lock) <= 0)
+        return 0;
+
+    REF_PRINT_COUNT("BULLET_PROOF", proof);
+    REF_ASSERT_ISNT(ref > 0);
+    return ((ref > 0) ? 1 : 0);
 }
 
 /** Prove computes the ZK rangeproof.
