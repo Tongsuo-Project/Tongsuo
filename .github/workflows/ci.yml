@@ -256,7 +256,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: config
-        run: ./config --strict-warnings -fsanitize=memory -DOSSL_SANITIZE_MEMORY enable-ssl-trace enable-zlib enable-zlib-dynamic enable-fips enable-ec_elgamal enable-twisted_ec_elgamal enable-paillier && perl configdata.pm --dump
+        run: CC=clang ./config --strict-warnings enable-ssl-trace enable-zlib enable-zlib-dynamic enable-fips enable-ec_elgamal enable-twisted_ec_elgamal enable-paillier && perl configdata.pm --dump
       - name: make
         run: make -s -j4
       - name: make test
@@ -368,7 +368,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: config
-        run: ./config --strict-warnings -fsanitize=memory -DOSSL_SANITIZE_MEMORY enable-bulletproofs && perl configdata.pm --dump
+        run: CC=clang ./config --strict-warnings --debug -O1 -fsanitize=memory -DOSSL_SANITIZE_MEMORY enable-bulletproofs && perl configdata.pm --dump
       - name: make
         run: make -s -j4
       - name: make test

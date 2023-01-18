@@ -12,6 +12,8 @@
 #include "bullet_proof.h"
 #include "util.h"
 
+static void bullet_proof_cleanup(BULLET_PROOF *proof);
+
 /** Creates a new BULLET_PROOF_PUB_PARAM object
  *  \param  curve_id    the elliptic curve id
  *  \param  bits        the range bits that support verification
@@ -318,7 +320,7 @@ BULLET_PROOF *BULLET_PROOF_new(BULLET_PROOF_CTX *ctx)
 {
     BULLET_PROOF *proof = NULL;
 
-    if (ctx == NULL) {
+    if (ctx == NULL || ctx->pp == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return NULL;
     }
@@ -382,6 +384,25 @@ void BULLET_PROOF_free(BULLET_PROOF *proof)
     bp_inner_product_proof_free(proof->ip_proof);
     CRYPTO_THREAD_lock_free(proof->lock);
     OPENSSL_free(proof);
+}
+
+static void bullet_proof_cleanup(BULLET_PROOF *proof)
+{
+    size_t i;
+
+    if (proof == NULL)
+        return;
+
+    if (proof->V != NULL) {
+        for (i = 0; i < proof->n; i++) {
+            EC_POINT_free(proof->V[i]);
+            proof->V[i] = NULL;
+        }
+        proof->V = NULL;
+    }
+
+    bp_inner_product_proof_free(proof->ip_proof);
+    proof->ip_proof = NULL;
 }
 
 /** Increases the internal reference count of a BULLET_PROOF object.
@@ -451,6 +472,9 @@ int BULLET_PROOF_prove(BULLET_PROOF_CTX *ctx, BULLET_PROOF_WITNESS *witness,
         ERR_raise(ERR_LIB_ZKP_BP, ZKP_BP_R_EXCEEDS_MAX_AGG_NUM);
         return ret;
     }
+
+    if (proof->V != NULL || proof->ip_proof != NULL)
+        bullet_proof_cleanup(proof);
 
     pp = ctx->pp;
     group = ctx->group;
@@ -759,6 +783,9 @@ int BULLET_PROOF_prove(BULLET_PROOF_CTX *ctx, BULLET_PROOF_WITNESS *witness,
     ret = bp_inner_product_proof_prove(ip_ctx, ip_witness, proof->ip_proof);
 
 end:
+    if (!ret)
+        bullet_proof_cleanup(proof);
+
     bp_inner_product_witness_free(ip_witness);
     bp_inner_product_pub_param_free(ip_pp);
     bp_inner_product_ctx_free(ip_ctx);
