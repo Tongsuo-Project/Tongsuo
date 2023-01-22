@@ -701,7 +701,7 @@ typedef enum OPTION_choice {
     OPT_SSL3, OPT_TLS1_3, OPT_TLS1_2, OPT_TLS1_1, OPT_TLS1, OPT_DTLS, OPT_DTLS1,
 #ifndef OPENSSL_NO_NTLS
     OPT_NTLS, OPT_ENC_CERT, OPT_ENC_KEY, OPT_SIGN_CERT, OPT_SIGN_KEY,
-    OPT_ENABLE_NTLS, OPT_ENC_CERTFORM, OPT_SIGN_CERTFORM,
+    OPT_ENABLE_NTLS, OPT_ENABLE_FORCE_NTLS, OPT_ENC_CERTFORM, OPT_SIGN_CERTFORM,
     OPT_ENC_KEYFORM, OPT_SIGN_KEYFORM,
 #endif
 #ifndef OPENSSL_NO_SM2
@@ -954,6 +954,7 @@ const OPTIONS s_server_options[] = {
 #ifndef OPENSSL_NO_NTLS
     {"ntls", OPT_NTLS, '-', "Just talk NTLS"},
     {"enable_ntls", OPT_ENABLE_NTLS, '-', "enable ntls"},
+    {"enable_force_ntls", OPT_ENABLE_FORCE_NTLS, '-', "enable force ntls"},
 #endif
 #ifndef OPENSSL_NO_SM2
     {"enable_sm_tls13_strict", OPT_ENABLE_SM_TLS13_STRICT, '-', "enable sm tls13 strict"},
@@ -1098,6 +1099,7 @@ int s_server_main(int argc, char *argv[])
     int s_enc_key_format = FORMAT_PEM;
     int s_sign_key_format = FORMAT_PEM;
     int enable_ntls = 0;
+    int enable_force_ntls = 0;
 #endif
 #ifndef OPENSSL_NO_SM2
     int enable_sm_tls13_strict = 0;
@@ -1625,6 +1627,9 @@ int s_server_main(int argc, char *argv[])
         case OPT_ENABLE_NTLS:
             enable_ntls = 1;
             break;
+        case OPT_ENABLE_FORCE_NTLS:
+            enable_force_ntls = 1;
+            break;
 #endif
 #ifndef OPENSSL_NO_SM2
         case OPT_ENABLE_SM_TLS13_STRICT:
@@ -1975,6 +1980,9 @@ skip:
         next_proto.data = next_protos_parse(&next_proto.len, next_proto_neg_in);
         if (next_proto.data == NULL)
             goto end;
+    }
+    if (enable_force_ntls) {
+        SSL_CTX_enable_force_ntls(ctx);
     }
 #endif
     alpn_ctx.data = NULL;

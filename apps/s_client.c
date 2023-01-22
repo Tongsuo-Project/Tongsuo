@@ -439,7 +439,7 @@ typedef enum OPTION_choice {
     OPT_SSL3, OPT_SSL_CONFIG,
     OPT_TLS1_3, OPT_TLS1_2, OPT_TLS1_1, OPT_TLS1, OPT_DTLS, OPT_DTLS1,
 #ifndef OPENSSL_NO_NTLS
-    OPT_NTLS, OPT_ENABLE_NTLS,
+    OPT_NTLS, OPT_ENABLE_NTLS, OPT_ENABLE_FORCE_NTLS,
 #endif
 #ifndef OPENSSL_NO_SM2
     OPT_ENABLE_SM_TLS13_STRICT,
@@ -649,6 +649,7 @@ const OPTIONS s_client_options[] = {
 #ifndef OPENSSL_NO_NTLS
     {"ntls", OPT_NTLS, '-', "Just use NTLS"},
     {"enable_ntls", OPT_ENABLE_NTLS, '-', "enable ntls"},
+    {"enable_force_ntls", OPT_ENABLE_FORCE_NTLS, '-', "enable force ntls"},
 #endif
 #ifndef OPENSSL_NO_SM2
     {"enable_sm_tls13_strict", OPT_ENABLE_SM_TLS13_STRICT, '-', "enable sm tls13 strict"},
@@ -855,6 +856,7 @@ int s_client_main(int argc, char **argv)
     char *enc_cert_file = NULL, *enc_key_file = NULL;
     char *sign_cert_file = NULL, *sign_key_file = NULL;
     int enable_ntls = 0;
+    int enable_force_ntls = 0;
 #endif
 #ifndef OPENSSL_NO_SM2
     int enable_sm_tls13_strict = 0;
@@ -1325,6 +1327,9 @@ int s_client_main(int argc, char **argv)
             break;
         case OPT_ENABLE_NTLS:
             enable_ntls = 1;
+            break;
+        case OPT_ENABLE_FORCE_NTLS:
+            enable_force_ntls = 1;
             break;
 #endif
 #ifndef OPENSSL_NO_SM2
@@ -1810,6 +1815,9 @@ int s_client_main(int argc, char **argv)
             ERR_print_errors(bio_err);
             goto end;
         }
+    }
+    if (enable_force_ntls) {
+        SSL_CTX_enable_force_ntls(ctx);
     }
 #endif
 
