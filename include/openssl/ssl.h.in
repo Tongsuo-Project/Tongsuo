@@ -1797,8 +1797,12 @@ __owur int SSL_CTX_use_sign_PrivateKey_file(SSL_CTX *ctx, const char *file,
                                             int type);
 void SSL_CTX_enable_ntls(SSL_CTX *ctx);
 void SSL_CTX_disable_ntls(SSL_CTX *ctx);
+void SSL_CTX_enable_force_ntls(SSL_CTX *ctx);
+void SSL_CTX_disable_force_ntls(SSL_CTX *ctx);
 void SSL_enable_ntls(SSL *s);
 void SSL_disable_ntls(SSL *s);
+void SSL_enable_force_ntls(SSL *s);
+void SSL_disable_force_ntls(SSL *s);
 # endif
 
 # ifndef OPENSSL_NO_SM2
