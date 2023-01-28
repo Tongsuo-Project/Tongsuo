@@ -1981,9 +1981,6 @@ skip:
         if (next_proto.data == NULL)
             goto end;
     }
-    if (enable_force_ntls) {
-        SSL_CTX_enable_force_ntls(ctx);
-    }
 #endif
     alpn_ctx.data = NULL;
     if (alpn_in) {
@@ -2066,6 +2063,9 @@ skip:
 #ifndef OPENSSL_NO_NTLS
     if (enable_ntls)
         SSL_CTX_enable_ntls(ctx);
+    if (enable_force_ntls) {
+        SSL_CTX_enable_force_ntls(ctx);
+    }
 #endif
 
 #ifndef OPENSSL_NO_SM2
