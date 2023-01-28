@@ -1816,9 +1816,6 @@ int s_client_main(int argc, char **argv)
             goto end;
         }
     }
-    if (enable_force_ntls) {
-        SSL_CTX_enable_force_ntls(ctx);
-    }
 #endif
 
     if (chain_file != NULL) {
@@ -1878,6 +1875,9 @@ int s_client_main(int argc, char **argv)
 #ifndef OPENSSL_NO_NTLS
     if (enable_ntls)
         SSL_CTX_enable_ntls(ctx);
+    if (enable_force_ntls) {
+        SSL_CTX_enable_force_ntls(ctx);
+    }
 #endif
 #ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
     if (enable_verify_peer_by_dc)
