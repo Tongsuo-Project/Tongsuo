@@ -2079,7 +2079,7 @@ int SSL_connection_is_ntls(SSL *s, int is_server)
                     return -1;
                 }
                 memcpy(buf, data, PEEK_HEADER_LENGTH);
-            } else {
+            } else if (BIO_method_type(s->rbio) == BIO_TYPE_SOCKET) {
                 ret = BIO_get_fd(s->rbio, &fd);
 
                 if (ret <= 0) {
@@ -2090,6 +2090,28 @@ int SSL_connection_is_ntls(SSL *s, int is_server)
                 }
 
                 ret = recv(fd, buf, PEEK_HEADER_LENGTH, MSG_PEEK);
+                if (ret < PEEK_HEADER_LENGTH) {
+                    s->rwstate = SSL_READING;
+                    return -1;
+                }
+            } else {
+                if (BIO_method_type(s->rbio) != BIO_TYPE_BUFFER) {
+                    BIO *bbio = BIO_new(BIO_f_buffer());
+                    if (bbio == NULL) {
+                        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
+                                      ERR_R_MALLOC_FAILURE);
+                        return -1;
+                    }
+                    s->rbio = BIO_push(bbio, s->rbio);
+                }
+
+                ret = BIO_buffer_peek(s->rbio, buf, PEEK_HEADER_LENGTH);
+                if (ret <= 0) {
+                    /* Non-standard buffer-bio seems unnecessary to support */
+                    SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
+                                  ERR_R_INTERNAL_ERROR);
+                    return -1;
+                }
                 if (ret < PEEK_HEADER_LENGTH) {
                     s->rwstate = SSL_READING;
                     return -1;
