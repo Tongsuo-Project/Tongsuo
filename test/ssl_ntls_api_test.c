@@ -141,13 +141,8 @@ static int test_ntls_ctx_set_cert_pkey_file_api(int i)
     SSL_CTX_disable_ntls(ctx);
     if (!TEST_true(ctx->enable_ntls == 0))
         goto err;
-    if (!TEST_true(ctx->enable_force_ntls == 0))
-        goto err;
-
 
     SSL_CTX_enable_force_ntls(ctx);
-    if (!TEST_true(ctx->enable_ntls == 1))
-        goto err;
     if (!TEST_true(ctx->enable_force_ntls == 1))
         goto err;
     SSL_CTX_disable_force_ntls(ctx);
@@ -258,12 +253,8 @@ static int test_ntls_ssl_set_cert_pkey_file_api(int i)
     SSL_disable_ntls(ssl);
     if (!TEST_true(ssl->enable_ntls == 0))
         goto err;
-    if (!TEST_true(ssl->enable_force_ntls == 0))
-        goto err;
 
     SSL_enable_force_ntls(ssl);
-    if (!TEST_true(ssl->enable_ntls == 1))
-        goto err;
     if (!TEST_true(ssl->enable_force_ntls == 1))
         goto err;
     SSL_disable_force_ntls(ssl);

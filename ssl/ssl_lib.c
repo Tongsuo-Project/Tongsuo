@@ -6530,12 +6530,10 @@ void SSL_CTX_enable_ntls(SSL_CTX *ctx)
 void SSL_CTX_disable_ntls(SSL_CTX *ctx)
 {
     ctx->enable_ntls = 0;
-    ctx->enable_force_ntls = 0;
 }
 
 void SSL_CTX_enable_force_ntls(SSL_CTX *ctx)
 {
-    ctx->enable_ntls = 1;
     ctx->enable_force_ntls = 1;
 }
 
@@ -6552,12 +6550,10 @@ void SSL_enable_ntls(SSL *s)
 void SSL_disable_ntls(SSL *s)
 {
     s->enable_ntls = 0;
-    s->enable_force_ntls = 0;
 }
 
 void SSL_enable_force_ntls(SSL *s)
 {
-    s->enable_ntls = 1;
     s->enable_force_ntls = 1;
 }
 

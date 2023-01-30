@@ -268,9 +268,7 @@ int ossl_statem_connect(SSL *s)
 #ifndef OPENSSL_NO_NTLS
     int ret;
 
-    if (s->enable_force_ntls == 1)
-        return state_machine_ntls(s, 0);
-    else if (s->enable_ntls == 1) {
+    if (s->enable_ntls == 1) {
         ret = SSL_connection_is_ntls(s, 0);
         if (ret == 0)
             return state_machine(s, 0);
