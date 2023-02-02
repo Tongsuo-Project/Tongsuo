@@ -1,6 +1,6 @@
 # Generated with generate_ssl_tests.pl
 
-num_tests = 17
+num_tests = 19
 
 test-0 = 0-test cipher ECC-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only
 test-1 = 1-test cipher ECC-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only
@@ -19,6 +19,8 @@ test-13 = 13-test server choose RSA-SM4 with RSA double certs only
 test-14 = 14-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs
 test-15 = 15-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs
 test-16 = 16-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs
+test-17 = 17-test ntls client handshake with server which has set enable_force_ntls
+test-18 = 18-test tls client handshake with server which has set enable_force_ntls
 # ===========================================================
 
 [0-test cipher ECC-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only]
@@ -576,5 +578,68 @@ ExpectedCipher = ECC-SM2-SM4-CBC-SM3
 ExpectedProtocol = NTLS
 ExpectedResult = Success
 Method = NTLS
+
+
+# ===========================================================
+
+[17-test ntls client handshake with server which has set enable_force_ntls]
+ssl_conf = 17-test ntls client handshake with server which has set enable_force_ntls-ssl
+
+[17-test ntls client handshake with server which has set enable_force_ntls-ssl]
+server = 17-test ntls client handshake with server which has set enable_force_ntls-server
+client = 17-test ntls client handshake with server which has set enable_force_ntls-client
+
+[17-test ntls client handshake with server which has set enable_force_ntls-server]
+Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
+CipherString = DEFAULT
+Enable_force_ntls = on
+Enable_ntls = on
+EncCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_enc.crt
+EncPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_enc.key
+PrivateKey = ${ENV::TEST_CERTS_DIR}/serverkey.pem
+SignCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.crt
+SignPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.key
+
+[17-test ntls client handshake with server which has set enable_force_ntls-client]
+CipherString = DEFAULT
+Enable_ntls = on
+VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2/chain-ca.crt
+VerifyMode = Peer
+
+[test-17]
+ExpectedProtocol = NTLS
+ExpectedResult = Success
+Method = NTLS
+
+
+# ===========================================================
+
+[18-test tls client handshake with server which has set enable_force_ntls]
+ssl_conf = 18-test tls client handshake with server which has set enable_force_ntls-ssl
+
+[18-test tls client handshake with server which has set enable_force_ntls-ssl]
+server = 18-test tls client handshake with server which has set enable_force_ntls-server
+client = 18-test tls client handshake with server which has set enable_force_ntls-client
+
+[18-test tls client handshake with server which has set enable_force_ntls-server]
+Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
+CipherString = DEFAULT
+Enable_force_ntls = on
+Enable_ntls = on
+EncCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_enc.crt
+EncPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_enc.key
+PrivateKey = ${ENV::TEST_CERTS_DIR}/serverkey.pem
+SignCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.crt
+SignPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.key
+
+[18-test tls client handshake with server which has set enable_force_ntls-client]
+CipherString = DEFAULT
+Enable_ntls = off
+VerifyCAFile = ${ENV::TEST_CERTS_DIR}/rootcert.pem
+VerifyMode = Peer
+
+[test-18]
+ExpectedResult = ServerFail
+Method = TLS
 
 
