@@ -5433,3 +5433,5 @@ ENGINE_get_default_bn_meth              5717	3_0_3	EXIST::FUNCTION:BN_METHOD,ENG
 EC_ELGAMAL_DECRYPT_TABLE_new_ex         5718	3_0_3	EXIST::FUNCTION:EC,EC_ELGAMAL
 EC_POINT_from_string                    5719	3_0_3	EXIST::FUNCTION:EC,EC_ELGAMAL
 PAILLIER_CTX_set_engine                 5720	3_0_3	EXIST::FUNCTION:ENGINE,PAILLIER
+EVP_sm4_gcm                             5721	3_0_3	EXIST::FUNCTION:SM4
+EVP_sm4_ccm                             5722	3_0_3	EXIST::FUNCTION:SM4

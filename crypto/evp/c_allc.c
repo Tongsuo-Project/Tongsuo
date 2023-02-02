@@ -69,6 +69,8 @@ void openssl_add_all_ciphers_int(void)
     EVP_add_cipher(EVP_sm4_ctr());
     EVP_add_cipher_alias(SN_sm4_cbc, "SM4");
     EVP_add_cipher_alias(SN_sm4_cbc, "sm4");
+    EVP_add_cipher(EVP_sm4_gcm());
+    EVP_add_cipher(EVP_sm4_ccm());
 #endif
 
 #ifndef OPENSSL_NO_RC5
