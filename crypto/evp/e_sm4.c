@@ -302,9 +302,12 @@ void sm4_ctr128_encrypt_blocks (const unsigned char *in, unsigned char *out,
                 Y_ni[i].d[3] = ctr;
             ctr++;
         }
-
+# ifdef USE_SM4_NI
+        SM4_encrypt_affine_ni((const uint8_t *)Y_ni, (uint8_t *)Eki_ni, key);
+# else
         for (i = 0; i < 4; i++)
             sm4_128_block_encrypt(Y_ni[i].c, Eki_ni[i].c, key);
+# endif
 
         for (i = 0; i < 4; i++) {
             uint64_t *out_p = (uint64_t *)out;
@@ -502,7 +505,11 @@ static int sm4_gcm_init(EVP_CIPHER_CTX *ctx, const unsigned char *key,
     if (key) {
         SM4_set_key(key,&gctx->ks);
         CRYPTO_gcm128_init(&gctx->gcm, &gctx->ks, (block128_f) sm4_128_block_encrypt);
+# ifdef USE_SM4_NI
+        gctx->ctr = (ctr128_f) sm4_ctr128_encrypt_blocks;
+# else
         gctx->ctr = NULL;
+#endif
         /*
          * If we have an iv can set it directly, otherwise use saved IV.
          */
