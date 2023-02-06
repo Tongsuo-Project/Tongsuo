@@ -310,11 +310,13 @@ void sm4_ctr128_encrypt_blocks (const unsigned char *in, unsigned char *out,
 # endif
 
         for (i = 0; i < 4; i++) {
-            uint64_t *out_p = (uint64_t *)out;
-            uint64_t *in_p = (uint64_t *)in;
-
-            for (j = 0; j < 2; j++)
-                out_p[j] = Eki_ni[i].u[j] ^ in_p[j];
+            for (j = 0; j < 16; j++) {
+                /*
+                 * we do this byte-by-byte to avoid misaligned
+                 * memory access, which makes UBsan unhappy.
+                 */
+                out[j] = Eki_ni[i].c[j] ^ in[j];
+            }
             in += 16;
             out += 16;
         }
