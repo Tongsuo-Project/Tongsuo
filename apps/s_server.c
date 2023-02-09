@@ -701,6 +701,7 @@ typedef enum OPTION_choice {
     OPT_SSL3, OPT_TLS1_3, OPT_TLS1_2, OPT_TLS1_1, OPT_TLS1, OPT_DTLS, OPT_DTLS1,
 #ifndef OPENSSL_NO_NTLS
     OPT_NTLS, OPT_ENC_CERT, OPT_ENC_KEY, OPT_SIGN_CERT, OPT_SIGN_KEY,
+    OPT_ENC_CERT2, OPT_ENC_KEY2, OPT_SIGN_CERT2, OPT_SIGN_KEY2,
     OPT_ENABLE_NTLS, OPT_ENABLE_FORCE_NTLS, OPT_ENC_CERTFORM, OPT_SIGN_CERTFORM,
     OPT_ENC_KEYFORM, OPT_SIGN_KEYFORM,
 #endif
@@ -793,6 +794,14 @@ const OPTIONS s_server_options[] = {
      "NTLS signing certificate file to use, PEM format assumed"},
     {"enc_key", OPT_ENC_KEY, 's', "NTLS encryption private key file to use"},
     {"sign_key", OPT_SIGN_KEY, 's', "NTLS signing private key file to use"},
+    {"enc_cert2", OPT_ENC_CERT2, '<',
+     "second encryption certificate file to use for servername"},
+    {"sign_cert2", OPT_SIGN_CERT2, '<',
+     "second signing certificate file to use for servername"},
+    {"enc_key2", OPT_ENC_KEY2, 's',
+     "second encryption private key file to use for servername"},
+    {"sign_key2", OPT_SIGN_KEY2, 's',
+     "second signing private key file to use for servername"},
     {"enc_certform", OPT_ENC_CERTFORM, 'F',
      "Enc Certificate format (PEM or DER) PEM default"},
     {"sign_certform", OPT_SIGN_CERTFORM, 'F',
@@ -1085,15 +1094,17 @@ int s_server_main(int argc, char *argv[])
     int s_server_verify = SSL_VERIFY_NONE;
     int s_server_session_id_context = 1; /* anything will do */
     const char *s_cert_file = TEST_CERT, *s_key_file = NULL, *s_chain_file = NULL;
-    const char *s_cert_file2 = TEST_CERT2, *s_key_file2 = NULL;
+    const char *s_cert_file2 = NULL, *s_key_file2 = NULL;
     char *s_dcert_file = NULL, *s_dkey_file = NULL, *s_dchain_file = NULL;
 #ifndef OPENSSL_NO_NTLS
     char *s_enc_cert_file = NULL, *s_enc_key_file = NULL;
+    char *s_enc_cert_file2 = NULL, *s_enc_key_file2 = NULL;
     char *s_sign_cert_file = NULL, *s_sign_key_file = NULL;
-    EVP_PKEY *s_enc_key = NULL;
-    EVP_PKEY *s_sign_key = NULL;
-    X509 *s_enc_cert = NULL;
-    X509 *s_sign_cert = NULL;
+    char *s_sign_cert_file2 = NULL, *s_sign_key_file2 = NULL;
+    EVP_PKEY *s_enc_key = NULL, *s_enc_key2 = NULL;
+    EVP_PKEY *s_sign_key = NULL, *s_sign_key2 = NULL;
+    X509 *s_enc_cert = NULL, *s_enc_cert2 = NULL;
+    X509 *s_sign_cert = NULL, *s_sign_cert2 = NULL;
     int s_enc_cert_format = FORMAT_PEM;
     int s_sign_cert_format = FORMAT_PEM;
     int s_enc_key_format = FORMAT_PEM;
@@ -1319,6 +1330,18 @@ int s_server_main(int argc, char *argv[])
             break;
         case OPT_SIGN_KEY:
             s_sign_key_file = opt_arg();
+            break;
+        case OPT_ENC_CERT2:
+            s_enc_cert_file2 = opt_arg();
+            break;
+        case OPT_ENC_KEY2:
+            s_enc_key_file2 = opt_arg();
+            break;
+        case OPT_SIGN_CERT2:
+            s_sign_cert_file2 = opt_arg();
+            break;
+        case OPT_SIGN_KEY2:
+            s_sign_key_file2 = opt_arg();
             break;
         case OPT_ENC_CERTFORM:
             if (!opt_format(opt_arg(), OPT_FMT_PEMDER, &s_enc_cert_format))
@@ -1875,8 +1898,7 @@ int s_server_main(int argc, char *argv[])
     if (s_key_file == NULL)
         s_key_file = s_cert_file;
 
-    if (s_key_file2 == NULL)
-        s_key_file2 = s_cert_file2;
+
 
     if (!load_excert(&exc))
         goto end;
@@ -1963,16 +1985,72 @@ skip:
         }
 
         if (tlsextcbp.servername != NULL) {
-            s_key2 = load_key(s_key_file2, s_key_format, 0, pass, engine,
-                              "second server certificate private key");
-            if (s_key2 == NULL)
-                goto end;
+            if (s_cert_file2 == NULL
+#ifndef OPENSSL_NO_NTLS
+                && s_sign_cert_file2 == NULL
+                && s_enc_cert_file2 == NULL
+#endif
+                )
+                s_cert_file2 = TEST_CERT2;
 
-            s_cert2 = load_cert_pass(s_cert_file2, s_cert_format, 1, pass,
-                                "second server certificate");
+            if (s_key_file2 == NULL)
+                s_key_file2 = s_cert_file2;
 
-            if (s_cert2 == NULL)
-                goto end;
+            if (s_key_file2) {
+                s_key2 = load_key(s_key_file2, s_key_format, 0, pass, engine,
+                                  "second server certificate private key");
+                if (s_key2 == NULL)
+                    goto end;
+            }
+
+            if (s_cert_file2) {
+                s_cert2 = load_cert_pass(s_cert_file2, s_cert_format, 1, pass,
+                                         "second server certificate");
+
+                if (s_cert2 == NULL)
+                    goto end;
+            }
+#ifndef OPENSSL_NO_NTLS
+            if (s_enc_key_file2) {
+                s_enc_key2 = load_key(s_enc_key_file2, s_enc_key_format, 0,
+                                      pass, engine, "second server encryption "
+                                      "certificate private key file");
+                if (s_enc_key2 == NULL) {
+                    ERR_print_errors(bio_err);
+                    goto end;
+                }
+            }
+
+            if (s_enc_cert_file2) {
+                s_enc_cert2 = load_cert(s_enc_cert_file2, s_enc_cert_format,
+                                        "second server encryption certificate "
+                                        "file");
+                if (s_enc_cert2 == NULL) {
+                    ERR_print_errors(bio_err);
+                    goto end;
+                }
+            }
+
+            if (s_sign_key_file2) {
+                s_sign_key2 = load_key(s_sign_key_file2, s_sign_key_format, 0,
+                                       pass, engine, "second server signing "
+                                       "certificate private key file");
+                if (s_sign_key2 == NULL) {
+                    ERR_print_errors(bio_err);
+                    goto end;
+                }
+            }
+
+            if (s_sign_cert_file2) {
+                s_sign_cert2 = load_cert(s_sign_cert_file2, s_sign_cert_format,
+                                        "second server signature certificate "
+                                        "file");
+                if (s_sign_cert2 == NULL) {
+                    ERR_print_errors(bio_err);
+                    goto end;
+                }
+            }
+#endif
         }
     }
 #if !defined(OPENSSL_NO_NEXTPROTONEG)
@@ -2191,7 +2269,13 @@ skip:
         goto end;
     }
 
-    if (s_cert2) {
+    if (s_cert2
+#ifndef OPENSSL_NO_NTLS
+        || (s_sign_cert2 && s_enc_cert2)
+#endif
+        )
+    {
+
         ctx2 = SSL_CTX_new_ex(app_get0_libctx(), app_get0_propq(), meth);
         if (ctx2 == NULL) {
             ERR_print_errors(bio_err);
@@ -2201,6 +2285,11 @@ skip:
 
     if (ctx2 != NULL) {
         BIO_printf(bio_s_out, "Setting secondary ctx parameters\n");
+
+#ifndef OPENSSL_NO_NTLS
+        if (enable_ntls)
+            SSL_CTX_enable_ntls(ctx2);
+#endif
 
         if (sdebug)
             ssl_ctx_security_debug(ctx2, sdebug);
@@ -2346,7 +2435,14 @@ skip:
     if (!set_sign_cert_key_stuff(ctx, s_sign_cert, s_sign_key, NULL, 0))
         goto end;
 
-    if (!set_enc_cert_key_stuff(ctx, s_enc_cert, s_enc_key, s_chain, build_chain))
+    if (!set_enc_cert_key_stuff(ctx, s_enc_cert, s_enc_key, s_chain,
+                                build_chain))
+        goto end;
+
+    if (ctx2 != NULL &&
+        (!set_sign_cert_key_stuff(ctx2, s_sign_cert2, s_sign_key2, NULL, 0) ||
+            !set_enc_cert_key_stuff(ctx2, s_enc_cert2, s_enc_key2, NULL,
+                                    build_chain)))
         goto end;
 #endif
 
@@ -2523,6 +2619,10 @@ skip:
     X509_free(s_enc_cert);
     EVP_PKEY_free(s_enc_key);
     EVP_PKEY_free(s_sign_key);
+    X509_free(s_sign_cert2);
+    X509_free(s_enc_cert2);
+    EVP_PKEY_free(s_enc_key2);
+    EVP_PKEY_free(s_sign_key2);
 #endif
     sk_X509_pop_free(s_chain, X509_free);
     sk_X509_pop_free(s_dchain, X509_free);

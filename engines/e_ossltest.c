@@ -245,7 +245,11 @@ static int ossltest_ciphers(ENGINE *, const EVP_CIPHER **,
 
 static int ossltest_cipher_nids[] = {
     NID_aes_128_cbc, NID_aes_128_gcm,
-    NID_aes_128_cbc_hmac_sha1, 0
+    NID_aes_128_cbc_hmac_sha1,
+#ifndef OPENSSL_NO_SM4
+    NID_sm4_cbc,
+#endif
+    0
 };
 
 /* AES128 */
@@ -301,7 +305,38 @@ static const EVP_CIPHER *ossltest_aes_128_cbc(void)
     return _hidden_aes_128_cbc;
 }
 
-static EVP_CIPHER *_hidden_aes_128_gcm = NULL;
+#ifndef OPENSSL_NO_SM4
+static int ossltest_sm4_init_key(EVP_CIPHER_CTX* ctx,
+                                 const unsigned char* key,
+                                 const unsigned char* iv, int enc);
+static int ossltest_sm4_cbc_cipher(EVP_CIPHER_CTX* ctx, unsigned char* out,
+                                   const unsigned char* in, size_t inl);
+
+static EVP_CIPHER* _hidden_sm4_cbc = NULL;
+static const EVP_CIPHER *ossltest_sm4_cbc(void)
+{
+    if (_hidden_sm4_cbc == NULL
+        && ((_hidden_sm4_cbc = EVP_CIPHER_meth_new(NID_sm4_cbc,
+                                                   16 /* block size */,
+                                                   16 /* key len */)) == NULL
+            || !EVP_CIPHER_meth_set_iv_length(_hidden_sm4_cbc,16)
+            || !EVP_CIPHER_meth_set_flags(_hidden_sm4_cbc,
+                                          EVP_CIPH_FLAG_DEFAULT_ASN1
+                                          | EVP_CIPH_CBC_MODE)
+            || !EVP_CIPHER_meth_set_init(_hidden_sm4_cbc,
+                                         ossltest_sm4_init_key)
+            || !EVP_CIPHER_meth_set_do_cipher(_hidden_sm4_cbc,
+                                              ossltest_sm4_cbc_cipher)
+            || !EVP_CIPHER_meth_set_impl_ctx_size(_hidden_sm4_cbc,
+                    EVP_CIPHER_impl_ctx_size(EVP_sm4_cbc())))) {
+        EVP_CIPHER_meth_free(_hidden_sm4_cbc);
+        _hidden_sm4_cbc = NULL;
+    }
+    return _hidden_sm4_cbc;
+}
+#endif
+
+static EVP_CIPHER* _hidden_aes_128_gcm = NULL;
 
 #define AES_GCM_FLAGS   (EVP_CIPH_FLAG_DEFAULT_ASN1 \
                 | EVP_CIPH_CUSTOM_IV | EVP_CIPH_FLAG_CUSTOM_CIPHER \
@@ -370,6 +405,10 @@ static void destroy_ciphers(void)
     _hidden_aes_128_cbc = NULL;
     _hidden_aes_128_gcm = NULL;
     _hidden_aes_128_cbc_hmac_sha1 = NULL;
+#ifndef OPENSSL_NO_SM4
+    EVP_CIPHER_meth_free(_hidden_sm4_cbc);
+    _hidden_sm4_cbc = NULL;
+#endif
 }
 
 /* Key loading */
@@ -543,6 +582,11 @@ static int ossltest_ciphers(ENGINE *e, const EVP_CIPHER **cipher,
     case NID_aes_128_cbc_hmac_sha1:
         *cipher = ossltest_aes_128_cbc_hmac_sha1();
         break;
+#ifndef OPENSSL_NO_SM4
+    case NID_sm4_cbc:
+        *cipher = ossltest_sm4_cbc();
+        break;
+#endif
     default:
         ok = 0;
         *cipher = NULL;
@@ -682,6 +726,46 @@ static int digest_sha512_final(EVP_MD_CTX *ctx, unsigned char *md)
     }
     return ret;
 }
+
+#ifndef OPENSSL_NO_SM4
+/*
+ * SM4 Implementation
+ */
+
+static int ossltest_sm4_init_key(EVP_CIPHER_CTX *ctx,
+                                 const unsigned char *key,
+                                 const unsigned char *iv, int enc)
+{
+    return EVP_CIPHER_meth_get_init(EVP_sm4_cbc()) (ctx, key, iv, enc);
+}
+
+static int ossltest_sm4_cbc_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
+                                   const unsigned char *in, size_t inl)
+{
+    unsigned char *tmpbuf;
+    int ret;
+
+    tmpbuf = OPENSSL_malloc(inl);
+
+    /* OPENSSL_malloc will return NULL if inl == 0 */
+    if (tmpbuf == NULL && inl > 0)
+        return -1;
+
+    /* Remember what we were asked to encrypt */
+    if (tmpbuf != NULL)
+        memcpy(tmpbuf, in, inl);
+
+    /* Go through the motions of encrypting it */
+    ret = EVP_CIPHER_meth_get_do_cipher(EVP_sm4_cbc())(ctx, out, in, inl);
+
+    /* Throw it all away and just use the plaintext as the output */
+    if (tmpbuf != NULL)
+        memcpy(out, tmpbuf, inl);
+    OPENSSL_free(tmpbuf);
+
+    return ret;
+}
+#endif
 
 /*
  * AES128 Implementation
