@@ -1,8 +1,9 @@
 LIBS=../../libcrypto
 
 IF[{- !$disabled{bulletproofs} -}]
-    SOURCE[../../libcrypto]=bulletproofs/bullet_proof.c     \
-                            bulletproofs/inner_product.c    \
-                            bulletproofs/util.c             \
+    SOURCE[../../libcrypto]=bulletproofs/bullet_proof.c                     \
+                            bulletproofs/inner_product.c                    \
+                            bulletproofs/util.c                             \
+                            bulletproofs/bullet_proof_encode.c              \
                             bulletproofs/bp_err.c
 ENDIF

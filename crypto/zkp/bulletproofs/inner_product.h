@@ -64,6 +64,7 @@ bp_inner_product_witness_t *bp_inner_product_witness_new(BIGNUM **vec_a,
                                                          BIGNUM **vec_b,
                                                          size_t n);
 void bp_inner_product_witness_free(bp_inner_product_witness_t *witness);
+bp_inner_product_proof_t *bp_inner_product_proof_alloc(size_t n);
 bp_inner_product_proof_t *bp_inner_product_proof_new(bp_inner_product_ctx_t *ctx);
 void bp_inner_product_proof_free(bp_inner_product_proof_t *proof);
 int bp_inner_product_proof_prove(bp_inner_product_ctx_t *ctx,

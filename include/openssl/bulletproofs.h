@@ -118,6 +118,44 @@ int BULLET_PROOF_prove(BULLET_PROOF_CTX *ctx, BULLET_PROOF_WITNESS *witness,
  */
 int BULLET_PROOF_verify(BULLET_PROOF_CTX *ctx, BULLET_PROOF *proof);
 
+/** Encodes BULLET_PROOF_PUB_PARAM to binary
+ *  \param  pp         BULLET_PROOF_PUB_PARAM object
+ *  \param  out        the buffer for the result (if NULL the function returns
+ *                     number of bytes needed).
+ *  \param  size       The memory size of the out pointer object
+ *  \return the length of the encoded octet string or 0 if an error occurred
+ */
+size_t BULLET_PROOF_PUB_PARAM_encode(BULLET_PROOF_PUB_PARAM *pp, unsigned char *out,
+                                     size_t size);
+
+/** Decodes binary to BULLET_PROOF_PUB_PARAM
+ *  \param  in         Memory buffer with the encoded BULLET_PROOF_PUB_PARAM
+ *                     object
+ *  \param  size       The memory size of the in pointer object
+ *  \return BULLET_PROOF_PUB_PARAM object pointer on success and NULL otherwise
+ */
+BULLET_PROOF_PUB_PARAM *BULLET_PROOF_PUB_PARAM_decode(unsigned char *in,
+                                                      size_t size);
+
+/** Encodes BULLET_PROOF to binary
+ *  \param  ctx        BULLET_PROOF_CTX object
+ *  \param  proof      BULLET_PROOF object
+ *  \param  out        the buffer for the result (if NULL the function returns
+ *                     number of bytes needed).
+ *  \param  size       The memory size of the out pointer object
+ *  \return the length of the encoded octet string or 0 if an error occurred
+ */
+size_t BULLET_PROOF_encode(BULLET_PROOF_CTX *ctx, BULLET_PROOF *proof,
+                           unsigned char *out, size_t size);
+
+/** Decodes binary to BULLET_PROOF
+ *  \param  in         Memory buffer with the encoded BULLET_PROOF object
+ *  \param  size       The memory size of the in pointer object
+ *  \return BULLET_PROOF_PUB_PARAM object pointer on success and NULL otherwise
+ */
+BULLET_PROOF *BULLET_PROOF_decode(BULLET_PROOF_CTX *ctx,
+                                  unsigned char *in, size_t size);
+
 # ifdef  __cplusplus
 }
 # endif

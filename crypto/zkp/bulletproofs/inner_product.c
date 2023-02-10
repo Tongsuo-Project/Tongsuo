@@ -187,7 +187,7 @@ void bp_inner_product_witness_free(bp_inner_product_witness_t *witness)
     OPENSSL_free(witness);
 }
 
-bp_inner_product_proof_t *bp_inner_product_proof_new(bp_inner_product_ctx_t *ctx)
+bp_inner_product_proof_t *bp_inner_product_proof_alloc(size_t n)
 {
     bp_inner_product_proof_t *proof = NULL;
 
@@ -197,13 +197,13 @@ bp_inner_product_proof_t *bp_inner_product_proof_new(bp_inner_product_ctx_t *ctx
         return NULL;
     }
 
-    proof->vec_L = OPENSSL_zalloc(ctx->pp->n * sizeof(*proof->vec_L));
+    proof->vec_L = OPENSSL_zalloc(n * sizeof(*proof->vec_L));
     if (!proof->vec_L) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         goto err;
     }
 
-    proof->vec_R = OPENSSL_zalloc(ctx->pp->n * sizeof(*proof->vec_R));
+    proof->vec_R = OPENSSL_zalloc(n * sizeof(*proof->vec_R));
     if (!proof->vec_R) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         goto err;
@@ -216,6 +216,11 @@ bp_inner_product_proof_t *bp_inner_product_proof_new(bp_inner_product_ctx_t *ctx
 err:
     bp_inner_product_proof_free(proof);
     return NULL;
+}
+
+bp_inner_product_proof_t *bp_inner_product_proof_new(bp_inner_product_ctx_t *ctx)
+{
+    return bp_inner_product_proof_alloc(ctx->pp->n);
 }
 
 void bp_inner_product_proof_free(bp_inner_product_proof_t *proof)

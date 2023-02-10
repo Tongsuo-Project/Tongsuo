@@ -23,6 +23,7 @@ extern "C" {
 # include "inner_product.h"
 
 struct bullet_proof_pub_param_st {
+    int curve_id;
     size_t bits;
     size_t max_agg_num;
     /* size equal bits * max_agg_num */
@@ -30,7 +31,6 @@ struct bullet_proof_pub_param_st {
     EC_POINT **vec_H;
     EC_POINT *H;
     EC_POINT *U;
-    int curve_id;
     CRYPTO_RWLOCK *lock;
     CRYPTO_REF_COUNT references;
 };
