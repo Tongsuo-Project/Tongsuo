@@ -2033,10 +2033,12 @@ err:
     return rv;
 }
 
-
 int SSL_connection_is_ntls(SSL *s, int is_server)
 {
-#define PEEK_HEADER_LENGTH 3
+    int ret = 0;
+    unsigned int version;
+    uint8_t *p, *data = NULL;
+
     /*
      * For client, or sometimes ssl_version is fixed,
      * we can easily determine if version is NTLS
@@ -2048,97 +2050,72 @@ int SSL_connection_is_ntls(SSL *s, int is_server)
         /* After receiving client hello and before choosing server version,
          * get version from s->clienthello->legacy_version
          */
-        if (s->clienthello) {
-            if (s->clienthello->legacy_version == NTLS1_1_VERSION)
-                return 1;
-            else
-                return 0;
+        if (s->clienthello)
+            return s->clienthello->legacy_version == NTLS1_1_VERSION;
+
+        if (s->preread_len >= sizeof(s->preread_buf)) {
+            p = &s->preread_buf[1];
+            n2s(p, version);
+            return version == NTLS1_1_VERSION;
         }
 
         /*
          * For server, first flight has not set version, we
          * have to get the server version from clientHello
          */
-        if (SSL_IS_FIRST_HANDSHAKE(s) && SSL_in_before(s)) {
-            int ret, fd;
-            PACKET pkt;
-            unsigned int version, type;
-            unsigned char buf[PEEK_HEADER_LENGTH];
-            char *data = NULL;
+        if (!SSL_IS_FIRST_HANDSHAKE(s) || !SSL_in_before(s))
+            return 0;
 
-            if (BIO_method_type(s->rbio) == BIO_TYPE_MEM) {
-                ret = BIO_get_mem_data(s->rbio, &data);
-                if (ret < PEEK_HEADER_LENGTH) {
-                    s->rwstate = SSL_READING;
-                    return -1;
-                }
-                memcpy(buf, data, PEEK_HEADER_LENGTH);
-            } else if (BIO_method_type(s->rbio) == BIO_TYPE_BIO) {
-                ret = BIO_nread0(s->rbio, &data);
-                if (ret < PEEK_HEADER_LENGTH) {
-                    s->rwstate = SSL_READING;
-                    return -1;
-                }
-                memcpy(buf, data, PEEK_HEADER_LENGTH);
-            } else if (BIO_method_type(s->rbio) == BIO_TYPE_SOCKET) {
-                ret = BIO_get_fd(s->rbio, &fd);
-
-                if (ret <= 0) {
-                    /* NTLS only support socket communication */
-                    SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                                  ERR_R_INTERNAL_ERROR);
-                    return -1;
-                }
-
-                ret = recv(fd, buf, PEEK_HEADER_LENGTH, MSG_PEEK);
-                if (ret < PEEK_HEADER_LENGTH) {
-                    s->rwstate = SSL_READING;
-                    return -1;
-                }
-            } else {
-                if (BIO_method_type(s->rbio) != BIO_TYPE_BUFFER) {
-                    BIO *bbio = BIO_new(BIO_f_buffer());
-                    if (bbio == NULL) {
-                        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                                      ERR_R_MALLOC_FAILURE);
-                        return -1;
-                    }
-                    s->rbio = BIO_push(bbio, s->rbio);
-                }
-
-                ret = BIO_buffer_peek(s->rbio, buf, PEEK_HEADER_LENGTH);
-                if (ret <= 0) {
-                    /* Non-standard buffer-bio seems unnecessary to support */
-                    SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR,
-                                  ERR_R_INTERNAL_ERROR);
-                    return -1;
-                }
-                if (ret < PEEK_HEADER_LENGTH) {
-                    s->rwstate = SSL_READING;
-                    return -1;
-                }
-            }
-
-            if (!PACKET_buf_init(&pkt, buf, 3)) {
-                SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
-                return -1;
-            }
-
-            if (!PACKET_get_1(&pkt, &type)) {
-                SSLfatal_ntls(s, SSL_AD_DECODE_ERROR, ERR_R_INTERNAL_ERROR);
-                return -1;
-            }
-
-            if (!PACKET_get_net_2(&pkt, &version)) {
-                SSLfatal_ntls(s, SSL_AD_DECODE_ERROR, ERR_R_INTERNAL_ERROR);
-                return -1;
-            }
-
-            if (version == NTLS1_1_VERSION)
-                return 1;
-            else
-                return 0;
+        if (s->rbio == NULL) {
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_R_READ_BIO_NOT_SET);
+            return -1;
         }
+
+        data = s->preread_buf + s->preread_len;
+
+        clear_sys_error();
+        s->rwstate = SSL_READING;
+        ret = BIO_read(s->rbio, data, sizeof(s->preread_buf) - s->preread_len);
+
+        if (ret <= 0 && !BIO_should_retry(s->rbio) && BIO_eof(s->rbio)) {
+            if (s->options & SSL_OP_IGNORE_UNEXPECTED_EOF) {
+                SSL_set_shutdown(s, SSL_RECEIVED_SHUTDOWN);
+                s->s3.warn_alert = SSL_AD_CLOSE_NOTIFY;
+            } else {
+                SSLfatal(s, SSL_AD_DECODE_ERROR,
+                         SSL_R_UNEXPECTED_EOF_WHILE_READING);
+            }
+
+            return -1;
+        }
+
+        if (ret > 0)
+            s->preread_len += ret;
+
+        if (s->preread_len >= sizeof(s->preread_buf)) {
+            BIO *bbio = BIO_new(BIO_f_buffer());
+            if (bbio == NULL) {
+                SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+                return -1;
+            }
+
+            if (BIO_set_buffer_read_data(bbio, s->preread_buf,
+                                         sizeof(s->preread_buf))
+                != 1) {
+                BIO_vfree(bbio);
+                SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+                return -1;
+            }
+
+            s->rwstate = SSL_NOTHING;
+            s->rbio = BIO_push(bbio, s->rbio);
+
+            p = &s->preread_buf[1];
+            n2s(p, version);
+            return version == NTLS1_1_VERSION;
+        }
+
+        return -1;
     }
 
     return 0;

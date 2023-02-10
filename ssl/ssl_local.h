@@ -844,6 +844,10 @@ typedef struct tls_group_info_st {
 
 # define TLS_GROUP_FFDHE_FOR_TLS1_3 (TLS_GROUP_FFDHE|TLS_GROUP_ONLY_FOR_TLS1_3)
 
+# ifndef OPENSSL_NO_NTLS
+#  define PREREAD_HEADER_LENGTH 3
+# endif
+
 struct ssl_ctx_st {
     OSSL_LIB_CTX *libctx;
 
@@ -1895,6 +1899,9 @@ struct ssl_st {
 # ifndef OPENSSL_NO_NTLS
     int enable_ntls;
     int enable_force_ntls;
+
+    uint8_t preread_buf[PREREAD_HEADER_LENGTH];
+    size_t preread_len;
 # endif
 # ifndef OPENSSL_NO_SKIP_SCSV
     int skip_scsv;

@@ -5,6 +5,8 @@
  Changes between 8.3.0 and 8.4.0 [xx XXX xxxx]
   *) s_server支持配置多证书测试TLCP SNI功能
 
+  *) SSL_connection_is_ntls改成使用预读方式判断是否为NTLS
+
   *) 修复CVE-2022-3996
 
   *) Paillier 支持硬件加速
