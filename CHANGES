@@ -7,6 +7,8 @@
 
  Changes between 8.3.2 and 8.3.3 [xxxx年xx月xx日]
 
+  *) SSL_connection_is_ntls改成使用预读方式判断是否为NTLS
+
   *) 支持SM4-NI优化
 
  Changes between 8.3.1 and 8.3.2 [2022年12月12日]
