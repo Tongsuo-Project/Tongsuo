@@ -129,9 +129,12 @@ int ntls_sm2_derive_ntls(SSL *s, EVP_PKEY *tmp_priv, EVP_PKEY *peer_tmp_pub)
 }
 # endif
 
-# define PEEK_HEADER_LENGTH 3
 int SSL_connection_is_ntls(SSL *s, int is_server)
 {
+    int ret = 0;
+    unsigned int version;
+    uint8_t *p, *data = NULL;
+
     /*
      * For client, or sometimes ssl_version is fixed,
      * we can easily determine if version is NTLS
@@ -143,61 +146,66 @@ int SSL_connection_is_ntls(SSL *s, int is_server)
         /* After receiving client hello and before choosing server version,
          * get version from s->clienthello->legacy_version
          */
-        if (s->clienthello) {
-            if (s->clienthello->legacy_version == NTLS1_1_VERSION)
-                return 1;
-            else
-                return 0;
+        if (s->clienthello)
+            return s->clienthello->legacy_version == NTLS1_1_VERSION;
+
+        if (s->preread_len >= sizeof(s->preread_buf)) {
+            p = &s->preread_buf[1];
+            n2s(p, version);
+            return version == NTLS1_1_VERSION;
         }
 
         /*
          * For server, first flight has not set version, we
          * have to get the server version from clientHello
          */
-        if (SSL_IS_FIRST_HANDSHAKE(s) && SSL_in_before(s)) {
-            int ret, fd;
-            PACKET pkt;
-            unsigned int version, type;
-            unsigned char buf[PEEK_HEADER_LENGTH];
+        if (!SSL_IS_FIRST_HANDSHAKE(s) || !SSL_in_before(s))
+            return 0;
 
-            ret = BIO_get_fd(s->rbio, &fd);
-
-            if (ret <= 0) {
-                /* NTLS only support socket communication */
-                SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_SSL_CONNECTION_IS_NTLS,
-                            ERR_R_INTERNAL_ERROR);
-                return -1;
-            }
-
-            ret = recv(fd, buf, PEEK_HEADER_LENGTH, MSG_PEEK);
-            if (ret < PEEK_HEADER_LENGTH) {
-                s->rwstate = SSL_READING;
-                return -1;
-            }
-
-            if (!PACKET_buf_init(&pkt, buf, 3)) {
-                SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_SSL_CONNECTION_IS_NTLS,
-                            ERR_R_INTERNAL_ERROR);
-                return -1;
-            }
-
-            if (!PACKET_get_1(&pkt, &type)) {
-                SSLfatal_ntls(s, SSL_AD_DECODE_ERROR, SSL_F_SSL_CONNECTION_IS_NTLS,
-                         ERR_R_INTERNAL_ERROR);
-                return -1;
-            }
-
-            if (!PACKET_get_net_2(&pkt, &version)) {
-                SSLfatal_ntls(s, SSL_AD_DECODE_ERROR, SSL_F_SSL_CONNECTION_IS_NTLS,
-                         ERR_R_INTERNAL_ERROR);
-                return -1;
-            }
-
-            if (version == NTLS1_1_VERSION)
-                return 1;
-            else
-                return 0;
+        if (s->rbio == NULL) {
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_SSL_CONNECTION_IS_NTLS,
+                     SSL_R_READ_BIO_NOT_SET);
+            return -1;
         }
+
+        data = s->preread_buf + s->preread_len;
+
+        clear_sys_error();
+        s->rwstate = SSL_READING;
+        ret = BIO_read(s->rbio, data, sizeof(s->preread_buf) - s->preread_len);
+
+        if (ret <= 0)
+            return -1;
+
+        if (ret > 0)
+            s->preread_len += ret;
+
+        if (s->preread_len >= sizeof(s->preread_buf)) {
+            BIO *bbio = BIO_new(BIO_f_buffer());
+            if (bbio == NULL) {
+                SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_SSL_CONNECTION_IS_NTLS,
+                         ERR_R_MALLOC_FAILURE);
+                return -1;
+            }
+
+            if (BIO_set_buffer_read_data(bbio, s->preread_buf,
+                                         sizeof(s->preread_buf))
+                != 1) {
+                BIO_vfree(bbio);
+                SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_SSL_CONNECTION_IS_NTLS,
+                         ERR_R_INTERNAL_ERROR);
+                return -1;
+            }
+
+            s->rwstate = SSL_NOTHING;
+            s->rbio = BIO_push(bbio, s->rbio);
+
+            p = &s->preread_buf[1];
+            n2s(p, version);
+            return version == NTLS1_1_VERSION;
+        }
+
+        return -1;
     }
 
     return 0;

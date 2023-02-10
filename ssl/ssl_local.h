@@ -790,6 +790,10 @@ typedef struct ssl_ctx_ext_secure_st {
     unsigned char tick_aes_key[TLSEXT_TICK_KEY_LENGTH];
 } SSL_CTX_EXT_SECURE;
 
+# ifndef OPENSSL_NO_NTLS
+#  define PREREAD_HEADER_LENGTH 3
+# endif
+
 struct ssl_ctx_st {
     const SSL_METHOD *method;
     STACK_OF(SSL_CIPHER) *cipher_list;
@@ -1607,6 +1611,9 @@ struct ssl_st {
 
 # ifndef OPENSSL_NO_NTLS
     int enable_ntls;
+
+    uint8_t preread_buf[PREREAD_HEADER_LENGTH];
+    size_t preread_len;
 # endif
 
 #ifndef OPENSSL_NO_SM2

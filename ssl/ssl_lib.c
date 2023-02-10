@@ -3755,12 +3755,13 @@ int SSL_get_error(const SSL *s, int i)
             return SSL_ERROR_WANT_READ;
         }
 #endif
-#ifndef OPENSSL_NO_NTLS
-        if (s->enable_ntls == 1 && SSL_IS_FIRST_HANDSHAKE(s)) {
-            return SSL_ERROR_WANT_READ;
-        }
-#endif
+
         bio = SSL_get_rbio(s);
+#ifndef OPENSSL_NO_NTLS
+        if (s->enable_ntls == 1 && SSL_IS_FIRST_HANDSHAKE(s)
+            && s->preread_len < sizeof(s->preread_buf) && !BIO_eof(bio))
+            return SSL_ERROR_WANT_READ;
+#endif
         if (BIO_should_read(bio))
             return SSL_ERROR_WANT_READ;
         else if (BIO_should_write(bio))
