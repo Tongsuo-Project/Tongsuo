@@ -237,3 +237,18 @@ jobs:
         run: make clean
       - name: check dirty
         run: test $(git status --porcelain | wc -l) -eq "0"
+
+  sm4ni_test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: config
+        run: ./config --strict-warnings enable-asan enable-ubsan -march=native && perl configdata.pm --dump
+      - name: make
+        run: make -s -j4
+      - name: make test
+        run: make test
+      - name: make clean
+        run: make clean
+      - name: check dirty
+        run: test $(git status --porcelain | wc -l) -eq "0"
