@@ -856,7 +856,7 @@ while (@argvcopy)
                         die "Directory given with --prefix MUST be absolute\n"
                                 unless file_name_is_absolute($config{prefix});
                         }
-                if (/^--symbol-prefix=(.*)$/)
+                elsif (/^--symbol-prefix=(.*)$/)
                         {
                         $config{symbol_prefix}=$1;
                         }
