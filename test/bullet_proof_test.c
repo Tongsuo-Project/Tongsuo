@@ -108,17 +108,17 @@ static int bullet_proof_encode_test(int bits, int64_t secret)
     if (!TEST_true(BULLET_PROOF_verify(ctx2, proof)))
         goto err;
 
-    size = BULLET_PROOF_encode(ctx, proof, NULL, 0);
+    size = BULLET_PROOF_encode(proof, NULL, 0);
     if (size == 0)
         goto err;
 
     if (!TEST_ptr(proof_bin = OPENSSL_zalloc(size)))
         goto err;
 
-    if (!TEST_size_t_eq(BULLET_PROOF_encode(ctx, proof, proof_bin, size), size))
+    if (!TEST_size_t_eq(BULLET_PROOF_encode(proof, proof_bin, size), size))
         goto err;
 
-    if (!TEST_ptr(proof2 = BULLET_PROOF_decode(ctx, proof_bin, size)))
+    if (!TEST_ptr(proof2 = BULLET_PROOF_decode(proof_bin, size)))
         goto err;
 
     if (!TEST_true(BULLET_PROOF_verify(ctx, proof2)))

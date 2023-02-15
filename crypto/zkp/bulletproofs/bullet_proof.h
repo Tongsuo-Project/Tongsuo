@@ -64,6 +64,8 @@ struct bullet_proof_st {
     CRYPTO_REF_COUNT references;
 };
 
+BULLET_PROOF *bullet_proof_alloc(const EC_GROUP *group);
+
 # ifdef  __cplusplus
 }
 # endif

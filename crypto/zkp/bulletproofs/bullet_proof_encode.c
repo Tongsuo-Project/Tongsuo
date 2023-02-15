@@ -205,27 +205,35 @@ err:
 }
 
 /** Encodes BULLET_PROOF to binary
- *  \param  ctx        BULLET_PROOF_CTX object
  *  \param  proof      BULLET_PROOF object
  *  \param  out        the buffer for the result (if NULL the function returns
  *                     number of bytes needed).
  *  \param  size       The memory size of the out pointer object
  *  \return the length of the encoded octet string or 0 if an error occurred
  */
-size_t BULLET_PROOF_encode(BULLET_PROOF_CTX *ctx, BULLET_PROOF *proof,
-                           unsigned char *out, size_t size)
+size_t BULLET_PROOF_encode(BULLET_PROOF *proof, unsigned char *out, size_t size)
 {
-    int *q;
+    int *q, curve_id;
     size_t point_len, bn_len, ret = 0, len, i;
     unsigned char *p;
     point_conversion_form_t form = POINT_CONVERSION_COMPRESSED;
     BN_CTX *bn_ctx = NULL;
     const BIGNUM *order;
+    EC_GROUP *group = NULL;
 
-    if (ctx == NULL || ctx->group == NULL || proof == NULL) {
+    if (proof == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return ret;
     }
+
+    if ((curve_id = EC_POINT_get_curve_name(proof->A)) <= 0) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_INVALID_ARGUMENT);
+        goto end;
+    }
+
+    group = EC_GROUP_new_by_curve_name_ex(NULL, NULL, curve_id);
+    if (group == NULL)
+        goto end;
 
     bn_ctx = BN_CTX_new();
     if (bn_ctx == NULL) {
@@ -233,15 +241,14 @@ size_t BULLET_PROOF_encode(BULLET_PROOF_CTX *ctx, BULLET_PROOF *proof,
         goto end;
     }
 
-    order = EC_GROUP_get0_order(ctx->group);
+    order = EC_GROUP_get0_order(group);
     bn_len = BN_num_bytes(order);
 
-    point_len = EC_POINT_point2oct(ctx->group,
-                                   EC_GROUP_get0_generator(ctx->group),
+    point_len = EC_POINT_point2oct(group, EC_GROUP_get0_generator(group),
                                    form, NULL, 0, bn_ctx);
-    /* proof len */
-    len = 4 + point_len * (proof->n + 4) + bn_len * 3;
-    /* ip_proof len */
+    /* proof_len = len(curve_id) + len(n) + len(V[n]+A+S+T1+T2) + len(taux+mu+tx) */
+    len = 4 + 4 + point_len * (proof->n + 4) + bn_len * 3;
+    /* ip_proof_len = len(n) + len(vec_L[n]+vec_R[n]) + len(a+b) */
     len += 4 + point_len * proof->ip_proof->n * 2 + bn_len * 2;
     if (out == NULL) {
         ret = len;
@@ -255,33 +262,33 @@ size_t BULLET_PROOF_encode(BULLET_PROOF_CTX *ctx, BULLET_PROOF *proof,
 
     /* encoding proof */
     q = (int *)out;
+    *q++ = l2n(curve_id);
     *q++ = l2n((int)proof->n);
     p = (unsigned char *)q;
 
     for (i = 0; i < proof->n; i++) {
-        if (EC_POINT_point2oct(ctx->group, proof->V[i], form, p, point_len,
-                               bn_ctx) == 0)
+        if (EC_POINT_point2oct(group, proof->V[i], form, p, point_len, bn_ctx) == 0)
             goto end;
 
         p += point_len;
     }
 
-    if (EC_POINT_point2oct(ctx->group, proof->A, form, p, point_len, bn_ctx) == 0)
+    if (EC_POINT_point2oct(group, proof->A, form, p, point_len, bn_ctx) == 0)
         goto end;
 
     p += point_len;
 
-    if (EC_POINT_point2oct(ctx->group, proof->S, form, p, point_len, bn_ctx) == 0)
+    if (EC_POINT_point2oct(group, proof->S, form, p, point_len, bn_ctx) == 0)
         goto end;
 
     p += point_len;
 
-    if (EC_POINT_point2oct(ctx->group, proof->T1, form, p, point_len, bn_ctx) == 0)
+    if (EC_POINT_point2oct(group, proof->T1, form, p, point_len, bn_ctx) == 0)
         goto end;
 
     p += point_len;
 
-    if (EC_POINT_point2oct(ctx->group, proof->T2, form, p, point_len, bn_ctx) == 0)
+    if (EC_POINT_point2oct(group, proof->T2, form, p, point_len, bn_ctx) == 0)
         goto end;
 
     p += point_len;
@@ -307,7 +314,7 @@ size_t BULLET_PROOF_encode(BULLET_PROOF_CTX *ctx, BULLET_PROOF *proof,
     p = (unsigned char *)q;
 
     for (i = 0; i < proof->ip_proof->n; i++) {
-        if (EC_POINT_point2oct(ctx->group, proof->ip_proof->vec_L[i], form, p, point_len,
+        if (EC_POINT_point2oct(group, proof->ip_proof->vec_L[i], form, p, point_len,
                                bn_ctx) == 0)
             goto end;
 
@@ -315,7 +322,7 @@ size_t BULLET_PROOF_encode(BULLET_PROOF_CTX *ctx, BULLET_PROOF *proof,
     }
 
     for (i = 0; i < proof->ip_proof->n; i++) {
-        if (EC_POINT_point2oct(ctx->group, proof->ip_proof->vec_R[i], form, p, point_len,
+        if (EC_POINT_point2oct(group, proof->ip_proof->vec_R[i], form, p, point_len,
                                bn_ctx) == 0)
             goto end;
 
@@ -336,6 +343,7 @@ size_t BULLET_PROOF_encode(BULLET_PROOF_CTX *ctx, BULLET_PROOF *proof,
 
 end:
     BN_CTX_free(bn_ctx);
+    EC_GROUP_free(group);
     return ret;
 }
 
@@ -344,22 +352,34 @@ end:
  *  \param  size       The memory size of the in pointer object
  *  \return BULLET_PROOF_PUB_PARAM object pointer on success and NULL otherwise
  */
-BULLET_PROOF *BULLET_PROOF_decode(BULLET_PROOF_CTX *ctx,
-                                  unsigned char *in, size_t size)
+BULLET_PROOF *BULLET_PROOF_decode(unsigned char *in, size_t size)
 {
     unsigned char *p;
-    int *q = (int *)in;
+    int *q = (int *)in, curve_id;
     size_t point_len, bn_len, proof_len, ip_proof_len, n, i;
     point_conversion_form_t form = POINT_CONVERSION_COMPRESSED;
     BULLET_PROOF *proof = NULL;
     bp_inner_product_proof_t *ip_proof = NULL;
     BN_CTX *bn_ctx = NULL;
     const BIGNUM *order;
+    EC_GROUP *group = NULL;
 
-    if (ctx == NULL || ctx->group == NULL || in == NULL || size <= 8) {
+    if (in == NULL || size <= 8) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return NULL;
     }
+
+    curve_id = n2l(*q);
+    q++;
+
+    if (curve_id <= 0) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_INVALID_ARGUMENT);
+        goto err;
+    }
+
+    group = EC_GROUP_new_by_curve_name_ex(NULL, NULL, curve_id);
+    if (group == NULL)
+        goto err;
 
     bn_ctx = BN_CTX_new();
     if (bn_ctx == NULL) {
@@ -371,22 +391,22 @@ BULLET_PROOF *BULLET_PROOF_decode(BULLET_PROOF_CTX *ctx,
     q++;
     p = (unsigned char *)q;
 
-    order = EC_GROUP_get0_order(ctx->group);
+    order = EC_GROUP_get0_order(group);
     bn_len = BN_num_bytes(order);
 
-    point_len = EC_POINT_point2oct(ctx->group,
-                                   EC_GROUP_get0_generator(ctx->group),
+    point_len = EC_POINT_point2oct(group, EC_GROUP_get0_generator(group),
                                    form, NULL, 0, bn_ctx);
     if (point_len <= 0)
         goto err;
 
-    proof_len = 4 + point_len * (n + 4) + bn_len * 3;
+    /* len(curve_id) + len(n) + len(V[n]+A+S+T1+T2) + len(taux+mu+tx) */
+    proof_len = 4 + 4 + point_len * (n + 4) + bn_len * 3;
     if (size < proof_len) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_INVALID_ARGUMENT);
         goto err;
     }
 
-    proof = BULLET_PROOF_new(ctx);
+    proof = bullet_proof_alloc(group);
     if (proof == NULL)
         goto err;
 
@@ -396,10 +416,10 @@ BULLET_PROOF *BULLET_PROOF_decode(BULLET_PROOF_CTX *ctx,
     }
 
     for (i = 0; i < n; i++) {
-        if (!(proof->V[i] = EC_POINT_new(ctx->group)))
+        if (!(proof->V[i] = EC_POINT_new(group)))
             goto err;
 
-        if (!EC_POINT_oct2point(ctx->group, proof->V[i], p, point_len, bn_ctx))
+        if (!EC_POINT_oct2point(group, proof->V[i], p, point_len, bn_ctx))
             goto err;
 
         p += point_len;
@@ -407,22 +427,22 @@ BULLET_PROOF *BULLET_PROOF_decode(BULLET_PROOF_CTX *ctx,
 
     proof->n = (size_t)n;
 
-    if (!EC_POINT_oct2point(ctx->group, proof->A, p, point_len, bn_ctx))
+    if (!EC_POINT_oct2point(group, proof->A, p, point_len, bn_ctx))
         goto err;
 
     p += point_len;
 
-    if (!EC_POINT_oct2point(ctx->group, proof->S, p, point_len, bn_ctx))
+    if (!EC_POINT_oct2point(group, proof->S, p, point_len, bn_ctx))
         goto err;
 
     p += point_len;
 
-    if (!EC_POINT_oct2point(ctx->group, proof->T1, p, point_len, bn_ctx))
+    if (!EC_POINT_oct2point(group, proof->T1, p, point_len, bn_ctx))
         goto err;
 
     p += point_len;
 
-    if (!EC_POINT_oct2point(ctx->group, proof->T2, p, point_len, bn_ctx))
+    if (!EC_POINT_oct2point(group, proof->T2, p, point_len, bn_ctx))
         goto err;
 
     p += point_len;
@@ -447,6 +467,7 @@ BULLET_PROOF *BULLET_PROOF_decode(BULLET_PROOF_CTX *ctx,
     q++;
     p = (unsigned char *)q;
 
+    /* ip_proof_len = len(n) + len(vec_L[n]+vec_R[n]) + len(a+b) */
     ip_proof_len = 4 + point_len * n * 2 + bn_len * 2;
     if (size < (proof_len + ip_proof_len)) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_INVALID_ARGUMENT);
@@ -457,20 +478,20 @@ BULLET_PROOF *BULLET_PROOF_decode(BULLET_PROOF_CTX *ctx,
         goto err;
 
     for (i = 0; i < n; i++) {
-        if (!(ip_proof->vec_L[i] = EC_POINT_new(ctx->group)))
+        if (!(ip_proof->vec_L[i] = EC_POINT_new(group)))
             goto err;
 
-        if (!EC_POINT_oct2point(ctx->group, ip_proof->vec_L[i], p, point_len, bn_ctx))
+        if (!EC_POINT_oct2point(group, ip_proof->vec_L[i], p, point_len, bn_ctx))
             goto err;
 
         p += point_len;
     }
 
     for (i = 0; i < n; i++) {
-        if (!(ip_proof->vec_R[i] = EC_POINT_new(ctx->group)))
+        if (!(ip_proof->vec_R[i] = EC_POINT_new(group)))
             goto err;
 
-        if (!EC_POINT_oct2point(ctx->group, ip_proof->vec_R[i], p, point_len, bn_ctx))
+        if (!EC_POINT_oct2point(group, ip_proof->vec_R[i], p, point_len, bn_ctx))
             goto err;
 
         p += point_len;
@@ -491,11 +512,13 @@ BULLET_PROOF *BULLET_PROOF_decode(BULLET_PROOF_CTX *ctx,
     proof->ip_proof = ip_proof;
 
     BN_CTX_free(bn_ctx);
+    EC_GROUP_free(group);
     return proof;
 
 err:
     bp_inner_product_proof_free(ip_proof);
     BULLET_PROOF_free(proof);
     BN_CTX_free(bn_ctx);
+    EC_GROUP_free(group);
     return NULL;
 }

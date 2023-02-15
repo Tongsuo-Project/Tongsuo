@@ -14,6 +14,42 @@
 
 static void bullet_proof_cleanup(BULLET_PROOF *proof);
 
+BULLET_PROOF *bullet_proof_alloc(const EC_GROUP *group)
+{
+    BULLET_PROOF *proof = NULL;
+
+    if (group == NULL) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
+        return NULL;
+    }
+
+    proof = OPENSSL_zalloc(sizeof(*proof));
+    if (proof == NULL) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
+        return NULL;
+    }
+
+    if (!(proof->A = EC_POINT_new(group))
+        || !(proof->S = EC_POINT_new(group))
+        || !(proof->T1 = EC_POINT_new(group))
+        || !(proof->T2 = EC_POINT_new(group))
+        || !(proof->taux = BN_new())
+        || !(proof->mu = BN_new())
+        || !(proof->tx = BN_new()))
+        goto err;
+
+    proof->references = 1;
+    if ((proof->lock = CRYPTO_THREAD_lock_new()) == NULL) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+
+    return proof;
+err:
+    BULLET_PROOF_free(proof);
+    return NULL;
+}
+
 /** Creates a new BULLET_PROOF_PUB_PARAM object
  *  \param  curve_id    the elliptic curve id
  *  \param  bits        the range bits that support verification
@@ -318,38 +354,12 @@ void BULLET_PROOF_WITNESS_free(BULLET_PROOF_WITNESS *witness)
  */
 BULLET_PROOF *BULLET_PROOF_new(BULLET_PROOF_CTX *ctx)
 {
-    BULLET_PROOF *proof = NULL;
-
-    if (ctx == NULL || ctx->pp == NULL) {
+    if (ctx == NULL || ctx->pp == NULL || ctx->group == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return NULL;
     }
 
-    proof = OPENSSL_zalloc(sizeof(*proof));
-    if (proof == NULL) {
-        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
-        return NULL;
-    }
-
-    if (!(proof->A = EC_POINT_new(ctx->group))
-        || !(proof->S = EC_POINT_new(ctx->group))
-        || !(proof->T1 = EC_POINT_new(ctx->group))
-        || !(proof->T2 = EC_POINT_new(ctx->group))
-        || !(proof->taux = BN_new())
-        || !(proof->mu = BN_new())
-        || !(proof->tx = BN_new()))
-        goto err;
-
-    proof->references = 1;
-    if ((proof->lock = CRYPTO_THREAD_lock_new()) == NULL) {
-        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
-        goto err;
-    }
-
-    return proof;
-err:
-    BULLET_PROOF_free(proof);
-    return NULL;
+    return bullet_proof_alloc(ctx->group);
 }
 
 /** Frees a BULLET_PROOF object
@@ -845,7 +855,7 @@ int BULLET_PROOF_verify(BULLET_PROOF_CTX *ctx, BULLET_PROOF *proof)
     bp_inner_product_pub_param_t *ip_pp = NULL;
     BULLET_PROOF_PUB_PARAM *pp;
 
-    if (ctx == NULL || proof == NULL) {
+    if (ctx == NULL || ctx->pp == NULL || proof == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return ret;
     }
@@ -857,6 +867,11 @@ int BULLET_PROOF_verify(BULLET_PROOF_CTX *ctx, BULLET_PROOF *proof)
     vec_r_len = n + 3;
     group = ctx->group;
     order = EC_GROUP_get0_order(group);
+
+    if (pp->curve_id != EC_POINT_get_curve_name(proof->A)) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_INVALID_ARGUMENT);
+        return ret;
+    }
 
     if (!(vec_H = OPENSSL_zalloc(sizeof(*vec_H) * vec_h_len))
         || !(vec_P = OPENSSL_zalloc(sizeof(*vec_P) * vec_p_len))
