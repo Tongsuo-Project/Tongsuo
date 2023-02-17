@@ -13,6 +13,8 @@
 # include <stdlib.h>
 # include <openssl/macros.h>
 # include <openssl/opensslconf.h>
+# include <openssl/types.h>
+# include <openssl/pem.h>
 # include <openssl/zkpbperr.h>
 
 # ifndef OPENSSL_NO_BULLETPROOFS
@@ -20,7 +22,10 @@
 extern "C" {
 # endif
 
-# define BULLET_PROOF_MAX_BITS          64
+# define PEM_STRING_BULLETPROOFS_PUB_PARAM      "BULLETPROOFS PUBLIC PARAM"
+# define PEM_STRING_BULLETPROOFS_PROOF          "BULLETPROOFS PROOF"
+
+# define BULLET_PROOF_MAX_BITS          256
 # define BULLET_PROOF_MAX_AGG_NUM       32
 
 typedef struct bullet_proof_pub_param_st BULLET_PROOF_PUB_PARAM;
@@ -125,8 +130,8 @@ int BULLET_PROOF_verify(BULLET_PROOF_CTX *ctx, BULLET_PROOF *proof);
  *  \param  size       The memory size of the out pointer object
  *  \return the length of the encoded octet string or 0 if an error occurred
  */
-size_t BULLET_PROOF_PUB_PARAM_encode(BULLET_PROOF_PUB_PARAM *pp, unsigned char *out,
-                                     size_t size);
+size_t BULLET_PROOF_PUB_PARAM_encode(const BULLET_PROOF_PUB_PARAM *pp,
+                                     unsigned char *out, size_t size);
 
 /** Decodes binary to BULLET_PROOF_PUB_PARAM
  *  \param  in         Memory buffer with the encoded BULLET_PROOF_PUB_PARAM
@@ -134,7 +139,7 @@ size_t BULLET_PROOF_PUB_PARAM_encode(BULLET_PROOF_PUB_PARAM *pp, unsigned char *
  *  \param  size       The memory size of the in pointer object
  *  \return BULLET_PROOF_PUB_PARAM object pointer on success and NULL otherwise
  */
-BULLET_PROOF_PUB_PARAM *BULLET_PROOF_PUB_PARAM_decode(unsigned char *in,
+BULLET_PROOF_PUB_PARAM *BULLET_PROOF_PUB_PARAM_decode(const unsigned char *in,
                                                       size_t size);
 
 /** Encodes BULLET_PROOF to binary
@@ -144,14 +149,29 @@ BULLET_PROOF_PUB_PARAM *BULLET_PROOF_PUB_PARAM_decode(unsigned char *in,
  *  \param  size       The memory size of the out pointer object
  *  \return the length of the encoded octet string or 0 if an error occurred
  */
-size_t BULLET_PROOF_encode(BULLET_PROOF *proof, unsigned char *out, size_t size);
+size_t BULLET_PROOF_encode(const BULLET_PROOF *proof, unsigned char *out,
+                           size_t size);
 
 /** Decodes binary to BULLET_PROOF
  *  \param  in         Memory buffer with the encoded BULLET_PROOF object
  *  \param  size       The memory size of the in pointer object
  *  \return BULLET_PROOF_PUB_PARAM object pointer on success and NULL otherwise
  */
-BULLET_PROOF *BULLET_PROOF_decode(unsigned char *in, size_t size);
+BULLET_PROOF *BULLET_PROOF_decode(const unsigned char *in, size_t size);
+
+# ifndef OPENSSL_NO_STDIO
+int BULLET_PROOF_PUB_PARAM_print_fp(FILE *fp, const BULLET_PROOF_PUB_PARAM *pp,
+                                    int indent);
+int BULLET_PROOF_print_fp(FILE *fp, const BULLET_PROOF *proof, int indent);
+# endif
+int BULLET_PROOF_PUB_PARAM_print(BIO *bp, const BULLET_PROOF_PUB_PARAM *pp,
+                                 int indent);
+int BULLET_PROOF_print(BIO *bp, const BULLET_PROOF *proof, int indent);
+
+DECLARE_PEM_rw(BULLETPROOFS_PublicParam, BULLET_PROOF_PUB_PARAM)
+DECLARE_PEM_rw(BULLETPROOFS_Proof, BULLET_PROOF)
+DECLARE_ASN1_ENCODE_FUNCTIONS_only(BULLET_PROOF_PUB_PARAM, BULLET_PROOF_PUB_PARAM)
+DECLARE_ASN1_ENCODE_FUNCTIONS_only(BULLET_PROOF, BULLET_PROOF)
 
 # ifdef  __cplusplus
 }

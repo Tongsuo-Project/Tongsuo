@@ -5,5 +5,7 @@ IF[{- !$disabled{bulletproofs} -}]
                             bulletproofs/inner_product.c                    \
                             bulletproofs/util.c                             \
                             bulletproofs/bullet_proof_encode.c              \
+                            bulletproofs/bullet_proof_asn1.c                \
+                            bulletproofs/bullet_proof_prn.c                 \
                             bulletproofs/bp_err.c
 ENDIF

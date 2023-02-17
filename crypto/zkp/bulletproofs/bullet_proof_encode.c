@@ -36,8 +36,8 @@
  *  \param  size       The memory size of the out pointer object
  *  \return the length of the encoded octet string or 0 if an error occurred
  */
-size_t BULLET_PROOF_PUB_PARAM_encode(BULLET_PROOF_PUB_PARAM *pp, unsigned char *out,
-                                     size_t size)
+size_t BULLET_PROOF_PUB_PARAM_encode(const BULLET_PROOF_PUB_PARAM *pp,
+                                     unsigned char *out, size_t size)
 {
     int *q;
     size_t point_len, ret = 0, len, i, n;
@@ -120,7 +120,7 @@ end:
  *  \param  size       The memory size of the in pointer object
  *  \return BULLET_PROOF_PUB_PARAM object pointer on success and NULL otherwise
  */
-BULLET_PROOF_PUB_PARAM *BULLET_PROOF_PUB_PARAM_decode(unsigned char *in,
+BULLET_PROOF_PUB_PARAM *BULLET_PROOF_PUB_PARAM_decode(const unsigned char *in,
                                                       size_t size)
 {
     unsigned char *p;
@@ -211,7 +211,8 @@ err:
  *  \param  size       The memory size of the out pointer object
  *  \return the length of the encoded octet string or 0 if an error occurred
  */
-size_t BULLET_PROOF_encode(BULLET_PROOF *proof, unsigned char *out, size_t size)
+size_t BULLET_PROOF_encode(const BULLET_PROOF *proof, unsigned char *out,
+                           size_t size)
 {
     int *q, curve_id;
     size_t point_len, bn_len, ret = 0, len, i;
@@ -293,17 +294,17 @@ size_t BULLET_PROOF_encode(BULLET_PROOF *proof, unsigned char *out, size_t size)
 
     p += point_len;
 
-    if (!BN_bn2bin(proof->taux, p))
+    if (!BN_bn2binpad(proof->taux, p, bn_len))
         goto end;
 
     p += bn_len;
 
-    if (!BN_bn2bin(proof->mu, p))
+    if (!BN_bn2binpad(proof->mu, p, bn_len))
         goto end;
 
     p += bn_len;
 
-    if (!BN_bn2bin(proof->tx, p))
+    if (!BN_bn2binpad(proof->tx, p, bn_len))
         goto end;
 
     p += bn_len;
@@ -329,12 +330,12 @@ size_t BULLET_PROOF_encode(BULLET_PROOF *proof, unsigned char *out, size_t size)
         p += point_len;
     }
 
-    if (!BN_bn2bin(proof->ip_proof->a, p))
+    if (!BN_bn2binpad(proof->ip_proof->a, p, bn_len))
         goto end;
 
     p += bn_len;
 
-    if (!BN_bn2bin(proof->ip_proof->b, p))
+    if (!BN_bn2binpad(proof->ip_proof->b, p, bn_len))
         goto end;
 
     p += bn_len;
@@ -352,7 +353,7 @@ end:
  *  \param  size       The memory size of the in pointer object
  *  \return BULLET_PROOF_PUB_PARAM object pointer on success and NULL otherwise
  */
-BULLET_PROOF *BULLET_PROOF_decode(unsigned char *in, size_t size)
+BULLET_PROOF *BULLET_PROOF_decode(const unsigned char *in, size_t size)
 {
     unsigned char *p;
     int *q = (int *)in, curve_id;

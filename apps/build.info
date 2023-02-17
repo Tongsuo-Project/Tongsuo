@@ -63,6 +63,10 @@ IF[{- !$disabled{'ec_elgamal'} -}]
   $OPENSSLSRC=$OPENSSLSRC ec_elgamal.c
 ENDIF
 
+IF[{- !$disabled{'bulletproofs'} -}]
+  $OPENSSLSRC=$OPENSSLSRC bulletproofs.c
+ENDIF
+
 IF[{- !$disabled{apps} -}]
   PROGRAMS=openssl
   SOURCE[openssl]=$INITSRC $OPENSSLSRC
