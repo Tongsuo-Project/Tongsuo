@@ -8,6 +8,7 @@
  */
 
 #include <openssl/err.h>
+#include <crypto/ec.h>
 #include <crypto/ec/ec_local.h>
 #include "bullet_proof.h"
 #include "util.h"
@@ -66,7 +67,7 @@ BULLET_PROOF_PUB_PARAM *BULLET_PROOF_PUB_PARAM_new(int curve_id, size_t bits,
     BULLET_PROOF_PUB_PARAM *pp = NULL;
     point_conversion_form_t format = POINT_CONVERSION_COMPRESSED;
 
-    if (curve_id <= 0 || bits <= 0 || max_agg_num <= 0) {
+    if (curve_id == NID_undef || bits <= 0 || max_agg_num <= 0) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_INVALID_ARGUMENT);
         return NULL;
     }
@@ -143,6 +144,26 @@ err:
     EC_GROUP_free(group);
     BULLET_PROOF_PUB_PARAM_free(pp);
     return NULL;
+}
+
+/** Creates a new BULLET_PROOF_PUB_PARAM object by curve name
+ *  \param  curve_name    the elliptic curve name
+ *  \param  bits        the range bits that support verification
+ *  \param  max_agg_num the number of the aggregate range proofs
+ *  \return newly created BULLET_PROOF_PUB_PARAM object or NULL in case of an error
+ */
+BULLET_PROOF_PUB_PARAM *BULLET_PROOF_PUB_PARAM_new_by_curve_name(const char *curve_name,
+                                                                 size_t bits,
+                                                                 size_t max_agg_num)
+{
+    int curve_id = ossl_ec_curve_name2nid(curve_name);
+
+    if (curve_id == NID_undef) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_INVALID_ARGUMENT);
+        return NULL;
+    }
+
+    return BULLET_PROOF_PUB_PARAM_new(curve_id, bits, max_agg_num);
 }
 
 /** Frees a BULLET_PROOF_PUB_PARAM object

@@ -42,6 +42,15 @@ typedef struct bullet_proof_st BULLET_PROOF;
 BULLET_PROOF_PUB_PARAM *BULLET_PROOF_PUB_PARAM_new(int curve_id, size_t bits,
                                                    size_t max_agg_num);
 
+/** Creates a new BULLET_PROOF_PUB_PARAM object by curve name
+ *  \param  curve_name    the elliptic curve name
+ *  \param  bits        the range bits that support verification
+ *  \param  max_agg_num the number of the aggregate range proofs
+ *  \return newly created BULLET_PROOF_PUB_PARAM object or NULL in case of an error
+ */
+BULLET_PROOF_PUB_PARAM *BULLET_PROOF_PUB_PARAM_new_by_curve_name(const char *curve_name,
+                                                                 size_t bits,
+                                                                 size_t max_agg_num);
 /** Frees a BULLET_PROOF_PUB_PARAM object
  *  \param  pp        BULLET_PROOF_PUB_PARAM object to be freed
  */

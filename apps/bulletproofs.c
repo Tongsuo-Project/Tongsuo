@@ -21,7 +21,6 @@
 #include <openssl/rand.h>
 #include <openssl/bulletproofs.h>
 #include <openssl/ec.h>
-#include <crypto/ec.h>
 #include <internal/cryptlib.h>
 
 #define MAX_NUM                             64
@@ -78,14 +77,14 @@ const OPTIONS bulletproofs_options[] = {
     {NULL}
 };
 
-static int bulletproofs_pub_param_gen(int curve_id, int bits, int agg_max,
+static int bulletproofs_pub_param_gen(const char *curve_name, int bits, int agg_max,
                                       char *out_file, int text)
 {
     int ret = 0;
     BIO *bio = NULL;
     BULLET_PROOF_PUB_PARAM *pp = NULL;
 
-    if (!(pp = BULLET_PROOF_PUB_PARAM_new(curve_id, bits, agg_max)))
+    if (!(pp = BULLET_PROOF_PUB_PARAM_new_by_curve_name(curve_name, bits, agg_max)))
         goto err;
 
     if (!(bio = bio_open_owner(out_file, FORMAT_PEM, 1)))
@@ -216,7 +215,7 @@ int bulletproofs_main(int argc, char **argv)
     BIO *pp_bio = NULL, *in_bio = NULL;
     BULLET_PROOF_PUB_PARAM *bp_pp = NULL;
     BULLET_PROOF *bp_proof = NULL;
-    int ret = 1, actions = 0, text = 0, secret, i, curve_id;
+    int ret = 1, actions = 0, text = 0, secret, i;
     int bits = BULLETPROOFS_BITS_DEFAULT, agg_max = BULLETPROOFS_AGG_MAX_DEFAULT;
     int ppgen = 0, pp = 0, proof = 0, prove = 0, verify = 0;
     int64_t secrets[MAX_NUM];
@@ -343,12 +342,7 @@ opthelp2:
         goto err;
 
     if (ppgen) {
-        if ((curve_id = ossl_ec_curve_name2nid(curve_name)) == NID_undef) {
-            BIO_printf(bio_err, "Error: -curve_name is invalid.\n");
-            goto opthelp2;
-        }
-
-        ret = bulletproofs_pub_param_gen(curve_id, bits, agg_max, out_file, text);
+        ret = bulletproofs_pub_param_gen(curve_name, bits, agg_max, out_file, text);
         goto err;
     }
 
