@@ -131,6 +131,7 @@ jobs:
           done
       - name: switch to the speed-auto-test branch and commit speed test result file
         run: |
+          make clean
           git checkout speed-auto-test
           git add ./speed/*
           git -c user.name="github-actions[bot]" \
@@ -166,7 +167,5 @@ jobs:
               python3 /home/runner/speed_parse.py -c $commit -f $FILE -t $algo_type -j "$JOB_DATE" $MYSQL_ARG
             done
           done
-      - name: make clean
-        run: make clean
       - name: check dirty
         run: test $(git status --porcelain | wc -l) -eq "0"
