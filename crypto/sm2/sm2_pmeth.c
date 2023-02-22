@@ -300,8 +300,11 @@ static int pkey_sm2_digest_custom(EVP_PKEY_CTX *ctx, EVP_MD_CTX *mctx)
          * recognize or set sm2-id for each cert, so we choose to set a default
          * sm2 id for each sm2 sign process.
          */
+        smctx->id = OPENSSL_memdup(SM2_DEFAULT_USERID, SM2_DEFAULT_USERID_LEN);
+        if (smctx->id == NULL)
+            return 0;
+
         smctx->id_set = 1;
-        smctx->id = (uint8_t*)OPENSSL_memdup(SM2_DEFAULT_USERID, SM2_DEFAULT_USERID_LEN);
         smctx->id_len = SM2_DEFAULT_USERID_LEN;
     }
 
