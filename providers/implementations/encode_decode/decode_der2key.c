@@ -109,16 +109,10 @@ static void *der2key_decode_p8(const unsigned char **input_der,
         != NULL && PKCS8_pkey_get0(NULL, NULL, NULL, &alg, p8inf)) {
         int nid = OBJ_obj2nid(alg->algorithm);
 
-        /* Note: algorithm with EC oid and SM2 parameter is identified as SM2 */
-        if (nid == EVP_PKEY_EC && ctx->desc->evp_type == EVP_PKEY_SM2) {
-            int ptype;
-            const void *pval = NULL;
-            X509_ALGOR_get0(NULL, &ptype, &pval, alg);
-            if (ptype == V_ASN1_OBJECT && OBJ_obj2nid(pval) == NID_sm2)
-                nid = NID_sm2;
-        }
-
-        if (nid == ctx->desc->evp_type)
+        /* Note: support sm2 p8 key with algorithm id-ecPublicKey */
+        if (nid == ctx->desc->evp_type
+            || (nid == EVP_PKEY_EC
+                && ctx->desc->evp_type == EVP_PKEY_SM2))
             key = key_from_pkcs8(p8inf, PROV_LIBCTX_OF(ctx->provctx), NULL);
     }
     PKCS8_PRIV_KEY_INFO_free(p8inf);
