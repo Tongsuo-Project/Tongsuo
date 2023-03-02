@@ -67,7 +67,7 @@ const OPTIONS bulletproofs_options[] = {
 
     OPT_SECTION("Output"),
     {"out", OPT_OUT, '>', "Output the bulletproofs key to specified file"},
-    {"noout", OPT_NOOUT, '-', "Don't print bulletproofs key out"},
+    {"noout", OPT_NOOUT, '-', "Don't print bulletproofs action result"},
     {"text", OPT_TEXT, '-', "Print the bulletproofs key in text"},
     {"verbose", OPT_VERBOSE, '-', "Verbose output"},
 
@@ -154,13 +154,12 @@ err:
 static int bulletproofs_prove(BULLET_PROOF_PUB_PARAM *pp, int64_t secrets[],
                               size_t len, char *out_file, int text)
 {
-    BIO *bio = NULL;
     int ret = 0;
     BULLET_PROOF_CTX *ctx = NULL;
     BULLET_PROOF_WITNESS *witness = NULL;
     BULLET_PROOF *proof = NULL;
 
-    if (pp == NULL || !(bio = bio_open_owner(out_file, FORMAT_PEM, 1)))
+    if (pp == NULL)
         goto err;
 
     if (!(ctx = BULLET_PROOF_CTX_new(pp, NULL)))
@@ -180,7 +179,6 @@ err:
     BULLET_PROOF_free(proof);
     BULLET_PROOF_WITNESS_free(witness);
     BULLET_PROOF_CTX_free(ctx);
-    BIO_free(bio);
     return ret;
 }
 
@@ -191,7 +189,7 @@ static int bulletproofs_verify(BULLET_PROOF_PUB_PARAM *pp, BULLET_PROOF *proof,
     int ret = 0;
     BULLET_PROOF_CTX *ctx = NULL;
 
-    if (pp == NULL || proof == NULL || !(bio = bio_open_owner(out_file, FORMAT_PEM, 1)))
+    if (pp == NULL || proof == NULL || !(bio = bio_open_owner(out_file, FORMAT_TEXT, 1)))
         goto err;
 
     if (!(ctx = BULLET_PROOF_CTX_new(pp, NULL)))
