@@ -7,6 +7,14 @@
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
  */
+/*
+ * Copyright 2023 The Tongsuo Project Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
+ * this file except in compliance with the License.  You can obtain a copy
+ * in the file LICENSE in the source distribution or at
+ * https://github.com/Tongsuo-Project/Tongsuo/blob/master/LICENSE.txt
+ */
 
 #undef SECONDS
 #define SECONDS          3
@@ -286,7 +294,8 @@ enum {
     D_CBC_DES, D_EDE3_DES, D_RC4,
     D_CBC_RC5,
     D_CBC_128_AES, D_CBC_192_AES, D_CBC_256_AES,
-    D_EVP, D_GHASH, D_RAND, D_EVP_CMAC, D_SM3, D_CBC_SM4, ALGOR_NUM
+    D_EVP, D_GHASH, D_RAND, D_EVP_CMAC, D_SM3, D_CBC_SM4,
+    D_EEA3_128_ZUC, ALGOR_NUM
 };
 /* name of algorithms to test. MUST BE KEEP IN SYNC with above enum ! */
 static const char *names[ALGOR_NUM] = {
@@ -295,7 +304,8 @@ static const char *names[ALGOR_NUM] = {
     "des-cbc", "des-ede3", "rc4",
     "rc5-cbc",
     "aes-128-cbc", "aes-192-cbc", "aes-256-cbc",
-    "evp", "ghash", "rand", "cmac", "sm3", "sm4"
+    "evp", "ghash", "rand", "cmac", "sm3", "sm4",
+    "zuc-128-eea3"
 };
 
 /* list of configured algorithm (remaining), with some few alias */
@@ -321,6 +331,9 @@ static const OPT_PAIR doit_choices[] = {
 #ifndef OPENSSL_NO_SM4
     {"sm4-cbc", D_CBC_SM4},
     {"sm4", D_CBC_SM4},
+#endif
+#ifndef OPENSSL_NO_ZUC
+    {"zuc-128-eea3", D_EEA3_128_ZUC},
 #endif
 };
 
@@ -758,7 +771,7 @@ static int GHASH_loop(void *args)
 
 #define MAX_BLOCK_SIZE 128
 
-static unsigned char iv[2 * MAX_BLOCK_SIZE / 8];
+static unsigned char iv[2 * MAX_BLOCK_SIZE / 8] = {0x11, 0x22, 0x33, 0x44, 0x55};
 
 static EVP_CIPHER_CTX *init_evp_cipher_ctx(const char *ciphername,
                                            const unsigned char *key,
@@ -2577,6 +2590,31 @@ int speed_main(int argc, char **argv)
                 run_benchmark(async_jobs, EVP_Cipher_loop, loopargs);
             d = Time_F(STOP);
             print_result(D_CBC_SM4, testnum, count, d);
+        }
+        for (i = 0; i < loopargs_len; i++)
+            EVP_CIPHER_CTX_free(loopargs[i].ctx);
+    }
+#endif
+
+#ifndef OPENSSL_NO_ZUC
+    if (doit[D_EEA3_128_ZUC]) {
+        int st = 1;
+
+        keylen = 16;
+        for (i = 0; st && i < loopargs_len; i++) {
+            loopargs[i].ctx = init_evp_cipher_ctx(names[D_EEA3_128_ZUC],
+                                                  key32, keylen);
+            st = loopargs[i].ctx != NULL;
+        }
+
+        for (testnum = 0; st && testnum < size_num; testnum++) {
+            print_message(names[D_EEA3_128_ZUC], c[D_EEA3_128_ZUC][testnum],
+                          lengths[testnum], seconds.sym);
+            Time_F(START);
+            count =
+                run_benchmark(async_jobs, EVP_Cipher_loop, loopargs);
+            d = Time_F(STOP);
+            print_result(D_EEA3_128_ZUC, testnum, count, d);
         }
         for (i = 0; i < loopargs_len; i++)
             EVP_CIPHER_CTX_free(loopargs[i].ctx);
