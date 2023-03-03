@@ -70,6 +70,9 @@
 #ifndef OPENSSL_NO_PAILLIER
 # include <openssl/paillier.h>
 #endif
+#ifndef OPENSSL_NO_ZUC
+# include <crypto/zuc.h>
+#endif
 #include <openssl/x509.h>
 #include <openssl/dsa.h>
 #include "./testdsa.h"
@@ -295,7 +298,7 @@ enum {
     D_CBC_RC5,
     D_CBC_128_AES, D_CBC_192_AES, D_CBC_256_AES,
     D_EVP, D_GHASH, D_RAND, D_EVP_CMAC, D_SM3, D_CBC_SM4,
-    D_EEA3_128_ZUC, ALGOR_NUM
+    D_EEA3_128_ZUC, D_EIA3_128_ZUC, ALGOR_NUM
 };
 /* name of algorithms to test. MUST BE KEEP IN SYNC with above enum ! */
 static const char *names[ALGOR_NUM] = {
@@ -305,7 +308,7 @@ static const char *names[ALGOR_NUM] = {
     "rc5-cbc",
     "aes-128-cbc", "aes-192-cbc", "aes-256-cbc",
     "evp", "ghash", "rand", "cmac", "sm3", "sm4",
-    "zuc-128-eea3"
+    "zuc-128-eea3", "zuc-128-eia3"
 };
 
 /* list of configured algorithm (remaining), with some few alias */
@@ -334,6 +337,7 @@ static const OPT_PAIR doit_choices[] = {
 #endif
 #ifndef OPENSSL_NO_ZUC
     {"zuc-128-eea3", D_EEA3_128_ZUC},
+    {"zuc-128-eia3", D_EIA3_128_ZUC},
 #endif
 };
 
@@ -738,6 +742,38 @@ static int EVP_Digest_SM3_loop(void *args)
 }
 #endif
 
+#ifndef OPENSSL_NO_ZUC
+static int ZUC_128_EIA3_loop(void *args)
+{
+    loopargs_t *tempargs = *(loopargs_t **) args;
+    unsigned char *buf = tempargs->buf;
+    EVP_MAC_CTX *mctx = tempargs->mctx;
+    OSSL_PARAM params[3];
+    unsigned char mac[EVP_MAX_MD_SIZE], eia3_key[ZUC_KEY_SIZE], eia3_iv[ZUC_CTR_SIZE];
+    int count;
+    size_t outl;
+
+    params[0] = OSSL_PARAM_construct_octet_string(OSSL_MAC_PARAM_KEY,
+                                                  (char *)eia3_key, ZUC_KEY_SIZE);
+    params[1] = OSSL_PARAM_construct_octet_string(OSSL_MAC_PARAM_IV,
+                                                  (char *)eia3_iv, ZUC_CTR_SIZE);
+    params[2] = OSSL_PARAM_construct_end();
+
+    if (!EVP_MAC_CTX_get_params(mctx, params))
+        return -1;
+
+    for (count = 0; COND(c[D_EIA3_128_ZUC][testnum]); count++) {
+
+        if (!EVP_MAC_init(mctx, NULL, 0, params)
+            || !EVP_MAC_update(mctx, buf, lengths[testnum])
+            || !EVP_MAC_final(mctx, mac, &outl, sizeof(mac)))
+            return -1;
+    }
+
+    return count;
+}
+#endif
+
 static int algindex;
 
 static int EVP_Cipher_loop(void *args)
@@ -771,7 +807,7 @@ static int GHASH_loop(void *args)
 
 #define MAX_BLOCK_SIZE 128
 
-static unsigned char iv[2 * MAX_BLOCK_SIZE / 8] = {0x11, 0x22, 0x33, 0x44, 0x55};
+static unsigned char iv[2 * MAX_BLOCK_SIZE / 8];
 
 static EVP_CIPHER_CTX *init_evp_cipher_ctx(const char *ciphername,
                                            const unsigned char *key,
@@ -2195,6 +2231,15 @@ int speed_main(int argc, char **argv)
         } else {
             doit[D_HMAC] = 0;
         }
+#ifndef OPENSSL_NO_ZUC
+        if ((mac = EVP_MAC_fetch(app_get0_libctx(), "EIA3",
+                                 app_get0_propq())) != NULL) {
+            EVP_MAC_free(mac);
+            mac = NULL;
+        } else {
+            doit[D_EIA3_128_ZUC] = 0;
+        }
+#endif
         ERR_pop_to_mark();
         memset(rsa_doit, 1, sizeof(rsa_doit));
 #ifndef OPENSSL_NO_DH
@@ -2619,6 +2664,50 @@ int speed_main(int argc, char **argv)
         for (i = 0; i < loopargs_len; i++)
             EVP_CIPHER_CTX_free(loopargs[i].ctx);
     }
+
+    if (doit[D_EIA3_128_ZUC]) {
+        static const char eia3_iv[] = "12345";
+        static const char eia3_key[] = "This is a key...";
+        int len = strlen(eia3_key);
+        OSSL_PARAM params[3];
+
+        mac = EVP_MAC_fetch(app_get0_libctx(), "EIA3", app_get0_propq());
+        if (mac == NULL)
+            goto end;
+
+        params[0] = OSSL_PARAM_construct_octet_string(OSSL_MAC_PARAM_KEY,
+                                                      (char *)eia3_key, len);
+        params[1] = OSSL_PARAM_construct_octet_string(OSSL_MAC_PARAM_IV,
+                                                      (char *)eia3_iv,
+                                                      sizeof(eia3_iv) - 1);
+        params[2] = OSSL_PARAM_construct_end();
+
+        for (i = 0; i < loopargs_len; i++) {
+            loopargs[i].mctx = EVP_MAC_CTX_new(mac);
+            if (loopargs[i].mctx == NULL)
+                goto end;
+
+            if (!EVP_MAC_CTX_set_params(loopargs[i].mctx, params))
+                goto end;
+        }
+
+        for (testnum = 0; testnum < size_num; testnum++) {
+            print_message(names[D_EIA3_128_ZUC], c[D_EIA3_128_ZUC][testnum], lengths[testnum],
+                          seconds.sym);
+            Time_F(START);
+            count = run_benchmark(async_jobs, ZUC_128_EIA3_loop, loopargs);
+            d = Time_F(STOP);
+            print_result(D_EIA3_128_ZUC, testnum, count, d);
+            if (count < 0)
+                break;
+        }
+
+        for (i = 0; i < loopargs_len; i++)
+            EVP_MAC_CTX_free(loopargs[i].mctx);
+        EVP_MAC_free(mac);
+        mac = NULL;
+    }
+
 #endif
 
     if (doit[D_GHASH]) {
