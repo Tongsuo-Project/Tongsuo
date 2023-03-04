@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 The Tongsuo Project Authors. All Rights Reserved.
+ * Copyright 2023 The Tongsuo Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -250,25 +250,20 @@ void ZUC_init(ZUC_KEY *zk)
 
 int ZUC_generate_keystream(ZUC_KEY *zk)
 {
-    int i;
+    int i, len;
     uint32_t keystream;
-    int pos = zk->keystream_len;
+    uint32_t pos = 0;
 
     if (!zk->inited)
         return 0;
 
-    if (zk->keystream == NULL) {
-        zk->keystream_len = zk->L * sizeof(uint32_t);
-        zk->keystream = OPENSSL_malloc(zk->keystream_len);
-        if (zk->keystream == NULL)
-            return 0;
-    } else {
-        /* TODO: allocate a little more space to reduce OPENSSL_realloc calling */
-        zk->keystream_len += zk->L * sizeof(uint32_t);
-        zk->keystream = OPENSSL_realloc(zk->keystream, zk->keystream_len);
-        if (zk->keystream == NULL)
-            return 0;
-    }
+    zk->L = (sizeof(zk->keystream) * 8 + 31) / 32;
+    len = zk->L * sizeof(uint32_t);
+
+    zk->keystream_tail[0] = zk->keystream[len - 4];
+    zk->keystream_tail[1] = zk->keystream[len - 3];
+    zk->keystream_tail[2] = zk->keystream[len - 2];
+    zk->keystream_tail[3] = zk->keystream[len - 1];
 
     for (i = 0; i < zk->L; i++) {
         zuc_br(zk);
@@ -284,11 +279,57 @@ int ZUC_generate_keystream(ZUC_KEY *zk)
         pos += 4;
     }
 
+    zk->keystream_tail[4] = zk->keystream[0];
+    zk->keystream_tail[5] = zk->keystream[1];
+    zk->keystream_tail[6] = zk->keystream[2];
+    zk->keystream_tail[7] = zk->keystream[3];
+
+    zk->keystream_len += len;
+
     return 1;
 }
 
 void ZUC_destroy_keystream(ZUC_KEY *zk)
 {
-    OPENSSL_free(zk->keystream);
-    zk->keystream = NULL;
+    return;
+}
+
+int ZUC_keystream_get_word(ZUC_KEY *zk, int i)
+{
+    uint32_t word = 0, ti, j = i / 8, k, len;
+    uint8_t *data;
+
+    if (zk == NULL)
+        return 0;
+
+    len = zk->L * sizeof(uint32_t);
+    data = zk->keystream;
+    k = j % len;
+
+    if ((k + 4) >= len) {
+        data = zk->keystream_tail;
+        j = k + 4 - len;
+    } else {
+        j = k;
+    }
+
+    ti = i % 8;
+    if (ti == 0) {
+        word = (uint32_t)data[j] << 24;
+        word |= ((uint32_t)data[j + 1] << 16);
+        word |= ((uint32_t)data[j + 2] << 8);
+        word |= data[j + 3];
+    } else {
+        word = (uint32_t)((uint8_t)(data[j] << ti) | (uint8_t)(data[j + 1] >> (8 - ti))) << 24;
+        word |= (uint32_t)((uint8_t)(data[j + 1] << ti) | (uint8_t)(data[j + 2] >> (8 - ti))) << 16;
+        word |= (uint32_t)((uint8_t)(data[j + 2] << ti) | (uint8_t)(data[j + 3] >> (8 - ti))) << 8;
+        word |= (data[j + 3] << ti) | (data[j + 4] >> (8 - ti));
+    }
+
+    return word;
+}
+
+int ZUC_keystream_get_byte(ZUC_KEY *zk, int i)
+{
+    return zk->keystream[i % (zk->L * sizeof(uint32_t))];
 }

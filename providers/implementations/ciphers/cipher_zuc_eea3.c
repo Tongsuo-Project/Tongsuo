@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 The Tongsuo Project Authors. All Rights Reserved.
+ * Copyright 2023 The Tongsuo Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -73,6 +73,7 @@ static int zuc_128_eea3_get_params(OSSL_PARAM params[])
 static int zuc_128_eea3_get_ctx_params(void *vctx, OSSL_PARAM params[])
 {
     OSSL_PARAM *p;
+    PROV_ZUC_EEA3_CTX *ctx = (PROV_ZUC_EEA3_CTX *)vctx;
 
     p = OSSL_PARAM_locate(params, OSSL_CIPHER_PARAM_IVLEN);
     if (p != NULL && !OSSL_PARAM_set_size_t(p, ZUC_EEA3_IVLEN)) {
@@ -84,6 +85,18 @@ static int zuc_128_eea3_get_ctx_params(void *vctx, OSSL_PARAM params[])
         ERR_raise(ERR_LIB_PROV, PROV_R_FAILED_TO_SET_PARAMETER);
         return 0;
     }
+    p = OSSL_PARAM_locate(params, OSSL_CIPHER_PARAM_UPDATED_IV);
+    if (p != NULL) {
+        if (p->data_size < ZUC_EEA3_IVLEN) {
+            ERR_raise(ERR_LIB_PROV, PROV_R_INVALID_IV_LENGTH);
+            return 0;
+        }
+        if (!OSSL_PARAM_set_octet_string(p, ctx->base.iv, ZUC_EEA3_IVLEN)
+            && !OSSL_PARAM_set_octet_ptr(p, &ctx->base.iv, ZUC_EEA3_IVLEN)) {
+            ERR_raise(ERR_LIB_PROV, PROV_R_FAILED_TO_SET_PARAMETER);
+            return 0;
+        }
+    }
 
     return 1;
 }
@@ -91,6 +104,7 @@ static int zuc_128_eea3_get_ctx_params(void *vctx, OSSL_PARAM params[])
 static const OSSL_PARAM zuc_128_eea3_known_gettable_ctx_params[] = {
     OSSL_PARAM_size_t(OSSL_CIPHER_PARAM_KEYLEN, NULL),
     OSSL_PARAM_size_t(OSSL_CIPHER_PARAM_IVLEN, NULL),
+    OSSL_PARAM_size_t(OSSL_CIPHER_PARAM_UPDATED_IV, NULL),
     OSSL_PARAM_END
 };
 const OSSL_PARAM *zuc_128_eea3_gettable_ctx_params(ossl_unused void *cctx,

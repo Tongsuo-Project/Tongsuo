@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 The Tongsuo Project Authors. All Rights Reserved.
+ * Copyright 2023 The Tongsuo Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -36,7 +36,8 @@ typedef struct ZUC_KEY_st {
     uint8_t iv[16];
 
     /* keystream */
-    uint8_t *keystream;
+    uint8_t keystream[8];
+    uint8_t keystream_tail[8];
     uint32_t keystream_len;
     int L;
 
@@ -48,6 +49,8 @@ typedef struct eia3_context EIA3_CTX;
 void ZUC_init(ZUC_KEY *zk);
 int ZUC_generate_keystream(ZUC_KEY *zk);
 void ZUC_destroy_keystream(ZUC_KEY *zk);
+int ZUC_keystream_get_word(ZUC_KEY *zk, int i);
+int ZUC_keystream_get_byte(ZUC_KEY *zk, int i);
 
 size_t EIA3_ctx_size(void);
 int EIA3_Init(EIA3_CTX *ctx, const unsigned char key[EVP_ZUC_KEY_SIZE], const unsigned char iv[5]);

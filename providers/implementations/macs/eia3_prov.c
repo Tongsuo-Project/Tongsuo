@@ -30,6 +30,7 @@ static OSSL_FUNC_mac_dupctx_fn eia3_dup;
 static OSSL_FUNC_mac_freectx_fn eia3_free;
 static OSSL_FUNC_mac_gettable_params_fn eia3_gettable_params;
 static OSSL_FUNC_mac_get_params_fn eia3_get_params;
+static OSSL_FUNC_mac_get_ctx_params_fn eia3_get_ctx_params;
 static OSSL_FUNC_mac_settable_ctx_params_fn eia3_settable_ctx_params;
 static OSSL_FUNC_mac_set_ctx_params_fn eia3_set_ctx_params;
 static OSSL_FUNC_mac_init_fn eia3_init;
@@ -137,6 +138,8 @@ static int eia3_final(void *vmacctx, unsigned char *out, size_t *outl,
 
 static const OSSL_PARAM known_gettable_params[] = {
     OSSL_PARAM_size_t(OSSL_MAC_PARAM_SIZE, NULL),
+    OSSL_PARAM_octet_string(OSSL_MAC_PARAM_KEY, NULL, 0),
+    OSSL_PARAM_octet_string(OSSL_MAC_PARAM_IV, NULL, 0),
     OSSL_PARAM_END
 };
 static const OSSL_PARAM *eia3_gettable_params(void *provctx)
@@ -191,6 +194,42 @@ static int eia3_set_ctx_params(void *vmacctx, const OSSL_PARAM *params)
     return 1;
 }
 
+static int eia3_get_ctx_params(void *vmacctx, OSSL_PARAM params[])
+{
+    struct eia3_data_st *ctx = vmacctx;
+    OSSL_PARAM *p;
+
+    if ((p = OSSL_PARAM_locate(params, OSSL_MAC_PARAM_SIZE)) != NULL
+        && !OSSL_PARAM_set_size_t(p, eia3_size()))
+        return 0;
+
+    if ((p = OSSL_PARAM_locate(params, OSSL_MAC_PARAM_IV)) != NULL) {
+        if (p->data_size < ZUC_CTR_SIZE) {
+            ERR_raise(ERR_LIB_PROV, PROV_R_INVALID_IV_LENGTH);
+            return 0;
+        }
+        if (!OSSL_PARAM_set_octet_string(p, ctx->iv, ZUC_CTR_SIZE)
+            && !OSSL_PARAM_set_octet_ptr(p, &ctx->iv, ZUC_CTR_SIZE)) {
+            ERR_raise(ERR_LIB_PROV, PROV_R_FAILED_TO_SET_PARAMETER);
+            return 0;
+        }
+    }
+
+    if ((p = OSSL_PARAM_locate(params, OSSL_MAC_PARAM_KEY)) != NULL) {
+        if (p->data_size < ZUC_KEY_SIZE) {
+            ERR_raise(ERR_LIB_PROV, PROV_R_INVALID_KEY_LENGTH);
+            return 0;
+        }
+        if (!OSSL_PARAM_set_octet_string(p, ctx->key, ZUC_KEY_SIZE)
+            && !OSSL_PARAM_set_octet_ptr(p, &ctx->key, ZUC_KEY_SIZE)) {
+            ERR_raise(ERR_LIB_PROV, PROV_R_FAILED_TO_SET_PARAMETER);
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
 const OSSL_DISPATCH ossl_eia3_functions[] = {
     { OSSL_FUNC_MAC_NEWCTX, (void (*)(void))eia3_new },
     { OSSL_FUNC_MAC_DUPCTX, (void (*)(void))eia3_dup },
@@ -200,6 +239,7 @@ const OSSL_DISPATCH ossl_eia3_functions[] = {
     { OSSL_FUNC_MAC_FINAL, (void (*)(void))eia3_final },
     { OSSL_FUNC_MAC_GETTABLE_PARAMS, (void (*)(void))eia3_gettable_params },
     { OSSL_FUNC_MAC_GET_PARAMS, (void (*)(void))eia3_get_params },
+    { OSSL_FUNC_MAC_GET_CTX_PARAMS, (void (*)(void))eia3_get_ctx_params },
     { OSSL_FUNC_MAC_SETTABLE_CTX_PARAMS,
       (void (*)(void))eia3_settable_ctx_params },
     { OSSL_FUNC_MAC_SET_CTX_PARAMS, (void (*)(void))eia3_set_ctx_params },

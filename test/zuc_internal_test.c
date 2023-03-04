@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 The Tongsuo Project Authors. All Rights Reserved.
+ * Copyright 2023 The Tongsuo Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -402,7 +402,7 @@ static EIA3_TV eia3_tv[5] = {
 static int test_zuc(int idx)
 {
     ZUC_KEY zk;
-    int ret, i;
+    int ret = 0, i;
     uint32_t z;
 
     /* setup */
@@ -413,34 +413,48 @@ static int test_zuc(int idx)
 
     ZUC_init(&zk);
 
-    ret = ZUC_generate_keystream(&zk);
-    if (!ret) {
-        TEST_error("Fail to generate ZUC keystrean (round %d)", idx);
-        return 0;
-    }
-
     for (i = 0; i < 3; i++) {
         if (ztv[idx].output[i] != 0) {
             /*
              * in the spec, one test reads the last keystream byte
              */
-            if (i == 2)
-                z = (long)zk.keystream[7996] << 24 | zk.keystream[7997] << 16
-                    | zk.keystream[7998] << 8 | zk.keystream[7999];
-            else
-                z = (long)zk.keystream[i * 4] << 24 | zk.keystream[i * 4 + 1] << 16
-                    | zk.keystream[i * 4 + 2] << 8 | zk.keystream[i * 4 + 3];
+            if (i == 2) {
+                while (zk.keystream_len <= 7996) {
+                    if (!ZUC_generate_keystream(&zk)) {
+                        TEST_error("Fail to generate ZUC keystrean (round %d)", idx);
+                        goto end;
+                    }
+                }
+                z = (long)ZUC_keystream_get_byte(&zk, 7996) << 24
+                        | ZUC_keystream_get_byte(&zk, 7997) << 16
+                        | ZUC_keystream_get_byte(&zk, 7998) << 8
+                        | ZUC_keystream_get_byte(&zk, 7999);
+            } else {
+                while (zk.keystream_len <= (uint32_t)i * 4) {
+                    if (!ZUC_generate_keystream(&zk)) {
+                        TEST_error("Fail to generate ZUC keystrean (round %d)", idx);
+                        goto end;
+                    }
+                }
+                z = (long)ZUC_keystream_get_byte(&zk, i * 4) << 24
+                        | ZUC_keystream_get_byte(&zk, i * 4 + 1) << 16
+                        | ZUC_keystream_get_byte(&zk, i * 4 + 2) << 8
+                        | ZUC_keystream_get_byte(&zk, i * 4 + 3);
+            }
 
             if (!TEST_uint_eq(z, ztv[idx].output[i])) {
                 TEST_info("Current compared key: %d", i);
-                return 0;
+                goto end;
             }
         }
     }
 
+    ret = 1;
+
+end:
     ZUC_destroy_keystream(&zk);
 
-    return 1;
+    return ret;
 }
 
 static int test_eia3(int idx)
@@ -474,7 +488,8 @@ static int test_eia3(int idx)
 
             mac = ((uint32_t)out[0] << 24) | ((uint32_t)out[1] << 16) | ((uint32_t)out[2] << 8) | (uint32_t)out[3];
             if (!TEST_uint_eq(mac, eia3_tv[i].expected)) {
-                TEST_info("eia3 result: 0x%x, expected: 0x%x", mac, eia3_tv[i].expected);
+                TEST_info("eia3 result: 0x%x, expected: 0x%x, i: %d, input_len: %zu",
+                          mac, eia3_tv[i].expected, i, eia3_tv[i].input_len);
                 return 0;
             }
         }
