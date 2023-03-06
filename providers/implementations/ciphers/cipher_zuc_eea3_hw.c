@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 The Tongsuo Project Authors. All Rights Reserved.
+ * Copyright 2023 The Tongsuo Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -11,6 +11,8 @@
 
 #include "cipher_zuc_eea3.h"
 
+static int zuc_128_eea3_initiv(PROV_CIPHER_CTX *vctx);
+
 static int zuc_128_eea3_initkey(PROV_CIPHER_CTX *vctx, const uint8_t *key,
                                 size_t keylen)
 {
@@ -18,6 +20,8 @@ static int zuc_128_eea3_initkey(PROV_CIPHER_CTX *vctx, const uint8_t *key,
     ZUC_KEY *zk = &ctx->ks.ks;
 
     zk->k = key;
+
+    zuc_128_eea3_initiv(vctx);
 
     return 1;
 }
@@ -42,7 +46,7 @@ static int zuc_128_eea3_initiv(PROV_CIPHER_CTX *vctx)
      */
 
     /* IV is a 'must' */
-    if (!vctx->iv_set)
+    if (!vctx->iv_set || !zk->k)
         return 0;
 
     count = ((long)iv[0] << 24) | (iv[1] << 16) | (iv[2] << 8) | iv[3];
@@ -66,6 +70,9 @@ static int zuc_128_eea3_initiv(PROV_CIPHER_CTX *vctx)
     zk->iv[14] = zk->iv[6];
     zk->iv[15] = zk->iv[7];
 
+    zk->keystream_len = 0;
+    zk->inited = 0;
+
     ZUC_init(zk);
 
     return 1;
@@ -76,16 +83,12 @@ static int zuc_128_eea3_cipher(PROV_CIPHER_CTX *vctx, unsigned char *out,
 {
     PROV_ZUC_EEA3_CTX *ctx = (PROV_ZUC_EEA3_CTX *)vctx;
     ZUC_KEY *zk = &ctx->ks.ks;
-    unsigned int i, remain, num = vctx->num;
+    unsigned int i, k, n, num = vctx->num;
 
-    remain = zk->keystream_len - num;
-    if (remain < inl) {
-        /* no adequate key, generate more */
-        zk->L = ((inl - remain) * 8 + 31) / 32;
+    if (num >= zk->keystream_len && !ZUC_generate_keystream(zk))
+        return 0;
 
-        if (!ZUC_generate_keystream(zk))
-            return 0;
-    }
+    n = zk->L * sizeof(uint32_t);
 
     /*
      * EEA3 is based on 'bits', but we can only handle 'bytes'.
@@ -94,11 +97,18 @@ static int zuc_128_eea3_cipher(PROV_CIPHER_CTX *vctx, unsigned char *out,
      * bits at the end of the input. Those trailing bits in the last byte
      * should be discarded by caller.
      */
-    for (i = 0; i < inl; i++, num++)
-        out[i] = in[i] ^ zk->keystream[num];
+    for (i = 0; i < inl; i++) {
+        k = num + i;
+        if (k >= zk->keystream_len) {
+            if (!ZUC_generate_keystream(zk))
+                return 0;
+        }
+
+        out[i] = in[i] ^ zk->keystream[k % n];
+    }
 
     /* num always points to next key byte to use */
-    vctx->num = num;
+    vctx->num += inl;
 
     return 1;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 The Tongsuo Project Authors. All Rights Reserved.
+ * Copyright 2023 The Tongsuo Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -15,26 +15,6 @@
 
 # include "crypto/zuc.h"
 # include "eia3_local.h"
-
-static ossl_inline uint32_t GET_WORD(uint8_t *data, uint32_t i)
-{
-    uint32_t word = 0, ti, j = i / 8;
-
-    ti = i % 8;
-    if (ti == 0) {
-        word = (uint32_t)data[j] << 24;
-        word |= ((uint32_t)data[j + 1] << 16);
-        word |= ((uint32_t)data[j + 2] << 8);
-        word |= data[j + 3];
-    } else {
-        word = (uint32_t)((uint8_t)(data[j] << ti) | (uint8_t)(data[j + 1] >> (8 - ti))) << 24;
-        word |= (uint32_t)((uint8_t)(data[j + 1] << ti) | (uint8_t)(data[j + 2] >> (8 - ti))) << 16;
-        word |= (uint32_t)((uint8_t)(data[j + 2] << ti) | (uint8_t)(data[j + 3] >> (8 - ti))) << 8;
-        word |= (data[j + 3] << ti) | (data[j + 4] >> (8 - ti));
-    }
-
-    return word;
-}
 
 static ossl_inline uint8_t GET_BIT(const unsigned char *data, uint32_t i)
 {
@@ -98,17 +78,17 @@ int EIA3_Init(EIA3_CTX *ctx, const unsigned char key[EVP_ZUC_KEY_SIZE], const un
 int EIA3_Update(EIA3_CTX *ctx, const unsigned char *inp, size_t len)
 {
     ZUC_KEY *zk = &ctx->zk;
-    size_t i, remain, length = len * 8, num = ctx->num;
+    size_t i, length = len * 8;
 
-    remain = zk->keystream_len - num;
-    zk->L = ((len - remain) * 8 + 64 + 31) / 32;
+    for (i = 0; i < length; i++) {
+        if ((ctx->num + i/8 + 4) >= zk->keystream_len) {
+            if (!ZUC_generate_keystream(zk))
+                return 0;
+        }
 
-    if (zk->L > 0 && !ZUC_generate_keystream(zk))
-        return 0;
-
-    for (i = 0; i < length; i++)
         if (GET_BIT(inp, i))
-            ctx->T ^= GET_WORD(zk->keystream, ctx->length + i);
+            ctx->T ^= ZUC_keystream_get_word(zk, i);
+    }
 
     ctx->length += length;
     ctx->num += len;
@@ -118,12 +98,24 @@ int EIA3_Update(EIA3_CTX *ctx, const unsigned char *inp, size_t len)
 
 void EIA3_Final(EIA3_CTX *ctx, unsigned char out[EIA3_DIGEST_SIZE])
 {
-    size_t L = (ctx->length + 64 + 31) / 32;
-    uint32_t mac;
     ZUC_KEY *zk = &ctx->zk;
+    size_t L = (ctx->length + 64 + 31) / 32, last;
+    uint32_t mac;
 
-    ctx->T ^= GET_WORD(zk->keystream, ctx->length);
-    mac = ctx->T ^ GET_WORD(zk->keystream, (L - 1) * 32);
+    if ((ctx->length / 8 + 4) >= zk->keystream_len) {
+        if (!ZUC_generate_keystream(zk))
+            return;
+    }
+
+    ctx->T ^= ZUC_keystream_get_word(zk, ctx->length);
+
+    last = (L - 1) * 32;
+    if ((last / 8 + 4) >= zk->keystream_len) {
+        if (!ZUC_generate_keystream(zk))
+            return;
+    }
+
+    mac = ctx->T ^ ZUC_keystream_get_word(zk, (L - 1) * 32);
 
     out[0] = (uint8_t)(mac >> 24) & 0xFF;
     out[1] = (uint8_t)(mac >> 16) & 0xFF;

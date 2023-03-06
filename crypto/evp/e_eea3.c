@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 The Tongsuo Project Authors. All Rights Reserved.
+ * Copyright 2023 The Tongsuo Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -99,6 +99,9 @@ static int eea3_init_key(EVP_CIPHER_CTX *ctx, const unsigned char *key,
     zk->iv[14] = zk->iv[6];
     zk->iv[15] = zk->iv[7];
 
+    zk->keystream_len = 0;
+    zk->inited = 0;
+
     ZUC_init(zk);
 
     return 1;
@@ -109,17 +112,12 @@ static int eea3_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
 {
     EVP_EEA3_KEY *ek = data(ctx);
     ZUC_KEY *zk = &ek->zk;
-    unsigned int i, remain;
-    int num = EVP_CIPHER_CTX_num(ctx);
+    unsigned int i, k, n, num = EVP_CIPHER_CTX_num(ctx);
 
-    remain = zk->keystream_len - num;
-    if (remain < inl) {
-        /* no adequate key, generate more */
-        zk->L = ((inl - remain) * 8 + 31) / 32;
+    if (num >= zk->keystream_len && !ZUC_generate_keystream(zk))
+        return 0;
 
-        if (!ZUC_generate_keystream(zk))
-            return 0;
-    }
+    n = zk->L * sizeof(uint32_t);
 
     /*
      * EEA3 is based on 'bits', but we can only handle 'bytes'.
@@ -128,8 +126,17 @@ static int eea3_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
      * bits at the end of the input. Those trailing bits in the last byte
      * should be discarded by caller.
      */
-    for (i = 0; i < inl; i++, num++)
-        out[i] = in[i] ^ zk->keystream[num];
+    for (i = 0; i < inl; i++) {
+        k = num + i;
+        if (k >= zk->keystream_len) {
+            if (!ZUC_generate_keystream(zk))
+                return 0;
+        }
+
+        out[i] = in[i] ^ zk->keystream[k % n];
+    }
+
+    num += inl;
 
     /* num always points to next key byte to use */
     EVP_CIPHER_CTX_set_num(ctx, num);
