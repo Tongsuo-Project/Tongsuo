@@ -1874,7 +1874,9 @@ static int check_named_curve_from_ecparameters(int id)
     if (!TEST_ptr(other_gen = EC_POINT_new(tmpg))
         || !TEST_true(EC_POINT_set_affine_coordinates(tmpg, other_gen,
                                                       other_gen_x, other_gen_y,
-                                                      bn_ctx)))
+                                                      bn_ctx))
+        || !TEST_int_eq((EC_GROUP_get_curve_name(tmpg)),
+                        EC_POINT_get_curve_name(other_gen)))
         goto err;
 
     /*

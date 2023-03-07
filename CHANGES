@@ -9,6 +9,8 @@
 
   *) SSL_connection_is_ntls改成使用预读方式判断是否为NTLS
 
+  *) 支持零知识证明算法-bulletproofs (range proof)
+
   *) 修复CVE-2022-3996
 
   *) Paillier 支持硬件加速

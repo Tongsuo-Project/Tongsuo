@@ -975,6 +975,11 @@ const EC_METHOD *EC_POINT_method_of(const EC_POINT *point)
 }
 #endif
 
+int EC_POINT_get_curve_name(const EC_POINT *point)
+{
+    return point->curve_name;
+}
+
 int EC_POINT_set_to_infinity(const EC_GROUP *group, EC_POINT *point)
 {
     if (group->meth->point_set_to_infinity == 0) {

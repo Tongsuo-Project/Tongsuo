@@ -21,6 +21,7 @@
 #define PKEY_SECONDS    10
 #define EC_ELGAMAL_SECONDS      10
 #define PAILLIER_SECONDS        10
+#define BULLETPROOFS_SECONDS    10
 
 #define RSA_SECONDS     PKEY_SECONDS
 #define DSA_SECONDS     PKEY_SECONDS
@@ -73,6 +74,9 @@
 #ifndef OPENSSL_NO_ZUC
 # include <crypto/zuc.h>
 #endif
+#ifndef OPENSSL_NO_BULLETPROOFS
+# include <openssl/bulletproofs.h>
+#endif
 #include <openssl/x509.h>
 #include <openssl/dsa.h>
 #include "./testdsa.h"
@@ -112,6 +116,7 @@ typedef struct openssl_speed_sec_st {
     int ffdh;
     int ec_elgamal;
     int paillier;
+    int bulletproofs;
 } openssl_speed_sec_t;
 
 static volatile int run = 0;
@@ -129,6 +134,12 @@ static void ec_elgamal_print_message(const char *str, const char *str2,
 static int PAILLIER_loop(void *args);
 static void paillier_print_message(const char *str, const char *str2,
                                    long num, int tm);
+#endif
+
+#ifndef OPENSSL_NO_BULLETPROOFS
+static int BULLETPROOFS_loop(void *args);
+static void bulletproofs_print_message(const char *op, const char *curve_name,
+                                       int bits, int agg_max, size_t agg, int tm);
 #endif
 
 static double Time_F(int s);
@@ -560,6 +571,55 @@ static double paillier_results[PAILLIER_NUM][PAILLIER_PLAINTEXTS_NUM][6];
 
 #endif /* OPENSSL_NO_PAILLIER */
 
+#ifndef OPENSSL_NO_BULLETPROOFS
+enum {
+    R_BULLETPROOFS_P160,
+    R_BULLETPROOFS_P192,
+    R_BULLETPROOFS_P224,
+    R_BULLETPROOFS_P256,
+    R_BULLETPROOFS_P384,
+    R_BULLETPROOFS_P521,
+    R_BULLETPROOFS_BRP256R1,
+    R_BULLETPROOFS_BRP256T1,
+    R_BULLETPROOFS_BRP384R1,
+    R_BULLETPROOFS_BRP384T1,
+    R_BULLETPROOFS_BRP512R1,
+    R_BULLETPROOFS_BRP512T1,
+# ifndef OPENSSL_NO_SM2
+    R_BULLETPROOFS_SM2
+# endif
+};
+
+static OPT_PAIR bulletproofs_choices[] = {
+    {"bulletproofsp160", R_BULLETPROOFS_P160},
+    {"bulletproofsp192", R_BULLETPROOFS_P192},
+    {"bulletproofsp224", R_BULLETPROOFS_P224},
+    {"bulletproofsp256", R_BULLETPROOFS_P256},
+    {"bulletproofsp384", R_BULLETPROOFS_P384},
+    {"bulletproofsp521", R_BULLETPROOFS_P521},
+    {"bulletproofsp256r1", R_BULLETPROOFS_BRP256R1},
+    {"bulletproofsp256t1", R_BULLETPROOFS_BRP256T1},
+    {"bulletproofsp384r1", R_BULLETPROOFS_BRP384R1},
+    {"bulletproofsp384t1", R_BULLETPROOFS_BRP384T1},
+    {"bulletproofsp512r1", R_BULLETPROOFS_BRP512R1},
+    {"bulletproofsp512t1", R_BULLETPROOFS_BRP512T1},
+# ifndef OPENSSL_NO_SM2
+    {"bulletproofssm2", R_BULLETPROOFS_SM2}
+# endif
+};
+
+static int bulletproofs_bits[] = {16, 32, 64};
+static int bulletproofs_agg_max[] = {1, 16, 32};
+
+# define BULLETPROOFS_NUM                   OSSL_NELEM(bulletproofs_choices)
+# define BULLETPROOFS_BITS_NUM              OSSL_NELEM(bulletproofs_bits)
+# define BULLETPROOFS_AGG_MAX_NUM           OSSL_NELEM(bulletproofs_agg_max)
+# define BULLETPROOFS_AGG_NUM               3
+
+static double bulletproofs_results[BULLETPROOFS_NUM][BULLETPROOFS_BITS_NUM][BULLETPROOFS_AGG_MAX_NUM][BULLETPROOFS_AGG_NUM][2];
+
+#endif /* OPENSSL_NO_BULLETPROOFS */
+
 #define COND(unused_cond) (run && count < INT_MAX)
 #define COUNT(d) (count)
 
@@ -601,6 +661,11 @@ typedef struct loopargs_st {
     PAILLIER_CIPHERTEXT *paillier_ciphertext_a[PAILLIER_NUM];
     PAILLIER_CIPHERTEXT *paillier_ciphertext_b[PAILLIER_NUM];
     PAILLIER_CIPHERTEXT *paillier_ciphertext_r[PAILLIER_NUM];
+#endif
+#ifndef OPENSSL_NO_BULLETPROOFS
+    BULLET_PROOF_WITNESS *bulletproofs_witness;
+    BULLET_PROOF_CTX *bulletproofs_ctx;
+    BULLET_PROOF *bulletproofs_proof;
 #endif
     unsigned char *secret_a;
     unsigned char *secret_b;
@@ -1408,6 +1473,42 @@ static int PAILLIER_loop(void *args)
 }
 #endif                         /* OPENSSL_NO_PAILLIER */
 
+#ifndef OPENSSL_NO_BULLETPROOFS
+static int bulletproofs_prove = 0;
+static int bulletproofs_verify = 0;
+
+static int BULLETPROOFS_loop(void *args)
+{
+    loopargs_t *tempargs = *(loopargs_t **) args;
+    BULLET_PROOF_CTX *ctx = tempargs->bulletproofs_ctx;
+    BULLET_PROOF_WITNESS *witness = tempargs->bulletproofs_witness;
+    BULLET_PROOF *proof = tempargs->bulletproofs_proof;
+    int count = 0;
+
+    if (bulletproofs_prove) {
+        for (; COND(1); count++) {
+            if (!BULLET_PROOF_prove(ctx, witness, proof)) {
+                BIO_printf(bio_err, "BULLETPROOFS prove failure\n");
+                ERR_print_errors(bio_err);
+                count = -1;
+                break;
+            }
+        }
+    } else if (bulletproofs_verify) {
+        for (; COND(1); count++) {
+            if (!BULLET_PROOF_verify(ctx, proof)) {
+                BIO_printf(bio_err, "BULLETPROOFS verify failure\n");
+                ERR_print_errors(bio_err);
+                count = -1;
+                break;
+            }
+        }
+    }
+
+    return count;
+}
+#endif                         /* OPENSSL_NO_BULLETPROOFS */
+
 static int run_benchmark(int async_jobs,
                          int (*loop_function) (void *), loopargs_t * loopargs)
 {
@@ -1670,7 +1771,7 @@ int speed_main(int argc, char **argv)
                                     ECDSA_SECONDS, ECDH_SECONDS,
                                     EdDSA_SECONDS, SM2_SECONDS,
                                     FFDH_SECONDS, EC_ELGAMAL_SECONDS,
-                                    PAILLIER_SECONDS };
+                                    PAILLIER_SECONDS, BULLETPROOFS_SECONDS };
 
     static const unsigned char key32[32] = {
         0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0,
@@ -1807,6 +1908,35 @@ int speed_main(int argc, char **argv)
         "g_optimize",
     };
     int paillier_doit[PAILLIER_NUM] = { 0 };
+#endif
+
+#ifndef OPENSSL_NO_BULLETPROOFS
+    static const EC_CURVE test_bulletproofs_curves[] = {
+        /* Prime Curves */
+        {"secp160r1", NID_secp160r1},
+        {"nistp192", NID_X9_62_prime192v1},
+        {"nistp224", NID_secp224r1},
+        {"nistp256", NID_X9_62_prime256v1},
+        {"nistp384", NID_secp384r1},
+        {"nistp521", NID_secp521r1},
+        {"brainpoolP256r1", NID_brainpoolP256r1},
+        {"brainpoolP256t1", NID_brainpoolP256t1},
+        {"brainpoolP384r1", NID_brainpoolP384r1},
+        {"brainpoolP384t1", NID_brainpoolP384t1},
+        {"brainpoolP512r1", NID_brainpoolP512r1},
+        {"brainpoolP512t1", NID_brainpoolP512t1},
+# ifndef OPENSSL_NO_SM2
+        {"sm2", NID_sm2},
+# endif
+    };
+    int bulletproofs_doit[BULLETPROOFS_NUM] = { 0 };
+    BULLET_PROOF_PUB_PARAM *bp_pp[BULLETPROOFS_NUM][BULLETPROOFS_BITS_NUM][BULLETPROOFS_AGG_MAX_NUM] = { 0 };
+    BULLET_PROOF_CTX *bp_ctx[BULLETPROOFS_NUM][BULLETPROOFS_BITS_NUM][BULLETPROOFS_AGG_MAX_NUM] = { 0 };
+    BULLET_PROOF_WITNESS *bp_witness[BULLETPROOFS_NUM][BULLETPROOFS_BITS_NUM][BULLETPROOFS_AGG_MAX_NUM][3] = { 0 };
+    BULLET_PROOF *bp_proof[BULLETPROOFS_NUM][BULLETPROOFS_BITS_NUM][BULLETPROOFS_AGG_MAX_NUM] = { 0 };
+    size_t bp_agg_num[BULLETPROOFS_NUM][BULLETPROOFS_BITS_NUM][BULLETPROOFS_AGG_MAX_NUM][3] = { 0 };
+    size_t bp_size[BULLETPROOFS_NUM][BULLETPROOFS_BITS_NUM][BULLETPROOFS_AGG_MAX_NUM][3] = { 0 };
+    int64_t bp_secrets[64] = { 0 };
 #endif
 
     uint8_t ecdsa_doit[ECDSA_NUM] = { 0 };
@@ -2112,6 +2242,17 @@ int speed_main(int argc, char **argv)
         }
         if (opt_found(algo, paillier_choices, &i)) {
             paillier_doit[i] = 2;
+            continue;
+        }
+#endif
+#ifndef OPENSSL_NO_BULLETPROOFS
+        if (strcmp(algo, "bulletproofs") == 0) {
+            for (i = 0; i < OSSL_NELEM(bulletproofs_doit); i++)
+                bulletproofs_doit[i] = 1;
+            continue;
+        }
+        if (opt_found(algo, bulletproofs_choices, &i)) {
+            bulletproofs_doit[i] = 2;
             continue;
         }
 #endif
@@ -4027,6 +4168,123 @@ int speed_main(int argc, char **argv)
     }
 #endif                         /* OPENSSL_NO_PAILLIER */
 
+#ifndef OPENSSL_NO_BULLETPROOFS
+    for (i = 1; i < sizeof(bp_secrets)/sizeof(bp_secrets[0]); i++) {
+        bp_secrets[i] = (1U << i) - 1;
+    }
+
+    for (testnum = 0; testnum < BULLETPROOFS_NUM; testnum++) {
+        unsigned long m, n, j;
+        size_t bp_agg_count = 0;
+
+        if (!bulletproofs_doit[testnum])
+            continue;           /* Ignore Curve */
+
+        for (m = 0; m < BULLETPROOFS_BITS_NUM; m++) {
+            bp_secrets[0] = (1U << bulletproofs_bits[m]) - 1;
+
+            for (n = 0; n < BULLETPROOFS_AGG_MAX_NUM; n++) {
+                bp_pp[testnum][m][n] = BULLET_PROOF_PUB_PARAM_new(test_bulletproofs_curves[testnum].nid,
+                                                                  bulletproofs_bits[m],
+                                                                  bulletproofs_agg_max[n]);
+                if (bp_pp[testnum][m][n] == NULL)
+                    goto end;
+
+                bp_ctx[testnum][m][n] = BULLET_PROOF_CTX_new(bp_pp[testnum][m][n], NULL);
+                if (bp_ctx[testnum][m][n] == NULL)
+                    goto end;
+
+                bp_proof[testnum][m][n] = BULLET_PROOF_new(bp_ctx[testnum][m][n]);
+                if (bp_ctx[testnum][m][n] == NULL)
+                    goto end;
+
+                for (j = 0; j < BULLETPROOFS_AGG_NUM; j++) {
+                    if (j == 0 || bulletproofs_agg_max[n] == 1) {
+                        bp_agg_count = 1;
+                    } else if (j == 1) {
+                        bp_agg_count = (bulletproofs_agg_max[n] > bulletproofs_bits[m] ?
+                                        bulletproofs_bits[m] : bulletproofs_agg_max[n]) / 2;
+                    } else {
+                        bp_agg_count = bulletproofs_agg_max[n] > bulletproofs_bits[m] ?
+                                       bulletproofs_bits[m] : bulletproofs_agg_max[n];
+                    }
+
+                    bp_agg_num[testnum][m][n][j] = bp_agg_count;
+
+                    bp_witness[testnum][m][n][j] = BULLET_PROOF_WITNESS_new(bp_ctx[testnum][m][n],
+                                                                            bp_secrets, bp_agg_count);
+                    if (!BULLET_PROOF_prove(bp_ctx[testnum][m][n],
+                                            bp_witness[testnum][m][n][j],
+                                            bp_proof[testnum][m][n])) {
+                        BIO_printf(bio_err, "bulletproofs prove failure.\n");
+                        ERR_print_errors(bio_err);
+                        goto end;
+                    }
+
+                    if (!BULLET_PROOF_verify(bp_ctx[testnum][m][n],
+                                             bp_proof[testnum][m][n])) {
+                        BIO_printf(bio_err, "bulletproofs verify failure\n");
+                        ERR_print_errors(bio_err);
+                        goto end;
+                    }
+
+                    bp_size[testnum][m][n][j] = BULLET_PROOF_encode(bp_proof[testnum][m][n], NULL, 0);
+
+                    for (i = 0; i < loopargs_len; i++) {
+                        loopargs[i].bulletproofs_ctx = bp_ctx[testnum][m][n];
+                        loopargs[i].bulletproofs_proof = bp_proof[testnum][m][n];
+                        loopargs[i].bulletproofs_witness = bp_witness[testnum][m][n][j];
+                    }
+
+                    bulletproofs_print_message("prove",
+                                               test_bulletproofs_curves[testnum].name,
+                                               bulletproofs_bits[m],
+                                               bulletproofs_agg_max[n],
+                                               bp_agg_num[testnum][m][n][j],
+                                               seconds.bulletproofs);
+                    bulletproofs_prove = 1;
+                    Time_F(START);
+                    count = run_benchmark(async_jobs, BULLETPROOFS_loop, loopargs);
+                    d = Time_F(STOP);
+                    bulletproofs_prove = 0;
+
+                    BIO_printf(bio_err,
+                               mr ? "+R23:%ld:%s:%d:%d:%zu:%.2f\n" :
+                               "%ld curve(%s) bits(%d) agg_max(%d) agg(%zu) bulletproofs prove in %.2fs \n",
+                               count, test_bulletproofs_curves[testnum].name,
+                               bulletproofs_bits[m], bulletproofs_agg_max[n],
+                               bp_agg_count, d);
+                    bulletproofs_results[testnum][m][n][j][0] = (double)count / d;
+
+                    bulletproofs_print_message("verify",
+                                               test_bulletproofs_curves[testnum].name,
+                                               bulletproofs_bits[m],
+                                               bulletproofs_agg_max[n],
+                                               bp_agg_num[testnum][m][n][j],
+                                               seconds.bulletproofs);
+                    bulletproofs_prove = 1;
+                    Time_F(START);
+                    count = run_benchmark(async_jobs, BULLETPROOFS_loop, loopargs);
+                    d = Time_F(STOP);
+                    bulletproofs_prove = 0;
+
+                    BIO_printf(bio_err,
+                               mr ? "+R24:%ld:%s:%d:%d:%zu:%.2f\n" :
+                               "%ld curve(%s) bits(%d) agg_max(%d) agg(%zu) bulletproofs verify in %.2fs \n",
+                               count, test_bulletproofs_curves[testnum].name,
+                               bulletproofs_bits[m], bulletproofs_agg_max[n],
+                               bp_agg_count, d);
+                    bulletproofs_results[testnum][m][n][j][1] = (double)count / d;
+
+                    if (bulletproofs_agg_max[n] == 1) {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+#endif                         /* OPENSSL_NO_BULLETPROOFS */
+
 #ifndef NO_FORK
  show_res:
 #endif
@@ -4199,7 +4457,6 @@ int speed_main(int argc, char **argv)
 #endif /* OPENSSL_NO_DH */
 
 #ifndef OPENSSL_NO_EC_ELGAMAL
-    unsigned long j = 0;
     testnum = 1;
     for (k = 0; k < OSSL_NELEM(ec_elgamal_doit); k++) {
         if (!ec_elgamal_doit[k])
@@ -4219,6 +4476,7 @@ int speed_main(int argc, char **argv)
 
     testnum = 1;
     for (k = 0; k < OSSL_NELEM(ec_elgamal_doit); k++) {
+        unsigned long j = 0;
         if (!ec_elgamal_doit[k])
             continue;
         if (testnum && !mr) {
@@ -4272,6 +4530,48 @@ int speed_main(int argc, char **argv)
                        paillier_results[i][k][1], paillier_results[i][k][2],
                        paillier_results[i][k][3], paillier_results[i][k][4],
                        paillier_results[i][k][5]);
+        }
+    }
+#endif
+
+#ifndef OPENSSL_NO_BULLETPROOFS
+    testnum = 1;
+    for (i = 0; i < BULLETPROOFS_NUM; i++) {
+        unsigned long m, n, j;
+        size_t pp_size;
+
+        if (!bulletproofs_doit[i])
+            continue;
+
+        if (testnum && !mr) {
+            printf("\n%-20s %4s %4s %4s   %12s %12s %12s %12s\n",
+                    "curve", "bits", "agg_max", "agg", "prove/s", "verify/s", "pp_size(B)", "proof_size(B)");
+            testnum = 0;
+        }
+
+        for (m = 0; m < BULLETPROOFS_BITS_NUM; m++) {
+            for (n = 0; n < BULLETPROOFS_AGG_MAX_NUM; n++) {
+                for (j = 0; j < BULLETPROOFS_AGG_NUM; j++) {
+                    pp_size = BULLET_PROOF_PUB_PARAM_encode(bp_pp[i][m][n], NULL, 0);
+                    if (mr)
+                        printf("+F12:%d:%s:%d:%d:%zu:%f:%f:%zu:%zu\n", i,
+                               test_bulletproofs_curves[i].name, bulletproofs_bits[m],
+                               bulletproofs_agg_max[n], bp_agg_num[i][m][n][j],
+                               bulletproofs_results[i][m][n][j][0],
+                               bulletproofs_results[i][m][n][j][1],
+                               pp_size, bp_size[i][m][n][j]);
+                    else
+                        printf("%-20s %4d %4d %4zu   %12.1f %12.1f %12zu %12zu\n",
+                               test_bulletproofs_curves[i].name, bulletproofs_bits[m],
+                               bulletproofs_agg_max[n], bp_agg_num[i][m][n][j],
+                               bulletproofs_results[i][m][n][j][0],
+                               bulletproofs_results[i][m][n][j][1],
+                               pp_size, bp_size[i][m][n][j]);
+
+                    if (bulletproofs_agg_max[n] == 1)
+                        break;
+                }
+            }
         }
     }
 #endif
@@ -4376,6 +4676,31 @@ int speed_main(int argc, char **argv)
     OPENSSL_free(evp_hmac_name);
     OPENSSL_free(evp_cmac_name);
 
+#ifndef OPENSSL_NO_BULLETPROOFS
+    for (i = 0; i < BULLETPROOFS_NUM; i++) {
+        unsigned long m, n, j;
+
+        if (!bulletproofs_doit[i])
+            continue;
+
+        for (m = 0; m < BULLETPROOFS_BITS_NUM; m++) {
+            for (n = 0; n < BULLETPROOFS_AGG_MAX_NUM; n++) {
+                if (bp_proof[i][m][n] != NULL)
+                    BULLET_PROOF_free(bp_proof[i][m][n]);
+                if (bp_ctx[i][m][n] != NULL)
+                    BULLET_PROOF_CTX_free(bp_ctx[i][m][n]);
+                if (bp_pp[i][m][n] != NULL)
+                    BULLET_PROOF_PUB_PARAM_free(bp_pp[i][m][n]);
+
+                for (j = 0; j < BULLETPROOFS_AGG_NUM; j++) {
+                    if (bp_witness[i][m][n][j] != NULL)
+                        BULLET_PROOF_WITNESS_free(bp_witness[i][m][n][j]);
+                }
+            }
+        }
+    }
+#endif
+
     if (async_jobs > 0) {
         for (i = 0; i < loopargs_len; i++)
             ASYNC_WAIT_CTX_free(loopargs[i].wait_ctx);
@@ -4464,6 +4789,28 @@ static void paillier_print_message(const char *str, const char *str2,
                mr ? "+DTP:%s:%s:%d\n"
                : "Doing paillier %s with type %s for %ld times: ",
                str, str2, num);
+    (void)BIO_flush(bio_err);
+# endif
+}
+#endif
+
+#ifndef OPENSSL_NO_BULLETPROOFS
+static void bulletproofs_print_message(const char *op, const char *curve_name,
+                                       int bits, int agg_max, size_t agg, int tm)
+{
+# ifdef SIGALRM
+    BIO_printf(bio_err,
+               mr ? "+DTP:%s:%s:%d:%d:%zu:%d\n"
+               : "Doing bulletproofs %s with (curve:%s, bits:%d, agg_max:%d, agg:%zu) for %ds: ",
+               op, curve_name, bits, agg_max, agg, tm);
+    (void)BIO_flush(bio_err);
+    run = 1;
+    alarm(tm);
+# else
+    BIO_printf(bio_err,
+               mr ? "+DTP:%s:%s:%d:%d:%zu:%d\n"
+               : "Doing bulletproofs %s with (curve:%s, bits:%d, agg_max:%d, agg:%zu) for %d times: ",
+               op, curve_name, bits, agg_max, agg, tm);
     (void)BIO_flush(bio_err);
 # endif
 }

@@ -667,6 +667,12 @@ int EC_POINT_set_to_infinity(const EC_GROUP *group, EC_POINT *point);
  */
 OSSL_DEPRECATEDIN_3_0 const EC_METHOD *EC_POINT_method_of(const EC_POINT *point);
 
+/** Returns the curve name of a EC_POINT object
+ *  \param  point  EC_POINT object
+ *  \return NID of the curve name OID or 0 if not set.
+ */
+int EC_POINT_get_curve_name(const EC_POINT *point);
+
 /** Sets the jacobian projective coordinates of a EC_POINT over GFp
  *  \param  group  underlying EC_GROUP object
  *  \param  p      EC_POINT object

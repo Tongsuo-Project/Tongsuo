@@ -506,6 +506,7 @@ my @disablables = (
     "crypto-mdebug-count",
     "cert-compression",
     "paillier",
+    "bulletproofs",
     "bn-method"
     );
 foreach my $proto ((@tls, @dtls))
@@ -568,6 +569,7 @@ our %disabled = ( # "what"         => "comment"
                   "evp-cipher-api-compat"      => "default",
                   "cert-compression"    => "default",
                   "paillier"            => "default",
+                  "bulletproofs"        => "default",
                   "bn-method"           => "default",
                 );
 
@@ -1089,6 +1091,12 @@ while (@argvcopy)
 # If enable-ec_elgamal has been set, we must set the api to 1.1.1 and disable deperated.
 if (!defined($disabled{'ec_elgamal'})) {
     die "ec_elgamal only supports api with 1.1.1\n"
+        if ($config{api} && $config{api} != $apitable->{"1.1.1"});
+    $config{api}=$apitable->{"1.1.1"};
+}
+
+if (!defined($disabled{'bulletproofs'})) {
+    die "bulletproofs only supports api with 1.1.1\n"
         if ($config{api} && $config{api} != $apitable->{"1.1.1"});
     $config{api}=$apitable->{"1.1.1"};
 }

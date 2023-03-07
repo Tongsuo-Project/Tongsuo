@@ -2,8 +2,8 @@
 
 # The INPUT HEADER is scanned for declarations
 # LIBNAME       PUBLIC HEADER                   ERROR-TABLE FILE                        INTERNAL HEADER (if relevant)
-L ERR           NONE                            NONE                                    
-L FUNC          NONE                            NONE                                    
+L ERR           NONE                            NONE
+L FUNC          NONE                            NONE
 L BN            include/openssl/bnerr.h         crypto/bn/bn_err.c                      include/crypto/bnerr.h
 L RSA           include/openssl/rsaerr.h        crypto/rsa/rsa_err.c                    include/crypto/rsaerr.h
 L DH            include/openssl/dherr.h         crypto/dh/dh_err.c                      include/crypto/dherr.h
@@ -44,6 +44,7 @@ L PROV          include/openssl/proverr.h       providers/common/provider_err.c 
 L OSSL_ENCODER  include/openssl/encodererr.h    crypto/encode_decode/encoder_err.c      include/crypto/encodererr.h
 L OSSL_DECODER  include/openssl/decodererr.h    crypto/encode_decode/decoder_err.c      include/crypto/decodererr.h
 L HTTP          include/openssl/httperr.h       crypto/http/http_err.c                  include/crypto/httperr.h
+L ZKP_BP        include/openssl/zkpbperr.h      crypto/zkp/bulletproofs/bp_err.c        include/crypto/zkpbperr.h
 
 # SSL/TLS alerts
 R SSL_R_SSLV3_ALERT_UNEXPECTED_MESSAGE          1010
