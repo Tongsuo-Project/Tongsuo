@@ -108,7 +108,7 @@ Either option B<-C> or option B<-P> must be given in case of HTTPS. (Optional)
 =item B<-P> CA_path
 
 (HTTPS) The path containing the trusted CA certificates to verify the peer's
-certificate. The directory must be prepared with the B<c_rehash>
+certificate. The directory must be prepared with the B<rehash>
 OpenSSL utility. Either option B<-C> or option B<-P> must be given in case of
 HTTPS. (Optional)
 

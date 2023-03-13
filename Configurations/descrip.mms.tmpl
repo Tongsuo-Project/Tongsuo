@@ -140,7 +140,6 @@ INSTALL_SHLIBS={- join(", ", map { "-\n\t".$_.".EXE" } @install_shlibs) -}
 INSTALL_ENGINES={- join(", ", map { "-\n\t".$_.".EXE" } @{$unified_info{install}->{engines}}) -}
 INSTALL_PROGRAMS={- join(", ", map { "-\n\t".$_.".EXE" } @{$unified_info{install}->{programs}}) -}
 {- output_off() if $disabled{apps}; "" -}
-BIN_SCRIPTS=[.tools]c_rehash.pl
 MISC_SCRIPTS=[.apps]CA.pl, [.apps]tsget.pl
 {- output_on() if $disabled{apps}; "" -}
 
@@ -581,8 +580,6 @@ install_programs : check_INSTALLTOP install_runtime_libs build_programs
         - CREATE/DIR ossl_installroot:[EXE.'arch']
         COPY/PROT=W:RE [.APPS]openssl.EXE -
                 ossl_installroot:[EXE.'arch']openssl{- $osslver -}.EXE
-        @ ! Install scripts
-        COPY/PROT=W:RE $(BIN_SCRIPTS) ossl_installroot:[EXE]
         @ ! {- output_on() if $disabled{apps}; "" -}
 
 install_startup : [.VMS]openssl_startup.com [.VMS]openssl_shutdown.com -

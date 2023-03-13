@@ -102,7 +102,6 @@ INSTALL_ENGINEPDBS={- join(" ", map { local $dsoext = ".pdb"; quotify1(dso($_)) 
 INSTALL_PROGRAMS={- join(" ", map { quotify1($_.$exeext) } grep { !m|^test\\| } @{$unified_info{install}->{programs}}) -}
 INSTALL_PROGRAMPDBS={- join(" ", map { quotify1($_.".pdb") } grep { !m|^test\\| } @{$unified_info{install}->{programs}}) -}
 {- output_off() if $disabled{apps}; "" -}
-BIN_SCRIPTS="$(BLDDIR)\tools\c_rehash.pl"
 MISC_SCRIPTS="$(BLDDIR)\apps\CA.pl" "$(BLDDIR)\apps\tsget.pl"
 {- output_on() if $disabled{apps}; "" -}
 
@@ -459,8 +458,6 @@ install_programs: install_runtime_libs build_programs
 	@"$(PERL)" "$(SRCDIR)\util\copy.pl" $(INSTALL_PROGRAMS) \
                                         "$(INSTALLTOP)\bin"
 	@"$(PERL)" "$(SRCDIR)\util\copy.pl" $(INSTALL_PROGRAMPDBS) \
-                                        "$(INSTALLTOP)\bin"
-	@"$(PERL)" "$(SRCDIR)\util\copy.pl" $(BIN_SCRIPTS) \
                                         "$(INSTALLTOP)\bin"
 
 uninstall_runtime:
