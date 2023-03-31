@@ -265,7 +265,6 @@ make test
 %{_bindir}/openssl
 %{_mandir}/man1*/*
 %exclude %{_mandir}/man1*/*.pl*
-%exclude %{_mandir}/man1*/c_rehash*
 %exclude %{_mandir}/man1*/tsget*
 %{_mandir}/man5*/*
 %{_mandir}/man7*/*
@@ -295,7 +294,6 @@ make test
 
 # static
 %{_libdir}/*.a
-%exclude %{babassl_prefix}/bin/c_rehash
 
 # perl
 %{_bindir}/*.pl

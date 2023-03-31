@@ -77,8 +77,6 @@ Makefile
 # Misc auto generated files
 /include/openssl/opensslconf.h
 /include/openssl/symbol_prefix.h
-/tools/c_rehash
-/tools/c_rehash.pl
 /util/shlib_wrap.sh
 /tags
 /TAGS

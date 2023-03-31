@@ -75,7 +75,7 @@ The file should contain one or more certificates in PEM format.
 A directory of trusted certificates. The certificates should have names
 of the form: hash.0 or have symbolic links to them of this
 form ("hash" is the hashed certificate subject name: see the B<-hash> option
-of the B<x509> utility). Under Unix the B<c_rehash> script will automatically
+of the B<x509> utility). Under Unix the B<rehash> script will automatically
 create symbolic links to a directory of certificates.
 
 =item B<-no-CAfile>

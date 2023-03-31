@@ -5,8 +5,8 @@ Original text by James Westby, contributed under the OpenSSL license.
 
 =head1 NAME
 
-openssl-c_rehash, openssl-rehash,
-c_rehash, rehash - Create symbolic links to files named by the hash values
+openssl-rehash,
+rehash - Create symbolic links to files named by the hash values
 
 =head1 SYNOPSIS
 
@@ -19,14 +19,7 @@ B<[-n]>
 B<[-v]>
 [ I<directory>...]
 
-B<c_rehash>
-I<flags...>
-
 =head1 DESCRIPTION
-
-On some platforms, the OpenSSL B<rehash> command is available as
-an external script called B<c_rehash>.  They are functionally equivalent,
-except for minor differences noted below.
 
 B<rehash> scans directories and calculates a hash value of each
 C<.pem>, C<.crt>, C<.cer>, or C<.crl>
@@ -63,22 +56,6 @@ is found.
 A warning will also be displayed if there are files that
 cannot be parsed as either a certificate or a CRL or if
 more than one such object appears in the file.
-
-=head2 Script Configuration
-
-The B<c_rehash> script
-uses the B<openssl> program to compute the hashes and
-fingerprints. If not found in the user's B<PATH>, then set the
-B<OPENSSL> environment variable to the full pathname.
-Any program can be used, it will be invoked as follows for either
-a certificate or CRL:
-
-  $OPENSSL x509 -hash -fingerprint -noout -in FILENAME
-  $OPENSSL crl -hash -fingerprint -noout -in FILENAME
-
-where B<FILENAME> is the filename. It must output the hash of the
-file on the first line, and the fingerprint on the second,
-optionally prefixed with some text and an equals sign.
 
 =head1 OPTIONS
 

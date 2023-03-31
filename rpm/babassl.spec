@@ -72,7 +72,6 @@ make install DESTDIR=$RPM_BUILD_ROOT
 %files
 %defattr(-,root,root,-)
 %{babassl_prefix}
-%exclude %{babassl_prefix}/bin/c_rehash
 %exclude %{babassl_prefix}/ssl/misc/tsget*
 %exclude %{babassl_prefix}/ssl/misc/*.pl
 
