@@ -25,7 +25,7 @@ jobs:
           shell: bash
           command: git fetch --depth=1
       - name: config
-        run: ./config --strict-warnings enable-ec_elgamal enable-ntls enable-sm2 enable-sm3 enable-sm4 enable-fips --api=1.1.1 && perl configdata.pm --dump
+        run: ./config --strict-warnings enable-ec_elgamal enable-paillier enable-zuc enable-ntls enable-sm2 enable-sm3 enable-sm4 enable-fips --api=1.1.1 && perl configdata.pm --dump
       - name: make
         run: make -j4
       - name: Set current date as env variable
