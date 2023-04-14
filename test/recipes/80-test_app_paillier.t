@@ -157,7 +157,7 @@ my $pub_text_out_path = catfile($PAILLIER_TEST_OUT_D, "pub-text-out.txt");
 
 # test paillier key generate
 ok(run(app(["openssl", "paillier",
-    "-keygen", "-out", $pail_key_path])), "test paillier -keygen -out");
+    "-keygen", "-out", $pail_key_path, "2048"])), "test paillier -keygen -out 2048");
 ok(run(app(["openssl", "paillier",
     "-pubgen", "-key_in", $pail_key_path, "-out", $pail_pub_path])), "test paillier -pubgen -out");
 
