@@ -1,0 +1,15 @@
+commit: 0ac6ae7ba6eb4f17e92daf0d8278cc3e662ab12a
+date: 2023-04-19 09:12:42
+version: 3.0.3
+built on: Wed Apr 19 00:43:35 2023 UTC
+options: bn(64,64)
+compiler: gcc -fPIC -pthread -m64 -Wa,--noexecstack -Wall -O3 -DPEDANTIC -pedantic -Wno-long-long -DUNUSEDRESULT_DEBUG -Wall -Wmissing-declarations -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wswitch -Wsign-compare -Wshadow -Wformat -Wtype-limits -Wundef -Werror -Wmissing-prototypes -Wstrict-prototypes -DOPENSSL_USE_NODELETE -DL_ENDIAN -DOPENSSL_PIC -DOPENSSL_BUILDING_OPENSSL -DNDEBUG 
+CPUINFO: OPENSSL_ia32cap=0xfffa32035f8bffff:0xd01e4fbb
+
+paillier type           a            b   encrypt(b)/s   decrypt(b)/s   add(a,b)/s   sub(a,b)/s   mul(a,b)/s
+g_optimize              9           10         4367.8         4881.7     390923.6      8268.6      86690.4
+g_optimize              9       100000         4810.0         4647.1     292710.9      8211.3      88793.7
+g_optimize              9    100000000         4825.8         4753.2     384357.8      7793.3      89954.8
+g_optimize              9          -10         4848.1         4581.5     372549.3      7345.0      89684.7
+g_optimize              9      -100000         4874.0         4615.2     384823.6      8023.1      90825.6
+g_optimize              9   -100000000         4981.2         4625.0     373028.4      8070.2      88687.4
