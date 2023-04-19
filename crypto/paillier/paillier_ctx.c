@@ -61,6 +61,10 @@ void PAILLIER_CTX_free(PAILLIER_CTX *ctx)
     if (ctx == NULL)
         return;
 
+# ifndef OPENSSL_NO_BN_METHOD
+    ENGINE_free(ctx->engine);
+# endif
+
     PAILLIER_KEY_free(ctx->key);
     BN_free(ctx->threshold);
     OPENSSL_clear_free((void *)ctx, sizeof(PAILLIER_CTX));
@@ -125,6 +129,14 @@ err:
 int PAILLIER_CTX_set_engine(PAILLIER_CTX *ctx, ENGINE *engine)
 {
 # ifndef OPENSSL_NO_BN_METHOD
+    if (ctx == NULL || engine == NULL) {
+        ERR_raise(ERR_LIB_PAILLIER, ERR_R_PASSED_NULL_PARAMETER);
+        return 0;
+    }
+
+    if (!ENGINE_up_ref(engine))
+        return 0;
+
     ctx->engine = engine;
     return 1;
 # else
