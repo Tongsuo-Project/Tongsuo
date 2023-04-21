@@ -298,6 +298,8 @@ struct x509_store_ctx_st {      /* X509_STORE_CTX */
     SSL_DANE *dane;
     /* signed via bare TA public key, rather than CA certificate */
     int bare_ta_signed;
+    /* verify options */
+    STACK_OF(OPENSSL_STRING) *vfyopts;
 
     OSSL_LIB_CTX *libctx;
     char *propq;
