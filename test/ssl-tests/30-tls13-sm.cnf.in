@@ -29,7 +29,7 @@ our @tests = (
             "MinProtocol" => "TLSv1.3",
             "MaxProtocol" => "TLSv1.3",
             "Ciphersuites" => "TLS_SM4_GCM_SM3",
-            "VerifyCAFile" => test_pem("sm2-root.crt"),
+            "VerifyCAFile" => test_pem("sm2-root-cert.pem"),
         },
         test   => {
             "ExpectedResult" => "Success",
@@ -50,7 +50,7 @@ our @tests = (
             "MinProtocol" => "TLSv1.3",
             "MaxProtocol" => "TLSv1.3",
             "Ciphersuites" => "TLS_AES_128_GCM_SHA256:TLS_SM4_GCM_SM3",
-            "VerifyCAFile" => test_pem("sm2-root.crt"),
+            "VerifyCAFile" => test_pem("sm2-root-cert.pem"),
         },
         test   => {
             "ExpectedResult" => "Success",
@@ -71,7 +71,7 @@ our @tests = (
             "MinProtocol" => "TLSv1.3",
             "MaxProtocol" => "TLSv1.3",
             "Ciphersuites" => "TLS_SM4_CCM_SM3",
-            "VerifyCAFile" => test_pem("sm2-root.crt"),
+            "VerifyCAFile" => test_pem("sm2-root-cert.pem"),
         },
         test   => {
             "ExpectedResult" => "Success",
@@ -92,7 +92,7 @@ our @tests = (
             "MinProtocol" => "TLSv1.3",
             "MaxProtocol" => "TLSv1.3",
             "Ciphersuites" => "TLS_AES_128_GCM_SHA256:TLS_SM4_CCM_SM3",
-            "VerifyCAFile" => test_pem("sm2-root.crt"),
+            "VerifyCAFile" => test_pem("sm2-root-cert.pem"),
         },
         test   => {
             "ExpectedResult" => "Success",
@@ -113,7 +113,7 @@ our @tests = (
             "MinProtocol" => "TLSv1.3",
             "MaxProtocol" => "TLSv1.3",
             "Ciphersuites" => "TLS_AES_128_GCM_SHA256",
-            "VerifyCAFile" => test_pem("sm2-root.crt"),
+            "VerifyCAFile" => test_pem("sm2-root-cert.pem"),
         },
         test   => {
             "ExpectedResult" => "Success",
@@ -134,7 +134,7 @@ our @tests = (
             "MinProtocol" => "TLSv1.3",
             "MaxProtocol" => "TLSv1.3",
             "Ciphersuites" => "TLS_AES_256_GCM_SHA384",
-            "VerifyCAFile" => test_pem("sm2-root.crt"),
+            "VerifyCAFile" => test_pem("sm2-root-cert.pem"),
         },
         test   => {
             "ExpectedResult" => "Success",
@@ -432,7 +432,7 @@ our @tests = (
             "Enable_sm_tls13_strict" => "off",
             "Groups" => "SM2",
             "VerifyMode" => "Require",
-            "VerifyCAFile" => test_pem("sm2-root.crt"),
+            "VerifyCAFile" => test_pem("sm2-root-cert.pem"),
         },
         client => {
             "MinProtocol" => "TLSv1.3",
@@ -458,7 +458,7 @@ our @tests = (
             "PrivateKey" => test_pem("sm2-leaf.key"),
             "Enable_sm_tls13_strict" => "on",
             "VerifyMode" => "Require",
-            "VerifyCAFile" => test_pem("sm2-root.crt"),
+            "VerifyCAFile" => test_pem("sm2-root-cert.pem"),
         },
         client => {
             "MinProtocol" => "TLSv1.3",
