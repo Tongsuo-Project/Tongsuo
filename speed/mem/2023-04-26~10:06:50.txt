@@ -1,0 +1,4 @@
+              total        used        free      shared  buff/cache   available
+Mem:            15G        1.4G        225M        3.2M         13G         13G
+Swap:            0B          0B          0B
+/sys/fs/cgroup/memory/memory.limit_in_bytes: 2147483648
