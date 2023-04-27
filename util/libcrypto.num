@@ -5475,3 +5475,5 @@ SM3_Init                                5759	3_0_3	EXIST::FUNCTION:DEPRECATEDIN_
 SM3_Update                              5760	3_0_3	EXIST::FUNCTION:DEPRECATEDIN_3_0,SM3
 SM3_Final                               5761	3_0_3	EXIST::FUNCTION:DEPRECATEDIN_3_0,SM3
 SM3_Transform                           5762	3_0_3	EXIST::FUNCTION:DEPRECATEDIN_3_0,SM3
+X509_verify_ctx                         5763	3_0_3	EXIST::FUNCTION:
+X509_REQ_verify_ctx                     5764	3_0_3	EXIST::FUNCTION:
