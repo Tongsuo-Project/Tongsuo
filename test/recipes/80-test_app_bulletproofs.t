@@ -141,31 +141,31 @@ ok($res =~ m/curve_id: 1172 \(SM2\)\nbits: 16\nmax aggregation number: 2/, "chec
 
 # test prove secrets: 1
 $res = bulletproofs_prove($pp_path, (1));
-ok($res =~ m/BEGIN BULLETPROOFS PROOF/, "check bulletproofs prove secrets: 1");
+ok($res =~ m/BEGIN BULLETPROOFS RANGE PROOF/, "check bulletproofs prove secrets: 1");
 $res = bulletproofs_verify($pp_path, $proof_path);
 ok($res =~ m/The proof is valid/, "check bulletproofs verify proof(secrets: 1)");
 $res = bulletproofs_proof($proof_path);
-ok($res =~ m/BEGIN BULLETPROOFS PROOF/ && $res !~ m/n: 1/, "check bulletproofs proof output");
+ok($res =~ m/BEGIN BULLETPROOFS RANGE PROOF/ && $res !~ m/n: 1/, "check bulletproofs proof output");
 $res = bulletproofs_proof($proof_path, 1);
 ok($res =~ m/n: 1/ && $res =~ m/V\[n\]:/ && $res =~ m/    R\[n\]:/, "check bulletproofs proof text output");
 
 # test prove secrets: 1 100
 $res = bulletproofs_prove($pp_path, (1, 100));
-ok($res =~ m/BEGIN BULLETPROOFS PROOF/, "check bulletproofs prove secrets: 1 100");
+ok($res =~ m/BEGIN BULLETPROOFS RANGE PROOF/, "check bulletproofs prove secrets: 1 100");
 $res = bulletproofs_verify($pp_path, $proof_path);
 ok($res =~ m/The proof is valid/, "check bulletproofs verify proof(secrets: 1 100)");
 $res = bulletproofs_proof($proof_path);
-ok($res =~ m/BEGIN BULLETPROOFS PROOF/ && $res !~ m/n: 2/, "check bulletproofs proof output");
+ok($res =~ m/BEGIN BULLETPROOFS RANGE PROOF/ && $res !~ m/n: 2/, "check bulletproofs proof output");
 $res = bulletproofs_proof($proof_path, 1);
 ok($res =~ m/n: 2/ && $res =~ m/V\[n\]:/ && $res =~ m/    R\[n\]:/, "check bulletproofs proof text output");
 
 # test prove secrets: 1 100000
 $res = bulletproofs_prove($pp_path, (1, 100000));
-ok($res =~ m/BEGIN BULLETPROOFS PROOF/, "check bulletproofs prove secrets: 1 100000");
+ok($res =~ m/BEGIN BULLETPROOFS RANGE PROOF/, "check bulletproofs prove secrets: 1 100000");
 $res = bulletproofs_verify($pp_path, $proof_path);
 ok($res =~ m/The proof is invalid/, "check bulletproofs verify proof(secrets: 1 100000), 100000 is not in [0, 2^16)");
 $res = bulletproofs_proof($proof_path);
-ok($res =~ m/BEGIN BULLETPROOFS PROOF/ && $res !~ m/n: 2/, "check bulletproofs proof output");
+ok($res =~ m/BEGIN BULLETPROOFS RANGE PROOF/ && $res !~ m/n: 2/, "check bulletproofs proof output");
 $res = bulletproofs_proof($proof_path, 1);
 ok($res =~ m/n: 2/ && $res =~ m/V\[n\]:/ && $res =~ m/    R\[n\]:/, "check bulletproofs proof text output");
 
@@ -177,4 +177,4 @@ bulletproofs_ppgen();
 $res = bulletproofs_verify($pp_path, $proof_path);
 ok($res =~ m/The proof is invalid/, "check bulletproofs verify proof by other public parameter");
 
-rmtree(${BULLETPROOFS_TEST_OUT_D}, { safe => 0 });
+#rmtree(${BULLETPROOFS_TEST_OUT_D}, { safe => 0 });

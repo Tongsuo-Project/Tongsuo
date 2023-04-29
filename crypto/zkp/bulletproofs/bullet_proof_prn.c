@@ -16,7 +16,7 @@
 #include <openssl/asn1.h>
 #include <openssl/bio.h>
 #include <openssl/bulletproofs.h>
-#include "bullet_proof.h"
+#include "range_proof.h"
 
 /* Number of octets per line */
 #define ASN1_BUF_PRINT_WIDTH    127
@@ -163,7 +163,7 @@ int BULLET_PROOF_PUB_PARAM_print_fp(FILE *fp, const BULLET_PROOF_PUB_PARAM *pp,
     BIO_free(b);
     return ret;
 }
-int BULLET_PROOF_print_fp(FILE *fp, const BULLET_PROOF *proof, int indent)
+int BP_RANGE_PROOF_print_fp(FILE *fp, const BP_RANGE_PROOF *proof, int indent)
 {
     BIO *b;
     int ret;
@@ -173,7 +173,7 @@ int BULLET_PROOF_print_fp(FILE *fp, const BULLET_PROOF *proof, int indent)
         return 0;
     }
     BIO_set_fp(b, fp, BIO_NOCLOSE);
-    ret = BULLET_PROOF_print(b, proof, indent);
+    ret = BP_RANGE_PROOF_print(b, proof, indent);
     BIO_free(b);
     return ret;
 }
@@ -182,8 +182,8 @@ int BULLET_PROOF_print_fp(FILE *fp, const BULLET_PROOF *proof, int indent)
 int BULLET_PROOF_PUB_PARAM_print(BIO *bp, const BULLET_PROOF_PUB_PARAM *pp,
                                  int indent)
 {
-    int ret = 0;
-    size_t point_len, i, n;
+    int ret = 0, i, n;
+    size_t point_len;
     unsigned char *p = NULL;
     BN_CTX *bn_ctx = NULL;
     EC_GROUP *group = NULL;
@@ -238,10 +238,10 @@ end:
     return ret;
 }
 
-int BULLET_PROOF_print(BIO *bp, const BULLET_PROOF *proof, int indent)
+int BP_RANGE_PROOF_print(BIO *bp, const BP_RANGE_PROOF *proof, int indent)
 {
-    int ret = 0, curve_id;
-    size_t point_len, i;
+    int ret = 0, curve_id, i;
+    size_t point_len;
     unsigned char *p = NULL;
     BN_CTX *bn_ctx = NULL;
     EC_GROUP *group = NULL;

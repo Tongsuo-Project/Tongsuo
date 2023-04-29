@@ -1716,3 +1716,5 @@ X509_R_WRONG_LOOKUP_TYPE:112:wrong lookup type
 X509_R_WRONG_TYPE:122:wrong type
 ZKP_BP_R_EXCEEDS_MAX_AGG_NUM:100:exceeds max agg num
 ZKP_BP_R_EXCEEDS_MAX_BITS:101:exceeds max bits
+ZKP_BP_R_EXCEEDS_PP_CAPACITY:102:exceeds pp capacity
+ZKP_BP_R_TRANSCRIPT_INIT_FAILED:103:transcript init failed

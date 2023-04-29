@@ -128,7 +128,7 @@ err:
     return ret;
 }
 
-static int bulletproofs_proof_print(BULLET_PROOF *proof, char *out_file, int text)
+static int bulletproofs_range_proof_print(BP_RANGE_PROOF *proof, char *out_file, int text)
 {
     int ret = 0;
     BIO *bio = NULL;
@@ -136,11 +136,11 @@ static int bulletproofs_proof_print(BULLET_PROOF *proof, char *out_file, int tex
     if (proof == NULL || !(bio = bio_open_owner(out_file, FORMAT_PEM, 1)))
         goto err;
 
-    if (text && !BULLET_PROOF_print(bio, proof, 0))
+    if (text && !BP_RANGE_PROOF_print(bio, proof, 0))
         goto err;
 
     if (!noout) {
-        if (!PEM_write_bio_BULLETPROOFS_Proof(bio, proof))
+        if (!PEM_write_bio_BULLETPROOFS_RangeProof(bio, proof))
             goto err;
     }
 
@@ -151,51 +151,62 @@ err:
     return ret;
 }
 
-static int bulletproofs_prove(BULLET_PROOF_PUB_PARAM *pp, int64_t secrets[],
-                              size_t len, char *out_file, int text)
+static int bulletproofs_range_prove(BULLET_PROOF_PUB_PARAM *pp, int64_t secrets[],
+                                    size_t len, char *out_file, int text)
 {
     int ret = 0;
-    BULLET_PROOF_CTX *ctx = NULL;
-    BULLET_PROOF_WITNESS *witness = NULL;
-    BULLET_PROOF *proof = NULL;
+    BP_TRANSCRIPT *transcript = NULL;
+    BP_RANGE_PROOF_CTX *ctx = NULL;
+    BP_RANGE_PROOF_WITNESS *witness = NULL;
+    BP_RANGE_PROOF *proof = NULL;
 
     if (pp == NULL)
         goto err;
 
-    if (!(ctx = BULLET_PROOF_CTX_new(pp, NULL)))
+    if (!(transcript = BP_TRANSCRIPT_new(BP_TRANSCRIPT_METHOD_sha256(),
+                                         "bulletproofs_app")))
         goto err;
 
-    if (!(witness = BULLET_PROOF_WITNESS_new(ctx, secrets, len)))
+    if (!(ctx = BP_RANGE_PROOF_CTX_new(pp, transcript)))
         goto err;
 
-    if (!(proof = BULLET_PROOF_new(ctx)))
+    if (!(witness = BP_RANGE_PROOF_WITNESS_new(ctx, secrets, len)))
         goto err;
 
-    if (!BULLET_PROOF_prove(ctx, witness, proof))
+    if (!(proof = BP_RANGE_PROOF_new(ctx)))
         goto err;
 
-    ret = bulletproofs_proof_print(proof, out_file, text);
+    if (!BP_RANGE_PROOF_prove(ctx, witness, proof))
+        goto err;
+
+    ret = bulletproofs_range_proof_print(proof, out_file, text);
 err:
-    BULLET_PROOF_free(proof);
-    BULLET_PROOF_WITNESS_free(witness);
-    BULLET_PROOF_CTX_free(ctx);
+    BP_RANGE_PROOF_free(proof);
+    BP_RANGE_PROOF_WITNESS_free(witness);
+    BP_RANGE_PROOF_CTX_free(ctx);
+    BP_TRANSCRIPT_free(transcript);
     return ret;
 }
 
-static int bulletproofs_verify(BULLET_PROOF_PUB_PARAM *pp, BULLET_PROOF *proof,
-                               char *out_file)
+static int bulletproofs_range_verify(BULLET_PROOF_PUB_PARAM *pp, BP_RANGE_PROOF *proof,
+                                     char *out_file)
 {
     BIO *bio = NULL;
     int ret = 0;
-    BULLET_PROOF_CTX *ctx = NULL;
+    BP_TRANSCRIPT *transcript = NULL;
+    BP_RANGE_PROOF_CTX *ctx = NULL;
 
     if (pp == NULL || proof == NULL || !(bio = bio_open_owner(out_file, FORMAT_TEXT, 1)))
         goto err;
 
-    if (!(ctx = BULLET_PROOF_CTX_new(pp, NULL)))
+    if (!(transcript = BP_TRANSCRIPT_new(BP_TRANSCRIPT_METHOD_sha256(),
+                                         "bulletproofs_app")))
         goto err;
 
-    if (BULLET_PROOF_verify(ctx, proof))
+    if (!(ctx = BP_RANGE_PROOF_CTX_new(pp, transcript)))
+        goto err;
+
+    if (BP_RANGE_PROOF_verify(ctx, proof))
         BIO_puts(bio, "The proof is valid\n");
     else
         BIO_puts(bio, "The proof is invalid\n");
@@ -203,7 +214,8 @@ static int bulletproofs_verify(BULLET_PROOF_PUB_PARAM *pp, BULLET_PROOF *proof,
     ret = 1;
 
 err:
-    BULLET_PROOF_CTX_free(ctx);
+    BP_RANGE_PROOF_CTX_free(ctx);
+    BP_TRANSCRIPT_free(transcript);
     BIO_free(bio);
     return ret;
 }
@@ -212,7 +224,7 @@ int bulletproofs_main(int argc, char **argv)
 {
     BIO *pp_bio = NULL, *in_bio = NULL;
     BULLET_PROOF_PUB_PARAM *bp_pp = NULL;
-    BULLET_PROOF *bp_proof = NULL;
+    BP_RANGE_PROOF *bp_proof = NULL;
     int ret = 1, actions = 0, text = 0, secret, i;
     int bits = BULLETPROOFS_BITS_DEFAULT, agg_max = BULLETPROOFS_AGG_MAX_DEFAULT;
     int ppgen = 0, pp = 0, proof = 0, prove = 0, verify = 0;
@@ -366,11 +378,11 @@ opthelp2:
             goto opthelp2;
         }
 
-        if (!(bp_proof = PEM_read_bio_BULLETPROOFS_Proof(in_bio, NULL, NULL, NULL)))
+        if (!(bp_proof = PEM_read_bio_BULLETPROOFS_RangeProof(in_bio, NULL, NULL, NULL)))
             goto err;
 
         if (proof && bp_proof) {
-            ret = bulletproofs_proof_print(bp_proof, out_file, text);
+            ret = bulletproofs_range_proof_print(bp_proof, out_file, text);
             goto err;
         }
     }
@@ -393,15 +405,15 @@ opthelp2:
     if (pp)
         ret = bulletproofs_pub_param_print(bp_pp, out_file, text);
     else if (prove)
-        ret = bulletproofs_prove(bp_pp, secrets, argc, out_file, text);
+        ret = bulletproofs_range_prove(bp_pp, secrets, argc, out_file, text);
     else if (verify)
-        ret = bulletproofs_verify(bp_pp, bp_proof, out_file);
+        ret = bulletproofs_range_verify(bp_pp, bp_proof, out_file);
 
  err:
     ret = ret ? 0 : 1;
     BIO_free_all(in_bio);
     BIO_free_all(pp_bio);
-    BULLET_PROOF_free(bp_proof);
+    BP_RANGE_PROOF_free(bp_proof);
     BULLET_PROOF_PUB_PARAM_free(bp_pp);
     if (ret != 0) {
         BIO_printf(bio_err, "May be extra arguments error, please use -help for usage summary.\n");

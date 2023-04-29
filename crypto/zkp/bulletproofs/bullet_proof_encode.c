@@ -10,7 +10,7 @@
 #include <openssl/err.h>
 #include <crypto/ec/ec_local.h>
 #include "internal/endian.h"
-#include "bullet_proof.h"
+#include "range_proof.h"
 
 #ifdef __bswap_constant_32
 # undef __bswap_constant_32
@@ -204,18 +204,18 @@ err:
     return NULL;
 }
 
-/** Encodes BULLET_PROOF to binary
- *  \param  proof      BULLET_PROOF object
+/** Encodes BP_RANGE_PROOF to binary
+ *  \param  proof      BP_RANGE_PROOF object
  *  \param  out        the buffer for the result (if NULL the function returns
  *                     number of bytes needed).
  *  \param  size       The memory size of the out pointer object
  *  \return the length of the encoded octet string or 0 if an error occurred
  */
-size_t BULLET_PROOF_encode(const BULLET_PROOF *proof, unsigned char *out,
-                           size_t size)
+size_t BP_RANGE_PROOF_encode(const BP_RANGE_PROOF *proof, unsigned char *out,
+                             size_t size)
 {
-    int *q, curve_id;
-    size_t point_len, bn_len, ret = 0, len, i;
+    int *q, curve_id, point_len, bn_len, ret = 0, i;
+    size_t len;
     unsigned char *p;
     point_conversion_form_t form = POINT_CONVERSION_COMPRESSED;
     BN_CTX *bn_ctx = NULL;
@@ -348,18 +348,18 @@ end:
     return ret;
 }
 
-/** Decodes binary to BULLET_PROOF
- *  \param  in         Memory buffer with the encoded BULLET_PROOF object
+/** Decodes binary to BP_RANGE_PROOF
+ *  \param  in         Memory buffer with the encoded BP_RANGE_PROOF object
  *  \param  size       The memory size of the in pointer object
- *  \return BULLET_PROOF_PUB_PARAM object pointer on success and NULL otherwise
+ *  \return BP_RANGE_PROOF_PUB_PARAM object pointer on success and NULL otherwise
  */
-BULLET_PROOF *BULLET_PROOF_decode(const unsigned char *in, size_t size)
+BP_RANGE_PROOF *BP_RANGE_PROOF_decode(const unsigned char *in, size_t size)
 {
     unsigned char *p;
-    int *q = (int *)in, curve_id;
-    size_t point_len, bn_len, proof_len, ip_proof_len, n, i;
+    int *q = (int *)in, curve_id, n, i;
+    size_t point_len, bn_len, proof_len, ip_proof_len;
     point_conversion_form_t form = POINT_CONVERSION_COMPRESSED;
-    BULLET_PROOF *proof = NULL;
+    BP_RANGE_PROOF *proof = NULL;
     bp_inner_product_proof_t *ip_proof = NULL;
     BN_CTX *bn_ctx = NULL;
     const BIGNUM *order;
@@ -388,7 +388,7 @@ BULLET_PROOF *BULLET_PROOF_decode(const unsigned char *in, size_t size)
         goto err;
     }
 
-    n = (size_t)n2l(*q);
+    n = (int)n2l(*q);
     q++;
     p = (unsigned char *)q;
 
@@ -407,7 +407,7 @@ BULLET_PROOF *BULLET_PROOF_decode(const unsigned char *in, size_t size)
         goto err;
     }
 
-    proof = bullet_proof_alloc(group);
+    proof = bp_range_proof_alloc(group);
     if (proof == NULL)
         goto err;
 
@@ -426,7 +426,7 @@ BULLET_PROOF *BULLET_PROOF_decode(const unsigned char *in, size_t size)
         p += point_len;
     }
 
-    proof->n = (size_t)n;
+    proof->n = n;
 
     if (!EC_POINT_oct2point(group, proof->A, p, point_len, bn_ctx))
         goto err;
@@ -464,7 +464,7 @@ BULLET_PROOF *BULLET_PROOF_decode(const unsigned char *in, size_t size)
     p += bn_len;
 
     q = (int *)p;
-    n = (size_t)n2l(*q);
+    n = (int)n2l(*q);
     q++;
     p = (unsigned char *)q;
 
@@ -498,7 +498,7 @@ BULLET_PROOF *BULLET_PROOF_decode(const unsigned char *in, size_t size)
         p += point_len;
     }
 
-    ip_proof->n = (size_t)n;
+    ip_proof->n = n;
 
     if (!BN_bin2bn(p, (int)bn_len, ip_proof->a))
         goto err;
@@ -518,7 +518,7 @@ BULLET_PROOF *BULLET_PROOF_decode(const unsigned char *in, size_t size)
 
 err:
     bp_inner_product_proof_free(ip_proof);
-    BULLET_PROOF_free(proof);
+    BP_RANGE_PROOF_free(proof);
     BN_CTX_free(bn_ctx);
     EC_GROUP_free(group);
     return NULL;

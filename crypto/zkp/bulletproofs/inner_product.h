@@ -19,32 +19,35 @@ extern "C" {
 # include <openssl/bn.h>
 # include <openssl/ec.h>
 # include "internal/refcount.h"
+# include "transcript.h"
 
 typedef struct bp_inner_product_pub_param_st {
     int curve_id;
     int initial;
-    size_t n;
+    int n;
     EC_POINT **vec_G;
     EC_POINT **vec_H;
-    EC_POINT *U;
 } bp_inner_product_pub_param_t;
 
 typedef struct bp_inner_product_ctx_st {
-    char *st;
-    size_t st_len;
+    BP_TRANSCRIPT *transcript;
     EC_GROUP *group;
     EC_POINT *P;
+    EC_POINT *U;
+    int factors_num;
+    BIGNUM **vec_G_factors;
+    BIGNUM **vec_H_factors;
     bp_inner_product_pub_param_t *pp;
 } bp_inner_product_ctx_t;
 
 typedef struct bp_inner_product_witness_st {
-    size_t n;
+    int n;
     BIGNUM **vec_a;
     BIGNUM **vec_b;
 } bp_inner_product_witness_t;
 
 typedef struct bp_inner_product_proof_st {
-    size_t n;
+    int n;
     EC_POINT **vec_L;
     EC_POINT **vec_R;
     BIGNUM *a;
@@ -54,17 +57,21 @@ typedef struct bp_inner_product_proof_st {
 bp_inner_product_pub_param_t *bp_inner_product_pub_param_new(int curve_id);
 int bp_inner_product_pub_param_set(bp_inner_product_pub_param_t *pp,
                                    EC_POINT **vec_G, EC_POINT **vec_H,
-                                   size_t n, EC_POINT *U);
-int bp_inner_product_pub_param_gen(bp_inner_product_pub_param_t *pp, size_t n);
+                                   int n);
+int bp_inner_product_pub_param_gen(bp_inner_product_pub_param_t *pp, int n);
 void bp_inner_product_pub_param_free(bp_inner_product_pub_param_t *pp);
 bp_inner_product_ctx_t *bp_inner_product_ctx_new(bp_inner_product_pub_param_t *pp,
-                                                 EC_POINT *P, char *st, size_t st_len);
+                                                 BP_TRANSCRIPT *transcript,
+                                                 EC_POINT *U, EC_POINT *P,
+                                                 BIGNUM **vec_G_factors,
+                                                 BIGNUM **vec_H_factors,
+                                                 int factors_num);
 void bp_inner_product_ctx_free(bp_inner_product_ctx_t *ctx);
 bp_inner_product_witness_t *bp_inner_product_witness_new(BIGNUM **vec_a,
                                                          BIGNUM **vec_b,
-                                                         size_t n);
+                                                         int n);
 void bp_inner_product_witness_free(bp_inner_product_witness_t *witness);
-bp_inner_product_proof_t *bp_inner_product_proof_alloc(size_t n);
+bp_inner_product_proof_t *bp_inner_product_proof_alloc(int n);
 bp_inner_product_proof_t *bp_inner_product_proof_new(bp_inner_product_ctx_t *ctx);
 void bp_inner_product_proof_free(bp_inner_product_proof_t *proof);
 int bp_inner_product_proof_prove(bp_inner_product_ctx_t *ctx,

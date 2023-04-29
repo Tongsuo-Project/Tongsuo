@@ -19,6 +19,10 @@ static const ERR_STRING_DATA ZKP_BP_str_reasons[] = {
     "exceeds max agg num"},
     {ERR_PACK(ERR_LIB_ZKP_BP, 0, ZKP_BP_R_EXCEEDS_MAX_BITS),
     "exceeds max bits"},
+    {ERR_PACK(ERR_LIB_ZKP_BP, 0, ZKP_BP_R_EXCEEDS_PP_CAPACITY),
+    "exceeds pp capacity"},
+    {ERR_PACK(ERR_LIB_ZKP_BP, 0, ZKP_BP_R_TRANSCRIPT_INIT_FAILED),
+    "transcript init failed"},
     {0, NULL}
 };
 

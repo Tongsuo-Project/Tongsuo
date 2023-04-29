@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <openssl/asn1t.h>
 #include <openssl/bulletproofs.h>
-#include "bullet_proof.h"
+#include "range_proof.h"
 
 
 BULLET_PROOF_PUB_PARAM *d2i_BULLET_PROOF_PUB_PARAM(BULLET_PROOF_PUB_PARAM **pp,
@@ -53,20 +53,20 @@ int i2d_BULLET_PROOF_PUB_PARAM(const BULLET_PROOF_PUB_PARAM *pp,
     return (int)size;
 }
 
-BULLET_PROOF *d2i_BULLET_PROOF(BULLET_PROOF **proof, const unsigned char **in,
-                               long len)
+BP_RANGE_PROOF *d2i_BP_RANGE_PROOF(BP_RANGE_PROOF **proof, const unsigned char **in,
+                                   long len)
 {
-    BULLET_PROOF *ret = NULL;
+    BP_RANGE_PROOF *ret = NULL;
     const unsigned char *p = *in;
 
     if (p == NULL)
         return NULL;
 
-    if ((ret = BULLET_PROOF_decode(p, len)) == NULL)
+    if ((ret = BP_RANGE_PROOF_decode(p, len)) == NULL)
         return NULL;
 
     if (proof) {
-        BULLET_PROOF_free(*proof);
+        BP_RANGE_PROOF_free(*proof);
         *proof = ret;
     }
 
@@ -74,21 +74,21 @@ BULLET_PROOF *d2i_BULLET_PROOF(BULLET_PROOF **proof, const unsigned char **in,
     return ret;
 }
 
-int i2d_BULLET_PROOF(const BULLET_PROOF *proof, unsigned char **out)
+int i2d_BP_RANGE_PROOF(const BP_RANGE_PROOF *proof, unsigned char **out)
 {
     size_t size;
 
-    if ((size = BULLET_PROOF_encode(proof, NULL, 0)) <= 0)
+    if ((size = BP_RANGE_PROOF_encode(proof, NULL, 0)) <= 0)
         return 0;
 
     if (out == NULL)
         return (int)size;
 
-    if (BULLET_PROOF_encode(proof, *out, size) <= 0)
+    if (BP_RANGE_PROOF_encode(proof, *out, size) <= 0)
         return 0;
 
     return (int)size;
 }
 
 IMPLEMENT_PEM_rw(BULLETPROOFS_PublicParam, BULLET_PROOF_PUB_PARAM, PEM_STRING_BULLETPROOFS_PUB_PARAM, BULLET_PROOF_PUB_PARAM)
-IMPLEMENT_PEM_rw(BULLETPROOFS_Proof, BULLET_PROOF, PEM_STRING_BULLETPROOFS_PROOF, BULLET_PROOF)
+IMPLEMENT_PEM_rw(BULLETPROOFS_RangeProof, BP_RANGE_PROOF, PEM_STRING_BULLETPROOFS_RANGE_PROOF, BP_RANGE_PROOF)

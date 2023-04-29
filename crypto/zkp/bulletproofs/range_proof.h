@@ -24,8 +24,8 @@ extern "C" {
 
 struct bullet_proof_pub_param_st {
     int curve_id;
-    size_t bits;
-    size_t max_agg_num;
+    int bits;
+    int max_agg_num;
     /* size equal bits * max_agg_num */
     EC_POINT **vec_G;
     EC_POINT **vec_H;
@@ -35,22 +35,21 @@ struct bullet_proof_pub_param_st {
     CRYPTO_REF_COUNT references;
 };
 
-struct bullet_proof_ctx_st {
-    char *st;
-    size_t st_len;
+struct bp_range_proof_ctx_st {
+    BP_TRANSCRIPT *transcript;
     const EC_POINT *G;
     EC_GROUP *group;
     BULLET_PROOF_PUB_PARAM *pp;
 };
 
-struct bullet_proof_witness_st {
-    size_t n;
+struct bp_range_proof_witness_st {
+    int n;
     BIGNUM **vec_r;
     BIGNUM **vec_v;
 };
 
-struct bullet_proof_st {
-    size_t n;
+struct bp_range_proof_st {
+    int n;
     EC_POINT **V;
     EC_POINT *A;
     EC_POINT *S;
@@ -64,7 +63,7 @@ struct bullet_proof_st {
     CRYPTO_REF_COUNT references;
 };
 
-BP_RANGE_PROOF *bullet_proof_alloc(const EC_GROUP *group);
+BP_RANGE_PROOF *bp_range_proof_alloc(const EC_GROUP *group);
 
 # ifdef  __cplusplus
 }

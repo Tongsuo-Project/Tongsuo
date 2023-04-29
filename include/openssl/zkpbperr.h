@@ -23,5 +23,7 @@
  */
 # define ZKP_BP_R_EXCEEDS_MAX_AGG_NUM                     100
 # define ZKP_BP_R_EXCEEDS_MAX_BITS                        101
+# define ZKP_BP_R_EXCEEDS_PP_CAPACITY                     102
+# define ZKP_BP_R_TRANSCRIPT_INIT_FAILED                  103
 
 #endif

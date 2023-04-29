@@ -22,6 +22,31 @@ extern "C" {
 
 # define bp_rand_range BN_rand_range
 
+typedef struct bp_poly3_st {
+    int n;
+    BIGNUM **x0;
+    BIGNUM **x1;
+    BIGNUM **x2;
+    BIGNUM **x3;
+    BIGNUM **eval;
+} bp_poly3_t;
+
+typedef struct bp_poly6_st {
+    BIGNUM *t1;
+    BIGNUM *t2;
+    BIGNUM *t3;
+    BIGNUM *t4;
+    BIGNUM *t5;
+    BIGNUM *t6;
+} bp_poly6_t;
+
+typedef struct bp_poly_ps_st {
+    int pos;
+    int num;
+    EC_POINT **points;
+    BIGNUM **scalars;
+} bp_poly_ps_t;
+
 EC_POINT **bp_random_ec_points_new(const EC_GROUP *group, size_t n, BN_CTX *bn_ctx);
 void bp_random_ec_points_free(EC_POINT **P, size_t n);
 EC_POINT *bp_random_ec_point_new(const EC_GROUP *group, BN_CTX *bn_ctx);
@@ -41,7 +66,25 @@ int bp_str2point(const EC_GROUP *group, const unsigned char *str, size_t len,
 size_t bp_point2oct(const EC_GROUP *group, const EC_POINT *P,
                     unsigned char *buf, BN_CTX *bn_ctx);
 int bp_bin_hash2bn(const unsigned char *data, size_t len, BIGNUM *r);
+int bp_next_power_of_two(int num);
+int bp_floor_log2(int x);
+int bp_inner_product(BIGNUM *r, int num, const BIGNUM *a[], const BIGNUM *b[],
+                     BN_CTX *bn_ctx);
 
+bp_poly3_t *bp_poly3_new(int n, BN_CTX *bn_ctx);
+void bp_poly3_free(bp_poly3_t *poly3);
+int bp_poly3_eval(bp_poly3_t *poly3, const BIGNUM *x, BN_CTX *bn_ctx);
+int bp_poly3_special_inner_product(bp_poly6_t *r, bp_poly3_t *lhs, bp_poly3_t *rhs,
+                                   BN_CTX *bn_ctx);
+bp_poly6_t *bp_poly6_new(BN_CTX *bn_ctx);
+void bp_poly6_free(bp_poly6_t *poly6);
+int bp_poly6_eval(bp_poly6_t *poly6, BIGNUM *r, const BIGNUM *x, BN_CTX *bn_ctx);
+
+bp_poly_ps_t *bp_poly_ps_new(int num);
+void bp_poly_ps_free(bp_poly_ps_t *ps);
+int bp_poly_ps_append(bp_poly_ps_t *ps, EC_POINT *point, BIGNUM *scalar);
+int bp_poly_ps_eval(bp_poly_ps_t *ps, EC_POINT *r, BIGNUM *scalar,
+                    const EC_GROUP *group, BN_CTX *bn_ctx);
 # ifdef  __cplusplus
 }
 # endif
