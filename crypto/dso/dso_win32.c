@@ -19,7 +19,7 @@ static FARPROC GetProcAddressA(HMODULE hModule, LPCSTR lpProcName)
     WCHAR lpProcNameW[64];
     int i;
 
-    for (i = 0; lpProcName[i] && i < 64; i++)
+    for (i = 0; i < 64 && lpProcName[i]; i++)
         lpProcNameW[i] = (WCHAR)lpProcName[i];
     if (i == 64)
         return NULL;
