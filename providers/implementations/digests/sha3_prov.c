@@ -237,7 +237,6 @@ const OSSL_DISPATCH ossl_##name##_functions[] = {                              \
     { OSSL_FUNC_DIGEST_FREECTX, (void (*)(void))keccak_freectx },              \
     { OSSL_FUNC_DIGEST_DUPCTX, (void (*)(void))keccak_dupctx },                \
     PROV_DISPATCH_FUNC_DIGEST_GET_PARAMS(name)
-}
 
 #define PROV_FUNC_SHA3_DIGEST(name, bitlen, blksize, dgstsize, flags)          \
     PROV_FUNC_SHA3_DIGEST_COMMON(name, bitlen, blksize, dgstsize, flags),      \
@@ -251,6 +250,7 @@ const OSSL_DISPATCH ossl_##name##_functions[] = {                              \
     { OSSL_FUNC_DIGEST_SETTABLE_CTX_PARAMS,                                    \
      (void (*)(void))shake_settable_ctx_params },                              \
     PROV_DISPATCH_FUNC_DIGEST_CONSTRUCT_END
+}
 
 static void keccak_freectx(void *vctx)
 {
