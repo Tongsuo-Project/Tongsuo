@@ -1284,6 +1284,9 @@ char ssl3_cbc_record_digest_supported(const EVP_MD_CTX *ctx)
     case NID_sha256:
     case NID_sha384:
     case NID_sha512:
+#ifndef OPENSSL_NO_SM3
+    case NID_sm3:
+#endif
         return 1;
     default:
         return 0;

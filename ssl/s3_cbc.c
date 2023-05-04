@@ -29,6 +29,7 @@
 #include <openssl/evp.h>
 #ifndef FIPS_MODULE
 # include <openssl/md5.h>
+# include <openssl/sm3.h>
 #endif
 #include <openssl/sha.h>
 
@@ -101,6 +102,21 @@ static void tls1_md5_final_raw(void *ctx, unsigned char *md_out)
     u32toLE(md5->C, md_out);
     u32toLE(md5->D, md_out);
 }
+# ifndef OPENSSL_NO_SM3
+static void tls1_sm3_final_raw(void *ctx, unsigned char *md_out)
+{
+    SM3_CTX *sm3 = ctx;
+
+    l2n(sm3->A, md_out);
+    l2n(sm3->B, md_out);
+    l2n(sm3->C, md_out);
+    l2n(sm3->D, md_out);
+    l2n(sm3->E, md_out);
+    l2n(sm3->F, md_out);
+    l2n(sm3->G, md_out);
+    l2n(sm3->H, md_out);
+}
+# endif
 #endif /* FIPS_MODULE */
 
 static void tls1_sha1_final_raw(void *ctx, unsigned char *md_out)
@@ -251,6 +267,19 @@ int ssl3_cbc_digest_record(const EVP_MD *md,
         md_size = 64;
         md_block_size = 128;
         md_length_size = 16;
+#ifndef OPENSSL_NO_SM3
+    } else if (EVP_MD_is_a(md, "SM3")) {
+# ifdef FIPS_MODULE
+        return 0;
+# else
+        if (SM3_Init((SM3_CTX *)md_state.c) <= 0)
+            return 0;
+        md_final_raw = tls1_sm3_final_raw;
+        md_transform =
+            (void (*)(void *ctx, const unsigned char *block))SM3_Transform;
+        md_size = 32;
+# endif
+#endif
     } else {
         /*
          * ssl3_cbc_record_digest_supported should have been called first to

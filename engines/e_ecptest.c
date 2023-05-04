@@ -21,7 +21,7 @@
 #include <openssl/ec.h>
 #include <openssl/md5.h>
 #ifndef OPENSSL_NO_SM3
-# include <internal/sm3.h>
+# include <openssl/sm3.h>
 #endif
 
 /* Engine Id and Name */

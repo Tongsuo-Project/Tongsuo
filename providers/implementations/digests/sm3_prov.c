@@ -6,13 +6,14 @@
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
  */
+#include "internal/deprecated.h"
 
 #include <openssl/crypto.h>
-#include "internal/sm3.h"
+#include <openssl/sm3.h>
 #include "prov/digestcommon.h"
 #include "prov/implementations.h"
 
 /* ossl_sm3_functions */
 IMPLEMENT_digest_functions(sm3, SM3_CTX,
                            SM3_CBLOCK, SM3_DIGEST_LENGTH, 0,
-                           ossl_sm3_init, ossl_sm3_update, ossl_sm3_final)
+                           SM3_Init, SM3_Update, SM3_Final)
