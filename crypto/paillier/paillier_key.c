@@ -169,6 +169,11 @@ int PAILLIER_KEY_generate_key(PAILLIER_KEY *key, int bits)
         return ret;
     }
 
+    if (bits <= 0 || bits > OPENSSL_PAILLIER_MAX_MODULUS_BITS) {
+        ERR_raise(ERR_LIB_PAILLIER, ERR_R_PASSED_INVALID_ARGUMENT);
+        return ret;
+    }
+
     bn_ctx = BN_CTX_new();
     if (bn_ctx == NULL)
         goto err;

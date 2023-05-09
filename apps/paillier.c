@@ -43,7 +43,7 @@ const OPTIONS paillier_options[] = {
     {"help", OPT_HELP, '-', "Display this summary"},
 
     OPT_SECTION("Action"),
-    {"keygen", OPT_KEYGEN, '-', "Generate a paillier private key"},
+    {"keygen", OPT_KEYGEN, '-', "Generate a paillier private key, usage: -keygen 2048, 2048 is the size of key in bits "},
     {"pubgen", OPT_PUBGEN, '-', "Generate a paillier public key"},
     {"key", OPT_KEY, '-', "Display/Parse a paillier private key"},
     {"pub", OPT_PUB, '-', "Display/Parse a paillier public key"},
@@ -65,7 +65,7 @@ const OPTIONS paillier_options[] = {
     {"verbose", OPT_VERBOSE, '-', "Verbose output"},
 
     OPT_PARAMETERS(),
-    {"arg1", 0, 0, "Argument for encryption/decryption, or the first argument of a homomorphic operation"},
+    {"arg1", 0, 0, "Argument for keygen/encryption/decryption, or the first argument of a homomorphic operation"},
     {"arg2", 0, 0, "The second argument of a homomorphic operation"},
 
     {NULL}
@@ -119,7 +119,7 @@ end:
     return ret;
 }
 
-static int paillier_keygen(char *outfile, int text)
+static int paillier_keygen(char *outfile, int bits, int text)
 {
     int ret = 0;
     BIO *bio = NULL;
@@ -127,7 +127,7 @@ static int paillier_keygen(char *outfile, int text)
 
     pail_key = PAILLIER_KEY_new();
     if (pail_key == NULL
-        || !PAILLIER_KEY_generate_key(pail_key, 255))
+        || !PAILLIER_KEY_generate_key(pail_key, bits))
         goto end;
 
     if (!(bio = bio_open_owner(outfile, FORMAT_PEM, 1)))
@@ -537,6 +537,11 @@ opthelp2:
     argc = opt_num_rest();
     argv = opt_rest();
 
+    if (keygen && argc != 1) {
+        BIO_printf(bio_err, "Extra arguments given.\n");
+        goto opthelp2;
+    }
+
     if (argc == 1) {
         arg1 = argv[0];
         if (encrypt) {
@@ -548,6 +553,9 @@ opthelp2:
 
             if (*argv[0] == '_')
                 plain = -plain;
+        } else if (keygen) {
+            if (!opt_int(arg1, &plain) || plain <= 0)
+                goto end;
         }
     } else if (argc == 2) {
         arg1 = argv[0];
@@ -571,7 +579,7 @@ opthelp2:
         goto end;
 
     if (verbose) {
-        //TODO
+        /* TODO */
     }
 
     if (infile != NULL) {
@@ -593,7 +601,7 @@ opthelp2:
     }
 
     if (keygen)
-        ret = paillier_keygen(outfile, text);
+        ret = paillier_keygen(outfile, plain, text);
     else if (pubgen)
         ret = paillier_pubgen(pail_key, outfile, text);
     else if (key || pub)
