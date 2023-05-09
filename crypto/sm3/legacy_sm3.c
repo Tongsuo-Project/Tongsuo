@@ -8,12 +8,13 @@
  * https://www.openssl.org/source/license.html
  */
 
+#include "internal/deprecated.h"
 
 #include "crypto/evp.h"
 #include "../evp/legacy_meth.h"
-#include "internal/sm3.h"
+#include <openssl/sm3.h>
 
-IMPLEMENT_LEGACY_EVP_MD_METH_LC(sm3_int, ossl_sm3)
+IMPLEMENT_LEGACY_EVP_MD_METH(sm3_int, SM3)
 
 static const EVP_MD sm3_md = {
     NID_sm3,

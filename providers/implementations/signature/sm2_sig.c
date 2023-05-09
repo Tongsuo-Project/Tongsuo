@@ -22,10 +22,10 @@
 #include <openssl/evp.h>
 #include <openssl/err.h>
 #include <openssl/proverr.h>
+#include <openssl/sm3.h>
 #include "internal/nelem.h"
 #include "internal/sizes.h"
 #include "internal/cryptlib.h"
-#include "internal/sm3.h"
 #include "prov/implementations.h"
 #include "prov/providercommon.h"
 #include "prov/provider_ctx.h"

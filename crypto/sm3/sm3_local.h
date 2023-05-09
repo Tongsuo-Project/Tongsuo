@@ -10,16 +10,16 @@
  */
 
 #include <string.h>
-#include "internal/sm3.h"
+#include <openssl/sm3.h>
 
 #define DATA_ORDER_IS_BIG_ENDIAN
 
 #define HASH_LONG               SM3_WORD
 #define HASH_CTX                SM3_CTX
 #define HASH_CBLOCK             SM3_CBLOCK
-#define HASH_UPDATE             ossl_sm3_update
-#define HASH_TRANSFORM          ossl_sm3_transform
-#define HASH_FINAL              ossl_sm3_final
+#define HASH_UPDATE             SM3_Update
+#define HASH_TRANSFORM          SM3_Transform
+#define HASH_FINAL              SM3_Final
 #define HASH_MAKE_STRING(c, s)              \
       do {                                  \
         unsigned long ll;                   \
@@ -49,7 +49,6 @@ void ossl_hwsm3_block_data_order(SM3_CTX *c, const void *p, size_t num);
 #endif
 
 void ossl_sm3_block_data_order(SM3_CTX *c, const void *p, size_t num);
-void ossl_sm3_transform(SM3_CTX *c, const unsigned char *data);
 
 #include "crypto/md32_common.h"
 

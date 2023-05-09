@@ -8,11 +8,12 @@
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
  */
+#include "internal/deprecated.h"
 
 #include <openssl/e_os2.h>
 #include "sm3_local.h"
 
-int ossl_sm3_init(SM3_CTX *c)
+int SM3_Init(SM3_CTX *c)
 {
     memset(c, 0, sizeof(*c));
     c->A = SM3_A;
