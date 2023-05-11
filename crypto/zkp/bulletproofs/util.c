@@ -13,6 +13,9 @@
 #include <crypto/ec/ec_local.h>
 #include "util.h"
 
+DEFINE_STACK_OF(BIGNUM)
+DEFINE_STACK_OF(EC_POINT)
+
 EC_POINT **bp_random_ec_points_new(const EC_GROUP *group, size_t n, BN_CTX *bn_ctx)
 {
     size_t i;
@@ -404,7 +407,7 @@ int bp_next_power_of_two(int num)
 {
     int next_power_of_2 = 1;
 
-    while(next_power_of_2 <= num) {
+    while(next_power_of_2 < num) {
         next_power_of_2 <<= 1;
     }
 
@@ -424,7 +427,7 @@ int bp_floor_log2(int x)
 }
 
 int bp_inner_product(BIGNUM *r, int num, const BIGNUM *a[], const BIGNUM *b[],
-                     BN_CTX *bn_ctx)
+                     const BIGNUM *order, BN_CTX *bn_ctx)
 {
     int ret = 0, i;
     BN_CTX *ctx = NULL;
@@ -452,16 +455,16 @@ int bp_inner_product(BIGNUM *r, int num, const BIGNUM *a[], const BIGNUM *b[],
         } else if (b == NULL) {
             p = a[i];
         } else {
-            if (!BN_mul(t, a[i], b[i], bn_ctx))
+            if (!BN_mod_mul(t, a[i], b[i], order, bn_ctx))
                 goto end;
             p = t;
         }
 
-        if (!BN_add(v, v, p))
+        if (!BN_mod_add(v, v, p, order, bn_ctx))
             goto end;
     }
 
-    if (!BN_add(r, r, v))
+    if (!BN_copy(r, v))
         goto end;
 
     ret = 1;
@@ -472,12 +475,12 @@ end:
     return ret;
 }
 
-bp_poly3_t *bp_poly3_new(int n, BN_CTX *bn_ctx)
+bp_poly3_t *bp_poly3_new(int n, const BIGNUM *order)
 {
     int i;
     bp_poly3_t *ret = NULL;
 
-    if (bn_ctx == NULL || n <= 0) {
+    if (n <= 0 || order == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_INVALID_ARGUMENT);
         return NULL;
     }
@@ -487,24 +490,24 @@ bp_poly3_t *bp_poly3_new(int n, BN_CTX *bn_ctx)
         return NULL;
     }
 
+    if (!(ret->bn_ctx = BN_CTX_new()))
+        goto err;
+
     if (!(ret->x0 = OPENSSL_zalloc(sizeof(*ret->x0) * n))
         || !(ret->x1 = OPENSSL_zalloc(sizeof(*ret->x1) * n))
         || !(ret->x2 = OPENSSL_zalloc(sizeof(*ret->x2) * n))
-        || !(ret->x3 = OPENSSL_zalloc(sizeof(*ret->x3) * n))
-        || !(ret->eval = OPENSSL_zalloc(sizeof(*ret->eval) * n))) {
+        || !(ret->x3 = OPENSSL_zalloc(sizeof(*ret->x3) * n))) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         goto err;
     }
 
     ret->n = n;
 
-    BN_CTX_start(bn_ctx);
-
     for (i = 0; i < n; i++) {
-        ret->x0[i] = BN_CTX_get(bn_ctx);
-        ret->x1[i] = BN_CTX_get(bn_ctx);
-        ret->x2[i] = BN_CTX_get(bn_ctx);
-        if (!(ret->x3[i] = BN_CTX_get(bn_ctx)))
+        ret->x0[i] = BN_CTX_get(ret->bn_ctx);
+        ret->x1[i] = BN_CTX_get(ret->bn_ctx);
+        ret->x2[i] = BN_CTX_get(ret->bn_ctx);
+        if (!(ret->x3[i] = BN_CTX_get(ret->bn_ctx)))
             goto err;
 
         BN_zero(ret->x0[i]);
@@ -513,10 +516,9 @@ bp_poly3_t *bp_poly3_new(int n, BN_CTX *bn_ctx)
         BN_zero(ret->x3[i]);
     }
 
-    BN_CTX_end(bn_ctx);
+    ret->order = order;
     return ret;
 err:
-    BN_CTX_end(bn_ctx);
     bp_poly3_free(ret);
     return NULL;
 }
@@ -526,135 +528,99 @@ void bp_poly3_free(bp_poly3_t *poly3)
     if (poly3 == NULL)
         return;
 
+    BN_CTX_free(poly3->bn_ctx);
     OPENSSL_free(poly3->x0);
     OPENSSL_free(poly3->x1);
     OPENSSL_free(poly3->x2);
     OPENSSL_free(poly3->x3);
-    OPENSSL_free(poly3->eval);
     OPENSSL_free(poly3);
 }
 
-#if 0
-int bp_poly3_eval(bp_poly3_t *poly3, const BIGNUM *x, BN_CTX *bn_ctx)
+STACK_OF(BIGNUM) *bp_poly3_eval(bp_poly3_t *poly3, const BIGNUM *x)
 {
-    int ret = 0, i;
-    BIGNUM *x2, *x3, *t, *eval;
+    int i;
+    BIGNUM *eval = NULL;
+    STACK_OF(BIGNUM) *ret = NULL;
 
-    if (poly3 == NULL || bn_ctx == NULL) {
-        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
-        return NULL;
-    }
-
-    BN_CTX_start(bn_ctx);
-
-    x2 = BN_CTX_get(bn_ctx);
-    x3 = BN_CTX_get(bn_ctx);
-    if (!(t = BN_CTX_get(bn_ctx)))
-        goto err;
-
-    if (!BN_sqr(x2, x, bn_ctx) || !BN_mul(x3, x2, x, bn_ctx))
-        goto err;
-
-    for (i = 0; i < poly3->n; i++) {
-        if (!(eval = BN_CTX_get(bn_ctx)))
-            goto err;
-
-        BN_zero(eval);
-
-        if (!BN_add(eval, eval, poly3->x0[i]))
-            goto err;
-
-        if (!BN_mul(t, x, poly3->x1[i], bn_ctx) || !BN_add(eval, eval, t)
-            || !BN_mul(t, x2, poly3->x2[i], bn_ctx) || !BN_add(eval, eval, t)
-            || !BN_mul(t, x3, poly3->x3[i], bn_ctx) || !BN_add(eval, eval, t))
-            goto err;
-
-        poly3->eval[i] = eval;
-    }
-
-    ret = 1;
-err:
-    BN_CTX_end(bn_ctx);
-    return ret;
-}
-
-#else
-int bp_poly3_eval(bp_poly3_t *poly3, const BIGNUM *x, BN_CTX *bn_ctx)
-{
-    int ret = 0, i;
-    BIGNUM *eval;
-
-    if (poly3 == NULL || bn_ctx == NULL) {
+    if (poly3 == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return 0;
     }
 
-    BN_CTX_start(bn_ctx);
+    if (!(ret = sk_BIGNUM_new_reserve(NULL, poly3->n)))
+        return 0;
 
     for (i = 0; i < poly3->n; i++) {
-        if (!(eval = BN_CTX_get(bn_ctx)))
+        if (!(eval = BN_CTX_get(poly3->bn_ctx)))
+            goto err;
+        if (!BN_mod_mul(eval, x, poly3->x3[i], poly3->order, poly3->bn_ctx)
+            || !BN_mod_add(eval, eval, poly3->x2[i], poly3->order, poly3->bn_ctx)
+            || !BN_mod_mul(eval, eval, x, poly3->order, poly3->bn_ctx)
+            || !BN_mod_add(eval, eval, poly3->x1[i], poly3->order, poly3->bn_ctx)
+            || !BN_mod_mul(eval, eval, x, poly3->order, poly3->bn_ctx)
+            || !BN_mod_add(eval, eval, poly3->x0[i], poly3->order, poly3->bn_ctx))
             goto err;
 
-        if (!BN_mul(eval, x, poly3->x3[i], bn_ctx)
-            || !BN_add(eval, eval, poly3->x2[i])
-            || !BN_mul(eval, eval, x, bn_ctx)
-            || !BN_add(eval, eval, poly3->x1[i])
-            || !BN_mul(eval, eval, x, bn_ctx)
-            || !BN_add(eval, eval, poly3->x0[i]))
+        if (sk_BIGNUM_push(ret, eval) <= 0)
             goto err;
-
-        poly3->eval[i] = eval;
     }
 
-    ret = 1;
-err:
-    BN_CTX_end(bn_ctx);
     return ret;
+err:
+    sk_BIGNUM_free(ret);
+    return NULL;
 }
-#endif
 
-int bp_poly3_special_inner_product(bp_poly6_t *r, bp_poly3_t *lhs, bp_poly3_t *rhs,
-                                   BN_CTX *bn_ctx)
+int bp_poly3_special_inner_product(bp_poly6_t *r, bp_poly3_t *lhs, bp_poly3_t *rhs)
 {
     int ret = 0;
     BIGNUM *t;
 
-    if (r == NULL || lhs == NULL || rhs == NULL || bn_ctx == NULL) {
+    if (r == NULL || lhs == NULL || rhs == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return 0;
     }
 
-    BN_CTX_start(bn_ctx);
+    BN_CTX_start(r->bn_ctx);
 
-    if (!(t = BN_CTX_get(bn_ctx)))
+    if (!(t = BN_CTX_get(r->bn_ctx)))
         goto err;
 
-    if (!bp_inner_product(r->t1, lhs->n, (const BIGNUM **)lhs->x1, (const BIGNUM **)rhs->x0, bn_ctx)
-        || !bp_inner_product(r->t2, lhs->n, (const BIGNUM **)lhs->x1, (const BIGNUM **)rhs->x1, bn_ctx)
-        || !bp_inner_product(t, lhs->n, (const BIGNUM **)lhs->x2, (const BIGNUM **)rhs->x0, bn_ctx)
-        || !BN_add(r->t2, r->t2, t)
-        || !bp_inner_product(r->t3, lhs->n, (const BIGNUM **)lhs->x2, (const BIGNUM **)rhs->x1, bn_ctx)
-        || !bp_inner_product(t, lhs->n, (const BIGNUM **)lhs->x3, (const BIGNUM **)rhs->x0, bn_ctx)
-        || !BN_add(r->t3, r->t3, t)
-        || !bp_inner_product(r->t4, lhs->n, (const BIGNUM **)lhs->x1, (const BIGNUM **)rhs->x3, bn_ctx)
-        || !bp_inner_product(t, lhs->n, (const BIGNUM **)lhs->x3, (const BIGNUM **)rhs->x1, bn_ctx)
-        || !BN_add(r->t4, r->t4, t)
-        || !bp_inner_product(r->t5, lhs->n, (const BIGNUM **)lhs->x2, (const BIGNUM **)rhs->x3, bn_ctx)
-        || !bp_inner_product(r->t6, lhs->n, (const BIGNUM **)lhs->x3, (const BIGNUM **)rhs->x3, bn_ctx))
+    if (!bp_inner_product(r->t1, lhs->n, (const BIGNUM **)lhs->x1,
+                          (const BIGNUM **)rhs->x0, r->order, r->bn_ctx)
+        || !bp_inner_product(r->t2, lhs->n, (const BIGNUM **)lhs->x1,
+                             (const BIGNUM **)rhs->x1, r->order, r->bn_ctx)
+        || !bp_inner_product(t, lhs->n, (const BIGNUM **)lhs->x2,
+                             (const BIGNUM **)rhs->x0, r->order, r->bn_ctx)
+        || !BN_mod_add(r->t2, r->t2, t, r->order, r->bn_ctx)
+        || !bp_inner_product(r->t3, lhs->n, (const BIGNUM **)lhs->x2,
+                             (const BIGNUM **)rhs->x1, r->order, r->bn_ctx)
+        || !bp_inner_product(t, lhs->n, (const BIGNUM **)lhs->x3,
+                             (const BIGNUM **)rhs->x0, r->order, r->bn_ctx)
+        || !BN_mod_add(r->t3, r->t3, t, r->order, r->bn_ctx)
+        || !bp_inner_product(r->t4, lhs->n, (const BIGNUM **)lhs->x1,
+                             (const BIGNUM **)rhs->x3, r->order, r->bn_ctx)
+        || !bp_inner_product(t, lhs->n, (const BIGNUM **)lhs->x3,
+                             (const BIGNUM **)rhs->x1, r->order, r->bn_ctx)
+        || !BN_mod_add(r->t4, r->t4, t, r->order, r->bn_ctx)
+        || !bp_inner_product(r->t5, lhs->n, (const BIGNUM **)lhs->x2,
+                             (const BIGNUM **)rhs->x3, r->order, r->bn_ctx)
+        || !bp_inner_product(r->t6, lhs->n, (const BIGNUM **)lhs->x3,
+                             (const BIGNUM **)rhs->x3, r->order, r->bn_ctx))
         goto err;
 
     ret = 1;
 
 err:
-    BN_CTX_end(bn_ctx);
+    BN_CTX_end(r->bn_ctx);
     return ret;
 }
 
-bp_poly6_t *bp_poly6_new(BN_CTX *bn_ctx)
+bp_poly6_t *bp_poly6_new(const BIGNUM *order)
 {
     bp_poly6_t *ret = NULL;
 
-    if (bn_ctx == NULL) {
+    if (order == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return NULL;
     }
@@ -664,50 +630,54 @@ bp_poly6_t *bp_poly6_new(BN_CTX *bn_ctx)
         return NULL;
     }
 
-    BN_CTX_start(bn_ctx);
+    if (!(ret->bn_ctx = BN_CTX_new()))
+        goto err;
 
-    ret->t1 = BN_CTX_get(bn_ctx);
-    ret->t2 = BN_CTX_get(bn_ctx);
-    ret->t3 = BN_CTX_get(bn_ctx);
-    ret->t4 = BN_CTX_get(bn_ctx);
-    ret->t5 = BN_CTX_get(bn_ctx);
-    ret->t6 = BN_CTX_get(bn_ctx);
+    ret->t1 = BN_CTX_get(ret->bn_ctx);
+    ret->t2 = BN_CTX_get(ret->bn_ctx);
+    ret->t3 = BN_CTX_get(ret->bn_ctx);
+    ret->t4 = BN_CTX_get(ret->bn_ctx);
+    ret->t5 = BN_CTX_get(ret->bn_ctx);
+    ret->t6 = BN_CTX_get(ret->bn_ctx);
     if (ret->t6 == NULL)
         goto err;
 
-    BN_CTX_end(bn_ctx);
+    ret->order = order;
     return ret;
 err:
-    BN_CTX_end(bn_ctx);
     bp_poly6_free(ret);
     return NULL;
 }
 
 void bp_poly6_free(bp_poly6_t *poly6)
 {
+    if (poly6 == NULL)
+        return;
+
+    BN_CTX_free(poly6->bn_ctx);
     OPENSSL_free(poly6);
 }
 
-int bp_poly6_eval(bp_poly6_t *poly6, BIGNUM *r, const BIGNUM *x, BN_CTX *bn_ctx)
+int bp_poly6_eval(bp_poly6_t *poly6, const BIGNUM *x, BIGNUM *r)
 {
     int ret = 0;
 
-    if (poly6 == NULL || r == NULL || bn_ctx == NULL) {
+    if (poly6 == NULL || r == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return 0;
     }
 
-    if (!BN_mul(r, x, poly6->t6, bn_ctx)
-        || !BN_add(r, r, poly6->t5)
-        || !BN_mul(r, r, x, bn_ctx)
-        || !BN_add(r, r, poly6->t4)
-        || !BN_mul(r, r, x, bn_ctx)
-        || !BN_add(r, r, poly6->t3)
-        || !BN_mul(r, r, x, bn_ctx)
-        || !BN_add(r, r, poly6->t2)
-        || !BN_mul(r, r, x, bn_ctx)
-        || !BN_add(r, r, poly6->t1)
-        || !BN_mul(r, r, x, bn_ctx))
+    if (!BN_mod_mul(r, x, poly6->t6, poly6->order, poly6->bn_ctx)
+        || !BN_mod_add(r, r, poly6->t5, poly6->order, poly6->bn_ctx)
+        || !BN_mod_mul(r, r, x, poly6->order, poly6->bn_ctx)
+        || !BN_mod_add(r, r, poly6->t4, poly6->order, poly6->bn_ctx)
+        || !BN_mod_mul(r, r, x, poly6->order, poly6->bn_ctx)
+        || !BN_mod_add(r, r, poly6->t3, poly6->order, poly6->bn_ctx)
+        || !BN_mod_mul(r, r, x, poly6->order, poly6->bn_ctx)
+        || !BN_mod_add(r, r, poly6->t2, poly6->order, poly6->bn_ctx)
+        || !BN_mod_mul(r, r, x, poly6->order, poly6->bn_ctx)
+        || !BN_mod_add(r, r, poly6->t1, poly6->order, poly6->bn_ctx)
+        || !BN_mod_mul(r, r, x, poly6->order, poly6->bn_ctx))
         goto err;
 
     ret = 1;
@@ -715,11 +685,11 @@ err:
     return ret;
 }
 
-bp_poly_ps_t *bp_poly_ps_new(int num)
+bp_poly_points_t *bp_poly_points_new(int capacity)
 {
-    bp_poly_ps_t *ret = NULL;
+    bp_poly_points_t *ret = NULL;
 
-    if (num <= 0) {
+    if (capacity <= 0) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_INVALID_ARGUMENT);
         return NULL;
     }
@@ -729,22 +699,22 @@ bp_poly_ps_t *bp_poly_ps_new(int num)
         return NULL;
     }
 
-    if (!(ret->points = OPENSSL_zalloc(sizeof(*ret->points) * num))
-        || !(ret->scalars = OPENSSL_zalloc(sizeof(*ret->scalars) * num))) {
+    if (!(ret->points = OPENSSL_zalloc(sizeof(*ret->points) * capacity))
+        || !(ret->scalars = OPENSSL_zalloc(sizeof(*ret->scalars) * capacity))) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         goto err;
     }
 
-    ret->pos = 0;
-    ret->num = num;
+    ret->num = 0;
+    ret->capacity = capacity;
 
     return ret;
 err:
-    bp_poly_ps_free(ret);
+    bp_poly_points_free(ret);
     return NULL;
 }
 
-void bp_poly_ps_free(bp_poly_ps_t *ps)
+void bp_poly_points_free(bp_poly_points_t *ps)
 {
     if (ps == NULL)
         return;
@@ -754,32 +724,41 @@ void bp_poly_ps_free(bp_poly_ps_t *ps)
     OPENSSL_free(ps);
 }
 
-int bp_poly_ps_append(bp_poly_ps_t *ps, EC_POINT *point, BIGNUM *scalar)
+void bp_poly_points_reset(bp_poly_points_t *ps)
+{
+    if (ps == NULL || ps->num == 0)
+        return;
+
+    memset(ps->points, 0, sizeof(*ps->points) * ps->num);
+    memset(ps->scalars, 0, sizeof(*ps->scalars) * ps->num);
+    ps->num = 0;
+}
+
+int bp_poly_points_append(bp_poly_points_t *ps, EC_POINT *point, BIGNUM *scalar)
 {
     if (ps == NULL || point == NULL || scalar == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return 0;
     }
 
-    if (ps->pos >= ps->num)
+    if (ps->num >= ps->capacity)
         return 0;
 
-    ps->points[ps->pos] = point;
-    ps->scalars[ps->pos] = scalar;
-    ps->pos++;
+    ps->points[ps->num] = point;
+    ps->scalars[ps->num] = scalar;
+    ps->num++;
 
     return 1;
 }
 
-int bp_poly_ps_eval(bp_poly_ps_t *ps, EC_POINT *r, BIGNUM *scalar,
-                    const EC_GROUP *group, BN_CTX *bn_ctx)
+int bp_poly_points_mul(bp_poly_points_t *ps, EC_POINT *r, BIGNUM *scalar,
+                       const EC_GROUP *group, BN_CTX *bn_ctx)
 {
     if (ps == NULL || r == NULL || group == NULL || bn_ctx == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return 0;
     }
 
-    return EC_POINTs_mul(group, r, scalar, ps->pos,
-                         (const EC_POINT **)ps->points,
+    return EC_POINTs_mul(group, r, scalar, ps->num, (const EC_POINT **)ps->points,
                          (const BIGNUM **)ps->scalars, bn_ctx);
 }

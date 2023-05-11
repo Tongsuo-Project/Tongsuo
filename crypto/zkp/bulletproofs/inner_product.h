@@ -23,10 +23,8 @@ extern "C" {
 
 typedef struct bp_inner_product_pub_param_st {
     int curve_id;
-    int initial;
-    int n;
-    EC_POINT **vec_G;
-    EC_POINT **vec_H;
+    STACK_OF(EC_POINT) *sk_G;
+    STACK_OF(EC_POINT) *sk_H;
 } bp_inner_product_pub_param_t;
 
 typedef struct bp_inner_product_ctx_st {
@@ -34,49 +32,41 @@ typedef struct bp_inner_product_ctx_st {
     EC_GROUP *group;
     EC_POINT *P;
     EC_POINT *U;
-    int factors_num;
-    BIGNUM **vec_G_factors;
-    BIGNUM **vec_H_factors;
+    STACK_OF(BIGNUM) *sk_G_factors;
+    STACK_OF(BIGNUM) *sk_H_factors;
     bp_inner_product_pub_param_t *pp;
 } bp_inner_product_ctx_t;
 
 typedef struct bp_inner_product_witness_st {
-    int n;
-    BIGNUM **vec_a;
-    BIGNUM **vec_b;
+    STACK_OF(BIGNUM) *sk_a;
+    STACK_OF(BIGNUM) *sk_b;
 } bp_inner_product_witness_t;
 
 typedef struct bp_inner_product_proof_st {
-    int n;
-    EC_POINT **vec_L;
-    EC_POINT **vec_R;
+    STACK_OF(EC_POINT) *sk_L;
+    STACK_OF(EC_POINT) *sk_R;
     BIGNUM *a;
     BIGNUM *b;
 } bp_inner_product_proof_t;
 
-bp_inner_product_pub_param_t *bp_inner_product_pub_param_new(int curve_id);
-int bp_inner_product_pub_param_set(bp_inner_product_pub_param_t *pp,
-                                   EC_POINT **vec_G, EC_POINT **vec_H,
-                                   int n);
-int bp_inner_product_pub_param_gen(bp_inner_product_pub_param_t *pp, int n);
+bp_inner_product_pub_param_t *bp_inner_product_pub_param_new(int curve_id,
+                                                             STACK_OF(EC_POINT) *sk_G,
+                                                             STACK_OF(EC_POINT) *sk_H);
 void bp_inner_product_pub_param_free(bp_inner_product_pub_param_t *pp);
 bp_inner_product_ctx_t *bp_inner_product_ctx_new(bp_inner_product_pub_param_t *pp,
                                                  BP_TRANSCRIPT *transcript,
                                                  EC_POINT *U, EC_POINT *P,
-                                                 BIGNUM **vec_G_factors,
-                                                 BIGNUM **vec_H_factors,
-                                                 int factors_num);
+                                                 STACK_OF(BIGNUM) *sk_G_factors,
+                                                 STACK_OF(BIGNUM) *sk_H_factors);
 void bp_inner_product_ctx_free(bp_inner_product_ctx_t *ctx);
-bp_inner_product_witness_t *bp_inner_product_witness_new(BIGNUM **vec_a,
-                                                         BIGNUM **vec_b,
-                                                         int n);
+bp_inner_product_witness_t *bp_inner_product_witness_new(STACK_OF(BIGNUM) *sk_a,
+                                                         STACK_OF(BIGNUM) *sk_b);
 void bp_inner_product_witness_free(bp_inner_product_witness_t *witness);
 bp_inner_product_proof_t *bp_inner_product_proof_alloc(int n);
 bp_inner_product_proof_t *bp_inner_product_proof_new(bp_inner_product_ctx_t *ctx);
 void bp_inner_product_proof_free(bp_inner_product_proof_t *proof);
-int bp_inner_product_proof_prove(bp_inner_product_ctx_t *ctx,
-                                 bp_inner_product_witness_t *witness,
-                                 bp_inner_product_proof_t *proof);
+bp_inner_product_proof_t *bp_inner_product_proof_prove(bp_inner_product_ctx_t *ctx,
+                                                       bp_inner_product_witness_t *witness);
 int bp_inner_product_proof_verify(bp_inner_product_ctx_t *ctx,
                                   bp_inner_product_proof_t *proof);
 

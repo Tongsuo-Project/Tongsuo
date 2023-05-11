@@ -3,6 +3,8 @@
  _______________
 
  Changes between 8.3.0 and 8.4.0 [xx XXX xxxx]
+  *) 支持零知识证明算法-bulletproofs (r1cs)
+
   *) ZUC 算法优化以及 speed 支持 ZUC 算法
 
   *) s_server支持配置多证书测试TLCP SNI功能

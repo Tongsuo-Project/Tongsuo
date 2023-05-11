@@ -148,8 +148,7 @@ static int bp_bn_print(BIO *bp, const char *number, const BIGNUM *num,
     return rv;
 }
 #ifndef OPENSSL_NO_STDIO
-int BULLET_PROOF_PUB_PARAM_print_fp(FILE *fp, const BULLET_PROOF_PUB_PARAM *pp,
-                                    int indent)
+int BP_PUB_PARAM_print_fp(FILE *fp, const BP_PUB_PARAM *pp, int indent)
 {
     BIO *b;
     int ret;
@@ -159,7 +158,7 @@ int BULLET_PROOF_PUB_PARAM_print_fp(FILE *fp, const BULLET_PROOF_PUB_PARAM *pp,
         return 0;
     }
     BIO_set_fp(b, fp, BIO_NOCLOSE);
-    ret = BULLET_PROOF_PUB_PARAM_print(b, pp, indent);
+    ret = BP_PUB_PARAM_print(b, pp, indent);
     BIO_free(b);
     return ret;
 }
@@ -179,13 +178,13 @@ int BP_RANGE_PROOF_print_fp(FILE *fp, const BP_RANGE_PROOF *proof, int indent)
 }
 #endif
 
-int BULLET_PROOF_PUB_PARAM_print(BIO *bp, const BULLET_PROOF_PUB_PARAM *pp,
-                                 int indent)
+int BP_PUB_PARAM_print(BIO *bp, const BP_PUB_PARAM *pp, int indent)
 {
     int ret = 0, i, n;
     size_t point_len;
     unsigned char *p = NULL;
     BN_CTX *bn_ctx = NULL;
+    EC_POINT *G, *H;
     EC_GROUP *group = NULL;
 
     if (pp == NULL)
@@ -194,8 +193,8 @@ int BULLET_PROOF_PUB_PARAM_print(BIO *bp, const BULLET_PROOF_PUB_PARAM *pp,
     bp_bio_printf(bp, indent, "Bulletproofs Public Parameter: \n");
     bp_bio_printf(bp, indent, "curve_id: %d (%s)\n", pp->curve_id,
                   OSSL_EC_curve_nid2name(pp->curve_id));
-    bp_bio_printf(bp, indent, "bits: %zu\n", pp->bits);
-    bp_bio_printf(bp, indent, "max aggregation number: %zu\n", pp->max_agg_num);
+    bp_bio_printf(bp, indent, "gens_capacity: %zu\n", pp->gens_capacity);
+    bp_bio_printf(bp, indent, "party_capacity: %zu\n", pp->party_capacity);
 
     group = EC_GROUP_new_by_curve_name_ex(NULL, NULL, pp->curve_id);
     if (group == NULL)
@@ -212,17 +211,25 @@ int BULLET_PROOF_PUB_PARAM_print(BIO *bp, const BULLET_PROOF_PUB_PARAM *pp,
         goto end;
 
     bp_bio_printf(bp, indent, "G[n]:\n");
-    n = pp->bits * pp->max_agg_num;
+    n = pp->gens_capacity * pp->party_capacity;
     for (i = 0; i < n; i++) {
+        G = sk_EC_POINT_value(pp->sk_G, i);
+        if (G == NULL)
+            goto end;
+
         bp_bio_printf(bp, indent + 4, "[%zu]: ", i);
-        if (!bp_point_print(bp, group, pp->vec_G[i], NULL, 0, bn_ctx))
+        if (!bp_point_print(bp, group, G, NULL, 0, bn_ctx))
             goto end;
     }
 
     bp_bio_printf(bp, indent, "H[n]:\n");
     for (i = 0; i < n; i++) {
+        H = sk_EC_POINT_value(pp->sk_H, i);
+        if (H == NULL)
+            goto end;
+
         bp_bio_printf(bp, indent + 4, "[%zu]: ", i);
-        if (!bp_point_print(bp, group, pp->vec_H[i], NULL, 0, bn_ctx))
+        if (!bp_point_print(bp, group, H, NULL, 0, bn_ctx))
             goto end;
     }
 
@@ -240,17 +247,17 @@ end:
 
 int BP_RANGE_PROOF_print(BIO *bp, const BP_RANGE_PROOF *proof, int indent)
 {
-    int ret = 0, curve_id, i;
+    int ret = 0, curve_id, i, n;
     size_t point_len;
     unsigned char *p = NULL;
     BN_CTX *bn_ctx = NULL;
+    EC_POINT *L, *R;
     EC_GROUP *group = NULL;
 
     if (proof == NULL)
         return 0;
 
-    bp_bio_printf(bp, indent, "Bulletproofs Proof: \n");
-    bp_bio_printf(bp, indent, "n: %zu\n", proof->n);
+    bp_bio_printf(bp, indent, "Range Proof: \n");
 
     curve_id = EC_POINT_get_curve_name(proof->A);
     if (curve_id <= 0)
@@ -270,13 +277,6 @@ int BP_RANGE_PROOF_print(BIO *bp, const BP_RANGE_PROOF *proof, int indent)
     if (p == NULL)
         goto end;
 
-    bp_bio_printf(bp, indent, "V[n]:\n");
-    for (i = 0; i < proof->n; i++) {
-        bp_bio_printf(bp, indent + 4, "[%zu]: ", i);
-        if (!bp_point_print(bp, group, proof->V[i], NULL, 0, bn_ctx))
-            goto end;
-    }
-
     if (!bp_point_print(bp, group, proof->A, "A: ", indent, bn_ctx)
         || !bp_point_print(bp, group, proof->S, "S: ", indent, bn_ctx)
         || !bp_point_print(bp, group, proof->T1, "T1: ", indent, bn_ctx)
@@ -289,19 +289,28 @@ int BP_RANGE_PROOF_print(BIO *bp, const BP_RANGE_PROOF *proof, int indent)
     if (proof->ip_proof != NULL) {
         bp_bio_printf(bp, indent, "inner proof:\n");
         indent += 4;
-        bp_bio_printf(bp, indent, "n: %zu\n", proof->ip_proof->n);
+        n = sk_EC_POINT_num(proof->ip_proof->sk_L);
+        bp_bio_printf(bp, indent, "n: %zu\n", n);
 
         bp_bio_printf(bp, indent, "L[n]:\n");
-        for (i = 0; i < proof->ip_proof->n; i++) {
+        for (i = 0; i < n; i++) {
+            L = sk_EC_POINT_value(proof->ip_proof->sk_L, i);
+            if (L == NULL)
+                goto end;
+
             bp_bio_printf(bp, indent + 4, "[%zu]: ", i);
-            if (!bp_point_print(bp, group, proof->ip_proof->vec_L[i], NULL, 0, bn_ctx))
+            if (!bp_point_print(bp, group, L, NULL, 0, bn_ctx))
                 goto end;
         }
 
         bp_bio_printf(bp, indent, "R[n]:\n");
-        for (i = 0; i < proof->ip_proof->n; i++) {
+        for (i = 0; i < n; i++) {
+            R = sk_EC_POINT_value(proof->ip_proof->sk_R, i);
+            if (R == NULL)
+                goto end;
+
             bp_bio_printf(bp, indent + 4, "[%zu]: ", i);
-            if (!bp_point_print(bp, group, proof->ip_proof->vec_R[i], NULL, 0, bn_ctx))
+            if (!bp_point_print(bp, group, R, NULL, 0, bn_ctx))
                 goto end;
         }
 

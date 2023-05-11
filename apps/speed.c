@@ -663,8 +663,8 @@ typedef struct loopargs_st {
     PAILLIER_CIPHERTEXT *paillier_ciphertext_r[PAILLIER_NUM];
 #endif
 #ifndef OPENSSL_NO_BULLETPROOFS
-    BP_RANGE_PROOF_WITNESS *bulletproofs_witness;
-    BP_RANGE_PROOF_CTX *bulletproofs_ctx;
+    BP_RANGE_WITNESS *bulletproofs_witness;
+    BP_RANGE_CTX *bulletproofs_ctx;
     BP_RANGE_PROOF *bulletproofs_proof;
 #endif
     unsigned char *secret_a;
@@ -1480,8 +1480,8 @@ static int bulletproofs_verify = 0;
 static int BULLETPROOFS_loop(void *args)
 {
     loopargs_t *tempargs = *(loopargs_t **) args;
-    BP_RANGE_PROOF_CTX *ctx = tempargs->bulletproofs_ctx;
-    BP_RANGE_PROOF_WITNESS *witness = tempargs->bulletproofs_witness;
+    BP_RANGE_CTX *ctx = tempargs->bulletproofs_ctx;
+    BP_RANGE_WITNESS *witness = tempargs->bulletproofs_witness;
     BP_RANGE_PROOF *proof = tempargs->bulletproofs_proof;
     int count = 0;
 
@@ -1496,7 +1496,7 @@ static int BULLETPROOFS_loop(void *args)
         }
     } else if (bulletproofs_verify) {
         for (; COND(1); count++) {
-            if (!BP_RANGE_PROOF_verify(ctx, proof)) {
+            if (!BP_RANGE_PROOF_verify(ctx, witness, proof)) {
                 BIO_printf(bio_err, "BULLETPROOFS verify failure\n");
                 ERR_print_errors(bio_err);
                 count = -1;
@@ -1931,9 +1931,9 @@ int speed_main(int argc, char **argv)
     };
     int bulletproofs_doit[BULLETPROOFS_NUM] = { 0 };
     BP_TRANSCRIPT *bp_transcript[BULLETPROOFS_NUM][BULLETPROOFS_BITS_NUM][BULLETPROOFS_AGG_MAX_NUM] = { 0 };
-    BULLET_PROOF_PUB_PARAM *bp_pp[BULLETPROOFS_NUM][BULLETPROOFS_BITS_NUM][BULLETPROOFS_AGG_MAX_NUM] = { 0 };
-    BP_RANGE_PROOF_CTX *bp_ctx[BULLETPROOFS_NUM][BULLETPROOFS_BITS_NUM][BULLETPROOFS_AGG_MAX_NUM] = { 0 };
-    BP_RANGE_PROOF_WITNESS *bp_witness[BULLETPROOFS_NUM][BULLETPROOFS_BITS_NUM][BULLETPROOFS_AGG_MAX_NUM][3] = { 0 };
+    BP_PUB_PARAM *bp_pp[BULLETPROOFS_NUM][BULLETPROOFS_BITS_NUM][BULLETPROOFS_AGG_MAX_NUM] = { 0 };
+    BP_RANGE_CTX *bp_ctx[BULLETPROOFS_NUM][BULLETPROOFS_BITS_NUM][BULLETPROOFS_AGG_MAX_NUM] = { 0 };
+    BP_RANGE_WITNESS *bp_witness[BULLETPROOFS_NUM][BULLETPROOFS_BITS_NUM][BULLETPROOFS_AGG_MAX_NUM][3] = { 0 };
     BP_RANGE_PROOF *bp_proof[BULLETPROOFS_NUM][BULLETPROOFS_BITS_NUM][BULLETPROOFS_AGG_MAX_NUM] = { 0 };
     size_t bp_agg_num[BULLETPROOFS_NUM][BULLETPROOFS_BITS_NUM][BULLETPROOFS_AGG_MAX_NUM][3] = { 0 };
     size_t bp_size[BULLETPROOFS_NUM][BULLETPROOFS_BITS_NUM][BULLETPROOFS_AGG_MAX_NUM][3] = { 0 };
@@ -4185,21 +4185,21 @@ int speed_main(int argc, char **argv)
             bp_secrets[0] = (1U << bulletproofs_bits[m]) - 1;
 
             for (n = 0; n < BULLETPROOFS_AGG_MAX_NUM; n++) {
-                bp_pp[testnum][m][n] = BULLET_PROOF_PUB_PARAM_new(test_bulletproofs_curves[testnum].nid,
-                                                                  bulletproofs_bits[m],
-                                                                  bulletproofs_agg_max[n]);
+                bp_pp[testnum][m][n] = BP_PUB_PARAM_new(test_bulletproofs_curves[testnum].nid,
+                                                        bulletproofs_bits[m],
+                                                        bulletproofs_agg_max[n]);
                 if (bp_pp[testnum][m][n] == NULL)
                     goto end;
 
                 if (!(bp_transcript[testnum][m][n] = BP_TRANSCRIPT_new(BP_TRANSCRIPT_METHOD_sha256(), "speed-test")))
                     goto end;
 
-                bp_ctx[testnum][m][n] = BP_RANGE_PROOF_CTX_new(bp_pp[testnum][m][n], bp_transcript[testnum][m][n]);
+                bp_ctx[testnum][m][n] = BP_RANGE_CTX_new(bp_pp[testnum][m][n], bp_transcript[testnum][m][n]);
                 if (bp_ctx[testnum][m][n] == NULL)
                     goto end;
 
                 bp_proof[testnum][m][n] = BP_RANGE_PROOF_new(bp_ctx[testnum][m][n]);
-                if (bp_ctx[testnum][m][n] == NULL)
+                if (bp_proof[testnum][m][n] == NULL)
                     goto end;
 
                 for (j = 0; j < BULLETPROOFS_AGG_NUM; j++) {
@@ -4215,18 +4215,20 @@ int speed_main(int argc, char **argv)
 
                     bp_agg_num[testnum][m][n][j] = bp_agg_count;
 
-                    bp_witness[testnum][m][n][j] = BP_RANGE_PROOF_WITNESS_new(bp_ctx[testnum][m][n],
-                                                                            bp_secrets, bp_agg_count);
-                    if (!BP_RANGE_PROOF_prove(bp_ctx[testnum][m][n],
-                                            bp_witness[testnum][m][n][j],
-                                            bp_proof[testnum][m][n])) {
+                    bp_witness[testnum][m][n][j] = BP_RANGE_WITNESS_new(bp_ctx[testnum][m][n]);
+
+                    for (k = 0; k < bp_agg_count; k++) {
+                        if (!BP_RANGE_WITNESS_commit(bp_ctx[testnum][m][n], bp_witness[testnum][m][n][j], bp_secrets[k]))
+                            goto end;
+                    }
+
+                    if (!BP_RANGE_PROOF_prove(bp_ctx[testnum][m][n], bp_witness[testnum][m][n][j], bp_proof[testnum][m][n])) {
                         BIO_printf(bio_err, "bulletproofs prove failure.\n");
                         ERR_print_errors(bio_err);
                         goto end;
                     }
 
-                    if (!BP_RANGE_PROOF_verify(bp_ctx[testnum][m][n],
-                                             bp_proof[testnum][m][n])) {
+                    if (!BP_RANGE_PROOF_verify(bp_ctx[testnum][m][n], bp_witness[testnum][m][n][j], bp_proof[testnum][m][n])) {
                         BIO_printf(bio_err, "bulletproofs verify failure\n");
                         ERR_print_errors(bio_err);
                         goto end;
@@ -4556,7 +4558,7 @@ int speed_main(int argc, char **argv)
         for (m = 0; m < BULLETPROOFS_BITS_NUM; m++) {
             for (n = 0; n < BULLETPROOFS_AGG_MAX_NUM; n++) {
                 for (j = 0; j < BULLETPROOFS_AGG_NUM; j++) {
-                    pp_size = BULLET_PROOF_PUB_PARAM_encode(bp_pp[i][m][n], NULL, 0);
+                    pp_size = BP_PUB_PARAM_encode(bp_pp[i][m][n], NULL, 0);
                     if (mr)
                         printf("+F12:%d:%s:%d:%d:%zu:%f:%f:%zu:%zu\n", i,
                                test_bulletproofs_curves[i].name, bulletproofs_bits[m],
@@ -4689,20 +4691,22 @@ int speed_main(int argc, char **argv)
 
         for (m = 0; m < BULLETPROOFS_BITS_NUM; m++) {
             for (n = 0; n < BULLETPROOFS_AGG_MAX_NUM; n++) {
+                for (j = 0; j < BULLETPROOFS_AGG_NUM; j++) {
+                    if (bp_witness[i][m][n][j] != NULL)
+                        BP_RANGE_WITNESS_free(bp_witness[i][m][n][j]);
+                }
+
                 if (bp_proof[i][m][n] != NULL)
                     BP_RANGE_PROOF_free(bp_proof[i][m][n]);
+
                 if (bp_ctx[i][m][n] != NULL)
-                    BP_RANGE_PROOF_CTX_free(bp_ctx[i][m][n]);
+                    BP_RANGE_CTX_free(bp_ctx[i][m][n]);
+
                 if (bp_pp[i][m][n] != NULL)
-                    BULLET_PROOF_PUB_PARAM_free(bp_pp[i][m][n]);
+                    BP_PUB_PARAM_free(bp_pp[i][m][n]);
 
                 if (bp_transcript[i][m][n] != NULL)
                     BP_TRANSCRIPT_free(bp_transcript[i][m][n]);
-
-                for (j = 0; j < BULLETPROOFS_AGG_NUM; j++) {
-                    if (bp_witness[i][m][n][j] != NULL)
-                        BP_RANGE_PROOF_WITNESS_free(bp_witness[i][m][n][j]);
-                }
             }
         }
     }

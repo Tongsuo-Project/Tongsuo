@@ -14,21 +14,19 @@
 #include "range_proof.h"
 
 
-BULLET_PROOF_PUB_PARAM *d2i_BULLET_PROOF_PUB_PARAM(BULLET_PROOF_PUB_PARAM **pp,
-                                                   const unsigned char **in,
-                                                   long len)
+BP_PUB_PARAM *d2i_BP_PUB_PARAM(BP_PUB_PARAM **pp, const unsigned char **in, long len)
 {
-    BULLET_PROOF_PUB_PARAM *param = NULL;
+    BP_PUB_PARAM *param = NULL;
     const unsigned char *p = *in;
 
     if (p == NULL)
         return NULL;
 
-    if ((param = BULLET_PROOF_PUB_PARAM_decode(p, len)) == NULL)
+    if ((param = BP_PUB_PARAM_decode(p, len)) == NULL)
         return NULL;
 
     if (pp) {
-        BULLET_PROOF_PUB_PARAM_free(*pp);
+        BP_PUB_PARAM_free(*pp);
         *pp = param;
     }
 
@@ -36,18 +34,17 @@ BULLET_PROOF_PUB_PARAM *d2i_BULLET_PROOF_PUB_PARAM(BULLET_PROOF_PUB_PARAM **pp,
     return param;
 }
 
-int i2d_BULLET_PROOF_PUB_PARAM(const BULLET_PROOF_PUB_PARAM *pp,
-                               unsigned char **out)
+int i2d_BP_PUB_PARAM(const BP_PUB_PARAM *pp, unsigned char **out)
 {
     size_t size;
 
-    if ((size = BULLET_PROOF_PUB_PARAM_encode(pp, NULL, 0)) <= 0)
+    if ((size = BP_PUB_PARAM_encode(pp, NULL, 0)) <= 0)
         return 0;
 
     if (out == NULL)
         return (int)size;
 
-    if (BULLET_PROOF_PUB_PARAM_encode(pp, *out, size) <= 0)
+    if (BP_PUB_PARAM_encode(pp, *out, size) <= 0)
         return 0;
 
     return (int)size;
@@ -90,5 +87,5 @@ int i2d_BP_RANGE_PROOF(const BP_RANGE_PROOF *proof, unsigned char **out)
     return (int)size;
 }
 
-IMPLEMENT_PEM_rw(BULLETPROOFS_PublicParam, BULLET_PROOF_PUB_PARAM, PEM_STRING_BULLETPROOFS_PUB_PARAM, BULLET_PROOF_PUB_PARAM)
+IMPLEMENT_PEM_rw(BULLETPROOFS_PublicParam, BP_PUB_PARAM, PEM_STRING_BULLETPROOFS_PUB_PARAM, BP_PUB_PARAM)
 IMPLEMENT_PEM_rw(BULLETPROOFS_RangeProof, BP_RANGE_PROOF, PEM_STRING_BULLETPROOFS_RANGE_PROOF, BP_RANGE_PROOF)

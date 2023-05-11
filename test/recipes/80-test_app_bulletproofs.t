@@ -57,11 +57,11 @@ sub bulletproofs_ppgen
         push @app_args, $curve_name;
     }
     if ($bits) {
-        push @app_args, "-bits";
+        push @app_args, "-gens_capacity";
         push @app_args, $bits;
     }
     if ($agg_max) {
-        push @app_args, "-agg_max";
+        push @app_args, "-party_capacity";
         push @app_args, $agg_max;
     }
     if ($text) {

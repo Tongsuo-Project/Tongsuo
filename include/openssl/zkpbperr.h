@@ -21,9 +21,12 @@
 /*
  * ZKP_BP reason codes.
  */
+# define ZKP_BP_R_EXCEEDS_GENS_CAPACITY                   106
 # define ZKP_BP_R_EXCEEDS_MAX_AGG_NUM                     100
 # define ZKP_BP_R_EXCEEDS_MAX_BITS                        101
+# define ZKP_BP_R_EXCEEDS_PARTY_CAPACITY                  104
 # define ZKP_BP_R_EXCEEDS_PP_CAPACITY                     102
 # define ZKP_BP_R_TRANSCRIPT_INIT_FAILED                  103
+# define ZKP_BP_R_WITNESS_INVALID                         105
 
 #endif

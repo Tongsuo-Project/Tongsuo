@@ -34,7 +34,7 @@ static int verbose = 0, noout = 0;
 
 typedef enum OPTION_choice {
     OPT_COMMON,
-    OPT_PPGEN, OPT_PP, OPT_CURVE_NAME, OPT_BITS, OPT_AGG_MAX,
+    OPT_PPGEN, OPT_PP, OPT_CURVE_NAME, OPT_GENS_CAPACITY, OPT_PARTY_CAPACITY,
     OPT_PROOF, OPT_PROVE, OPT_VERIFY,
     OPT_IN, OPT_PP_IN, OPT_OUT, OPT_NOOUT,
     OPT_TEXT, OPT_VERBOSE,
@@ -48,7 +48,7 @@ const OPTIONS bulletproofs_options[] = {
     {"help", OPT_HELP, '-', "Display this summary"},
 
     OPT_SECTION("Action"),
-    {"ppgen", OPT_PPGEN, '-', "Generate a bulletproofs public parameter, usage: -ppgen -curve_name secp256k1 -bits 32 -agg_max 8"},
+    {"ppgen", OPT_PPGEN, '-', "Generate a bulletproofs public parameter, usage: -ppgen -curve_name secp256k1 -gens_capacity 32 -party_capacity 8"},
     {"pp", OPT_PP, '-', "Display/Parse a bulletproofs public parameter"},
     {"proof", OPT_PROOF, '-', "Display/Parse a bulletproofs proof"},
     {"prove", OPT_PROVE, '-', "Bulletproofs prove operation: proof of generating at least one number with bulletproofs public parameters, "
@@ -58,8 +58,13 @@ const OPTIONS bulletproofs_options[] = {
 
     OPT_SECTION("PPGEN"),
     {"curve_name", OPT_CURVE_NAME, 's', "The curve name of the bulletproofs public parameter, default: " STR(BULLETPROOFS_CURVE_DEFAULT) ""},
-    {"bits", OPT_BITS, 'N', "The range bits that support verification, default: " STR(BULLETPROOFS_BITS_DEFAULT) ""},
-    {"agg_max", OPT_AGG_MAX, 'N', "The number of the aggregate range proofs, default: " STR(BULLETPROOFS_AGG_MAX_DEFAULT) ""},
+    {"gens_capacity", OPT_GENS_CAPACITY, 'N', "The number of generators to precompute for each party. "
+                                              "For range_proof, it is the maximum bitsize of the range_proof,"
+                                              "maximum value is 64. For r1cs_proof, the capacity must be greater "
+                                              "than the number of multipliers, rounded up to the next power of two."
+                                              ", default: " STR(BULLETPROOFS_GENS_CAPACITY_DEFAULT) ""},
+    {"party_capacity", OPT_PARTY_CAPACITY, 'N', "The maximum number of parties that can produce on aggregated range proof."
+                                                "For r1cs_proof, set to 1. default: 1"},
 
     OPT_SECTION("Input"),
     {"in", OPT_IN, 's', "Input file"},
@@ -77,20 +82,19 @@ const OPTIONS bulletproofs_options[] = {
     {NULL}
 };
 
-static int bulletproofs_pub_param_gen(const char *curve_name, int bits, int agg_max,
-                                      char *out_file, int text)
+static int bulletproofs_pub_param_gen(const char *curve_name, int gens_capacity,
+                                      int party_capacity, char *out_file, int text)
 {
     int ret = 0;
     BIO *bio = NULL;
-    BULLET_PROOF_PUB_PARAM *pp = NULL;
+    BP_PUB_PARAM *pp = NULL;
 
-    if (!(pp = BULLET_PROOF_PUB_PARAM_new_by_curve_name(curve_name, bits, agg_max)))
+    if (!(pp = BP_PUB_PARAM_new_by_curve_name(curve_name, gens_capacity, party_capacity)))
         goto err;
 
     if (!(bio = bio_open_owner(out_file, FORMAT_PEM, 1)))
         goto err;
-
-    if (text && !BULLET_PROOF_PUB_PARAM_print(bio, pp, 0))
+if (text && !BP_PUB_PARAM_print(bio, pp, 0))
         goto err;
 
     if (!PEM_write_bio_BULLETPROOFS_PublicParam(bio, pp))
@@ -100,12 +104,11 @@ static int bulletproofs_pub_param_gen(const char *curve_name, int bits, int agg_
 
 err:
     BIO_free(bio);
-    BULLET_PROOF_PUB_PARAM_free(pp);
+    BP_PUB_PARAM_free(pp);
     return ret;
 }
 
-static int bulletproofs_pub_param_print(BULLET_PROOF_PUB_PARAM *pp,
-                                        char *out_file, int text)
+static int bulletproofs_pub_param_print(BP_PUB_PARAM *pp, char *out_file, int text)
 {
     int ret = 0;
     BIO *bio = NULL;
@@ -113,7 +116,7 @@ static int bulletproofs_pub_param_print(BULLET_PROOF_PUB_PARAM *pp,
     if (pp == NULL || !(bio = bio_open_owner(out_file, FORMAT_PEM, 1)))
         goto err;
 
-    if (text && !BULLET_PROOF_PUB_PARAM_print(bio, pp, 0))
+    if (text && !BP_PUB_PARAM_print(bio, pp, 0))
         goto err;
 
     if (!noout) {
@@ -151,13 +154,13 @@ err:
     return ret;
 }
 
-static int bulletproofs_range_prove(BULLET_PROOF_PUB_PARAM *pp, int64_t secrets[],
-                                    size_t len, char *out_file, int text)
+static int bulletproofs_range_prove(BP_PUB_PARAM *pp, int64_t secrets[], int len,
+                                    char *out_file, int text)
 {
-    int ret = 0;
+    int ret = 0, i;
     BP_TRANSCRIPT *transcript = NULL;
-    BP_RANGE_PROOF_CTX *ctx = NULL;
-    BP_RANGE_PROOF_WITNESS *witness = NULL;
+    BP_RANGE_CTX *ctx = NULL;
+    BP_RANGE_WITNESS *witness = NULL;
     BP_RANGE_PROOF *proof = NULL;
 
     if (pp == NULL)
@@ -167,46 +170,48 @@ static int bulletproofs_range_prove(BULLET_PROOF_PUB_PARAM *pp, int64_t secrets[
                                          "bulletproofs_app")))
         goto err;
 
-    if (!(ctx = BP_RANGE_PROOF_CTX_new(pp, transcript)))
+    if (!(ctx = BP_RANGE_CTX_new(pp, transcript)))
         goto err;
 
-    if (!(witness = BP_RANGE_PROOF_WITNESS_new(ctx, secrets, len)))
+    if (!(witness = BP_RANGE_WITNESS_new(ctx)))
         goto err;
 
-    if (!(proof = BP_RANGE_PROOF_new(ctx)))
-        goto err;
+    for (i = 0; i < len; i++) {
+        if (!BP_RANGE_WITNESS_commit(ctx, witness, secrets[i]))
+            goto err;
+    }
 
-    if (!BP_RANGE_PROOF_prove(ctx, witness, proof))
+    if (!(proof = BP_RANGE_PROOF_prove_new(ctx, witness)))
         goto err;
 
     ret = bulletproofs_range_proof_print(proof, out_file, text);
 err:
     BP_RANGE_PROOF_free(proof);
-    BP_RANGE_PROOF_WITNESS_free(witness);
-    BP_RANGE_PROOF_CTX_free(ctx);
+    BP_RANGE_WITNESS_free(witness);
+    BP_RANGE_CTX_free(ctx);
     BP_TRANSCRIPT_free(transcript);
     return ret;
 }
 
-static int bulletproofs_range_verify(BULLET_PROOF_PUB_PARAM *pp, BP_RANGE_PROOF *proof,
-                                     char *out_file)
+static int bulletproofs_range_verify(BP_PUB_PARAM *pp, BP_RANGE_PROOF *proof,
+                                     BP_RANGE_WITNESS *witness, char *out_file)
 {
     BIO *bio = NULL;
     int ret = 0;
     BP_TRANSCRIPT *transcript = NULL;
-    BP_RANGE_PROOF_CTX *ctx = NULL;
+    BP_RANGE_CTX *ctx = NULL;
 
-    if (pp == NULL || proof == NULL || !(bio = bio_open_owner(out_file, FORMAT_TEXT, 1)))
+    if (pp == NULL || proof == NULL || witness == NULL || !(bio = bio_open_owner(out_file, FORMAT_TEXT, 1)))
         goto err;
 
     if (!(transcript = BP_TRANSCRIPT_new(BP_TRANSCRIPT_METHOD_sha256(),
                                          "bulletproofs_app")))
         goto err;
 
-    if (!(ctx = BP_RANGE_PROOF_CTX_new(pp, transcript)))
+    if (!(ctx = BP_RANGE_CTX_new(pp, transcript)))
         goto err;
 
-    if (BP_RANGE_PROOF_verify(ctx, proof))
+    if (BP_RANGE_PROOF_verify(ctx, witness, proof))
         BIO_puts(bio, "The proof is valid\n");
     else
         BIO_puts(bio, "The proof is invalid\n");
@@ -214,7 +219,7 @@ static int bulletproofs_range_verify(BULLET_PROOF_PUB_PARAM *pp, BP_RANGE_PROOF 
     ret = 1;
 
 err:
-    BP_RANGE_PROOF_CTX_free(ctx);
+    BP_RANGE_CTX_free(ctx);
     BP_TRANSCRIPT_free(transcript);
     BIO_free(bio);
     return ret;
@@ -223,10 +228,11 @@ err:
 int bulletproofs_main(int argc, char **argv)
 {
     BIO *pp_bio = NULL, *in_bio = NULL;
-    BULLET_PROOF_PUB_PARAM *bp_pp = NULL;
+    BP_PUB_PARAM *bp_pp = NULL;
     BP_RANGE_PROOF *bp_proof = NULL;
+    BP_RANGE_WITNESS *bp_witness = NULL;
     int ret = 1, actions = 0, text = 0, secret, i;
-    int bits = BULLETPROOFS_BITS_DEFAULT, agg_max = BULLETPROOFS_AGG_MAX_DEFAULT;
+    int gens_capacity = BULLETPROOFS_BITS_DEFAULT, party_capacity = 1;
     int ppgen = 0, pp = 0, proof = 0, prove = 0, verify = 0;
     int64_t secrets[MAX_NUM];
     char *pp_file = NULL, *in_file = NULL, *out_file = NULL;
@@ -288,11 +294,11 @@ opthelp2:
         case OPT_CURVE_NAME:
             curve_name = opt_arg();
             break;
-        case OPT_BITS:
-            bits = opt_int_arg();
+        case OPT_GENS_CAPACITY:
+            gens_capacity = opt_int_arg();
             break;
-        case OPT_AGG_MAX:
-            agg_max = opt_int_arg();
+        case OPT_PARTY_CAPACITY:
+            party_capacity = opt_int_arg();
             break;
         case OPT_IN:
             in_file = opt_arg();
@@ -352,7 +358,7 @@ opthelp2:
         goto err;
 
     if (ppgen) {
-        ret = bulletproofs_pub_param_gen(curve_name, bits, agg_max, out_file, text);
+        ret = bulletproofs_pub_param_gen(curve_name, gens_capacity, party_capacity, out_file, text);
         goto err;
     }
 
@@ -407,14 +413,14 @@ opthelp2:
     else if (prove)
         ret = bulletproofs_range_prove(bp_pp, secrets, argc, out_file, text);
     else if (verify)
-        ret = bulletproofs_range_verify(bp_pp, bp_proof, out_file);
+        ret = bulletproofs_range_verify(bp_pp, bp_proof, bp_witness, out_file);
 
  err:
     ret = ret ? 0 : 1;
     BIO_free_all(in_bio);
     BIO_free_all(pp_bio);
     BP_RANGE_PROOF_free(bp_proof);
-    BULLET_PROOF_PUB_PARAM_free(bp_pp);
+    BP_PUB_PARAM_free(bp_pp);
     if (ret != 0) {
         BIO_printf(bio_err, "May be extra arguments error, please use -help for usage summary.\n");
         ERR_print_errors(bio_err);
