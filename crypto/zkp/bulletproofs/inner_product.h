@@ -22,14 +22,13 @@ extern "C" {
 # include "transcript.h"
 
 typedef struct bp_inner_product_pub_param_st {
-    int curve_id;
+    const EC_GROUP *group;
     STACK_OF(EC_POINT) *sk_G;
     STACK_OF(EC_POINT) *sk_H;
 } bp_inner_product_pub_param_t;
 
 typedef struct bp_inner_product_ctx_st {
     BP_TRANSCRIPT *transcript;
-    EC_GROUP *group;
     EC_POINT *P;
     EC_POINT *U;
     STACK_OF(BIGNUM) *sk_G_factors;
@@ -49,7 +48,7 @@ typedef struct bp_inner_product_proof_st {
     BIGNUM *b;
 } bp_inner_product_proof_t;
 
-bp_inner_product_pub_param_t *bp_inner_product_pub_param_new(int curve_id,
+bp_inner_product_pub_param_t *bp_inner_product_pub_param_new(const EC_GROUP *group,
                                                              STACK_OF(EC_POINT) *sk_G,
                                                              STACK_OF(EC_POINT) *sk_H);
 void bp_inner_product_pub_param_free(bp_inner_product_pub_param_t *pp);

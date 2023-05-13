@@ -159,42 +159,50 @@ static int bulletproofs_range_prove(BP_PUB_PARAM *pp, int64_t secrets[], int len
 {
     int ret = 0, i;
     BP_TRANSCRIPT *transcript = NULL;
+    BP_WITNESS *witness = NULL;
     BP_RANGE_CTX *ctx = NULL;
-    BP_RANGE_WITNESS *witness = NULL;
     BP_RANGE_PROOF *proof = NULL;
+    BIGNUM *v;
 
     if (pp == NULL)
-        goto err;
+        return ret;
+
+    if (!(v = BN_new()))
+        return ret;
 
     if (!(transcript = BP_TRANSCRIPT_new(BP_TRANSCRIPT_METHOD_sha256(),
                                          "bulletproofs_app")))
         goto err;
 
-    if (!(ctx = BP_RANGE_CTX_new(pp, transcript)))
-        goto err;
-
-    if (!(witness = BP_RANGE_WITNESS_new(ctx)))
+    if (!(witness = BP_WITNESS_new(pp)))
         goto err;
 
     for (i = 0; i < len; i++) {
-        if (!BP_RANGE_WITNESS_commit(ctx, witness, secrets[i]))
+        if (!BN_lebin2bn((const unsigned char *)&secrets[i], sizeof(secrets[i]), v))
+            goto err;
+
+        if (!BP_WITNESS_commit(witness, NULL, v))
             goto err;
     }
 
-    if (!(proof = BP_RANGE_PROOF_prove_new(ctx, witness)))
+    if (!(ctx = BP_RANGE_CTX_new(pp, witness, transcript)))
+        goto err;
+
+    if (!(proof = BP_RANGE_PROOF_new_prove(ctx)))
         goto err;
 
     ret = bulletproofs_range_proof_print(proof, out_file, text);
 err:
     BP_RANGE_PROOF_free(proof);
-    BP_RANGE_WITNESS_free(witness);
     BP_RANGE_CTX_free(ctx);
+    BP_WITNESS_free(witness);
     BP_TRANSCRIPT_free(transcript);
+    BN_free(v);
     return ret;
 }
 
 static int bulletproofs_range_verify(BP_PUB_PARAM *pp, BP_RANGE_PROOF *proof,
-                                     BP_RANGE_WITNESS *witness, char *out_file)
+                                     BP_WITNESS *witness, char *out_file)
 {
     BIO *bio = NULL;
     int ret = 0;
@@ -208,10 +216,10 @@ static int bulletproofs_range_verify(BP_PUB_PARAM *pp, BP_RANGE_PROOF *proof,
                                          "bulletproofs_app")))
         goto err;
 
-    if (!(ctx = BP_RANGE_CTX_new(pp, transcript)))
+    if (!(ctx = BP_RANGE_CTX_new(pp, witness, transcript)))
         goto err;
 
-    if (BP_RANGE_PROOF_verify(ctx, witness, proof))
+    if (BP_RANGE_PROOF_verify(ctx, proof))
         BIO_puts(bio, "The proof is valid\n");
     else
         BIO_puts(bio, "The proof is invalid\n");
@@ -229,8 +237,8 @@ int bulletproofs_main(int argc, char **argv)
 {
     BIO *pp_bio = NULL, *in_bio = NULL;
     BP_PUB_PARAM *bp_pp = NULL;
+    BP_WITNESS *bp_witness = NULL;
     BP_RANGE_PROOF *bp_proof = NULL;
-    BP_RANGE_WITNESS *bp_witness = NULL;
     int ret = 1, actions = 0, text = 0, secret, i;
     int gens_capacity = BULLETPROOFS_BITS_DEFAULT, party_capacity = 1;
     int ppgen = 0, pp = 0, proof = 0, prove = 0, verify = 0;

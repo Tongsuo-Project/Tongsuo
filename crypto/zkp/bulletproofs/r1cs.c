@@ -13,11 +13,12 @@
 #include "r1cs.h"
 #include "util.h"
 
-BP_R1CS_CTX *BP_R1CS_CTX_new(BP_PUB_PARAM *pp, BP_TRANSCRIPT *transcript)
+BP_R1CS_CTX *BP_R1CS_CTX_new(BP_PUB_PARAM *pp, BP_WITNESS *witness,
+                             BP_TRANSCRIPT *transcript)
 {
     BP_R1CS_CTX *ctx = NULL;
 
-    if (pp == NULL || transcript == NULL) {
+    if (pp == NULL || witness == NULL || transcript == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return NULL;
     }
@@ -29,27 +30,22 @@ BP_R1CS_CTX *BP_R1CS_CTX_new(BP_PUB_PARAM *pp, BP_TRANSCRIPT *transcript)
     }
 
     ctx->transcript = transcript;
-    ctx->op = BP_R1CS_OP_UNKOWN;
 
     if (!BP_PUB_PARAM_up_ref(pp))
         goto err;
 
     ctx->pp = pp;
 
-    ctx->group = EC_GROUP_new_by_curve_name_ex(NULL, NULL, pp->curve_id);
-    if (ctx->group == NULL)
+    if (!BP_WITNESS_up_ref(witness))
         goto err;
 
-    ctx->G = EC_GROUP_get0_generator(ctx->group);
+    ctx->witness = witness;
 
     if ((ctx->p_constraints = sk_BP_R1CS_LINEAR_COMBINATION_new_null()) == NULL
         || (ctx->v_constraints = sk_BP_R1CS_LINEAR_COMBINATION_new_null()) == NULL
-        || (ctx->V = sk_BP_R1CS_VARIABLE_new_null()) == NULL
         || (ctx->aL = sk_BIGNUM_new_null()) == NULL
         || (ctx->aR = sk_BIGNUM_new_null()) == NULL
-        || (ctx->aO = sk_BIGNUM_new_null()) == NULL
-        || (ctx->v = sk_BIGNUM_new_null()) == NULL
-        || (ctx->r = sk_BIGNUM_new_null()) == NULL)
+        || (ctx->aO = sk_BIGNUM_new_null()) == NULL)
         goto err;
 
     return ctx;
@@ -64,19 +60,16 @@ void BP_R1CS_CTX_free(BP_R1CS_CTX *ctx)
     if (ctx == NULL)
         return;
 
-    BP_PUB_PARAM_free(ctx->pp);
-    EC_GROUP_free(ctx->group);
+    BP_PUB_PARAM_down_ref(ctx->pp);
+    BP_WITNESS_down_ref(ctx->witness);
 
     sk_BP_R1CS_LINEAR_COMBINATION_pop_free(ctx->p_constraints,
                                            BP_R1CS_LINEAR_COMBINATION_free);
     sk_BP_R1CS_LINEAR_COMBINATION_pop_free(ctx->v_constraints,
                                            BP_R1CS_LINEAR_COMBINATION_free);
-    sk_BP_R1CS_VARIABLE_pop_free(ctx->V, BP_R1CS_VARIABLE_free);
     sk_BIGNUM_pop_free(ctx->aL, BN_free);
     sk_BIGNUM_pop_free(ctx->aR, BN_free);
     sk_BIGNUM_pop_free(ctx->aO, BN_free);
-    sk_BIGNUM_pop_free(ctx->v, BN_free);
-    sk_BIGNUM_pop_free(ctx->r, BN_free);
 
     OPENSSL_clear_free((void *)ctx, sizeof(*ctx));
 }
@@ -91,33 +84,33 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_new(BP_R1CS_CTX *ctx)
         return NULL;
     }
 
-    if ((proof->AI1 = EC_POINT_new(ctx->group)) == NULL
-        || (proof->AO1 = EC_POINT_new(ctx->group)) == NULL
-        || (proof->S1 = EC_POINT_new(ctx->group)) == NULL
-        || (proof->AI2 = EC_POINT_new(ctx->group)) == NULL
-        || (proof->AO2 = EC_POINT_new(ctx->group)) == NULL
-        || (proof->S2 = EC_POINT_new(ctx->group)) == NULL
-        || (proof->T1 = EC_POINT_new(ctx->group)) == NULL
-        || (proof->T3 = EC_POINT_new(ctx->group)) == NULL
-        || (proof->T4 = EC_POINT_new(ctx->group)) == NULL
-        || (proof->T5 = EC_POINT_new(ctx->group)) == NULL
-        || (proof->T6 = EC_POINT_new(ctx->group)) == NULL
+    if ((proof->AI1 = EC_POINT_new(ctx->pp->group)) == NULL
+        || (proof->AO1 = EC_POINT_new(ctx->pp->group)) == NULL
+        || (proof->S1 = EC_POINT_new(ctx->pp->group)) == NULL
+        || (proof->AI2 = EC_POINT_new(ctx->pp->group)) == NULL
+        || (proof->AO2 = EC_POINT_new(ctx->pp->group)) == NULL
+        || (proof->S2 = EC_POINT_new(ctx->pp->group)) == NULL
+        || (proof->T1 = EC_POINT_new(ctx->pp->group)) == NULL
+        || (proof->T3 = EC_POINT_new(ctx->pp->group)) == NULL
+        || (proof->T4 = EC_POINT_new(ctx->pp->group)) == NULL
+        || (proof->T5 = EC_POINT_new(ctx->pp->group)) == NULL
+        || (proof->T6 = EC_POINT_new(ctx->pp->group)) == NULL
         || (proof->taux = BN_new()) == NULL
         || (proof->mu = BN_new()) == NULL
         || (proof->tx = BN_new()) == NULL)
         goto err;
 
-    EC_POINT_set_to_infinity(ctx->group, proof->AI1);
-    EC_POINT_set_to_infinity(ctx->group, proof->AO1);
-    EC_POINT_set_to_infinity(ctx->group, proof->S1);
-    EC_POINT_set_to_infinity(ctx->group, proof->AI2);
-    EC_POINT_set_to_infinity(ctx->group, proof->AO2);
-    EC_POINT_set_to_infinity(ctx->group, proof->S2);
-    EC_POINT_set_to_infinity(ctx->group, proof->T1);
-    EC_POINT_set_to_infinity(ctx->group, proof->T3);
-    EC_POINT_set_to_infinity(ctx->group, proof->T4);
-    EC_POINT_set_to_infinity(ctx->group, proof->T5);
-    EC_POINT_set_to_infinity(ctx->group, proof->T6);
+    EC_POINT_set_to_infinity(ctx->pp->group, proof->AI1);
+    EC_POINT_set_to_infinity(ctx->pp->group, proof->AO1);
+    EC_POINT_set_to_infinity(ctx->pp->group, proof->S1);
+    EC_POINT_set_to_infinity(ctx->pp->group, proof->AI2);
+    EC_POINT_set_to_infinity(ctx->pp->group, proof->AO2);
+    EC_POINT_set_to_infinity(ctx->pp->group, proof->S2);
+    EC_POINT_set_to_infinity(ctx->pp->group, proof->T1);
+    EC_POINT_set_to_infinity(ctx->pp->group, proof->T3);
+    EC_POINT_set_to_infinity(ctx->pp->group, proof->T4);
+    EC_POINT_set_to_infinity(ctx->pp->group, proof->T5);
+    EC_POINT_set_to_infinity(ctx->pp->group, proof->T6);
 
     proof->references = 1;
 
@@ -163,103 +156,104 @@ void BP_R1CS_PROOF_free(BP_R1CS_PROOF *proof)
     OPENSSL_clear_free((void *)proof, sizeof(*proof));
 }
 
-BP_R1CS_LINEAR_COMBINATION *BP_R1CS_bn_commit(BP_R1CS_CTX *ctx, BIGNUM *value)
+BP_R1CS_LINEAR_COMBINATION *BP_WITNESS_r1cs_commit(BP_WITNESS *witness,
+                                                   const char *name,
+                                                   BIGNUM *v)
 {
     int num;
-    BIGNUM *v = NULL, *r = NULL, *v1, *r1;
     const BIGNUM *order;
+    BIGNUM *r = NULL, *val = NULL;
     EC_POINT *V = NULL;
-    BP_R1CS_VARIABLE *var = NULL;
+    BP_VARIABLE *var = NULL;
+    BP_R1CS_VARIABLE *r1cs_var = NULL;
     BP_R1CS_LINEAR_COMBINATION *lc = NULL;
 
-    if (ctx == NULL || value == NULL) {
+    if (witness == NULL || name == NULL || v == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return NULL;
     }
 
-    order = EC_GROUP_get0_order(ctx->group);
+    order = EC_GROUP_get0_order(witness->group);
 
-    num = sk_BIGNUM_num(ctx->v);
-    if ((v = BN_dup(value)) == NULL || sk_BIGNUM_push(ctx->v, v) <= 0)
-        goto err;
-    v1 = v;
-    v = NULL;
+    num = sk_BP_VARIABLE_num(witness->sk_V);
 
-    if ((r = BN_new()) == NULL || !bp_rand_range(r, order))
+    if (BP_WITNESS_get_variable_index(witness, name) >= 0) {
+        ERR_raise(ERR_LIB_ZKP_BP, ZKP_BP_R_VARIABLE_DUPLICATED);
+        return NULL;
+    }
+
+    r = BN_new();
+    val = BN_dup(v);
+    V = EC_POINT_new(witness->group);
+    if (r == NULL || val == NULL || V == NULL)
         goto err;
 
-    if (sk_BIGNUM_push(ctx->r, r) <= 0)
+    if (!bp_rand_range(r, order))
         goto err;
-    r1 = r;
+
+    /* (69) */
+    if (!EC_POINT_mul(witness->group, V, v, witness->H, r, NULL))
+        goto err;
+
+    if (!(var = BP_VARIABLE_new(name, V, witness->group)))
+        goto err;
+
+    if (sk_BIGNUM_push(witness->sk_r, r) <= 0)
+        goto err;
+
     r = NULL;
 
-    if ((V = EC_POINT_new(ctx->group)) == NULL)
+    if (sk_BIGNUM_push(witness->sk_v, val) <= 0)
         goto err;
 
-    if (!EC_POINT_mul(ctx->group, V, v1, ctx->pp->H, r1, NULL))
+    val = NULL;
+
+    if (sk_BP_VARIABLE_push(witness->sk_V, var) <= 0)
         goto err;
 
-    if ((var = BP_R1CS_VARIABLE_new(BP_R1CS_VARIABLE_COMMITTED, num, V)) == NULL)
+    if ((r1cs_var = BP_R1CS_VARIABLE_new(BP_R1CS_VARIABLE_COMMITTED, num)) == NULL)
         goto err;
 
-    if (!(lc = BP_R1CS_LINEAR_COMBINATION_new_from_param(var, NULL)))
+    if (!(lc = BP_R1CS_LINEAR_COMBINATION_new_from_param(r1cs_var, NULL)))
         goto err;
 
-    if (!BP_TRANSCRIPT_append_point(ctx->transcript, "V", V, ctx->group))
-        goto err;
+    lc->type = BP_R1CS_LC_TYPE_PROVE;
 
     EC_POINT_free(V);
-
-    ctx->op = BP_R1CS_OP_PROVE;
-
     return lc;
-
 err:
-    EC_POINT_free(V);
-    BN_free(v);
     BN_free(r);
-    BP_R1CS_VARIABLE_free(var);
+    BN_free(val);
+    EC_POINT_free(V);
+    BP_VARIABLE_free(var);
+    BP_R1CS_VARIABLE_free(r1cs_var);
     BP_R1CS_LINEAR_COMBINATION_free(lc);
     return NULL;
 }
 
-BP_R1CS_LINEAR_COMBINATION *BP_R1CS_lc_commit(BP_R1CS_CTX *ctx,
-                                              BP_R1CS_LINEAR_COMBINATION *lc)
+BP_R1CS_LINEAR_COMBINATION *BP_WITNESS_r1cs_linear_combination_get(BP_WITNESS *witness,
+                                                                   const char *name)
 {
-    int num;
-    BP_R1CS_VARIABLE *var = NULL, *vv;
+    int i;
+    BP_R1CS_VARIABLE *var = NULL;
     BP_R1CS_LINEAR_COMBINATION *ret = NULL;
-    BP_R1CS_LINEAR_COMBINATION_ITEM *lc_items;
 
-    if (ctx == NULL || lc == NULL) {
+    if (witness == NULL || name == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return NULL;
     }
 
-    if (sk_BP_R1CS_LINEAR_COMBINATION_ITEM_num(lc->items) != 1) {
-        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_INVALID_ARGUMENT);
+    i = BP_WITNESS_get_variable_index(witness, name);
+    if (i < 0)
         return NULL;
-    }
 
-    lc_items = sk_BP_R1CS_LINEAR_COMBINATION_ITEM_value(lc->items, 0);
-    vv = lc_items->variable;
-    if (vv == NULL || vv->C == NULL)
-        goto err;
-
-    num = sk_BP_R1CS_VARIABLE_num(ctx->V);
-    if ((var = BP_R1CS_VARIABLE_new(BP_R1CS_VARIABLE_COMMITTED, num, vv->C)) == NULL)
+    if ((var = BP_R1CS_VARIABLE_new(BP_R1CS_VARIABLE_COMMITTED, i)) == NULL)
         goto err;
 
     if (!(ret = BP_R1CS_LINEAR_COMBINATION_new_from_param(var, NULL)))
         goto err;
 
-    if (!BP_TRANSCRIPT_append_point(ctx->transcript, "V", vv->C, ctx->group))
-        goto err;
-
-    if (sk_BP_R1CS_VARIABLE_push(ctx->V, var) <= 0)
-        goto err;
-
-    ctx->op = BP_R1CS_OP_VERIFY;
+    ret->type = BP_R1CS_LC_TYPE_VERIFY;
 
     return ret;
 err:
@@ -268,38 +262,7 @@ err:
     return NULL;
 }
 
-int BP_R1CS_constrain(BP_R1CS_CTX *ctx, BP_R1CS_LINEAR_COMBINATION *lc)
-{
-    int ref;
-    STACK_OF(BP_R1CS_LINEAR_COMBINATION) *constraints;
-
-    if (ctx == NULL || lc == NULL) {
-        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
-        return 0;
-    }
-
-    if (CRYPTO_UP_REF(&lc->references, &ref, lc->lock) <= 0)
-        return 0;
-
-    if (ctx->op == BP_R1CS_OP_PROVE) {
-        constraints = ctx->p_constraints;
-    } else if (ctx->op == BP_R1CS_OP_VERIFY) {
-        constraints = ctx->v_constraints;
-    } else {
-        goto err;
-    }
-
-    if (sk_BP_R1CS_LINEAR_COMBINATION_push(constraints, lc) <= 0) {
-        goto err;
-    }
-
-    return 1;
-err:
-    CRYPTO_DOWN_REF(&lc->references, &ref, lc->lock);
-    return 0;
-}
-
-BP_R1CS_PROOF *BP_R1CS_prove(BP_R1CS_CTX *ctx)
+BP_R1CS_PROOF *BP_R1CS_PROOF_prove(BP_R1CS_CTX *ctx)
 {
     EC_GROUP *group;
     const BIGNUM *order;
@@ -317,9 +280,6 @@ BP_R1CS_PROOF *BP_R1CS_prove(BP_R1CS_CTX *ctx)
     STACK_OF(BIGNUM) *sk_G_scalars = NULL, *sk_H_scalars = NULL;
     STACK_OF(BIGNUM) *sk_l = NULL, *sk_r = NULL;
     EC_POINT *U = NULL, *G, *H;
-    BP_R1CS_VARIABLE *var;
-    BP_R1CS_LINEAR_COMBINATION *lc;
-    BP_R1CS_LINEAR_COMBINATION_ITEM *item;
     bp_poly3_t *poly_l = NULL, *poly_r = NULL;
     bp_poly6_t *poly_t = NULL, *poly_tau = NULL;
     bp_poly_points_t *poly_ai1 = NULL, *poly_ao1 = NULL, *poly_s1 = NULL;
@@ -328,18 +288,23 @@ BP_R1CS_PROOF *BP_R1CS_prove(BP_R1CS_CTX *ctx)
     bp_inner_product_pub_param_t *ip_pp = NULL;
     BP_TRANSCRIPT *transcript;
     BP_PUB_PARAM *pp;
+    BP_WITNESS *witness;
+    BP_VARIABLE *var;
+    BP_R1CS_VARIABLE *r1cs_var;
+    BP_R1CS_LINEAR_COMBINATION *lc;
+    BP_R1CS_LINEAR_COMBINATION_ITEM *item;
     BP_R1CS_PROOF *proof = NULL, *ret = NULL;
 
-    if (ctx == NULL || ctx->p_constraints == NULL ||
-        ctx->v == NULL || ctx->r == NULL) {
+    if (ctx == NULL || ctx->p_constraints == NULL || ctx->witness == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return NULL;
     }
 
-    pp = ctx->pp;
-    group = ctx->group;
-    order = EC_GROUP_get0_order(ctx->group);
     transcript = ctx->transcript;
+    witness = ctx->witness;
+    pp = ctx->pp;
+    group = pp->group;
+    order = EC_GROUP_get0_order(group);
 
     n1 = sk_BIGNUM_num(ctx->aL);
     padded_n = bp_next_power_of_two(n1);
@@ -385,13 +350,23 @@ BP_R1CS_PROOF *BP_R1CS_prove(BP_R1CS_CTX *ctx)
     if (w == NULL)
         goto err;
 
-    m = sk_BIGNUM_num(ctx->v);
+    m = sk_BP_VARIABLE_num(witness->sk_V);
+    for (i = 0; i < m; i++) {
+        var = sk_BP_VARIABLE_value(witness->sk_V, i);
+        if (var == NULL)
+            goto err;
+
+        if (!BP_TRANSCRIPT_append_point(transcript, "V", var->point, group))
+            goto err;
+    }
+
+    m = sk_BIGNUM_num(witness->sk_v);
     if (!BP_TRANSCRIPT_append_int64(transcript, "m", m))
         goto err;
 
-    m = sk_BIGNUM_num(ctx->r);
+    m = sk_BIGNUM_num(witness->sk_r);
     if (m > 0) {
-        r = sk_BIGNUM_value(ctx->r, 0);
+        r = sk_BIGNUM_value(witness->sk_r, 0);
         if (r == NULL)
             goto err;
 
@@ -403,7 +378,7 @@ BP_R1CS_PROOF *BP_R1CS_prove(BP_R1CS_CTX *ctx)
     buf = seed_buf;
 
     for (i = 0; i < m; i++) {
-        r = sk_BIGNUM_value(ctx->r, i);
+        r = sk_BIGNUM_value(witness->sk_r, i);
         if (r == NULL)
             goto err;
 
@@ -492,7 +467,7 @@ BP_R1CS_PROOF *BP_R1CS_prove(BP_R1CS_CTX *ctx)
     /*
      * flatten the constraints
      */
-    m = sk_BIGNUM_num(ctx->v);
+    m = sk_BIGNUM_num(witness->sk_v);
     if ((wL = OPENSSL_zalloc(sizeof(*wL) * n)) == NULL
         || (wR = OPENSSL_zalloc(sizeof(*wR) * n)) == NULL
         || (wO = OPENSSL_zalloc(sizeof(*wO) * n)) == NULL
@@ -533,20 +508,20 @@ BP_R1CS_PROOF *BP_R1CS_prove(BP_R1CS_CTX *ctx)
             if (item == NULL)
                 goto err;
 
-            var = item->variable;
+            r1cs_var = item->variable;
 
-            switch (var->type) {
+            switch (r1cs_var->type) {
             case BP_R1CS_VARIABLE_COMMITTED:
-                pw = wV[var->value];
+                pw = wV[r1cs_var->value];
                 break;
             case BP_R1CS_VARIABLE_MULTIPLIER_LEFT:
-                pw = wL[var->value];
+                pw = wL[r1cs_var->value];
                 break;
             case BP_R1CS_VARIABLE_MULTIPLIER_RIGHT:
-                pw = wR[var->value];
+                pw = wR[r1cs_var->value];
                 break;
             case BP_R1CS_VARIABLE_MULTIPLIER_OUTPUT:
-                pw = wO[var->value];
+                pw = wO[r1cs_var->value];
                 break;
             default:
                 break;
@@ -558,7 +533,7 @@ BP_R1CS_PROOF *BP_R1CS_prove(BP_R1CS_CTX *ctx)
             if (!BN_mod_mul(product, pow_z, item->scalar, order, bn_ctx))
                 goto err;
 
-            if (var->type == BP_R1CS_VARIABLE_COMMITTED) {
+            if (r1cs_var->type == BP_R1CS_VARIABLE_COMMITTED) {
                 if (!BN_mod_sub(pw, pw, product, order, bn_ctx))
                     goto err;
             } else {
@@ -658,9 +633,9 @@ BP_R1CS_PROOF *BP_R1CS_prove(BP_R1CS_CTX *ctx)
         goto err;
 
     BN_zero(tau2);
-    m = sk_BIGNUM_num(ctx->r);
+    m = sk_BIGNUM_num(witness->sk_r);
     for (i = 0; i < m; i++) {
-        r = sk_BIGNUM_value(ctx->r, i);
+        r = sk_BIGNUM_value(witness->sk_r, i);
         if (r == NULL || !BN_mod_mul(product, wV[i], r, order, bn_ctx))
             goto err;
 
@@ -738,7 +713,7 @@ BP_R1CS_PROOF *BP_R1CS_prove(BP_R1CS_CTX *ctx)
             goto err;
     }
 
-    if (!(ip_pp = bp_inner_product_pub_param_new(pp->curve_id, sk_G, sk_H))
+    if (!(ip_pp = bp_inner_product_pub_param_new(group, sk_G, sk_H))
         || !(ip_ctx = bp_inner_product_ctx_new(ip_pp, transcript, U, NULL,
                                                sk_G_scalars, sk_H_scalars))
         || !(ip_witness = bp_inner_product_witness_new(sk_l, sk_r)))
@@ -781,7 +756,7 @@ err:
     return ret;
 }
 
-int BP_R1CS_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof)
+int BP_R1CS_PROOF_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof)
 {
     BN_CTX *bn_ctx = NULL;
     EC_GROUP *group;
@@ -797,23 +772,25 @@ int BP_R1CS_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof)
     BIGNUM **wL = NULL, **wR = NULL, **wO = NULL, **wV = NULL;
     EC_POINT *P = NULL, *L, *R, *G, *H;
     bp_poly_points_t *poly_p = NULL;
-    BP_R1CS_VARIABLE *V, *var;
-    BP_R1CS_LINEAR_COMBINATION *lc;
-    BP_R1CS_LINEAR_COMBINATION_ITEM *item;
     BP_TRANSCRIPT *transcript;
     BP_PUB_PARAM *pp;
+    BP_WITNESS *witness;
+    BP_VARIABLE *var;
+    BP_R1CS_VARIABLE *r1cs_var;
+    BP_R1CS_LINEAR_COMBINATION *lc;
+    BP_R1CS_LINEAR_COMBINATION_ITEM *item;
     bp_inner_product_proof_t *ip_proof = NULL;
 
-    if (ctx == NULL || ctx->v_constraints == NULL ||
-        ctx->V == NULL) {
+    if (ctx == NULL || ctx->v_constraints == NULL || ctx->witness == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return 0;
     }
 
     pp = ctx->pp;
-    group = ctx->group;
-    order = EC_GROUP_get0_order(ctx->group);
     transcript = ctx->transcript;
+    witness = ctx->witness;
+    group = pp->group;
+    order = EC_GROUP_get0_order(group);
     ip_proof = proof->ip_proof;
     pp_capacity = pp->gens_capacity * pp->party_capacity;
 
@@ -823,7 +800,7 @@ int BP_R1CS_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof)
         goto err;
     }
 
-    v_n = sk_BP_R1CS_VARIABLE_num(ctx->V);
+    v_n = sk_BP_VARIABLE_num(witness->sk_V);
     lg_n = sk_EC_POINT_num(ip_proof->sk_L);
     if (padded_n != 1 << lg_n) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_INVALID_ARGUMENT);
@@ -890,6 +867,15 @@ int BP_R1CS_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof)
         goto err;
 
     //START
+    for (i = 0; i < v_n; i++) {
+        var = sk_BP_VARIABLE_value(witness->sk_V, i);
+        if (var == NULL)
+            goto err;
+
+        if (!BP_TRANSCRIPT_append_point(transcript, "V", var->point, group))
+            goto err;
+    }
+
     if (!BP_TRANSCRIPT_append_int64(transcript, "m", v_n))
         goto err;
 
@@ -907,8 +893,6 @@ int BP_R1CS_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof)
         || !BP_TRANSCRIPT_append_point(transcript, "A_O2", proof->AO2, group)
         || !BP_TRANSCRIPT_append_point(transcript, "S2", proof->S2, group))
         goto err;
-
-    //padded_n = bp_next_power_of_two(num);
 
     if (!BP_TRANSCRIPT_challange(transcript, "y", y)
         || !BP_TRANSCRIPT_challange(transcript, "z", z))
@@ -993,20 +977,20 @@ int BP_R1CS_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof)
             if (item == NULL)
                 goto err;
 
-            var = item->variable;
+            r1cs_var = item->variable;
 
-            switch (var->type) {
+            switch (r1cs_var->type) {
             case BP_R1CS_VARIABLE_COMMITTED:
-                pw = wV[var->value];
+                pw = wV[r1cs_var->value];
                 break;
             case BP_R1CS_VARIABLE_MULTIPLIER_LEFT:
-                pw = wL[var->value];
+                pw = wL[r1cs_var->value];
                 break;
             case BP_R1CS_VARIABLE_MULTIPLIER_RIGHT:
-                pw = wR[var->value];
+                pw = wR[r1cs_var->value];
                 break;
             case BP_R1CS_VARIABLE_MULTIPLIER_OUTPUT:
-                pw = wO[var->value];
+                pw = wO[r1cs_var->value];
                 break;
             case BP_R1CS_VARIABLE_ONE:
                 pw = wc;
@@ -1021,8 +1005,8 @@ int BP_R1CS_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof)
             if (!BN_mod_mul(product, pow_z, item->scalar, order, bn_ctx))
                 goto err;
 
-            if (var->type == BP_R1CS_VARIABLE_COMMITTED
-                || var->type == BP_R1CS_VARIABLE_ONE) {
+            if (r1cs_var->type == BP_R1CS_VARIABLE_COMMITTED
+                || r1cs_var->type == BP_R1CS_VARIABLE_ONE) {
                 if (!BN_mod_sub(pw, pw, product, order, bn_ctx))
                     goto err;
             } else {
@@ -1150,8 +1134,8 @@ int BP_R1CS_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof)
     }
 
     for (i = 0; i < v_n; i++) {
-        V = sk_BP_R1CS_VARIABLE_value(ctx->V, i);
-        if (V == NULL || V->C == NULL)
+        var = sk_BP_VARIABLE_value(witness->sk_V, i);
+        if (var == NULL || var->point == NULL)
             goto err;
 
         v_scalar = BN_CTX_get(bn_ctx);
@@ -1161,7 +1145,7 @@ int BP_R1CS_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof)
         if (!BN_mod_mul(v_scalar, wV[i], rx2, order, bn_ctx))
             goto err;
 
-        if (!bp_poly_points_append(poly_p, V->C, v_scalar))
+        if (!bp_poly_points_append(poly_p, var->point, v_scalar))
             goto err;
     }
 

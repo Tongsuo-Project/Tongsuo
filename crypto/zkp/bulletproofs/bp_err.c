@@ -27,6 +27,8 @@ static const ERR_STRING_DATA ZKP_BP_str_reasons[] = {
     "exceeds pp capacity"},
     {ERR_PACK(ERR_LIB_ZKP_BP, 0, ZKP_BP_R_TRANSCRIPT_INIT_FAILED),
     "transcript init failed"},
+    {ERR_PACK(ERR_LIB_ZKP_BP, 0, ZKP_BP_R_VARIABLE_DUPLICATED),
+    "variable duplicated"},
     {ERR_PACK(ERR_LIB_ZKP_BP, 0, ZKP_BP_R_WITNESS_INVALID), "witness invalid"},
     {0, NULL}
 };

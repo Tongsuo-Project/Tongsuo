@@ -1720,4 +1720,5 @@ ZKP_BP_R_EXCEEDS_MAX_BITS:101:exceeds max bits
 ZKP_BP_R_EXCEEDS_PARTY_CAPACITY:104:exceeds party capacity
 ZKP_BP_R_EXCEEDS_PP_CAPACITY:102:exceeds pp capacity
 ZKP_BP_R_TRANSCRIPT_INIT_FAILED:103:transcript init failed
+ZKP_BP_R_VARIABLE_DUPLICATED:107:variable duplicated
 ZKP_BP_R_WITNESS_INVALID:105:witness invalid

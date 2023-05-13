@@ -53,9 +53,13 @@ err:
 }
 
 /** Creates a new BP_RANGE_CTX object
+ *  \param  pp          BP_PUB_PARAM object
+ *  \param  witness     BP_WITNESS object
+ *  \param  transcript  BP_TRANSCRIPT object
  *  \return newly created BP_RANGE_CTX object or NULL in case of an error
  */
-BP_RANGE_CTX *BP_RANGE_CTX_new(BP_PUB_PARAM *pp, BP_TRANSCRIPT *transcript)
+BP_RANGE_CTX *BP_RANGE_CTX_new(BP_PUB_PARAM *pp, BP_WITNESS *witness,
+                               BP_TRANSCRIPT *transcript)
 {
     BP_RANGE_CTX *ctx = NULL;
 
@@ -74,13 +78,13 @@ BP_RANGE_CTX *BP_RANGE_CTX_new(BP_PUB_PARAM *pp, BP_TRANSCRIPT *transcript)
         goto err;
 
     ctx->pp = pp;
-    ctx->transcript = transcript;
 
-    ctx->group = EC_GROUP_new_by_curve_name_ex(NULL, NULL, pp->curve_id);
-    if (ctx->group == NULL)
+    if (!BP_WITNESS_up_ref(witness))
         goto err;
 
-    ctx->G = EC_GROUP_get0_generator(ctx->group);
+    ctx->witness = witness;
+
+    ctx->transcript = transcript;
 
     return ctx;
 
@@ -97,126 +101,23 @@ void BP_RANGE_CTX_free(BP_RANGE_CTX *ctx)
     if (ctx == NULL)
         return;
 
-    BP_PUB_PARAM_free(ctx->pp);
-    EC_GROUP_free(ctx->group);
+    BP_PUB_PARAM_down_ref(ctx->pp);
+    BP_WITNESS_down_ref(ctx->witness);
     OPENSSL_clear_free((void *)ctx, sizeof(*ctx));
 }
 
-/** Creates a new BP_RANGE_WITNESS object
- *  \param  ctx       BP_RANGE_CTX object
- *  \return newly created BP_RANGE_WITNESS object or NULL in case of an error
- */
-BP_RANGE_WITNESS *BP_RANGE_WITNESS_new(BP_RANGE_CTX *ctx)
-{
-    BP_RANGE_WITNESS *witness = NULL;
-
-    if (ctx == NULL) {
-        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
-        return NULL;
-    }
-
-    if (!(witness = OPENSSL_zalloc(sizeof(*witness)))) {
-        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
-        return NULL;
-    }
-
-    if (!(witness->sk_r = sk_BIGNUM_new_null())
-        || !(witness->sk_v = sk_BIGNUM_new_null())
-        || !(witness->sk_V = sk_EC_POINT_new_null())) {
-        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
-        goto err;
-    }
-
-    return witness;
-err:
-    BP_RANGE_WITNESS_free(witness);
-    return NULL;
-}
-
-/** Frees a BP_RANGE_WITNESS object
- *  \param  witness   BP_RANGE_WITNESS object to be freed
- */
-void BP_RANGE_WITNESS_free(BP_RANGE_WITNESS *witness)
-{
-    if (witness == NULL)
-        return;
-
-    sk_BIGNUM_pop_free(witness->sk_r, BN_free);
-    sk_BIGNUM_pop_free(witness->sk_v, BN_free);
-    sk_EC_POINT_pop_free(witness->sk_V, EC_POINT_free);
-    OPENSSL_free(witness);
-}
-
-int BP_RANGE_WITNESS_commit(BP_RANGE_CTX *ctx, BP_RANGE_WITNESS *witness, int64_t secret)
-{
-    int num;
-    const BIGNUM *order;
-    BIGNUM *r = NULL, *v = NULL;
-    EC_POINT *V = NULL;
-
-    if (ctx == NULL || witness == NULL) {
-        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
-        return 0;
-    }
-
-    num = sk_BIGNUM_num(witness->sk_v);
-    if (num > ctx->pp->party_capacity) {
-        ERR_raise(ERR_LIB_ZKP_BP, ZKP_BP_R_EXCEEDS_PARTY_CAPACITY);
-        return 0;
-    }
-
-    order = EC_GROUP_get0_order(ctx->group);
-
-    r = BN_new();
-    v = BN_new();
-    V = EC_POINT_new(ctx->group);
-    if (r == NULL || v == NULL || V == NULL)
-        goto err;
-
-    if (!bp_rand_range(r, order))
-        goto err;
-
-    if (!BN_lebin2bn((const unsigned char *)&secret, sizeof(secret), v))
-        goto err;
-
-    /* (69) */
-    if (!EC_POINT_mul(ctx->group, V, r, ctx->pp->H, v, NULL))
-        goto err;
-
-    if (sk_BIGNUM_push(witness->sk_r, r) <= 0)
-        goto err;
-
-    r = NULL;
-
-    if (sk_BIGNUM_push(witness->sk_v, v) <= 0)
-        goto err;
-
-    v = NULL;
-
-    if (sk_EC_POINT_push(witness->sk_V, V) <= 0)
-        goto err;
-
-    return 1;
-err:
-    BN_free(r);
-    BN_free(v);
-    EC_POINT_free(V);
-    BP_RANGE_WITNESS_free(witness);
-    return 0;
-}
-
 /** Creates a new BP_RANGE_PROOF object
- *  \param  ctx       BP_RANGE_CTX object
+ *  \param  pp          BP_PUB_PARAM object
  *  \return newly created BP_RANGE_PROOF object or NULL in case of an error
  */
-BP_RANGE_PROOF *BP_RANGE_PROOF_new(BP_RANGE_CTX *ctx)
+BP_RANGE_PROOF *BP_RANGE_PROOF_new(BP_PUB_PARAM *pp)
 {
-    if (ctx == NULL || ctx->pp == NULL || ctx->group == NULL) {
+    if (pp == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return NULL;
     }
 
-    return bp_range_proof_alloc(ctx->group);
+    return bp_range_proof_alloc(pp->group);
 }
 
 /** Frees a BP_RANGE_PROOF object
@@ -290,17 +191,17 @@ int BP_RANGE_PROOF_down_ref(BP_RANGE_PROOF *proof)
 
 /** Prove computes the ZK rangeproof.
  *  \param  ctx       BP_RANGE_CTX object
- *  \param  witness   BP_RANGE_WITNESS object
  *  \param  proof     BP_RANGE_PROOF object
  *  \return 1 on success and 0 if an error occurred.
  */
-int BP_RANGE_PROOF_prove(BP_RANGE_CTX *ctx, BP_RANGE_WITNESS *witness,
-                         BP_RANGE_PROOF *proof)
+int BP_RANGE_PROOF_prove(BP_RANGE_CTX *ctx, BP_RANGE_PROOF *proof)
 {
     int i, j, m = 0, n, ret = 0;
     int bits, poly_num, witness_n, witness_r_n, witness_v_n, witness_padded_n;
     int *aL = NULL, *aR = NULL;
     BP_TRANSCRIPT *transcript;
+    BP_PUB_PARAM *pp;
+    BP_WITNESS *witness;
     BIGNUM *witness_r, *witness_v;
     BIGNUM *alpha, *rho, *tau1, *tau2, *bn0, *bn1, *bn2, *bn_1, *tmp;
     BIGNUM *x, *y, *y_inv, *pow_y_inv, *z, *z2, *pow_zn, **pow_y = NULL;
@@ -315,76 +216,20 @@ int BP_RANGE_PROOF_prove(BP_RANGE_CTX *ctx, BP_RANGE_WITNESS *witness,
     const BIGNUM *order;
     EC_GROUP *group;
     BN_CTX *bn_ctx = NULL;
-    BP_PUB_PARAM *pp;
     bp_inner_product_ctx_t *ip_ctx = NULL;
     bp_inner_product_pub_param_t *ip_pp = NULL;
     bp_inner_product_witness_t *ip_witness = NULL;
 
-    if (ctx == NULL || ctx->pp == NULL || witness == NULL || proof == NULL) {
+    if (ctx == NULL || ctx->pp == NULL || ctx->witness == NULL || proof == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return ret;
     }
 
-    witness_n = sk_EC_POINT_num(witness->sk_V);
-    witness_padded_n = bp_next_power_of_two(witness_n);
-    if (witness_padded_n > ctx->pp->party_capacity) {
-        ERR_raise(ERR_LIB_ZKP_BP, ZKP_BP_R_EXCEEDS_PARTY_CAPACITY);
-        return ret;
-    }
-
-    for (i = witness_n; i < witness_padded_n; i++) {
-        if (!BP_RANGE_WITNESS_commit(ctx, witness, 0))
-            return ret;
-    }
-
-    witness_r_n = sk_BIGNUM_num(witness->sk_r);
-    witness_v_n = sk_BIGNUM_num(witness->sk_v);
-    witness_n = sk_EC_POINT_num(witness->sk_V);
-    witness_padded_n = bp_next_power_of_two(witness_n);
-
-    if (witness_r_n != witness_v_n || witness_v_n != witness_n) {
-        ERR_raise(ERR_LIB_ZKP_BP, ZKP_BP_R_WITNESS_INVALID);
-        return ret;
-    }
-
-    if (proof->ip_proof != NULL)
-        bp_range_proof_cleanup(proof);
-
     pp = ctx->pp;
+    witness = ctx->witness;
     transcript = ctx->transcript;
-    group = ctx->group;
+    group = pp->group;
     order = EC_GROUP_get0_order(group);
-    n = pp->gens_capacity * witness_padded_n;
-    poly_num = n * 2  + 1;
-    bits = pp->gens_capacity;
-
-    if (!(P = EC_POINT_new(group))
-        || !(T = EC_POINT_new(group))
-        || !(U = EC_POINT_new(group)))
-        goto err;
-
-    if (!(aL = OPENSSL_zalloc(sizeof(*aL) * n))
-        || !(aR = OPENSSL_zalloc(sizeof(*aL) * n))
-        || !(sL = OPENSSL_zalloc(sizeof(*sL) * n))
-        || !(sR = OPENSSL_zalloc(sizeof(*sR) * n))
-        || !(sk_G = sk_EC_POINT_new_reserve(NULL, n))
-        || !(sk_H = sk_EC_POINT_new_reserve(NULL, n))
-        || !(sk_G_scalars = sk_BIGNUM_new_reserve(NULL, n))
-        || !(sk_H_scalars = sk_BIGNUM_new_reserve(NULL, n))
-        || !(sk_l = sk_BIGNUM_new_reserve(NULL, n))
-        || !(sk_r = sk_BIGNUM_new_reserve(NULL, n))
-        || !(pow_y = OPENSSL_zalloc(sizeof(*pow_y) * n))
-        || !(ll0 = OPENSSL_zalloc(sizeof(*ll0) * n))
-        || !(rr1 = OPENSSL_zalloc(sizeof(*rr1) * n))
-        || !(rr2 = OPENSSL_zalloc(sizeof(*rr2) * n))) {
-        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
-        goto err;
-    }
-
-    if (!(poly_a = bp_poly_points_new(poly_num))
-        || !(poly_s = bp_poly_points_new(poly_num))
-        || !(poly_p = bp_poly_points_new(poly_num)))
-        goto err;
 
     bn_ctx = BN_CTX_new_ex(group->libctx);
     if (bn_ctx == NULL)
@@ -424,6 +269,63 @@ int BP_RANGE_PROOF_prove(BP_RANGE_CTX *ctx, BP_RANGE_WITNESS *witness,
     BN_set_negative(bn_1, 1);
     BN_set_word(bn2, 2);
     BN_one(pow_y_inv);
+
+    witness_n = sk_BP_VARIABLE_num(witness->sk_V);
+    witness_padded_n = bp_next_power_of_two(witness_n);
+    if (witness_padded_n > ctx->pp->party_capacity) {
+        ERR_raise(ERR_LIB_ZKP_BP, ZKP_BP_R_EXCEEDS_PARTY_CAPACITY);
+        goto err;
+    }
+
+    for (i = witness_n; i < witness_padded_n; i++) {
+        if (!BP_WITNESS_commit(witness, NULL, bn0))
+            goto err;
+    }
+
+    witness_r_n = sk_BIGNUM_num(witness->sk_r);
+    witness_v_n = sk_BIGNUM_num(witness->sk_v);
+    witness_n = sk_BP_VARIABLE_num(witness->sk_V);
+    witness_padded_n = bp_next_power_of_two(witness_n);
+
+    if (witness_r_n != witness_v_n || witness_v_n != witness_n) {
+        ERR_raise(ERR_LIB_ZKP_BP, ZKP_BP_R_WITNESS_INVALID);
+        goto err;
+    }
+
+    n = pp->gens_capacity * witness_padded_n;
+    poly_num = n * 2  + 1;
+    bits = pp->gens_capacity;
+
+    if (proof->ip_proof != NULL)
+        bp_range_proof_cleanup(proof);
+
+    if (!(P = EC_POINT_new(group))
+        || !(T = EC_POINT_new(group))
+        || !(U = EC_POINT_new(group)))
+        goto err;
+
+    if (!(aL = OPENSSL_zalloc(sizeof(*aL) * n))
+        || !(aR = OPENSSL_zalloc(sizeof(*aL) * n))
+        || !(sL = OPENSSL_zalloc(sizeof(*sL) * n))
+        || !(sR = OPENSSL_zalloc(sizeof(*sR) * n))
+        || !(sk_G = sk_EC_POINT_new_reserve(NULL, n))
+        || !(sk_H = sk_EC_POINT_new_reserve(NULL, n))
+        || !(sk_G_scalars = sk_BIGNUM_new_reserve(NULL, n))
+        || !(sk_H_scalars = sk_BIGNUM_new_reserve(NULL, n))
+        || !(sk_l = sk_BIGNUM_new_reserve(NULL, n))
+        || !(sk_r = sk_BIGNUM_new_reserve(NULL, n))
+        || !(pow_y = OPENSSL_zalloc(sizeof(*pow_y) * n))
+        || !(ll0 = OPENSSL_zalloc(sizeof(*ll0) * n))
+        || !(rr1 = OPENSSL_zalloc(sizeof(*rr1) * n))
+        || !(rr2 = OPENSSL_zalloc(sizeof(*rr2) * n))) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+
+    if (!(poly_a = bp_poly_points_new(poly_num))
+        || !(poly_s = bp_poly_points_new(poly_num))
+        || !(poly_p = bp_poly_points_new(poly_num)))
+        goto err;
 
     if (!bp_rand_range(alpha, order)
         || !bp_rand_range(rho, order)
@@ -629,7 +531,7 @@ int BP_RANGE_PROOF_prove(BP_RANGE_CTX *ctx, BP_RANGE_WITNESS *witness,
         || !bp_poly_points_mul(poly_p, P, NULL, group, bn_ctx))
         goto err;
 
-    if (!(ip_pp = bp_inner_product_pub_param_new(pp->curve_id, sk_G, sk_H))
+    if (!(ip_pp = bp_inner_product_pub_param_new(group, sk_G, sk_H))
         || !(ip_ctx = bp_inner_product_ctx_new(ip_pp, transcript, U, P,
                                                sk_G_scalars, sk_H_scalars))
         || !(ip_witness = bp_inner_product_witness_new(sk_l, sk_r))
@@ -672,25 +574,23 @@ err:
     return ret;
 }
 
-/** Prove computes the ZK rangeproof.
+/** Prove computes the ZK rangeproof and new a proof object.
  *  \param  ctx       BP_RANGE_CTX object
- *  \param  witness   BP_RANGE_WITNESS object
  *  \return BP_RANGE_PROOF object on success or NULL in case of an error
  */
-BP_RANGE_PROOF *BP_RANGE_PROOF_prove_new(BP_RANGE_CTX *ctx,
-                                         BP_RANGE_WITNESS *witness)
+BP_RANGE_PROOF *BP_RANGE_PROOF_new_prove(BP_RANGE_CTX *ctx)
 {
     BP_RANGE_PROOF *proof = NULL;
 
-    if (ctx == NULL || ctx->pp == NULL || witness == NULL) {
+    if (ctx == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return NULL;
     }
 
-    if (!(proof = BP_RANGE_PROOF_new(ctx)))
+    if (!(proof = BP_RANGE_PROOF_new(ctx->pp)))
         return NULL;
 
-    if (!BP_RANGE_PROOF_prove(ctx, witness, proof))
+    if (!BP_RANGE_PROOF_prove(ctx, proof))
         goto err;
 
     return proof;
@@ -702,44 +602,45 @@ err:
 /** Verifies that the supplied proof is a valid proof
  *  for the supplied secret values using the supplied public parameters.
  *  \param  ctx       BP_RANGE_CTX object
- *  \param  witness   BP_RANGE_WITNESS object
  *  \param  proof     BP_RANGE_PROOF object
  *  \return 1 if the proof is valid, 0 if the proof is invalid and -1 on error
  */
-int BP_RANGE_PROOF_verify(BP_RANGE_CTX *ctx, BP_RANGE_WITNESS *witness,
-                          BP_RANGE_PROOF *proof)
+int BP_RANGE_PROOF_verify(BP_RANGE_CTX *ctx, BP_RANGE_PROOF *proof)
 {
     int ret = 0, i = 0, j, m, n, bits, poly_p_num, poly_r_num, witness_n, witness_padded_n;
     BP_TRANSCRIPT *transcript;
+    BP_PUB_PARAM *pp;
+    BP_WITNESS *witness;
+    BP_VARIABLE *V;
     BIGNUM *bn0, *bn1, *bn2, *delta;
     BIGNUM *x, *x2, *y, *y_inv, *z, *z2, *nz, *t, *tmp, *z_pow_y;
     BIGNUM *pow_y, *pow_y_inv, *pow_z, *pow_2, *sum_pow_y, *sum_pow_z, *sum_pow_2;
     BIGNUM *g_scalar, *h_scalar;
     STACK_OF(BIGNUM) *sk_G_scalars = NULL, *sk_H_scalars = NULL;
     STACK_OF(EC_POINT) *sk_G = NULL, *sk_H = NULL;
-    EC_POINT *O = NULL, *P = NULL, *U = NULL, *L = NULL, *R = NULL, *V, *G, *H;
+    EC_POINT *O = NULL, *P = NULL, *U = NULL, *L = NULL, *R = NULL, *G, *H;
     BN_CTX *bn_ctx = NULL;
     bp_poly_points_t *poly_p = NULL, *poly_r = NULL;
     EC_GROUP *group;
     const BIGNUM *order;
     bp_inner_product_ctx_t *ip_ctx = NULL;
     bp_inner_product_pub_param_t *ip_pp = NULL;
-    BP_PUB_PARAM *pp;
 
-    if (ctx == NULL || ctx->pp == NULL || witness == NULL || proof == NULL) {
+    if (ctx == NULL || ctx->pp == NULL || ctx->witness == NULL || proof == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return ret;
     }
 
     transcript = ctx->transcript;
     pp = ctx->pp;
+    witness = ctx->witness;
     bits = pp->gens_capacity;
-    witness_n = sk_EC_POINT_num(witness->sk_V);
+    witness_n = sk_BP_VARIABLE_num(witness->sk_V);
     witness_padded_n = bp_next_power_of_two(witness_n);
     n = bits * witness_padded_n;
     poly_p_num = bits * witness_padded_n * 2 + 4;
     poly_r_num = bits * witness_padded_n + 3;
-    group = ctx->group;
+    group = pp->group;
     order = EC_GROUP_get0_order(group);
 
     if (witness_n != witness_padded_n) {
@@ -752,7 +653,7 @@ int BP_RANGE_PROOF_verify(BP_RANGE_CTX *ctx, BP_RANGE_WITNESS *witness,
         return 0;
     }
 
-    if (pp->curve_id != EC_POINT_get_curve_name(proof->A)) {
+    if (EC_GROUP_get_curve_name(pp->group) != EC_POINT_get_curve_name(proof->A)) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_INVALID_ARGUMENT);
         return 0;
     }
@@ -837,7 +738,7 @@ int BP_RANGE_PROOF_verify(BP_RANGE_CTX *ctx, BP_RANGE_WITNESS *witness,
         goto err;
 
     for (i = 0; i < witness_n; i++) {
-        V = sk_EC_POINT_value(witness->sk_V, i);
+        V = sk_BP_VARIABLE_value(witness->sk_V, i);
         if (V == NULL)
             goto err;
 
@@ -899,7 +800,7 @@ int BP_RANGE_PROOF_verify(BP_RANGE_CTX *ctx, BP_RANGE_WITNESS *witness,
         if (tmp == NULL || !BN_copy(tmp, pow_z))
             goto err;
 
-        if (!bp_poly_points_append(poly_r, V, tmp))
+        if (!bp_poly_points_append(poly_r, V->point, tmp))
             goto err;
     }
 
@@ -946,7 +847,7 @@ int BP_RANGE_PROOF_verify(BP_RANGE_CTX *ctx, BP_RANGE_WITNESS *witness,
         || !bp_poly_points_mul(poly_p, P, NULL, group, bn_ctx))
         goto err;
 
-    if (!(ip_pp = bp_inner_product_pub_param_new(pp->curve_id, sk_G, sk_H))
+    if (!(ip_pp = bp_inner_product_pub_param_new(group, sk_G, sk_H))
         || !(ip_ctx = bp_inner_product_ctx_new(ip_pp, transcript, U, P,
                                                sk_G_scalars, sk_H_scalars)))
         goto err;

@@ -30,6 +30,116 @@
 # define l2n(x)  __bswap_constant_32(x)
 #endif
 
+static point_conversion_form_t form = POINT_CONVERSION_COMPRESSED;
+
+static int bp_stack_of_variable_encode(STACK_OF(BP_VARIABLE) *sk, unsigned char *out,
+                                       const EC_GROUP *group, BN_CTX *bn_ctx)
+{
+    int i, n, *q, size;
+    size_t point_len;
+    unsigned char *p;
+    BP_VARIABLE *V;
+
+    if (sk == NULL || group == NULL)
+        return 0;
+
+    point_len = EC_POINT_point2oct(group, EC_GROUP_get0_generator(group),
+                                   form, NULL, 0, bn_ctx);
+    n = sk_BP_VARIABLE_num(sk);
+    if (out == NULL) {
+        size = sizeof(n) + n * point_len;
+        for (i = 0; i < n; i++) {
+            V = sk_BP_VARIABLE_value(sk, i);
+            if (V == NULL)
+                break;
+            size += strlen(V->name);
+        }
+
+        return size;
+    }
+
+    q = (int *)out;
+    *q++ = l2n((int)n);
+    p = (unsigned char *)q;
+
+    for (i = 0; i < n; i++) {
+        V = sk_BP_VARIABLE_value(sk, i);
+        if (V == NULL)
+            goto end;
+
+        if (EC_POINT_point2oct(group, V->point, form, p, point_len, bn_ctx) == 0)
+            goto end;
+
+        p += point_len;
+        stpcpy((char *)p, V->name);
+        p += strlen(V->name) + 1;
+    }
+
+end:
+    return p - out;
+}
+
+static STACK_OF(BP_VARIABLE) *bp_stack_of_variable_decode(const unsigned char *in,
+                                                          int *len,
+                                                          const EC_GROUP *group,
+                                                          BN_CTX *bn_ctx)
+{
+    char *name;
+    unsigned char *p;
+    int *q = (int *)in, n, i;
+    size_t point_len;
+    EC_POINT *V = NULL;
+    BP_VARIABLE *var = NULL;
+    STACK_OF(BP_VARIABLE) *ret = NULL;
+
+    if (in == NULL || group == NULL)
+        return 0;
+
+    point_len = EC_POINT_point2oct(group, EC_GROUP_get0_generator(group),
+                                   form, NULL, 0, bn_ctx);
+    n = (int)n2l(*q);
+    q++;
+    p = (unsigned char *)q;
+
+    if (n < 0) {
+        return NULL;
+    }
+
+    if (!(ret = sk_BP_VARIABLE_new_reserve(NULL, n)))
+        return NULL;
+
+    for (i = 0; i < n; i++) {
+        if (!(V = EC_POINT_new(group)))
+            goto err;
+
+        if (!EC_POINT_oct2point(group, V, p, point_len, bn_ctx))
+            goto err;
+
+        p += point_len;
+
+        name = (char *)p;
+        p += strlen(name) + 1;
+
+        if (!(var = BP_VARIABLE_new(name, V, group)))
+            goto err;
+
+        if (sk_BP_VARIABLE_push(ret, var) <= 0)
+            goto err;
+
+        EC_POINT_free(V);
+    }
+
+    if (len != NULL)
+        *len = p - in;
+
+    return ret;
+err:
+    EC_POINT_free(V);
+    BP_VARIABLE_free(var);
+    sk_BP_VARIABLE_pop_free(ret, BP_VARIABLE_free);
+    return NULL;
+}
+
 static int bp_stack_of_bignum_encode(STACK_OF(BIGNUM) *sk, unsigned char *out,
                                      int bn_len)
 {
@@ -110,7 +220,6 @@ static int bp_stack_of_point_encode(STACK_OF(EC_POINT) *sk, unsigned char *out,
     size_t point_len;
     unsigned char *p;
     EC_POINT *P;
-    point_conversion_form_t form = POINT_CONVERSION_COMPRESSED;
 
     if (sk == NULL || group == NULL)
         return 0;
@@ -150,7 +259,6 @@ static STACK_OF(EC_POINT) *bp_stack_of_point_decode(const unsigned char *in,
     size_t point_len;
     EC_POINT *P = NULL;
     STACK_OF(EC_POINT) *ret = NULL;
-    point_conversion_form_t form = POINT_CONVERSION_COMPRESSED;
 
     if (in == NULL || group == NULL)
         return 0;
@@ -200,10 +308,9 @@ err:
  */
 size_t BP_PUB_PARAM_encode(const BP_PUB_PARAM *pp, unsigned char *out, size_t size)
 {
-    int *q, sk_len;
+    int *q, sk_len, curve_id;
     size_t point_len, ret = 0, len;
     unsigned char *p;
-    point_conversion_form_t form = POINT_CONVERSION_COMPRESSED;
     BN_CTX *bn_ctx = NULL;
     EC_GROUP *group = NULL;
 
@@ -212,9 +319,9 @@ size_t BP_PUB_PARAM_encode(const BP_PUB_PARAM *pp, unsigned char *out, size_t si
         return ret;
     }
 
-    group = EC_GROUP_new_by_curve_name_ex(NULL, NULL, pp->curve_id);
-    if (group == NULL)
-        goto end;
+    group = pp->group;
+
+    curve_id = EC_GROUP_get_curve_name(group);
 
     bn_ctx = BN_CTX_new();
     if (bn_ctx == NULL) {
@@ -241,7 +348,7 @@ size_t BP_PUB_PARAM_encode(const BP_PUB_PARAM *pp, unsigned char *out, size_t si
     memset(out, 0, size);
 
     q = (int *)out;
-    *q++ = l2n((int)pp->curve_id);
+    *q++ = l2n((int)curve_id);
     *q++ = l2n((int)pp->gens_capacity);
     *q++ = l2n((int)pp->party_capacity);
     p = (unsigned char *)q;
@@ -272,7 +379,6 @@ size_t BP_PUB_PARAM_encode(const BP_PUB_PARAM *pp, unsigned char *out, size_t si
 
 end:
     BN_CTX_free(bn_ctx);
-    EC_GROUP_free(group);
     return ret;
 }
 
@@ -287,7 +393,6 @@ BP_PUB_PARAM *BP_PUB_PARAM_decode(const unsigned char *in, size_t size)
     unsigned char *p;
     int curve_id, *q = (int *)in, sk_len;
     size_t point_len, gens_capacity, party_capacity, n;
-    point_conversion_form_t form = POINT_CONVERSION_COMPRESSED;
     BP_PUB_PARAM *pp = NULL;
     BN_CTX *bn_ctx = NULL;
     EC_GROUP *group = NULL;
@@ -326,7 +431,7 @@ BP_PUB_PARAM *BP_PUB_PARAM_decode(const unsigned char *in, size_t size)
         goto err;
     }
 
-    pp = BP_PUB_PARAM_new(curve_id, gens_capacity, party_capacity);
+    pp = BP_PUB_PARAM_new(group, gens_capacity, party_capacity);
     if (pp == NULL)
         goto err;
 
@@ -366,20 +471,23 @@ err:
     return NULL;
 }
 
-/** Encodes BP_RANGE_WITNESS to binary
- *  \param  pp         BP_RANGE_WITNESS object
- *  \param  out        the buffer for the result (if NULL the function returns
+/** Encodes BP_WITNESS to binary
+ *  \param  pp         BP_WITNESS object
+ *  \param  out        The buffer for the result (if NULL the function returns
  *                     number of bytes needed).
  *  \param  size       The memory size of the out pointer object
+ *  \param  flag       The flag is an indicator for encoding random number 'r'
+ *                     and plaintext 'v', with 1 indicating encoding and 0
+ *                     indicating no encoding.
  *  \return the length of the encoded octet string or 0 if an error occurred
  */
-size_t BP_RANGE_WITNESS_encode(const BP_RANGE_WITNESS *witness,
-                               unsigned char *out, size_t size)
+size_t BP_WITNESS_encode(const BP_WITNESS *witness, unsigned char *out,
+                         size_t size, int flag)
 {
     int *q, curve_id, bn_len, sk_len;
-    size_t ret = 0, len, n;
+    size_t ret = 0, len, n, point_len;
     unsigned char *p;
-    EC_POINT *V;
+    BP_VARIABLE *V;
     BN_CTX *bn_ctx = NULL;
     const BIGNUM *order;
     EC_GROUP *group = NULL;
@@ -389,14 +497,14 @@ size_t BP_RANGE_WITNESS_encode(const BP_RANGE_WITNESS *witness,
         return ret;
     }
 
-    n = sk_EC_POINT_num(witness->sk_V);
+    n = sk_BP_VARIABLE_num(witness->sk_V);
     if (n == 0) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_INVALID_ARGUMENT);
         return ret;
     }
 
-    V = sk_EC_POINT_value(witness->sk_V, 0);
-    if ((curve_id = EC_POINT_get_curve_name(V)) == NID_undef) {
+    V = sk_BP_VARIABLE_value(witness->sk_V, 0);
+    if ((curve_id = EC_POINT_get_curve_name(V->point)) == NID_undef) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_INVALID_ARGUMENT);
         goto end;
     }
@@ -408,21 +516,27 @@ size_t BP_RANGE_WITNESS_encode(const BP_RANGE_WITNESS *witness,
     order = EC_GROUP_get0_order(group);
     bn_len = BN_num_bytes(order);
 
+    point_len = EC_POINT_point2oct(group, EC_GROUP_get0_generator(group),
+                                   form, NULL, 0, bn_ctx);
+    if (point_len <= 0)
+        goto end;
+
     bn_ctx = BN_CTX_new();
     if (bn_ctx == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         goto end;
     }
 
-    if (!(sk_len = bp_stack_of_point_encode(witness->sk_V, NULL, group, bn_ctx)))
+    if (!(sk_len = bp_stack_of_variable_encode(witness->sk_V, NULL, group, bn_ctx)))
         goto end;
 
-    len = 4  + sk_len;
+    len = 4 + point_len + sk_len;
 
     if (!(sk_len = bp_stack_of_bignum_encode(witness->sk_r, NULL, bn_len)))
         goto end;
 
-    len += sk_len * 2;
+    if (flag == 1)
+        len += sk_len * 2;
 
     if (out == NULL) {
         ret = len;
@@ -438,20 +552,27 @@ size_t BP_RANGE_WITNESS_encode(const BP_RANGE_WITNESS *witness,
     *q++ = l2n((int)curve_id);
     p = (unsigned char *)q;
 
-    if (!(sk_len = bp_stack_of_point_encode(witness->sk_V, p, group, bn_ctx)))
+    if (EC_POINT_point2oct(group, witness->H, form, p, point_len, bn_ctx) == 0)
+        goto end;
+
+    p += point_len;
+
+    if (!(sk_len = bp_stack_of_variable_encode(witness->sk_V, p, group, bn_ctx)))
         goto end;
 
     p += sk_len;
 
-    if (!(sk_len = bp_stack_of_bignum_encode(witness->sk_r, p, bn_len)))
-        goto end;
+    if (flag == 1) {
+        if (!(sk_len = bp_stack_of_bignum_encode(witness->sk_r, p, bn_len)))
+            goto end;
 
-    p += sk_len;
+        p += sk_len;
 
-    if (!(sk_len = bp_stack_of_bignum_encode(witness->sk_v, p, bn_len)))
-        goto end;
+        if (!(sk_len = bp_stack_of_bignum_encode(witness->sk_v, p, bn_len)))
+            goto end;
 
-    p += sk_len;
+        p += sk_len;
+    }
 
     ret = len;
 
@@ -461,19 +582,18 @@ end:
     return ret;
 }
 
-/** Decodes binary to BP_RANGE_WITNESS
- *  \param  in         Memory buffer with the encoded BP_RANGE_WITNESS
+/** Decodes binary to BP_WITNESS
+ *  \param  in         Memory buffer with the encoded BP_WITNESS
  *                     object
  *  \param  size       The memory size of the in pointer object
- *  \return BP_RANGE_WITNESS object pointer on success and NULL otherwise
+ *  \return BP_WITNESS object pointer on success and NULL otherwise
  */
-BP_RANGE_WITNESS *BP_RANGE_WITNESS_decode(const unsigned char *in, size_t size)
+BP_WITNESS *BP_WITNESS_decode(const unsigned char *in, size_t size)
 {
     unsigned char *p;
     int curve_id, *q = (int *)in, bn_len, sk_len, n;
     size_t point_len;
-    point_conversion_form_t form = POINT_CONVERSION_COMPRESSED;
-    BP_RANGE_WITNESS *witness = NULL;
+    BP_WITNESS *witness = NULL;
     BN_CTX *bn_ctx = NULL;
     const BIGNUM *order;
     EC_GROUP *group = NULL;
@@ -515,7 +635,12 @@ BP_RANGE_WITNESS *BP_RANGE_WITNESS_decode(const unsigned char *in, size_t size)
         goto err;
     }
 
-    if (!(witness->sk_V = bp_stack_of_point_decode(p, &sk_len, group, bn_ctx)))
+    if (!EC_POINT_oct2point(group, witness->H, p, point_len, bn_ctx))
+        goto err;
+
+    p += point_len;
+
+    if (!(witness->sk_V = bp_stack_of_variable_decode(p, &sk_len, group, bn_ctx)))
         goto err;
 
     p += sk_len;
@@ -530,13 +655,14 @@ BP_RANGE_WITNESS *BP_RANGE_WITNESS_decode(const unsigned char *in, size_t size)
 
     p += sk_len;
 
-    EC_GROUP_free(group);
+    witness->group = group;
+
     BN_CTX_free(bn_ctx);
     return witness;
 
 err:
     EC_GROUP_free(group);
-    BP_RANGE_WITNESS_free(witness);
+    BP_WITNESS_free(witness);
     BN_CTX_free(bn_ctx);
     return NULL;
 }
@@ -555,7 +681,6 @@ size_t BP_RANGE_PROOF_encode(const BP_RANGE_PROOF *proof, unsigned char *out,
     size_t len, point_len;
     unsigned char *p;
     bp_inner_product_proof_t *ip_proof;
-    point_conversion_form_t form = POINT_CONVERSION_COMPRESSED;
     BN_CTX *bn_ctx = NULL;
     const BIGNUM *order;
     EC_GROUP *group = NULL;
@@ -686,7 +811,6 @@ BP_RANGE_PROOF *BP_RANGE_PROOF_decode(const unsigned char *in, size_t size)
     unsigned char *p;
     int *q = (int *)in, curve_id, sk_len;
     size_t point_len, bn_len, proof_len;
-    point_conversion_form_t form = POINT_CONVERSION_COMPRESSED;
     BP_RANGE_PROOF *proof = NULL;
     bp_inner_product_proof_t *ip_proof = NULL;
     BN_CTX *bn_ctx = NULL;

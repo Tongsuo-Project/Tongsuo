@@ -10,6 +10,7 @@
 #include <openssl/err.h>
 #include <openssl/ec.h>
 #include <crypto/ec/ec_local.h>
+#include <openssl/bulletproofs.h>
 #include "debug.h"
 
 int bp_rand_range(BIGNUM *rnd, const BIGNUM *range)
@@ -127,7 +128,7 @@ err:
     BIO_free(bio);
 }
 
-void BP_RANGE_WITNESS_debug_print(BP_RANGE_WITNESS *witness, const char *note)
+void BP_WITNESS_debug_print(BP_WITNESS *witness, const char *note)
 {
     BIO *bio = NULL;
     BN_CTX *bn_ctx = NULL;
@@ -142,11 +143,11 @@ void BP_RANGE_WITNESS_debug_print(BP_RANGE_WITNESS *witness, const char *note)
         goto err;
 
     BIO_printf(bio, "%s: \n", note);
-    BIO_printf(bio, "witness->n: %d\n", sk_EC_POINT_num(witness->sk_V));
+    BIO_printf(bio, "witness->n: %d\n", sk_BP_VARIABLE_num(witness->sk_V));
 
+    bp_stack_of_variable_debug_print(bio, witness->sk_V, "witness->sk_V");
     bp_stack_of_bignum_debug_print(bio, witness->sk_r, "witness->sk_r");
     bp_stack_of_bignum_debug_print(bio, witness->sk_v, "witness->sk_v");
-    bp_stack_of_point_debug_print(bio, witness->sk_V, "witness->sk_V");
 
 err:
     BN_CTX_free(bn_ctx);
@@ -351,6 +352,42 @@ void bp_stack_of_point_debug_print(BIO *bio, STACK_OF(EC_POINT) *sk, const char 
         BN_print(b, p->Y);
         BIO_printf(b, ", %s[%d]->Z: ", name, i);
         BN_print(b, p->Z);
+        BIO_printf(b, "\n");
+    }
+
+err:
+    BIO_free(b);
+}
+
+void bp_stack_of_variable_debug_print(BIO *bio, STACK_OF(BP_VARIABLE) *sk, const char *name)
+{
+    BIO *b = NULL;
+    int i, n;
+    EC_POINT *V;
+    BP_VARIABLE *var;
+
+    if (sk == NULL)
+        return;
+
+    if (bio == NULL) {
+        b = bio = BIO_new(BIO_s_file());
+        BIO_set_fp(b, stderr, BIO_NOCLOSE);
+    }
+
+    n = sk_BP_VARIABLE_num(sk);
+    for (i = 0; i < n; i++) {
+        var = sk_BP_VARIABLE_value(sk, i);
+        if (var == NULL)
+            goto err;
+
+        V = var->point;
+
+        BIO_printf(b, "%s[%d], name: %s, X: ", name, var->name, i);
+        BN_print(b, V->X);
+        BIO_printf(b, ", Y: ");
+        BN_print(b, V->Y);
+        BIO_printf(b, ", Z: ");
+        BN_print(b, V->Z);
         BIO_printf(b, "\n");
     }
 

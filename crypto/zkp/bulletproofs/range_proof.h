@@ -25,17 +25,8 @@ extern "C" {
 
 struct bp_range_ctx_st {
     BP_TRANSCRIPT *transcript;
-    const EC_POINT *G;
-    EC_GROUP *group;
     BP_PUB_PARAM *pp;
-};
-
-struct bp_range_witness_st {
-    /* for prove */
-    STACK_OF(BIGNUM) *sk_r;
-    STACK_OF(BIGNUM) *sk_v;
-    /* for verify */
-    STACK_OF(EC_POINT) *sk_V;
+    BP_WITNESS *witness;
 };
 
 struct bp_range_proof_st {

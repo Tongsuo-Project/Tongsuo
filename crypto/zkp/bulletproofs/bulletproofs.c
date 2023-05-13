@@ -14,7 +14,7 @@
 #include "util.h"
 
 /** Creates a new BP_PUB_PARAM object
- *  \param  curve_id        the elliptic curve id
+ *  \param  group           underlying EC_GROUP object
  *  \param  gens_capacity   the number of generators to precompute for each party.
  *                          For range_proof, it is the maximum bitsize of the
  *                          range_proof, maximum value is 64. For r1cs_proof,
@@ -24,19 +24,19 @@
  *                          aggregated proof. For r1cs_proof, set to 1.
  *  \return newly created BP_PUB_PARAM object or NULL in case of an error
  */
-BP_PUB_PARAM *BP_PUB_PARAM_new(int curve_id, int gens_capacity, int party_capacity)
+BP_PUB_PARAM *BP_PUB_PARAM_new(const EC_GROUP *group, int gens_capacity,
+                               int party_capacity)
 {
     int i, n;
     size_t plen;
     unsigned char *pstr = NULL;
     BN_CTX *bn_ctx = NULL;
-    EC_GROUP *group = NULL;
-    EC_POINT *P = NULL;
     const EC_POINT *G = NULL;
+    EC_POINT *P = NULL;
     BP_PUB_PARAM *pp = NULL;
     point_conversion_form_t format = POINT_CONVERSION_COMPRESSED;
 
-    if (curve_id == NID_undef || gens_capacity <= 0 || party_capacity <= 0) {
+    if (group == NULL || gens_capacity <= 0 || party_capacity <= 0) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_INVALID_ARGUMENT);
         return NULL;
     }
@@ -57,13 +57,9 @@ BP_PUB_PARAM *BP_PUB_PARAM_new(int curve_id, int gens_capacity, int party_capaci
         return NULL;
     }
 
-    pp->curve_id = curve_id;
-
-    group = EC_GROUP_new_by_curve_name_ex(NULL, NULL, curve_id);
-    if (group == NULL)
+    if (!(pp->group = EC_GROUP_dup(group)))
         goto err;
 
-    pp->group = group;
     G = EC_GROUP_get0_generator(group);
 
     bn_ctx = BN_CTX_new_ex(group->libctx);
@@ -138,7 +134,7 @@ err:
 }
 
 /** Creates a new BP_PUB_PARAM object by curve name
- *  \param  curve_name    the elliptic curve name
+ *  \param  curve_name      the elliptic curve name
  *  \param  gens_capacity   the number of generators to precompute for each party.
  *                          For range_proof, it is the maximum bitsize of the
  *                          range_proof, maximum value is 64. For r1cs_proof,
@@ -159,7 +155,35 @@ BP_PUB_PARAM *BP_PUB_PARAM_new_by_curve_name(const char *curve_name,
         return NULL;
     }
 
-    return BP_PUB_PARAM_new(curve_id, gens_capacity, party_capacity);
+    return BP_PUB_PARAM_new_by_curve_id(curve_id, gens_capacity, party_capacity);
+}
+
+/** Creates a new BP_PUB_PARAM object by curve id
+ *  \param  curve_id        the elliptic curve id
+ *  \param  gens_capacity   the number of generators to precompute for each party.
+ *                          For range_proof, it is the maximum bitsize of the
+ *                          range_proof, maximum value is 64. For r1cs_proof,
+ *                          the capacity must be greater than the number of
+ *                          multipliers, rounded up to the next power of two.
+ *  \param  party_capacity  the maximum number of parties that can produce on
+ *                          aggregated proof. For r1cs_proof, set to 1.
+ *  \return newly created BP_PUB_PARAM object or NULL in case of an error
+ */
+BP_PUB_PARAM *BP_PUB_PARAM_new_by_curve_id(int curve_id,
+                                           int gens_capacity,
+                                           int party_capacity)
+{
+    BP_PUB_PARAM *ret;
+    EC_GROUP *group = NULL;
+
+    if (!(group = EC_GROUP_new_by_curve_name(curve_id)))
+        return NULL;
+
+    ret = BP_PUB_PARAM_new(group, gens_capacity, party_capacity);
+
+    EC_GROUP_free(group);
+
+    return ret;
 }
 
 /** Frees a BP_PUB_PARAM object
@@ -195,6 +219,9 @@ int BP_PUB_PARAM_up_ref(BP_PUB_PARAM *pp)
 {
     int ref;
 
+    if (pp == NULL)
+        return 0;
+
     if (CRYPTO_UP_REF(&pp->references, &ref, pp->lock) <= 0)
         return 0;
 
@@ -211,10 +238,272 @@ int BP_PUB_PARAM_down_ref(BP_PUB_PARAM *pp)
 {
     int ref;
 
+    if (pp == NULL)
+        return 0;
+
     if (CRYPTO_DOWN_REF(&pp->references, &ref, pp->lock) <= 0)
         return 0;
 
     REF_PRINT_COUNT("BP_PUB_PARAM", pp);
-    REF_ASSERT_ISNT(ref > 0);
+    REF_ASSERT_ISNT(ref < 0);
     return ((ref > 0) ? 1 : 0);
+}
+
+/** Creates a new BP_VARIABLE object
+ *  \param  name           the bulletproofs variable name, used for indexing.
+ *  \param  point          EC_POINT object
+ *  \param  group          EC_GROUP object
+ *  \return newly created BP_WITNESS object or NULL in case of an error
+ */
+BP_VARIABLE *BP_VARIABLE_new(const char *name, const EC_POINT *point, const EC_GROUP *group)
+{
+    BP_VARIABLE *ret = NULL;
+
+    if (!(ret = OPENSSL_zalloc(sizeof(*ret)))) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
+        return NULL;
+    }
+
+    ret->point = EC_POINT_dup(point, group);
+
+    if (name != NULL)
+        ret->name = OPENSSL_strdup(name);
+
+    if (ret->point == NULL)
+        goto err;
+
+    return ret;
+err:
+    BP_VARIABLE_free(ret);
+    return NULL;
+}
+
+/** Frees a BP_VARIABLE object
+ *  \param  var   BP_VARIABLE object to be freed
+ */
+void BP_VARIABLE_free(BP_VARIABLE *var)
+{
+    if (var == NULL)
+        return;
+
+    EC_POINT_free(var->point);
+    OPENSSL_free(var->name);
+    OPENSSL_free(var);
+}
+
+/** Creates a new BP_WITNESS object
+ *  \param  pp           underlying BP_PUB_PARAM object
+ *  \return newly created BP_WITNESS object or NULL in case of an error
+ */
+BP_WITNESS *BP_WITNESS_new(BP_PUB_PARAM *pp)
+{
+    BP_WITNESS *witness = NULL;
+
+    if (pp == NULL) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
+        return NULL;
+    }
+
+    if (!(witness = OPENSSL_zalloc(sizeof(*witness)))) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
+        return NULL;
+    }
+
+    if (!(witness->sk_r = sk_BIGNUM_new_null())
+        || !(witness->sk_v = sk_BIGNUM_new_null())
+        || !(witness->sk_V = sk_BP_VARIABLE_new_null())) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+
+    if (!(witness->group = EC_GROUP_dup(pp->group))
+        || !(witness->H = EC_POINT_dup(pp->H, pp->group)))
+        goto err;
+
+    witness->references = 1;
+    if ((witness->lock = CRYPTO_THREAD_lock_new()) == NULL) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+
+    return witness;
+err:
+    BP_WITNESS_free(witness);
+    return NULL;
+}
+
+/** Frees a BP_WITNESS object
+ *  \param  witness   BP_WITNESS object to be freed
+ */
+void BP_WITNESS_free(BP_WITNESS *witness)
+{
+    int ref;
+
+    if (witness == NULL)
+        return;
+
+    CRYPTO_DOWN_REF(&witness->references, &ref, witness->lock);
+    REF_PRINT_COUNT("BP_WITNESS", witness);
+    if (ref > 0)
+        return;
+    REF_ASSERT_ISNT(ref < 0);
+
+    sk_BIGNUM_pop_free(witness->sk_r, BN_free);
+    sk_BIGNUM_pop_free(witness->sk_v, BN_free);
+    sk_BP_VARIABLE_pop_free(witness->sk_V, BP_VARIABLE_free);
+    EC_POINT_free(witness->H);
+    EC_GROUP_free(witness->group);
+    OPENSSL_free(witness);
+}
+
+/** Increases the internal reference count of a BP_WITNESS object.
+ *  \param  witness  BP_WITNESS object
+ *  \return 1 on success and 0 if an error occurred.
+ */
+int BP_WITNESS_up_ref(BP_WITNESS *witness)
+{
+    int ref;
+
+    if (witness == NULL)
+        return 0;
+
+    if (CRYPTO_UP_REF(&witness->references, &ref, witness->lock) <= 0)
+        return 0;
+
+    REF_PRINT_COUNT("BP_WITNESS", witness);
+    REF_ASSERT_ISNT(ref < 2);
+    return ((ref > 1) ? 1 : 0);
+}
+
+/** Decreases the internal reference count of a BP_WITNESS object.
+ *  \param  witness  BP_WITNESS object
+ *  \return 1 on success and 0 if an error occurred.
+ */
+int BP_WITNESS_down_ref(BP_WITNESS *witness)
+{
+    int ref;
+
+    if (witness == NULL)
+        return 0;
+
+    if (CRYPTO_DOWN_REF(&witness->references, &ref, witness->lock) <= 0)
+        return 0;
+
+    REF_PRINT_COUNT("BP_WITNESS", witness);
+    REF_ASSERT_ISNT(ref < 0);
+    return ((ref > 0) ? 1 : 0);
+}
+
+/** Commit v to the witness and calculate V=G^r*H^v
+ *  \param  witness   BP_WITNESS object
+ *  \param  name      the name used to index the BP_VARIABLE object
+ *  \param  v         plaintext BIGNUM object
+ *  \return 1 on success and 0 otherwise
+ */
+int BP_WITNESS_commit(BP_WITNESS *witness, const char *name, const BIGNUM *v)
+{
+    const BIGNUM *order;
+    BIGNUM *r = NULL, *val = NULL;
+    EC_POINT *V = NULL;
+    BP_VARIABLE *var = NULL;
+
+    if (witness == NULL || v == NULL) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
+        return 0;
+    }
+
+    if (BP_WITNESS_get_variable_index(witness, name) >= 0) {
+        ERR_raise(ERR_LIB_ZKP_BP, ZKP_BP_R_VARIABLE_DUPLICATED);
+        return 0;
+    }
+
+    order = EC_GROUP_get0_order(witness->group);
+
+    r = BN_new();
+    val = BN_dup(v);
+    V = EC_POINT_new(witness->group);
+    if (r == NULL || val == NULL || V == NULL)
+        goto err;
+
+    if (!bp_rand_range(r, order))
+        goto err;
+
+    /* (69) */
+    if (!EC_POINT_mul(witness->group, V, r, witness->H, v, NULL))
+        goto err;
+
+    if (!(var = BP_VARIABLE_new(name, V, witness->group)))
+        goto err;
+
+    if (sk_BIGNUM_push(witness->sk_r, r) <= 0)
+        goto err;
+
+    r = NULL;
+
+    if (sk_BIGNUM_push(witness->sk_v, val) <= 0)
+        goto err;
+
+    val = NULL;
+
+    if (sk_BP_VARIABLE_push(witness->sk_V, var) <= 0)
+        goto err;
+
+    EC_POINT_free(V);
+    return 1;
+err:
+    BN_free(r);
+    BN_free(val);
+    EC_POINT_free(V);
+    BP_VARIABLE_free(var);
+    return 0;
+}
+
+/** Get the BP_VARIABLE with the variable name from the witness.
+ *  \param  witness   BP_WITNESS object
+ *  \param  name      the name of the BP_VARIABLE object
+ *  \return the BP_VARIABLE object when found by name, otherwise return NULL.
+ */
+BP_VARIABLE *BP_WITNESS_get_variable(BP_WITNESS *witness, const char *name)
+{
+    int i;
+
+    if (witness == NULL || name == NULL) {
+        return NULL;
+    }
+
+    i = BP_WITNESS_get_variable_index(witness, name);
+    if (i < 0) {
+        return NULL;
+    }
+
+    return sk_BP_VARIABLE_value(witness->sk_V, i);
+}
+
+/** Get the index of the BP_VARIABLE in the stack that corresponds to the variable
+ *  name from the witness.
+ *  \param  witness   BP_WITNESS object
+ *  \param  name      the name of the BP_VARIABLE object
+ *  \return the index of the BP_VARIABLE object when found by name,
+ *  otherwise return -1.
+ */
+int BP_WITNESS_get_variable_index(BP_WITNESS *witness, const char *name)
+{
+    int i, num;
+    BP_VARIABLE *V;
+
+    if (witness == NULL || name == NULL) {
+        return -1;
+    }
+
+    num = sk_BP_VARIABLE_num(witness->sk_V);
+    for (i = 0; i < num; i++) {
+        V = sk_BP_VARIABLE_value(witness->sk_V, i);
+        if (V == NULL)
+            return -1;
+
+        if (OPENSSL_strcasecmp(V->name, name) == 0)
+            return i;
+    }
+
+    return -1;
 }

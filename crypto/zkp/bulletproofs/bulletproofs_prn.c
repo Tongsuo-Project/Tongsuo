@@ -180,7 +180,7 @@ int BP_RANGE_PROOF_print_fp(FILE *fp, const BP_RANGE_PROOF *proof, int indent)
 
 int BP_PUB_PARAM_print(BIO *bp, const BP_PUB_PARAM *pp, int indent)
 {
-    int ret = 0, i, n;
+    int ret = 0, i, n, curve_id;
     size_t point_len;
     unsigned char *p = NULL;
     BN_CTX *bn_ctx = NULL;
@@ -190,15 +190,15 @@ int BP_PUB_PARAM_print(BIO *bp, const BP_PUB_PARAM *pp, int indent)
     if (pp == NULL)
         return 0;
 
+    curve_id = EC_GROUP_get_curve_name(pp->group);
+
     bp_bio_printf(bp, indent, "Bulletproofs Public Parameter: \n");
-    bp_bio_printf(bp, indent, "curve_id: %d (%s)\n", pp->curve_id,
-                  OSSL_EC_curve_nid2name(pp->curve_id));
+    bp_bio_printf(bp, indent, "curve: %s (%d)\n", OSSL_EC_curve_nid2name(curve_id),
+                               curve_id);
     bp_bio_printf(bp, indent, "gens_capacity: %zu\n", pp->gens_capacity);
     bp_bio_printf(bp, indent, "party_capacity: %zu\n", pp->party_capacity);
 
-    group = EC_GROUP_new_by_curve_name_ex(NULL, NULL, pp->curve_id);
-    if (group == NULL)
-        goto end;
+    group = pp->group;
 
     bn_ctx = BN_CTX_new();
     if (bn_ctx == NULL)
@@ -241,7 +241,6 @@ int BP_PUB_PARAM_print(BIO *bp, const BP_PUB_PARAM *pp, int indent)
 end:
     OPENSSL_free(p);
     BN_CTX_free(bn_ctx);
-    EC_GROUP_free(group);
     return ret;
 }
 

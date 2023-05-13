@@ -27,6 +27,7 @@
 # define ZKP_BP_R_EXCEEDS_PARTY_CAPACITY                  104
 # define ZKP_BP_R_EXCEEDS_PP_CAPACITY                     102
 # define ZKP_BP_R_TRANSCRIPT_INIT_FAILED                  103
+# define ZKP_BP_R_VARIABLE_DUPLICATED                     107
 # define ZKP_BP_R_WITNESS_INVALID                         105
 
 #endif

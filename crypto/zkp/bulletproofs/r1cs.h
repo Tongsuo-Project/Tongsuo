@@ -27,18 +27,23 @@ DEFINE_STACK_OF(BP_R1CS_VARIABLE)
 DEFINE_STACK_OF(BP_R1CS_LINEAR_COMBINATION_ITEM)
 DEFINE_STACK_OF(BP_R1CS_LINEAR_COMBINATION)
 
-typedef enum bp_r1cs_op_type {
-    BP_R1CS_OP_UNKOWN,
-    BP_R1CS_OP_PROVE,
-    BP_R1CS_OP_VERIFY,
-} bp_r1cs_op_type_t;
+typedef enum bp_r1cs_variable_type {
+    BP_R1CS_VARIABLE_COMMITTED,
+    BP_R1CS_VARIABLE_MULTIPLIER_LEFT,
+    BP_R1CS_VARIABLE_MULTIPLIER_RIGHT,
+    BP_R1CS_VARIABLE_MULTIPLIER_OUTPUT,
+    BP_R1CS_VARIABLE_ONE,
+} BP_R1CS_VARIABLE_TYPE;
+
+typedef enum bp_r1cs_lc_type {
+    BP_R1CS_LC_TYPE_UNKOWN,
+    BP_R1CS_LC_TYPE_PROVE,
+    BP_R1CS_LC_TYPE_VERIFY,
+} BP_R1CS_LC_TYPE;
 
 struct bp_r1cs_variable_st {
     BP_R1CS_VARIABLE_TYPE   type;
     uint64_t                value;
-    /* commitment */
-    EC_POINT               *C;
-    char                   *name;
     CRYPTO_RWLOCK          *lock;
     CRYPTO_REF_COUNT        references;
 };
@@ -49,6 +54,7 @@ struct bp_r1cs_linear_combination_item_st {
 };
 
 struct bp_r1cs_linear_combination_st {
+    BP_R1CS_LC_TYPE                            type;
     STACK_OF(BP_R1CS_LINEAR_COMBINATION_ITEM) *items;
     CRYPTO_RWLOCK                             *lock;
     CRYPTO_REF_COUNT                           references;
@@ -56,18 +62,13 @@ struct bp_r1cs_linear_combination_st {
 
 struct bp_r1cs_ctx_st {
     BP_TRANSCRIPT *transcript;
-    bp_r1cs_op_type_t op;
-    const EC_POINT *G;
-    EC_GROUP *group;
     BP_PUB_PARAM *pp;
+    BP_WITNESS *witness;
     STACK_OF(BP_R1CS_LINEAR_COMBINATION) *p_constraints;
     STACK_OF(BP_R1CS_LINEAR_COMBINATION) *v_constraints;
-    STACK_OF(BP_R1CS_VARIABLE) *V;
     STACK_OF(BIGNUM) *aL;
     STACK_OF(BIGNUM) *aR;
     STACK_OF(BIGNUM) *aO;
-    STACK_OF(BIGNUM) *v;
-    STACK_OF(BIGNUM) *r;
     int vars_num;
 };
 
@@ -91,6 +92,15 @@ struct bp_r1cs_proof_st {
     CRYPTO_REF_COUNT references;
 };
 
+BP_R1CS_VARIABLE *BP_R1CS_VARIABLE_new(BP_R1CS_VARIABLE_TYPE type, uint64_t value);
+BP_R1CS_VARIABLE *BP_R1CS_VARIABLE_dup(const BP_R1CS_VARIABLE *var);
+void BP_R1CS_VARIABLE_free(BP_R1CS_VARIABLE *var);
+BP_R1CS_LC_ITEM *BP_R1CS_LC_ITEM_new(BP_R1CS_VARIABLE *var, const BIGNUM *scalar);
+BP_R1CS_LC_ITEM *BP_R1CS_LC_ITEM_dup(BP_R1CS_LC_ITEM *item);
+void BP_R1CS_LC_ITEM_free(BP_R1CS_LC_ITEM *item);
+
+BP_R1CS_LINEAR_COMBINATION *BP_R1CS_LINEAR_COMBINATION_new_from_param(BP_R1CS_VARIABLE *var,
+                                                                      const BIGNUM *scalar);
 
 # ifdef  __cplusplus
 }

@@ -206,26 +206,24 @@ static int r1cs_example_logic1(BP_R1CS_CTX *ctx,
                                bp_r1cs_example_linaer_combinations *lc)
 {
     int ret = 0;
-    BP_R1CS_LINEAR_COMBINATION *a = NULL, *b = NULL, *c = NULL, *ab = NULL, *c_ab = NULL;
+    BP_R1CS_LINEAR_COMBINATION *a = NULL, *b = NULL, *c = NULL;
 
     if (ctx == NULL || lc == NULL) {
         return 0;
     }
 
-    if (!(a = BP_R1CS_LINEAR_COMBINATION_new())
-        || !(b = BP_R1CS_LINEAR_COMBINATION_new())
-        || !(c = BP_R1CS_LINEAR_COMBINATION_new())
-        || !(ab = BP_R1CS_LINEAR_COMBINATION_new())
-        || !(c_ab = BP_R1CS_LINEAR_COMBINATION_new())) {
+    if (!(a = BP_R1CS_LINEAR_COMBINATION_dup(lc->a1))
+        || !(b = BP_R1CS_LINEAR_COMBINATION_dup(lc->b1))
+        || !(c = BP_R1CS_LINEAR_COMBINATION_dup(lc->c1))) {
         return 0;
     }
 
-    if (!BP_R1CS_LINEAR_COMBINATION_add(ctx, a, lc->a1, lc->a2)
-        || !BP_R1CS_LINEAR_COMBINATION_add(ctx, b, lc->b1, lc->b2)
-        || !BP_R1CS_LINEAR_COMBINATION_add(ctx, c, lc->c1, lc->c2)
-        || !BP_R1CS_LINEAR_COMBINATION_mul(ctx, ab, a, b)
-        || !BP_R1CS_LINEAR_COMBINATION_sub(ctx, c_ab, c, ab)
-        || !BP_R1CS_constrain(ctx, c_ab)) {
+    if (!BP_R1CS_LINEAR_COMBINATION_add(a, lc->a2)
+        || !BP_R1CS_LINEAR_COMBINATION_add(b, lc->b2)
+        || !BP_R1CS_LINEAR_COMBINATION_add(c, lc->c2)
+        || !BP_R1CS_LINEAR_COMBINATION_mul(a, b, ctx)
+        || !BP_R1CS_LINEAR_COMBINATION_sub(a, c)
+        || !BP_R1CS_LINEAR_COMBINATION_constrain(a, ctx)) {
         goto err;
     }
 
@@ -234,7 +232,6 @@ static int r1cs_example_logic1(BP_R1CS_CTX *ctx,
 err:
     BP_R1CS_LINEAR_COMBINATION_free(a);
     BP_R1CS_LINEAR_COMBINATION_free(b);
-    BP_R1CS_LINEAR_COMBINATION_free(ab);
     BP_R1CS_LINEAR_COMBINATION_free(c);
 
     return ret;
@@ -247,26 +244,24 @@ static int r1cs_example_logic2(BP_R1CS_CTX *ctx,
                                bp_r1cs_example_linaer_combinations *lc)
 {
     int ret = 0;
-    BP_R1CS_LINEAR_COMBINATION *a = NULL, *b = NULL, *c = NULL, *ab = NULL, *c_ab = NULL;
+    BP_R1CS_LINEAR_COMBINATION *a = NULL, *b = NULL, *c = NULL;
 
     if (ctx == NULL || lc == NULL) {
         return 0;
     }
 
-    if (!(a = BP_R1CS_LINEAR_COMBINATION_new())
-        || !(b = BP_R1CS_LINEAR_COMBINATION_new())
-        || !(c = BP_R1CS_LINEAR_COMBINATION_new())
-        || !(ab = BP_R1CS_LINEAR_COMBINATION_new())
-        || !(c_ab = BP_R1CS_LINEAR_COMBINATION_new())) {
+    if (!(a = BP_R1CS_LINEAR_COMBINATION_dup(lc->a1))
+        || !(b = BP_R1CS_LINEAR_COMBINATION_dup(lc->b1))
+        || !(c = BP_R1CS_LINEAR_COMBINATION_dup(lc->c1))) {
         return 0;
     }
 
-    if (!BP_R1CS_LINEAR_COMBINATION_mul(ctx, a, lc->a1, lc->a2)
-        || !BP_R1CS_LINEAR_COMBINATION_mul(ctx, b, lc->b1, lc->b2)
-        || !BP_R1CS_LINEAR_COMBINATION_add(ctx, ab, a, b)
-        || !BP_R1CS_LINEAR_COMBINATION_mul(ctx, c, lc->c1, lc->c2)
-        || !BP_R1CS_LINEAR_COMBINATION_sub(ctx, c_ab, c, ab)
-        || !BP_R1CS_constrain(ctx, c_ab)) {
+    if (!BP_R1CS_LINEAR_COMBINATION_mul(a, lc->a2, ctx)
+        || !BP_R1CS_LINEAR_COMBINATION_mul(b, lc->b2, ctx)
+        || !BP_R1CS_LINEAR_COMBINATION_add(a, b)
+        || !BP_R1CS_LINEAR_COMBINATION_mul(c, lc->c2, ctx)
+        || !BP_R1CS_LINEAR_COMBINATION_sub(a, c)
+        || !BP_R1CS_LINEAR_COMBINATION_constrain(a, ctx)) {
         goto err;
     }
 
@@ -275,7 +270,6 @@ static int r1cs_example_logic2(BP_R1CS_CTX *ctx,
 err:
     BP_R1CS_LINEAR_COMBINATION_free(a);
     BP_R1CS_LINEAR_COMBINATION_free(b);
-    BP_R1CS_LINEAR_COMBINATION_free(ab);
     BP_R1CS_LINEAR_COMBINATION_free(c);
 
     return ret;
@@ -288,26 +282,24 @@ static int r1cs_example_logic3(BP_R1CS_CTX *ctx,
                                bp_r1cs_example_linaer_combinations *lc)
 {
     int ret = 0;
-    BP_R1CS_LINEAR_COMBINATION *a = NULL, *b = NULL, *c = NULL, *ab = NULL, *c_ab = NULL;
+    BP_R1CS_LINEAR_COMBINATION *a = NULL, *b = NULL, *c = NULL;
 
     if (ctx == NULL || lc == NULL) {
         return 0;
     }
 
-    if (!(a = BP_R1CS_LINEAR_COMBINATION_new())
-        || !(b = BP_R1CS_LINEAR_COMBINATION_new())
-        || !(c = BP_R1CS_LINEAR_COMBINATION_new())
-        || !(ab = BP_R1CS_LINEAR_COMBINATION_new())
-        || !(c_ab = BP_R1CS_LINEAR_COMBINATION_new())) {
+    if (!(a = BP_R1CS_LINEAR_COMBINATION_dup(lc->a1))
+        || !(b = BP_R1CS_LINEAR_COMBINATION_dup(lc->b1))
+        || !(c = BP_R1CS_LINEAR_COMBINATION_dup(lc->c1))) {
         return 0;
     }
 
-    if (!BP_R1CS_LINEAR_COMBINATION_mul(ctx, a, lc->a1, lc->a2)
-        || !BP_R1CS_LINEAR_COMBINATION_mul(ctx, b, lc->b1, lc->b2)
-        || !BP_R1CS_LINEAR_COMBINATION_add(ctx, ab, a, b)
-        || !BP_R1CS_LINEAR_COMBINATION_add(ctx, c, lc->c1, lc->c2)
-        || !BP_R1CS_LINEAR_COMBINATION_sub(ctx, c_ab, c, ab)
-        || !BP_R1CS_constrain(ctx, c_ab)) {
+    if (!BP_R1CS_LINEAR_COMBINATION_mul(a, lc->a2, ctx)
+        || !BP_R1CS_LINEAR_COMBINATION_mul(b, lc->b2, ctx)
+        || !BP_R1CS_LINEAR_COMBINATION_add(a, b)
+        || !BP_R1CS_LINEAR_COMBINATION_add(c, lc->c2)
+        || !BP_R1CS_LINEAR_COMBINATION_sub(a, c)
+        || !BP_R1CS_LINEAR_COMBINATION_constrain(a, ctx)) {
         goto err;
     }
 
@@ -316,7 +308,6 @@ static int r1cs_example_logic3(BP_R1CS_CTX *ctx,
 err:
     BP_R1CS_LINEAR_COMBINATION_free(a);
     BP_R1CS_LINEAR_COMBINATION_free(b);
-    BP_R1CS_LINEAR_COMBINATION_free(ab);
     BP_R1CS_LINEAR_COMBINATION_free(c);
 
     return ret;
@@ -330,7 +321,7 @@ static int r1cs_example_logic4(BP_R1CS_CTX *ctx,
 {
     int ret = 0;
     BIGNUM *bn7 = NULL;
-    BP_R1CS_LINEAR_COMBINATION *a = NULL, *b = NULL, *c = NULL, *ab = NULL, *c_ab = NULL;
+    BP_R1CS_LINEAR_COMBINATION *a = NULL, *b = NULL, *c = NULL;
 
     if (ctx == NULL || lc == NULL) {
         return 0;
@@ -341,21 +332,19 @@ static int r1cs_example_logic4(BP_R1CS_CTX *ctx,
 
     BN_set_word(bn7, 7);
 
-    if (!(a = BP_R1CS_LINEAR_COMBINATION_new())
-        || !(b = BP_R1CS_LINEAR_COMBINATION_new())
-        || !(c = BP_R1CS_LINEAR_COMBINATION_new())
-        || !(ab = BP_R1CS_LINEAR_COMBINATION_new())
-        || !(c_ab = BP_R1CS_LINEAR_COMBINATION_new())) {
+    if (!(a = BP_R1CS_LINEAR_COMBINATION_dup(lc->a1))
+        || !(b = BP_R1CS_LINEAR_COMBINATION_dup(lc->b1))
+        || !(c = BP_R1CS_LINEAR_COMBINATION_dup(lc->c1))) {
         return 0;
     }
 
-    if (!BP_R1CS_LINEAR_COMBINATION_mul(ctx, a, lc->a1, lc->a2)
-        || !BP_R1CS_LINEAR_COMBINATION_mul(ctx, b, lc->b1, lc->b2)
-        || !BP_R1CS_LINEAR_COMBINATION_add(ctx, ab, a, b)
-        || !BP_R1CS_LINEAR_COMBINATION_mul(ctx, c, lc->c1, lc->c2)
-        || !BP_R1CS_LINEAR_COMBINATION_mul_bn(ctx, c, bn7)
-        || !BP_R1CS_LINEAR_COMBINATION_sub(ctx, c_ab, c, ab)
-        || !BP_R1CS_constrain(ctx, c_ab)) {
+    if (!BP_R1CS_LINEAR_COMBINATION_mul(a, lc->a2, ctx)
+        || !BP_R1CS_LINEAR_COMBINATION_mul(b, lc->b2, ctx)
+        || !BP_R1CS_LINEAR_COMBINATION_add(a, b)
+        || !BP_R1CS_LINEAR_COMBINATION_mul(c, lc->c2, ctx)
+        || !BP_R1CS_LINEAR_COMBINATION_mul_bn(c, bn7)
+        || !BP_R1CS_LINEAR_COMBINATION_sub(a, c)
+        || !BP_R1CS_LINEAR_COMBINATION_constrain(a, ctx)) {
         goto err;
     }
 
@@ -364,7 +353,6 @@ static int r1cs_example_logic4(BP_R1CS_CTX *ctx,
 err:
     BP_R1CS_LINEAR_COMBINATION_free(a);
     BP_R1CS_LINEAR_COMBINATION_free(b);
-    BP_R1CS_LINEAR_COMBINATION_free(ab);
     BP_R1CS_LINEAR_COMBINATION_free(c);
     BN_free(bn7);
 
@@ -379,7 +367,7 @@ static int r1cs_example_logic5(BP_R1CS_CTX *ctx,
 {
     int ret = 0;
     BIGNUM *bn7 = NULL;
-    BP_R1CS_LINEAR_COMBINATION *a = NULL, *b = NULL, *c = NULL, *ab = NULL, *c_ab = NULL;
+    BP_R1CS_LINEAR_COMBINATION *a = NULL, *b = NULL, *c = NULL;
 
     if (ctx == NULL || lc == NULL) {
         return 0;
@@ -390,21 +378,19 @@ static int r1cs_example_logic5(BP_R1CS_CTX *ctx,
 
     BN_set_word(bn7, 7);
 
-    if (!(a = BP_R1CS_LINEAR_COMBINATION_new())
-        || !(b = BP_R1CS_LINEAR_COMBINATION_new())
-        || !(c = BP_R1CS_LINEAR_COMBINATION_new())
-        || !(ab = BP_R1CS_LINEAR_COMBINATION_new())
-        || !(c_ab = BP_R1CS_LINEAR_COMBINATION_new())) {
+    if (!(a = BP_R1CS_LINEAR_COMBINATION_dup(lc->a1))
+        || !(b = BP_R1CS_LINEAR_COMBINATION_dup(lc->b1))
+        || !(c = BP_R1CS_LINEAR_COMBINATION_dup(lc->c1))) {
         return 0;
     }
 
-    if (!BP_R1CS_LINEAR_COMBINATION_mul(ctx, a, lc->a1, lc->a2)
-        || !BP_R1CS_LINEAR_COMBINATION_mul(ctx, b, lc->b1, lc->b2)
-        || !BP_R1CS_LINEAR_COMBINATION_add(ctx, ab, a, b)
-        || !BP_R1CS_LINEAR_COMBINATION_mul(ctx, c, lc->c1, lc->c2)
-        || !BP_R1CS_LINEAR_COMBINATION_add_bn(ctx, c, bn7)
-        || !BP_R1CS_LINEAR_COMBINATION_sub(ctx, c_ab, c, ab)
-        || !BP_R1CS_constrain(ctx, c_ab)) {
+    if (!BP_R1CS_LINEAR_COMBINATION_mul(a, lc->a2, ctx)
+        || !BP_R1CS_LINEAR_COMBINATION_mul(b, lc->b2, ctx)
+        || !BP_R1CS_LINEAR_COMBINATION_add(a, b)
+        || !BP_R1CS_LINEAR_COMBINATION_mul(c, lc->c2, ctx)
+        || !BP_R1CS_LINEAR_COMBINATION_add_bn(c, bn7)
+        || !BP_R1CS_LINEAR_COMBINATION_sub(a, c)
+        || !BP_R1CS_LINEAR_COMBINATION_constrain(a, ctx)) {
         goto err;
     }
 
@@ -413,7 +399,6 @@ static int r1cs_example_logic5(BP_R1CS_CTX *ctx,
 err:
     BP_R1CS_LINEAR_COMBINATION_free(a);
     BP_R1CS_LINEAR_COMBINATION_free(b);
-    BP_R1CS_LINEAR_COMBINATION_free(ab);
     BP_R1CS_LINEAR_COMBINATION_free(c);
     BN_free(bn7);
 
@@ -435,7 +420,7 @@ static void bp_r1cs_example_linaer_combinations_free(bp_r1cs_example_linaer_comb
     OPENSSL_free(lc);
 }
 
-static BP_R1CS_PROOF *r1cs_example_prove(BP_R1CS_CTX *ctx,
+static BP_R1CS_PROOF *r1cs_example_prove(BP_R1CS_CTX *ctx, BP_WITNESS *witness,
                                          BIGNUM *a1, BIGNUM *a2,
                                          BIGNUM *b1, BIGNUM *b2,
                                          BIGNUM *c1, BIGNUM *c2,
@@ -454,12 +439,12 @@ static BP_R1CS_PROOF *r1cs_example_prove(BP_R1CS_CTX *ctx,
     if (!(lc = OPENSSL_zalloc(sizeof(*lc))))
         return NULL;
 
-    if (!(lc_a1 = BP_R1CS_bn_commit(ctx, a1))
-        || !(lc_a2 = BP_R1CS_bn_commit(ctx, a2))
-        || !(lc_b1 = BP_R1CS_bn_commit(ctx, b1))
-        || !(lc_b2 = BP_R1CS_bn_commit(ctx, b2))
-        || !(lc_c1 = BP_R1CS_bn_commit(ctx, c1))
-        || !(lc_c2 = BP_R1CS_bn_commit(ctx, c2)))
+    if (!(lc_a1 = BP_WITNESS_r1cs_commit(witness, "a1", a1))
+        || !(lc_a2 = BP_WITNESS_r1cs_commit(witness, "a2", a2))
+        || !(lc_b1 = BP_WITNESS_r1cs_commit(witness, "b1", b1))
+        || !(lc_b2 = BP_WITNESS_r1cs_commit(witness, "b2", b2))
+        || !(lc_c1 = BP_WITNESS_r1cs_commit(witness, "c1", c1))
+        || !(lc_c2 = BP_WITNESS_r1cs_commit(witness, "c2", c2)))
         goto err;
 
     lc->a1 = lc_a1;
@@ -472,7 +457,7 @@ static BP_R1CS_PROOF *r1cs_example_prove(BP_R1CS_CTX *ctx,
     if (!logic(ctx, lc))
         goto err;
 
-    if (!(proof = BP_R1CS_prove(ctx)))
+    if (!(proof = BP_R1CS_PROOF_prove(ctx)))
         goto err;
 
     *plc = lc;
@@ -491,7 +476,7 @@ err:
     return NULL;
 }
 
-static int r1cs_example_verify(BP_R1CS_CTX *ctx,
+static int r1cs_example_verify(BP_R1CS_CTX *ctx, BP_WITNESS *witness,
                                BP_R1CS_PROOF *proof,
                                bp_r1cs_example_linaer_combinations *lc,
                                int (*logic)(BP_R1CS_CTX *, bp_r1cs_example_linaer_combinations *))
@@ -507,12 +492,12 @@ static int r1cs_example_verify(BP_R1CS_CTX *ctx,
     if (!(l = OPENSSL_zalloc(sizeof(*l))))
         return 0;
 
-    if (!(lc_a1 = BP_R1CS_lc_commit(ctx, lc->a1))
-        || !(lc_a2 = BP_R1CS_lc_commit(ctx, lc->a2))
-        || !(lc_b1 = BP_R1CS_lc_commit(ctx, lc->b1))
-        || !(lc_b2 = BP_R1CS_lc_commit(ctx, lc->b2))
-        || !(lc_c1 = BP_R1CS_lc_commit(ctx, lc->c1))
-        || !(lc_c2 = BP_R1CS_lc_commit(ctx, lc->c2)))
+    if (!(lc_a1 = BP_WITNESS_r1cs_linear_combination_get(witness, "a1"))
+        || !(lc_a2 = BP_WITNESS_r1cs_linear_combination_get(witness, "a2"))
+        || !(lc_b1 = BP_WITNESS_r1cs_linear_combination_get(witness, "b1"))
+        || !(lc_b2 = BP_WITNESS_r1cs_linear_combination_get(witness, "b2"))
+        || !(lc_c1 = BP_WITNESS_r1cs_linear_combination_get(witness, "c1"))
+        || !(lc_c2 = BP_WITNESS_r1cs_linear_combination_get(witness, "c2")))
         goto err;
 
     l->a1 = lc_a1;
@@ -525,7 +510,7 @@ static int r1cs_example_verify(BP_R1CS_CTX *ctx,
     if (!logic(ctx, l))
         goto err;
 
-    if (!BP_R1CS_verify(ctx, proof))
+    if (!BP_R1CS_PROOF_verify(ctx, proof))
         goto err;
 
     return 1;
@@ -545,25 +530,29 @@ static int r1cs_proof_test(BIGNUM *a1, BIGNUM *a2, BIGNUM *b1, BIGNUM *b2, BIGNU
                            int (*logic)(BP_R1CS_CTX *, bp_r1cs_example_linaer_combinations *))
 {
     int ret = 0;
-    BP_PUB_PARAM *pp = NULL;
     BP_TRANSCRIPT *transcript = NULL;
+    BP_PUB_PARAM *pp = NULL;
+    BP_WITNESS *witness = NULL;
     BP_R1CS_CTX *ctx = NULL;
     BP_R1CS_PROOF *proof = NULL;
     bp_r1cs_example_linaer_combinations *lc = NULL;
 
-    if (!TEST_ptr(pp = BP_PUB_PARAM_new(NID_secp256k1, 128, 1)))
-        goto err;
-
     if (!TEST_ptr(transcript = BP_TRANSCRIPT_new(BP_TRANSCRIPT_METHOD_sha256(), "r1cs_test")))
         goto err;
 
-    if (!TEST_ptr(ctx = BP_R1CS_CTX_new(pp, transcript)))
+    if (!TEST_ptr(pp = BP_PUB_PARAM_new_by_curve_id(NID_secp256k1, 128, 1)))
         goto err;
 
-    if (!TEST_ptr(proof = r1cs_example_prove(ctx, a1, a2, b1, b2, c1, c2, &lc, logic)))
+    if (!TEST_ptr(witness = BP_WITNESS_new(pp)))
         goto err;
 
-    if (!TEST_true(r1cs_example_verify(ctx, proof, lc, logic)))
+    if (!TEST_ptr(ctx = BP_R1CS_CTX_new(pp, witness, transcript)))
+        goto err;
+
+    if (!TEST_ptr(proof = r1cs_example_prove(ctx, witness, a1, a2, b1, b2, c1, c2, &lc, logic)))
+        goto err;
+
+    if (!TEST_true(r1cs_example_verify(ctx, witness, proof, lc, logic)))
         goto err;
 
     ret = 1;
@@ -921,42 +910,50 @@ err:
 static int range_proofs_test(int bits, int64_t secrets[], int len)
 {
     int ret = 0, i;
+    BIGNUM *v = NULL;
     BP_PUB_PARAM *pp = NULL;
+    BP_WITNESS *witness = NULL;
     BP_TRANSCRIPT *transcript = NULL;
-    BP_RANGE_WITNESS *witness = NULL;
     BP_RANGE_CTX *ctx = NULL;
     BP_RANGE_PROOF *proof = NULL;
 
-    if (!TEST_ptr(pp = BP_PUB_PARAM_new(NID_secp256k1, bits, 8)))
+    if (!(v = BN_new()))
+        goto err;
+
+    if (!TEST_ptr(pp = BP_PUB_PARAM_new_by_curve_id(NID_secp256k1, bits, 8)))
         goto err;
 
     if (!TEST_ptr(transcript = BP_TRANSCRIPT_new(BP_TRANSCRIPT_METHOD_sha256(), "test")))
         goto err;
 
-    if (!TEST_ptr(ctx = BP_RANGE_CTX_new(pp, transcript)))
-        goto err;
-
-    if (!TEST_ptr(witness = BP_RANGE_WITNESS_new(ctx)))
+    if (!TEST_ptr(witness = BP_WITNESS_new(pp)))
         goto err;
 
     for (i = 0; i < len; i++) {
-        if (!TEST_true(BP_RANGE_WITNESS_commit(ctx, witness, secrets[i])))
+        if (!BN_lebin2bn((const unsigned char *)&secrets[i], sizeof(secrets[i]), v))
+            goto err;
+
+        if (!TEST_true(BP_WITNESS_commit(witness, NULL, v)))
             goto err;
     }
 
-    if (!TEST_ptr(proof = BP_RANGE_PROOF_prove_new(ctx, witness)))
+    if (!TEST_ptr(ctx = BP_RANGE_CTX_new(pp, witness, transcript)))
         goto err;
 
-    if (!TEST_true(BP_RANGE_PROOF_verify(ctx, witness, proof)))
+    if (!TEST_ptr(proof = BP_RANGE_PROOF_new_prove(ctx)))
+        goto err;
+
+    if (!TEST_true(BP_RANGE_PROOF_verify(ctx, proof)))
         goto err;
 
     ret = 1;
 err:
     BP_RANGE_PROOF_free(proof);
-    BP_RANGE_WITNESS_free(witness);
     BP_RANGE_CTX_free(ctx);
-    BP_TRANSCRIPT_free(transcript);
+    BP_WITNESS_free(witness);
     BP_PUB_PARAM_free(pp);
+    BP_TRANSCRIPT_free(transcript);
+    BN_free(v);
 
     return ret;
 }
@@ -973,37 +970,41 @@ static int range_proof_test(int bits, int64_t secret)
 static int range_proof_encode_test(int bits, int64_t secret)
 {
     int ret = 0;
-    int64_t secrets[1];
     size_t size;
     unsigned char *pp_bin = NULL, *proof_bin = NULL;
+    BIGNUM *v = NULL;
     BP_PUB_PARAM *pp = NULL, *pp2 = NULL;
     BP_TRANSCRIPT *transcript = NULL, *transcript2 = NULL;
-    BP_RANGE_WITNESS *witness = NULL;
+    BP_WITNESS *witness = NULL;
     BP_RANGE_CTX *ctx = NULL, *ctx2 = NULL;
     BP_RANGE_PROOF *proof = NULL, *proof2 = NULL;
 
-    secrets[0] = secret;
+    if (!(v = BN_new()))
+        goto err;
 
-    if (!TEST_ptr(pp = BP_PUB_PARAM_new(NID_secp256k1, bits, 8)))
+    if (!TEST_ptr(pp = BP_PUB_PARAM_new_by_curve_id(NID_secp256k1, bits, 8)))
         goto err;
 
     if (!TEST_ptr(transcript = BP_TRANSCRIPT_new(BP_TRANSCRIPT_METHOD_sha256(), "test"))
         || !TEST_ptr(transcript2 = BP_TRANSCRIPT_dup(transcript)))
         goto err;
 
-    if (!TEST_ptr(ctx = BP_RANGE_CTX_new(pp, transcript)))
+    if (!TEST_ptr(witness = BP_WITNESS_new(pp)))
         goto err;
 
-    if (!TEST_ptr(witness = BP_RANGE_WITNESS_new(ctx)))
+    if (!BN_lebin2bn((const unsigned char *)&secret, sizeof(secret), v))
         goto err;
 
-    if (!TEST_true(BP_RANGE_WITNESS_commit(ctx, witness, secret)))
+    if (!TEST_true(BP_WITNESS_commit(witness, NULL, v)))
         goto err;
 
-    if (!TEST_ptr(proof = BP_RANGE_PROOF_prove_new(ctx, witness)))
+    if (!TEST_ptr(ctx = BP_RANGE_CTX_new(pp, witness, transcript)))
         goto err;
 
-    if (!TEST_true(BP_RANGE_PROOF_verify(ctx, witness, proof)))
+    if (!TEST_ptr(proof = BP_RANGE_PROOF_new_prove(ctx)))
+        goto err;
+
+    if (!TEST_true(BP_RANGE_PROOF_verify(ctx, proof)))
         goto err;
 
     size = BP_PUB_PARAM_encode(pp, NULL, 0);
@@ -1019,10 +1020,10 @@ static int range_proof_encode_test(int bits, int64_t secret)
     if (!TEST_ptr(pp2 = BP_PUB_PARAM_decode(pp_bin, size)))
         goto err;
 
-    if (!TEST_ptr(ctx2 = BP_RANGE_CTX_new(pp2, transcript2)))
+    if (!TEST_ptr(ctx2 = BP_RANGE_CTX_new(pp2, witness, transcript2)))
         goto err;
 
-    if (!TEST_true(BP_RANGE_PROOF_verify(ctx2, witness, proof)))
+    if (!TEST_true(BP_RANGE_PROOF_verify(ctx2, proof)))
         goto err;
 
     size = BP_RANGE_PROOF_encode(proof, NULL, 0);
@@ -1038,10 +1039,10 @@ static int range_proof_encode_test(int bits, int64_t secret)
     if (!TEST_ptr(proof2 = BP_RANGE_PROOF_decode(proof_bin, size)))
         goto err;
 
-    if (!TEST_true(BP_RANGE_PROOF_verify(ctx, witness, proof2)))
+    if (!TEST_true(BP_RANGE_PROOF_verify(ctx, proof2)))
         goto err;
 
-    if (!TEST_true(BP_RANGE_PROOF_verify(ctx2, witness, proof2)))
+    if (!TEST_true(BP_RANGE_PROOF_verify(ctx2, proof2)))
         goto err;
 
     ret = 1;
@@ -1050,13 +1051,14 @@ err:
     OPENSSL_free(proof_bin);
     BP_RANGE_PROOF_free(proof);
     BP_RANGE_PROOF_free(proof2);
-    BP_RANGE_WITNESS_free(witness);
     BP_RANGE_CTX_free(ctx);
     BP_RANGE_CTX_free(ctx2);
+    BP_WITNESS_free(witness);
     BP_TRANSCRIPT_free(transcript);
     BP_TRANSCRIPT_free(transcript2);
     BP_PUB_PARAM_free(pp);
     BP_PUB_PARAM_free(pp2);
+    BN_free(v);
 
     return ret;
 }

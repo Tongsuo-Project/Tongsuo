@@ -16,7 +16,7 @@
 DEFINE_STACK_OF(BIGNUM)
 DEFINE_STACK_OF(EC_POINT)
 
-bp_inner_product_pub_param_t *bp_inner_product_pub_param_new(int curve_id,
+bp_inner_product_pub_param_t *bp_inner_product_pub_param_new(const EC_GROUP *group,
                                                              STACK_OF(EC_POINT) *sk_G,
                                                              STACK_OF(EC_POINT) *sk_H)
 {
@@ -32,7 +32,7 @@ bp_inner_product_pub_param_t *bp_inner_product_pub_param_new(int curve_id,
         return NULL;
     }
 
-    pp->curve_id = curve_id;
+    pp->group = group;
     pp->sk_G = sk_G;
     pp->sk_H = sk_H;
 
@@ -77,14 +77,10 @@ bp_inner_product_ctx_t *bp_inner_product_ctx_new(bp_inner_product_pub_param_t *p
     ctx->sk_G_factors = sk_G_factors;
     ctx->sk_H_factors = sk_H_factors;
 
-    ctx->group = EC_GROUP_new_by_curve_name_ex(NULL, NULL, pp->curve_id);
-    if (ctx->group == NULL)
+    if (!(ctx->U = EC_POINT_dup(U, pp->group)))
         goto err;
 
-    if (!(ctx->U = EC_POINT_dup(U, ctx->group)))
-        goto err;
-
-    if (P != NULL && !(ctx->P = EC_POINT_dup(P, ctx->group)))
+    if (P != NULL && !(ctx->P = EC_POINT_dup(P, pp->group)))
         goto err;
 
     return ctx;
@@ -101,7 +97,6 @@ void bp_inner_product_ctx_free(bp_inner_product_ctx_t *ctx)
 
     EC_POINT_free(ctx->U);
     EC_POINT_free(ctx->P);
-    EC_GROUP_free(ctx->group);
     OPENSSL_clear_free((void *)ctx, sizeof(*ctx));
 }
 
@@ -211,7 +206,7 @@ bp_inner_product_proof_t *bp_inner_product_proof_prove(bp_inner_product_ctx_t *c
     STACK_OF(BIGNUM) *sk_a = NULL, *sk_b = NULL, *p_sk_a, *p_sk_b;
     bp_poly_points_t *poly_l = NULL, *poly_r = NULL, *poly_g = NULL, *poly_h = NULL;
     const BIGNUM *order;
-    EC_GROUP *group;
+    const EC_GROUP *group;
     bp_inner_product_pub_param_t *pp;
     bp_inner_product_proof_t *proof = NULL, *ret = NULL;
 
@@ -222,7 +217,7 @@ bp_inner_product_proof_t *bp_inner_product_proof_prove(bp_inner_product_ctx_t *c
 
     transcript = ctx->transcript;
     pp = ctx->pp;
-    group = ctx->group;
+    group = pp->group;
     order = EC_GROUP_get0_order(group);
     pp_num = sk_EC_POINT_num(pp->sk_G);
     poly_num = pp_num + 1;
@@ -518,8 +513,8 @@ int bp_inner_product_proof_verify(bp_inner_product_ctx_t *ctx,
     BIGNUM **vec_x = NULL, **vec_x_inv = NULL, *G_factors, *H_factors;
     BIGNUM *s, *s_inv, *u, *u_inv, *x2, *x2_inv;
     bp_poly_points_t *poly = NULL;
-    EC_GROUP *group;
     const BIGNUM *order;
+    const EC_GROUP *group;
     bp_inner_product_pub_param_t *pp;
 
     if (!ctx || !proof) {
@@ -528,9 +523,9 @@ int bp_inner_product_proof_verify(bp_inner_product_ctx_t *ctx,
     }
 
     transcript = ctx->transcript;
-    group = ctx->group;
-    order = EC_GROUP_get0_order(group);
     pp = ctx->pp;
+    group = pp->group;
+    order = EC_GROUP_get0_order(group);
     pp_num = sk_EC_POINT_num(pp->sk_G);
     proof_num = sk_EC_POINT_num(proof->sk_L);
     n = 2 * proof_num  + 2 * pp_num + 1;

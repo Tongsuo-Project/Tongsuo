@@ -23,9 +23,9 @@ extern "C" {
 
 DEFINE_STACK_OF(BIGNUM)
 DEFINE_STACK_OF(EC_POINT)
+DEFINE_STACK_OF(BP_VARIABLE)
 
 struct bp_pub_param_st {
-    int curve_id;
     EC_GROUP *group;
     /* `gens_capacity` is the number of generators to precompute for each party.
      *  For range_proof, it is the maximum bitsize of the range_proof,
@@ -41,6 +41,21 @@ struct bp_pub_param_st {
     STACK_OF(EC_POINT) *sk_H;
     EC_POINT *H;
     EC_POINT *U;
+    CRYPTO_RWLOCK *lock;
+    CRYPTO_REF_COUNT references;
+};
+
+struct bp_variable_st {
+    EC_POINT *point;
+    char *name;
+};
+
+struct bp_witness_st {
+    EC_GROUP *group;
+    EC_POINT *H;
+    STACK_OF(BIGNUM) *sk_r;
+    STACK_OF(BIGNUM) *sk_v;
+    STACK_OF(BP_VARIABLE) *sk_V;
     CRYPTO_RWLOCK *lock;
     CRYPTO_REF_COUNT references;
 };

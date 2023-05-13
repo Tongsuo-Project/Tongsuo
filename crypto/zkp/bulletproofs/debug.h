@@ -31,7 +31,7 @@ void EC_POINT_debug_print_affine(BIO *b, const EC_GROUP *group, const EC_POINT *
                                  const char *name, BN_CTX *ctx);
 
 void BP_PUB_PARAM_debug_print(BP_PUB_PARAM *pp, const char *note);
-void BP_RANGE_WITNESS_debug_print(BP_RANGE_WITNESS *witness, const char *note);
+void BP_WITNESS_debug_print(BP_WITNESS *witness, const char *note);
 void BP_RANGE_PROOF_debug_print(BP_RANGE_PROOF *proof, const EC_GROUP *group, const char *note);
 
 void bp_inner_product_pub_param_debug_print(bp_inner_product_pub_param_t *pp,
@@ -46,6 +46,7 @@ void bp_point_vector_debug_print(BIO *bio, const EC_GROUP *group,
                                  const char *note, BN_CTX *bn_ctx);
 void bp_stack_of_bignum_debug_print(BIO *bio, STACK_OF(BIGNUM) *sk, const char *name);
 void bp_stack_of_point_debug_print(BIO *bio, STACK_OF(EC_POINT) *sk, const char *nam);
+void bp_stack_of_variable_debug_print(BIO *bio, STACK_OF(BP_VARIABLE) *sk, const char *name);
 
 # ifdef  __cplusplus
 }
