@@ -41,8 +41,7 @@ BP_R1CS_CTX *BP_R1CS_CTX_new(BP_PUB_PARAM *pp, BP_WITNESS *witness,
 
     ctx->witness = witness;
 
-    if ((ctx->p_constraints = sk_BP_R1CS_LINEAR_COMBINATION_new_null()) == NULL
-        || (ctx->v_constraints = sk_BP_R1CS_LINEAR_COMBINATION_new_null()) == NULL
+    if ((ctx->constraints = sk_BP_R1CS_LINEAR_COMBINATION_new_null()) == NULL
         || (ctx->aL = sk_BIGNUM_new_null()) == NULL
         || (ctx->aR = sk_BIGNUM_new_null()) == NULL
         || (ctx->aO = sk_BIGNUM_new_null()) == NULL)
@@ -63,9 +62,7 @@ void BP_R1CS_CTX_free(BP_R1CS_CTX *ctx)
     BP_PUB_PARAM_down_ref(ctx->pp);
     BP_WITNESS_down_ref(ctx->witness);
 
-    sk_BP_R1CS_LINEAR_COMBINATION_pop_free(ctx->p_constraints,
-                                           BP_R1CS_LINEAR_COMBINATION_free);
-    sk_BP_R1CS_LINEAR_COMBINATION_pop_free(ctx->v_constraints,
+    sk_BP_R1CS_LINEAR_COMBINATION_pop_free(ctx->constraints,
                                            BP_R1CS_LINEAR_COMBINATION_free);
     sk_BIGNUM_pop_free(ctx->aL, BN_free);
     sk_BIGNUM_pop_free(ctx->aR, BN_free);
@@ -295,7 +292,7 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_prove(BP_R1CS_CTX *ctx)
     BP_R1CS_LINEAR_COMBINATION_ITEM *item;
     BP_R1CS_PROOF *proof = NULL, *ret = NULL;
 
-    if (ctx == NULL || ctx->p_constraints == NULL || ctx->witness == NULL) {
+    if (ctx == NULL || ctx->constraints == NULL || ctx->witness == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return NULL;
     }
@@ -496,11 +493,14 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_prove(BP_R1CS_CTX *ctx)
         BN_zero(wV[i]);
     }
 
-    k = sk_BP_R1CS_LINEAR_COMBINATION_num(ctx->p_constraints);
+    k = sk_BP_R1CS_LINEAR_COMBINATION_num(ctx->constraints);
     for (i = 0; i < k; i++) {
-        lc = sk_BP_R1CS_LINEAR_COMBINATION_value(ctx->p_constraints, i);
+        lc = sk_BP_R1CS_LINEAR_COMBINATION_value(ctx->constraints, i);
         if (lc == NULL)
             goto err;
+
+        if (lc->type != BP_R1CS_LC_TYPE_PROVE)
+            continue;
 
         m = sk_BP_R1CS_LINEAR_COMBINATION_ITEM_num(lc->items);
         for (j = 0; j < m; j++) {
@@ -781,7 +781,7 @@ int BP_R1CS_PROOF_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof)
     BP_R1CS_LINEAR_COMBINATION_ITEM *item;
     bp_inner_product_proof_t *ip_proof = NULL;
 
-    if (ctx == NULL || ctx->v_constraints == NULL || ctx->witness == NULL) {
+    if (ctx == NULL || ctx->constraints == NULL || ctx->witness == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return 0;
     }
@@ -965,11 +965,14 @@ int BP_R1CS_PROOF_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof)
 
     BN_zero(wc);
 
-    m = sk_BP_R1CS_LINEAR_COMBINATION_num(ctx->v_constraints);
+    m = sk_BP_R1CS_LINEAR_COMBINATION_num(ctx->constraints);
     for (i = 0; i < m; i++) {
-        lc = sk_BP_R1CS_LINEAR_COMBINATION_value(ctx->v_constraints, i);
+        lc = sk_BP_R1CS_LINEAR_COMBINATION_value(ctx->constraints, i);
         if (lc == NULL)
             goto err;
+
+        if (lc->type != BP_R1CS_LC_TYPE_VERIFY)
+            continue;
 
         n = sk_BP_R1CS_LINEAR_COMBINATION_ITEM_num(lc->items);
         for (j = 0; j < n; j++) {

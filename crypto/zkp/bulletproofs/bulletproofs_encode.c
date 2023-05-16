@@ -52,7 +52,12 @@ static int bp_stack_of_variable_encode(STACK_OF(BP_VARIABLE) *sk, unsigned char 
             V = sk_BP_VARIABLE_value(sk, i);
             if (V == NULL)
                 break;
-            size += strlen(V->name);
+
+            if (V->name != NULL) {
+                size += strlen(V->name);
+            }
+
+            size += 1;
         }
 
         return size;
@@ -71,6 +76,12 @@ static int bp_stack_of_variable_encode(STACK_OF(BP_VARIABLE) *sk, unsigned char 
             goto end;
 
         p += point_len;
+
+        if (V->name == NULL) {
+            *p++ = '\0';
+            continue;
+        }
+
         stpcpy((char *)p, V->name);
         p += strlen(V->name) + 1;
     }
@@ -116,9 +127,14 @@ static STACK_OF(BP_VARIABLE) *bp_stack_of_variable_decode(const unsigned char *i
             goto err;
 
         p += point_len;
-
         name = (char *)p;
-        p += strlen(name) + 1;
+        if (*name == '\0') {
+            name = NULL;
+        } else {
+            p += strlen(name);
+        }
+
+        p += 1;
 
         if (!(var = BP_VARIABLE_new(name, V, group)))
             goto err;
@@ -149,7 +165,7 @@ static int bp_stack_of_bignum_encode(STACK_OF(BIGNUM) *sk, unsigned char *out,
 
     n = sk ? sk_BIGNUM_num(sk) : 0;
     if (out == NULL)
-        return sizeof(n) + n * bn_len;
+        return sizeof(n) + n * (bn_len + 1);
 
     q = (int *)out;
     *q++ = l2n((int)n);
@@ -159,6 +175,8 @@ static int bp_stack_of_bignum_encode(STACK_OF(BIGNUM) *sk, unsigned char *out,
         b = sk_BIGNUM_value(sk, i);
         if (b == NULL)
             goto end;
+
+        *p++ = BN_is_negative(b) ? '-' : '+';
 
         if (!BN_bn2binpad(b, p, bn_len))
             goto end;
@@ -174,7 +192,7 @@ static STACK_OF(BIGNUM) *bp_stack_of_bignum_decode(const unsigned char *in,
                                                    int *len, int bn_len)
 {
     unsigned char *p;
-    int *q = (int *)in, n, i;
+    int *q = (int *)in, n, i, neg;
     BIGNUM *b = NULL;
     STACK_OF(BIGNUM) *ret;
 
@@ -194,8 +212,12 @@ static STACK_OF(BIGNUM) *bp_stack_of_bignum_decode(const unsigned char *in,
         if (b == NULL)
             goto err;
 
+        neg = *p++ == '-' ? 1 : 0;
+
         if (!BN_bin2bn(p, (int)bn_len, b))
             goto err;
+
+        BN_set_negative(b, neg);
 
         if (sk_BIGNUM_push(ret, b) <= 0)
             goto err;
@@ -586,12 +608,15 @@ end:
  *  \param  in         Memory buffer with the encoded BP_WITNESS
  *                     object
  *  \param  size       The memory size of the in pointer object
+ *  \param  flag       The flag is an indicator for decoding random number 'r'
+ *                     and plaintext 'v', with 1 indicating decoding and 0
+ *                     indicating no decoding.
  *  \return BP_WITNESS object pointer on success and NULL otherwise
  */
-BP_WITNESS *BP_WITNESS_decode(const unsigned char *in, size_t size)
+BP_WITNESS *BP_WITNESS_decode(const unsigned char *in, size_t size, int flag)
 {
     unsigned char *p;
-    int curve_id, *q = (int *)in, bn_len, sk_len, n;
+    int curve_id, *q = (int *)in, bn_len, sk_len;
     size_t point_len;
     BP_WITNESS *witness = NULL;
     BN_CTX *bn_ctx = NULL;
@@ -612,7 +637,6 @@ BP_WITNESS *BP_WITNESS_decode(const unsigned char *in, size_t size)
     curve_id = n2l(*q);
     q++;
     p = (unsigned char *)q;
-    n = n2l(*q);
 
     group = EC_GROUP_new_by_curve_name_ex(NULL, NULL, curve_id);
     if (group == NULL)
@@ -626,14 +650,12 @@ BP_WITNESS *BP_WITNESS_decode(const unsigned char *in, size_t size)
     if (point_len <= 0)
         goto err;
 
-    if (size < (4 * 2 + point_len * n)) {
-        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_INVALID_ARGUMENT);
-        goto err;
-    }
-
     if (!(witness = OPENSSL_zalloc(sizeof(*witness)))) {
         goto err;
     }
+
+    if (!(witness->H = EC_POINT_new(group)))
+        goto err;
 
     if (!EC_POINT_oct2point(group, witness->H, p, point_len, bn_ctx))
         goto err;
@@ -645,17 +667,23 @@ BP_WITNESS *BP_WITNESS_decode(const unsigned char *in, size_t size)
 
     p += sk_len;
 
-    if (!(witness->sk_r = bp_stack_of_bignum_decode(p, &sk_len, bn_len)))
-        goto err;
+    if (flag == 1) {
+        if (!(witness->sk_r = bp_stack_of_bignum_decode(p, &sk_len, bn_len)))
+            goto err;
 
-    p += sk_len;
+        p += sk_len;
 
-    if (!(witness->sk_v = bp_stack_of_bignum_decode(p, &sk_len, bn_len)))
-        goto err;
+        if (!(witness->sk_v = bp_stack_of_bignum_decode(p, &sk_len, bn_len)))
+            goto err;
 
-    p += sk_len;
+        p += sk_len;
+    }
 
     witness->group = group;
+
+    witness->references = 1;
+    if ((witness->lock = CRYPTO_THREAD_lock_new()) == NULL)
+        goto err;
 
     BN_CTX_free(bn_ctx);
     return witness;

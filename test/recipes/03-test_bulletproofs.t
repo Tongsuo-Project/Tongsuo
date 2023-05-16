@@ -11,9 +11,9 @@ use OpenSSL::Test;              # get 'plan'
 use OpenSSL::Test::Simple;
 use OpenSSL::Test::Utils;
 
-setup("test_bullet_proof");
+setup("test_bulletproofs");
 
-plan skip_all => "This test is unsupported in a no-bullet_proof build"
+plan skip_all => "This test is unsupported in a no-bulletproofs build"
     if disabled("bulletproofs");
 
-simple_test("test_bullet_proof", "bullet_proof_test");
+simple_test("test_bulletproofs", "bulletproofs_test");

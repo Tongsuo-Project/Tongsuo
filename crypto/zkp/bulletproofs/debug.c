@@ -13,11 +13,48 @@
 #include <openssl/bulletproofs.h>
 #include "debug.h"
 
+#if 0
 int bp_rand_range(BIGNUM *rnd, const BIGNUM *range)
 {
     BN_set_word(rnd, 1);
     return 1;
 }
+#endif
+
+int bp_buf2hexstr_print(BIO *bio, const unsigned char *buf, size_t size,
+                        char *field, int text)
+{
+    unsigned char *out = NULL;
+    size_t out_n;
+    BIO *b = NULL;
+
+    if (bio == NULL) {
+        bio = b = BIO_new(BIO_s_file());
+        BIO_set_fp(b, stderr, BIO_NOCLOSE);
+    }
+
+    BIO_printf(bio, "%s: ", field);
+
+    if (text) {
+        BIO_puts(bio, "\n");
+        BIO_indent(bio, 4, 4);
+        BIO_hex_string(bio, 4, 16, buf, size);
+    } else {
+        out_n = size * 2 + 1;
+        if (!(out = (unsigned char *)OPENSSL_zalloc(out_n))
+            || !OPENSSL_buf2hexstr_ex((char *)out, out_n, NULL, buf, size, '\0')) {
+            OPENSSL_free(out);
+            return 0;
+        }
+        BIO_printf(bio, "%s", out);
+        OPENSSL_free(out);
+    }
+
+    BIO_puts(bio, "\n");
+    BIO_free(b);
+    return 1;
+}
+
 
 void BN_debug_print(BIO *b, const BIGNUM *n, const char *name)
 {
@@ -99,48 +136,35 @@ err:
 void BP_PUB_PARAM_debug_print(BP_PUB_PARAM *pp, const char *note)
 {
     BIO *bio = NULL;
-    BN_CTX *bn_ctx = NULL;
-    EC_GROUP *group = NULL;
+    int curve_id = 0;
 
     if (!(bio = BIO_new(BIO_s_file())))
         goto err;
 
     BIO_set_fp(bio, stderr, BIO_NOCLOSE);
 
-    bn_ctx = BN_CTX_new();
-    if (bn_ctx == NULL)
-        goto err;
-
-    if (!(group = EC_GROUP_new_by_curve_name_ex(NULL, NULL, pp->curve_id)))
-        goto err;
+    curve_id = EC_GROUP_get_curve_name(pp->group);
 
     BIO_printf(bio, "%s: \n", note);
     BIO_printf(bio, "pp->gens_capacity: %zu\n", pp->gens_capacity);
     BIO_printf(bio, "pp->party_capacity: %zu\n", pp->party_capacity);
-    BIO_printf(bio, "pp->curve_id: %zu\n", pp->curve_id);
+    BIO_printf(bio, "pp->curve_id: %zu\n", curve_id);
 
     bp_stack_of_point_debug_print(bio, pp->sk_G, "pp->sk_G");
     bp_stack_of_point_debug_print(bio, pp->sk_H, "pp->sk_H");
 
 err:
-    EC_GROUP_free(group);
-    BN_CTX_free(bn_ctx);
     BIO_free(bio);
 }
 
 void BP_WITNESS_debug_print(BP_WITNESS *witness, const char *note)
 {
     BIO *bio = NULL;
-    BN_CTX *bn_ctx = NULL;
 
     if (!(bio = BIO_new(BIO_s_file())))
         goto err;
 
     BIO_set_fp(bio, stderr, BIO_NOCLOSE);
-
-    bn_ctx = BN_CTX_new();
-    if (bn_ctx == NULL)
-        goto err;
 
     BIO_printf(bio, "%s: \n", note);
     BIO_printf(bio, "witness->n: %d\n", sk_BP_VARIABLE_num(witness->sk_V));
@@ -150,7 +174,6 @@ void BP_WITNESS_debug_print(BP_WITNESS *witness, const char *note)
     bp_stack_of_bignum_debug_print(bio, witness->sk_v, "witness->sk_v");
 
 err:
-    BN_CTX_free(bn_ctx);
     BIO_free(bio);
 }
 
@@ -188,31 +211,23 @@ void bp_inner_product_pub_param_debug_print(bp_inner_product_pub_param_t *pp,
                                             const char *note)
 {
     BIO *bio = NULL;
-    BN_CTX *bn_ctx = NULL;
-    EC_GROUP *group = NULL;
+    int curve_id;
 
     if (!(bio = BIO_new(BIO_s_file())))
         goto err;
 
     BIO_set_fp(bio, stderr, BIO_NOCLOSE);
 
-    bn_ctx = BN_CTX_new();
-    if (bn_ctx == NULL)
-        goto err;
-
-    if (!(group = EC_GROUP_new_by_curve_name_ex(NULL, NULL, pp->curve_id)))
-        goto err;
+    curve_id = EC_GROUP_get_curve_name(pp->group);
 
     BIO_printf(bio, "%s: \n", note);
-    BIO_printf(bio, "ip_pp->curve_id: %zu\n", pp->curve_id);
+    BIO_printf(bio, "ip_pp->curve_id: %zu\n", curve_id);
     BIO_printf(bio, "ip_pp->n: %zu\n", sk_EC_POINT_num(pp->sk_G));
 
     bp_stack_of_point_debug_print(bio, pp->sk_G, "ip_pp->sk_G");
     bp_stack_of_point_debug_print(bio, pp->sk_H, "ip_pp->sk_H");
 
 err:
-    EC_GROUP_free(group);
-    BN_CTX_free(bn_ctx);
     BIO_free(bio);
 }
 
@@ -220,16 +235,11 @@ void bp_inner_product_witness_debug_print(bp_inner_product_witness_t *witness,
                                           const char *note)
 {
     BIO *bio = NULL;
-    BN_CTX *bn_ctx = NULL;
 
     if (!(bio = BIO_new(BIO_s_file())))
         goto err;
 
     BIO_set_fp(bio, stderr, BIO_NOCLOSE);
-
-    bn_ctx = BN_CTX_new();
-    if (bn_ctx == NULL)
-        goto err;
 
     BIO_printf(bio, "%s: \n", note);
     BIO_printf(bio, "ip_witness->n: %zu\n", sk_BIGNUM_num(witness->sk_a));
@@ -238,7 +248,6 @@ void bp_inner_product_witness_debug_print(bp_inner_product_witness_t *witness,
     bp_stack_of_bignum_debug_print(bio, witness->sk_b, "ip_witness->sk_b");
 
 err:
-    BN_CTX_free(bn_ctx);
     BIO_free(bio);
 }
 
@@ -246,16 +255,11 @@ void bp_inner_product_proof_debug_print(bp_inner_product_proof_t *proof,
                                         const EC_GROUP *group, const char *note)
 {
     BIO *bio = NULL;
-    BN_CTX *bn_ctx = NULL;
 
     if (!(bio = BIO_new(BIO_s_file())))
         goto err;
 
     BIO_set_fp(bio, stderr, BIO_NOCLOSE);
-
-    bn_ctx = BN_CTX_new();
-    if (bn_ctx == NULL)
-        goto err;
 
     BIO_printf(bio, "%s: \n", note);
     BIO_printf(bio, "ip_proof->n: %zu\n", sk_EC_POINT_num(proof->sk_L));
@@ -267,7 +271,6 @@ void bp_inner_product_proof_debug_print(bp_inner_product_proof_t *proof,
     BN_debug_print(bio, proof->b, "ip_proof->b");
 
 err:
-    BN_CTX_free(bn_ctx);
     BIO_free(bio);
 }
 

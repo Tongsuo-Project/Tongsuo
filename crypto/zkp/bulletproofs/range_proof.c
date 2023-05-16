@@ -110,7 +110,7 @@ void BP_RANGE_CTX_free(BP_RANGE_CTX *ctx)
  *  \param  pp          BP_PUB_PARAM object
  *  \return newly created BP_RANGE_PROOF object or NULL in case of an error
  */
-BP_RANGE_PROOF *BP_RANGE_PROOF_new(BP_PUB_PARAM *pp)
+BP_RANGE_PROOF *BP_RANGE_PROOF_new(const BP_PUB_PARAM *pp)
 {
     if (pp == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
@@ -605,7 +605,7 @@ err:
  *  \param  proof     BP_RANGE_PROOF object
  *  \return 1 if the proof is valid, 0 if the proof is invalid and -1 on error
  */
-int BP_RANGE_PROOF_verify(BP_RANGE_CTX *ctx, BP_RANGE_PROOF *proof)
+int BP_RANGE_PROOF_verify(BP_RANGE_CTX *ctx, const BP_RANGE_PROOF *proof)
 {
     int ret = 0, i = 0, j, m, n, bits, poly_p_num, poly_r_num, witness_n, witness_padded_n;
     BP_TRANSCRIPT *transcript;

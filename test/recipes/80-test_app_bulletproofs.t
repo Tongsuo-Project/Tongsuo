@@ -20,11 +20,13 @@ my $BULLETPROOFS_TEST_OUT_D = catdir($BULLETPROOFS_TEST_D, "bulletproofs_test_ou
 
 my $ppgen_out_path = catfile($BULLETPROOFS_TEST_OUT_D, "pp.pem");
 my $pp_out_path = catfile($BULLETPROOFS_TEST_OUT_D, "pp-out.txt");
+my $witness_out_path = catfile($BULLETPROOFS_TEST_OUT_D, "witness-out.txt");
 my $proof_out_path = catfile($BULLETPROOFS_TEST_OUT_D, "proof-out.txt");
 my $prove_out_path = catfile($BULLETPROOFS_TEST_OUT_D, "proof.pem");
 my $verify_out_path = catfile($BULLETPROOFS_TEST_OUT_D, "verify-out.txt");
 
 my $pp_path = $ppgen_out_path;
+my $witness_path = $witness_out_path;
 my $proof_path = $prove_out_path;
 
 rmtree(${BULLETPROOFS_TEST_OUT_D}, { safe => 0 });
@@ -50,19 +52,19 @@ sub file_content
 
 sub bulletproofs_ppgen
 {
-    my ($curve_name, $bits, $agg_max, $text) = @_;
+    my ($curve_name, $gens_capacity, $party_capacity, $text) = @_;
     my @app_args = ("openssl", "bulletproofs", "-ppgen", "-out", $ppgen_out_path);
     if ($curve_name) {
         push @app_args, "-curve_name";
         push @app_args, $curve_name;
     }
-    if ($bits) {
+    if ($gens_capacity) {
         push @app_args, "-gens_capacity";
-        push @app_args, $bits;
+        push @app_args, $gens_capacity;
     }
-    if ($agg_max) {
+    if ($party_capacity) {
         push @app_args, "-party_capacity";
-        push @app_args, $agg_max;
+        push @app_args, $party_capacity;
     }
     if ($text) {
         push @app_args, "-text";
@@ -75,13 +77,40 @@ sub bulletproofs_ppgen
 
 sub bulletproofs_pp
 {
-    my ($pp, $text) = @_;
-    my @app_args = ("openssl", "bulletproofs", "-pp", "-in", $pp, "-out", $pp_out_path);
+    my ($pp_path, $text) = @_;
+    my @app_args = ("openssl", "bulletproofs", "-pp", "-in", $pp_path, "-out", $pp_out_path);
     if ($text) {
         push @app_args, "-text";
     }
     if (run(app([@app_args]))) {
         return file_content($pp_out_path);
+    }
+    return 'Error';
+}
+
+sub bulletproofs_witness_commit
+{
+    my ($pp_path, $text, @witnesses) = @_;
+    my @app_args = ("openssl", "bulletproofs", "-witness", "-pp_in", $pp_path, "-out", $witness_out_path);
+    if ($text) {
+        push @app_args, "-text";
+    }
+    push @app_args, @witnesses;
+    if (run(app([@app_args]))) {
+        return file_content($witness_out_path);
+    }
+    return 'Error';
+}
+
+sub bulletproofs_witness_print
+{
+    my ($text) = @_;
+    my @app_args = ("openssl", "bulletproofs", "-witness", "-in", $witness_path);
+    if ($text) {
+        push @app_args, "-text";
+    }
+    if (run(app([@app_args]))) {
+        return file_content($witness_out_path);
     }
     return 'Error';
 }
@@ -101,12 +130,11 @@ sub bulletproofs_proof
 
 sub bulletproofs_prove
 {
-    my ($pp, @secrets, $text) = @_;
-    my @app_args = ("openssl", "bulletproofs", "-prove", "-pp_in", $pp, "-out", $prove_out_path);
+    my ($pp, $witness, $text) = @_;
+    my @app_args = ("openssl", "bulletproofs", "-prove", "-pp_in", $pp, "-witness_in", $witness, "-out", $prove_out_path);
     if ($text) {
         push @app_args, "-text";
     }
-    push @app_args, @secrets;
     if (run(app([@app_args]))) {
         return file_content($prove_out_path);
     }
@@ -129,52 +157,85 @@ setup("test_app_bulletproofs");
 plan skip_all => "app_bulletproofs is not supported by this OpenSSL build"
     if disabled("bulletproofs");
 
-plan tests => 21;
+plan tests => 36;
 
 my $res = bulletproofs_ppgen();
-ok($res =~ m/BULLETPROOFS PUBLIC PARAM/, "check bulletproofs public parameter generate with default arguments");
+ok($res =~ m/BULLETPROOFS PUBLIC PARAM/, "Check bulletproofs public parameter generate with default arguments");
 $res = bulletproofs_pp($pp_path, 1);
-ok($res =~ m/curve_id: \d+ \([\d\-A-Za-z_]+\)\nbits: \d+\nmax aggregation number: \d+/, "check bulletproofs public parameter generate with default arguments");
+ok($res =~ m/curve: [\d\-A-Za-z_]+ \(\d+\)\ngens_capacity: \d+\nparty_capacity: \d+/, "Check bulletproofs public parameter generate with default arguments");
 
-$res = bulletproofs_ppgen("SM2", 16, 2, 1);
-ok($res =~ m/curve_id: 1172 \(SM2\)\nbits: 16\nmax aggregation number: 2/, "check bulletproofs public parameter generate with (SM2, 16, 2)");
+$res = bulletproofs_ppgen("SM2", 16, 4, 1);
+ok($res =~ m/curve: SM2 \(1172\)\ngens_capacity: 16\nparty_capacity: 4/, "Check bulletproofs public parameter generate with (SM2, 16, 4)");
+
+# test witness: 1
+$res = bulletproofs_witness_commit($pp_path, 1, (1));
+ok($res =~ m/BEGIN BULLETPROOFS WITNESS/, "Check bulletproofs witness output format");
+ok($res =~ m/v\[n\]:\s+\[0\]: 1 \(0x1\)/, "Check the value of V in the bulletproofs witness, generated with wintesses: 1");
 
 # test prove secrets: 1
-$res = bulletproofs_prove($pp_path, (1));
-ok($res =~ m/BEGIN BULLETPROOFS RANGE PROOF/, "check bulletproofs prove secrets: 1");
+$res = bulletproofs_prove($pp_path, $witness_path, 1);
+ok($res =~ m/BEGIN BULLETPROOFS RANGE PROOF[\s\S]+BEGIN BULLETPROOFS WITNESS/, "Check the format of the bulletproofs proof result with witness: 1");
 $res = bulletproofs_verify($pp_path, $proof_path);
-ok($res =~ m/The proof is valid/, "check bulletproofs verify proof(secrets: 1)");
+ok($res =~ m/The proof is valid/, "Check the verification of the bulletproofs proof with the witness: 1");
 $res = bulletproofs_proof($proof_path);
-ok($res =~ m/BEGIN BULLETPROOFS RANGE PROOF/ && $res !~ m/n: 1/, "check bulletproofs proof output");
+ok($res =~ m/BEGIN BULLETPROOFS RANGE PROOF/, "Check bulletproofs proof output");
 $res = bulletproofs_proof($proof_path, 1);
-ok($res =~ m/n: 1/ && $res =~ m/V\[n\]:/ && $res =~ m/    R\[n\]:/, "check bulletproofs proof text output");
+ok($res =~ m/A: (\w\w:?)+\s+S: (\w\w:?)+\s+T1: (\w\w:?)+\s+T2: (\w\w:?)+\s+taux: (\w\w:?)+\s+mu: (\w\w:?)+\s+tx: (\w\w:?)+\s+inner proof:/ && $res =~ m/V\[n\]:/ && $res =~ m/    R\[n\]:/, "Check bulletproofs proof text output");
 
-# test prove secrets: 1 100
-$res = bulletproofs_prove($pp_path, (1, 100));
-ok($res =~ m/BEGIN BULLETPROOFS RANGE PROOF/, "check bulletproofs prove secrets: 1 100");
+# test witness: 1,100
+$res = bulletproofs_witness_commit($pp_path, 1, (1, 100));
+ok($res =~ m/v\[n\]:\s+\[0\]: 1 \(0x1\)\s+\[1\]: 100 \(0x64\)/, "Check the value of v in the bulletproofs witness, generated with wintesses: 1,100");
+
+# test prove secrets: 1,100
+$res = bulletproofs_prove($pp_path, $witness_path, 1);
+ok($res =~ m/BEGIN BULLETPROOFS RANGE PROOF[\s\S]+BEGIN BULLETPROOFS WITNESS/, "Check the format of the bulletproofs proof result with witness: 1,100");
 $res = bulletproofs_verify($pp_path, $proof_path);
-ok($res =~ m/The proof is valid/, "check bulletproofs verify proof(secrets: 1 100)");
+ok($res =~ m/The proof is valid/, "Check the verification of the bulletproofs proof with the witness: 1,100");
 $res = bulletproofs_proof($proof_path);
-ok($res =~ m/BEGIN BULLETPROOFS RANGE PROOF/ && $res !~ m/n: 2/, "check bulletproofs proof output");
+ok($res =~ m/BEGIN BULLETPROOFS RANGE PROOF/, "Check bulletproofs proof output");
 $res = bulletproofs_proof($proof_path, 1);
-ok($res =~ m/n: 2/ && $res =~ m/V\[n\]:/ && $res =~ m/    R\[n\]:/, "check bulletproofs proof text output");
+ok($res =~ m/A: (\w\w:?)+\s+S: (\w\w:?)+\s+T1: (\w\w:?)+\s+T2: (\w\w:?)+\s+taux: (\w\w:?)+\s+mu: (\w\w:?)+\s+tx: (\w\w:?)+\s+inner proof:/ && $res =~ m/V\[n\]:/ && $res =~ m/    R\[n\]:/, "Check bulletproofs proof text output");
 
-# test prove secrets: 1 100000
-$res = bulletproofs_prove($pp_path, (1, 100000));
-ok($res =~ m/BEGIN BULLETPROOFS RANGE PROOF/, "check bulletproofs prove secrets: 1 100000");
+bulletproofs_ppgen("SM2", 16, 4, 1);
 $res = bulletproofs_verify($pp_path, $proof_path);
-ok($res =~ m/The proof is invalid/, "check bulletproofs verify proof(secrets: 1 100000), 100000 is not in [0, 2^16)");
+ok($res =~ m/The proof is invalid/, "Check the verification of the bulletproofs proof using the other public parameters.");
+
+# test witness: 1,2,100000
+$res = bulletproofs_witness_commit($pp_path, 1, (1, 2, 100000));
+ok($res =~ m/v\[n\]:\s+\[0\]: 1 \(0x1\)\s+\[1\]: 2 \(0x2\)\s+\[2\]: 100000 \(0x186a0\)/, "Check the value of v in the bulletproofs witness, generated with wintesses: 1,2,100000");
+
+# test prove secrets: 1,2,100000
+$res = bulletproofs_prove($pp_path, $witness_path, 1);
+ok($res =~ m/BEGIN BULLETPROOFS RANGE PROOF[\s\S]+BEGIN BULLETPROOFS WITNESS/, "Check the format of the bulletproofs proof result with witness: 1,2,100000");
+$res = bulletproofs_verify($pp_path, $proof_path);
+ok($res =~ m/The proof is invalid/, "Check the verification of the bulletproofs proof with the witness: 1,2,100000. 100000 is out of range [0, 1<<16), it should fail.");
 $res = bulletproofs_proof($proof_path);
-ok($res =~ m/BEGIN BULLETPROOFS RANGE PROOF/ && $res !~ m/n: 2/, "check bulletproofs proof output");
+ok($res =~ m/BEGIN BULLETPROOFS RANGE PROOF/, "Check bulletproofs proof output");
 $res = bulletproofs_proof($proof_path, 1);
-ok($res =~ m/n: 2/ && $res =~ m/V\[n\]:/ && $res =~ m/    R\[n\]:/, "check bulletproofs proof text output");
+ok($res =~ m/A: (\w\w:?)+\s+S: (\w\w:?)+\s+T1: (\w\w:?)+\s+T2: (\w\w:?)+\s+taux: (\w\w:?)+\s+mu: (\w\w:?)+\s+tx: (\w\w:?)+\s+inner proof:/ && $res =~ m/V\[n\]:/ && $res =~ m/    R\[n\]:/, "Check bulletproofs proof text output");
 
-# test prove secrets: 1 100 1000
-$res = bulletproofs_prove($pp_path, (1, 100, 1000));
-ok($res =~ m/Error/, "check bulletproofs prove secrets: 1 100 1000, the max agg is exceeded");
+# test witness: 1,2,100000,3,4
+$res = bulletproofs_witness_commit($pp_path, 1, (1, 2, 100000, 3, 4));
+ok($res =~ m/v\[n\]:\s+\[0\]: 1 \(0x1\)\s+\[1\]: 2 \(0x2\)\s+\[2\]: 100000 \(0x186a0\)\s+\[3\]: 3 \(0x3\)\s+\[4\]: 4 \(0x4\)/, "Check the value of v in the bulletproofs witness, generated with wintesses: 1,2,100000,3,4");
 
-bulletproofs_ppgen();
-$res = bulletproofs_verify($pp_path, $proof_path);
-ok($res =~ m/The proof is invalid/, "check bulletproofs verify proof by other public parameter");
+# test prove secrets: 1,2,100000,3,4
+$res = bulletproofs_prove($pp_path, $witness_path, 1);
+ok($res =~ m/Error/, "Check the format of the bulletproofs proof result with witness: 1,2,100000. The party capacity is exceeded");
 
-#rmtree(${BULLETPROOFS_TEST_OUT_D}, { safe => 0 });
+$res = bulletproofs_witness_commit($pp_path, 1, ("a=1"));
+ok($res =~ m/V\[n\]:\s+\[a\]: \w+/, "Check the value of V in the bulletproofs witness, generated with wintesses: a=1");
+ok($res =~ m/v\[n\]:\s+\[0\]: 1 \(0x1\)/, "Check the value of v in the bulletproofs witness, generated with wintesses: a=1");
+$res = bulletproofs_witness_commit($pp_path, 1, ("a=1", "b=-2"));
+ok($res =~ m/V\[n\]:\s+\[a\]: (\w\w:?)+\s+\[b\]: \w+/, "Check the value of V in the bulletproofs witness, generated with wintesses: a=1,b=-2");
+ok($res =~ m/v\[n\]:\s+\[0\]: 1 \(0x1\)\s+\[1\]: -2 \(-0x2\)/, "Check the value of v in the bulletproofs witness, generated with wintesses: a=1,b=-2");
+$res = bulletproofs_witness_commit($pp_path, 1, ("a1=1", "b1=-2", "c1=3"));
+ok($res =~ m/V\[n\]:\s+\[a1\]: (\w\w:?)+\s+\[b1\]: (\w\w:?)+\s+\[c1\]: (\w\w:?)+/, "Check the value of V in the bulletproofs witness, generated with wintesses: a1=1,b1=-2,c1=3");
+ok($res =~ m/v\[n\]:\s+\[0\]: 1 \(0x1\)\s+\[1\]: -2 \(-0x2\)\s+\[2\]: 3 \(0x3\)/, "Check the value of v in the bulletproofs witness, generated with wintesses: a1=1,b1=-2,c1=3");
+$res = bulletproofs_witness_print(1);
+ok($res =~ m/V\[n\]:\s+\[a1\]: (\w\w:?)+\s+\[b1\]: (\w\w:?)+\s+\[c1\]: (\w\w:?)+/, "Check the value of V in the bulletproofs witness pem file, generated with wintesses: a1=1,b1=-2,c1=3");
+ok($res =~ m/v\[n\]:\s+\[0\]: 1 \(0x1\)\s+\[1\]: -2 \(-0x2\)\s+\[2\]: 3 \(0x3\)/, "Check the value of v in the bulletproofs witness pem file, generated with wintesses: a1=1,b1=-2,c1=3");
+$res = bulletproofs_witness_commit($pp_path, 1, ("aa=1", "bb=2", "cc=33333", "dddd=4"));
+ok($res =~ m/V\[n\]:\s+\[aa\]: (\w\w:?)+\s+\[bb\]: (\w\w:?)+\s+\[cc\]: (\w\w:?)+\s+\[dddd\]: (\w\w:?)+/, "Check the value of V in the bulletproofs witness, generated with wintesses: aa=1,bb=2,cc=3333,dddd=4");
+ok($res =~ m/v\[n\]:\s+\[0\]: 1 \(0x1\)\s+\[1\]: 2 \(0x2\)\s+\[2\]: 33333 \(0x8235\)\s+\[3\]: 4 \(0x4\)/, "Check the value of v in the bulletproofs witness, generated with wintesses: aa=1,bb=2,cc=3333,dddd=4");
+
+rmtree(${BULLETPROOFS_TEST_OUT_D}, { safe => 0 });

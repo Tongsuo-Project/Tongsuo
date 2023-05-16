@@ -295,7 +295,7 @@ void BP_VARIABLE_free(BP_VARIABLE *var)
  *  \param  pp           underlying BP_PUB_PARAM object
  *  \return newly created BP_WITNESS object or NULL in case of an error
  */
-BP_WITNESS *BP_WITNESS_new(BP_PUB_PARAM *pp)
+BP_WITNESS *BP_WITNESS_new(const BP_PUB_PARAM *pp)
 {
     BP_WITNESS *witness = NULL;
 
@@ -498,7 +498,7 @@ int BP_WITNESS_get_variable_index(BP_WITNESS *witness, const char *name)
     num = sk_BP_VARIABLE_num(witness->sk_V);
     for (i = 0; i < num; i++) {
         V = sk_BP_VARIABLE_value(witness->sk_V, i);
-        if (V == NULL)
+        if (V == NULL || V->name == NULL)
             return -1;
 
         if (OPENSSL_strcasecmp(V->name, name) == 0)

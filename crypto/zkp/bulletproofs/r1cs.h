@@ -64,8 +64,7 @@ struct bp_r1cs_ctx_st {
     BP_TRANSCRIPT *transcript;
     BP_PUB_PARAM *pp;
     BP_WITNESS *witness;
-    STACK_OF(BP_R1CS_LINEAR_COMBINATION) *p_constraints;
-    STACK_OF(BP_R1CS_LINEAR_COMBINATION) *v_constraints;
+    STACK_OF(BP_R1CS_LINEAR_COMBINATION) *constraints;
     STACK_OF(BIGNUM) *aL;
     STACK_OF(BIGNUM) *aR;
     STACK_OF(BIGNUM) *aO;

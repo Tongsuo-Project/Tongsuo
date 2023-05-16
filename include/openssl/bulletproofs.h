@@ -23,6 +23,7 @@ extern "C" {
 # endif
 
 # define PEM_STRING_BULLETPROOFS_PUB_PARAM      "BULLETPROOFS PUBLIC PARAM"
+# define PEM_STRING_BULLETPROOFS_WITNESS        "BULLETPROOFS WITNESS"
 # define PEM_STRING_BULLETPROOFS_RANGE_PROOF    "BULLETPROOFS RANGE PROOF"
 # define PEM_STRING_BULLETPROOFS_R1CS_PROOF     "BULLETPROOFS R1CS PROOF"
 
@@ -130,7 +131,7 @@ void BP_VARIABLE_free(BP_VARIABLE *var);
  *  \param  pp           underlying BP_PUB_PARAM object
  *  \return newly created BP_WITNESS object or NULL in case of an error
  */
-BP_WITNESS *BP_WITNESS_new(BP_PUB_PARAM *pp);
+BP_WITNESS *BP_WITNESS_new(const BP_PUB_PARAM *pp);
 
 /** Frees a BP_WITNESS object
  *  \param  witness   BP_WITNESS object to be freed
@@ -195,7 +196,7 @@ void BP_RANGE_CTX_free(BP_RANGE_CTX *ctx);
  *  \param  pp          BP_PUB_PARAM object
  *  \return newly created BP_RANGE_PROOF object or NULL in case of an error
  */
-BP_RANGE_PROOF *BP_RANGE_PROOF_new(BP_PUB_PARAM *pp);
+BP_RANGE_PROOF *BP_RANGE_PROOF_new(const BP_PUB_PARAM *pp);
 
 /** Frees a BP_RANGE_PROOF object
  *  \param  proof     BP_RANGE_PROOF object to be freed
@@ -233,7 +234,7 @@ BP_RANGE_PROOF *BP_RANGE_PROOF_new_prove(BP_RANGE_CTX *ctx);
  *  \param  proof     BP_RANGE_PROOF object
  *  \return 1 if the proof is valid, 0 if the proof is invalid and -1 on error
  */
-int BP_RANGE_PROOF_verify(BP_RANGE_CTX *ctx, BP_RANGE_PROOF *proof);
+int BP_RANGE_PROOF_verify(BP_RANGE_CTX *ctx, const BP_RANGE_PROOF *proof);
 
 /** Encodes BP_PUB_PARAM to binary
  *  \param  pp         BP_PUB_PARAM object
@@ -261,9 +262,11 @@ size_t BP_WITNESS_encode(const BP_WITNESS *witness, unsigned char *out,
  *  \param  in         Memory buffer with the encoded BP_WITNESS
  *                     object
  *  \param  size       The memory size of the in pointer object
+ *  \param  flag       The flag is an indicator for decoding random number 'r'
+ *                     and plaintext 'v', with 1 indicating decoding and 0
  *  \return BP_WITNESS object pointer on success and NULL otherwise
  */
-BP_WITNESS *BP_WITNESS_decode(const unsigned char *in, size_t size);
+BP_WITNESS *BP_WITNESS_decode(const unsigned char *in, size_t size, int flag);
 
 /** Decodes binary to BP_PUB_PARAM
  *  \param  in         Memory buffer with the encoded BP_PUB_PARAM
@@ -336,9 +339,11 @@ void BP_R1CS_CTX_free(BP_R1CS_CTX *ctx);
 
 # ifndef OPENSSL_NO_STDIO
 int BP_PUB_PARAM_print_fp(FILE *fp, const BP_PUB_PARAM *pp, int indent);
+int BP_WITNESS_print_fp(FILE *fp, const BP_WITNESS *witness, int indent, int flag);
 int BP_RANGE_PROOF_print_fp(FILE *fp, const BP_RANGE_PROOF *proof, int indent);
 # endif
 int BP_PUB_PARAM_print(BIO *bp, const BP_PUB_PARAM *pp, int indent);
+int BP_WITNESS_print(BIO *bp, const BP_WITNESS *witness, int indent, int flag);
 int BP_RANGE_PROOF_print(BIO *bp, const BP_RANGE_PROOF *proof, int indent);
 
 /********************************************************************/
@@ -346,8 +351,12 @@ int BP_RANGE_PROOF_print(BIO *bp, const BP_RANGE_PROOF *proof, int indent);
 /********************************************************************/
 
 DECLARE_PEM_rw(BULLETPROOFS_PublicParam, BP_PUB_PARAM)
+DECLARE_PEM_rw(BULLETPROOFS_LongWitness, BP_WITNESS)
+DECLARE_PEM_rw(BULLETPROOFS_ShortWitness, BP_WITNESS)
 DECLARE_PEM_rw(BULLETPROOFS_RangeProof, BP_RANGE_PROOF)
 DECLARE_ASN1_ENCODE_FUNCTIONS_only(BP_PUB_PARAM, BP_PUB_PARAM)
+DECLARE_ASN1_ENCODE_FUNCTIONS_only(BP_WITNESS, long_BP_WITNESS)
+DECLARE_ASN1_ENCODE_FUNCTIONS_only(BP_WITNESS, short_BP_WITNESS)
 DECLARE_ASN1_ENCODE_FUNCTIONS_only(BP_RANGE_PROOF, BP_RANGE_PROOF)
 
 /********************************************************************/

@@ -99,7 +99,7 @@ end:
     return ret;
 }
 
-static int bp_bn_print(BIO *bp, const char *number, const BIGNUM *num,
+static int bp_bn_print(BIO *bp, const char *name, const BIGNUM *num,
                        unsigned char *ign, int indent)
 {
     int n, rv = 0;
@@ -113,13 +113,19 @@ static int bp_bn_print(BIO *bp, const char *number, const BIGNUM *num,
     if (!BIO_indent(bp, indent, ASN1_PRINT_MAX_INDENT))
         return 0;
     if (BN_is_zero(num)) {
-        if (BIO_printf(bp, "%s: 0\n", number) <= 0)
+        if (name != NULL)
+            BIO_printf(bp, "%s: ", name);
+
+        if (BIO_printf(bp, "0\n") <= 0)
             return 0;
         return 1;
     }
 
     if (BN_num_bytes(num) <= BN_BYTES) {
-        if (BIO_printf(bp, "%s: %s%lu (%s0x%lx)\n", number, neg,
+        if (name != NULL)
+            BIO_printf(bp, "%s: ", name);
+
+        if (BIO_printf(bp, "%s%lu (%s0x%lx)\n", neg,
                        (unsigned long)bn_get_words(num)[0], neg,
                        (unsigned long)bn_get_words(num)[0]) <= 0)
             return 0;
@@ -131,8 +137,12 @@ static int bp_bn_print(BIO *bp, const char *number, const BIGNUM *num,
     if (buf == NULL)
         goto err;
     buf[0] = 0;
-    if (BIO_printf(bp, "%s: %s", number, neg) <= 0)
-        goto err;
+
+    if (name != NULL)
+        BIO_printf(bp, "%s: ", name);
+
+    BIO_printf(bp, "%s", neg);
+
     n = BN_bn2bin(num, buf + 1);
 
     if (buf[1] & 0x80)
@@ -162,6 +172,22 @@ int BP_PUB_PARAM_print_fp(FILE *fp, const BP_PUB_PARAM *pp, int indent)
     BIO_free(b);
     return ret;
 }
+
+int BP_WITNESS_print_fp(FILE *fp, const BP_WITNESS *witness, int indent, int flag)
+{
+    BIO *b;
+    int ret;
+
+    if ((b = BIO_new(BIO_s_file())) == NULL) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_BUF_LIB);
+        return 0;
+    }
+    BIO_set_fp(b, fp, BIO_NOCLOSE);
+    ret = BP_WITNESS_print(b, witness, indent, flag);
+    BIO_free(b);
+    return ret;
+}
+
 int BP_RANGE_PROOF_print_fp(FILE *fp, const BP_RANGE_PROOF *proof, int indent)
 {
     BIO *b;
@@ -181,8 +207,6 @@ int BP_RANGE_PROOF_print_fp(FILE *fp, const BP_RANGE_PROOF *proof, int indent)
 int BP_PUB_PARAM_print(BIO *bp, const BP_PUB_PARAM *pp, int indent)
 {
     int ret = 0, i, n, curve_id;
-    size_t point_len;
-    unsigned char *p = NULL;
     BN_CTX *bn_ctx = NULL;
     EC_POINT *G, *H;
     EC_GROUP *group = NULL;
@@ -202,12 +226,6 @@ int BP_PUB_PARAM_print(BIO *bp, const BP_PUB_PARAM *pp, int indent)
 
     bn_ctx = BN_CTX_new();
     if (bn_ctx == NULL)
-        goto end;
-
-    point_len = EC_POINT_point2oct(group, EC_GROUP_get0_generator(group),
-                                   POINT_CONVERSION_COMPRESSED, NULL, 0, bn_ctx);
-    p = OPENSSL_zalloc(point_len);
-    if (p == NULL)
         goto end;
 
     bp_bio_printf(bp, indent, "G[n]:\n");
@@ -239,7 +257,79 @@ int BP_PUB_PARAM_print(BIO *bp, const BP_PUB_PARAM *pp, int indent)
 
     ret = 1;
 end:
-    OPENSSL_free(p);
+    BN_CTX_free(bn_ctx);
+    return ret;
+}
+
+int BP_WITNESS_print(BIO *bp, const BP_WITNESS *witness, int indent, int flag)
+{
+    int ret = 0, i, n, curve_id;
+    BN_CTX *bn_ctx = NULL;
+    BP_VARIABLE *var;
+    BIGNUM *v, *r;
+    EC_GROUP *group = NULL;
+
+    if (witness == NULL)
+        return 0;
+
+    group = witness->group;
+    curve_id = EC_GROUP_get_curve_name(group);
+
+    bp_bio_printf(bp, indent, "Witness: \n");
+    bp_bio_printf(bp, indent, "curve: %s (%d)\n", OSSL_EC_curve_nid2name(curve_id),
+                               curve_id);
+
+    bn_ctx = BN_CTX_new();
+    if (bn_ctx == NULL)
+        goto end;
+
+    bp_bio_printf(bp, indent, "H: ");
+    if (!bp_point_print(bp, group, witness->H, NULL, 0, bn_ctx))
+        goto end;
+
+    bp_bio_printf(bp, indent, "V[n]:\n");
+    n = sk_BP_VARIABLE_num(witness->sk_V);
+    for (i = 0; i < n; i++) {
+        var = sk_BP_VARIABLE_value(witness->sk_V, i);
+        if (var == NULL)
+            goto end;
+
+        if (var->name != NULL)
+            bp_bio_printf(bp, indent + 4, "[%s]: ", var->name);
+        else
+            bp_bio_printf(bp, indent + 4, "[%zu]: ", i);
+
+        if (!bp_point_print(bp, group, var->point, NULL, 0, bn_ctx))
+            goto end;
+    }
+
+    n = sk_BIGNUM_num(witness->sk_v);
+    if (n != 0 && flag == 1) {
+        bp_bio_printf(bp, indent, "v[n]:\n");
+        for (i = 0; i < n; i++) {
+            v = sk_BIGNUM_value(witness->sk_v, i);
+            if (v == NULL)
+                goto end;
+
+            bp_bio_printf(bp, indent + 4, "[%zu]: ", i);
+            if (!bp_bn_print(bp, NULL, v, NULL, 0))
+                goto end;
+        }
+
+        bp_bio_printf(bp, indent, "r[n]:\n");
+        for (i = 0; i < n; i++) {
+            r = sk_BIGNUM_value(witness->sk_r, i);
+            if (r == NULL)
+                goto end;
+
+            bp_bio_printf(bp, indent + 4, "[%zu]: ", i);
+            if (!bp_bn_print(bp, NULL, r, NULL, 0))
+                goto end;
+        }
+    }
+
+    ret = 1;
+end:
     BN_CTX_free(bn_ctx);
     return ret;
 }
@@ -247,8 +337,6 @@ end:
 int BP_RANGE_PROOF_print(BIO *bp, const BP_RANGE_PROOF *proof, int indent)
 {
     int ret = 0, curve_id, i, n;
-    size_t point_len;
-    unsigned char *p = NULL;
     BN_CTX *bn_ctx = NULL;
     EC_POINT *L, *R;
     EC_GROUP *group = NULL;
@@ -268,12 +356,6 @@ int BP_RANGE_PROOF_print(BIO *bp, const BP_RANGE_PROOF *proof, int indent)
 
     bn_ctx = BN_CTX_new();
     if (bn_ctx == NULL)
-        goto end;
-
-    point_len = EC_POINT_point2oct(group, EC_GROUP_get0_generator(group),
-                                   POINT_CONVERSION_COMPRESSED, NULL, 0, bn_ctx);
-    p = OPENSSL_zalloc(point_len);
-    if (p == NULL)
         goto end;
 
     if (!bp_point_print(bp, group, proof->A, "A: ", indent, bn_ctx)
@@ -323,7 +405,6 @@ int BP_RANGE_PROOF_print(BIO *bp, const BP_RANGE_PROOF *proof, int indent)
 
     ret = 1;
 end:
-    OPENSSL_free(p);
     BN_CTX_free(bn_ctx);
     EC_GROUP_free(group);
     return ret;

@@ -586,7 +586,6 @@ int BP_R1CS_LINEAR_COMBINATION_constrain(BP_R1CS_LINEAR_COMBINATION *lc,
                                          BP_R1CS_CTX *ctx)
 {
     int ref;
-    STACK_OF(BP_R1CS_LINEAR_COMBINATION) *constraints;
 
     if (ctx == NULL || lc == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
@@ -596,15 +595,7 @@ int BP_R1CS_LINEAR_COMBINATION_constrain(BP_R1CS_LINEAR_COMBINATION *lc,
     if (CRYPTO_UP_REF(&lc->references, &ref, lc->lock) <= 0)
         return 0;
 
-    if (lc->type == BP_R1CS_LC_TYPE_PROVE) {
-        constraints = ctx->p_constraints;
-    } else if (lc->type == BP_R1CS_LC_TYPE_VERIFY) {
-        constraints = ctx->v_constraints;
-    } else {
-        goto err;
-    }
-
-    if (sk_BP_R1CS_LINEAR_COMBINATION_push(constraints, lc) <= 0) {
+    if (sk_BP_R1CS_LINEAR_COMBINATION_push(ctx->constraints, lc) <= 0) {
         goto err;
     }
 

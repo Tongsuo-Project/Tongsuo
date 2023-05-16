@@ -25,6 +25,9 @@ extern "C" {
 
 int bp_rand_range(BIGNUM *rnd, const BIGNUM *range);
 
+int bp_buf2hexstr_print(BIO *bio, const unsigned char *buf, size_t size,
+                        char *field, int text);
+
 void BN_debug_print(BIO *b, const BIGNUM *n, const char *name);
 void EC_POINT_debug_print(BIO *b, const EC_POINT *p, const char *name);
 void EC_POINT_debug_print_affine(BIO *b, const EC_GROUP *group, const EC_POINT *p,
