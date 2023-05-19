@@ -12,6 +12,7 @@
 #include "internal/cryptlib.h"
 
 #include <openssl/md5.h>
+#include <openssl/sm3.h>
 #include <openssl/sha.h>
 
 /*
@@ -50,6 +51,22 @@ static void tls1_md5_final_raw(void *ctx, unsigned char *md_out)
     u32toLE(md5->C, md_out);
     u32toLE(md5->D, md_out);
 }
+
+# ifndef OPENSSL_NO_SM3
+static void tls1_sm3_final_raw(void *ctx, unsigned char *md_out)
+{
+    SM3_CTX *sm3 = ctx;
+
+    l2n(sm3->A, md_out);
+    l2n(sm3->B, md_out);
+    l2n(sm3->C, md_out);
+    l2n(sm3->D, md_out);
+    l2n(sm3->E, md_out);
+    l2n(sm3->F, md_out);
+    l2n(sm3->G, md_out);
+    l2n(sm3->H, md_out);
+}
+# endif
 
 static void tls1_sha1_final_raw(void *ctx, unsigned char *md_out)
 {
@@ -97,6 +114,9 @@ char ssl3_cbc_record_digest_supported(const EVP_MD_CTX *ctx)
     case NID_sha256:
     case NID_sha384:
     case NID_sha512:
+#ifndef OPENSSL_NO_SM3
+    case NID_sm3:
+#endif
         return 1;
     default:
         return 0;
@@ -224,6 +244,16 @@ int ssl3_cbc_digest_record(const EVP_MD_CTX *ctx,
         md_block_size = 128;
         md_length_size = 16;
         break;
+#ifndef OPENSSL_NO_SM3
+    case NID_sm3:
+        if (SM3_Init((SM3_CTX *)md_state.c) <= 0)
+            return 0;
+        md_final_raw = tls1_sm3_final_raw;
+        md_transform =
+            (void (*)(void *ctx, const unsigned char *block))SM3_Transform;
+        md_size = 32;
+        break;
+#endif
     default:
         /*
          * ssl3_cbc_record_digest_supported should have been called first to

@@ -99,7 +99,7 @@
 # include <openssl/ec.h>
 #endif
 #ifndef OPENSSL_NO_SM3
-# include <crypto/sm3.h>
+# include <openssl/sm3.h>
 #endif
 #ifndef OPENSSL_NO_SM4
 # include <crypto/sm4.h>

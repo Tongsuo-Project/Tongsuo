@@ -4664,3 +4664,7 @@ EC_ELGAMAL_DECRYPT_TABLE_free           6610	1_1_1h	EXIST::FUNCTION:EC,EC_ELGAMA
 EC_ELGAMAL_DECRYPT_TABLE_new            6611	1_1_1h	EXIST::FUNCTION:EC,EC_ELGAMAL
 X509_STORE_copy                         6612	1_1_1h	EXIST::FUNCTION:
 X509_VERIFY_PARAM_copy                  6613	1_1_1h	EXIST::FUNCTION:
+SM3_Init                                6614	1_1_1h	EXIST::FUNCTION:SM3
+SM3_Update                              6615	1_1_1h	EXIST::FUNCTION:SM3
+SM3_Final                               6616	1_1_1h	EXIST::FUNCTION:SM3
+SM3_Transform                           6617	1_1_1h	EXIST::FUNCTION:SM3
