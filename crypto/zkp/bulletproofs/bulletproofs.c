@@ -255,7 +255,8 @@ int BP_PUB_PARAM_down_ref(BP_PUB_PARAM *pp)
  *  \param  group          EC_GROUP object
  *  \return newly created BP_WITNESS object or NULL in case of an error
  */
-BP_VARIABLE *BP_VARIABLE_new(const char *name, const EC_POINT *point, const EC_GROUP *group)
+BP_VARIABLE *BP_VARIABLE_new(const char *name, const EC_POINT *point,
+                             const EC_GROUP *group)
 {
     BP_VARIABLE *ret = NULL;
 
@@ -412,7 +413,12 @@ int BP_WITNESS_commit(BP_WITNESS *witness, const char *name, const BIGNUM *v)
         return 0;
     }
 
-    if (BP_WITNESS_get_variable_index(witness, name) >= 0) {
+    if (name != NULL && strlen(name) > BP_VARIABLE_NAME_MAX_LEN) {
+        ERR_raise(ERR_LIB_ZKP_BP, ZKP_BP_R_VARIABLE_NAME_TOO_LONG);
+        return 0;
+    }
+
+    if (name != NULL && BP_WITNESS_get_variable_index(witness, name) >= 0) {
         ERR_raise(ERR_LIB_ZKP_BP, ZKP_BP_R_VARIABLE_DUPLICATED);
         return 0;
     }

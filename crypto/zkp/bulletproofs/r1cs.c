@@ -9,6 +9,7 @@
 
 #include <openssl/err.h>
 #include <crypto/ec.h>
+#include <crypto/ctype.h>
 #include <crypto/ec/ec_local.h>
 #include "r1cs.h"
 #include "util.h"
@@ -109,6 +110,10 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_new(BP_R1CS_CTX *ctx)
     EC_POINT_set_to_infinity(ctx->pp->group, proof->T5);
     EC_POINT_set_to_infinity(ctx->pp->group, proof->T6);
 
+    BN_zero(proof->taux);
+    BN_zero(proof->mu);
+    BN_zero(proof->tx);
+
     proof->references = 1;
 
     if ((proof->lock = CRYPTO_THREAD_lock_new()) == NULL) {
@@ -153,30 +158,28 @@ void BP_R1CS_PROOF_free(BP_R1CS_PROOF *proof)
     OPENSSL_clear_free((void *)proof, sizeof(*proof));
 }
 
-BP_R1CS_LINEAR_COMBINATION *BP_WITNESS_r1cs_commit(BP_WITNESS *witness,
-                                                   const char *name,
-                                                   BIGNUM *v)
+int BP_WITNESS_r1cs_commit(BP_WITNESS *witness, const char *name, BIGNUM *v)
 {
-    int num;
     const BIGNUM *order;
     BIGNUM *r = NULL, *val = NULL;
     EC_POINT *V = NULL;
     BP_VARIABLE *var = NULL;
-    BP_R1CS_VARIABLE *r1cs_var = NULL;
-    BP_R1CS_LINEAR_COMBINATION *lc = NULL;
 
     if (witness == NULL || name == NULL || v == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
-        return NULL;
+        return 0;
+    }
+
+    if (strlen(name) > BP_VARIABLE_NAME_MAX_LEN) {
+        ERR_raise(ERR_LIB_ZKP_BP, ZKP_BP_R_VARIABLE_NAME_TOO_LONG);
+        return 0;
     }
 
     order = EC_GROUP_get0_order(witness->group);
 
-    num = sk_BP_VARIABLE_num(witness->sk_V);
-
     if (BP_WITNESS_get_variable_index(witness, name) >= 0) {
         ERR_raise(ERR_LIB_ZKP_BP, ZKP_BP_R_VARIABLE_DUPLICATED);
-        return NULL;
+        return 0;
     }
 
     r = BN_new();
@@ -208,6 +211,28 @@ BP_R1CS_LINEAR_COMBINATION *BP_WITNESS_r1cs_commit(BP_WITNESS *witness,
     if (sk_BP_VARIABLE_push(witness->sk_V, var) <= 0)
         goto err;
 
+    return 1;
+err:
+    BN_free(r);
+    BN_free(val);
+    EC_POINT_free(V);
+    BP_VARIABLE_free(var);
+    return 0;
+}
+
+BP_R1CS_LINEAR_COMBINATION *BP_WITNESS_r1cs_linear_combination_commit(BP_WITNESS *witness,
+                                                                      const char *name,
+                                                                      BIGNUM *v)
+{
+    int num;
+    BP_R1CS_VARIABLE *r1cs_var = NULL;
+    BP_R1CS_LINEAR_COMBINATION *lc = NULL;
+
+    if (!BP_WITNESS_r1cs_commit(witness, name, v))
+        return 0;
+
+    num = sk_BP_VARIABLE_num(witness->sk_V) - 1;
+
     if ((r1cs_var = BP_R1CS_VARIABLE_new(BP_R1CS_VARIABLE_COMMITTED, num)) == NULL)
         goto err;
 
@@ -216,13 +241,8 @@ BP_R1CS_LINEAR_COMBINATION *BP_WITNESS_r1cs_commit(BP_WITNESS *witness,
 
     lc->type = BP_R1CS_LC_TYPE_PROVE;
 
-    EC_POINT_free(V);
     return lc;
 err:
-    BN_free(r);
-    BN_free(val);
-    EC_POINT_free(V);
-    BP_VARIABLE_free(var);
     BP_R1CS_VARIABLE_free(r1cs_var);
     BP_R1CS_LINEAR_COMBINATION_free(lc);
     return NULL;
@@ -264,7 +284,7 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_prove(BP_R1CS_CTX *ctx)
     EC_GROUP *group;
     const BIGNUM *order;
     BN_CTX *bn_ctx = NULL;
-    int i, j, k, m, n, n1, seed_buf_len, size, padded_n, pp_capacity;
+    int i, j, k, m, n, nn, n1, seed_buf_len, size, padded_n, pp_capacity;
     unsigned char *seed_buf = NULL, *buf = NULL;
     BIGNUM *alpha, *beta, *rho, *r = NULL, *product;
     BIGNUM **sL = NULL, **sR = NULL;
@@ -304,6 +324,7 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_prove(BP_R1CS_CTX *ctx)
     order = EC_GROUP_get0_order(group);
 
     n1 = sk_BIGNUM_num(ctx->aL);
+    nn = n1 + 1;
     padded_n = bp_next_power_of_two(n1);
     pp_capacity = pp->gens_capacity * pp->party_capacity;
     if (pp_capacity < padded_n) {
@@ -400,8 +421,8 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_prove(BP_R1CS_CTX *ctx)
         || !bp_rand_range(rho, order))
         goto err;
 
-    if (!(sL = OPENSSL_zalloc(sizeof(*sL) * n1))
-        || !(sR = OPENSSL_zalloc(sizeof(*sR) * n1))) {
+    if (!(sL = OPENSSL_zalloc(sizeof(*sL) * nn))
+        || !(sR = OPENSSL_zalloc(sizeof(*sR) * nn))) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         goto err;
     }
@@ -442,6 +463,7 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_prove(BP_R1CS_CTX *ctx)
      */
 
     n = sk_BIGNUM_num(ctx->aL);
+    nn = n + 1;
     padded_n = bp_next_power_of_two(n);
     if (pp_capacity < padded_n) {
         ERR_raise(ERR_LIB_ZKP_BP, ZKP_BP_R_EXCEEDS_PP_CAPACITY);
@@ -465,9 +487,9 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_prove(BP_R1CS_CTX *ctx)
      * flatten the constraints
      */
     m = sk_BIGNUM_num(witness->sk_v);
-    if ((wL = OPENSSL_zalloc(sizeof(*wL) * n)) == NULL
-        || (wR = OPENSSL_zalloc(sizeof(*wR) * n)) == NULL
-        || (wO = OPENSSL_zalloc(sizeof(*wO) * n)) == NULL
+    if ((wL = OPENSSL_zalloc(sizeof(*wL) * nn)) == NULL
+        || (wR = OPENSSL_zalloc(sizeof(*wR) * nn)) == NULL
+        || (wO = OPENSSL_zalloc(sizeof(*wO) * nn)) == NULL
         || (wV = OPENSSL_zalloc(sizeof(*wV) * m)) == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         goto err;
@@ -761,7 +783,7 @@ int BP_R1CS_PROOF_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof)
     BN_CTX *bn_ctx = NULL;
     EC_GROUP *group;
     const BIGNUM *order;
-    int i, j, m, n, padded_n, v_n, lg_i, lg_n, pp_capacity, ret = 0;
+    int i, j, m, n, nn, padded_n, v_n, lg_i, lg_n, pp_capacity, ret = 0;
     BIGNUM *delta, *bn1;
     BIGNUM **vec_s = NULL, **vec_ip_x2 = NULL;
     BIGNUM *x, *x2, *x3, *ip_x, *ip_x_inv, *ip_x2, *ip_x2_inv;
@@ -794,6 +816,7 @@ int BP_R1CS_PROOF_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof)
     ip_proof = proof->ip_proof;
     pp_capacity = pp->gens_capacity * pp->party_capacity;
 
+    nn = ctx->vars_num + 1;
     padded_n = bp_next_power_of_two(ctx->vars_num);
     if (pp_capacity < padded_n) {
         ERR_raise(ERR_LIB_ZKP_BP, ZKP_BP_R_EXCEEDS_PP_CAPACITY);
@@ -935,9 +958,9 @@ int BP_R1CS_PROOF_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof)
     /*
      * flatten the constraints
      */
-    if ((wL = OPENSSL_zalloc(sizeof(*wL) * ctx->vars_num)) == NULL
-        || (wR = OPENSSL_zalloc(sizeof(*wR) * ctx->vars_num)) == NULL
-        || (wO = OPENSSL_zalloc(sizeof(*wO) * ctx->vars_num)) == NULL
+    if ((wL = OPENSSL_zalloc(sizeof(*wL) * nn)) == NULL
+        || (wR = OPENSSL_zalloc(sizeof(*wR) * nn)) == NULL
+        || (wO = OPENSSL_zalloc(sizeof(*wO) * nn)) == NULL
         || (wV = OPENSSL_zalloc(sizeof(*wV) * v_n)) == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         goto err;

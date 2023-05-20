@@ -198,7 +198,7 @@ static int bp_transcript_sha256_append_bn(BP_TRANSCRIPT *transcript,
 {
     int ret = 0;
     size_t len;
-    unsigned char buf[256], *str = NULL;
+    unsigned char buf[256] = {0}, *str = NULL;
     bp_transcript_sha256_ctx *ctx = NULL;
 
     if (transcript == NULL || bn == NULL) {
@@ -208,7 +208,7 @@ static int bp_transcript_sha256_append_bn(BP_TRANSCRIPT *transcript,
 
     ctx = transcript->data;
 
-    len = BN_num_bytes(bn);
+    len = BN_is_zero(bn) ? 1 : BN_num_bytes(bn);
     if (len > sizeof(buf)) {
         if (!(str = OPENSSL_zalloc(len))) {
             ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);

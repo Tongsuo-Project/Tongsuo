@@ -21,6 +21,8 @@ extern "C" {
 # include <openssl/bulletproofs.h>
 # include "internal/refcount.h"
 
+# define BP_VARIABLE_NAME_MAX_LEN   16
+
 DEFINE_STACK_OF(BIGNUM)
 DEFINE_STACK_OF(EC_POINT)
 DEFINE_STACK_OF(BP_VARIABLE)

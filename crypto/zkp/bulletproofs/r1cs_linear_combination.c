@@ -236,6 +236,19 @@ void BP_R1CS_LINEAR_COMBINATION_free(BP_R1CS_LINEAR_COMBINATION *lc)
     OPENSSL_clear_free((void *)lc, sizeof(*lc));
 }
 
+int BP_R1CS_LINEAR_COMBINATION_clean(BP_R1CS_LINEAR_COMBINATION *lc)
+{
+    if (lc == NULL)
+        return 0;
+
+    sk_BP_R1CS_LINEAR_COMBINATION_ITEM_pop_free(lc->items, BP_R1CS_LC_ITEM_free);
+    if ((lc->items = sk_BP_R1CS_LINEAR_COMBINATION_ITEM_new_null()) == NULL)
+        return 0;
+
+    lc->type = BP_R1CS_LC_TYPE_UNKOWN;
+    return 1;
+}
+
 static int BP_R1CS_LINEAR_COMBINATION_eval(BP_R1CS_CTX *ctx,
                                            const BP_R1CS_LINEAR_COMBINATION *lc,
                                            BIGNUM *r, BN_CTX *bn_ctx)
@@ -580,6 +593,29 @@ int BP_R1CS_LINEAR_COMBINATION_add_bn(BP_R1CS_LINEAR_COMBINATION *lc,
     }
 
     return 1;
+}
+
+/* lc = lc - value */
+int BP_R1CS_LINEAR_COMBINATION_sub_bn(BP_R1CS_LINEAR_COMBINATION *lc,
+                                      const BIGNUM *value)
+{
+    int ret = 0;
+    BIGNUM *scalar = NULL;
+
+    if (lc == NULL || value == NULL) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
+        return 0;
+    }
+
+    if (!(scalar = BN_dup(value)))
+        return 0;
+
+    BN_set_negative(scalar, 1);
+
+    ret = BP_R1CS_LINEAR_COMBINATION_add_bn(lc, scalar);
+
+    BN_free(scalar);
+    return ret;
 }
 
 int BP_R1CS_LINEAR_COMBINATION_constrain(BP_R1CS_LINEAR_COMBINATION *lc,

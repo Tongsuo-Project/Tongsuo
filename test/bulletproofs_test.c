@@ -405,6 +405,106 @@ err:
     return ret;
 }
 
+/*
+ * Constrains a1 + b1 = c1
+ */
+static int r1cs_example_logic6(BP_R1CS_CTX *ctx,
+                               bp_r1cs_example_linaer_combinations *lc)
+{
+    int ret = 0;
+    BP_R1CS_LINEAR_COMBINATION *a = NULL;
+
+    if (ctx == NULL || lc == NULL) {
+        return 0;
+    }
+
+    if (!(a = BP_R1CS_LINEAR_COMBINATION_dup(lc->a1))) {
+        return 0;
+    }
+
+    if (!BP_R1CS_LINEAR_COMBINATION_add(a, lc->b1)
+        || !BP_R1CS_LINEAR_COMBINATION_sub(a, lc->c1)
+        || !BP_R1CS_LINEAR_COMBINATION_constrain(a, ctx)) {
+        goto err;
+    }
+
+    ret = 1;
+
+err:
+    BP_R1CS_LINEAR_COMBINATION_free(a);
+
+    return ret;
+}
+
+/*
+ * Constrains a1*a2 = 10
+ */
+static int r1cs_example_logic7(BP_R1CS_CTX *ctx,
+                               bp_r1cs_example_linaer_combinations *lc)
+{
+    int ret = 0;
+    BIGNUM *bn10 = NULL;
+    BP_R1CS_LINEAR_COMBINATION *a = NULL;
+
+    if (ctx == NULL || lc == NULL) {
+        return 0;
+    }
+
+    if (!(bn10 = BN_new()))
+        goto err;
+
+    BN_set_word(bn10, 10);
+
+    if (!(a = BP_R1CS_LINEAR_COMBINATION_dup(lc->a1))) {
+        return 0;
+    }
+
+    if (!BP_R1CS_LINEAR_COMBINATION_mul(a, lc->a2, ctx)
+        || !BP_R1CS_LINEAR_COMBINATION_sub_bn(a, bn10)
+        || !BP_R1CS_LINEAR_COMBINATION_constrain(a, ctx)) {
+        goto err;
+    }
+
+    ret = 1;
+
+err:
+    BP_R1CS_LINEAR_COMBINATION_free(a);
+    BN_free(bn10);
+
+    return ret;
+}
+
+/*
+ * Constrains a1 + b1 + c1 = 0
+ */
+static int r1cs_example_logic8(BP_R1CS_CTX *ctx,
+                               bp_r1cs_example_linaer_combinations *lc)
+{
+    int ret = 0;
+    BP_R1CS_LINEAR_COMBINATION *a = NULL;
+
+    if (ctx == NULL || lc == NULL) {
+        return 0;
+    }
+
+    if (!(a = BP_R1CS_LINEAR_COMBINATION_dup(lc->a1))) {
+        return 0;
+    }
+
+    if (!BP_R1CS_LINEAR_COMBINATION_add(a, lc->b1)
+        || !BP_R1CS_LINEAR_COMBINATION_add(a, lc->c1)
+        || !BP_R1CS_LINEAR_COMBINATION_constrain(a, ctx)) {
+        goto err;
+    }
+
+    ret = 1;
+
+err:
+    BP_R1CS_LINEAR_COMBINATION_free(a);
+
+    return ret;
+}
+
 static void bp_r1cs_example_linaer_combinations_free(bp_r1cs_example_linaer_combinations *lc)
 {
     if (lc == NULL)
@@ -439,12 +539,12 @@ static BP_R1CS_PROOF *r1cs_example_prove(BP_R1CS_CTX *ctx, BP_WITNESS *witness,
     if (!(lc = OPENSSL_zalloc(sizeof(*lc))))
         return NULL;
 
-    if (!(lc_a1 = BP_WITNESS_r1cs_commit(witness, "a1", a1))
-        || !(lc_a2 = BP_WITNESS_r1cs_commit(witness, "a2", a2))
-        || !(lc_b1 = BP_WITNESS_r1cs_commit(witness, "b1", b1))
-        || !(lc_b2 = BP_WITNESS_r1cs_commit(witness, "b2", b2))
-        || !(lc_c1 = BP_WITNESS_r1cs_commit(witness, "c1", c1))
-        || !(lc_c2 = BP_WITNESS_r1cs_commit(witness, "c2", c2)))
+    if (!(lc_a1 = BP_WITNESS_r1cs_linear_combination_commit(witness, "a1", a1))
+        || !(lc_a2 = BP_WITNESS_r1cs_linear_combination_commit(witness, "a2", a2))
+        || !(lc_b1 = BP_WITNESS_r1cs_linear_combination_commit(witness, "b1", b1))
+        || !(lc_b2 = BP_WITNESS_r1cs_linear_combination_commit(witness, "b2", b2))
+        || !(lc_c1 = BP_WITNESS_r1cs_linear_combination_commit(witness, "c1", c1))
+        || !(lc_c2 = BP_WITNESS_r1cs_linear_combination_commit(witness, "c2", c2)))
         goto err;
 
     lc->a1 = lc_a1;
@@ -907,6 +1007,212 @@ err:
     return ret;
 }
 
+static int r1cs_proof_test6_should_ok(void)
+{
+    int ret = 0;
+    BIGNUM *a1, *a2, *b1, *b2, *c1, *c2;
+    BN_CTX *bn_ctx = NULL;
+
+    if (!TEST_ptr(bn_ctx = BN_CTX_new()))
+        goto err;
+
+    BN_CTX_start(bn_ctx);
+
+    a1 = BN_CTX_get(bn_ctx);
+    a2 = BN_CTX_get(bn_ctx);
+    b1 = BN_CTX_get(bn_ctx);
+    b2 = BN_CTX_get(bn_ctx);
+    c1 = BN_CTX_get(bn_ctx);
+    c2 = BN_CTX_get(bn_ctx);
+    if (!TEST_ptr(c2))
+        goto err;
+
+    BN_set_word(a1, 2);
+    BN_set_word(a2, 0);
+    BN_set_word(b1, 3);
+    BN_set_word(b2, 0);
+    BN_set_word(c1, 5);
+    BN_set_word(c2, 0);
+
+    ret = r1cs_proof_test(a1, a2, b1, b2, c1, c2, r1cs_example_logic6);
+err:
+    BN_CTX_end(bn_ctx);
+    BN_CTX_free(bn_ctx);
+    return ret;
+}
+
+static int r1cs_proof_test6_should_failed(void)
+{
+    int ret = 0;
+    BIGNUM *a1, *a2, *b1, *b2, *c1, *c2;
+    BN_CTX *bn_ctx = NULL;
+
+    if (!TEST_ptr(bn_ctx = BN_CTX_new()))
+        goto err;
+
+    BN_CTX_start(bn_ctx);
+
+    a1 = BN_CTX_get(bn_ctx);
+    a2 = BN_CTX_get(bn_ctx);
+    b1 = BN_CTX_get(bn_ctx);
+    b2 = BN_CTX_get(bn_ctx);
+    c1 = BN_CTX_get(bn_ctx);
+    c2 = BN_CTX_get(bn_ctx);
+    if (!TEST_ptr(c2))
+        goto err;
+
+    BN_set_word(a1, 2);
+    BN_set_word(a2, 0);
+    BN_set_word(b1, 3);
+    BN_set_word(b2, 0);
+    BN_set_word(c1, 4);
+    BN_set_word(c2, 0);
+
+    ret = r1cs_proof_test(a1, a2, b1, b2, c1, c2, r1cs_example_logic6) == 1 ? 0 : 1;
+err:
+    BN_CTX_end(bn_ctx);
+    BN_CTX_free(bn_ctx);
+    return ret;
+}
+
+static int r1cs_proof_test7_should_ok(void)
+{
+    int ret = 0;
+    BIGNUM *a1, *a2, *b1, *b2, *c1, *c2;
+    BN_CTX *bn_ctx = NULL;
+
+    if (!TEST_ptr(bn_ctx = BN_CTX_new()))
+        goto err;
+
+    BN_CTX_start(bn_ctx);
+
+    a1 = BN_CTX_get(bn_ctx);
+    a2 = BN_CTX_get(bn_ctx);
+    b1 = BN_CTX_get(bn_ctx);
+    b2 = BN_CTX_get(bn_ctx);
+    c1 = BN_CTX_get(bn_ctx);
+    c2 = BN_CTX_get(bn_ctx);
+    if (!TEST_ptr(c2))
+        goto err;
+
+    BN_set_word(a1, 2);
+    BN_set_word(a2, 5);
+    BN_set_word(b1, 0);
+    BN_set_word(b2, 0);
+    BN_set_word(c1, 0);
+    BN_set_word(c2, 0);
+
+    ret = r1cs_proof_test(a1, a2, b1, b2, c1, c2, r1cs_example_logic7);
+err:
+    BN_CTX_end(bn_ctx);
+    BN_CTX_free(bn_ctx);
+    return ret;
+}
+
+static int r1cs_proof_test7_should_failed(void)
+{
+    int ret = 0;
+    BIGNUM *a1, *a2, *b1, *b2, *c1, *c2;
+    BN_CTX *bn_ctx = NULL;
+
+    if (!TEST_ptr(bn_ctx = BN_CTX_new()))
+        goto err;
+
+    BN_CTX_start(bn_ctx);
+
+    a1 = BN_CTX_get(bn_ctx);
+    a2 = BN_CTX_get(bn_ctx);
+    b1 = BN_CTX_get(bn_ctx);
+    b2 = BN_CTX_get(bn_ctx);
+    c1 = BN_CTX_get(bn_ctx);
+    c2 = BN_CTX_get(bn_ctx);
+    if (!TEST_ptr(c2))
+        goto err;
+
+    BN_set_word(a1, 2);
+    BN_set_word(a2, 6);
+    BN_set_word(b1, 0);
+    BN_set_word(b2, 0);
+    BN_set_word(c1, 0);
+    BN_set_word(c2, 0);
+
+    ret = r1cs_proof_test(a1, a2, b1, b2, c1, c2, r1cs_example_logic7) == 1 ? 0 : 1;
+err:
+    BN_CTX_end(bn_ctx);
+    BN_CTX_free(bn_ctx);
+    return ret;
+}
+
+static int r1cs_proof_test8_should_ok(void)
+{
+    int ret = 0;
+    BIGNUM *a1, *a2, *b1, *b2, *c1, *c2;
+    BN_CTX *bn_ctx = NULL;
+
+    if (!TEST_ptr(bn_ctx = BN_CTX_new()))
+        goto err;
+
+    BN_CTX_start(bn_ctx);
+
+    a1 = BN_CTX_get(bn_ctx);
+    a2 = BN_CTX_get(bn_ctx);
+    b1 = BN_CTX_get(bn_ctx);
+    b2 = BN_CTX_get(bn_ctx);
+    c1 = BN_CTX_get(bn_ctx);
+    c2 = BN_CTX_get(bn_ctx);
+    if (!TEST_ptr(c2))
+        goto err;
+
+    BN_set_word(a1, 1);
+    BN_set_word(a2, 0);
+    BN_set_word(b1, 2);
+    BN_set_word(b2, 0);
+    BN_set_word(c1, 3);
+    BN_set_word(c2, 0);
+    BN_set_negative(c1, 1);
+
+    ret = r1cs_proof_test(a1, a2, b1, b2, c1, c2, r1cs_example_logic8);
+err:
+    BN_CTX_end(bn_ctx);
+    BN_CTX_free(bn_ctx);
+    return ret;
+}
+
+static int r1cs_proof_test8_should_failed(void)
+{
+    int ret = 0;
+    BIGNUM *a1, *a2, *b1, *b2, *c1, *c2;
+    BN_CTX *bn_ctx = NULL;
+
+    if (!TEST_ptr(bn_ctx = BN_CTX_new()))
+        goto err;
+
+    BN_CTX_start(bn_ctx);
+
+    a1 = BN_CTX_get(bn_ctx);
+    a2 = BN_CTX_get(bn_ctx);
+    b1 = BN_CTX_get(bn_ctx);
+    b2 = BN_CTX_get(bn_ctx);
+    c1 = BN_CTX_get(bn_ctx);
+    c2 = BN_CTX_get(bn_ctx);
+    if (!TEST_ptr(c2))
+        goto err;
+
+    BN_set_word(a1, 1);
+    BN_set_word(a2, 0);
+    BN_set_word(b1, 2);
+    BN_set_word(b2, 0);
+    BN_set_word(c1, 4);
+    BN_set_word(c2, 0);
+    BN_set_negative(c1, 1);
+
+    ret = r1cs_proof_test(a1, a2, b1, b2, c1, c2, r1cs_example_logic8) == 1 ? 0 : 1;
+err:
+    BN_CTX_end(bn_ctx);
+    BN_CTX_free(bn_ctx);
+    return ret;
+}
+
 static int range_proofs_test(int bits, int64_t secrets[], int len)
 {
     int ret = 0, i;
@@ -1127,6 +1433,12 @@ int setup_tests(void)
     ADD_TEST(r1cs_proof_test4_should_failed);
     ADD_TEST(r1cs_proof_test5_should_ok);
     ADD_TEST(r1cs_proof_test5_should_failed);
+    ADD_TEST(r1cs_proof_test6_should_ok);
+    ADD_TEST(r1cs_proof_test6_should_failed);
+    ADD_TEST(r1cs_proof_test7_should_ok);
+    ADD_TEST(r1cs_proof_test7_should_failed);
+    ADD_TEST(r1cs_proof_test8_should_ok);
+    ADD_TEST(r1cs_proof_test8_should_failed);
     ADD_TEST(bp_poly3_eval_test);
     ADD_TEST(bp_poly6_eval_test);
     ADD_TEST(bp_poly3_special_inner_product_test);

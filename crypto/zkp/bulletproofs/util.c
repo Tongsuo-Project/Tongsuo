@@ -480,7 +480,7 @@ bp_poly3_t *bp_poly3_new(int n, const BIGNUM *order)
     int i;
     bp_poly3_t *ret = NULL;
 
-    if (n <= 0 || order == NULL) {
+    if (n < 0 || order == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_INVALID_ARGUMENT);
         return NULL;
     }
@@ -490,8 +490,15 @@ bp_poly3_t *bp_poly3_new(int n, const BIGNUM *order)
         return NULL;
     }
 
+    ret->order = order;
+
     if (!(ret->bn_ctx = BN_CTX_new()))
         goto err;
+
+    if (n == 0) {
+        ret->n = 0;
+        return ret;
+    }
 
     if (!(ret->x0 = OPENSSL_zalloc(sizeof(*ret->x0) * n))
         || !(ret->x1 = OPENSSL_zalloc(sizeof(*ret->x1) * n))
@@ -516,7 +523,6 @@ bp_poly3_t *bp_poly3_new(int n, const BIGNUM *order)
         BN_zero(ret->x3[i]);
     }
 
-    ret->order = order;
     return ret;
 err:
     bp_poly3_free(ret);
@@ -579,6 +585,21 @@ int bp_poly3_special_inner_product(bp_poly6_t *r, bp_poly3_t *lhs, bp_poly3_t *r
     if (r == NULL || lhs == NULL || rhs == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return 0;
+    }
+
+    if (lhs->n != rhs->n) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_INVALID_ARGUMENT);
+        return 0;
+    }
+
+    if (lhs->n == 0) {
+        BN_zero(r->t1);
+        BN_zero(r->t2);
+        BN_zero(r->t3);
+        BN_zero(r->t4);
+        BN_zero(r->t5);
+        BN_zero(r->t6);
+        return 1;
     }
 
     BN_CTX_start(r->bn_ctx);

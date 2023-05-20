@@ -12,5 +12,6 @@ IF[{- !$disabled{bulletproofs} -}]
                             bulletproofs/transcript_sha256.c                \
                             bulletproofs/r1cs.c                             \
                             bulletproofs/r1cs_linear_combination.c          \
+                            bulletproofs/r1cs_constraint_expression.c       \
                             bulletproofs/bp_err.c
 ENDIF

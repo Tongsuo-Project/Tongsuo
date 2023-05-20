@@ -17,6 +17,7 @@
 #include <openssl/bio.h>
 #include <openssl/bulletproofs.h>
 #include "range_proof.h"
+#include "r1cs.h"
 
 /* Number of octets per line */
 #define ASN1_BUF_PRINT_WIDTH    127
@@ -157,6 +158,54 @@ static int bp_bn_print(BIO *bp, const char *name, const BIGNUM *num,
     OPENSSL_clear_free(buf, buflen);
     return rv;
 }
+
+static int bp_inner_product_proof_print(BIO *bp,
+                                        const bp_inner_product_proof_t *ip_proof,
+                                        const EC_GROUP *group, BN_CTX *bn_ctx,
+                                        int indent)
+{
+    int ret = 0, i, n;
+    EC_POINT *L, *R;
+
+    if (bp == NULL || ip_proof == NULL || group == NULL || bn_ctx == NULL)
+        return ret;
+
+    bp_bio_printf(bp, indent, "inner proof:\n");
+    indent += 4;
+    n = sk_EC_POINT_num(ip_proof->sk_L);
+    bp_bio_printf(bp, indent, "n: %zu\n", n);
+
+    bp_bio_printf(bp, indent, "L[n]:\n");
+    for (i = 0; i < n; i++) {
+        L = sk_EC_POINT_value(ip_proof->sk_L, i);
+        if (L == NULL)
+            goto end;
+
+        bp_bio_printf(bp, indent + 4, "[%zu]: ", i);
+        if (!bp_point_print(bp, group, L, NULL, 0, bn_ctx))
+            goto end;
+    }
+
+    bp_bio_printf(bp, indent, "R[n]:\n");
+    for (i = 0; i < n; i++) {
+        R = sk_EC_POINT_value(ip_proof->sk_R, i);
+        if (R == NULL)
+            goto end;
+
+        bp_bio_printf(bp, indent + 4, "[%zu]: ", i);
+        if (!bp_point_print(bp, group, R, NULL, 0, bn_ctx))
+            goto end;
+    }
+
+    if (!bp_bn_print(bp, "a", ip_proof->a, NULL, indent)
+        || !bp_bn_print(bp, "b", ip_proof->b, NULL, indent))
+        goto end;
+
+    ret = 1;
+end:
+    return ret;
+}
+
 #ifndef OPENSSL_NO_STDIO
 int BP_PUB_PARAM_print_fp(FILE *fp, const BP_PUB_PARAM *pp, int indent)
 {
@@ -199,6 +248,21 @@ int BP_RANGE_PROOF_print_fp(FILE *fp, const BP_RANGE_PROOF *proof, int indent)
     }
     BIO_set_fp(b, fp, BIO_NOCLOSE);
     ret = BP_RANGE_PROOF_print(b, proof, indent);
+    BIO_free(b);
+    return ret;
+}
+
+int BP_R1CS_PROOF_print_fp(FILE *fp, const BP_R1CS_PROOF *proof, int indent)
+{
+    BIO *b;
+    int ret;
+
+    if ((b = BIO_new(BIO_s_file())) == NULL) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_BUF_LIB);
+        return 0;
+    }
+    BIO_set_fp(b, fp, BIO_NOCLOSE);
+    ret = BP_R1CS_PROOF_print(b, proof, indent);
     BIO_free(b);
     return ret;
 }
@@ -336,9 +400,8 @@ end:
 
 int BP_RANGE_PROOF_print(BIO *bp, const BP_RANGE_PROOF *proof, int indent)
 {
-    int ret = 0, curve_id, i, n;
+    int ret = 0, curve_id;
     BN_CTX *bn_ctx = NULL;
-    EC_POINT *L, *R;
     EC_GROUP *group = NULL;
 
     if (proof == NULL)
@@ -368,37 +431,59 @@ int BP_RANGE_PROOF_print(BIO *bp, const BP_RANGE_PROOF *proof, int indent)
         goto end;
 
     if (proof->ip_proof != NULL) {
-        bp_bio_printf(bp, indent, "inner proof:\n");
-        indent += 4;
-        n = sk_EC_POINT_num(proof->ip_proof->sk_L);
-        bp_bio_printf(bp, indent, "n: %zu\n", n);
+        ret = bp_inner_product_proof_print(bp, proof->ip_proof, group, bn_ctx, indent);
+    } else {
+        bp_bio_printf(bp, indent, "inner proof: not found\n");
+    }
 
-        bp_bio_printf(bp, indent, "L[n]:\n");
-        for (i = 0; i < n; i++) {
-            L = sk_EC_POINT_value(proof->ip_proof->sk_L, i);
-            if (L == NULL)
-                goto end;
+    ret = 1;
+end:
+    BN_CTX_free(bn_ctx);
+    EC_GROUP_free(group);
+    return ret;
+}
 
-            bp_bio_printf(bp, indent + 4, "[%zu]: ", i);
-            if (!bp_point_print(bp, group, L, NULL, 0, bn_ctx))
-                goto end;
-        }
+int BP_R1CS_PROOF_print(BIO *bp, const BP_R1CS_PROOF *proof, int indent)
+{
+    int ret = 0, curve_id;
+    BN_CTX *bn_ctx = NULL;
+    EC_GROUP *group = NULL;
 
-        bp_bio_printf(bp, indent, "R[n]:\n");
-        for (i = 0; i < n; i++) {
-            R = sk_EC_POINT_value(proof->ip_proof->sk_R, i);
-            if (R == NULL)
-                goto end;
+    if (proof == NULL)
+        return 0;
 
-            bp_bio_printf(bp, indent + 4, "[%zu]: ", i);
-            if (!bp_point_print(bp, group, R, NULL, 0, bn_ctx))
-                goto end;
-        }
+    bp_bio_printf(bp, indent, "R1CS Proof: \n");
 
-        if (!bp_bn_print(bp, "a", proof->ip_proof->a, NULL, indent)
-            || !bp_bn_print(bp, "b", proof->ip_proof->b, NULL, indent))
-            goto end;
+    curve_id = EC_POINT_get_curve_name(proof->AI1);
+    if (curve_id <= 0)
+        goto end;
 
+    group = EC_GROUP_new_by_curve_name_ex(NULL, NULL, curve_id);
+    if (group == NULL)
+        goto end;
+
+    bn_ctx = BN_CTX_new();
+    if (bn_ctx == NULL)
+        goto end;
+
+    if (!bp_point_print(bp, group, proof->AI1, "AI1: ", indent, bn_ctx)
+        || !bp_point_print(bp, group, proof->AO1, "AO1: ", indent, bn_ctx)
+        || !bp_point_print(bp, group, proof->S1, "S1: ", indent, bn_ctx)
+        || !bp_point_print(bp, group, proof->AI2, "AI2: ", indent, bn_ctx)
+        || !bp_point_print(bp, group, proof->AO2, "AO2: ", indent, bn_ctx)
+        || !bp_point_print(bp, group, proof->S2, "S2: ", indent, bn_ctx)
+        || !bp_point_print(bp, group, proof->T1, "T1: ", indent, bn_ctx)
+        || !bp_point_print(bp, group, proof->T3, "T3: ", indent, bn_ctx)
+        || !bp_point_print(bp, group, proof->T4, "T4: ", indent, bn_ctx)
+        || !bp_point_print(bp, group, proof->T5, "T5: ", indent, bn_ctx)
+        || !bp_point_print(bp, group, proof->T6, "T6: ", indent, bn_ctx)
+        || !bp_bn_print(bp, "taux", proof->taux, NULL, indent)
+        || !bp_bn_print(bp, "mu", proof->mu, NULL, indent)
+        || !bp_bn_print(bp, "tx", proof->tx, NULL, indent))
+        goto end;
+
+    if (proof->ip_proof != NULL) {
+        ret = bp_inner_product_proof_print(bp, proof->ip_proof, group, bn_ctx, indent);
     } else {
         bp_bio_printf(bp, indent, "inner proof: not found\n");
     }

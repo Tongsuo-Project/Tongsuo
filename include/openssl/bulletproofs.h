@@ -289,9 +289,26 @@ size_t BP_RANGE_PROOF_encode(const BP_RANGE_PROOF *proof, unsigned char *out,
 /** Decodes binary to BP_RANGE_PROOF
  *  \param  in         Memory buffer with the encoded BP_RANGE_PROOF object
  *  \param  size       The memory size of the in pointer object
- *  \return BP_RANGE_PROOF_PUB_PARAM object pointer on success and NULL otherwise
+ *  \return BP_RANGE_PROOF object pointer on success and NULL otherwise
  */
 BP_RANGE_PROOF *BP_RANGE_PROOF_decode(const unsigned char *in, size_t size);
+
+/** Encodes BP_R1CS_PROOF to binary
+ *  \param  proof      BP_R1CS_PROOF object
+ *  \param  out        the buffer for the result (if NULL the function returns
+ *                     number of bytes needed).
+ *  \param  size       The memory size of the out pointer object
+ *  \return the length of the encoded octet string or 0 if an error occurred
+ */
+size_t BP_R1CS_PROOF_encode(const BP_R1CS_PROOF *proof, unsigned char *out,
+                            size_t size);
+
+/** Decodes binary to BP_R1CS_PROOF
+ *  \param  in         Memory buffer with the encoded BP_R1CS_PROOF object
+ *  \param  size       The memory size of the in pointer object
+ *  \return BP_R1CS_PROOF object pointer on success and NULL otherwise
+ */
+BP_R1CS_PROOF *BP_R1CS_PROOF_decode(const unsigned char *in, size_t size);
 
 /********************************************************************/
 /*         functions for doing r1cs arithmetic                      */
@@ -300,6 +317,7 @@ BP_RANGE_PROOF *BP_RANGE_PROOF_decode(const unsigned char *in, size_t size);
 BP_R1CS_LINEAR_COMBINATION *BP_R1CS_LINEAR_COMBINATION_new(void);
 BP_R1CS_LINEAR_COMBINATION *BP_R1CS_LINEAR_COMBINATION_dup(const BP_R1CS_LINEAR_COMBINATION *lc);
 void BP_R1CS_LINEAR_COMBINATION_free(BP_R1CS_LINEAR_COMBINATION *lc);
+int BP_R1CS_LINEAR_COMBINATION_clean(BP_R1CS_LINEAR_COMBINATION *lc);
 
 int BP_R1CS_LINEAR_COMBINATION_mul(BP_R1CS_LINEAR_COMBINATION *lc,
                                    const BP_R1CS_LINEAR_COMBINATION *other,
@@ -313,13 +331,17 @@ int BP_R1CS_LINEAR_COMBINATION_mul_bn(BP_R1CS_LINEAR_COMBINATION *lc,
                                       const BIGNUM *value);
 int BP_R1CS_LINEAR_COMBINATION_add_bn(BP_R1CS_LINEAR_COMBINATION *lc,
                                       const BIGNUM *value);
+int BP_R1CS_LINEAR_COMBINATION_sub_bn(BP_R1CS_LINEAR_COMBINATION *lc,
+                                      const BIGNUM *value);
 
-BP_R1CS_LINEAR_COMBINATION *BP_WITNESS_r1cs_commit(BP_WITNESS *witness,
-                                                   const char *name,
-                                                   BIGNUM *v);
+BP_R1CS_LINEAR_COMBINATION *BP_WITNESS_r1cs_linear_combination_commit(BP_WITNESS *witness,
+                                                                      const char *name,
+                                                                      BIGNUM *v);
 BP_R1CS_LINEAR_COMBINATION *BP_WITNESS_r1cs_linear_combination_get(BP_WITNESS *witness,
                                                                    const char *name);
 int BP_R1CS_LINEAR_COMBINATION_constrain(BP_R1CS_LINEAR_COMBINATION *lc, BP_R1CS_CTX *ctx);
+int BP_WITNESS_r1cs_commit(BP_WITNESS *witness, const char *name, BIGNUM *v);
+int BP_R1CS_constraint_expression(BP_R1CS_CTX *ctx, const char *constraint, int is_prove);
 
 BP_R1CS_PROOF *BP_R1CS_PROOF_new(BP_R1CS_CTX *ctx);
 void BP_R1CS_PROOF_free(BP_R1CS_PROOF *proof);
@@ -341,10 +363,12 @@ void BP_R1CS_CTX_free(BP_R1CS_CTX *ctx);
 int BP_PUB_PARAM_print_fp(FILE *fp, const BP_PUB_PARAM *pp, int indent);
 int BP_WITNESS_print_fp(FILE *fp, const BP_WITNESS *witness, int indent, int flag);
 int BP_RANGE_PROOF_print_fp(FILE *fp, const BP_RANGE_PROOF *proof, int indent);
+int BP_R1CS_PROOF_print_fp(FILE *fp, const BP_R1CS_PROOF *proof, int indent);
 # endif
 int BP_PUB_PARAM_print(BIO *bp, const BP_PUB_PARAM *pp, int indent);
 int BP_WITNESS_print(BIO *bp, const BP_WITNESS *witness, int indent, int flag);
 int BP_RANGE_PROOF_print(BIO *bp, const BP_RANGE_PROOF *proof, int indent);
+int BP_R1CS_PROOF_print(BIO *bp, const BP_R1CS_PROOF *proof, int indent);
 
 /********************************************************************/
 /*         functions for doing bulletproofs encoding/decoding       */
@@ -354,10 +378,12 @@ DECLARE_PEM_rw(BULLETPROOFS_PublicParam, BP_PUB_PARAM)
 DECLARE_PEM_rw(BULLETPROOFS_LongWitness, BP_WITNESS)
 DECLARE_PEM_rw(BULLETPROOFS_ShortWitness, BP_WITNESS)
 DECLARE_PEM_rw(BULLETPROOFS_RangeProof, BP_RANGE_PROOF)
+DECLARE_PEM_rw(BULLETPROOFS_R1CSProof, BP_R1CS_PROOF)
 DECLARE_ASN1_ENCODE_FUNCTIONS_only(BP_PUB_PARAM, BP_PUB_PARAM)
 DECLARE_ASN1_ENCODE_FUNCTIONS_only(BP_WITNESS, long_BP_WITNESS)
 DECLARE_ASN1_ENCODE_FUNCTIONS_only(BP_WITNESS, short_BP_WITNESS)
 DECLARE_ASN1_ENCODE_FUNCTIONS_only(BP_RANGE_PROOF, BP_RANGE_PROOF)
+DECLARE_ASN1_ENCODE_FUNCTIONS_only(BP_R1CS_PROOF, BP_R1CS_PROOF)
 
 /********************************************************************/
 /*         functions for doing stranscript arithmetic               */
