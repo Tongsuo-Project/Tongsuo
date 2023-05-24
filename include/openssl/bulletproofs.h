@@ -319,6 +319,11 @@ BP_R1CS_LINEAR_COMBINATION *BP_R1CS_LINEAR_COMBINATION_dup(const BP_R1CS_LINEAR_
 void BP_R1CS_LINEAR_COMBINATION_free(BP_R1CS_LINEAR_COMBINATION *lc);
 int BP_R1CS_LINEAR_COMBINATION_clean(BP_R1CS_LINEAR_COMBINATION *lc);
 
+int BP_R1CS_LINEAR_COMBINATION_raw_mul(BP_R1CS_LINEAR_COMBINATION **output,
+                                       BP_R1CS_LINEAR_COMBINATION **left,
+                                       BP_R1CS_LINEAR_COMBINATION **right,
+                                       const BIGNUM *l, const BIGNUM *r,
+                                       BP_R1CS_CTX *ctx);
 int BP_R1CS_LINEAR_COMBINATION_mul(BP_R1CS_LINEAR_COMBINATION *lc,
                                    const BP_R1CS_LINEAR_COMBINATION *other,
                                    BP_R1CS_CTX *ctx);

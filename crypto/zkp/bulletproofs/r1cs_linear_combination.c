@@ -324,6 +324,125 @@ err:
     return ret;
 }
 
+/*
+ * left = lc(l)
+ * right = lc(r)
+ * output = left * right
+ */
+int BP_R1CS_LINEAR_COMBINATION_raw_mul(BP_R1CS_LINEAR_COMBINATION **output,
+                                       BP_R1CS_LINEAR_COMBINATION **left,
+                                       BP_R1CS_LINEAR_COMBINATION **right,
+                                       const BIGNUM *l, const BIGNUM *r,
+                                       BP_R1CS_CTX *ctx)
+{
+    int ln, rn, on, ret = 0;
+    BN_CTX *bn_ctx = NULL;
+    BIGNUM *lb = NULL, *rb = NULL, *ob = NULL;
+    BP_R1CS_VARIABLE *lv = NULL, *rv = NULL, *ov = NULL;
+    BP_R1CS_LINEAR_COMBINATION *llc = NULL, *rlc = NULL, *olc = NULL;
+
+    if (output == NULL || ctx == NULL) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
+        return 0;
+    }
+
+    if (l != NULL && r != NULL) {
+        ln  = sk_BIGNUM_num(ctx->aL);
+        rn  = sk_BIGNUM_num(ctx->aR);
+        on  = sk_BIGNUM_num(ctx->aO);
+
+        bn_ctx = BN_CTX_new();
+        if (bn_ctx == NULL)
+            goto err;
+
+        lb = BN_dup(l);
+        rb = BN_dup(r);
+        ob = BN_new();
+        if (lb == NULL || rb == NULL || ob == NULL)
+            goto err;
+
+        if (!BN_mul(ob, lb, rb, bn_ctx))
+            goto err;
+
+        if (sk_BIGNUM_push(ctx->aL, lb) <= 0)
+            goto err;
+        lb = NULL;
+
+        if (sk_BIGNUM_push(ctx->aR, rb) <= 0)
+            goto err;
+        rb = NULL;
+
+        if (sk_BIGNUM_push(ctx->aO, ob) <= 0)
+            goto err;
+        ob = NULL;
+    } else {
+        ln = rn = on = ctx->vars_num;
+        ctx->vars_num += 1;
+    }
+
+    ov = BP_R1CS_VARIABLE_new(BP_R1CS_VARIABLE_MULTIPLIER_OUTPUT, on);
+    if (ov == NULL)
+        goto err;
+
+    olc = BP_R1CS_LINEAR_COMBINATION_new_from_param(ov, NULL);
+    if (olc == NULL) {
+        goto err;
+    }
+
+    *output = olc;
+
+    if (left != NULL) {
+        lv = BP_R1CS_VARIABLE_new(BP_R1CS_VARIABLE_MULTIPLIER_LEFT, ln);
+        if (lv == NULL)
+            goto err;
+
+        llc = BP_R1CS_LINEAR_COMBINATION_new_from_param(lv, NULL);
+        if (llc == NULL) {
+            goto err;
+        }
+
+        *left = llc;
+    }
+
+    if (right != NULL) {
+        rv = BP_R1CS_VARIABLE_new(BP_R1CS_VARIABLE_MULTIPLIER_RIGHT, rn);
+        if (rv == NULL)
+            goto err;
+
+        rlc = BP_R1CS_LINEAR_COMBINATION_new_from_param(rv, NULL);
+        if (rlc == NULL) {
+            goto err;
+        }
+
+        *right = rlc;
+    }
+
+    BP_R1CS_VARIABLE_free(lv);
+    BP_R1CS_VARIABLE_free(rv);
+    BP_R1CS_VARIABLE_free(ov);
+    BN_CTX_free(bn_ctx);
+    return 1;
+err:
+    if (output == NULL)
+        output = NULL;
+    if (left == NULL)
+        left = NULL;
+    if (right == NULL)
+        right = NULL;
+
+    BP_R1CS_LINEAR_COMBINATION_free(llc);
+    BP_R1CS_LINEAR_COMBINATION_free(rlc);
+    BP_R1CS_LINEAR_COMBINATION_free(olc);
+    BP_R1CS_VARIABLE_free(lv);
+    BP_R1CS_VARIABLE_free(rv);
+    BP_R1CS_VARIABLE_free(ov);
+    BN_free(lb);
+    BN_free(rb);
+    BN_free(ob);
+    BN_CTX_free(bn_ctx);
+    return ret;
+}
+
 /* lc *= other */
 int BP_R1CS_LINEAR_COMBINATION_mul(BP_R1CS_LINEAR_COMBINATION *lc,
                                    const BP_R1CS_LINEAR_COMBINATION *other,
@@ -334,7 +453,7 @@ int BP_R1CS_LINEAR_COMBINATION_mul(BP_R1CS_LINEAR_COMBINATION *lc,
     BIGNUM *l = NULL, *r = NULL, *o = NULL, *bn_1;
     BP_R1CS_VARIABLE *lv = NULL, *rv = NULL, *ov = NULL;
     BP_R1CS_LINEAR_COMBINATION_ITEM *li = NULL, *ri = NULL, *oi = NULL;
-    BP_R1CS_LINEAR_COMBINATION *lt = NULL, *rt = NULL;
+    BP_R1CS_LINEAR_COMBINATION *llc = NULL, *rlc = NULL;
     STACK_OF(BP_R1CS_LINEAR_COMBINATION_ITEM) *lc_items = NULL;
 
     if (lc == NULL || other == NULL || ctx == NULL) {
@@ -394,27 +513,29 @@ int BP_R1CS_LINEAR_COMBINATION_mul(BP_R1CS_LINEAR_COMBINATION *lc,
         ctx->vars_num += 1;
     }
 
-    if (!(lt = BP_R1CS_LINEAR_COMBINATION_dup(lc))
-        || !(rt = BP_R1CS_LINEAR_COMBINATION_dup(other)))
+    llc = BP_R1CS_LINEAR_COMBINATION_dup(lc);
+    rlc = BP_R1CS_LINEAR_COMBINATION_dup(other);
+    if (llc == NULL || rlc == NULL)
         goto err;
 
-    if (!(lv = BP_R1CS_VARIABLE_new(BP_R1CS_VARIABLE_MULTIPLIER_LEFT, ln))
-        || !(rv = BP_R1CS_VARIABLE_new(BP_R1CS_VARIABLE_MULTIPLIER_RIGHT, rn))
-        || !(ov = BP_R1CS_VARIABLE_new(BP_R1CS_VARIABLE_MULTIPLIER_OUTPUT, on)))
+    lv = BP_R1CS_VARIABLE_new(BP_R1CS_VARIABLE_MULTIPLIER_LEFT, ln);
+    rv = BP_R1CS_VARIABLE_new(BP_R1CS_VARIABLE_MULTIPLIER_RIGHT, rn);
+    ov = BP_R1CS_VARIABLE_new(BP_R1CS_VARIABLE_MULTIPLIER_OUTPUT, on);
+    if (lv == NULL || rv == NULL || ov == NULL)
         goto err;
 
     if ((li = BP_R1CS_LC_ITEM_new(lv, bn_1)) == NULL
-        || sk_BP_R1CS_LINEAR_COMBINATION_ITEM_push(lt->items, li) <= 0)
+        || sk_BP_R1CS_LINEAR_COMBINATION_ITEM_push(llc->items, li) <= 0)
         goto err;
     li = NULL;
 
     if ((ri = BP_R1CS_LC_ITEM_new(rv, bn_1)) == NULL
-        || sk_BP_R1CS_LINEAR_COMBINATION_ITEM_push(rt->items, ri) <= 0)
+        || sk_BP_R1CS_LINEAR_COMBINATION_ITEM_push(rlc->items, ri) <= 0)
         goto err;
     ri = NULL;
 
-    if (!BP_R1CS_LINEAR_COMBINATION_constrain(lt, ctx)
-        || !BP_R1CS_LINEAR_COMBINATION_constrain(rt, ctx))
+    if (!BP_R1CS_LINEAR_COMBINATION_constrain(llc, ctx)
+        || !BP_R1CS_LINEAR_COMBINATION_constrain(rlc, ctx))
         goto err;
 
     if (!(lc_items = sk_BP_R1CS_LINEAR_COMBINATION_ITEM_new_reserve(NULL, 1)))
@@ -428,14 +549,14 @@ int BP_R1CS_LINEAR_COMBINATION_mul(BP_R1CS_LINEAR_COMBINATION *lc,
     lc->items = lc_items;
     lc_items = NULL;
     oi = NULL;
-    lt = rt = NULL;
+    llc = rlc = NULL;
 
     ret = 1;
 
 err:
     sk_BP_R1CS_LINEAR_COMBINATION_ITEM_free(lc_items);
-    BP_R1CS_LINEAR_COMBINATION_free(lt);
-    BP_R1CS_LINEAR_COMBINATION_free(rt);
+    BP_R1CS_LINEAR_COMBINATION_free(llc);
+    BP_R1CS_LINEAR_COMBINATION_free(rlc);
     BP_R1CS_LC_ITEM_free(li);
     BP_R1CS_LC_ITEM_free(ri);
     BP_R1CS_LC_ITEM_free(oi);
@@ -631,9 +752,8 @@ int BP_R1CS_LINEAR_COMBINATION_constrain(BP_R1CS_LINEAR_COMBINATION *lc,
     if (CRYPTO_UP_REF(&lc->references, &ref, lc->lock) <= 0)
         return 0;
 
-    if (sk_BP_R1CS_LINEAR_COMBINATION_push(ctx->constraints, lc) <= 0) {
+    if (sk_BP_R1CS_LINEAR_COMBINATION_push(ctx->constraints, lc) <= 0)
         goto err;
-    }
 
     return 1;
 err:

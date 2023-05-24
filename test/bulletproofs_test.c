@@ -1213,6 +1213,221 @@ err:
     return ret;
 }
 
+static int r1cs_range_logic(BP_R1CS_CTX *ctx, int64_t *value, int32_t bits,
+                            BP_R1CS_LINEAR_COMBINATION *v)
+{
+    int ret = 0, i, m, n;
+    BIGNUM *l = NULL, *r = NULL, *bn_1 = NULL, *pow_2 = NULL;
+    BP_R1CS_LINEAR_COMBINATION *a = NULL, *b = NULL, *o = NULL;
+
+    if (ctx == NULL || v == NULL) {
+        return 0;
+    }
+
+    pow_2 = BN_new();
+    bn_1 = BN_new();
+    l = BN_new();
+    r = BN_new();
+    if (pow_2 == NULL || bn_1 == NULL || l == NULL || r == NULL)
+        goto err;
+
+    BN_one(pow_2);
+    BN_one(bn_1);
+
+    for (i = 0; i < bits; i++) {
+        if (value != NULL) {
+            n = *value >> i & 0x1;
+            m = 1 - n;
+            BN_set_word(l, m);
+            BN_set_word(r, n);
+
+            if (!BP_R1CS_LINEAR_COMBINATION_raw_mul(&o, &a, &b, l, r, ctx))
+                goto err;
+        } else {
+            if (!BP_R1CS_LINEAR_COMBINATION_raw_mul(&o, &a, &b, NULL, NULL, ctx))
+                goto err;
+        }
+
+        if (!BP_R1CS_LINEAR_COMBINATION_constrain(o, ctx))
+            goto err;
+
+        if (!BP_R1CS_LINEAR_COMBINATION_add(a, b)
+            || !BP_R1CS_LINEAR_COMBINATION_sub_bn(a, bn_1))
+            goto err;
+
+        /* v = v - b * 2^i */
+        if (!BP_R1CS_LINEAR_COMBINATION_mul_bn(b, pow_2)
+            || !BP_R1CS_LINEAR_COMBINATION_sub(v, b))
+            goto err;
+
+        if (!BN_add(pow_2, pow_2, pow_2))
+            goto err;
+
+        BP_R1CS_LINEAR_COMBINATION_free(a);
+        BP_R1CS_LINEAR_COMBINATION_free(b);
+        BP_R1CS_LINEAR_COMBINATION_free(o);
+        a = b = o = NULL;
+    }
+
+    if (!BP_R1CS_LINEAR_COMBINATION_constrain(v, ctx))
+        goto err;
+
+    ret = 1;
+
+err:
+    BP_R1CS_LINEAR_COMBINATION_free(a);
+    BP_R1CS_LINEAR_COMBINATION_free(b);
+    BP_R1CS_LINEAR_COMBINATION_free(o);
+
+    BN_free(l);
+    BN_free(r);
+
+    return ret;
+}
+
+static BP_R1CS_PROOF *r1cs_range_prove(BP_R1CS_CTX *ctx, BP_WITNESS *witness,
+                                       int64_t value, int32_t bits)
+{
+    BIGNUM *v = NULL;
+    BP_R1CS_LINEAR_COMBINATION *lc = NULL;
+    BP_R1CS_PROOF *proof = NULL;
+
+    if (ctx == NULL || witness == NULL)
+        return NULL;
+
+    v = BN_new();
+    if (v == NULL)
+        return NULL;
+
+    BN_set_word(v, value);
+
+    if (!(lc = BP_WITNESS_r1cs_linear_combination_commit(witness, "v", v)))
+        goto err;
+
+    if (!r1cs_range_logic(ctx, &value, bits, lc))
+        goto err;
+
+    if (!(proof = BP_R1CS_PROOF_prove(ctx)))
+        goto err;
+
+    return proof;
+
+err:
+    BP_R1CS_LINEAR_COMBINATION_free(lc);
+    BP_R1CS_PROOF_free(proof);
+    return NULL;
+}
+
+static int r1cs_range_verify(BP_R1CS_CTX *ctx, BP_WITNESS *witness, BP_R1CS_PROOF *proof,
+                             int32_t bits)
+{
+    BP_R1CS_LINEAR_COMBINATION *lc = NULL;
+
+    if (ctx == NULL || witness == NULL || proof == NULL)
+        return 0;
+
+    if (!(lc = BP_WITNESS_r1cs_linear_combination_get(witness, "v")))
+        goto err;
+
+    if (!r1cs_range_logic(ctx, NULL, bits, lc))
+        goto err;
+
+    if (!BP_R1CS_PROOF_verify(ctx, proof))
+        goto err;
+
+    return 1;
+
+err:
+    BP_R1CS_LINEAR_COMBINATION_free(lc);
+    return 0;
+}
+
+static int r1cs_range_test(int32_t bits, int64_t value)
+{
+    int ret = 0;
+    BP_TRANSCRIPT *transcript = NULL;
+    BP_PUB_PARAM *pp = NULL;
+    BP_WITNESS *witness = NULL;
+    BP_R1CS_CTX *ctx = NULL;
+    BP_R1CS_PROOF *proof = NULL;
+
+    if (!TEST_ptr(transcript = BP_TRANSCRIPT_new(BP_TRANSCRIPT_METHOD_sha256(), "r1cs_range_test")))
+        goto err;
+
+    if (!TEST_ptr(pp = BP_PUB_PARAM_new_by_curve_id(NID_secp256k1, 128, 1)))
+        goto err;
+
+    if (!TEST_ptr(witness = BP_WITNESS_new(pp)))
+        goto err;
+
+    if (!TEST_ptr(ctx = BP_R1CS_CTX_new(pp, witness, transcript)))
+        goto err;
+
+    if (!TEST_ptr(proof = r1cs_range_prove(ctx, witness, value, bits)))
+        goto err;
+
+    if (!TEST_true(r1cs_range_verify(ctx, witness, proof, bits)))
+        goto err;
+
+    ret = 1;
+err:
+    BP_R1CS_PROOF_free(proof);
+    BP_R1CS_CTX_free(ctx);
+    BP_TRANSCRIPT_free(transcript);
+    BP_PUB_PARAM_free(pp);
+
+    return ret;
+
+}
+
+static int r1cs_ranges_test(int bits, int64_t secrets[], int len)
+{
+    int i;
+
+    for (i = 0; i < len; i++) {
+        if (!r1cs_range_test(bits, secrets[i]))
+            return 0;
+    }
+
+    return 1;
+}
+
+static int r1cs_range_tests(void)
+{
+    int64_t secrets1[] = {0, 1<<7};
+    int64_t secrets2[] = {0, 1<<15, (1<<16)-1};
+    int64_t secrets3[] = {0, 1<<15, (1<<16)-1, 1<<16};
+    int64_t secrets4[] = {0, 1<<15, (1<<16)-1, 1<<16, (1<<16)+1};
+    int64_t secrets5[] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+    int64_t secrets6[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+    if (!TEST_true(r1cs_range_test(8, 0))
+        || !TEST_true(r1cs_range_test(16, 1<<1))
+        || !TEST_true(r1cs_range_test(16, 1<<15))
+        || !TEST_true(r1cs_range_test(16, (1<<16)-1))
+        || TEST_true(r1cs_range_test(16, 1<<16))
+        || TEST_true(r1cs_range_test(16, (1<<16)+1))
+        || TEST_true(r1cs_range_test(16, 1<<24))
+        || TEST_true(r1cs_range_test(16, 1LL<<31))
+        || !TEST_true(r1cs_range_test(32, 0))
+        || !TEST_true(r1cs_range_test(32, 1<<1))
+        || !TEST_true(r1cs_range_test(32, 1<<16))
+        || !TEST_true(r1cs_range_test(32, 1LL<<31))
+        || !TEST_true(r1cs_range_test(32, (1LL<<32)-1))
+        || TEST_true(r1cs_range_test(32, 1LL<<32))
+        || TEST_true(r1cs_range_test(32, (1LL<<32)+1))
+        || !TEST_true(r1cs_range_test(64, (1LL<<31) * (1LL<<31)))
+        || !TEST_true(r1cs_ranges_test(16, secrets1, sizeof(secrets1)/sizeof(secrets1[0])))
+        || !TEST_true(r1cs_ranges_test(16, secrets2, sizeof(secrets2)/sizeof(secrets2[0])))
+        || TEST_true(r1cs_ranges_test(16, secrets3, sizeof(secrets3)/sizeof(secrets3[0])))
+        || TEST_true(r1cs_ranges_test(16, secrets4, sizeof(secrets4)/sizeof(secrets4[0])))
+        || !TEST_true(r1cs_ranges_test(16, secrets5, sizeof(secrets5)/sizeof(secrets5[0])))
+        || !TEST_true(r1cs_ranges_test(16, secrets6, sizeof(secrets6)/sizeof(secrets6[0]))))
+        return 0;
+
+    return 1;
+}
+
 static int range_proofs_test(int bits, int64_t secrets[], int len)
 {
     int ret = 0, i;
@@ -1378,9 +1593,6 @@ static int range_proof_tests(void)
     int64_t secrets5[] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
     int64_t secrets6[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-    //return range_proofs_test(16, secrets2, sizeof(secrets2)/sizeof(secrets2[0]));
-    //return 1;
-
     if (!TEST_true(range_proof_test(8, 0))
         || !TEST_true(range_proof_test(16, 1<<1))
         || !TEST_true(range_proof_test(16, 1<<15))
@@ -1423,6 +1635,7 @@ int setup_tests(void)
 {
     ADD_TEST(range_proof_tests);
     ADD_TEST(range_proof_encode_tests);
+    ADD_TEST(r1cs_range_tests);
     ADD_TEST(r1cs_proof_test1_should_ok);
     ADD_TEST(r1cs_proof_test1_should_failed);
     ADD_TEST(r1cs_proof_test2_should_ok);
