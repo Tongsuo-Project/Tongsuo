@@ -234,24 +234,24 @@ ok($res =~ m/Error/, "Check the format of the bulletproofs range proof result wi
 
 $res = bulletproofs_witness_commit($pp_path, 0, 1, ("a=1"));
 ok($res =~ m/V\[n\]:\s+\[a\]: \w+/, "Check the value of V in the bulletproofs witness, generated with wintesses: a=1");
-ok($res =~ m/v\[n\]:\s+\[0\]: 1 \(0x1\)/, "Check the value of v in the bulletproofs witness, generated with wintesses: a=1");
+ok($res =~ m/v\[n\]:\s+\[a\]: 1 \(0x1\)/, "Check the value of v in the bulletproofs witness, generated with wintesses: a=1");
 $res = bulletproofs_witness_commit($pp_path, 0, 1, ("a=1", "b=-2"));
 ok($res =~ m/V\[n\]:\s+\[a\]: (\w\w:?)+\s+\[b\]: \w+/, "Check the value of V in the bulletproofs witness, generated with wintesses: a=1,b=-2");
-ok($res =~ m/v\[n\]:\s+\[0\]: 1 \(0x1\)\s+\[1\]: -2 \(-0x2\)/, "Check the value of v in the bulletproofs witness, generated with wintesses: a=1,b=-2");
+ok($res =~ m/v\[n\]:\s+\[a\]: 1 \(0x1\)\s+\[b\]: -2 \(-0x2\)/, "Check the value of v in the bulletproofs witness, generated with wintesses: a=1,b=-2");
 $res = bulletproofs_witness_commit($pp_path, 0, 1, ("a1=1", "b1=-2", "c1=3"));
 ok($res =~ m/V\[n\]:\s+\[a1\]: (\w\w:?)+\s+\[b1\]: (\w\w:?)+\s+\[c1\]: (\w\w:?)+/, "Check the value of V in the bulletproofs witness, generated with wintesses: a1=1,b1=-2,c1=3");
-ok($res =~ m/v\[n\]:\s+\[0\]: 1 \(0x1\)\s+\[1\]: -2 \(-0x2\)\s+\[2\]: 3 \(0x3\)/, "Check the value of v in the bulletproofs witness, generated with wintesses: a1=1,b1=-2,c1=3");
+ok($res =~ m/v\[n\]:\s+\[a1\]: 1 \(0x1\)\s+\[b1\]: -2 \(-0x2\)\s+\[c1\]: 3 \(0x3\)/, "Check the value of v in the bulletproofs witness, generated with wintesses: a1=1,b1=-2,c1=3");
 $res = bulletproofs_witness_print(1);
 ok($res =~ m/V\[n\]:\s+\[a1\]: (\w\w:?)+\s+\[b1\]: (\w\w:?)+\s+\[c1\]: (\w\w:?)+/, "Check the value of V in the bulletproofs witness pem file, generated with wintesses: a1=1,b1=-2,c1=3");
-ok($res =~ m/v\[n\]:\s+\[0\]: 1 \(0x1\)\s+\[1\]: -2 \(-0x2\)\s+\[2\]: 3 \(0x3\)/, "Check the value of v in the bulletproofs witness pem file, generated with wintesses: a1=1,b1=-2,c1=3");
+ok($res =~ m/v\[n\]:\s+\[a1\]: 1 \(0x1\)\s+\[b1\]: -2 \(-0x2\)\s+\[c1\]: 3 \(0x3\)/, "Check the value of v in the bulletproofs witness pem file, generated with wintesses: a1=1,b1=-2,c1=3");
 $res = bulletproofs_witness_commit($pp_path, 0, 1, ("aa=1", "bb=2", "cc=33333", "dddd=4"));
 ok($res =~ m/V\[n\]:\s+\[aa\]: (\w\w:?)+\s+\[bb\]: (\w\w:?)+\s+\[cc\]: (\w\w:?)+\s+\[dddd\]: (\w\w:?)+/, "Check the value of V in the bulletproofs witness, generated with wintesses: aa=1,bb=2,cc=3333,dddd=4");
-ok($res =~ m/v\[n\]:\s+\[0\]: 1 \(0x1\)\s+\[1\]: 2 \(0x2\)\s+\[2\]: 33333 \(0x8235\)\s+\[3\]: 4 \(0x4\)/, "Check the value of v in the bulletproofs witness, generated with wintesses: aa=1,bb=2,cc=3333,dddd=4");
+ok($res =~ m/v\[n\]:\s+\[aa\]: 1 \(0x1\)\s+\[bb\]: 2 \(0x2\)\s+\[cc\]: 33333 \(0x8235\)\s+\[dddd\]: 4 \(0x4\)/, "Check the value of v in the bulletproofs witness, generated with wintesses: aa=1,bb=2,cc=3333,dddd=4");
 
 # test r1cs
 $res = bulletproofs_witness_commit($pp_path, 1, 1, ("aa=1", "bb=2", "cc=-3", "dd=4"));
 ok($res =~ m/V\[n\]:\s+\[aa\]: (\w\w:?)+\s+\[bb\]: (\w\w:?)+\s+\[cc\]: (\w\w:?)+\s+\[dd\]: (\w\w:?)+/, "Check the value of V in the bulletproofs witness, generated with wintesses: aa=1,bb=2,cc=-3,dd=4");
-ok($res =~ m/v\[n\]:\s+\[0\]: 1 \(0x1\)\s+\[1\]: 2 \(0x2\)\s+\[2\]: -3 \(-0x3\)\s+\[3\]: 4 \(0x4\)/, "Check the value of v in the bulletproofs witness, generated with wintesses: aa=1,bb=2,cc=-3,dd=4");
+ok($res =~ m/v\[n\]:\s+\[aa\]: 1 \(0x1\)\s+\[bb\]: 2 \(0x2\)\s+\[cc\]: -3 \(-0x3\)\s+\[dd\]: 4 \(0x4\)/, "Check the value of v in the bulletproofs witness, generated with wintesses: aa=1,bb=2,cc=-3,dd=4");
 
 # test prove constraint expression: aa+bb+cc=0
 $res = bulletproofs_prove($pp_path, $witness_path, "aa+bb+cc", 1);

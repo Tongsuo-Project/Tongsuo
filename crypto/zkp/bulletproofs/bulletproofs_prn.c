@@ -371,11 +371,16 @@ int BP_WITNESS_print(BIO *bp, const BP_WITNESS *witness, int indent, int flag)
     if (n != 0 && flag == 1) {
         bp_bio_printf(bp, indent, "v[n]:\n");
         for (i = 0; i < n; i++) {
+            var = sk_BP_VARIABLE_value(witness->sk_V, i);
             v = sk_BIGNUM_value(witness->sk_v, i);
             if (v == NULL)
                 goto end;
 
-            bp_bio_printf(bp, indent + 4, "[%zu]: ", i);
+            if (var->name != NULL)
+                bp_bio_printf(bp, indent + 4, "[%s]: ", var->name);
+            else
+                bp_bio_printf(bp, indent + 4, "[%zu]: ", i);
+
             if (!bp_bn_print(bp, NULL, v, NULL, 0))
                 goto end;
         }
