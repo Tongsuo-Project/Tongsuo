@@ -45,7 +45,7 @@ CipherString = DEFAULT
 Ciphersuites = TLS_SM4_GCM_SM3
 MaxProtocol = TLSv1.3
 MinProtocol = TLSv1.3
-VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-root.crt
+VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-root-cert.pem
 VerifyMode = Peer
 
 [test-0]
@@ -75,7 +75,7 @@ CipherString = DEFAULT
 Ciphersuites = TLS_AES_128_GCM_SHA256:TLS_SM4_GCM_SM3
 MaxProtocol = TLSv1.3
 MinProtocol = TLSv1.3
-VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-root.crt
+VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-root-cert.pem
 VerifyMode = Peer
 
 [test-1]
@@ -105,7 +105,7 @@ CipherString = DEFAULT
 Ciphersuites = TLS_SM4_CCM_SM3
 MaxProtocol = TLSv1.3
 MinProtocol = TLSv1.3
-VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-root.crt
+VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-root-cert.pem
 VerifyMode = Peer
 
 [test-2]
@@ -135,7 +135,7 @@ CipherString = DEFAULT
 Ciphersuites = TLS_AES_128_GCM_SHA256:TLS_SM4_CCM_SM3
 MaxProtocol = TLSv1.3
 MinProtocol = TLSv1.3
-VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-root.crt
+VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-root-cert.pem
 VerifyMode = Peer
 
 [test-3]
@@ -165,7 +165,7 @@ CipherString = DEFAULT
 Ciphersuites = TLS_AES_128_GCM_SHA256
 MaxProtocol = TLSv1.3
 MinProtocol = TLSv1.3
-VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-root.crt
+VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-root-cert.pem
 VerifyMode = Peer
 
 [test-4]
@@ -195,7 +195,7 @@ CipherString = DEFAULT
 Ciphersuites = TLS_AES_256_GCM_SHA384
 MaxProtocol = TLSv1.3
 MinProtocol = TLSv1.3
-VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-root.crt
+VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-root-cert.pem
 VerifyMode = Peer
 
 [test-5]
@@ -625,7 +625,7 @@ Groups = SM2
 MaxProtocol = TLSv1.3
 MinProtocol = TLSv1.3
 PrivateKey = ${ENV::TEST_CERTS_DIR}/sm2-leaf.key
-VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-root.crt
+VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-root-cert.pem
 VerifyMode = Require
 
 [19-test client auth fail when enable sm_tls13_strict, CertificateRequest with other signature algorithms except sm2sig_sm3-client]
@@ -660,7 +660,7 @@ Enable_sm_tls13_strict = on
 MaxProtocol = TLSv1.3
 MinProtocol = TLSv1.3
 PrivateKey = ${ENV::TEST_CERTS_DIR}/sm2-leaf.key
-VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-root.crt
+VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-root-cert.pem
 VerifyMode = Require
 
 [20-test client auth success when both enable sm_tls13_strict-client]

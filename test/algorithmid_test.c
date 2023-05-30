@@ -68,7 +68,8 @@ static int test_spki_aid(X509_PUBKEY *pubkey, const char *filename)
 
     /* SM2 should be wrapped by EC */
     if (EVP_KEYMGMT_is_a(keymgmt, "SM2")) {
-        if (!TEST_true(OBJ_obj2nid(oid) == NID_X9_62_id_ecPublicKey)) {
+        int nid = OBJ_obj2nid(oid);
+        if (!TEST_true(nid == NID_X9_62_id_ecPublicKey || nid == NID_sm2)) {
             TEST_info("The AlgorithmID (%s) for SM2 pkey is not EC oid", name);
             goto end;
         }

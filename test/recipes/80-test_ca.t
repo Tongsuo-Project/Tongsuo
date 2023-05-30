@@ -27,7 +27,8 @@ my $std_openssl_cnf = '"'
 
 rmtree("demoCA", { safe => 0 });
 
-plan tests => 17;
+plan tests => 18;
+
  SKIP: {
      my $cakey = srctop_file("test", "certs", "ca-key.pem");
      $ENV{OPENSSL_CONFIG} = qq(-config "$cnf");
@@ -60,7 +61,7 @@ plan tests => 17;
 }
 
 SKIP: {
-    skip "SM2 is not supported by this OpenSSL build", 1
+    skip "SM2 is not supported by this OpenSSL build", 2
         if disabled("sm2");
 
     is(yes(cmdstr(app(["openssl", "ca", "-config",
@@ -70,10 +71,22 @@ SKIP: {
                        "-sigopt", "distid:1234567812345678",
                        "-vfyopt", "distid:1234567812345678",
                        "-md", "sm3",
-                       "-cert", srctop_file("test", "certs", "sm2-root.crt"),
+                       "-cert", srctop_file("test", "certs", "sm2-root-cert.pem"),
                        "-keyfile", srctop_file("test", "certs", "sm2-root.key")]))),
        0,
        "Signing SM2 certificate request");
+
+    is(yes(cmdstr(app(["openssl", "ca", "-config",
+                       $cnf,
+                       "-in", srctop_file("test", "certs", "sm2-noza-csr.pem"),
+                       "-out", "sm2-noza-test.crt",
+                       "-sigopt", "sm2-za:no",
+                       "-vfyopt", "sm2-za:no",
+                       "-md", "sm3",
+                       "-cert", srctop_file("test", "certs", "sm2-noza-root-cert.pem"),
+                       "-keyfile", srctop_file("test", "certs", "sm2-root.key")]))),
+       0,
+       "Signing SM2 certificate request without Za");
 }
 
 SKIP: {
@@ -96,7 +109,7 @@ SKIP: {
                        "-sigopt", "sm2_id:1234567812345678",
                        "-sm2-id", "1234567812345678",
                        "-md", "sm3",
-                       "-cert", srctop_file("test", "certs", "sm2-root.crt"),
+                       "-cert", srctop_file("test", "certs", "sm2-root-cert.pem"),
                        "-keyfile", srctop_file("test", "certs", "sm2-root.key")]))),
        0,
        "Signing SM2 certificate request (compat)");
