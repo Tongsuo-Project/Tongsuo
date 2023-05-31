@@ -21,7 +21,19 @@
 /*
  * ZKP_BP reason codes.
  */
+# define ZKP_BP_R_EXCEEDS_GENS_CAPACITY                   106
 # define ZKP_BP_R_EXCEEDS_MAX_AGG_NUM                     100
 # define ZKP_BP_R_EXCEEDS_MAX_BITS                        101
+# define ZKP_BP_R_EXCEEDS_PARTY_CAPACITY                  104
+# define ZKP_BP_R_EXCEEDS_PP_CAPACITY                     102
+# define ZKP_BP_R_R1CS_CONSTRAINT_EXPRESSION_FORMAT_ERROR 109
+# define ZKP_BP_R_R1CS_CONSTRAINT_EXPRESSION_NO_VAR       110
+# define ZKP_BP_R_R1CS_CONSTRAINT_EXPRESSION_PROCESS_ERROR 111
+# define ZKP_BP_R_R1CS_CONSTRAINT_EXPRESSION_VAR_NOT_FOUND 112
+# define ZKP_BP_R_R1CS_CONSTRAINT_EXPRESSION_VAR_TOO_LONG 113
+# define ZKP_BP_R_TRANSCRIPT_INIT_FAILED                  103
+# define ZKP_BP_R_VARIABLE_DUPLICATED                     107
+# define ZKP_BP_R_VARIABLE_NAME_TOO_LONG                  108
+# define ZKP_BP_R_WITNESS_INVALID                         105
 
 #endif

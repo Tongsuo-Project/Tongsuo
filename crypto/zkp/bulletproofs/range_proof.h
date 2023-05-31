@@ -20,38 +20,16 @@ extern "C" {
 # include <openssl/ec.h>
 # include <openssl/bulletproofs.h>
 # include "internal/refcount.h"
+# include "bulletproofs.h"
 # include "inner_product.h"
 
-struct bullet_proof_pub_param_st {
-    int curve_id;
-    size_t bits;
-    size_t max_agg_num;
-    /* size equal bits * max_agg_num */
-    EC_POINT **vec_G;
-    EC_POINT **vec_H;
-    EC_POINT *H;
-    EC_POINT *U;
-    CRYPTO_RWLOCK *lock;
-    CRYPTO_REF_COUNT references;
+struct bp_range_ctx_st {
+    BP_TRANSCRIPT *transcript;
+    BP_PUB_PARAM *pp;
+    BP_WITNESS *witness;
 };
 
-struct bullet_proof_ctx_st {
-    char *st;
-    size_t st_len;
-    const EC_POINT *G;
-    EC_GROUP *group;
-    BULLET_PROOF_PUB_PARAM *pp;
-};
-
-struct bullet_proof_witness_st {
-    size_t n;
-    BIGNUM **vec_r;
-    BIGNUM **vec_v;
-};
-
-struct bullet_proof_st {
-    size_t n;
-    EC_POINT **V;
+struct bp_range_proof_st {
     EC_POINT *A;
     EC_POINT *S;
     EC_POINT *T1;
@@ -64,7 +42,7 @@ struct bullet_proof_st {
     CRYPTO_REF_COUNT references;
 };
 
-BULLET_PROOF *bullet_proof_alloc(const EC_GROUP *group);
+BP_RANGE_PROOF *bp_range_proof_alloc(const EC_GROUP *group);
 
 # ifdef  __cplusplus
 }

@@ -628,7 +628,7 @@ IF[{- !$disabled{tests} -}]
     ENDIF
 
     IF[{- !$disabled{bulletproofs} -}]
-      PROGRAMS{noinst}=bullet_proof_test
+      PROGRAMS{noinst}=bulletproofs_test
     ENDIF
 
     SOURCE[poly1305_internal_test]=poly1305_internal_test.c
@@ -643,9 +643,9 @@ IF[{- !$disabled{tests} -}]
     INCLUDE[paillier_internal_test]=.. ../include ../crypto/ec ../apps/include
     DEPEND[paillier_internal_test]=../libcrypto libtestutil.a
 
-    SOURCE[bullet_proof_test]=bullet_proof_test.c
-    INCLUDE[bullet_proof_test]=.. ../include ../crypto/ec ../apps/include
-    DEPEND[bullet_proof_test]=../libcrypto.a libtestutil.a
+    SOURCE[bulletproofs_test]=bulletproofs_test.c
+    INCLUDE[bulletproofs_test]=.. ../include ../crypto/ec ../apps/include
+    DEPEND[bulletproofs_test]=../libcrypto.a libtestutil.a
 
     SOURCE[chacha_internal_test]=chacha_internal_test.c
     INCLUDE[chacha_internal_test]=.. ../include ../apps/include
