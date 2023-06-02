@@ -14,14 +14,16 @@
 铜锁提供如下主要的功能特性：
 
   * 技术合规能力
-    * 符合GM/T 0028《密码模块安全技术要求》的"软件密码模块安全一级"资质
+    * 符合 GM/T 0028《密码模块安全技术要求》的"软件密码模块安全一级"资质
+    * 符合 GM/T 0005-2021《随机性检测规范》
   * 零知识证明（ZKP）
-    * Bulletproofs
+    * Bulletproofs range
+    * [Bulletproofs R1CS](https://www.yuque.com/tsdoc/ts/bulletproofs)
   * 密码学算法
     * 中国商用密码算法：SM2、SM3、SM4、[祖冲之](https://www.yuque.com/tsdoc/ts/copzp3)等
     * 国际主流算法：ECDSA、RSA、AES、SHA等
     * 同态加密算法：[EC-ElGamal](https://www.yuque.com/tsdoc/misc/ec-elgamal)、[Paillier](https://www.yuque.com/tsdoc/misc/rdibad)等
-    * 后量子密码学\*：LAC、NTRU、Saber、Dilithium等
+    * 后量子密码学\*：Kyber、Dilithium等
   * 安全通信协议
     * 支持GB/T 38636-2020 TLCP标准，即[双证书国密](https://www.yuque.com/tsdoc/ts/hedgqf)通信协议
     * 支持[RFC 8998](https://datatracker.ietf.org/doc/html/rfc8998)，即TLS 1.3 +[国密单证书](https://www.yuque.com/tsdoc/ts/grur3x)
