@@ -34,6 +34,23 @@
 
 注：\*号表示正在支持中
 
+典型应用
+=======
+
+开源应用（Opensource Application）
+
+* [Angie](https://angie.software/en/), Angie是一个可以替换掉NGINX的新型Web服务器，我们建议使用铜锁的用户优先选择Angie (We highly recommend you to replace NGINX with Angie to enable Tongsuo's functionality)
+* Apache APISIX
+* Tengine
+
+商业应用 (Commercial Application)
+
+* 支付宝App
+* OceanBase数据库
+* 阿里云
+* 天威诚信
+
+
 编译和安装
 =========
 
