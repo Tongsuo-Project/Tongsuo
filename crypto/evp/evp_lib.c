@@ -597,6 +597,16 @@ unsigned char *EVP_CIPHER_CTX_buf_noconst(EVP_CIPHER_CTX *ctx)
     return ctx->buf;
 }
 
+int EVP_CIPHER_CTX_get_buf_len(const EVP_CIPHER_CTX *ctx)
+{
+    return ctx->buf_len;
+}
+
+int EVP_CIPHER_CTX_get_final_used(const EVP_CIPHER_CTX *ctx)
+{
+    return ctx->final_used;
+}
+
 int EVP_CIPHER_CTX_get_num(const EVP_CIPHER_CTX *ctx)
 {
     int ok;

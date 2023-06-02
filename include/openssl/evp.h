@@ -635,6 +635,8 @@ int EVP_CIPHER_CTX_get_original_iv(EVP_CIPHER_CTX *ctx, void *buf, size_t len);
 OSSL_DEPRECATEDIN_3_0
 unsigned char *EVP_CIPHER_CTX_buf_noconst(EVP_CIPHER_CTX *ctx);
 # endif
+int EVP_CIPHER_CTX_get_buf_len(const EVP_CIPHER_CTX *ctx);
+int EVP_CIPHER_CTX_get_final_used(const EVP_CIPHER_CTX *ctx);
 int EVP_CIPHER_CTX_get_num(const EVP_CIPHER_CTX *ctx);
 # define EVP_CIPHER_CTX_num EVP_CIPHER_CTX_get_num
 int EVP_CIPHER_CTX_set_num(EVP_CIPHER_CTX *ctx, int num);
