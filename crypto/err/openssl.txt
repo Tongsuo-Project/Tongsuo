@@ -1714,5 +1714,21 @@ X509_R_UNKNOWN_TRUST_ID:120:unknown trust id
 X509_R_UNSUPPORTED_ALGORITHM:111:unsupported algorithm
 X509_R_WRONG_LOOKUP_TYPE:112:wrong lookup type
 X509_R_WRONG_TYPE:122:wrong type
+ZKP_BP_R_EXCEEDS_GENS_CAPACITY:106:exceeds gens capacity
 ZKP_BP_R_EXCEEDS_MAX_AGG_NUM:100:exceeds max agg num
 ZKP_BP_R_EXCEEDS_MAX_BITS:101:exceeds max bits
+ZKP_BP_R_EXCEEDS_PARTY_CAPACITY:104:exceeds party capacity
+ZKP_BP_R_EXCEEDS_PP_CAPACITY:102:exceeds pp capacity
+ZKP_BP_R_R1CS_CONSTRAINT_EXPRESSION_FORMAT_ERROR:109:\
+	r1cs constraint expression format error
+ZKP_BP_R_R1CS_CONSTRAINT_EXPRESSION_NO_VAR:110:r1cs constraint expression no var
+ZKP_BP_R_R1CS_CONSTRAINT_EXPRESSION_PROCESS_ERROR:111:\
+	r1cs constraint expression process error
+ZKP_BP_R_R1CS_CONSTRAINT_EXPRESSION_VAR_NOT_FOUND:112:\
+	r1cs constraint expression var not found
+ZKP_BP_R_R1CS_CONSTRAINT_EXPRESSION_VAR_TOO_LONG:113:\
+	r1cs constraint expression var too long
+ZKP_BP_R_TRANSCRIPT_INIT_FAILED:103:transcript init failed
+ZKP_BP_R_VARIABLE_DUPLICATED:107:variable duplicated
+ZKP_BP_R_VARIABLE_NAME_TOO_LONG:108:variable name too long
+ZKP_BP_R_WITNESS_INVALID:105:witness invalid

@@ -15,10 +15,33 @@
 #ifndef OPENSSL_NO_ERR
 
 static const ERR_STRING_DATA ZKP_BP_str_reasons[] = {
+    {ERR_PACK(ERR_LIB_ZKP_BP, 0, ZKP_BP_R_EXCEEDS_GENS_CAPACITY),
+    "exceeds gens capacity"},
     {ERR_PACK(ERR_LIB_ZKP_BP, 0, ZKP_BP_R_EXCEEDS_MAX_AGG_NUM),
     "exceeds max agg num"},
     {ERR_PACK(ERR_LIB_ZKP_BP, 0, ZKP_BP_R_EXCEEDS_MAX_BITS),
     "exceeds max bits"},
+    {ERR_PACK(ERR_LIB_ZKP_BP, 0, ZKP_BP_R_EXCEEDS_PARTY_CAPACITY),
+    "exceeds party capacity"},
+    {ERR_PACK(ERR_LIB_ZKP_BP, 0, ZKP_BP_R_EXCEEDS_PP_CAPACITY),
+    "exceeds pp capacity"},
+    {ERR_PACK(ERR_LIB_ZKP_BP, 0, ZKP_BP_R_R1CS_CONSTRAINT_EXPRESSION_FORMAT_ERROR),
+    "r1cs constraint expression format error"},
+    {ERR_PACK(ERR_LIB_ZKP_BP, 0, ZKP_BP_R_R1CS_CONSTRAINT_EXPRESSION_NO_VAR),
+    "r1cs constraint expression no var"},
+    {ERR_PACK(ERR_LIB_ZKP_BP, 0, ZKP_BP_R_R1CS_CONSTRAINT_EXPRESSION_PROCESS_ERROR),
+    "r1cs constraint expression process error"},
+    {ERR_PACK(ERR_LIB_ZKP_BP, 0, ZKP_BP_R_R1CS_CONSTRAINT_EXPRESSION_VAR_NOT_FOUND),
+    "r1cs constraint expression var not found"},
+    {ERR_PACK(ERR_LIB_ZKP_BP, 0, ZKP_BP_R_R1CS_CONSTRAINT_EXPRESSION_VAR_TOO_LONG),
+    "r1cs constraint expression var too long"},
+    {ERR_PACK(ERR_LIB_ZKP_BP, 0, ZKP_BP_R_TRANSCRIPT_INIT_FAILED),
+    "transcript init failed"},
+    {ERR_PACK(ERR_LIB_ZKP_BP, 0, ZKP_BP_R_VARIABLE_DUPLICATED),
+    "variable duplicated"},
+    {ERR_PACK(ERR_LIB_ZKP_BP, 0, ZKP_BP_R_VARIABLE_NAME_TOO_LONG),
+    "variable name too long"},
+    {ERR_PACK(ERR_LIB_ZKP_BP, 0, ZKP_BP_R_WITNESS_INVALID), "witness invalid"},
     {0, NULL}
 };
 

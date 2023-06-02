@@ -19,30 +19,37 @@ extern "C" {
 # include <openssl/bn.h>
 # include <openssl/ec.h>
 # include "internal/refcount.h"
-# include "bullet_proof.h"
+# include "bulletproofs.h"
+# include "range_proof.h"
 # include "inner_product.h"
 
 int bp_rand_range(BIGNUM *rnd, const BIGNUM *range);
 
-void BN_print2(BIO *b, const BIGNUM *n, const char *name);
-void EC_POINT_print(BIO *b, const EC_POINT *p, const char *name);
-void EC_POINT_print_affine(BIO *b, const EC_GROUP *group, const EC_POINT *p,
-                           const char *name, BN_CTX *ctx);
+int bp_buf2hexstr_print(BIO *bio, const unsigned char *buf, size_t size,
+                        char *field, int text);
 
-void BULLET_PROOF_PUB_PARAM_print(BULLET_PROOF_PUB_PARAM *pp, const char *note);
-void BULLET_PROOF_WITNESS_print(BULLET_PROOF_WITNESS *witness, const char *note);
-void BULLET_PROOF_print(BULLET_PROOF *proof, const EC_GROUP *group, const char *note);
+void BN_debug_print(BIO *b, const BIGNUM *n, const char *name);
+void EC_POINT_debug_print(BIO *b, const EC_POINT *p, const char *name);
+void EC_POINT_debug_print_affine(BIO *b, const EC_GROUP *group, const EC_POINT *p,
+                                 const char *name, BN_CTX *ctx);
 
-void bp_inner_product_pub_param_print(bp_inner_product_pub_param_t *pp,
-                                      const char *note);
-void bp_inner_product_witness_print(bp_inner_product_witness_t *witness,
-                                    const char *note);
-void bp_inner_product_proof_print(bp_inner_product_proof_t *proof,
-                                  const EC_GROUP *group, const char *note);
-void bp_bn_vector_print(BIO *bio, BIGNUM **bv, size_t n, const char *note);
-void bp_point_vector_print(BIO *bio, const EC_GROUP *group,
-                           EC_POINT **pv, size_t n,
-                           const char *note, BN_CTX *bn_ctx);
+void BP_PUB_PARAM_debug_print(BP_PUB_PARAM *pp, const char *note);
+void BP_WITNESS_debug_print(BP_WITNESS *witness, const char *note);
+void BP_RANGE_PROOF_debug_print(BP_RANGE_PROOF *proof, const EC_GROUP *group, const char *note);
+
+void bp_inner_product_pub_param_debug_print(bp_inner_product_pub_param_t *pp,
+                                            const char *note);
+void bp_inner_product_witness_debug_print(bp_inner_product_witness_t *witness,
+                                          const char *note);
+void bp_inner_product_proof_debug_print(bp_inner_product_proof_t *proof,
+                                        const EC_GROUP *group, const char *note);
+void bp_bn_vector_debug_print(BIO *bio, BIGNUM **bv, int n, const char *note);
+void bp_point_vector_debug_print(BIO *bio, const EC_GROUP *group,
+                                 EC_POINT **pv, int n,
+                                 const char *note, BN_CTX *bn_ctx);
+void bp_stack_of_bignum_debug_print(BIO *bio, STACK_OF(BIGNUM) *sk, const char *name);
+void bp_stack_of_point_debug_print(BIO *bio, STACK_OF(EC_POINT) *sk, const char *nam);
+void bp_stack_of_variable_debug_print(BIO *bio, STACK_OF(BP_VARIABLE) *sk, const char *name);
 
 # ifdef  __cplusplus
 }

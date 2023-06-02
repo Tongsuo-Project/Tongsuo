@@ -154,7 +154,7 @@ ok(test_errors("Bad output format", "root-cert.pem", '-outform', 'http'),
 SKIP: {
     skip "sm2 not disabled", 1 if !disabled("sm2");
 
-    ok(test_errors("Unable to load Public Key", "sm2.pem", '-text'),
+    ok(test_errors("Unable to load Public Key", "sm2-cert.pem", '-text'),
        "error loading unsupported sm2 cert");
 }
 
