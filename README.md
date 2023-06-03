@@ -65,7 +65,7 @@ make install
 如果是Windows，则需要：
 
 ~~~
-perl config
+perl Configure enable-ntls
 nmake
 nmake install
 ~~~
