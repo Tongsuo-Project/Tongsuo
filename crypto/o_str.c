@@ -222,7 +222,7 @@ int openssl_strerror_r(int errnum, char *buf, size_t buflen)
 {
 #if defined(_MSC_VER) && _MSC_VER>=1400
     return !strerror_s(buf, buflen, errnum);
-#elif defined(_GNU_SOURCE)
+#elif defined(_GNU_SOURCE) && !defined(__MUSL__)
     char *err;
 
     /*
