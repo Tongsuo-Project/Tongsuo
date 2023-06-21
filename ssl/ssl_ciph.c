@@ -10,7 +10,9 @@
  */
 
 /* for secure_getenv */
-#define _GNU_SOURCE
+#ifndef _GNU_SOURCE
+# define _GNU_SOURCE
+#endif
 #include <stdio.h>
 #include <ctype.h>
 #include <openssl/objects.h>
