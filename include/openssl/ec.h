@@ -142,6 +142,11 @@ OSSL_DEPRECATEDIN_3_0 const EC_METHOD *EC_GFp_nistp224_method(void);
  */
 OSSL_DEPRECATEDIN_3_0 const EC_METHOD *EC_GFp_nistp256_method(void);
 
+/** Returns 64-bit optimized methods for sm2p256
+ *  \return  EC_METHOD object
+ */
+OSSL_DEPRECATEDIN_3_0 const EC_METHOD *EC_GFp_sm2p256_method(void);
+
 /** Returns 64-bit optimized methods for nistp521
  *  \return  EC_METHOD object
  */
