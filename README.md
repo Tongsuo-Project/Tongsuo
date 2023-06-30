@@ -1,6 +1,11 @@
 概述
 =========================
 
+[![tongsuo logo]][www.tongsuo.net]
+
+[![github actions ci badge]][github actions ci]
+[![Coverage Status](https://coveralls.io/repos/github/Tongsuo-Project/Tongsuo/badge.svg?branch=master)](https://coveralls.io/github/Tongsuo-Project/Tongsuo?branch=master)
+
 铜锁/Tongsuo是一个提供现代密码学算法和安全通信协议的开源基础密码库，为存储、网络、密钥管理、隐私计算等诸多业务场景提供底层的密码学基础能力，实现数据在传输、使用、存储等过程中的私密性、完整性和可认证性，为数据生命周期中的隐私和安全提供保护能力。
 
 铜锁获得了国家密码管理局商用密码检测中心颁发的商用密码产品认证证书，助力用户在国密改造、密评、等保等过程中，更加严谨地满足我国商用密码技术合规的要求。可在[此处](https://www.yuque.com/tsdoc/misc/st247r05s8b5dtct)下载资质原始文件。
@@ -119,13 +124,14 @@ make install_programs
 
 铜锁的相关文档组织在 [铜锁文档网站](https://yuque.com/tsdoc) 上。
 
-交流群
+交流合作
 =========================
 
-铜锁使用钉钉群进行用户答疑和交流，欢迎扫码入群（也可直接搜索群号：44810299）：
-<img src=
-"https://github.com/Tongsuo-Project/Tongsuo/blob/master/tongsuo-dingtalk.jpg"
-width=50% height=50% />
+铜锁使用钉钉群进行用户答疑和交流，钉钉群号：44810299
+
+欢迎关注铜锁公众号，获取最新的铜锁动态：
+
+![tongsuo public qr](tongsuo-public-qr.jpg)
 
 报告安全缺陷
 =========================
@@ -135,3 +141,23 @@ width=50% height=50% />
  * [https://security.alipay.com/](https://security.alipay.com/)
 
 注意：对于非安全相关的Bug，请使用GitHub的Issues进行提交。
+
+<!-- Links  -->
+
+[www.tongsuo.net]:
+    <https://www.tongsuo.net>
+    "Tongsuo Homepage"
+
+<!-- Logos and Badges -->
+
+[tongsuo logo]:
+    tongsuo.png
+    "Tongsuo Logo"
+
+[github actions ci badge]:
+    <https://github.com/Tongsuo-Project/Tongsuo/workflows/GitHub%20CI/badge.svg>
+    "GitHub Actions CI Status"
+
+[github actions ci]:
+    <https://github.com/Tongsuo-Project/Tongsuo/actions?query=workflow%3A%22GitHub+CI%22>
+    "GitHub Actions CI"
