@@ -3109,7 +3109,7 @@ static const ec_list_element curve_list[] = {
      "RFC 5639 curve over a 512 bit prime field"},
 # ifndef OPENSSL_NO_SM2
     {NID_sm2, &_EC_sm2p256v1.h,
-# if !defined(OPENSSL_NO_EC_NISTP_64_GCC_128)
+# if !defined(OPENSSL_NO_EC_SM2P_64_GCC_128)
      EC_GFp_sm2p256_method,
 # else
      0,

@@ -44,6 +44,8 @@
  * OpenSSL integration was taken from Emilia Kasper's work in ecp_nistp224.c.
  * Otherwise based on Emilia's P224 work, which was inspired by my curve25519
  * work which got its smarts from Daniel J. Bernstein's work on the same.
+ * 
+ * The optimization of SM2 was also inspired by GuanZhi‘s work on GMSSL.
  */
 
 #include <openssl/opensslconf.h>
