@@ -481,7 +481,7 @@ INCLUDE_MAIN___test_libtestutil_OLB = /INCLUDE=MAIN
     IF[{- !$disabled{zuc} -}]
       PROGRAMS_NO_INST=zuc_internal_test
     ENDIF
-    IF[{- !$disabled{ec_elgamal} -}]
+    IF[{- !$disabled{ec} && !$disabled{ec_elgamal} -}]
       PROGRAMS_NO_INST=ec_elgamal_internal_test
     ENDIF
 

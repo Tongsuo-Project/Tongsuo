@@ -41,9 +41,9 @@ static int babassl_cert_cb(SSL *s, void *arg)
     return 1;
 }
 
+#ifndef OPENSSL_NO_TLS1_2
 static int babassl_cb = 0;
 
-#ifndef OPENSSL_NO_TLS1_2
 static int babassl_client_hello_callback(SSL *s, int *al, void *arg)
 {
     int *exts = NULL;
@@ -118,15 +118,20 @@ static int test_babassl_api(void)
     FILE *fp;
     const EVP_MD                       *md = NULL;
     int                                 rsig;
-#ifdef SSL_CIPHER_get_mkey
+#ifndef OPENSSL_NO_TLS1_2
+# ifdef SSL_CIPHER_get_mkey
     const SSL_CIPHER           *cipher;
-#endif
-#ifdef SSL_get_use_certificate
+# endif
+# ifdef SSL_get_use_certificate
     X509 *x509;
-#endif
-#ifdef SSL_get_master_key
+# endif
+# ifdef SSL_get_master_key
     int master_key_len;
     unsigned char *master_key = NULL;
+# endif
+# ifndef OPENSSL_NO_GLOBAL_SESSION_CACHE
+    SSL_SESSION *sess;
+# endif
 #endif
 #ifndef OPENSSL_NO_CRYPTO_MDEBUG_COUNT
     int count = 0;
@@ -141,9 +146,6 @@ static int test_babassl_api(void)
     BIGNUM *p = NULL, *a = NULL, *b = NULL;
     EC_POINT *P = NULL;
     BN_CTX *ctx = NULL;
-#endif
-#ifndef OPENSSL_NO_GLOBAL_SESSION_CACHE
-    SSL_SESSION *sess;
 #endif
 
     if (!TEST_true(create_ssl_ctx_pair(TLS_server_method(), TLS_client_method(),
@@ -210,7 +212,6 @@ static int test_babassl_api(void)
 
 #ifndef OPENSSL_NO_TLS1_2
     SSL_CTX_set_client_hello_cb(sctx, babassl_client_hello_callback, sctx3);
-#endif
 
     if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl, &clientssl,
                                       NULL, NULL))
@@ -218,19 +219,65 @@ static int test_babassl_api(void)
                                                 SSL_ERROR_NONE)))
         goto end;
 
-    if (!TEST_long_eq(BabaSSL_version_num(), BABASSL_VERSION_NUMBER))
-        goto end;
-
-#ifdef SSL_SESSION_get_ref
+# ifdef SSL_SESSION_get_ref
     if (!TEST_int_eq(SSL_SESSION_get_ref(SSL_get_session(serverssl)), 1))
         goto end;
-#endif
-
-#ifdef SSL_get_use_certificate
+# endif
+# ifdef SSL_get_use_certificate
     x509 = SSL_get_use_certificate(serverssl);
     if (!TEST_ptr_eq(x509, SSL_get_certificate(serverssl)))
         goto end;
+# endif
+# ifdef SSL_get_master_key
+    if (SSL_get_master_key(serverssl, &master_key, &master_key_len), 0)
+        goto end;
+
+    if (!TEST_int_eq(master_key_len, 48))
+        goto end;
+
+    if (!TEST_ptr_ne(master_key, NULL))
+        goto end;
+# endif
+# ifdef SSL_CIPHER_get_mkey
+    cipher = SSL_get_current_cipher(serverssl);
+    if (cipher == NULL)
+        goto end;
+
+    if (!TEST_long_eq(SSL_CIPHER_get_mkey(cipher), cipher->algorithm_mkey))
+        goto end;
+
+    if (!TEST_long_eq(SSL_CIPHER_get_mac(cipher), cipher->algorithm_mac))
+        goto end;
+
+    if (!TEST_long_eq(SSL_CIPHER_get_enc(cipher), cipher->algorithm_enc))
+        goto end;
+
+    if (!TEST_long_eq(SSL_CIPHER_get_auth(cipher), cipher->algorithm_auth))
+        goto end;
+# endif
+# ifdef SSL_get_sig_hash
+    if (!TEST_int_eq(SSL_get_sig_hash(serverssl), serverssl->sig_hash))
+        goto end;
+# endif
+# ifndef OPENSSL_NO_SESSION_REUSED_TYPE
+    if (!TEST_int_eq(SSL_get_session_reused_type(serverssl),
+                     serverssl->session_reused_type))
+        goto end;
+# endif
+#ifndef OPENSSL_NO_GLOBAL_SESSION_CACHE
+    sess = SSL_get_session(clientssl);
+    if (!TEST_ptr(sess))
+        goto end;
+
+    SSL_set_global_session_result(serverssl, sess);
+
+    if (!TEST_ptr_eq(serverssl->global_session_result, sess))
+        goto end;
 #endif
+#endif
+
+    if (!TEST_long_eq(BabaSSL_version_num(), BABASSL_VERSION_NUMBER))
+        goto end;
 
     fflush(stdout);
     setvbuf(stdout, NULL, _IONBF, 0);
@@ -254,40 +301,6 @@ static int test_babassl_api(void)
 #endif
     fp = freopen(DEV_TTY, "w", stdout);
     remove("BABASSL_debug.log");
-
-#ifdef SSL_get_master_key
-    if (SSL_get_master_key(serverssl, &master_key, &master_key_len), 0)
-        goto end;
-
-    if (!TEST_int_eq(master_key_len, 48))
-        goto end;
-
-    if (!TEST_ptr_ne(master_key, NULL))
-        goto end;
-#endif
-
-#ifdef SSL_CIPHER_get_mkey
-    cipher = SSL_get_current_cipher(serverssl);
-    if (cipher == NULL)
-        goto end;
-
-    if (!TEST_long_eq(SSL_CIPHER_get_mkey(cipher), cipher->algorithm_mkey))
-        goto end;
-
-    if (!TEST_long_eq(SSL_CIPHER_get_mac(cipher), cipher->algorithm_mac))
-        goto end;
-
-    if (!TEST_long_eq(SSL_CIPHER_get_enc(cipher), cipher->algorithm_enc))
-        goto end;
-
-    if (!TEST_long_eq(SSL_CIPHER_get_auth(cipher), cipher->algorithm_auth))
-        goto end;
-#endif
-
-#ifdef SSL_get_sig_hash
-    if (!TEST_int_eq(SSL_get_sig_hash(serverssl), serverssl->sig_hash))
-        goto end;
-#endif
 
     tls1_lookup_get_sig_and_md(0x0804, &rsig, &md);
     if (!TEST_int_eq(rsig, EVP_PKEY_RSA_PSS))
@@ -334,25 +347,8 @@ static int test_babassl_api(void)
         goto end;
 #endif
 
-#ifndef OPENSSL_NO_SESSION_REUSED_TYPE
-    if (!TEST_int_eq(SSL_get_session_reused_type(serverssl),
-                     serverssl->session_reused_type))
-        goto end;
-#endif
-
 #ifndef OPENSSL_NO_SESSION_LOOKUP
     if (!TEST_ptr(SSL_magic_pending_session_ptr()))
-        goto end;
-#endif
-
-#ifndef OPENSSL_NO_GLOBAL_SESSION_CACHE
-    sess = SSL_get_session(clientssl);
-    if (!TEST_ptr(sess))
-        goto end;
-
-    SSL_set_global_session_result(serverssl, sess);
-
-    if (!TEST_ptr_eq(serverssl->global_session_result, sess))
         goto end;
 #endif
 
@@ -398,7 +394,7 @@ err:
     return ret;
 }
 
-#ifndef OPENSSL_NO_SKIP_SCSV
+# if !defined(OPENSSL_NO_SKIP_SCSV) && !defined(OPENSSL_NO_TLS1_2)
 static int skip_scsv_cert_cb_called = 0;
 
 static int babassl_skip_scsv_cert_cb(SSL *s, void *arg)
@@ -407,13 +403,11 @@ static int babassl_skip_scsv_cert_cb(SSL *s, void *arg)
     return 1;
 }
 
-# ifndef OPENSSL_NO_TLS1_2
 static int babassl_skip_scsv_client_hello_callback(SSL *s, int *al, void *arg)
 {
     SSL_set_skip_scsv(s, 1);
     return 1;
 }
-# endif
 
 static int test_babassl_skip_scsv(void)
 {
@@ -422,14 +416,12 @@ static int test_babassl_skip_scsv(void)
     int testresult = 0;
 
     if (!TEST_true(create_ssl_ctx_pair(TLS_server_method(), TLS_client_method(),
-                                       TLS1_VERSION, TLS_MAX_VERSION,
+                                       TLS1_1_VERSION, TLS_MAX_VERSION,
                                        &sctx, &cctx, cert, privkey)))
         goto end;
 
-# ifndef OPENSSL_NO_TLS1_2
     SSL_CTX_set_client_hello_cb(sctx, babassl_skip_scsv_client_hello_callback,
                                 sctx);
-# endif
     SSL_CTX_set_cert_cb(sctx, babassl_skip_scsv_cert_cb, (void *)0x99);
 
     SSL_CTX_set_max_proto_version(cctx, TLS1_2_VERSION);
@@ -440,9 +432,8 @@ static int test_babassl_skip_scsv(void)
 
     if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl, &clientssl,
                                       NULL, NULL))
-            || !TEST_false(create_ssl_connection(serverssl, clientssl,
-                                                 SSL_ERROR_NONE))
-            || !TEST_int_eq(serverssl->version, 0x302)
+            || !TEST_false(create_ssl_connection(serverssl, clientssl, SSL_ERROR_NONE))
+            || !TEST_int_eq(serverssl->version, TLS1_1_VERSION)
             || !TEST_int_eq(skip_scsv_cert_cb_called, 1)
             || !TEST_int_ne(serverssl->version, sctx->method->version))
         goto end;
@@ -470,8 +461,6 @@ static int test_babassl_verify_cert_with_sni(void)
                                        TLS1_VERSION, TLS_MAX_VERSION,
                                        &sctx, &cctx, cert, privkey)))
         goto end;
-
-    SSL_CTX_set_max_proto_version(cctx, TLS1_2_VERSION);
 
     SSL_CTX_set_verify_cert_with_sni(sctx, 1);
 
@@ -515,9 +504,7 @@ end:
 }
 #endif
 
-#ifndef OPENSSL_NO_DYNAMIC_CIPHERS
-
-# ifndef OPENSSL_NO_TLS1_2
+#if !defined(OPENSSL_NO_DYNAMIC_CIPHERS) && !defined(OPENSSL_NO_TLS1_2)
 static STACK_OF(SSL_CIPHER)       *cipher_list = NULL;
 static STACK_OF(SSL_CIPHER)       *cipher_list_by_id = NULL;
 static int dynamic_ciphers_cb_count = 0;
@@ -541,7 +528,6 @@ static int babassl_dynamic_ciphers_client_hello_callback(SSL *s, int *al, void *
 
     return 1;
 }
-# endif
 
 static int test_babassl_dynamic_ciphers(void)
 {
@@ -554,10 +540,8 @@ static int test_babassl_dynamic_ciphers(void)
                                        &sctx, &cctx, cert, privkey)))
         goto end;
 
-# ifndef OPENSSL_NO_TLS1_2
     SSL_CTX_set_client_hello_cb(sctx, babassl_dynamic_ciphers_client_hello_callback,
                                 sctx);
-# endif
     SSL_CTX_set_max_proto_version(cctx, TLS1_2_VERSION);
 
     if (!TEST_true(SSL_CTX_set_cipher_list(sctx, "AES256-GCM-SHA384")))
@@ -661,7 +645,7 @@ end:
 
     return testresult;
 }
-#endif
+# endif
 
 #if defined(SSL_check_tlsext_status) && !defined(OPENSSL_NO_OCSP)
 
@@ -795,13 +779,13 @@ int setup_tests(void)
     }
 
     ADD_TEST(test_babassl_api);
-#ifndef OPENSSL_NO_SKIP_SCSV
+#if !defined(OPENSSL_NO_SKIP_SCSV) && !defined(OPENSSL_NO_TLS1_2)
     ADD_TEST(test_babassl_skip_scsv);
 #endif
 #ifndef OPENSSL_NO_VERIFY_SNI
     ADD_TEST(test_babassl_verify_cert_with_sni);
 #endif
-#ifndef OPENSSL_NO_DYNAMIC_CIPHERS
+#if !defined(OPENSSL_NO_DYNAMIC_CIPHERS) && !defined(OPENSSL_NO_TLS1_2)
     ADD_TEST(test_babassl_dynamic_ciphers);
 #endif
 #if defined(SSL_check_tlsext_status) && !defined(OPENSSL_NO_OCSP)

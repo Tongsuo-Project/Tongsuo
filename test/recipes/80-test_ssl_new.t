@@ -110,7 +110,8 @@ my %skip = (
   "25-cipher.conf" => disabled("ec") || disabled("tls1_2"),
   "26-tls13_client_auth.conf" => disabled("tls1_3"),
   "29-dtls-sctp-label-bug.conf" => disabled("sctp") || disabled("sock"),
-  "30-tls13-sm.conf" => disabled("sm2") || disabled("sm3") || disabled("sm4"),
+  "30-tls13-sm.conf" => disabled("sm2") || disabled("sm3") || disabled("sm4")
+                    || disabled("tls1_3"),
   "31-ntls.conf" => disabled("ntls") || disabled("sm2") || disabled("sm3")
                     || disabled("sm4"),
   "38-delegated-credential.conf" => disabled("delegated-credential")
