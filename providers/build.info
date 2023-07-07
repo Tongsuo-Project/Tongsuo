@@ -12,6 +12,10 @@
 # libdefault.a          Contains all algorithm implementations that should
 #                       into the default or base provider.
 #
+# libsmtc.a             Contains all algorithm implementations that should
+#                       go into the SMTC provider. The compilations for this
+#                       library are all done with SMTC_MODULE defined.
+#
 # To be noted is that the FIPS provider shares source code with libcrypto,
 # which means that select source files from crypto/ are compiled for
 # libfips.a the sources from providers/implementations.
@@ -38,6 +42,7 @@ INCLUDE[../libcrypto]=common/include
 # Libraries we're dealing with
 $LIBCOMMON=libcommon.a
 $LIBFIPS=libfips.a
+$LIBSMTC=libsmtc.a
 $LIBLEGACY=liblegacy.a
 $LIBDEFAULT=libdefault.a
 LIBS{noinst}=$LIBDEFAULT $LIBCOMMON
@@ -50,6 +55,7 @@ $COMMON_INCLUDES=../crypto ../include implementations/include common/include
 
 INCLUDE[$LIBCOMMON]=$COMMON_INCLUDES
 INCLUDE[$LIBFIPS]=.. $COMMON_INCLUDES
+INCLUDE[$LIBSMTC]=.. $COMMON_INCLUDES
 INCLUDE[$LIBLEGACY]=.. $COMMON_INCLUDES
 INCLUDE[$LIBDEFAULT]=.. $COMMON_INCLUDES
 DEFINE[$LIBFIPS]=FIPS_MODULE
@@ -63,6 +69,7 @@ DEPEND[$LIBCOMMON]{weak}=../libcrypto
 # The $LIBFIPS dependency on $LIBCOMMON is extra strong, to mitigate for
 # linking problems because they are interdependent
 SOURCE[$LIBFIPS]=$LIBCOMMON
+DEPEND[$LIBSMTC]=$LIBCOMMON
 DEPEND[$LIBLEGACY]=$LIBCOMMON
 DEPEND[$LIBDEFAULT]=$LIBCOMMON
 
@@ -118,6 +125,39 @@ IF[{- !$disabled{fips} -}]
   GENERATE[fipsmodule.cnf]=../util/mk-fipsmodule-cnf.pl \
           -module $(FIPSMODULE) -section_name fips_sect -key $(FIPSKEY)
   DEPEND[fipsmodule.cnf]=$FIPSGOAL
+ENDIF
+
+#
+# SMTC provider stuff
+#
+IF[{- !$disabled{smtc} -}]
+  LIBS{noinst}=$LIBSMTC
+  SUBDIRS=smtc
+
+  # Note: only support builtin module for now
+  IF[{- $disabled{module} -}]
+    # Become built in
+    $SMTCGOAL=../libcrypto
+    SOURCE[$SMTCGOAL]=$LIBSMTC
+    DEFINE[$SMTCGOAL]=STATIC_SMTC
+    DEFINE[$LIBSMTC]=STATIC_SMTC
+  ELSE
+    # TODO: become a module
+    $SMTCGOAL=smtc
+    MODULES=$SMTCGOAL
+    DEPEND[$SMTCGOAL]=$LIBSMTC
+    SOURCE[$SMTCGOAL]=smtc/smtc_entry.c
+    INCLUDE[$SMTCGOAL]=../include
+    IF[{- defined $target{shared_defflag} -}]
+      SOURCE[$SMTCGOAL]=smtc.ld
+      GENERATE[smtc.ld]=../util/providers.num
+    ENDIF
+    SOURCE[$LIBSMTC]=prov_running.c
+  ENDIF
+
+  DEFINE[$SMTCGOAL]=SMTC_MODULE
+  DEFINE[$LIBDEFAULT]=SMTC_MODULE
+  DEFINE[../libssl]=SMTC_MODULE
 ENDIF
 
 #

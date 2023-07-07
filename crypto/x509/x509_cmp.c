@@ -93,7 +93,11 @@ int X509_CRL_match(const X509_CRL *a, const X509_CRL *b)
 
     if ((a->flags & EXFLAG_NO_FINGERPRINT) == 0
             && (b->flags & EXFLAG_NO_FINGERPRINT) == 0)
+#ifdef SMTC_MODULE
+        rv = memcmp(a->sm3_hash, b->sm3_hash, SM3_DIGEST_LENGTH);
+#else
         rv = memcmp(a->sha1_hash, b->sha1_hash, SHA_DIGEST_LENGTH);
+#endif
     else
         return -2;
 
@@ -165,7 +169,11 @@ int X509_cmp(const X509 *a, const X509 *b)
 
     if ((a->ex_flags & EXFLAG_NO_FINGERPRINT) == 0
             && (b->ex_flags & EXFLAG_NO_FINGERPRINT) == 0)
+#ifdef SMTC_MODULE
+        rv = memcmp(a->sm3_hash, b->sm3_hash, SM3_DIGEST_LENGTH);
+#else
         rv = memcmp(a->sha1_hash, b->sha1_hash, SHA_DIGEST_LENGTH);
+#endif
     if (rv != 0)
         return rv < 0 ? -1 : 1;
 

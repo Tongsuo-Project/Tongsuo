@@ -236,7 +236,62 @@ DEFINE_COMPARISONS(unsigned char, uchar, "%u")
 DEFINE_COMPARISONS(long, long, "%ld")
 DEFINE_COMPARISONS(unsigned long, ulong, "%lu")
 DEFINE_COMPARISONS(size_t, size_t, "%zu")
-DEFINE_COMPARISONS(double, double, "%g")
+
+DEFINE_COMPARISON(double, double, lt, <, "%g")
+DEFINE_COMPARISON(double, double, gt, >, "%g")
+
+static int double_eq(double a, double b)
+{
+    double precision = 0.000001;
+    int res;
+
+    if (a > b)
+        res = a - b < precision;
+    else
+        res = b - a < precision;
+
+    return res;
+}
+
+int test_double_eq(const char *file, int line, const char *s1, const char *s2,
+                   double a, double b)
+{
+    if (double_eq(a, b))
+        return 1;
+    test_fail_message(NULL, file, line, "double", s1, s2, "==",
+                      "[%g] compared to [%g]", a, b);
+    return 0;
+}
+
+int test_double_ne(const char *file, int line, const char *s1, const char *s2,
+                   double a, double b)
+{
+    if (!double_eq(a, b))
+        return 1;
+    test_fail_message(NULL, file, line, "double", s1, s2, "!=",
+                      "[%g] compared to [%g]", a, b);
+    return 0;
+}
+
+int test_double_le(const char *file, int line, const char *s1, const char *s2,
+                   double a, double b)
+{
+    if (a < b || double_eq(a, b))
+        return 1;
+    test_fail_message(NULL, file, line, "double", s1, s2, "<=",
+                      "[%g] compared to [%g]", a, b);
+    return 0;
+}
+
+int test_double_ge(const char *file, int line, const char *s1, const char *s2,
+                   double a, double b)
+{
+    if (a > b || double_eq(a, b))
+        return 1;
+    test_fail_message(NULL, file, line, "double", s1, s2, ">=",
+                      "[%g] compared to [%g]", a, b);
+    return 0;
+}
 
 DEFINE_COMPARISON(void *, ptr, eq, ==, "%p")
 DEFINE_COMPARISON(void *, ptr, ne, !=, "%p")

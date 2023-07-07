@@ -67,6 +67,8 @@ providers/common/include/prov/der_digests.h
 providers/common/include/prov/der_wrap.h
 providers/common/include/prov/der_sm2.h
 
+providers/smtc/smtckey.h
+
 # error code files
 /crypto/err/openssl.txt.old
 /engines/e_afalg.txt.old
@@ -106,6 +108,7 @@ providers/common/include/prov/der_sm2.h
 /test/buildtest_*
 /test/provider_internal_test.cnf
 /test/fipsmodule.cnf
+/test/smtcmodule.cnf
 /providers/fipsmodule.cnf
 
 # Fuzz stuff.

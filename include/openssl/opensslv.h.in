@@ -119,9 +119,14 @@ extern "C" {
       |(TONGSUO_VERSION_PATCH<<4)        \
       |_TONGSUO_VERSION_PRE_RELEASE )
 
+# define TONGSUO_VERSION_STR "{- $config{tongsuo_version} -}"
+# define TONGSUO_FULL_VERSION_STR "{- $config{tongsuo_full_version} -}"
+
 # define TONGSUO_VERSION_TEXT    "Tongsuo {- "$config{tongsuo_full_version}" -}"
 # define BABASSL_VERSION_NUMBER  TONGSUO_VERSION_NUMBER
 # define BABASSL_VERSION_TEXT    TONGSUO_VERSION_TEXT
+
+# define TONGSUO_SMTC_INFO_STR "{- $config{TONGSUO_SMTC_INFO} -}"
 
 # ifdef  __cplusplus
 }

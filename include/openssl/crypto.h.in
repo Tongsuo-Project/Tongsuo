@@ -164,6 +164,9 @@ const char *OpenSSL_version(int type);
 # define OPENSSL_MODULES_DIR            8
 # define OPENSSL_CPU_INFO               9
 # define TONGSUO_VERSION                10
+# ifdef SMTC_MODULE
+#  define TONGSUO_SMTC_INFO              11
+# endif
 # ifndef OPENSSL_NO_QUIC
 #  define OPENSSL_INFO_QUIC             2000
 # endif
