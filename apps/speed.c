@@ -3845,7 +3845,7 @@ int speed_main(int argc, char **argv)
             EC_KEY_precompute_mult(loopargs[i].ec_elgamal_key[testnum], NULL);
             EC_KEY_generate_key(loopargs[i].ec_elgamal_key[testnum]);
 
-            ectx = EC_ELGAMAL_CTX_new(loopargs[i].ec_elgamal_key[testnum],
+            ectx = EC_ELGAMAL_CTX_new(loopargs[i].ec_elgamal_key[testnum], NULL,
                                       ec_elgamal_flag[testnum]);
             if (ectx == NULL) {
                 st = 0;

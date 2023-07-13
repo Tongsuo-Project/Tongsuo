@@ -19,6 +19,7 @@
 
 # include <openssl/opensslconf.h>
 # include <openssl/types.h>
+# include <openssl/safestack.h>
 
 # include <string.h>
 
@@ -1837,8 +1838,12 @@ OSSL_DEPRECATEDIN_3_0 void EC_KEY_METHOD_get_verify
 #   define EC_ELGAMAL_DECRYPT_TABLE_FLAG_NEGATIVE_FIRST             0x02
 #   define EC_ELGAMAL_DECRYPT_TABLE_FLAG_NEGATIVE_ONLY              0x03
 
+STACK_OF(EC_KEY);
+
 typedef struct ec_elgamal_ctx_st EC_ELGAMAL_CTX;
+typedef struct ec_elgamal_mr_ctx_st EC_ELGAMAL_MR_CTX;
 typedef struct ec_elgamal_ciphertext_st EC_ELGAMAL_CIPHERTEXT;
+typedef struct ec_elgamal_mr_ciphertext_st EC_ELGAMAL_MR_CIPHERTEXT;
 typedef struct ec_elgamal_decrypt_table_st EC_ELGAMAL_DECRYPT_TABLE;
 
 /********************************************************************/
@@ -1847,14 +1852,29 @@ typedef struct ec_elgamal_decrypt_table_st EC_ELGAMAL_DECRYPT_TABLE;
 
 /** Creates a new EC_ELGAMAL object
  *  \param  key  EC_KEY to use
+ *  \param  h        EC_POINT object pointer
+ *  \param  flag     flag of ctx
  *  \return newly created EC_ELGAMAL_CTX object or NULL in case of an error
  */
-EC_ELGAMAL_CTX *EC_ELGAMAL_CTX_new(EC_KEY *key, int32_t flag);
+EC_ELGAMAL_CTX *EC_ELGAMAL_CTX_new(EC_KEY *key, const EC_POINT *h, int32_t flag);
 
 /** Frees a EC_ELGAMAL_CTX object
  *  \param  ctx  EC_ELGAMAL_CTX object to be freed
  */
 void EC_ELGAMAL_CTX_free(EC_ELGAMAL_CTX *ctx);
+
+/** Creates a new EC_ELGAMAL_MR_CTX object
+ *  \param  key      EC_KEY to use
+ *  \param  flag     flag of ctx
+ *  \return newly created EC_ELGAMAL_MR_CTX object or NULL in case of an error
+ */
+EC_ELGAMAL_MR_CTX *EC_ELGAMAL_MR_CTX_new(STACK_OF(EC_KEY) *keys, const EC_POINT *h,
+                                         int32_t flag);
+
+/** Frees a EC_ELGAMAL_MR_CTX object
+ *  \param  ctx  EC_ELGAMAL_MR_CTX object to be freed
+ */
+void EC_ELGAMAL_MR_CTX_free(EC_ELGAMAL_MR_CTX *ctx);
 
 /** Creates a new EC_ELGAMAL_DECRYPT_TABLE object
  *  \param  ctx              EC_ELGAMAL_CTX object
@@ -1897,6 +1917,16 @@ void EC_ELGAMAL_CTX_set_decrypt_table(EC_ELGAMAL_CTX *ctx,
  */
 
 int EC_ELGAMAL_encrypt(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r, int32_t plaintext);
+
+/** Encrypts an Integer with additadive homomorphic EC-ElGamal
+ *  \param  ctx        EC_ELGAMAL_CTX object.
+ *  \param  r          EC_ELGAMAL_CIPHERTEXT_MR object that stores the result of
+ *                     the encryption
+ *  \param  plaintext  The plaintext integer to be encrypted
+ *  \return 1 on success and 0 otherwise
+ */
+int EC_ELGAMAL_MR_encrypt(EC_ELGAMAL_MR_CTX *ctx, EC_ELGAMAL_MR_CIPHERTEXT *r,
+                          int32_t plaintext, BIGNUM *rand);
 
 /** Decrypts the ciphertext
  *  \param  ctx        EC_ELGAMAL_CTX object
@@ -1947,11 +1977,26 @@ int EC_ELGAMAL_mul(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r,
  *  \return newly created EC_ELGAMAL_CIPHERTEXT object or NULL in case of an error
  */
 EC_ELGAMAL_CIPHERTEXT *EC_ELGAMAL_CIPHERTEXT_new(EC_ELGAMAL_CTX *ctx);
+EC_ELGAMAL_CIPHERTEXT *EC_ELGAMAL_CIPHERTEXT_dup(const EC_ELGAMAL_CIPHERTEXT *ct,
+                                                 const EC_GROUP *group);
 
 /** Frees a EC_ELGAMAL_CIPHERTEXT object
  *  \param  ciphertext  EC_ELGAMAL_CIPHERTEXT object to be freed
  */
 void EC_ELGAMAL_CIPHERTEXT_free(EC_ELGAMAL_CIPHERTEXT *ciphertext);
+
+/** Creates a new EC_ELGAMAL_MR_CIPHERTEXT object for EC-ELGAMAL oparations
+ *  \param  ctx        EC_ELGAMAL_MR_CTX object
+ *  \return newly created EC_ELGAMAL_MR_CIPHERTEXT object or NULL in case of an error
+ */
+EC_ELGAMAL_MR_CIPHERTEXT *EC_ELGAMAL_MR_CIPHERTEXT_new(EC_ELGAMAL_MR_CTX *ctx);
+EC_ELGAMAL_MR_CIPHERTEXT *EC_ELGAMAL_MR_CIPHERTEXT_dup(const EC_ELGAMAL_MR_CIPHERTEXT *ct,
+                                                       const EC_GROUP *group);
+
+/** Frees a EC_ELGAMAL_MR_CIPHERTEXT object
+ *  \param  ciphertext  EC_ELGAMAL_MR_CIPHERTEXT object to be freed
+ */
+void EC_ELGAMAL_MR_CIPHERTEXT_free(EC_ELGAMAL_MR_CIPHERTEXT *ciphertext);
 
 /** Encodes EC_ELGAMAL_CIPHERTEXT to binary
  *  \param  ctx        EC_ELGAMAL_CTX object
@@ -1977,6 +2022,31 @@ size_t EC_ELGAMAL_CIPHERTEXT_encode(EC_ELGAMAL_CTX *ctx, unsigned char *out,
  */
 int EC_ELGAMAL_CIPHERTEXT_decode(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r,
                                  unsigned char *in, size_t size);
+
+/** Encodes EC_ELGAMAL_MR_CIPHERTEXT to binary
+ *  \param  ctx        EC_ELGAMAL_MR_CTX object
+ *  \param  out        the buffer for the result (if NULL the function returns
+ *                     number of bytes needed).
+ *  \param  size       The memory size of the out pointer object
+ *  \param  ciphertext EC_ELGAMAL_MR_CIPHERTEXT object
+ *  \param  compressed Whether to compress the encoding (either 0 or 1)
+ *  \return the length of the encoded octet string or 0 if an error occurred
+ */
+size_t EC_ELGAMAL_MR_CIPHERTEXT_encode(EC_ELGAMAL_MR_CTX *ctx, unsigned char *out,
+                                       size_t size,
+                                       const EC_ELGAMAL_MR_CIPHERTEXT *ciphertext,
+                                       int compressed);
+
+/** Decodes binary to EC_ELGAMAL_MR_CIPHERTEXT
+ *  \param  ctx        EC_ELGAMAL_MR_CTX object
+ *  \param  r          the resulting ciphertext
+ *  \param  in         Memory buffer with the encoded EC_ELGAMAL_MR_CIPHERTEXT
+ *                     object
+ *  \param  size       The memory size of the in pointer object
+ *  \return 1 on success and 0 otherwise
+ */
+int EC_ELGAMAL_MR_CIPHERTEXT_decode(EC_ELGAMAL_MR_CTX *ctx, EC_ELGAMAL_MR_CIPHERTEXT *r,
+                                    unsigned char *in, size_t size);
 
 /*
  * Functions for convert string to ec_point on the elliptic curve.

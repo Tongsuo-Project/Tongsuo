@@ -508,6 +508,7 @@ my @disablables = (
     "cert-compression",
     "paillier",
     "bulletproofs",
+    "nizk",
     "bn-method"
     );
 foreach my $proto ((@tls, @dtls))
@@ -572,6 +573,7 @@ our %disabled = ( # "what"         => "comment"
                   "cert-compression"    => "default",
                   "paillier"            => "default",
                   "bulletproofs"        => "default",
+                  "nizk"                => "default",
                   "bn-method"           => "default",
                 );
 
@@ -1099,6 +1101,12 @@ if (!defined($disabled{'ec_elgamal'})) {
 
 if (!defined($disabled{'bulletproofs'})) {
     die "bulletproofs only supports api with 1.1.1\n"
+        if ($config{api} && $config{api} != $apitable->{"1.1.1"});
+    $config{api}=$apitable->{"1.1.1"};
+}
+
+if (!defined($disabled{'nizk'})) {
+    die "nizk only supports api with 1.1.1\n"
         if ($config{api} && $config{api} != $apitable->{"1.1.1"});
     $config{api}=$apitable->{"1.1.1"};
 }
