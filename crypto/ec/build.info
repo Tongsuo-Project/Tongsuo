@@ -54,6 +54,12 @@ IF[{- !$disabled{'ec_nistp_64_gcc_128'} -}]
   $COMMON=$COMMON ecp_nistp224.c ecp_nistp256.c ecp_nistp521.c ecp_nistputil.c
 ENDIF
 
+IF[{- !$disabled{sm2} -}]
+  IF[{- !$disabled{'ec_sm2p_64_gcc_128'} -}]
+    $COMMON=$COMMON ecp_sm2p256.c ecp_nistputil.c
+  ENDIF
+ENDIF
+
 IF[{- !$disabled{'ec_elgamal'} -}]
   $COMMON=$COMMON ec_elgamal_crypt.c ec_elgamal_dlog.c ec_elgamal_encode.c
 ENDIF

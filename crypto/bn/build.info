@@ -96,6 +96,9 @@ $COMMON=bn_add.c bn_div.c bn_exp.c bn_lib.c bn_ctx.c bn_mul.c \
 IF[{- !$disabled{'bn-method'} -}]
   $COMMON=$COMMON bn_meth.c
 ENDIF
+IF[{- !$disabled{sm2} -}]
+  $COMMON=$COMMON bn_sm2.c
+ENDIF
 SOURCE[../../libcrypto]=$COMMON $BNASM bn_print.c bn_err.c bn_srp.c
 DEFINE[../../libcrypto]=$BNDEF
 IF[{- !$disabled{'deprecated-0.9.8'} -}]
