@@ -51,7 +51,13 @@ $COMMON=ec_lib.c ecp_smpl.c ecp_mont.c ecp_nist.c ec_cvt.c ec_mult.c \
         curve448/arch_32/f_impl32.c
 
 IF[{- !$disabled{'ec_nistp_64_gcc_128'} -}]
-  $COMMON=$COMMON ecp_nistp224.c ecp_nistp256.c ecp_nistp521.c ecp_sm2p256.c ecp_nistputil.c
+  $COMMON=$COMMON ecp_nistp224.c ecp_nistp256.c ecp_nistp521.c ecp_nistputil.c
+ENDIF
+
+IF[{- !$disabled{sm2} -}]
+  IF[{- !$disabled{'ec_sm2p_64_gcc_128'} -}]
+    $COMMON=$COMMON ecp_sm2p256.c ecp_nistputil.c
+  ENDIF
 ENDIF
 
 IF[{- !$disabled{'ec_elgamal'} -}]

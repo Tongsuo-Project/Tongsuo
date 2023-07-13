@@ -142,16 +142,18 @@ OSSL_DEPRECATEDIN_3_0 const EC_METHOD *EC_GFp_nistp224_method(void);
  */
 OSSL_DEPRECATEDIN_3_0 const EC_METHOD *EC_GFp_nistp256_method(void);
 
-/** Returns 64-bit optimized methods for sm2p256
- *  \return  EC_METHOD object
- */
-OSSL_DEPRECATEDIN_3_0 const EC_METHOD *EC_GFp_sm2p256_method(void);
-
 /** Returns 64-bit optimized methods for nistp521
  *  \return  EC_METHOD object
  */
 OSSL_DEPRECATEDIN_3_0 const EC_METHOD *EC_GFp_nistp521_method(void);
 #   endif /* OPENSSL_NO_EC_NISTP_64_GCC_128 */
+
+#   if !defined(OPENSSL_NO_EC_SM2P_64_GCC_128) && !defined(OPENSSL_NO_SM2)
+/** Returns 64-bit optimized methods for sm2p256
+ *  \return  EC_METHOD object
+ */
+OSSL_DEPRECATEDIN_3_0 const EC_METHOD *EC_GFp_sm2p256_method(void);
+#   endif /* OPENSSL_NO_EC_SM2P_64_GCC_128 */
 
 #   ifndef OPENSSL_NO_EC2M
 /********************************************************************/

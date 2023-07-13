@@ -553,11 +553,12 @@ int ossl_ec_GF2m_simple_field_sqr(const EC_GROUP *, BIGNUM *r, const BIGNUM *a,
 int ossl_ec_GF2m_simple_field_div(const EC_GROUP *, BIGNUM *r, const BIGNUM *a,
                                  const BIGNUM *b, BN_CTX *);
 
-#ifndef OPENSSL_NO_EC_NISTP_64_GCC_128
+#if !defined(OPENSSL_NO_EC_NISTP_64_GCC_128) || !defined(OPENSSL_NO_EC_SM2P_64_GCC_128)
 # ifdef B_ENDIAN
-#  error "Can not enable ec_nistp_64_gcc_128 on big-endian systems"
+#  error "Can not enable ec_nistp_64_gcc_128 and ec_sm2p_64_gcc_128 on big-endian systems"
 # endif
 
+# ifndef OPENSSL_NO_EC_NISTP_64_GCC_128
 /* method functions in ecp_nistp224.c */
 int ossl_ec_GFp_nistp224_group_init(EC_GROUP *group);
 int ossl_ec_GFp_nistp224_group_set_curve(EC_GROUP *group, const BIGNUM *p,
@@ -617,7 +618,9 @@ int ossl_ec_GFp_nistp521_points_mul(const EC_GROUP *group, EC_POINT *r,
                                     const BIGNUM *scalars[], BN_CTX *ctx);
 int ossl_ec_GFp_nistp521_precompute_mult(EC_GROUP *group, BN_CTX *ctx);
 int ossl_ec_GFp_nistp521_have_precompute_mult(const EC_GROUP *group);
+# endif
 
+# if !defined(OPENSSL_NO_EC_SM2P_64_GCC_128) && !defined(OPENSSL_NO_SM2)
 /* method functions in ecp_sm2p256.c */
 int ossl_ec_GFp_sm2p256_group_init(EC_GROUP *group);
 int ossl_ec_GFp_sm2p256_group_set_curve(EC_GROUP *group, const BIGNUM *p,
@@ -637,6 +640,7 @@ int ossl_ec_GFp_sm2p256_points_mul(const EC_GROUP *group, EC_POINT *r,
                                     const BIGNUM *scalars[], BN_CTX *ctx);
 int ossl_ec_GFp_sm2p256_precompute_mult(EC_GROUP *group, BN_CTX *ctx);
 int ossl_ec_GFp_sm2p256_have_precompute_mult(const EC_GROUP *group);
+# endif
 
 /* utility functions in ecp_nistputil.c */
 void ossl_ec_GFp_nistp_points_make_affine_internal(size_t num, void *point_array,
