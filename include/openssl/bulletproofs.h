@@ -18,9 +18,9 @@
 # include <openssl/zkpbperr.h>
 
 # ifndef OPENSSL_NO_BULLETPROOFS
-# ifdef  __cplusplus
+#  ifdef  __cplusplus
 extern "C" {
-# endif
+#  endif
 
 # define PEM_STRING_BULLETPROOFS_PUB_PARAM      "BULLETPROOFS PUBLIC PARAM"
 # define PEM_STRING_BULLETPROOFS_WITNESS        "BULLETPROOFS WITNESS"
@@ -401,9 +401,9 @@ void BP_TRANSCRIPT_free(BP_TRANSCRIPT *transcript);
 int BP_TRANSCRIPT_reset(BP_TRANSCRIPT *transcript);
 const BP_TRANSCRIPT_METHOD *BP_TRANSCRIPT_METHOD_sha256(void);
 
-# ifdef  __cplusplus
+#  ifdef  __cplusplus
 }
-# endif
+#  endif
 # endif
 
 #endif
