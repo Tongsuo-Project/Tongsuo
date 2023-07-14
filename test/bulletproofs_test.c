@@ -630,14 +630,14 @@ static int r1cs_proof_test(BIGNUM *a1, BIGNUM *a2, BIGNUM *b1, BIGNUM *b2, BIGNU
                            int (*logic)(BP_R1CS_CTX *, bp_r1cs_example_linaer_combinations *))
 {
     int ret = 0;
-    BP_TRANSCRIPT *transcript = NULL;
+    ZKP_TRANSCRIPT *transcript = NULL;
     BP_PUB_PARAM *pp = NULL;
     BP_WITNESS *witness = NULL;
     BP_R1CS_CTX *ctx = NULL;
     BP_R1CS_PROOF *proof = NULL;
     bp_r1cs_example_linaer_combinations *lc = NULL;
 
-    if (!TEST_ptr(transcript = BP_TRANSCRIPT_new(BP_TRANSCRIPT_METHOD_sha256(), "r1cs_test")))
+    if (!TEST_ptr(transcript = ZKP_TRANSCRIPT_new(ZKP_TRANSCRIPT_METHOD_sha256(), "r1cs_test")))
         goto err;
 
     if (!TEST_ptr(pp = BP_PUB_PARAM_new_by_curve_id(NID_secp256k1, 128, 1)))
@@ -660,7 +660,7 @@ err:
     bp_r1cs_example_linaer_combinations_free(lc);
     BP_R1CS_PROOF_free(proof);
     BP_R1CS_CTX_free(ctx);
-    BP_TRANSCRIPT_free(transcript);
+    ZKP_TRANSCRIPT_free(transcript);
     BP_PUB_PARAM_free(pp);
 
     return ret;
@@ -1345,13 +1345,13 @@ err:
 static int r1cs_range_test(int32_t bits, int64_t value)
 {
     int ret = 0;
-    BP_TRANSCRIPT *transcript = NULL;
+    ZKP_TRANSCRIPT *transcript = NULL;
     BP_PUB_PARAM *pp = NULL;
     BP_WITNESS *witness = NULL;
     BP_R1CS_CTX *ctx = NULL;
     BP_R1CS_PROOF *proof = NULL;
 
-    if (!TEST_ptr(transcript = BP_TRANSCRIPT_new(BP_TRANSCRIPT_METHOD_sha256(), "r1cs_range_test")))
+    if (!TEST_ptr(transcript = ZKP_TRANSCRIPT_new(ZKP_TRANSCRIPT_METHOD_sha256(), "r1cs_range_test")))
         goto err;
 
     if (!TEST_ptr(pp = BP_PUB_PARAM_new_by_curve_id(NID_secp256k1, 128, 1)))
@@ -1373,7 +1373,7 @@ static int r1cs_range_test(int32_t bits, int64_t value)
 err:
     BP_R1CS_PROOF_free(proof);
     BP_R1CS_CTX_free(ctx);
-    BP_TRANSCRIPT_free(transcript);
+    ZKP_TRANSCRIPT_free(transcript);
     BP_PUB_PARAM_free(pp);
 
     return ret;
@@ -1434,7 +1434,7 @@ static int range_proofs_test(int bits, int64_t secrets[], int len)
     BIGNUM *v = NULL;
     BP_PUB_PARAM *pp = NULL;
     BP_WITNESS *witness = NULL;
-    BP_TRANSCRIPT *transcript = NULL;
+    ZKP_TRANSCRIPT *transcript = NULL;
     BP_RANGE_CTX *ctx = NULL;
     BP_RANGE_PROOF *proof = NULL;
 
@@ -1444,7 +1444,7 @@ static int range_proofs_test(int bits, int64_t secrets[], int len)
     if (!TEST_ptr(pp = BP_PUB_PARAM_new_by_curve_id(NID_secp256k1, bits, 8)))
         goto err;
 
-    if (!TEST_ptr(transcript = BP_TRANSCRIPT_new(BP_TRANSCRIPT_METHOD_sha256(), "test")))
+    if (!TEST_ptr(transcript = ZKP_TRANSCRIPT_new(ZKP_TRANSCRIPT_METHOD_sha256(), "test")))
         goto err;
 
     if (!TEST_ptr(witness = BP_WITNESS_new(pp)))
@@ -1473,7 +1473,7 @@ err:
     BP_RANGE_CTX_free(ctx);
     BP_WITNESS_free(witness);
     BP_PUB_PARAM_free(pp);
-    BP_TRANSCRIPT_free(transcript);
+    ZKP_TRANSCRIPT_free(transcript);
     BN_free(v);
 
     return ret;
@@ -1495,7 +1495,7 @@ static int range_proof_encode_test(int bits, int64_t secret)
     unsigned char *pp_bin = NULL, *proof_bin = NULL;
     BIGNUM *v = NULL;
     BP_PUB_PARAM *pp = NULL, *pp2 = NULL;
-    BP_TRANSCRIPT *transcript = NULL, *transcript2 = NULL;
+    ZKP_TRANSCRIPT *transcript = NULL, *transcript2 = NULL;
     BP_WITNESS *witness = NULL;
     BP_RANGE_CTX *ctx = NULL, *ctx2 = NULL;
     BP_RANGE_PROOF *proof = NULL, *proof2 = NULL;
@@ -1506,8 +1506,8 @@ static int range_proof_encode_test(int bits, int64_t secret)
     if (!TEST_ptr(pp = BP_PUB_PARAM_new_by_curve_id(NID_secp256k1, bits, 8)))
         goto err;
 
-    if (!TEST_ptr(transcript = BP_TRANSCRIPT_new(BP_TRANSCRIPT_METHOD_sha256(), "test"))
-        || !TEST_ptr(transcript2 = BP_TRANSCRIPT_dup(transcript)))
+    if (!TEST_ptr(transcript = ZKP_TRANSCRIPT_new(ZKP_TRANSCRIPT_METHOD_sha256(), "test"))
+        || !TEST_ptr(transcript2 = ZKP_TRANSCRIPT_dup(transcript)))
         goto err;
 
     if (!TEST_ptr(witness = BP_WITNESS_new(pp)))
@@ -1575,8 +1575,8 @@ err:
     BP_RANGE_CTX_free(ctx);
     BP_RANGE_CTX_free(ctx2);
     BP_WITNESS_free(witness);
-    BP_TRANSCRIPT_free(transcript);
-    BP_TRANSCRIPT_free(transcript2);
+    ZKP_TRANSCRIPT_free(transcript);
+    ZKP_TRANSCRIPT_free(transcript2);
     BP_PUB_PARAM_free(pp);
     BP_PUB_PARAM_free(pp2);
     BN_free(v);

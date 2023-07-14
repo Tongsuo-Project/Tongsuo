@@ -38,8 +38,6 @@ typedef struct zkp_transcript_sha256_ctx_st {
     EVP_MD_CTX *md_ctx;
 } zkp_transcript_sha256_ctx;
 
-const ZKP_TRANSCRIPT_METHOD *ZKP_TRANSCRIPT_METHOD_sha256(void);
-
 static int zkp_transcript_sha256_init(ZKP_TRANSCRIPT *transcript)
 {
     size_t len;

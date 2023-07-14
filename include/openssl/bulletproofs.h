@@ -15,6 +15,7 @@
 # include <openssl/opensslconf.h>
 # include <openssl/types.h>
 # include <openssl/pem.h>
+# include <openssl/zkp_transcript.h>
 # include <openssl/zkpbperr.h>
 
 # ifndef OPENSSL_NO_BULLETPROOFS
@@ -33,9 +34,6 @@ extern "C" {
 typedef struct bp_pub_param_st           BP_PUB_PARAM;
 typedef struct bp_witness_st             BP_WITNESS;
 typedef struct bp_variable_st            BP_VARIABLE;
-
-typedef struct bp_transcript_method_st   BP_TRANSCRIPT_METHOD;
-typedef struct bp_transcript_st          BP_TRANSCRIPT;
 
 typedef struct bp_range_ctx_st           BP_RANGE_CTX;
 typedef struct bp_range_proof_st         BP_RANGE_PROOF;
@@ -181,11 +179,11 @@ int BP_WITNESS_get_variable_index(BP_WITNESS *witness, const char *name);
 /** Creates a new BP_RANGE_CTX object
  *  \param  pp          BP_PUB_PARAM object
  *  \param  witness     BP_WITNESS object
- *  \param  transcript  BP_TRANSCRIPT object
+ *  \param  transcript  ZKP_TRANSCRIPT object
  *  \return newly created BP_RANGE_CTX object or NULL in case of an error
  */
 BP_RANGE_CTX *BP_RANGE_CTX_new(BP_PUB_PARAM *pp, BP_WITNESS *witness,
-                               BP_TRANSCRIPT *transcript);
+                               ZKP_TRANSCRIPT *transcript);
 
 /** Frees a BP_RANGE_CTX object
  *  \param  ctx       BP_RANGE_CTX object to be freed
@@ -356,11 +354,11 @@ int BP_R1CS_PROOF_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof);
 /** Creates a new BP_R1CS_CTX object
  *  \param  pp          BP_PUB_PARAM object
  *  \param  witness     BP_WITNESS object
- *  \param  transcript  BP_TRANSCRIPT object
+ *  \param  transcript  ZKP_TRANSCRIPT object
  *  \return newly created BP_R1CS_CTX object or NULL in case of an error
  */
 BP_R1CS_CTX *BP_R1CS_CTX_new(BP_PUB_PARAM *pp, BP_WITNESS *witness,
-                             BP_TRANSCRIPT *transcript);
+                             ZKP_TRANSCRIPT *transcript);
 
 void BP_R1CS_CTX_free(BP_R1CS_CTX *ctx);
 
@@ -389,17 +387,6 @@ DECLARE_ASN1_ENCODE_FUNCTIONS_only(BP_WITNESS, long_BP_WITNESS)
 DECLARE_ASN1_ENCODE_FUNCTIONS_only(BP_WITNESS, short_BP_WITNESS)
 DECLARE_ASN1_ENCODE_FUNCTIONS_only(BP_RANGE_PROOF, BP_RANGE_PROOF)
 DECLARE_ASN1_ENCODE_FUNCTIONS_only(BP_R1CS_PROOF, BP_R1CS_PROOF)
-
-/********************************************************************/
-/*         functions for doing stranscript arithmetic               */
-/********************************************************************/
-
-BP_TRANSCRIPT *BP_TRANSCRIPT_new(const BP_TRANSCRIPT_METHOD *method,
-                                 const char *label);
-BP_TRANSCRIPT *BP_TRANSCRIPT_dup(const BP_TRANSCRIPT *src);
-void BP_TRANSCRIPT_free(BP_TRANSCRIPT *transcript);
-int BP_TRANSCRIPT_reset(BP_TRANSCRIPT *transcript);
-const BP_TRANSCRIPT_METHOD *BP_TRANSCRIPT_METHOD_sha256(void);
 
 #  ifdef  __cplusplus
 }

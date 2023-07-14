@@ -9,6 +9,7 @@
 
 #include <openssl/err.h>
 #include <openssl/zkpbperr.h>
+#include <openssl/zkp_transcript.h>
 #include <crypto/ec/ec_local.h>
 #include "inner_product.h"
 #include "util.h"
@@ -48,7 +49,7 @@ void bp_inner_product_pub_param_free(bp_inner_product_pub_param_t *pp)
 }
 
 bp_inner_product_ctx_t *bp_inner_product_ctx_new(bp_inner_product_pub_param_t *pp,
-                                                 BP_TRANSCRIPT *transcript,
+                                                 ZKP_TRANSCRIPT *transcript,
                                                  EC_POINT *U, EC_POINT *P,
                                                  STACK_OF(BIGNUM) *sk_G_factors,
                                                  STACK_OF(BIGNUM) *sk_H_factors)
@@ -195,7 +196,7 @@ bp_inner_product_proof_t *bp_inner_product_proof_prove(bp_inner_product_ctx_t *c
                                                        bp_inner_product_witness_t *witness)
 {
     int i, j, m, n, pp_num, poly_num;
-    BP_TRANSCRIPT *transcript;
+    ZKP_TRANSCRIPT *transcript;
     BN_CTX *bn_ctx = NULL;
     BIGNUM *x, *x_inv, *t, *cL, *cR, *a, *b, *u, *u_inv;
     BIGNUM *G_factors_L, *G_factors_R, *H_factors_L, *H_factors_R;
@@ -361,11 +362,11 @@ bp_inner_product_proof_t *bp_inner_product_proof_prove(bp_inner_product_ctx_t *c
             goto end;
 
         /* compute the challenge */
-        if (!BP_TRANSCRIPT_append_point(transcript, "L", L, group)
-            || !BP_TRANSCRIPT_append_point(transcript, "R", R, group))
+        if (!ZKP_TRANSCRIPT_append_point(transcript, "L", L, group)
+            || !ZKP_TRANSCRIPT_append_point(transcript, "R", R, group))
             goto end;
 
-        if (!BP_TRANSCRIPT_challange(transcript, "x", x))
+        if (!ZKP_TRANSCRIPT_challange(transcript, "x", x))
             goto end;
 
         /* (26, 27) */
@@ -508,7 +509,7 @@ int bp_inner_product_proof_verify(bp_inner_product_ctx_t *ctx,
     int ret = 0;
     int i, j, m, n, proof_num, pp_num;
     EC_POINT *P = NULL, *L, *R, *G, *H;
-    BP_TRANSCRIPT *transcript;
+    ZKP_TRANSCRIPT *transcript;
     BN_CTX *bn_ctx = NULL;
     BIGNUM **vec_x = NULL, **vec_x_inv = NULL, *G_factors, *H_factors;
     BIGNUM *s, *s_inv, *u, *u_inv, *x2, *x2_inv;
@@ -564,11 +565,11 @@ int bp_inner_product_proof_verify(bp_inner_product_ctx_t *ctx,
         R = sk_EC_POINT_value(proof->sk_R, i);
 
         /* compute hash */
-        if (!BP_TRANSCRIPT_append_point(transcript, "L", L, group)
-            || !BP_TRANSCRIPT_append_point(transcript, "R", R, group))
+        if (!ZKP_TRANSCRIPT_append_point(transcript, "L", L, group)
+            || !ZKP_TRANSCRIPT_append_point(transcript, "R", R, group))
             goto end;
 
-        if (!BP_TRANSCRIPT_challange(transcript, "x", vec_x[i]))
+        if (!ZKP_TRANSCRIPT_challange(transcript, "x", vec_x[i]))
             goto end;
 
         if (!BN_mod_inverse(vec_x_inv[i], vec_x[i], order, bn_ctx)

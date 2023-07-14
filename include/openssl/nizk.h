@@ -17,7 +17,7 @@
 # include <openssl/pem.h>
 # include <openssl/ec.h>
 # include <openssl/safestack.h>
-# include <openssl/zkp.h>
+# include <openssl/zkp_transcript.h>
 # include <openssl/zkpbperr.h>
 
 # ifndef OPENSSL_NO_NIZK

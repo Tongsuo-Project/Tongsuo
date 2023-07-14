@@ -11,7 +11,6 @@
 #include <crypto/ec.h>
 #include <crypto/ec/ec_local.h>
 #include "range_proof.h"
-#include "transcript.h"
 #include "util.h"
 
 static void bp_range_proof_cleanup(BP_RANGE_PROOF *proof);
@@ -55,11 +54,11 @@ err:
 /** Creates a new BP_RANGE_CTX object
  *  \param  pp          BP_PUB_PARAM object
  *  \param  witness     BP_WITNESS object
- *  \param  transcript  BP_TRANSCRIPT object
+ *  \param  transcript  ZKP_TRANSCRIPT object
  *  \return newly created BP_RANGE_CTX object or NULL in case of an error
  */
 BP_RANGE_CTX *BP_RANGE_CTX_new(BP_PUB_PARAM *pp, BP_WITNESS *witness,
-                               BP_TRANSCRIPT *transcript)
+                               ZKP_TRANSCRIPT *transcript)
 {
     BP_RANGE_CTX *ctx = NULL;
 
@@ -199,7 +198,7 @@ int BP_RANGE_PROOF_prove(BP_RANGE_CTX *ctx, BP_RANGE_PROOF *proof)
     int i, j, m = 0, n, ret = 0;
     int bits, poly_num, witness_n, witness_r_n, witness_v_n, witness_padded_n;
     int *aL = NULL, *aR = NULL;
-    BP_TRANSCRIPT *transcript;
+    ZKP_TRANSCRIPT *transcript;
     BP_PUB_PARAM *pp;
     BP_WITNESS *witness;
     BIGNUM *witness_r, *witness_v;
@@ -372,12 +371,12 @@ int BP_RANGE_PROOF_prove(BP_RANGE_CTX *ctx, BP_RANGE_PROOF *proof)
         goto err;
 
     /* compute hash */
-    if (!BP_TRANSCRIPT_append_point(transcript, "A", proof->A, group)
-        || !BP_TRANSCRIPT_append_point(transcript, "S", proof->S, group))
+    if (!ZKP_TRANSCRIPT_append_point(transcript, "A", proof->A, group)
+        || !ZKP_TRANSCRIPT_append_point(transcript, "S", proof->S, group))
         goto err;
 
-    if (!BP_TRANSCRIPT_challange(transcript, "y", y)
-        || !BP_TRANSCRIPT_challange(transcript, "z", z))
+    if (!ZKP_TRANSCRIPT_challange(transcript, "y", y)
+        || !ZKP_TRANSCRIPT_challange(transcript, "z", z))
         goto err;
 
     if (!BN_mod_sqr(z2, z, order, bn_ctx) || !BN_copy(pow_zn, z2)
@@ -451,11 +450,11 @@ int BP_RANGE_PROOF_prove(BP_RANGE_CTX *ctx, BP_RANGE_PROOF *proof)
         goto err;
 
     /* (55, 56) */
-    if (!BP_TRANSCRIPT_append_point(transcript, "T1", proof->T1, group)
-        || !BP_TRANSCRIPT_append_point(transcript, "T2", proof->T2, group))
+    if (!ZKP_TRANSCRIPT_append_point(transcript, "T1", proof->T1, group)
+        || !ZKP_TRANSCRIPT_append_point(transcript, "T2", proof->T2, group))
         goto err;
 
-    if (!BP_TRANSCRIPT_challange(transcript, "x", x))
+    if (!ZKP_TRANSCRIPT_challange(transcript, "x", x))
         goto err;
 
     BN_zero(proof->tx);
@@ -541,7 +540,7 @@ int BP_RANGE_PROOF_prove(BP_RANGE_CTX *ctx, BP_RANGE_PROOF *proof)
     ret = 1;
 
 err:
-    BP_TRANSCRIPT_reset(transcript);
+    ZKP_TRANSCRIPT_reset(transcript);
 
     bp_inner_product_witness_free(ip_witness);
     bp_inner_product_pub_param_free(ip_pp);
@@ -608,7 +607,7 @@ err:
 int BP_RANGE_PROOF_verify(BP_RANGE_CTX *ctx, const BP_RANGE_PROOF *proof)
 {
     int ret = 0, i = 0, j, m, n, bits, poly_p_num, poly_r_num, witness_n, witness_padded_n;
-    BP_TRANSCRIPT *transcript;
+    ZKP_TRANSCRIPT *transcript;
     BP_PUB_PARAM *pp;
     BP_WITNESS *witness;
     BP_VARIABLE *V;
@@ -715,19 +714,19 @@ int BP_RANGE_PROOF_verify(BP_RANGE_CTX *ctx, const BP_RANGE_PROOF *proof)
 
     EC_POINT_set_to_infinity(group, O);
 
-    if (!BP_TRANSCRIPT_append_point(transcript, "A", proof->A, group)
-        || !BP_TRANSCRIPT_append_point(transcript, "S", proof->S, group))
+    if (!ZKP_TRANSCRIPT_append_point(transcript, "A", proof->A, group)
+        || !ZKP_TRANSCRIPT_append_point(transcript, "S", proof->S, group))
         goto err;
 
-    if (!BP_TRANSCRIPT_challange(transcript, "y", y)
-        || !BP_TRANSCRIPT_challange(transcript, "z", z))
+    if (!ZKP_TRANSCRIPT_challange(transcript, "y", y)
+        || !ZKP_TRANSCRIPT_challange(transcript, "z", z))
         goto err;
 
-    if (!BP_TRANSCRIPT_append_point(transcript, "T1", proof->T1, group)
-        || !BP_TRANSCRIPT_append_point(transcript, "T2", proof->T2, group))
+    if (!ZKP_TRANSCRIPT_append_point(transcript, "T1", proof->T1, group)
+        || !ZKP_TRANSCRIPT_append_point(transcript, "T2", proof->T2, group))
         goto err;
 
-    if (!BP_TRANSCRIPT_challange(transcript, "x", x))
+    if (!ZKP_TRANSCRIPT_challange(transcript, "x", x))
         goto err;
 
     if (!BN_mod_inverse(y_inv, y, order, bn_ctx)
@@ -855,7 +854,7 @@ int BP_RANGE_PROOF_verify(BP_RANGE_CTX *ctx, const BP_RANGE_PROOF *proof)
     ret = bp_inner_product_proof_verify(ip_ctx, proof->ip_proof);
 
 err:
-    BP_TRANSCRIPT_reset(transcript);
+    ZKP_TRANSCRIPT_reset(transcript);
 
     bp_inner_product_ctx_free(ip_ctx);
     bp_inner_product_pub_param_free(ip_pp);
