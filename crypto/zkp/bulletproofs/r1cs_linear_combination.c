@@ -11,7 +11,6 @@
 #include <crypto/ec.h>
 #include <crypto/ec/ec_local.h>
 #include "r1cs.h"
-#include "util.h"
 
 BP_R1CS_VARIABLE *BP_R1CS_VARIABLE_new(BP_R1CS_VARIABLE_TYPE type, uint64_t value)
 {

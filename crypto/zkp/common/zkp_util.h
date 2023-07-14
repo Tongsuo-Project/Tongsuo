@@ -41,6 +41,27 @@ extern "C" {
 
 STACK_OF(EC_POINT);
 
+typedef struct zkp_poly3_st {
+    int n;
+    const BIGNUM *order;
+    BN_CTX *bn_ctx;
+    BIGNUM **x0;
+    BIGNUM **x1;
+    BIGNUM **x2;
+    BIGNUM **x3;
+} zkp_poly3_t;
+
+typedef struct zkp_poly6_st {
+    const BIGNUM *order;
+    BN_CTX *bn_ctx;
+    BIGNUM *t1;
+    BIGNUM *t2;
+    BIGNUM *t3;
+    BIGNUM *t4;
+    BIGNUM *t5;
+    BIGNUM *t6;
+} zkp_poly6_t;
+
 typedef struct zkp_poly_points_st {
     int capacity;
     int num;
@@ -48,6 +69,9 @@ typedef struct zkp_poly_points_st {
     BIGNUM **scalars;
 } zkp_poly_points_t;
 
+EC_POINT *zkp_random_ec_point_new(const EC_GROUP *group, BN_CTX *bn_ctx);
+void zkp_random_ec_point_free(EC_POINT *P);
+int zkp_random_bn_gen(const EC_GROUP *group, BIGNUM **r, size_t n, BN_CTX *bn_ctx);
 int zkp_str2point(const EC_GROUP *group, const unsigned char *str, size_t len,
                   EC_POINT *r, BN_CTX *bn_ctx);
 size_t zkp_point2oct(const EC_GROUP *group, const EC_POINT *P,
@@ -57,6 +81,14 @@ int zkp_next_power_of_two(int num);
 int zkp_floor_log2(int x);
 int zkp_inner_product(BIGNUM *r, int num, const BIGNUM *a[], const BIGNUM *b[],
                       const BIGNUM *order, BN_CTX *bn_ctx);
+
+zkp_poly3_t *zkp_poly3_new(int n, const BIGNUM *order);
+void zkp_poly3_free(zkp_poly3_t *poly3);
+STACK_OF(BIGNUM) *zkp_poly3_eval(zkp_poly3_t *poly3, const BIGNUM *x);
+int zkp_poly3_special_inner_product(zkp_poly6_t *r, zkp_poly3_t *lhs, zkp_poly3_t *rhs);
+zkp_poly6_t *zkp_poly6_new(const BIGNUM *order);
+void zkp_poly6_free(zkp_poly6_t *poly6);
+int zkp_poly6_eval(zkp_poly6_t *poly6, const BIGNUM *x, BIGNUM *r);
 
 zkp_poly_points_t *zkp_poly_points_new(int capacity);
 void zkp_poly_points_free(zkp_poly_points_t *ps);

@@ -13,7 +13,6 @@
 #include <openssl/opensslconf.h>
 #include <openssl/bulletproofs.h>
 #include "crypto/zkp/bulletproofs/r1cs.h"
-#include "crypto/zkp/bulletproofs/util.h"
 
 typedef struct bp_r1cs_example_linaer_combinations_st {
     BP_R1CS_LINEAR_COMBINATION *a1;
@@ -23,181 +22,6 @@ typedef struct bp_r1cs_example_linaer_combinations_st {
     BP_R1CS_LINEAR_COMBINATION *c1;
     BP_R1CS_LINEAR_COMBINATION *c2;
 } bp_r1cs_example_linaer_combinations;
-
-static int bp_poly3_eval_test(void)
-{
-    int ret = 0, n = 2, i;
-    bp_poly3_t *p = NULL;
-    BIGNUM *order, *x, *r[2], *eval;
-    BN_CTX *bn_ctx = NULL;
-    STACK_OF(BIGNUM) *sk_eval = NULL;
-
-    if (!(sk_eval = sk_BIGNUM_new_reserve(NULL, n)))
-        goto err;
-
-    bn_ctx = BN_CTX_new();
-    if (bn_ctx == NULL)
-        goto err;
-
-    BN_CTX_start(bn_ctx);
-
-    r[0] = BN_CTX_get(bn_ctx);
-    r[1] = BN_CTX_get(bn_ctx);
-    x = BN_CTX_get(bn_ctx);
-    order = BN_CTX_get(bn_ctx);
-    if (order == NULL)
-        goto err;
-
-    BN_set_word(r[0], 1672);
-    BN_set_word(r[1], 2257);
-    BN_set_word(x, 8);
-    BN_set_word(order, 100000000);
-
-    p = bp_poly3_new(n, order);
-    if (p == NULL)
-        goto err;
-
-    for (i = 0; i < n; i++) {
-        BN_set_word(p->x0[i], i);
-        BN_set_word(p->x1[i], i+1);
-        BN_set_word(p->x2[i], i+2);
-        BN_set_word(p->x3[i], i+3);
-    }
-
-    if (!(sk_eval = bp_poly3_eval(p, x)))
-        goto err;
-
-    for (i = 0; i < n; i++) {
-        eval = sk_BIGNUM_value(sk_eval, i);
-        if (!TEST_ptr(eval))
-            goto err;
-
-        if (BN_cmp(eval, r[i]) != 0)
-            goto err;
-    }
-
-    ret = 1;
-
-err:
-    bp_poly3_free(p);
-    BN_CTX_end(bn_ctx);
-    BN_CTX_free(bn_ctx);
-    sk_BIGNUM_free(sk_eval);
-    return ret;
-}
-
-static int bp_poly6_eval_test(void)
-{
-    int ret = 0;
-    bp_poly6_t *p = NULL;
-    BIGNUM *order, *x, *r, *e;
-    BN_CTX *bn_ctx = NULL;
-
-    bn_ctx = BN_CTX_new();
-    if (bn_ctx == NULL)
-        goto err;
-
-    BN_CTX_start(bn_ctx);
-
-    r = BN_CTX_get(bn_ctx);
-    x = BN_CTX_get(bn_ctx);
-    e = BN_CTX_get(bn_ctx);
-    order = BN_CTX_get(bn_ctx);
-    if (order == NULL)
-        goto err;
-
-    BN_set_word(x, 8);
-    BN_set_word(e, 0x1ac688);
-    BN_set_word(order, 100000000);
-
-    p = bp_poly6_new(order);
-    if (p == NULL)
-        goto err;
-
-    BN_set_word(p->t1, 1);
-    BN_set_word(p->t2, 2);
-    BN_set_word(p->t3, 3);
-    BN_set_word(p->t4, 4);
-    BN_set_word(p->t5, 5);
-    BN_set_word(p->t6, 6);
-
-    if (!TEST_true(bp_poly6_eval(p, x, r)))
-        goto err;
-
-    if (BN_cmp(r, e) != 0)
-        goto err;
-
-    ret = 1;
-
-err:
-    bp_poly6_free(p);
-    BN_CTX_end(bn_ctx);
-    BN_CTX_free(bn_ctx);
-    return ret;
-}
-
-static int bp_poly3_special_inner_product_test(void)
-{
-    int ret = 0, n = 2, i;
-    bp_poly3_t *p1 = NULL, *p2 = NULL;
-    bp_poly6_t *p = NULL;
-    BIGNUM *order, *x, *e, *r;
-    BN_CTX *bn_ctx = NULL;
-
-    bn_ctx = BN_CTX_new();
-    if (bn_ctx == NULL)
-        goto err;
-
-    BN_CTX_start(bn_ctx);
-
-    x = BN_CTX_get(bn_ctx);
-    e = BN_CTX_get(bn_ctx);
-    r = BN_CTX_get(bn_ctx);
-    order = BN_CTX_get(bn_ctx);
-    if (order == NULL)
-        goto err;
-
-    BN_set_word(x, 8);
-    BN_set_word(e, 0xeb6270);
-    BN_set_word(order, 100000000);
-
-    p = bp_poly6_new(order);
-    p1 = bp_poly3_new(n, order);
-    p2 = bp_poly3_new(n, order);
-    if (p == NULL || p1 == NULL || p2 == NULL)
-        goto err;
-
-    for (i = 0; i < n; i++) {
-        BN_set_word(p1->x0[i], i);
-        BN_set_word(p1->x1[i], i+1);
-        BN_set_word(p1->x2[i], i+2);
-        BN_set_word(p1->x3[i], i+3);
-
-        BN_set_word(p2->x0[i], i+4);
-        BN_set_word(p2->x1[i], i+5);
-        BN_set_word(p2->x2[i], i+6);
-        BN_set_word(p2->x3[i], i+7);
-    }
-
-    if (!TEST_true(bp_poly3_special_inner_product(p, p1, p2)))
-        goto err;
-
-    if (!TEST_true(bp_poly6_eval(p, x, r)))
-        goto err;
-
-    if (BN_cmp(r, e) != 0)
-        goto err;
-
-    ret = 1;
-
-err:
-    bp_poly6_free(p);
-    bp_poly3_free(p1);
-    bp_poly3_free(p2);
-    BN_CTX_end(bn_ctx);
-    BN_CTX_free(bn_ctx);
-    return ret;
-}
 
 /*
  * Constrains (a1 + a2) * (b1 + b2) = (c1 + c2)
@@ -1652,9 +1476,6 @@ int setup_tests(void)
     ADD_TEST(r1cs_proof_test7_should_failed);
     ADD_TEST(r1cs_proof_test8_should_ok);
     ADD_TEST(r1cs_proof_test8_should_failed);
-    ADD_TEST(bp_poly3_eval_test);
-    ADD_TEST(bp_poly6_eval_test);
-    ADD_TEST(bp_poly3_special_inner_product_test);
     return 1;
 }
 
