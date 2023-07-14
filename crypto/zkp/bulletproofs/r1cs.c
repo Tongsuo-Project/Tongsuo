@@ -11,8 +11,8 @@
 #include <crypto/ec.h>
 #include <crypto/ctype.h>
 #include <crypto/ec/ec_local.h>
+#include <crypto/zkp/common/zkp_util.h>
 #include "r1cs.h"
-#include "util.h"
 
 BP_R1CS_CTX *BP_R1CS_CTX_new(BP_PUB_PARAM *pp, BP_WITNESS *witness,
                              ZKP_TRANSCRIPT *transcript)
@@ -188,7 +188,7 @@ int BP_WITNESS_r1cs_commit(BP_WITNESS *witness, const char *name, BIGNUM *v)
     if (r == NULL || val == NULL || V == NULL)
         goto err;
 
-    if (!bp_rand_range(r, order))
+    if (!zkp_rand_range(r, order))
         goto err;
 
     /* (69) */
@@ -297,9 +297,9 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_prove(BP_R1CS_CTX *ctx)
     STACK_OF(BIGNUM) *sk_G_scalars = NULL, *sk_H_scalars = NULL;
     STACK_OF(BIGNUM) *sk_l = NULL, *sk_r = NULL;
     EC_POINT *U = NULL, *G, *H;
-    bp_poly3_t *poly_l = NULL, *poly_r = NULL;
-    bp_poly6_t *poly_t = NULL, *poly_tau = NULL;
-    bp_poly_points_t *poly_ai1 = NULL, *poly_ao1 = NULL, *poly_s1 = NULL;
+    zkp_poly3_t *poly_l = NULL, *poly_r = NULL;
+    zkp_poly6_t *poly_t = NULL, *poly_tau = NULL;
+    zkp_poly_points_t *poly_ai1 = NULL, *poly_ao1 = NULL, *poly_s1 = NULL;
     bp_inner_product_ctx_t *ip_ctx = NULL;
     bp_inner_product_witness_t *ip_witness = NULL;
     bp_inner_product_pub_param_t *ip_pp = NULL;
@@ -325,7 +325,7 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_prove(BP_R1CS_CTX *ctx)
 
     n1 = sk_BIGNUM_num(ctx->aL);
     nn = n1 + 1;
-    padded_n = bp_next_power_of_two(n1);
+    padded_n = zkp_next_power_of_two(n1);
     pp_capacity = pp->gens_capacity * pp->party_capacity;
     if (pp_capacity < padded_n) {
         ERR_raise(ERR_LIB_ZKP_BP, ZKP_BP_R_EXCEEDS_PP_CAPACITY);
@@ -411,14 +411,14 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_prove(BP_R1CS_CTX *ctx)
 
     n = n1 * 2 + 1;
 
-    if (!(poly_ai1 = bp_poly_points_new(n))
-        || !(poly_ao1 = bp_poly_points_new(n))
-        || !(poly_s1 = bp_poly_points_new(n)))
+    if (!(poly_ai1 = zkp_poly_points_new(n))
+        || !(poly_ao1 = zkp_poly_points_new(n))
+        || !(poly_s1 = zkp_poly_points_new(n)))
         goto err;
 
-    if (!bp_rand_range(alpha, order)
-        || !bp_rand_range(beta, order)
-        || !bp_rand_range(rho, order))
+    if (!zkp_rand_range(alpha, order)
+        || !zkp_rand_range(beta, order)
+        || !zkp_rand_range(rho, order))
         goto err;
 
     if (!(sL = OPENSSL_zalloc(sizeof(*sL) * nn))
@@ -427,29 +427,29 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_prove(BP_R1CS_CTX *ctx)
         goto err;
     }
 
-    if (!bp_random_bn_gen(group, sL, n1, bn_ctx)
-        || !bp_random_bn_gen(group, sR, n1, bn_ctx))
+    if (!zkp_random_bn_gen(group, sL, n1, bn_ctx)
+        || !zkp_random_bn_gen(group, sR, n1, bn_ctx))
         goto err;
 
-    if (!bp_poly_points_append(poly_ai1, pp->H, alpha)
-        || !bp_poly_points_append(poly_ao1, pp->H, beta)
-        || !bp_poly_points_append(poly_s1, pp->H, rho))
+    if (!zkp_poly_points_append(poly_ai1, pp->H, alpha)
+        || !zkp_poly_points_append(poly_ao1, pp->H, beta)
+        || !zkp_poly_points_append(poly_s1, pp->H, rho))
         goto err;
 
     for (i = 0; i < n1; i++) {
         G = sk_EC_POINT_value(pp->sk_G, i);
         H = sk_EC_POINT_value(pp->sk_H, i);
-        if (!bp_poly_points_append(poly_ai1, G, sk_BIGNUM_value(ctx->aL, i))
-            || !bp_poly_points_append(poly_ai1, H, sk_BIGNUM_value(ctx->aR, i))
-            || !bp_poly_points_append(poly_ao1, G, sk_BIGNUM_value(ctx->aO, i))
-            || !bp_poly_points_append(poly_s1, G, sL[i])
-            || !bp_poly_points_append(poly_s1, H, sR[i]))
+        if (!zkp_poly_points_append(poly_ai1, G, sk_BIGNUM_value(ctx->aL, i))
+            || !zkp_poly_points_append(poly_ai1, H, sk_BIGNUM_value(ctx->aR, i))
+            || !zkp_poly_points_append(poly_ao1, G, sk_BIGNUM_value(ctx->aO, i))
+            || !zkp_poly_points_append(poly_s1, G, sL[i])
+            || !zkp_poly_points_append(poly_s1, H, sR[i]))
             goto err;
     }
 
-    if (!bp_poly_points_mul(poly_ai1, proof->AI1, NULL, group, bn_ctx)
-        || !bp_poly_points_mul(poly_ao1, proof->AO1, NULL, group, bn_ctx)
-        || !bp_poly_points_mul(poly_s1, proof->S1, NULL, group, bn_ctx))
+    if (!zkp_poly_points_mul(poly_ai1, proof->AI1, NULL, group, bn_ctx)
+        || !zkp_poly_points_mul(poly_ao1, proof->AO1, NULL, group, bn_ctx)
+        || !zkp_poly_points_mul(poly_s1, proof->S1, NULL, group, bn_ctx))
         goto err;
 
     if (!ZKP_TRANSCRIPT_append_point(transcript, "A_I1", proof->AI1, group)
@@ -464,7 +464,7 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_prove(BP_R1CS_CTX *ctx)
 
     n = sk_BIGNUM_num(ctx->aL);
     nn = n + 1;
-    padded_n = bp_next_power_of_two(n);
+    padded_n = zkp_next_power_of_two(n);
     if (pp_capacity < padded_n) {
         ERR_raise(ERR_LIB_ZKP_BP, ZKP_BP_R_EXCEEDS_PP_CAPACITY);
         goto err;
@@ -573,7 +573,7 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_prove(BP_R1CS_CTX *ctx)
     BN_one(pow_y);
     BN_one(pow_y_inv);
 
-    if (!(poly_l = bp_poly3_new(n, order)) || !(poly_r = bp_poly3_new(n, order)))
+    if (!(poly_l = zkp_poly3_new(n, order)) || !(poly_r = zkp_poly3_new(n, order)))
         goto err;
 
     for (i = 0; i < n; i++) {
@@ -615,10 +615,10 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_prove(BP_R1CS_CTX *ctx)
             goto err;
     }
 
-    if (!(poly_t = bp_poly6_new(order)))
+    if (!(poly_t = zkp_poly6_new(order)))
         goto err;
 
-    if (!bp_poly3_special_inner_product(poly_t, poly_l, poly_r))
+    if (!zkp_poly3_special_inner_product(poly_t, poly_l, poly_r))
         goto err;
 
     tau1 = BN_CTX_get(bn_ctx);
@@ -629,11 +629,11 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_prove(BP_R1CS_CTX *ctx)
     if (!(tau6 = BN_CTX_get(bn_ctx)))
         goto err;
 
-    if (!bp_rand_range(tau1, order)
-        || !bp_rand_range(tau3, order)
-        || !bp_rand_range(tau4, order)
-        || !bp_rand_range(tau5, order)
-        || !bp_rand_range(tau6, order))
+    if (!zkp_rand_range(tau1, order)
+        || !zkp_rand_range(tau3, order)
+        || !zkp_rand_range(tau4, order)
+        || !zkp_rand_range(tau5, order)
+        || !zkp_rand_range(tau6, order))
         goto err;
 
     if (!EC_POINT_mul(group, proof->T1, poly_t->t1, pp->H, tau1, bn_ctx)
@@ -665,7 +665,7 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_prove(BP_R1CS_CTX *ctx)
             goto err;
     }
 
-    if (!(poly_tau = bp_poly6_new(order)))
+    if (!(poly_tau = zkp_poly6_new(order)))
         goto err;
 
     poly_tau->t1 = tau1;
@@ -675,10 +675,10 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_prove(BP_R1CS_CTX *ctx)
     poly_tau->t5 = tau5;
     poly_tau->t6 = tau6;
 
-    if (!bp_poly6_eval(poly_t, x, proof->tx) || !bp_poly6_eval(poly_tau, x, proof->taux))
+    if (!zkp_poly6_eval(poly_t, x, proof->tx) || !zkp_poly6_eval(poly_tau, x, proof->taux))
         goto err;
 
-    if (!(sk_l = bp_poly3_eval(poly_l, x)) || !(sk_r = bp_poly3_eval(poly_r, x)))
+    if (!(sk_l = zkp_poly3_eval(poly_l, x)) || !(sk_r = zkp_poly3_eval(poly_r, x)))
         goto err;
 
     /* TODO: 2nd phase commitments */
@@ -753,13 +753,13 @@ err:
     bp_inner_product_ctx_free(ip_ctx);
     bp_inner_product_pub_param_free(ip_pp);
 
-    bp_poly3_free(poly_l);
-    bp_poly3_free(poly_r);
-    bp_poly6_free(poly_t);
+    zkp_poly3_free(poly_l);
+    zkp_poly3_free(poly_r);
+    zkp_poly6_free(poly_t);
 
-    bp_poly_points_free(poly_ai1);
-    bp_poly_points_free(poly_ao1);
-    bp_poly_points_free(poly_s1);
+    zkp_poly_points_free(poly_ai1);
+    zkp_poly_points_free(poly_ao1);
+    zkp_poly_points_free(poly_s1);
 
     BN_CTX_end(bn_ctx);
     BN_CTX_free(bn_ctx);
@@ -793,7 +793,7 @@ int BP_R1CS_PROOF_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof)
     BIGNUM *scalar, *g_scalar, *h_scalar, *b_scalar, *v_scalar, *s_a, *s_b;
     BIGNUM **wL = NULL, **wR = NULL, **wO = NULL, **wV = NULL;
     EC_POINT *P = NULL, *L, *R, *G, *H;
-    bp_poly_points_t *poly_p = NULL;
+    zkp_poly_points_t *poly_p = NULL;
     ZKP_TRANSCRIPT *transcript;
     BP_PUB_PARAM *pp;
     BP_WITNESS *witness;
@@ -817,7 +817,7 @@ int BP_R1CS_PROOF_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof)
     pp_capacity = pp->gens_capacity * pp->party_capacity;
 
     nn = ctx->vars_num + 1;
-    padded_n = bp_next_power_of_two(ctx->vars_num);
+    padded_n = zkp_next_power_of_two(ctx->vars_num);
     if (pp_capacity < padded_n) {
         ERR_raise(ERR_LIB_ZKP_BP, ZKP_BP_R_EXCEEDS_PP_CAPACITY);
         goto err;
@@ -830,7 +830,7 @@ int BP_R1CS_PROOF_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof)
         goto err;
     }
 
-    if (!(poly_p = bp_poly_points_new(12 + padded_n * 2 + lg_n * 2 + v_n)))
+    if (!(poly_p = zkp_poly_points_new(12 + padded_n * 2 + lg_n * 2 + v_n)))
         goto err;
 
     if (!(P = EC_POINT_new(group))
@@ -886,7 +886,7 @@ int BP_R1CS_PROOF_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof)
     BN_one(bn1);
     BN_one(pow_y_inv);
 
-    if (!bp_rand_range(r, order))
+    if (!zkp_rand_range(r, order))
         goto err;
 
     //START
@@ -1047,17 +1047,17 @@ int BP_R1CS_PROOF_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof)
             goto err;
     }
 
-    if (!bp_poly_points_append(poly_p, proof->AI1, x)
-        || !bp_poly_points_append(poly_p, proof->AO1, x2)
-        || !bp_poly_points_append(poly_p, proof->S1, x3)
-        || !bp_poly_points_append(poly_p, proof->AI2, ux)
-        || !bp_poly_points_append(poly_p, proof->AO2, ux2)
-        || !bp_poly_points_append(poly_p, proof->S2, ux3)
-        || !bp_poly_points_append(poly_p, proof->T1, rx)
-        || !bp_poly_points_append(poly_p, proof->T3, rx3)
-        || !bp_poly_points_append(poly_p, proof->T4, rx4)
-        || !bp_poly_points_append(poly_p, proof->T5, rx5)
-        || !bp_poly_points_append(poly_p, proof->T6, rx6))
+    if (!zkp_poly_points_append(poly_p, proof->AI1, x)
+        || !zkp_poly_points_append(poly_p, proof->AO1, x2)
+        || !zkp_poly_points_append(poly_p, proof->S1, x3)
+        || !zkp_poly_points_append(poly_p, proof->AI2, ux)
+        || !zkp_poly_points_append(poly_p, proof->AO2, ux2)
+        || !zkp_poly_points_append(poly_p, proof->S2, ux3)
+        || !zkp_poly_points_append(poly_p, proof->T1, rx)
+        || !zkp_poly_points_append(poly_p, proof->T3, rx3)
+        || !zkp_poly_points_append(poly_p, proof->T4, rx4)
+        || !zkp_poly_points_append(poly_p, proof->T5, rx5)
+        || !zkp_poly_points_append(poly_p, proof->T6, rx6))
         goto err;
 
     BN_one(vec_s[0]);
@@ -1087,16 +1087,16 @@ int BP_R1CS_PROOF_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof)
             || !BN_mod_mul(vec_s[0], vec_s[0], ip_x_inv, order, bn_ctx))
             goto err;
 
-        if (!BN_copy(scalar, ip_x2) || !bp_poly_points_append(poly_p, L, scalar))
+        if (!BN_copy(scalar, ip_x2) || !zkp_poly_points_append(poly_p, L, scalar))
             goto err;
 
         scalar = BN_CTX_get(bn_ctx);
-        if (scalar == NULL || !BN_copy(scalar, ip_x2_inv) || !bp_poly_points_append(poly_p, R, scalar))
+        if (scalar == NULL || !BN_copy(scalar, ip_x2_inv) || !zkp_poly_points_append(poly_p, R, scalar))
             goto err;
     }
 
     for (i = 1; i < padded_n; i++) {
-        lg_i = bp_floor_log2(i);
+        lg_i = zkp_floor_log2(i);
 
         vec_s[i] = BN_CTX_get(bn_ctx);
         if (vec_s[i] == NULL)
@@ -1151,8 +1151,8 @@ int BP_R1CS_PROOF_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof)
         if (G == NULL || H == NULL)
             goto err;
 
-        if (!bp_poly_points_append(poly_p, G, g_scalar)
-            || !bp_poly_points_append(poly_p, H, h_scalar))
+        if (!zkp_poly_points_append(poly_p, G, g_scalar)
+            || !zkp_poly_points_append(poly_p, H, h_scalar))
             goto err;
 
         if (!BN_mod_mul(pow_y_inv, pow_y_inv, y_inv, order, bn_ctx))
@@ -1171,7 +1171,7 @@ int BP_R1CS_PROOF_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof)
         if (!BN_mod_mul(v_scalar, wV[i], rx2, order, bn_ctx))
             goto err;
 
-        if (!bp_poly_points_append(poly_p, var->point, v_scalar))
+        if (!zkp_poly_points_append(poly_p, var->point, v_scalar))
             goto err;
     }
 
@@ -1194,8 +1194,8 @@ int BP_R1CS_PROOF_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof)
 
     BN_set_negative(h_scalar, 1);
 
-    if (!bp_poly_points_append(poly_p, pp->H, h_scalar)
-        || !bp_poly_points_mul(poly_p, P, b_scalar, group, bn_ctx))
+    if (!zkp_poly_points_append(poly_p, pp->H, h_scalar)
+        || !zkp_poly_points_mul(poly_p, P, b_scalar, group, bn_ctx))
         goto err;
 
     ret = EC_POINT_is_at_infinity(group, P);
@@ -1216,7 +1216,7 @@ err:
 
     EC_POINT_free(P);
 
-    bp_poly_points_free(poly_p);
+    zkp_poly_points_free(poly_p);
 
     return ret;
 }

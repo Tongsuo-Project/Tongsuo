@@ -9,27 +9,11 @@
 
 #include <openssl/err.h>
 #include <crypto/ec/ec_local.h>
+#include <crypto/zkp/common/zkp_util.h>
 #include "internal/endian.h"
 #include "bulletproofs.h"
 #include "range_proof.h"
 #include "r1cs.h"
-
-#ifdef __bswap_constant_32
-# undef __bswap_constant_32
-#endif
-#define __bswap_constant_32(x)                  \
-    ((((uint32_t)(x) & 0xff000000u) >> 24) |    \
-     (((uint32_t)(x) & 0x00ff0000u) >>  8) |    \
-     (((uint32_t)(x) & 0x0000ff00u) <<  8) |    \
-     (((uint32_t)(x) & 0x000000ffu) << 24))
-
-#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-# define n2l(x)  (x)
-# define l2n(x)  (x)
-#else
-# define n2l(x)  __bswap_constant_32(x)
-# define l2n(x)  __bswap_constant_32(x)
-#endif
 
 static point_conversion_form_t form = POINT_CONVERSION_COMPRESSED;
 
@@ -65,7 +49,7 @@ static int bp_stack_of_variable_encode(STACK_OF(BP_VARIABLE) *sk, unsigned char 
     }
 
     q = (int *)out;
-    *q++ = l2n((int)n);
+    *q++ = zkp_l2n((int)n);
     p = (unsigned char *)q;
 
     for (i = 0; i < n; i++) {
@@ -109,7 +93,7 @@ static STACK_OF(BP_VARIABLE) *bp_stack_of_variable_decode(const unsigned char *i
 
     point_len = EC_POINT_point2oct(group, EC_GROUP_get0_generator(group),
                                    form, NULL, 0, bn_ctx);
-    n = (int)n2l(*q);
+    n = (int)zkp_n2l(*q);
     q++;
     p = (unsigned char *)q;
 
@@ -157,171 +141,6 @@ err:
     return NULL;
 }
 
-static int bp_stack_of_bignum_encode(STACK_OF(BIGNUM) *sk, unsigned char *out,
-                                     int bn_len)
-{
-    int i, n, *q;
-    unsigned char *p;
-    BIGNUM *b;
-
-    n = sk ? sk_BIGNUM_num(sk) : 0;
-    if (out == NULL)
-        return sizeof(n) + n * (bn_len + 1);
-
-    q = (int *)out;
-    *q++ = l2n((int)n);
-    p = (unsigned char *)q;
-
-    for (i = 0; i < n; i++) {
-        b = sk_BIGNUM_value(sk, i);
-        if (b == NULL)
-            goto end;
-
-        *p++ = BN_is_negative(b) ? '-' : '+';
-
-        if (!BN_bn2binpad(b, p, bn_len))
-            goto end;
-
-        p += bn_len;
-    }
-
-end:
-    return p - out;
-}
-
-static STACK_OF(BIGNUM) *bp_stack_of_bignum_decode(const unsigned char *in,
-                                                   int *len, int bn_len)
-{
-    unsigned char *p;
-    int *q = (int *)in, n, i, neg;
-    BIGNUM *b = NULL;
-    STACK_OF(BIGNUM) *ret;
-
-    n = (int)n2l(*q);
-    q++;
-    p = (unsigned char *)q;
-
-    if (n < 0) {
-        return NULL;
-    }
-
-    if (!(ret = sk_BIGNUM_new_reserve(NULL, n)))
-        return NULL;
-
-    for (i = 0; i < n; i++) {
-        b = BN_new();
-        if (b == NULL)
-            goto err;
-
-        neg = *p++ == '-' ? 1 : 0;
-
-        if (!BN_bin2bn(p, (int)bn_len, b))
-            goto err;
-
-        BN_set_negative(b, neg);
-
-        if (sk_BIGNUM_push(ret, b) <= 0)
-            goto err;
-
-        p += bn_len;
-    }
-
-    if (len != NULL)
-        *len = p - in;
-
-    return ret;
-err:
-    BN_free(b);
-    sk_BIGNUM_pop_free(ret, BN_free);
-    return NULL;
-}
-
-static int bp_stack_of_point_encode(STACK_OF(EC_POINT) *sk, unsigned char *out,
-                                    const EC_GROUP *group, BN_CTX *bn_ctx)
-{
-    int i, n, *q;
-    size_t point_len;
-    unsigned char *p;
-    EC_POINT *P;
-
-    if (sk == NULL || group == NULL)
-        return 0;
-
-    point_len = EC_POINT_point2oct(group, EC_GROUP_get0_generator(group),
-                                   form, NULL, 0, bn_ctx);
-    n = sk_EC_POINT_num(sk);
-    if (out == NULL)
-        return sizeof(n) + n * point_len;
-
-    q = (int *)out;
-    *q++ = l2n((int)n);
-    p = (unsigned char *)q;
-
-    for (i = 0; i < n; i++) {
-        P = sk_EC_POINT_value(sk, i);
-        if (P == NULL)
-            goto end;
-
-        if (EC_POINT_point2oct(group, P, form, p, point_len, bn_ctx) == 0)
-            goto end;
-
-        p += point_len;
-    }
-
-end:
-    return p - out;
-}
-
-static STACK_OF(EC_POINT) *bp_stack_of_point_decode(const unsigned char *in,
-                                                    int *len,
-                                                    const EC_GROUP *group,
-                                                    BN_CTX *bn_ctx)
-{
-    unsigned char *p;
-    int *q = (int *)in, n, i;
-    size_t point_len;
-    EC_POINT *P = NULL;
-    STACK_OF(EC_POINT) *ret = NULL;
-
-    if (in == NULL || group == NULL)
-        return 0;
-
-    point_len = EC_POINT_point2oct(group, EC_GROUP_get0_generator(group),
-                                   form, NULL, 0, bn_ctx);
-    n = (int)n2l(*q);
-    q++;
-    p = (unsigned char *)q;
-
-    if (n < 0) {
-        return NULL;
-    }
-
-    if (!(ret = sk_EC_POINT_new_reserve(NULL, n)))
-        return NULL;
-
-    for (i = 0; i < n; i++) {
-        if (!(P = EC_POINT_new(group)))
-            goto err;
-
-        if (!EC_POINT_oct2point(group, P, p, point_len, bn_ctx))
-            goto err;
-
-        if (sk_EC_POINT_push(ret, P) <= 0)
-            goto err;
-
-        p += point_len;
-    }
-
-    if (len != NULL)
-        *len = p - in;
-
-    return ret;
-err:
-    EC_POINT_free(P);
-    sk_EC_POINT_pop_free(ret, EC_POINT_free);
-    return NULL;
-}
-
 static int bp_inner_product_proof_encode(bp_inner_product_proof_t *ip_proof,
                                          unsigned char *out, const EC_GROUP *group,
                                          BN_CTX *bn_ctx)
@@ -343,19 +162,19 @@ static int bp_inner_product_proof_encode(bp_inner_product_proof_t *ip_proof,
         || sk_BIGNUM_push(sk_bn, ip_proof->b) <= 0)
         goto end;
 
-    sk_len = bp_stack_of_bignum_encode(sk_bn, NULL, bn_len);
+    sk_len = zkp_stack_of_bignum_encode(sk_bn, NULL, bn_len);
     if (sk_len == 0)
         goto end;
 
     len = sk_len;
 
-    sk_len = bp_stack_of_point_encode(ip_proof->sk_L, NULL, group, bn_ctx);
+    sk_len = zkp_stack_of_point_encode(ip_proof->sk_L, NULL, group, bn_ctx);
     if (sk_len == 0)
         goto end;
 
     len += sk_len;
 
-    sk_len = bp_stack_of_point_encode(ip_proof->sk_R, NULL, group, bn_ctx);
+    sk_len = zkp_stack_of_point_encode(ip_proof->sk_R, NULL, group, bn_ctx);
     if (sk_len == 0)
         goto end;
 
@@ -364,19 +183,19 @@ static int bp_inner_product_proof_encode(bp_inner_product_proof_t *ip_proof,
     if (out == NULL)
         return len;
 
-    sk_len = bp_stack_of_bignum_encode(sk_bn, p, bn_len);
+    sk_len = zkp_stack_of_bignum_encode(sk_bn, p, bn_len);
     if (sk_len == 0)
         goto end;
 
     p += sk_len;
 
-    sk_len = bp_stack_of_point_encode(ip_proof->sk_L, p, group, bn_ctx);
+    sk_len = zkp_stack_of_point_encode(ip_proof->sk_L, p, group, bn_ctx);
     if (sk_len == 0)
         goto end;
 
     p += sk_len;
 
-    sk_len = bp_stack_of_point_encode(ip_proof->sk_R, p, group, bn_ctx);
+    sk_len = zkp_stack_of_point_encode(ip_proof->sk_R, p, group, bn_ctx);
     if (sk_len == 0)
         goto end;
 
@@ -410,7 +229,7 @@ static bp_inner_product_proof_t *bp_inner_product_proof_decode(const unsigned ch
     ip_proof->sk_L = NULL;
     ip_proof->sk_R = NULL;
 
-    if (!(sk_bn = bp_stack_of_bignum_decode(p, &sk_len, bn_len)))
+    if (!(sk_bn = zkp_stack_of_bignum_decode(p, &sk_len, bn_len)))
         goto err;
 
     if (sk_BIGNUM_num(sk_bn) != 2)
@@ -422,12 +241,12 @@ static bp_inner_product_proof_t *bp_inner_product_proof_decode(const unsigned ch
 
     p += sk_len;
 
-    if (!(ip_proof->sk_L = bp_stack_of_point_decode(p, &sk_len, group, bn_ctx)))
+    if (!(ip_proof->sk_L = zkp_stack_of_point_decode(p, &sk_len, group, bn_ctx)))
         goto err;
 
     p += sk_len;
 
-    if (!(ip_proof->sk_R = bp_stack_of_point_decode(p, &sk_len, group, bn_ctx)))
+    if (!(ip_proof->sk_R = zkp_stack_of_point_decode(p, &sk_len, group, bn_ctx)))
         goto err;
 
     p += sk_len;
@@ -477,7 +296,7 @@ size_t BP_PUB_PARAM_encode(const BP_PUB_PARAM *pp, unsigned char *out, size_t si
     point_len = EC_POINT_point2oct(group, EC_GROUP_get0_generator(group),
                                    form, NULL, 0, bn_ctx);
 
-    sk_len = bp_stack_of_point_encode(pp->sk_G, NULL, group, bn_ctx);
+    sk_len = zkp_stack_of_point_encode(pp->sk_G, NULL, group, bn_ctx);
     if (sk_len == 0)
         goto end;
 
@@ -493,9 +312,9 @@ size_t BP_PUB_PARAM_encode(const BP_PUB_PARAM *pp, unsigned char *out, size_t si
     memset(out, 0, size);
 
     q = (int *)out;
-    *q++ = l2n((int)curve_id);
-    *q++ = l2n((int)pp->gens_capacity);
-    *q++ = l2n((int)pp->party_capacity);
+    *q++ = zkp_l2n((int)curve_id);
+    *q++ = zkp_l2n((int)pp->gens_capacity);
+    *q++ = zkp_l2n((int)pp->party_capacity);
     p = (unsigned char *)q;
 
     if (EC_POINT_point2oct(group, pp->H, form, p, point_len, bn_ctx) == 0)
@@ -508,13 +327,13 @@ size_t BP_PUB_PARAM_encode(const BP_PUB_PARAM *pp, unsigned char *out, size_t si
 
     p += point_len;
 
-    sk_len = bp_stack_of_point_encode(pp->sk_G, p, group, bn_ctx);
+    sk_len = zkp_stack_of_point_encode(pp->sk_G, p, group, bn_ctx);
     if (sk_len == 0)
         goto end;
 
     p += sk_len;
 
-    sk_len = bp_stack_of_point_encode(pp->sk_H, p, group, bn_ctx);
+    sk_len = zkp_stack_of_point_encode(pp->sk_H, p, group, bn_ctx);
     if (sk_len == 0)
         goto end;
 
@@ -553,11 +372,11 @@ BP_PUB_PARAM *BP_PUB_PARAM_decode(const unsigned char *in, size_t size)
         goto err;
     }
 
-    curve_id = n2l(*q);
+    curve_id = zkp_n2l(*q);
     q++;
-    gens_capacity = (size_t)n2l(*q);
+    gens_capacity = (size_t)zkp_n2l(*q);
     q++;
-    party_capacity = (size_t)n2l(*q);
+    party_capacity = (size_t)zkp_n2l(*q);
     q++;
     p = (unsigned char *)q;
     n = gens_capacity * party_capacity;
@@ -595,12 +414,12 @@ BP_PUB_PARAM *BP_PUB_PARAM_decode(const unsigned char *in, size_t size)
 
     p += point_len;
 
-    if (!(pp->sk_G = bp_stack_of_point_decode(p, &sk_len, group, bn_ctx)))
+    if (!(pp->sk_G = zkp_stack_of_point_decode(p, &sk_len, group, bn_ctx)))
         goto err;
 
     p += sk_len;
 
-    if (!(pp->sk_H = bp_stack_of_point_decode(p, &sk_len, group, bn_ctx)))
+    if (!(pp->sk_H = zkp_stack_of_point_decode(p, &sk_len, group, bn_ctx)))
         goto err;
 
     p += sk_len;
@@ -675,7 +494,7 @@ size_t BP_WITNESS_encode(const BP_WITNESS *witness, unsigned char *out,
 
     len = 4 + point_len + sk_len;
 
-    if (!(sk_len = bp_stack_of_bignum_encode(witness->sk_r, NULL, bn_len)))
+    if (!(sk_len = zkp_stack_of_bignum_encode(witness->sk_r, NULL, bn_len)))
         goto end;
 
     if (flag == 1)
@@ -692,7 +511,7 @@ size_t BP_WITNESS_encode(const BP_WITNESS *witness, unsigned char *out,
     memset(out, 0, size);
 
     q = (int *)out;
-    *q++ = l2n((int)curve_id);
+    *q++ = zkp_l2n((int)curve_id);
     p = (unsigned char *)q;
 
     if (EC_POINT_point2oct(group, witness->H, form, p, point_len, bn_ctx) == 0)
@@ -706,12 +525,12 @@ size_t BP_WITNESS_encode(const BP_WITNESS *witness, unsigned char *out,
     p += sk_len;
 
     if (flag == 1) {
-        if (!(sk_len = bp_stack_of_bignum_encode(witness->sk_r, p, bn_len)))
+        if (!(sk_len = zkp_stack_of_bignum_encode(witness->sk_r, p, bn_len)))
             goto end;
 
         p += sk_len;
 
-        if (!(sk_len = bp_stack_of_bignum_encode(witness->sk_v, p, bn_len)))
+        if (!(sk_len = zkp_stack_of_bignum_encode(witness->sk_v, p, bn_len)))
             goto end;
 
         p += sk_len;
@@ -754,7 +573,7 @@ BP_WITNESS *BP_WITNESS_decode(const unsigned char *in, size_t size, int flag)
         goto err;
     }
 
-    curve_id = n2l(*q);
+    curve_id = zkp_n2l(*q);
     q++;
     p = (unsigned char *)q;
 
@@ -787,12 +606,12 @@ BP_WITNESS *BP_WITNESS_decode(const unsigned char *in, size_t size, int flag)
     p += sk_len;
 
     if (flag == 1) {
-        if (!(witness->sk_r = bp_stack_of_bignum_decode(p, &sk_len, bn_len)))
+        if (!(witness->sk_r = zkp_stack_of_bignum_decode(p, &sk_len, bn_len)))
             goto err;
 
         p += sk_len;
 
-        if (!(witness->sk_v = bp_stack_of_bignum_decode(p, &sk_len, bn_len)))
+        if (!(witness->sk_v = zkp_stack_of_bignum_decode(p, &sk_len, bn_len)))
             goto err;
 
         p += sk_len;
@@ -872,7 +691,7 @@ size_t BP_RANGE_PROOF_encode(const BP_RANGE_PROOF *proof, unsigned char *out,
         || sk_EC_POINT_push(sk_point, proof->T2) <= 0)
         goto end;
 
-    sk_len = bp_stack_of_point_encode(sk_point, NULL, group, bn_ctx);
+    sk_len = zkp_stack_of_point_encode(sk_point, NULL, group, bn_ctx);
     if (sk_len == 0)
         goto end;
     len += sk_len;
@@ -882,7 +701,7 @@ size_t BP_RANGE_PROOF_encode(const BP_RANGE_PROOF *proof, unsigned char *out,
         || sk_BIGNUM_push(sk_bn, proof->tx) <= 0)
         goto end;
 
-    sk_len = bp_stack_of_bignum_encode(sk_bn, NULL, bn_len);
+    sk_len = zkp_stack_of_bignum_encode(sk_bn, NULL, bn_len);
     if (sk_len == 0)
         goto end;
     len += sk_len;
@@ -904,15 +723,15 @@ size_t BP_RANGE_PROOF_encode(const BP_RANGE_PROOF *proof, unsigned char *out,
 
     /* encoding proof */
     q = (int *)out;
-    *q++ = l2n(curve_id);
+    *q++ = zkp_l2n(curve_id);
     p = (unsigned char *)q;
 
-    sk_len = bp_stack_of_point_encode(sk_point, p, group, bn_ctx);
+    sk_len = zkp_stack_of_point_encode(sk_point, p, group, bn_ctx);
     if (sk_len == 0)
         goto end;
     p += sk_len;
 
-    sk_len = bp_stack_of_bignum_encode(sk_bn, p, bn_len);
+    sk_len = zkp_stack_of_bignum_encode(sk_bn, p, bn_len);
     if (sk_len == 0)
         goto end;
     p += sk_len;
@@ -954,7 +773,7 @@ BP_RANGE_PROOF *BP_RANGE_PROOF_decode(const unsigned char *in, size_t size)
         return NULL;
     }
 
-    curve_id = n2l(*q);
+    curve_id = zkp_n2l(*q);
     q++;
 
     if (curve_id <= 0) {
@@ -998,7 +817,7 @@ BP_RANGE_PROOF *BP_RANGE_PROOF_decode(const unsigned char *in, size_t size)
         goto err;
     }
 
-    sk_point = bp_stack_of_point_decode(p, &len, group, bn_ctx);
+    sk_point = zkp_stack_of_point_decode(p, &len, group, bn_ctx);
     if (sk_point == NULL)
         goto err;
     p += len;
@@ -1011,7 +830,7 @@ BP_RANGE_PROOF *BP_RANGE_PROOF_decode(const unsigned char *in, size_t size)
     proof->T1 = sk_EC_POINT_value(sk_point, 2);
     proof->T2 = sk_EC_POINT_value(sk_point, 3);
 
-    sk_bn = bp_stack_of_bignum_decode(p, &len, bn_len);
+    sk_bn = zkp_stack_of_bignum_decode(p, &len, bn_len);
     if (sk_point == NULL)
         goto err;
     p += len;
@@ -1114,7 +933,7 @@ size_t BP_R1CS_PROOF_encode(const BP_R1CS_PROOF *proof, unsigned char *out,
        )
         goto end;
 
-    sk_len = bp_stack_of_point_encode(sk_point, NULL, group, bn_ctx);
+    sk_len = zkp_stack_of_point_encode(sk_point, NULL, group, bn_ctx);
     if (sk_len == 0)
         goto end;
     len += sk_len;
@@ -1124,7 +943,7 @@ size_t BP_R1CS_PROOF_encode(const BP_R1CS_PROOF *proof, unsigned char *out,
         || sk_BIGNUM_push(sk_bn, proof->tx) <= 0)
         goto end;
 
-    sk_len = bp_stack_of_bignum_encode(sk_bn, NULL, bn_len);
+    sk_len = zkp_stack_of_bignum_encode(sk_bn, NULL, bn_len);
     if (sk_len == 0)
         goto end;
     len += sk_len;
@@ -1146,15 +965,15 @@ size_t BP_R1CS_PROOF_encode(const BP_R1CS_PROOF *proof, unsigned char *out,
 
     /* encoding proof */
     q = (int *)out;
-    *q++ = l2n(curve_id);
+    *q++ = zkp_l2n(curve_id);
     p = (unsigned char *)q;
 
-    sk_len = bp_stack_of_point_encode(sk_point, p, group, bn_ctx);
+    sk_len = zkp_stack_of_point_encode(sk_point, p, group, bn_ctx);
     if (sk_len == 0)
         goto end;
     p += sk_len;
 
-    sk_len = bp_stack_of_bignum_encode(sk_bn, p, bn_len);
+    sk_len = zkp_stack_of_bignum_encode(sk_bn, p, bn_len);
     if (sk_len == 0)
         goto end;
     p += sk_len;
@@ -1197,7 +1016,7 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_decode(const unsigned char *in, size_t size)
         return NULL;
     }
 
-    curve_id = n2l(*q);
+    curve_id = zkp_n2l(*q);
     q++;
 
     if (curve_id <= 0) {
@@ -1244,7 +1063,7 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_decode(const unsigned char *in, size_t size)
         goto err;
     }
 
-    sk_point = bp_stack_of_point_decode(p, &len, group, bn_ctx);
+    sk_point = zkp_stack_of_point_decode(p, &len, group, bn_ctx);
     if (sk_point == NULL)
         goto err;
     p += len;
@@ -1278,7 +1097,7 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_decode(const unsigned char *in, size_t size)
     proof->S2 = sk_EC_POINT_value(sk_point, 10);
 #endif
 
-    sk_bn = bp_stack_of_bignum_decode(p, &len, bn_len);
+    sk_bn = zkp_stack_of_bignum_decode(p, &len, bn_len);
     if (sk_point == NULL)
         goto err;
     p += len;

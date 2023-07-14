@@ -9,7 +9,6 @@ IF[{- !$disabled{bulletproofs} -}]
     SOURCE[../../libcrypto]=bulletproofs/bulletproofs.c                     \
                             bulletproofs/range_proof.c                      \
                             bulletproofs/inner_product.c                    \
-                            bulletproofs/util.c                             \
                             bulletproofs/bulletproofs_encode.c              \
                             bulletproofs/bulletproofs_asn1.c                \
                             bulletproofs/bulletproofs_prn.c                 \
