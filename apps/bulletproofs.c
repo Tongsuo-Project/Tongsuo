@@ -118,7 +118,7 @@ err:
 }
 
 static int bulletproofs_pub_param_print(const BP_PUB_PARAM *pp,
-                                        BP_TRANSCRIPT *transcript,
+                                        ZKP_TRANSCRIPT *transcript,
                                         const char *out_file, int text)
 {
     int ret = 0;
@@ -239,7 +239,7 @@ err:
 }
 
 static int bulletproofs_witness_action(const BP_PUB_PARAM *pp,
-                                       BP_TRANSCRIPT *transcript, char *argv[],
+                                       ZKP_TRANSCRIPT *transcript, char *argv[],
                                        int argc, int r1cs, const char *out_file,
                                        int text)
 {
@@ -295,7 +295,7 @@ err:
     return ret;
 }
 
-static int bulletproofs_range_prove(BP_PUB_PARAM *pp, BP_TRANSCRIPT *transcript,
+static int bulletproofs_range_prove(BP_PUB_PARAM *pp, ZKP_TRANSCRIPT *transcript,
                                     BP_WITNESS *witness, const char *out_file,
                                     int text)
 {
@@ -321,7 +321,7 @@ err:
     return ret;
 }
 
-static int bulletproofs_range_verify(BP_PUB_PARAM *pp, BP_TRANSCRIPT *transcript,
+static int bulletproofs_range_verify(BP_PUB_PARAM *pp, ZKP_TRANSCRIPT *transcript,
                                      BP_WITNESS *witness, BP_RANGE_PROOF *proof,
                                      const char *out_file)
 {
@@ -351,7 +351,7 @@ err:
     return ret;
 }
 
-static int bulletproofs_r1cs_prove(BP_PUB_PARAM *pp, BP_TRANSCRIPT *transcript,
+static int bulletproofs_r1cs_prove(BP_PUB_PARAM *pp, ZKP_TRANSCRIPT *transcript,
                                    BP_WITNESS *witness, const char *constraint,
                                    const char *out_file, int text)
 {
@@ -380,7 +380,7 @@ err:
     return ret;
 }
 
-static int bulletproofs_r1cs_verify(BP_PUB_PARAM *pp, BP_TRANSCRIPT *transcript,
+static int bulletproofs_r1cs_verify(BP_PUB_PARAM *pp, ZKP_TRANSCRIPT *transcript,
                                     BP_WITNESS *witness, BP_R1CS_PROOF *proof,
                                     const char *constraint, const char *out_file)
 {
@@ -416,7 +416,7 @@ err:
 int bulletproofs_main(int argc, char **argv)
 {
     BIO *in_bio = NULL, *pp_bio = NULL, *witness_bio = NULL;
-    BP_TRANSCRIPT *transcript = NULL;
+    ZKP_TRANSCRIPT *transcript = NULL;
     BP_PUB_PARAM *bp_pp = NULL;
     BP_WITNESS *bp_witness = NULL;
     BP_RANGE_PROOF *bp_range_proof = NULL;
@@ -651,7 +651,7 @@ opthelp2:
         goto opthelp2;
     }
 
-    if (!(transcript = BP_TRANSCRIPT_new(BP_TRANSCRIPT_METHOD_sha256(), "bulletproofs_app")))
+    if (!(transcript = ZKP_TRANSCRIPT_new(ZKP_TRANSCRIPT_METHOD_sha256(), "bulletproofs_app")))
         goto err;
 
     if (pp) {
@@ -676,7 +676,7 @@ opthelp2:
     ret = ret ? 0 : 1;
     BIO_free_all(in_bio);
     BIO_free_all(pp_bio);
-    BP_TRANSCRIPT_free(transcript);
+    ZKP_TRANSCRIPT_free(transcript);
     BP_RANGE_PROOF_free(bp_range_proof);
     BP_R1CS_PROOF_free(bp_r1cs_proof);
     BP_PUB_PARAM_free(bp_pp);

@@ -15,7 +15,7 @@
 #include "util.h"
 
 BP_R1CS_CTX *BP_R1CS_CTX_new(BP_PUB_PARAM *pp, BP_WITNESS *witness,
-                             BP_TRANSCRIPT *transcript)
+                             ZKP_TRANSCRIPT *transcript)
 {
     BP_R1CS_CTX *ctx = NULL;
 
@@ -303,7 +303,7 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_prove(BP_R1CS_CTX *ctx)
     bp_inner_product_ctx_t *ip_ctx = NULL;
     bp_inner_product_witness_t *ip_witness = NULL;
     bp_inner_product_pub_param_t *ip_pp = NULL;
-    BP_TRANSCRIPT *transcript;
+    ZKP_TRANSCRIPT *transcript;
     BP_PUB_PARAM *pp;
     BP_WITNESS *witness;
     BP_VARIABLE *var;
@@ -374,12 +374,12 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_prove(BP_R1CS_CTX *ctx)
         if (var == NULL)
             goto err;
 
-        if (!BP_TRANSCRIPT_append_point(transcript, "V", var->point, group))
+        if (!ZKP_TRANSCRIPT_append_point(transcript, "V", var->point, group))
             goto err;
     }
 
     m = sk_BIGNUM_num(witness->sk_v);
-    if (!BP_TRANSCRIPT_append_int64(transcript, "m", m))
+    if (!ZKP_TRANSCRIPT_append_int64(transcript, "m", m))
         goto err;
 
     m = sk_BIGNUM_num(witness->sk_r);
@@ -452,9 +452,9 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_prove(BP_R1CS_CTX *ctx)
         || !bp_poly_points_mul(poly_s1, proof->S1, NULL, group, bn_ctx))
         goto err;
 
-    if (!BP_TRANSCRIPT_append_point(transcript, "A_I1", proof->AI1, group)
-        || !BP_TRANSCRIPT_append_point(transcript, "A_O1", proof->AO1, group)
-        || !BP_TRANSCRIPT_append_point(transcript, "S1", proof->S1, group))
+    if (!ZKP_TRANSCRIPT_append_point(transcript, "A_I1", proof->AI1, group)
+        || !ZKP_TRANSCRIPT_append_point(transcript, "A_O1", proof->AO1, group)
+        || !ZKP_TRANSCRIPT_append_point(transcript, "S1", proof->S1, group))
         goto err;
 
     /*
@@ -470,13 +470,13 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_prove(BP_R1CS_CTX *ctx)
         goto err;
     }
 
-    if (!BP_TRANSCRIPT_append_point(transcript, "A_I2", proof->AI2, group)
-        || !BP_TRANSCRIPT_append_point(transcript, "A_O2", proof->AO2, group)
-        || !BP_TRANSCRIPT_append_point(transcript, "S2", proof->S2, group))
+    if (!ZKP_TRANSCRIPT_append_point(transcript, "A_I2", proof->AI2, group)
+        || !ZKP_TRANSCRIPT_append_point(transcript, "A_O2", proof->AO2, group)
+        || !ZKP_TRANSCRIPT_append_point(transcript, "S2", proof->S2, group))
         goto err;
 
-    if (!BP_TRANSCRIPT_challange(transcript, "y", y)
-        || !BP_TRANSCRIPT_challange(transcript, "z", z))
+    if (!ZKP_TRANSCRIPT_challange(transcript, "y", y)
+        || !ZKP_TRANSCRIPT_challange(transcript, "z", z))
         goto err;
 
     if (!BN_mod_sqr(z2, z, order, bn_ctx) || !BN_copy(pow_z, z)
@@ -643,15 +643,15 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_prove(BP_R1CS_CTX *ctx)
         || !EC_POINT_mul(group, proof->T6, poly_t->t6, pp->H, tau6, bn_ctx))
         goto err;
 
-    if (!BP_TRANSCRIPT_append_point(transcript, "T_1", proof->T1, group)
-        || !BP_TRANSCRIPT_append_point(transcript, "T_3", proof->T3, group)
-        || !BP_TRANSCRIPT_append_point(transcript, "T_4", proof->T4, group)
-        || !BP_TRANSCRIPT_append_point(transcript, "T_5", proof->T5, group)
-        || !BP_TRANSCRIPT_append_point(transcript, "T_6", proof->T6, group))
+    if (!ZKP_TRANSCRIPT_append_point(transcript, "T_1", proof->T1, group)
+        || !ZKP_TRANSCRIPT_append_point(transcript, "T_3", proof->T3, group)
+        || !ZKP_TRANSCRIPT_append_point(transcript, "T_4", proof->T4, group)
+        || !ZKP_TRANSCRIPT_append_point(transcript, "T_5", proof->T5, group)
+        || !ZKP_TRANSCRIPT_append_point(transcript, "T_6", proof->T6, group))
         goto err;
 
-    if (!BP_TRANSCRIPT_challange(transcript, "u", u)
-        || !BP_TRANSCRIPT_challange(transcript, "x", x))
+    if (!ZKP_TRANSCRIPT_challange(transcript, "u", u)
+        || !ZKP_TRANSCRIPT_challange(transcript, "x", x))
         goto err;
 
     BN_zero(tau2);
@@ -690,12 +690,12 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_prove(BP_R1CS_CTX *ctx)
         || !BN_mod_mul(proof->mu, proof->mu, x, order, bn_ctx))
         goto err;
 
-    if (!BP_TRANSCRIPT_append_bn(transcript, "t_x", proof->tx)
-        || !BP_TRANSCRIPT_append_bn(transcript, "t_x_blinding", proof->taux)
-        || !BP_TRANSCRIPT_append_bn(transcript, "e_blinding", proof->mu))
+    if (!ZKP_TRANSCRIPT_append_bn(transcript, "t_x", proof->tx)
+        || !ZKP_TRANSCRIPT_append_bn(transcript, "t_x_blinding", proof->taux)
+        || !ZKP_TRANSCRIPT_append_bn(transcript, "e_blinding", proof->mu))
         goto err;
 
-    if (!BP_TRANSCRIPT_challange(transcript, "w", w))
+    if (!ZKP_TRANSCRIPT_challange(transcript, "w", w))
         goto err;
 
     if (!EC_POINT_mul(group, U, w, NULL, NULL, bn_ctx))
@@ -748,7 +748,7 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_prove(BP_R1CS_CTX *ctx)
     proof = NULL;
 
 err:
-    BP_TRANSCRIPT_reset(transcript);
+    ZKP_TRANSCRIPT_reset(transcript);
 
     bp_inner_product_ctx_free(ip_ctx);
     bp_inner_product_pub_param_free(ip_pp);
@@ -794,7 +794,7 @@ int BP_R1CS_PROOF_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof)
     BIGNUM **wL = NULL, **wR = NULL, **wO = NULL, **wV = NULL;
     EC_POINT *P = NULL, *L, *R, *G, *H;
     bp_poly_points_t *poly_p = NULL;
-    BP_TRANSCRIPT *transcript;
+    ZKP_TRANSCRIPT *transcript;
     BP_PUB_PARAM *pp;
     BP_WITNESS *witness;
     BP_VARIABLE *var;
@@ -895,16 +895,16 @@ int BP_R1CS_PROOF_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof)
         if (var == NULL)
             goto err;
 
-        if (!BP_TRANSCRIPT_append_point(transcript, "V", var->point, group))
+        if (!ZKP_TRANSCRIPT_append_point(transcript, "V", var->point, group))
             goto err;
     }
 
-    if (!BP_TRANSCRIPT_append_int64(transcript, "m", v_n))
+    if (!ZKP_TRANSCRIPT_append_int64(transcript, "m", v_n))
         goto err;
 
-    if (!BP_TRANSCRIPT_append_point(transcript, "A_I1", proof->AI1, group)
-        || !BP_TRANSCRIPT_append_point(transcript, "A_O1", proof->AO1, group)
-        || !BP_TRANSCRIPT_append_point(transcript, "S1", proof->S1, group))
+    if (!ZKP_TRANSCRIPT_append_point(transcript, "A_I1", proof->AI1, group)
+        || !ZKP_TRANSCRIPT_append_point(transcript, "A_O1", proof->AO1, group)
+        || !ZKP_TRANSCRIPT_append_point(transcript, "S1", proof->S1, group))
         goto err;
 
     /*
@@ -912,32 +912,32 @@ int BP_R1CS_PROOF_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof)
      * Process the remaining constraints.
      */
 
-    if (!BP_TRANSCRIPT_append_point(transcript, "A_I2", proof->AI2, group)
-        || !BP_TRANSCRIPT_append_point(transcript, "A_O2", proof->AO2, group)
-        || !BP_TRANSCRIPT_append_point(transcript, "S2", proof->S2, group))
+    if (!ZKP_TRANSCRIPT_append_point(transcript, "A_I2", proof->AI2, group)
+        || !ZKP_TRANSCRIPT_append_point(transcript, "A_O2", proof->AO2, group)
+        || !ZKP_TRANSCRIPT_append_point(transcript, "S2", proof->S2, group))
         goto err;
 
-    if (!BP_TRANSCRIPT_challange(transcript, "y", y)
-        || !BP_TRANSCRIPT_challange(transcript, "z", z))
+    if (!ZKP_TRANSCRIPT_challange(transcript, "y", y)
+        || !ZKP_TRANSCRIPT_challange(transcript, "z", z))
         goto err;
 
-    if (!BP_TRANSCRIPT_append_point(transcript, "T_1", proof->T1, group)
-        || !BP_TRANSCRIPT_append_point(transcript, "T_3", proof->T3, group)
-        || !BP_TRANSCRIPT_append_point(transcript, "T_4", proof->T4, group)
-        || !BP_TRANSCRIPT_append_point(transcript, "T_5", proof->T5, group)
-        || !BP_TRANSCRIPT_append_point(transcript, "T_6", proof->T6, group))
+    if (!ZKP_TRANSCRIPT_append_point(transcript, "T_1", proof->T1, group)
+        || !ZKP_TRANSCRIPT_append_point(transcript, "T_3", proof->T3, group)
+        || !ZKP_TRANSCRIPT_append_point(transcript, "T_4", proof->T4, group)
+        || !ZKP_TRANSCRIPT_append_point(transcript, "T_5", proof->T5, group)
+        || !ZKP_TRANSCRIPT_append_point(transcript, "T_6", proof->T6, group))
         goto err;
 
-    if (!BP_TRANSCRIPT_challange(transcript, "u", u)
-        || !BP_TRANSCRIPT_challange(transcript, "x", x))
+    if (!ZKP_TRANSCRIPT_challange(transcript, "u", u)
+        || !ZKP_TRANSCRIPT_challange(transcript, "x", x))
         goto err;
 
-    if (!BP_TRANSCRIPT_append_bn(transcript, "t_x", proof->tx)
-        || !BP_TRANSCRIPT_append_bn(transcript, "t_x_blinding", proof->taux)
-        || !BP_TRANSCRIPT_append_bn(transcript, "e_blinding", proof->mu))
+    if (!ZKP_TRANSCRIPT_append_bn(transcript, "t_x", proof->tx)
+        || !ZKP_TRANSCRIPT_append_bn(transcript, "t_x_blinding", proof->taux)
+        || !ZKP_TRANSCRIPT_append_bn(transcript, "e_blinding", proof->mu))
         goto err;
 
-    if (!BP_TRANSCRIPT_challange(transcript, "w", w))
+    if (!ZKP_TRANSCRIPT_challange(transcript, "w", w))
         goto err;
 
     if (!BN_mod_inverse(y_inv, y, order, bn_ctx)
@@ -1073,11 +1073,11 @@ int BP_R1CS_PROOF_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof)
         if (L == NULL || R == NULL)
             goto err;
 
-        if (!BP_TRANSCRIPT_append_point(transcript, "L", L, group)
-            || !BP_TRANSCRIPT_append_point(transcript, "R", R, group))
+        if (!ZKP_TRANSCRIPT_append_point(transcript, "L", L, group)
+            || !ZKP_TRANSCRIPT_append_point(transcript, "R", R, group))
             goto err;
 
-        if (!BP_TRANSCRIPT_challange(transcript, "x", ip_x))
+        if (!ZKP_TRANSCRIPT_challange(transcript, "x", ip_x))
             goto err;
 
         if (!BN_mod_sqr(ip_x2, ip_x, order, bn_ctx)
@@ -1201,7 +1201,7 @@ int BP_R1CS_PROOF_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof)
     ret = EC_POINT_is_at_infinity(group, P);
 
 err:
-    BP_TRANSCRIPT_reset(transcript);
+    ZKP_TRANSCRIPT_reset(transcript);
 
     OPENSSL_free(wV);
     OPENSSL_free(wO);

@@ -18,7 +18,7 @@ extern "C" {
 
 # include <openssl/bn.h>
 # include <openssl/ec.h>
-# include <openssl/zkp.h>
+# include <openssl/zkp_transcript.h>
 # include "internal/refcount.h"
 
 struct zkp_transcript_method_st {

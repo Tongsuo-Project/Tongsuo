@@ -7,17 +7,16 @@
  * https://github.com/Tongsuo-Project/Tongsuo/blob/master/LICENSE.txt
  */
 
-#ifndef HEADER_ZKP_H
-# define HEADER_ZKP_H
+#ifndef HEADER_ZKP_TRANSCRIPT_H
+# define HEADER_ZKP_TRANSCRIPT_H
 
 # include <stdlib.h>
 # include <openssl/macros.h>
 # include <openssl/opensslconf.h>
 # include <openssl/types.h>
-# include <openssl/zkpbperr.h>
 # include <openssl/ec.h>
 
-# ifndef OPENSSL_NO_ZKP
+# ifndef OPENSSL_NO_ZKP_TRANSCRIPT
 #  ifdef  __cplusplus
 extern "C" {
 #  endif
@@ -41,6 +40,8 @@ int ZKP_TRANSCRIPT_append_bn(ZKP_TRANSCRIPT *transcript, const char *label,
                              const BIGNUM *bn);
 int ZKP_TRANSCRIPT_challange(ZKP_TRANSCRIPT *transcript, const char *label,
                              BIGNUM *out);
+
+const ZKP_TRANSCRIPT_METHOD *ZKP_TRANSCRIPT_METHOD_sha256(void);
 
 #  ifdef  __cplusplus
 }
