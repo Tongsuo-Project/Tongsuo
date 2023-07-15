@@ -1,0 +1,45 @@
+commit: b747e1963e53cddd20e60bbabf24ed4828ac7d28
+date: 2023-07-15 09:11:47
+version: 3.0.3
+built on: Sat Jul 15 00:44:35 2023 UTC
+options: bn(64,64)
+compiler: gcc -fPIC -pthread -m64 -Wa,--noexecstack -Wall -O3 -DPEDANTIC -pedantic -Wno-long-long -DUNUSEDRESULT_DEBUG -Wall -Wmissing-declarations -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wswitch -Wsign-compare -Wshadow -Wformat -Wtype-limits -Wundef -Werror -Wmissing-prototypes -Wstrict-prototypes -DOPENSSL_USE_NODELETE -DL_ENDIAN -DOPENSSL_PIC -DOPENSSL_BUILDING_OPENSSL -DNDEBUG 
+CPUINFO: OPENSSL_ia32cap=0xfffa32035f8bffff:0xd01e4fbb
+
+paillier type           a            b   encrypt(b)/s   decrypt(b)/s   add(a,b)/s   sub(a,b)/s   mul(a,b)/s
+paillier_512            9           10          809.9          816.0     155282.4      2659.3      51289.5
+paillier_512            9       100000          824.4          828.2     156113.6      2592.7      51374.0
+paillier_512            9    100000000          835.0          844.8     156864.7      2632.1      50354.7
+paillier_512            9          -10          818.8          816.7     153738.4      2650.2      51297.2
+paillier_512            9      -100000          822.0          831.8     153803.5      2650.7      50844.6
+paillier_512            9   -100000000          809.6          830.3     157658.5      2651.4      51639.3
+paillier_1024           9           10          115.0          114.5      54426.1      1082.2      16635.3
+paillier_1024           9       100000          113.6          112.0      53076.1      1090.8      16895.4
+paillier_1024           9    100000000          112.2          112.6      54595.4      1107.6      17208.9
+paillier_1024           9          -10          115.8          115.3      54722.0      1094.3      16542.5
+paillier_1024           9      -100000          109.2          115.9      53883.1      1127.6      16933.8
+paillier_1024           9   -100000000          115.8          115.7      53821.0      1114.4      17107.5
+paillier_2048           9           10           14.7           14.5      15460.5       364.9       5334.3
+paillier_2048           9       100000           14.8           15.0      15674.4       371.2       5447.9
+paillier_2048           9    100000000           15.0           14.7      15252.9       363.6       5309.0
+paillier_2048           9          -10           14.9           14.8      15480.6       374.4       5409.4
+paillier_2048           9      -100000           14.7           14.8      15618.6       365.9       5361.0
+paillier_2048           9   -100000000           14.9           14.8      15433.7       371.0       5300.8
+paillier_3072           9           10            4.4            4.4       7260.0       181.4       2505.2
+paillier_3072           9       100000            4.5            4.5       7499.8       180.4       2543.3
+paillier_3072           9    100000000            4.5            4.5       7442.2       177.7       2495.2
+paillier_3072           9          -10            4.5            4.5       7465.0       180.3       2502.9
+paillier_3072           9      -100000            4.4            4.5       7318.9       181.0       2496.1
+paillier_3072           9   -100000000            4.5            4.5       7288.3       179.6       2521.9
+paillier_4096           9           10            1.9            1.9       4457.3       110.7       1443.0
+paillier_4096           9       100000            1.9            1.9       4356.7       106.8       1410.3
+paillier_4096           9    100000000            1.9            1.9       4453.6       106.1       1470.3
+paillier_4096           9          -10            1.9            1.9       4504.4       110.1       1461.6
+paillier_4096           9      -100000            1.9            1.9       4414.5       105.9       1434.7
+paillier_4096           9   -100000000            1.9            1.9       4488.2       109.4       1453.7
+paillier_7680           9           10            0.3            0.3       1364.1        34.5        423.3
+paillier_7680           9       100000            0.3            0.3       1357.2        35.0        428.6
+paillier_7680           9    100000000            0.3            0.3       1349.3        34.8        425.6
+paillier_7680           9          -10            0.3            0.3       1360.1        34.4        419.4
+paillier_7680           9      -100000            0.3            0.3       1362.2        34.3        422.0
+paillier_7680           9   -100000000            0.3            0.3       1344.2        34.1        422.9
