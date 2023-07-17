@@ -595,6 +595,15 @@ const BIGNUM *BN_get0_nist_prime_256(void);
 const BIGNUM *BN_get0_nist_prime_384(void);
 const BIGNUM *BN_get0_nist_prime_521(void);
 
+/*
+ * faster mod functions for the sm2 prime, 0 <= a < p^2
+ */
+# ifndef OPENSSL_NO_SM2
+int BN_sm2_mod_256(BIGNUM *r, const BIGNUM *a, const BIGNUM *p, BN_CTX *ctx);
+
+const BIGNUM *BN_get0_sm2_prime_256(void);
+# endif
+
 int (*BN_nist_mod_func(const BIGNUM *p)) (BIGNUM *r, const BIGNUM *a,
                                           const BIGNUM *field, BN_CTX *ctx);
 

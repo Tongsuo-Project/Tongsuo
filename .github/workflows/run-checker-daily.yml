@@ -48,6 +48,7 @@ jobs:
           no-ecdh,
           no-ecdsa,
           enable-ec_nistp_64_gcc_128,
+          enable-ec_sm2p_64_gcc_128
           no-ec_nistp_64_gcc_128,
           enable-egd,
           no-egd,

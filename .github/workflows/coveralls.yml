@@ -22,7 +22,7 @@ jobs:
       run: |
         sudo apt-get -yq install lcov
     - name: config
-      run: CC=gcc ./config --banner=Configured --debug --coverage no-asm enable-rc5 enable-ssl3 enable-nextprotoneg enable-ssl3-method enable-weak-ssl-ciphers enable-zlib enable-ec_nistp_64_gcc_128 no-shared enable-buildtest-c++ enable-external-tests -DPEDANTIC -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION enable-ntls enable-cert-compression enable-delegated-credential enable-status enable-ec_elgamal enable-paillier
+      run: CC=gcc ./config --banner=Configured --debug --coverage no-asm enable-rc5 enable-ssl3 enable-nextprotoneg enable-ssl3-method enable-weak-ssl-ciphers enable-zlib enable-ec_nistp_64_gcc_128 enable-ec_sm2p_64_gcc_128 no-shared enable-buildtest-c++ enable-external-tests -DPEDANTIC -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION enable-ntls enable-cert-compression enable-delegated-credential enable-status enable-ec_elgamal enable-paillier
     - name: config dump
       run: ./configdata.pm --dump
     - name: make
