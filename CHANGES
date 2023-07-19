@@ -10,6 +10,8 @@
 
  Changes between 8.3.0 and 8.4.0-pre1 [07 Jun 2023]
 
+  *) 支持零知识证明算法-NIZKPoK 和实现 ZKP 范围证明工具
+
   *) 修复CVE-2023-2650
 
   *) 支持零知识证明算法-bulletproofs (r1cs)
