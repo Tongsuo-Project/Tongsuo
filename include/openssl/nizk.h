@@ -43,7 +43,8 @@ NIZK_PUB_PARAM *NIZK_PUB_PARAM_new(const EC_GROUP *group, const EC_POINT *G,
 void NIZK_PUB_PARAM_free(NIZK_PUB_PARAM *pp);
 int NIZK_PUB_PARAM_up_ref(NIZK_PUB_PARAM *pp);
 int NIZK_PUB_PARAM_down_ref(NIZK_PUB_PARAM *pp);
-NIZK_WITNESS *NIZK_WITNESS_new(const NIZK_PUB_PARAM *pp);
+NIZK_WITNESS *NIZK_WITNESS_new(const NIZK_PUB_PARAM *pp, const BIGNUM *r,
+                               const BIGNUM *v);
 void NIZK_WITNESS_free(NIZK_WITNESS *witness);
 int NIZK_WITNESS_up_ref(NIZK_WITNESS *witness);
 int NIZK_WITNESS_down_ref(NIZK_WITNESS *witness);

@@ -9,7 +9,7 @@
 
 #include <openssl/err.h>
 #include "internal/endian.h"
-#include "../common/zkp_util.h"
+#include <crypto/zkp/common/zkp_util.h>
 #include "nizk.h"
 #include "nizk_plaintext_knowledge.h"
 #include "nizk_plaintext_equality.h"

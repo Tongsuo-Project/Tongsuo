@@ -10,8 +10,8 @@
 #include <openssl/err.h>
 #include <crypto/ec.h>
 #include <crypto/ec/ec_elgamal.h>
+#include <crypto/zkp/common/zkp_util.h>
 #include "nizk_plaintext_knowledge.h"
-#include "../common/zkp_util.h"
 
 NIZK_PLAINTEXT_KNOWLEDGE_CTX *NIZK_PLAINTEXT_KNOWLEDGE_CTX_new(ZKP_TRANSCRIPT *transcript,
                                                                NIZK_PUB_PARAM *pp,
@@ -117,7 +117,7 @@ NIZK_PLAINTEXT_KNOWLEDGE_PROOF *NIZK_PLAINTEXT_KNOWLEDGE_PROOF_prove(NIZK_PLAINT
     ZKP_TRANSCRIPT *transcript;
     NIZK_PUB_PARAM *pp;
     NIZK_WITNESS *witness;
-    NIZK_PLAINTEXT_KNOWLEDGE_PROOF *proof = NULL;
+    NIZK_PLAINTEXT_KNOWLEDGE_PROOF *proof = NULL, *ret = NULL;
     const BIGNUM *order;
     EC_GROUP *group;
     BN_CTX *bn_ctx = NULL;
@@ -130,7 +130,7 @@ NIZK_PLAINTEXT_KNOWLEDGE_PROOF *NIZK_PLAINTEXT_KNOWLEDGE_PROOF_prove(NIZK_PLAINT
     }
 
     if (!(proof = NIZK_PLAINTEXT_KNOWLEDGE_PROOF_new(ctx)))
-        goto err;
+        return NULL;
 
     pp = ctx->pp;
     witness = ctx->witness;
@@ -181,14 +181,14 @@ NIZK_PLAINTEXT_KNOWLEDGE_PROOF *NIZK_PLAINTEXT_KNOWLEDGE_PROOF_prove(NIZK_PLAINT
         || !BN_mod_add(proof->z2, b, t, order, bn_ctx))
         goto err;
 
-    BN_CTX_free(bn_ctx);
-    zkp_poly_points_free(poly);
-    return proof;
+    ret = proof;
+    proof = NULL;
 err:
     BN_CTX_free(bn_ctx);
     zkp_poly_points_free(poly);
     NIZK_PLAINTEXT_KNOWLEDGE_PROOF_free(proof);
-    return NULL;
+    ZKP_TRANSCRIPT_reset(transcript);
+    return ret;
 }
 
 int NIZK_PLAINTEXT_KNOWLEDGE_PROOF_verify(NIZK_PLAINTEXT_KNOWLEDGE_CTX *ctx,
@@ -199,7 +199,7 @@ int NIZK_PLAINTEXT_KNOWLEDGE_PROOF_verify(NIZK_PLAINTEXT_KNOWLEDGE_CTX *ctx,
     NIZK_PUB_PARAM *pp;
     EC_GROUP *group;
     BN_CTX *bn_ctx = NULL;
-    BIGNUM *e, *bn1;
+    BIGNUM *e, *bn1, *bn_1;
     EC_POINT *L = NULL, *R = NULL;
     zkp_poly_points_t *poly = NULL;
 
@@ -220,11 +220,14 @@ int NIZK_PLAINTEXT_KNOWLEDGE_PROOF_verify(NIZK_PLAINTEXT_KNOWLEDGE_CTX *ctx,
         goto err;
 
     e = BN_CTX_get(bn_ctx);
+    bn_1 = BN_CTX_get(bn_ctx);
     bn1 = BN_CTX_get(bn_ctx);
     if (bn1 == NULL)
         goto err;
 
     BN_one(bn1);
+    BN_one(bn_1);
+    BN_set_negative(bn_1, 1);
 
     if (!ZKP_TRANSCRIPT_append_point(transcript, "PK", ctx->PK, group)
         || !ZKP_TRANSCRIPT_append_point(transcript, "C1", ctx->ct->C1, group)
@@ -239,17 +242,18 @@ int NIZK_PLAINTEXT_KNOWLEDGE_PROOF_verify(NIZK_PLAINTEXT_KNOWLEDGE_CTX *ctx,
     if (!EC_POINT_mul(group, L, NULL, ctx->PK, proof->z1, bn_ctx))
         goto err;
 
-    if (!(poly = zkp_poly_points_new(2)))
+    if (!(poly = zkp_poly_points_new(3)))
         goto err;
 
     if (!zkp_poly_points_append(poly, proof->A, bn1)
-        || !zkp_poly_points_append(poly, ctx->ct->C1, e))
+        || !zkp_poly_points_append(poly, ctx->ct->C1, e)
+        || !zkp_poly_points_append(poly, L, bn_1))
         goto err;
 
     if (!zkp_poly_points_mul(poly, R, NULL, group, bn_ctx))
         goto err;
 
-    if (EC_POINT_cmp(group, L, R, bn_ctx) != 0)
+    if (!EC_POINT_is_at_infinity(group, R))
         goto err;
 
     zkp_poly_points_reset(poly);
@@ -264,13 +268,14 @@ int NIZK_PLAINTEXT_KNOWLEDGE_PROOF_verify(NIZK_PLAINTEXT_KNOWLEDGE_CTX *ctx,
     zkp_poly_points_reset(poly);
 
     if (!zkp_poly_points_append(poly, proof->B, bn1)
-        || !zkp_poly_points_append(poly, ctx->ct->C2, e))
+        || !zkp_poly_points_append(poly, ctx->ct->C2, e)
+        || !zkp_poly_points_append(poly, L, bn_1))
         goto err;
 
     if (!zkp_poly_points_mul(poly, R, NULL, group, bn_ctx))
         goto err;
 
-    if (EC_POINT_cmp(group, L, R, bn_ctx) != 0)
+    if (!EC_POINT_is_at_infinity(group, R))
         goto err;
 
     ret = 1;
@@ -278,5 +283,6 @@ err:
     EC_POINT_free(L);
     EC_POINT_free(R);
     zkp_poly_points_free(poly);
+    ZKP_TRANSCRIPT_reset(transcript);
     return ret;
 }

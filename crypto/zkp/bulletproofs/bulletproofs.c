@@ -13,6 +13,10 @@
 #include <crypto/zkp/common/zkp_util.h>
 #include "bulletproofs.h"
 
+DEFINE_STACK_OF(BIGNUM)
+DEFINE_STACK_OF(EC_POINT)
+DEFINE_STACK_OF(BP_VARIABLE)
+
 /** Creates a new BP_PUB_PARAM object
  *  \param  group           underlying EC_GROUP object
  *  \param  gens_capacity   the number of generators to precompute for each party.

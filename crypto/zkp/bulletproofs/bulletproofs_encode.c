@@ -15,6 +15,10 @@
 #include "range_proof.h"
 #include "r1cs.h"
 
+DEFINE_STACK_OF(BIGNUM)
+DEFINE_STACK_OF(EC_POINT)
+DEFINE_STACK_OF(BP_VARIABLE)
+
 static point_conversion_form_t form = POINT_CONVERSION_COMPRESSED;
 
 static int bp_stack_of_variable_encode(STACK_OF(BP_VARIABLE) *sk, unsigned char *out,

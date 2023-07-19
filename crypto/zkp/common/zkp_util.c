@@ -145,6 +145,46 @@ size_t zkp_point2oct(const EC_GROUP *group, const EC_POINT *P,
     return plen;
 }
 
+int zkp_point2point(const EC_GROUP *group, const EC_POINT *P, EC_POINT *H, BN_CTX *bn_ctx)
+{
+    int ret = 0;
+    size_t len;
+    unsigned char *buf = NULL;
+    BN_CTX *bctx = NULL;
+
+    if (group == NULL || P == NULL || H == NULL)
+        return -1;
+
+    if (bn_ctx == NULL) {
+        bctx = bn_ctx = BN_CTX_new();
+    }
+
+    if (bn_ctx == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+
+    len = EC_POINT_point2oct(group, P, POINT_CONVERSION_COMPRESSED, NULL, 0, bn_ctx);
+    if (len <= 0)
+        goto err;
+
+    buf = OPENSSL_zalloc(len);
+    if (buf == NULL)
+        goto err;
+
+    if (!EC_POINT_point2oct(group, P, POINT_CONVERSION_COMPRESSED, buf, len, bn_ctx))
+        goto err;
+
+    if (!EC_POINT_from_string(group, H, buf, len))
+        goto err;
+
+    ret = 1;
+err:
+    OPENSSL_free(buf);
+    BN_CTX_free(bctx);
+    return ret;
+}
+
 int zkp_bin_hash2bn(const unsigned char *data, size_t len, BIGNUM *r)
 {
     int ret = 0;

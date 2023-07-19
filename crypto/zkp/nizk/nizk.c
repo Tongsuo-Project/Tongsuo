@@ -11,6 +11,7 @@
 #include <openssl/zkpnizkerr.h>
 #include <crypto/ec.h>
 #include <crypto/ec/ec_local.h>
+#include <crypto/zkp/common/zkp_util.h>
 #include "nizk.h"
 
 NIZK_PUB_PARAM *NIZK_PUB_PARAM_new(const EC_GROUP *group, const EC_POINT *G,
@@ -18,7 +19,7 @@ NIZK_PUB_PARAM *NIZK_PUB_PARAM_new(const EC_GROUP *group, const EC_POINT *G,
 {
     NIZK_PUB_PARAM *pp = NULL;
 
-    if (group == NULL || G == NULL || H == NULL) {
+    if (group == NULL) {
         ERR_raise(ERR_LIB_ZKP_NIZK, ERR_R_PASSED_NULL_PARAMETER);
         return NULL;
     }
@@ -30,11 +31,21 @@ NIZK_PUB_PARAM *NIZK_PUB_PARAM_new(const EC_GROUP *group, const EC_POINT *G,
     }
 
     pp->group = EC_GROUP_dup(group);
-    pp->G = EC_POINT_dup(G, group);
-    pp->H = EC_POINT_dup(H, group);
+    pp->G = EC_POINT_dup(G ? G : EC_GROUP_get0_generator(group), group);
+
+    if (H != NULL) {
+        pp->H = EC_POINT_dup(H, group);
+    } else {
+        pp->H = EC_POINT_new(group);
+    }
 
     if (pp->group == NULL || pp->G == NULL || pp->H == NULL)
         goto err;
+
+    if (H == NULL) {
+        if (!zkp_point2point(group, pp->G, pp->H, NULL))
+            goto err;
+    }
 
     pp->references = 1;
     if ((pp->lock = CRYPTO_THREAD_lock_new()) == NULL) {
@@ -108,7 +119,8 @@ int NIZK_PUB_PARAM_down_ref(NIZK_PUB_PARAM *pp)
  *  \param  pp           underlying NIZK_PUB_PARAM object
  *  \return newly created NIZK_WITNESS object or NULL in case of an error
  */
-NIZK_WITNESS *NIZK_WITNESS_new(const NIZK_PUB_PARAM *pp)
+NIZK_WITNESS *NIZK_WITNESS_new(const NIZK_PUB_PARAM *pp, const BIGNUM *r,
+                               const BIGNUM *v)
 {
     NIZK_WITNESS *witness = NULL;
 
@@ -128,6 +140,16 @@ NIZK_WITNESS *NIZK_WITNESS_new(const NIZK_PUB_PARAM *pp)
         ERR_raise(ERR_LIB_ZKP_NIZK, ERR_R_MALLOC_FAILURE);
         goto err;
     }
+
+    if (r != NULL) {
+        if (!BN_copy(witness->r, r))
+            goto err;
+    } else {
+        zkp_rand_range(witness->r, witness->order);
+    }
+
+    if (v != NULL && !BN_copy(witness->v, v))
+        goto err;
 
     witness->references = 1;
     if ((witness->lock = CRYPTO_THREAD_lock_new()) == NULL) {

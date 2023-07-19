@@ -40,6 +40,8 @@
 # define ZKP_R_BULLETPROOFS_RANGE_VERIFY_FAILED           102
 # define ZKP_R_NIZK_PLAINTEXT_KNOWLEDGE_PROVE_FAILED      103
 # define ZKP_R_NIZK_PLAINTEXT_KNOWLEDGE_VERIFY_FAILED     104
+# define ZKP_R_RANGE_PROVE_FAILED                         105
+# define ZKP_R_RANGE_VERIFY_FAILED                        106
 # define ZKP_R_TRANSCRIPT_INIT_FAILED                     100
 
 #endif

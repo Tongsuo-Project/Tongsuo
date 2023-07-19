@@ -370,7 +370,7 @@ EC_ELGAMAL_MR_CIPHERTEXT *EC_ELGAMAL_MR_CIPHERTEXT_dup(const EC_ELGAMAL_MR_CIPHE
         return NULL;
     }
 
-    sk_C1 = sk_EC_POINT_dup(ct->sk_C1);
+    sk_C1 = sk_EC_POINT_new_reserve(NULL, sk_EC_POINT_num(ct->sk_C1));
     if (sk_C1 == NULL)
         goto err;
 

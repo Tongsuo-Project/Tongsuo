@@ -161,6 +161,15 @@ err:
 #endif
 }
 
+EC_ELGAMAL_CTX *EC_ELGAMAL_CTX_dup(EC_ELGAMAL_CTX *ctx)
+{
+#ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
+    return EC_ELGAMAL_CTX_new(ctx->key, ctx->h, ctx->flag);
+#else
+    return EC_ELGAMAL_CTX_new(ctx->key, NULL, ctx->flag);
+#endif
+}
+
 /** Frees a EC_ELGAMAL_CTX object
  *  \param  ctx  EC_ELGAMAL_CTX object to be freed
  */
@@ -325,10 +334,35 @@ void EC_ELGAMAL_MR_CTX_free(EC_ELGAMAL_MR_CTX *ctx)
 int EC_ELGAMAL_encrypt(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r, int32_t plaintext)
 {
     int ret = 0;
-    BN_CTX *bn_ctx = NULL;
-    BIGNUM *bn_plain = NULL, *rand = NULL;
+    BIGNUM *bn_plain = NULL;
 
     if (ctx == NULL || ctx->key == NULL || ctx->key->pub_key == NULL || r == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_PASSED_NULL_PARAMETER);
+        return ret;
+    }
+
+    bn_plain = BN_new();
+    if (bn_plain == NULL)
+        return ret;
+
+    BN_set_word(bn_plain, (BN_ULONG)(plaintext > 0 ? plaintext : -(int64_t)plaintext));
+    BN_set_negative(bn_plain, plaintext < 0 ? 1 : 0);
+
+    ret = EC_ELGAMAL_bn_encrypt(ctx, r, bn_plain, NULL);
+
+    BN_free(bn_plain);
+    return ret;
+}
+
+int EC_ELGAMAL_bn_encrypt(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r,
+                          const BIGNUM *plaintext, const BIGNUM *rand)
+{
+    int ret = 0;
+    BN_CTX *bn_ctx = NULL;
+    BIGNUM *random = NULL;
+
+    if (ctx == NULL || ctx->key == NULL || ctx->key->pub_key == NULL
+        || r == NULL || plaintext == NULL) {
         ERR_raise(ERR_LIB_EC, ERR_R_PASSED_NULL_PARAMETER);
         return ret;
     }
@@ -340,9 +374,8 @@ int EC_ELGAMAL_encrypt(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r, int32_t pl
     }
 
     BN_CTX_start(bn_ctx);
-    bn_plain = BN_CTX_get(bn_ctx);
-    rand = BN_CTX_get(bn_ctx);
-    if (rand == NULL) {
+    random = BN_CTX_get(bn_ctx);
+    if (random == NULL) {
         ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
         goto err;
     }
@@ -359,27 +392,27 @@ int EC_ELGAMAL_encrypt(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r, int32_t pl
             goto err;
     }
 
-    BN_rand_range(rand, EC_GROUP_get0_order(ctx->key->group));
-
-    BN_set_word(bn_plain, (BN_ULONG)(plaintext > 0 ? plaintext : -(int64_t)plaintext));
-    BN_set_negative(bn_plain, plaintext < 0 ? 1 : 0);
+    if (rand == NULL)
+        BN_rand_range(random, EC_GROUP_get0_order(ctx->key->group));
+    else
+        random = (BIGNUM *)rand;
 
 #ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
     if (ctx->flag == EC_ELGAMAL_FLAG_TWISTED) {
         if (!EC_POINT_mul(ctx->key->group, r->C1, NULL, ctx->key->pub_key,
-                          rand, bn_ctx))
+                          random, bn_ctx))
             goto err;
 
-        if (!EC_POINT_mul(ctx->key->group, r->C2, rand, ctx->h,
-                          bn_plain, bn_ctx))
+        if (!EC_POINT_mul(ctx->key->group, r->C2, random, ctx->h,
+                          plaintext, bn_ctx))
             goto err;
     } else {
 #endif
-        if (!EC_POINT_mul(ctx->key->group, r->C1, rand, NULL, NULL, bn_ctx))
+        if (!EC_POINT_mul(ctx->key->group, r->C1, random, NULL, NULL, bn_ctx))
             goto err;
 
-        if (!EC_POINT_mul(ctx->key->group, r->C2, bn_plain, ctx->key->pub_key,
-                          rand, bn_ctx))
+        if (!EC_POINT_mul(ctx->key->group, r->C2, plaintext, ctx->key->pub_key,
+                          random, bn_ctx))
             goto err;
 #ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
     }
@@ -401,23 +434,23 @@ err:
     return ret;
 }
 
-/** Encrypts an Integer with additadive homomorphic EC-ElGamal
+/** Encryption with one plaintext for multiple recipients.
  *  \param  ctx        EC_ELGAMAL_CTX object.
  *  \param  r          EC_ELGAMAL_CIPHERTEXT_MR object that stores the result of
  *                     the encryption
- *  \param  plaintext  The plaintext integer to be encrypted
+ *  \param  plaintext  The plaintext BIGNUM object to be encrypted
  *  \return 1 on success and 0 otherwise
  */
 int EC_ELGAMAL_MR_encrypt(EC_ELGAMAL_MR_CTX *ctx, EC_ELGAMAL_MR_CIPHERTEXT *r,
-                          int32_t plaintext, BIGNUM *rand)
+                          const BIGNUM *plaintext, BIGNUM *rand)
 {
     int ret = 0, i;
     EC_KEY *key;
     BN_CTX *bn_ctx = NULL;
-    BIGNUM *bn_plain = NULL, *random = NULL;
+    BIGNUM *random = NULL;
     EC_POINT *C1 = NULL;
 
-    if (ctx == NULL || ctx->sk_key == NULL || r == NULL) {
+    if (ctx == NULL || ctx->sk_key == NULL || r == NULL || plaintext == NULL) {
         ERR_raise(ERR_LIB_EC, ERR_R_PASSED_NULL_PARAMETER);
         return ret;
     }
@@ -429,7 +462,6 @@ int EC_ELGAMAL_MR_encrypt(EC_ELGAMAL_MR_CTX *ctx, EC_ELGAMAL_MR_CIPHERTEXT *r,
     }
 
     BN_CTX_start(bn_ctx);
-    bn_plain = BN_CTX_get(bn_ctx);
     random = BN_CTX_get(bn_ctx);
     if (random == NULL) {
         ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
@@ -458,9 +490,6 @@ int EC_ELGAMAL_MR_encrypt(EC_ELGAMAL_MR_CTX *ctx, EC_ELGAMAL_MR_CIPHERTEXT *r,
         rand = random;
     }
 
-    BN_set_word(bn_plain, (BN_ULONG)(plaintext > 0 ? plaintext : -(int64_t)plaintext));
-    BN_set_negative(bn_plain, plaintext < 0 ? 1 : 0);
-
 #ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
     if (ctx->flag == EC_ELGAMAL_FLAG_TWISTED) {
         for (i = 0; i < sk_EC_KEY_num(ctx->sk_key); i++) {
@@ -479,7 +508,7 @@ int EC_ELGAMAL_MR_encrypt(EC_ELGAMAL_MR_CTX *ctx, EC_ELGAMAL_MR_CIPHERTEXT *r,
             C1 = NULL;
         }
 
-        if (!EC_POINT_mul(ctx->group, r->C2, rand, ctx->h, bn_plain, bn_ctx))
+        if (!EC_POINT_mul(ctx->group, r->C2, rand, ctx->h, plaintext, bn_ctx))
             goto err;
     } else {
 #endif
@@ -490,7 +519,7 @@ int EC_ELGAMAL_MR_encrypt(EC_ELGAMAL_MR_CTX *ctx, EC_ELGAMAL_MR_CIPHERTEXT *r,
             if (C1 == NULL)
                 goto err;
 
-            if (!EC_POINT_mul(ctx->group, C1, bn_plain, key->pub_key, rand, bn_ctx))
+            if (!EC_POINT_mul(ctx->group, C1, plaintext, key->pub_key, rand, bn_ctx))
                 goto err;
 
             if (sk_EC_POINT_push(r->sk_C1, C1) <= 0)

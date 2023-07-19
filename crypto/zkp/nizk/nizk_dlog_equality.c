@@ -10,8 +10,8 @@
 #include <openssl/err.h>
 #include <crypto/ec.h>
 #include <crypto/ec/ec_local.h>
+#include <crypto/zkp/common/zkp_util.h>
 #include "nizk_dlog_equality.h"
-#include "../common/zkp_util.h"
 
 NIZK_DLOG_EQUALITY_CTX *NIZK_DLOG_EQUALITY_CTX_new(ZKP_TRANSCRIPT *transcript,
                                                    NIZK_PUB_PARAM *pp,
@@ -113,7 +113,7 @@ NIZK_DLOG_EQUALITY_PROOF *NIZK_DLOG_EQUALITY_PROOF_prove(NIZK_DLOG_EQUALITY_CTX 
     ZKP_TRANSCRIPT *transcript;
     NIZK_PUB_PARAM *pp;
     NIZK_WITNESS *witness;
-    NIZK_DLOG_EQUALITY_PROOF *proof = NULL;
+    NIZK_DLOG_EQUALITY_PROOF *proof = NULL, *ret = NULL;
     const BIGNUM *order;
     EC_GROUP *group;
     BN_CTX *bn_ctx = NULL;
@@ -125,7 +125,7 @@ NIZK_DLOG_EQUALITY_PROOF *NIZK_DLOG_EQUALITY_PROOF_prove(NIZK_DLOG_EQUALITY_CTX 
     }
 
     if (!(proof = NIZK_DLOG_EQUALITY_PROOF_new(ctx)))
-        goto err;
+        return NULL;
 
     pp = ctx->pp;
     witness = ctx->witness;
@@ -165,12 +165,13 @@ NIZK_DLOG_EQUALITY_PROOF *NIZK_DLOG_EQUALITY_PROOF_prove(NIZK_DLOG_EQUALITY_CTX 
         || !BN_mod_add(proof->z, a, t, order, bn_ctx))
         goto err;
 
-    BN_CTX_free(bn_ctx);
-    return proof;
+    ret = proof;
+    proof = NULL;
 err:
     BN_CTX_free(bn_ctx);
     NIZK_DLOG_EQUALITY_PROOF_free(proof);
-    return NULL;
+    ZKP_TRANSCRIPT_reset(transcript);
+    return ret;
 }
 
 int NIZK_DLOG_EQUALITY_PROOF_verify(NIZK_DLOG_EQUALITY_CTX *ctx, NIZK_DLOG_EQUALITY_PROOF *proof)
@@ -254,6 +255,7 @@ err:
     EC_POINT_free(L);
     EC_POINT_free(R);
     zkp_poly_points_free(poly);
+    ZKP_TRANSCRIPT_reset(transcript);
     return ret;
 }
 

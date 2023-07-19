@@ -3,7 +3,7 @@ LIBS=../../libcrypto
 SOURCE[../../libcrypto]=common/zkp_util.c                                   \
                         common/zkp_transcript.c                             \
                         common/zkp_transcript_sha256.c                      \
-                        common/zkp_err.c                                    \
+                        common/zkp_err.c
 
 IF[{- !$disabled{bulletproofs} -}]
     SOURCE[../../libcrypto]=bulletproofs/bulletproofs.c                     \
@@ -26,4 +26,8 @@ IF[{- !$disabled{nizk} -}]
                             nizk/nizk_dlog_equality.c                       \
                             nizk/nizk_encode.c                              \
                             nizk/nizk_err.c
+ENDIF
+
+IF[{- !$disabled{'zkp-gadget'} -}]
+    SOURCE[../../libcrypto]=gadget/zkp_range_proof.c
 ENDIF
