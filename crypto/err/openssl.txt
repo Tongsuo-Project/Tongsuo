@@ -1739,4 +1739,6 @@ ZKP_R_NIZK_PLAINTEXT_KNOWLEDGE_PROVE_FAILED:103:\
 	nizk plaintext knowledge prove failed
 ZKP_R_NIZK_PLAINTEXT_KNOWLEDGE_VERIFY_FAILED:104:\
 	nizk plaintext knowledge verify failed
+ZKP_R_RANGE_PROVE_FAILED:105:range prove failed
+ZKP_R_RANGE_VERIFY_FAILED:106:range verify failed
 ZKP_R_TRANSCRIPT_INIT_FAILED:100:transcript init failed

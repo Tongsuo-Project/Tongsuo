@@ -1857,6 +1857,7 @@ typedef struct ec_elgamal_decrypt_table_st EC_ELGAMAL_DECRYPT_TABLE;
  *  \return newly created EC_ELGAMAL_CTX object or NULL in case of an error
  */
 EC_ELGAMAL_CTX *EC_ELGAMAL_CTX_new(EC_KEY *key, const EC_POINT *h, int32_t flag);
+EC_ELGAMAL_CTX *EC_ELGAMAL_CTX_dup(EC_ELGAMAL_CTX *ctx);
 
 /** Frees a EC_ELGAMAL_CTX object
  *  \param  ctx  EC_ELGAMAL_CTX object to be freed
@@ -1915,18 +1916,19 @@ void EC_ELGAMAL_CTX_set_decrypt_table(EC_ELGAMAL_CTX *ctx,
  *  \param  plaintext  The plaintext integer to be encrypted
  *  \return 1 on success and 0 otherwise
  */
-
 int EC_ELGAMAL_encrypt(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r, int32_t plaintext);
+int EC_ELGAMAL_bn_encrypt(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r,
+                          const BIGNUM *plaintext, const BIGNUM *rand);
 
-/** Encrypts an Integer with additadive homomorphic EC-ElGamal
+/** Encryption with one plaintext for multiple recipients.
  *  \param  ctx        EC_ELGAMAL_CTX object.
  *  \param  r          EC_ELGAMAL_CIPHERTEXT_MR object that stores the result of
  *                     the encryption
- *  \param  plaintext  The plaintext integer to be encrypted
+ *  \param  plaintext  The plaintext BIGNUM object to be encrypted
  *  \return 1 on success and 0 otherwise
  */
 int EC_ELGAMAL_MR_encrypt(EC_ELGAMAL_MR_CTX *ctx, EC_ELGAMAL_MR_CIPHERTEXT *r,
-                          int32_t plaintext, BIGNUM *rand);
+                          const BIGNUM *plaintext, BIGNUM *rand);
 
 /** Decrypts the ciphertext
  *  \param  ctx        EC_ELGAMAL_CTX object

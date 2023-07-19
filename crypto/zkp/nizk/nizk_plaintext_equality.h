@@ -18,10 +18,9 @@ extern "C" {
 
 # include <openssl/bn.h>
 # include <openssl/ec.h>
-# include <openssl/nizk.h>
 # include <crypto/ec/ec_elgamal.h>
+# include <crypto/zkp/common/zkp_transcript.h>
 # include "internal/refcount.h"
-# include "../common/zkp_transcript.h"
 # include "nizk.h"
 
 struct nizk_plaintext_equality_ctx_st {

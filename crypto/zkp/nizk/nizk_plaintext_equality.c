@@ -10,8 +10,8 @@
 #include <openssl/err.h>
 #include <crypto/ec.h>
 #include <crypto/ec/ec_elgamal.h>
+#include <crypto/zkp/common/zkp_util.h>
 #include "nizk_plaintext_equality.h"
-#include "../common/zkp_util.h"
 
 DEFINE_STACK_OF(EC_POINT)
 
@@ -105,6 +105,7 @@ NIZK_PLAINTEXT_EQUALITY_PROOF *NIZK_PLAINTEXT_EQUALITY_PROOF_new(NIZK_PLAINTEXT_
     }
 
     if ((proof->sk_A = sk_EC_POINT_new_null()) == NULL
+        || (proof->B = EC_POINT_new(ctx->pp->group)) == NULL
         || (proof->z = BN_new()) == NULL
         || (proof->t = BN_new()) == NULL)
         goto err;
@@ -138,7 +139,7 @@ NIZK_PLAINTEXT_EQUALITY_PROOF *NIZK_PLAINTEXT_EQUALITY_PROOF_prove(NIZK_PLAINTEX
     ZKP_TRANSCRIPT *transcript;
     NIZK_PUB_PARAM *pp;
     NIZK_WITNESS *witness;
-    NIZK_PLAINTEXT_EQUALITY_PROOF *proof = NULL;
+    NIZK_PLAINTEXT_EQUALITY_PROOF *proof = NULL, *ret = NULL;
     const BIGNUM *order;
     EC_GROUP *group;
     EC_POINT *A = NULL, *P;
@@ -158,7 +159,7 @@ NIZK_PLAINTEXT_EQUALITY_PROOF *NIZK_PLAINTEXT_EQUALITY_PROOF_prove(NIZK_PLAINTEX
     }
 
     if (!(proof = NIZK_PLAINTEXT_EQUALITY_PROOF_new(ctx)))
-        goto err;
+        return NULL;
 
     pp = ctx->pp;
     witness = ctx->witness;
@@ -229,15 +230,15 @@ NIZK_PLAINTEXT_EQUALITY_PROOF *NIZK_PLAINTEXT_EQUALITY_PROOF_prove(NIZK_PLAINTEX
         || !BN_mod_add(proof->t, b, t, order, bn_ctx))
         goto err;
 
-    BN_CTX_free(bn_ctx);
-    zkp_poly_points_free(poly);
-    return proof;
+    ret = proof;
+    proof = NULL;
 err:
     EC_POINT_free(A);
     BN_CTX_free(bn_ctx);
     zkp_poly_points_free(poly);
     NIZK_PLAINTEXT_EQUALITY_PROOF_free(proof);
-    return NULL;
+    ZKP_TRANSCRIPT_reset(transcript);
+    return ret;
 }
 
 int NIZK_PLAINTEXT_EQUALITY_PROOF_verify(NIZK_PLAINTEXT_EQUALITY_CTX *ctx,
@@ -350,5 +351,6 @@ err:
     EC_POINT_free(L);
     EC_POINT_free(R);
     zkp_poly_points_free(poly);
+    ZKP_TRANSCRIPT_reset(transcript);
     return ret;
 }

@@ -13,6 +13,10 @@
 #include <crypto/zkp/common/zkp_util.h>
 #include "range_proof.h"
 
+DEFINE_STACK_OF(BIGNUM)
+DEFINE_STACK_OF(EC_POINT)
+DEFINE_STACK_OF(BP_VARIABLE)
+
 static void bp_range_proof_cleanup(BP_RANGE_PROOF *proof);
 
 BP_RANGE_PROOF *bp_range_proof_alloc(const EC_GROUP *group)

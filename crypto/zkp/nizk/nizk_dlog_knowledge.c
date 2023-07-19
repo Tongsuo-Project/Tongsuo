@@ -10,8 +10,8 @@
 #include <openssl/err.h>
 #include <crypto/ec.h>
 #include <crypto/ec/ec_local.h>
+#include <crypto/zkp/common/zkp_util.h>
 #include "nizk_dlog_knowledge.h"
-#include "../common/zkp_util.h"
 
 NIZK_DLOG_KNOWLEDGE_CTX *NIZK_DLOG_KNOWLEDGE_CTX_new(ZKP_TRANSCRIPT *transcript,
                                                      NIZK_PUB_PARAM *pp,
@@ -101,7 +101,7 @@ NIZK_DLOG_KNOWLEDGE_PROOF *NIZK_DLOG_KNOWLEDGE_PROOF_prove(NIZK_DLOG_KNOWLEDGE_C
     ZKP_TRANSCRIPT *transcript;
     NIZK_PUB_PARAM *pp;
     NIZK_WITNESS *witness;
-    NIZK_DLOG_KNOWLEDGE_PROOF *proof = NULL;
+    NIZK_DLOG_KNOWLEDGE_PROOF *proof = NULL, *ret = NULL;
     const BIGNUM *order;
     EC_GROUP *group;
     BN_CTX *bn_ctx = NULL;
@@ -113,7 +113,7 @@ NIZK_DLOG_KNOWLEDGE_PROOF *NIZK_DLOG_KNOWLEDGE_PROOF_prove(NIZK_DLOG_KNOWLEDGE_C
     }
 
     if (!(proof = NIZK_DLOG_KNOWLEDGE_PROOF_new(ctx)))
-        goto err;
+        return NULL;
 
     pp = ctx->pp;
     witness = ctx->witness;
@@ -149,12 +149,13 @@ NIZK_DLOG_KNOWLEDGE_PROOF *NIZK_DLOG_KNOWLEDGE_PROOF_prove(NIZK_DLOG_KNOWLEDGE_C
         || !BN_mod_add(proof->z, a, t, order, bn_ctx))
         goto err;
 
-    BN_CTX_free(bn_ctx);
-    return proof;
+    ret = proof;
+    proof = NULL;
 err:
     BN_CTX_free(bn_ctx);
     NIZK_DLOG_KNOWLEDGE_PROOF_free(proof);
-    return NULL;
+    ZKP_TRANSCRIPT_reset(transcript);
+    return ret;
 }
 
 int NIZK_DLOG_KNOWLEDGE_PROOF_verify(NIZK_DLOG_KNOWLEDGE_CTX *ctx,
@@ -165,7 +166,7 @@ int NIZK_DLOG_KNOWLEDGE_PROOF_verify(NIZK_DLOG_KNOWLEDGE_CTX *ctx,
     NIZK_PUB_PARAM *pp;
     EC_GROUP *group;
     BN_CTX *bn_ctx = NULL;
-    BIGNUM *e, *bn1;
+    BIGNUM *e, *bn1, *bn_1;
     EC_POINT *L = NULL, *R = NULL;
     zkp_poly_points_t *poly = NULL;
 
@@ -187,10 +188,13 @@ int NIZK_DLOG_KNOWLEDGE_PROOF_verify(NIZK_DLOG_KNOWLEDGE_CTX *ctx,
 
     e = BN_CTX_get(bn_ctx);
     bn1 = BN_CTX_get(bn_ctx);
-    if (bn1 == NULL)
+    bn_1 = BN_CTX_get(bn_ctx);
+    if (bn_1 == NULL)
         goto err;
 
     BN_one(bn1);
+    BN_one(bn_1);
+    BN_set_negative(bn_1, 1);
 
     if (!ZKP_TRANSCRIPT_append_point(transcript, "G", pp->G, group)
         || !ZKP_TRANSCRIPT_append_point(transcript, "H", pp->H, group)
@@ -203,17 +207,18 @@ int NIZK_DLOG_KNOWLEDGE_PROOF_verify(NIZK_DLOG_KNOWLEDGE_CTX *ctx,
     if (!EC_POINT_mul(group, L, NULL, pp->G, proof->z, bn_ctx))
         goto err;
 
-    if (!(poly = zkp_poly_points_new(2)))
+    if (!(poly = zkp_poly_points_new(3)))
         goto err;
 
     if (!zkp_poly_points_append(poly, proof->A, bn1)
-        || !zkp_poly_points_append(poly, pp->H, e))
+        || !zkp_poly_points_append(poly, pp->H, e)
+        || !zkp_poly_points_append(poly, L, bn_1))
         goto err;
 
     if (!zkp_poly_points_mul(poly, R, NULL, group, bn_ctx))
         goto err;
 
-    if (EC_POINT_cmp(group, L, R, bn_ctx) != 0)
+    if (!EC_POINT_is_at_infinity(group, R))
         goto err;
 
     ret = 1;
@@ -221,6 +226,7 @@ err:
     EC_POINT_free(L);
     EC_POINT_free(R);
     zkp_poly_points_free(poly);
+    ZKP_TRANSCRIPT_reset(transcript);
     return ret;
 }
 

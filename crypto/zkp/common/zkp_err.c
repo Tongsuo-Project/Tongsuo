@@ -51,6 +51,9 @@ static const ERR_STRING_DATA ZKP_str_reasons[] = {
     "nizk plaintext knowledge prove failed"},
     {ERR_PACK(ERR_LIB_ZKP, 0, ZKP_R_NIZK_PLAINTEXT_KNOWLEDGE_VERIFY_FAILED),
     "nizk plaintext knowledge verify failed"},
+    {ERR_PACK(ERR_LIB_ZKP, 0, ZKP_R_RANGE_PROVE_FAILED), "range prove failed"},
+    {ERR_PACK(ERR_LIB_ZKP, 0, ZKP_R_RANGE_VERIFY_FAILED),
+    "range verify failed"},
     {ERR_PACK(ERR_LIB_ZKP, 0, ZKP_R_TRANSCRIPT_INIT_FAILED),
     "transcript init failed"},
     {0, NULL}

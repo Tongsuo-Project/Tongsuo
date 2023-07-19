@@ -509,6 +509,7 @@ my @disablables = (
     "paillier",
     "bulletproofs",
     "nizk",
+    "zkp-gadget",
     "bn-method"
     );
 foreach my $proto ((@tls, @dtls))
@@ -574,6 +575,7 @@ our %disabled = ( # "what"         => "comment"
                   "paillier"            => "default",
                   "bulletproofs"        => "default",
                   "nizk"                => "default",
+                  "zkp-gadget"          => "default",
                   "bn-method"           => "default",
                 );
 
@@ -1109,6 +1111,19 @@ if (!defined($disabled{'nizk'})) {
     die "nizk only supports api with 1.1.1\n"
         if ($config{api} && $config{api} != $apitable->{"1.1.1"});
     $config{api}=$apitable->{"1.1.1"};
+    die "nizk depends on twisted_ec_elgamal\n"
+        if (defined($disabled{'twisted_ec_elgamal'}));
+}
+
+if (!defined($disabled{'zkp-gadget'})) {
+    die "zkp-gadget only supports api with 1.1.1\n"
+        if ($config{api} && $config{api} != $apitable->{"1.1.1"});
+    die "zkp-gadget depends on bulletproofs\n"
+        if (defined($disabled{'bulletproofs'}));
+    die "zkp-gadget depends on nizk\n"
+        if (defined($disabled{'nizk'}));
+    die "zkp-gadget depends on twisted_ec_elgamal\n"
+        if (defined($disabled{'twisted_ec_elgamal'}));
 }
 
 if (!defined($disabled{'bn-method'})) {
