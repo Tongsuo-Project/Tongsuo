@@ -74,6 +74,7 @@ void NIZK_PUB_PARAM_free(NIZK_PUB_PARAM *pp)
     EC_POINT_free(pp->G);
     EC_POINT_free(pp->H);
     EC_GROUP_free(pp->group);
+    CRYPTO_THREAD_lock_free(pp->lock);
     OPENSSL_clear_free((void *)pp, sizeof(*pp));
 }
 

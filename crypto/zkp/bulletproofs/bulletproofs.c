@@ -358,6 +358,7 @@ void BP_WITNESS_free(BP_WITNESS *witness)
     sk_BP_VARIABLE_pop_free(witness->sk_V, BP_VARIABLE_free);
     EC_POINT_free(witness->H);
     EC_GROUP_free(witness->group);
+    CRYPTO_THREAD_lock_free(witness->lock);
     OPENSSL_free(witness);
 }
 
