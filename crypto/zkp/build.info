@@ -1,9 +1,14 @@
 LIBS=../../libcrypto
 
-SOURCE[../../libcrypto]=common/zkp_util.c                                   \
-                        common/zkp_transcript.c                             \
-                        common/zkp_transcript_sha256.c                      \
-                        common/zkp_err.c
+IF[{- !$disabled{bulletproofs} || !$disabled{nizk} || !$disabled{'zkp-gadget'} -}]
+    SOURCE[../../libcrypto]=common/zkp_util.c                               \
+                            common/zkp_err.c
+ENDIF
+
+IF[{- !$disabled{'zkp-transcript'} -}]
+    SOURCE[../../libcrypto]=common/zkp_transcript.c                         \
+                            common/zkp_transcript_sha256.c
+ENDIF
 
 IF[{- !$disabled{bulletproofs} -}]
     SOURCE[../../libcrypto]=bulletproofs/bulletproofs.c                     \
