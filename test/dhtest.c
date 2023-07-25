@@ -124,6 +124,15 @@ static int dh_test(void)
     /* We'll have a stale error on the queue from the above test so clear it */
     ERR_clear_error();
 
+    if (!TEST_ptr(BN_copy(q, p)) || !TEST_true(BN_add(q, q, BN_value_one())))
+        goto err3;
+
+    if (!TEST_true(DH_check(dh, &i)))
+        goto err3;
+    if (!TEST_true(i & DH_CHECK_INVALID_Q_VALUE)
+        || !TEST_false(i & DH_CHECK_Q_NOT_PRIME))
+        goto err3;
+
     /* Modulus of size: dh check max modulus bits + 1 */
     if (!TEST_true(BN_set_word(p, 1))
             || !TEST_true(BN_lshift(p, p, OPENSSL_DH_CHECK_MAX_MODULUS_BITS)))
@@ -134,6 +143,9 @@ static int dh_test(void)
      */
     if (!TEST_false(DH_check(dh, &i)))
         goto err3;
+
+    /* We'll have a stale error on the queue from the above test so clear it */
+    ERR_clear_error();
 
     /*
      * II) key generation
@@ -588,7 +600,7 @@ static int rfc5114_test(void)
 
         if (!TEST_ptr(priv_key = BN_bin2bn(td->xB, td->xB_len, NULL))
                 || !TEST_ptr(pub_key = BN_bin2bn(td->yB, td->yB_len, NULL))
-                || !TEST_true( DH_set0_key(dhB, pub_key, priv_key)))
+                || !TEST_true(DH_set0_key(dhB, pub_key, priv_key)))
             goto bad_err;
         priv_key = pub_key = NULL;
 
