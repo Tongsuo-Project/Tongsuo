@@ -2,10 +2,17 @@
  Tongsuo CHANGES
  _______________
 
- Changes between 8.3.0 and 8.4.0 [xx XXX xxxx]
+ Changes between 8.4.0-pre1 and 8.4.0-pre2 [xx XXX xxxx]
+
+ *) 修复CVE-2023-3446
+
+ *) 修复CVE-2023-2975
+
   *) 实现基于64位平台架构的SM2算法性能优化
 
   *) 实现基于SM2曲线参数特化的快速模约减和快速模逆元算法
+
+ Changes between 8.3.0 and 8.4.0-pre1 [07 Jun 2023]
 
   *) 修复CVE-2023-2650
 
