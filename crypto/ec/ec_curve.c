@@ -3108,7 +3108,12 @@ static const ec_list_element curve_list[] = {
     {NID_brainpoolP512t1, &_EC_brainpoolP512t1.h, 0,
      "RFC 5639 curve over a 512 bit prime field"},
 # ifndef OPENSSL_NO_SM2
-    {NID_sm2, &_EC_sm2p256v1.h, 0,
+    {NID_sm2, &_EC_sm2p256v1.h,
+# if !defined(OPENSSL_NO_EC_SM2P_64_GCC_128)
+     EC_GFp_sm2p256_method,
+# else
+     0,
+# endif
      "SM2 curve over a 256 bit prime field"},
 # endif
 };

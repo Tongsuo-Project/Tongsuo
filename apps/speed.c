@@ -555,11 +555,17 @@ static double ec_elgamal_results[EC_ELGAMAL_NUM][EC_ELGAMAL_PLAINTEXTS_NUM][6];
 
 #ifndef OPENSSL_NO_PAILLIER
 enum {
-    R_PAILLIER_G_OPTIMIZE,
+    R_PAILLIER_512, R_PAILLIER_1024, R_PAILLIER_2048, R_PAILLIER_3072,
+    R_PAILLIER_4096, R_PAILLIER_7680, PAILLIER_NUM
 };
 
 static OPT_PAIR paillier_choices[] = {
-    {"ecelgamalp160", R_PAILLIER_G_OPTIMIZE},
+    {"paillier512", R_PAILLIER_512},
+    {"paillier1024", R_PAILLIER_1024},
+    {"paillier2048", R_PAILLIER_2048},
+    {"paillier3072", R_PAILLIER_3072},
+    {"paillier4096", R_PAILLIER_4096},
+    {"paillier7680", R_PAILLIER_7680},
 };
 
 static int paillier_plaintexts[] = {10, 100000, 100000000, -10, -100000, -100000000};
@@ -1903,7 +1909,12 @@ int speed_main(int argc, char **argv)
 
 #ifndef OPENSSL_NO_PAILLIER
     static const char *test_paillier_names[] = {
-        "g_optimize",
+        "paillier_512",
+        "paillier_1024",
+        "paillier_2048",
+        "paillier_3072",
+        "paillier_4096",
+        "paillier_7680",
     };
     int paillier_doit[PAILLIER_NUM] = { 0 };
 #endif
@@ -2547,9 +2558,6 @@ int speed_main(int argc, char **argv)
     ec_elgamal_c[R_EC_ELGAMAL_SM2][4] = count / 20000;
 # endif  /* OPENSSL_NO_SM2 */
 #endif   /* OPENSSL_NO_EC_ELGAMAL */
-#ifndef OPENSSL_NO_PAILLIER
-    paillier_c[R_PAILLIER_G_OPTIMIZE][0] = count / 18000;
-#endif   /* OPENSSL_NO_PAILLIER */
 
     if (doit[D_MD5]) {
         for (testnum = 0; testnum < size_num; testnum++) {
@@ -4008,11 +4016,33 @@ int speed_main(int argc, char **argv)
 #ifndef OPENSSL_NO_PAILLIER
     for (testnum = 0; testnum < PAILLIER_NUM; testnum++) {
         int st = 1;
+        int paillier_key_bits = 2048;
         int32_t r = 0;
         PAILLIER_CTX *ectx = NULL;
 
         if (!paillier_doit[testnum])
             continue;
+
+        switch (testnum) {
+        case R_PAILLIER_512:
+            paillier_key_bits = 512;
+            break;
+        case R_PAILLIER_1024:
+            paillier_key_bits = 1024;
+            break;
+        case R_PAILLIER_2048:
+            paillier_key_bits = 2048;
+            break;
+        case R_PAILLIER_3072:
+            paillier_key_bits = 3072;
+            break;
+        case R_PAILLIER_4096:
+            paillier_key_bits = 4096;
+            break;
+        case R_PAILLIER_7680:
+            paillier_key_bits = 7680;
+            break;
+        }
 
         paillier_plaintext_b = paillier_plaintexts[0];
 
@@ -4020,12 +4050,17 @@ int speed_main(int argc, char **argv)
             loopargs[i].paillier_key[testnum] = PAILLIER_KEY_new();
             if (loopargs[i].paillier_key[testnum] == NULL
                 || !PAILLIER_KEY_generate_key(loopargs[i].paillier_key[testnum],
-                                              255)
+                                              paillier_key_bits)
                 || !(ectx = PAILLIER_CTX_new(loopargs[i].paillier_key[testnum],
                                              PAILLIER_MAX_THRESHOLD))) {
                 st = 0;
                 break;
             }
+
+# ifndef OPENSSL_NO_BN_METHOD
+            if (e != NULL && !PAILLIER_CTX_set_engine(ectx, e))
+                break;
+# endif
 
             loopargs[i].paillier_ctx[testnum] = ectx;
 
@@ -4091,7 +4126,7 @@ int speed_main(int argc, char **argv)
 
                 BIO_printf(bio_err,
                            mr ? "+R18:%ld:%s:%d:%.2f\n" :
-                           "%ld %s paillier encrypt(%d) in %.2fs \n",
+                           "%ld %s encrypt(%d) in %.2fs \n",
                            count, test_paillier_names[testnum],
                            paillier_plaintext_b, d);
                 paillier_results[testnum][j][1] = (double)count / d;
@@ -4108,7 +4143,7 @@ int speed_main(int argc, char **argv)
 
                 BIO_printf(bio_err,
                            mr ? "+R19:%ld:%s:%d:%.2f\n" :
-                           "%ld %s paillier decrypt(%d) in %.2fs \n",
+                           "%ld %s decrypt(%d) in %.2fs \n",
                            count, test_paillier_names[testnum],
                            paillier_plaintext_b, d);
                 paillier_results[testnum][j][2] = (double)count / d;
@@ -4125,7 +4160,7 @@ int speed_main(int argc, char **argv)
 
                 BIO_printf(bio_err,
                            mr ? "+R20:%ld:%s:%d:%d:%.2f\n" :
-                           "%ld %s paillier add(%d,%d) in %.2fs \n",
+                           "%ld %s add(%d,%d) in %.2fs \n",
                            count, test_paillier_names[testnum],
                            paillier_plaintext_a, paillier_plaintext_b, d);
                 paillier_results[testnum][j][3] = (double)count / d;
@@ -4142,7 +4177,7 @@ int speed_main(int argc, char **argv)
 
                 BIO_printf(bio_err,
                            mr ? "+R21:%ld:%s:%d:%d:%.2f\n" :
-                           "%ld %s paillier sub(%d,%d) in %.2fs \n",
+                           "%ld %s sub(%d,%d) in %.2fs \n",
                            count, test_paillier_names[testnum],
                            paillier_plaintext_a, paillier_plaintext_b, d);
                 paillier_results[testnum][j][4] = (double)count / d;
@@ -4159,7 +4194,7 @@ int speed_main(int argc, char **argv)
 
                 BIO_printf(bio_err,
                            mr ? "+R22:%ld:%s:%d:%d:%.2f\n" :
-                           "%ld %s paillier mul(%d,%d) in %.2fs \n",
+                           "%ld %s mul(%d,%d) in %.2fs \n",
                            count, test_paillier_names[testnum],
                            paillier_plaintext_a, paillier_plaintext_b, d);
                 paillier_results[testnum][j][5] = (double)count / d;
