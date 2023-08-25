@@ -80,6 +80,7 @@ size_t zkp_point2oct(const EC_GROUP *group, const EC_POINT *P,
 int zkp_point2point(const EC_GROUP *group, const EC_POINT *P, EC_POINT *H, BN_CTX *bn_ctx);
 int zkp_bin_hash2bn(const unsigned char *data, size_t len, BIGNUM *r);
 int zkp_next_power_of_two(int num);
+int zkp_is_power_of_two(int num);
 int zkp_floor_log2(int x);
 int zkp_inner_product(BIGNUM *r, int num, const BIGNUM *a[], const BIGNUM *b[],
                       const BIGNUM *order, BN_CTX *bn_ctx);
