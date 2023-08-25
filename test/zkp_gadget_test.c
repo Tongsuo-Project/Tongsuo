@@ -366,6 +366,18 @@ static int zkp_range_proof_tests(void)
     if (!TEST_true(zkp_range_proof_test((1 << right_bound_bits) - 1, left_bound_bits, right_bound_bits)))
         return 0;
 
+    if (!TEST_true(zkp_range_proof_test(1 << 3, 3, 7)))
+        return 0;
+
+    if (!TEST_true(zkp_range_proof_test(1 << 4, 3, 7)))
+        return 0;
+
+    if (TEST_true(zkp_range_proof_test(1 << 7, 3, 7)))
+        return 0;
+
+    if (!TEST_true(zkp_range_proof_test((1 << 7) - 1, 3, 7)))
+        return 0;
+
     return 1;
 }
 
