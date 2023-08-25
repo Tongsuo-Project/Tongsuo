@@ -215,6 +215,11 @@ int zkp_next_power_of_two(int num)
     return next_power_of_2;
 }
 
+int zkp_is_power_of_two(int num)
+{
+    return (num != 0) && ((num & (num - 1)) == 0);
+}
+
 int zkp_floor_log2(int x)
 {
     int result = 0;

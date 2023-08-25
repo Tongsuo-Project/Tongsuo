@@ -1728,6 +1728,7 @@ ZKP_BP_R_R1CS_CONSTRAINT_EXPRESSION_VAR_NOT_FOUND:112:\
 	r1cs constraint expression var not found
 ZKP_BP_R_R1CS_CONSTRAINT_EXPRESSION_VAR_TOO_LONG:113:\
 	r1cs constraint expression var too long
+ZKP_BP_R_RANGE_LEN_MUST_BE_POWER_OF_TWO:114:range len must be power of two
 ZKP_BP_R_TRANSCRIPT_INIT_FAILED:103:transcript init failed
 ZKP_BP_R_VARIABLE_DUPLICATED:107:variable duplicated
 ZKP_BP_R_VARIABLE_NAME_TOO_LONG:108:variable name too long

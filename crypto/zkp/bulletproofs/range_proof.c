@@ -299,6 +299,11 @@ int BP_RANGE_PROOF_prove(BP_RANGE_CTX *ctx, BP_RANGE_PROOF *proof)
     poly_num = n * 2  + 1;
     bits = pp->gens_capacity;
 
+    if (!zkp_is_power_of_two(n)) {
+        ERR_raise(ERR_LIB_ZKP_BP, ZKP_BP_R_RANGE_LEN_MUST_BE_POWER_OF_TWO);
+        goto err;
+    }
+
     if (proof->ip_proof != NULL)
         bp_range_proof_cleanup(proof);
 
@@ -645,6 +650,11 @@ int BP_RANGE_PROOF_verify(BP_RANGE_CTX *ctx, const BP_RANGE_PROOF *proof)
     poly_r_num = bits * witness_padded_n + 3;
     group = pp->group;
     order = EC_GROUP_get0_order(group);
+
+    if (!zkp_is_power_of_two(n)) {
+        ERR_raise(ERR_LIB_ZKP_BP, ZKP_BP_R_RANGE_LEN_MUST_BE_POWER_OF_TWO);
+        return 0;
+    }
 
     if (witness_n != witness_padded_n) {
         ERR_raise(ERR_LIB_ZKP_BP, ZKP_BP_R_WITNESS_INVALID);
