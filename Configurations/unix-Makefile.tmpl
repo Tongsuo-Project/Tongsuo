@@ -846,7 +846,7 @@ install_programs: install_runtime_libs build_programs
 		chmod 755 $(DESTDIR)$(INSTALLTOP)/bin/$$fn.new; \
 		mv -f $(DESTDIR)$(INSTALLTOP)/bin/$$fn.new \
 		      $(DESTDIR)$(INSTALLTOP)/bin/$$fn; \
-		ln -sf $(DESTDIR)$(INSTALLTOP)/bin/$$fn $(DESTDIR)$(INSTALLTOP)/bin/tongsuo; \
+		ln -sf $$fn $(DESTDIR)$(INSTALLTOP)/bin/tongsuo; \
 	done
 	@set -e; for x in dummy $(BIN_SCRIPTS); do \
 		if [ "$$x" = "dummy" ]; then continue; fi; \
