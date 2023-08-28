@@ -5,14 +5,29 @@
  This is a high-level summary of the most important changes.
  For a full list of changes, see the git commit log.
 
- Changes between 8.3.2 and 8.3.3 [xxxx年xx月xx日]
+ Changes between 8.3.2 and 8.3.3 [2023年08月28日]
+
   *) 修复CVE-2023-3446
 
   *) 修复CVE-2023-3817
 
   *) 支持OpenHarmony操作系统3.2版本
 
+  *) 修复CVE-2022-2097
+
+  *) Fix unknown option --prefix on CFLAGS [daipingh]
+
+  *) 修复未检查OPENSSL_memdup返回值问题
+
   *) SSL_connection_is_ntls改成使用预读方式判断是否为NTLS
+
+  *) 修复CVE-2022-4304
+
+  *) 修复CVE-2023-0286
+
+  *) 修复CVE-2022-4450
+
+  *) 修复CVE-2023-0215
 
   *) 支持SM4-NI优化
 
