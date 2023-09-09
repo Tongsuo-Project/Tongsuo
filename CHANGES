@@ -6,6 +6,8 @@
 
   *)
 
+  *) 支持零知识证明算法-NIZKPoK 和实现 ZKP 范围证明工具
+
  Changes between 8.4.0-pre1 and 8.4.0-pre2 [17 Aug 2023]
 
   *) 修复CVE-2023-3817
@@ -19,8 +21,6 @@
   *) 实现基于SM2曲线参数特化的快速模约减和快速模逆元算法
 
  Changes between 8.3.0 and 8.4.0-pre1 [07 Jun 2023]
-
-  *) 支持零知识证明算法-NIZKPoK 和实现 ZKP 范围证明工具
 
   *) 修复CVE-2023-2650
 
