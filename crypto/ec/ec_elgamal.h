@@ -21,12 +21,18 @@ extern "C" {
 # include <openssl/ec.h>
 # include <openssl/bn.h>
 # include <openssl/lhash.h>
+# include <openssl/safestack.h>
 # include <crypto/lhash.h>
 # include <crypto/ec.h>
 # include <crypto/ec/ec_local.h>
 
 struct ec_elgamal_ciphertext_st {
     EC_POINT *C1;
+    EC_POINT *C2;
+};
+
+struct ec_elgamal_mr_ciphertext_st {
+    STACK_OF(EC_POINT) *sk_C1;
     EC_POINT *C2;
 };
 
@@ -56,7 +62,18 @@ struct ec_elgamal_ctx_st {
     int32_t flag;
 # ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
     EC_POINT *h;
-    BIGNUM *sk_inv;
+    BIGNUM *pk_inv;
+# endif
+};
+
+struct ec_elgamal_mr_ctx_st {
+    EC_GROUP *group;
+    STACK_OF(EC_KEY) *sk_key;
+    EC_ELGAMAL_DECRYPT_TABLE *decrypt_table;
+    int32_t flag;
+# ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
+    EC_POINT *h;
+    BIGNUM *pk_inv;
 # endif
 };
 

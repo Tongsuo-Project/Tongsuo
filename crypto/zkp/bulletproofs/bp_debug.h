@@ -23,15 +23,8 @@ extern "C" {
 # include "range_proof.h"
 # include "inner_product.h"
 
-int bp_rand_range(BIGNUM *rnd, const BIGNUM *range);
-
-int bp_buf2hexstr_print(BIO *bio, const unsigned char *buf, size_t size,
-                        char *field, int text);
-
-void BN_debug_print(BIO *b, const BIGNUM *n, const char *name);
-void EC_POINT_debug_print(BIO *b, const EC_POINT *p, const char *name);
-void EC_POINT_debug_print_affine(BIO *b, const EC_GROUP *group, const EC_POINT *p,
-                                 const char *name, BN_CTX *ctx);
+STACK_OF(EC_POINT);
+STACK_OF(BP_VARIABLE);
 
 void BP_PUB_PARAM_debug_print(BP_PUB_PARAM *pp, const char *note);
 void BP_WITNESS_debug_print(BP_WITNESS *witness, const char *note);
@@ -43,12 +36,6 @@ void bp_inner_product_witness_debug_print(bp_inner_product_witness_t *witness,
                                           const char *note);
 void bp_inner_product_proof_debug_print(bp_inner_product_proof_t *proof,
                                         const EC_GROUP *group, const char *note);
-void bp_bn_vector_debug_print(BIO *bio, BIGNUM **bv, int n, const char *note);
-void bp_point_vector_debug_print(BIO *bio, const EC_GROUP *group,
-                                 EC_POINT **pv, int n,
-                                 const char *note, BN_CTX *bn_ctx);
-void bp_stack_of_bignum_debug_print(BIO *bio, STACK_OF(BIGNUM) *sk, const char *name);
-void bp_stack_of_point_debug_print(BIO *bio, STACK_OF(EC_POINT) *sk, const char *nam);
 void bp_stack_of_variable_debug_print(BIO *bio, STACK_OF(BP_VARIABLE) *sk, const char *name);
 
 # ifdef  __cplusplus

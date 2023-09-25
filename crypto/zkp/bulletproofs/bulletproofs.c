@@ -10,8 +10,12 @@
 #include <openssl/err.h>
 #include <crypto/ec.h>
 #include <crypto/ec/ec_local.h>
+#include <crypto/zkp/common/zkp_util.h>
 #include "bulletproofs.h"
-#include "util.h"
+
+DEFINE_STACK_OF(BIGNUM)
+DEFINE_STACK_OF(EC_POINT)
+DEFINE_STACK_OF(BP_VARIABLE)
 
 /** Creates a new BP_PUB_PARAM object
  *  \param  group           underlying EC_GROUP object
@@ -83,10 +87,10 @@ BP_PUB_PARAM *BP_PUB_PARAM_new(const EC_GROUP *group, int gens_capacity,
     if (EC_POINT_point2oct(group, G, format, pstr, plen, bn_ctx) <= 0)
         goto err;
 
-    if (!bp_str2point(group, pstr, plen, pp->H, bn_ctx))
+    if (!zkp_str2point(group, pstr, plen, pp->H, bn_ctx))
         goto err;
 
-    if (!(pp->U = bp_random_ec_point_new(group, bn_ctx)))
+    if (!(pp->U = zkp_random_ec_point_new(group, bn_ctx)))
         goto err;
 
     pp->gens_capacity = gens_capacity;
@@ -100,14 +104,14 @@ BP_PUB_PARAM *BP_PUB_PARAM_new(const EC_GROUP *group, int gens_capacity,
     }
 
     for (i = 0; i < n; i++) {
-        P = bp_random_ec_point_new(group, bn_ctx);
+        P = zkp_random_ec_point_new(group, bn_ctx);
         if (P == NULL)
             goto err;
 
         if (sk_EC_POINT_push(pp->sk_G, P) <= 0)
             goto err;
 
-        P = bp_random_ec_point_new(group, bn_ctx);
+        P = zkp_random_ec_point_new(group, bn_ctx);
         if (P == NULL)
             goto err;
 
@@ -354,6 +358,7 @@ void BP_WITNESS_free(BP_WITNESS *witness)
     sk_BP_VARIABLE_pop_free(witness->sk_V, BP_VARIABLE_free);
     EC_POINT_free(witness->H);
     EC_GROUP_free(witness->group);
+    CRYPTO_THREAD_lock_free(witness->lock);
     OPENSSL_free(witness);
 }
 
@@ -431,7 +436,7 @@ int BP_WITNESS_commit(BP_WITNESS *witness, const char *name, const BIGNUM *v)
     if (r == NULL || val == NULL || V == NULL)
         goto err;
 
-    if (!bp_rand_range(r, order))
+    if (!zkp_rand_range(r, order))
         goto err;
 
     /* (69) */

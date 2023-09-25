@@ -24,6 +24,10 @@
 /* Maximum indent */
 #define ASN1_PRINT_MAX_INDENT   128
 
+DEFINE_STACK_OF(BIGNUM)
+DEFINE_STACK_OF(EC_POINT)
+DEFINE_STACK_OF(BP_VARIABLE)
+
 static int bp_bio_printf(BIO *bio, int indent, const char *format, ...)
 {
     va_list args;

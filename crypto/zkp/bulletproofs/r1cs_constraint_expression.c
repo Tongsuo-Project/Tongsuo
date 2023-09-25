@@ -22,6 +22,8 @@ typedef struct bp_r1cs_expression_st {
     int var_found;
 } bp_r1cs_expression_t;
 
+DEFINE_STACK_OF(BP_R1CS_LINEAR_COMBINATION_ITEM)
+
 static bp_r1cs_expression_t *bp_r1cs_expression_new(const char *exp_str, int is_prove);
 static void bp_r1cs_expression_free(bp_r1cs_expression_t *e);
 static int bp_r1cs_expression_evaluate_expression(bp_r1cs_expression_t *e,

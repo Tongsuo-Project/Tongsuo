@@ -18,13 +18,14 @@ extern "C" {
 
 # include <openssl/bn.h>
 # include <openssl/ec.h>
+# include <openssl/zkp_transcript.h>
 # include <openssl/bulletproofs.h>
 # include "internal/refcount.h"
 # include "bulletproofs.h"
 # include "inner_product.h"
 
 struct bp_range_ctx_st {
-    BP_TRANSCRIPT *transcript;
+    ZKP_TRANSCRIPT *transcript;
     BP_PUB_PARAM *pp;
     BP_WITNESS *witness;
 };
