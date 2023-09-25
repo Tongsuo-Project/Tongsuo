@@ -8,10 +8,10 @@
  */
 
 #include <openssl/err.h>
-#include <openssl/zkpbperr.h>
+#include <openssl/zkperr.h>
 #include <openssl/evp.h>
 #include <openssl/sha.h>
-#include "transcript.h"
+#include "zkp_transcript.h"
 
 #ifndef __bswap_constant_64
 # define __bswap_constant_64(x)                 \
@@ -33,31 +33,29 @@
 # define int64_l2n(x)  __bswap_constant_64(x)
 #endif
 
-typedef struct bp_transcript_sha256_ctx_st {
+typedef struct zkp_transcript_sha256_ctx_st {
     EVP_MD *sha256;
     EVP_MD_CTX *md_ctx;
-} bp_transcript_sha256_ctx;
+} zkp_transcript_sha256_ctx;
 
-const BP_TRANSCRIPT_METHOD *BP_TRANSCRIPT_METHOD_sha256(void);
-
-static int bp_transcript_sha256_init(BP_TRANSCRIPT *transcript)
+static int zkp_transcript_sha256_init(ZKP_TRANSCRIPT *transcript)
 {
     size_t len;
-    bp_transcript_sha256_ctx *ctx = NULL;
+    zkp_transcript_sha256_ctx *ctx = NULL;
 
     if (transcript == NULL) {
-        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
+        ERR_raise(ERR_LIB_ZKP, ERR_R_PASSED_NULL_PARAMETER);
         return 0;
     }
 
     if (!(ctx = OPENSSL_zalloc(sizeof(*ctx)))) {
-        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
+        ERR_raise(ERR_LIB_ZKP, ERR_R_MALLOC_FAILURE);
         goto err;
     }
 
     ctx->md_ctx = EVP_MD_CTX_new();
     if (ctx->md_ctx == NULL) {
-        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
+        ERR_raise(ERR_LIB_ZKP, ERR_R_MALLOC_FAILURE);
         goto err;
     }
 
@@ -80,13 +78,13 @@ err:
     return 0;
 }
 
-static int bp_transcript_sha256_reset(BP_TRANSCRIPT *transcript)
+static int zkp_transcript_sha256_reset(ZKP_TRANSCRIPT *transcript)
 {
     size_t len;
-    bp_transcript_sha256_ctx *ctx = NULL;
+    zkp_transcript_sha256_ctx *ctx = NULL;
 
     if (transcript == NULL) {
-        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_INVALID_ARGUMENT);
+        ERR_raise(ERR_LIB_ZKP, ERR_R_PASSED_INVALID_ARGUMENT);
         return 0;
     }
 
@@ -104,12 +102,12 @@ static int bp_transcript_sha256_reset(BP_TRANSCRIPT *transcript)
     return 1;
 }
 
-static int bp_transcript_sha256_cleanup(BP_TRANSCRIPT *transcript)
+static int zkp_transcript_sha256_cleanup(ZKP_TRANSCRIPT *transcript)
 {
-    bp_transcript_sha256_ctx *ctx = NULL;
+    zkp_transcript_sha256_ctx *ctx = NULL;
 
     if (transcript == NULL) {
-        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_INVALID_ARGUMENT);
+        ERR_raise(ERR_LIB_ZKP, ERR_R_PASSED_INVALID_ARGUMENT);
         return 0;
     }
 
@@ -120,14 +118,14 @@ static int bp_transcript_sha256_cleanup(BP_TRANSCRIPT *transcript)
     return 1;
 }
 
-static int bp_transcript_sha256_append_int64(BP_TRANSCRIPT *transcript,
-                                             const char *label, const int64_t i64)
+static int zkp_transcript_sha256_append_int64(ZKP_TRANSCRIPT *transcript,
+                                              const char *label, const int64_t i64)
 {
     int64_t num;
-    bp_transcript_sha256_ctx *ctx = NULL;
+    zkp_transcript_sha256_ctx *ctx = NULL;
 
     if (transcript == NULL || label == NULL) {
-        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_INVALID_ARGUMENT);
+        ERR_raise(ERR_LIB_ZKP, ERR_R_PASSED_INVALID_ARGUMENT);
         return 0;
     }
 
@@ -138,14 +136,14 @@ static int bp_transcript_sha256_append_int64(BP_TRANSCRIPT *transcript,
            && EVP_DigestUpdate(ctx->md_ctx, (char *)&num, sizeof(num));
 }
 
-static int bp_transcript_sha256_append_str(BP_TRANSCRIPT *transcript,
-                                           const char *label,
-                                           const char *str, int len)
+static int zkp_transcript_sha256_append_str(ZKP_TRANSCRIPT *transcript,
+                                            const char *label,
+                                            const char *str, int len)
 {
-    bp_transcript_sha256_ctx *ctx = NULL;
+    zkp_transcript_sha256_ctx *ctx = NULL;
 
     if (transcript == NULL || str == NULL || len <= 0) {
-        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_INVALID_ARGUMENT);
+        ERR_raise(ERR_LIB_ZKP, ERR_R_PASSED_INVALID_ARGUMENT);
         return 0;
     }
 
@@ -155,19 +153,19 @@ static int bp_transcript_sha256_append_str(BP_TRANSCRIPT *transcript,
            && EVP_DigestUpdate(ctx->md_ctx, str, len);
 }
 
-static int bp_transcript_sha256_append_point(BP_TRANSCRIPT *transcript,
-                                             const char *label,
-                                             const EC_POINT *point,
-                                             const EC_GROUP *group)
+static int zkp_transcript_sha256_append_point(ZKP_TRANSCRIPT *transcript,
+                                              const char *label,
+                                              const EC_POINT *point,
+                                              const EC_GROUP *group)
 {
     int ret = 0;
     size_t len;
     unsigned char buf[128], *str = NULL;
     point_conversion_form_t format = POINT_CONVERSION_COMPRESSED;
-    bp_transcript_sha256_ctx *ctx = NULL;
+    zkp_transcript_sha256_ctx *ctx = NULL;
 
     if (transcript == NULL || point == NULL || group == NULL) {
-        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
+        ERR_raise(ERR_LIB_ZKP, ERR_R_PASSED_NULL_PARAMETER);
         return 0;
     }
 
@@ -176,7 +174,7 @@ static int bp_transcript_sha256_append_point(BP_TRANSCRIPT *transcript,
     len = EC_POINT_point2oct(group, point, format, NULL, 0, NULL);
     if (len > sizeof(buf)) {
         if (!(str = OPENSSL_zalloc(len))) {
-            ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
+            ERR_raise(ERR_LIB_ZKP, ERR_R_MALLOC_FAILURE);
             return 0;
         }
     } else {
@@ -193,16 +191,16 @@ static int bp_transcript_sha256_append_point(BP_TRANSCRIPT *transcript,
     return ret;
 }
 
-static int bp_transcript_sha256_append_bn(BP_TRANSCRIPT *transcript,
-                                          const char *label, const BIGNUM *bn)
+static int zkp_transcript_sha256_append_bn(ZKP_TRANSCRIPT *transcript,
+                                           const char *label, const BIGNUM *bn)
 {
     int ret = 0;
     size_t len;
     unsigned char buf[256] = {0}, *str = NULL;
-    bp_transcript_sha256_ctx *ctx = NULL;
+    zkp_transcript_sha256_ctx *ctx = NULL;
 
     if (transcript == NULL || bn == NULL) {
-        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
+        ERR_raise(ERR_LIB_ZKP, ERR_R_PASSED_NULL_PARAMETER);
         return 0;
     }
 
@@ -211,7 +209,7 @@ static int bp_transcript_sha256_append_bn(BP_TRANSCRIPT *transcript,
     len = BN_is_zero(bn) ? 1 : BN_num_bytes(bn);
     if (len > sizeof(buf)) {
         if (!(str = OPENSSL_zalloc(len))) {
-            ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
+            ERR_raise(ERR_LIB_ZKP, ERR_R_MALLOC_FAILURE);
             return 0;
         }
     } else {
@@ -227,14 +225,14 @@ static int bp_transcript_sha256_append_bn(BP_TRANSCRIPT *transcript,
     return ret;
 }
 
-static int bp_transcript_sha256_challange(BP_TRANSCRIPT *transcript,
-                                          const char *label, BIGNUM *out)
+static int zkp_transcript_sha256_challange(ZKP_TRANSCRIPT *transcript,
+                                           const char *label, BIGNUM *out)
 {
     unsigned char hash_res[SHA256_DIGEST_LENGTH];
-    bp_transcript_sha256_ctx *ctx = NULL;
+    zkp_transcript_sha256_ctx *ctx = NULL;
 
     if (transcript == NULL || out == NULL) {
-        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
+        ERR_raise(ERR_LIB_ZKP, ERR_R_PASSED_NULL_PARAMETER);
         return 0;
     }
 
@@ -253,17 +251,17 @@ static int bp_transcript_sha256_challange(BP_TRANSCRIPT *transcript,
     return EVP_DigestUpdate(ctx->md_ctx, hash_res, SHA256_DIGEST_LENGTH);
 }
 
-const BP_TRANSCRIPT_METHOD *BP_TRANSCRIPT_METHOD_sha256(void)
+const ZKP_TRANSCRIPT_METHOD *ZKP_TRANSCRIPT_METHOD_sha256(void)
 {
-    static const BP_TRANSCRIPT_METHOD ret = {
-        bp_transcript_sha256_init,
-        bp_transcript_sha256_reset,
-        bp_transcript_sha256_cleanup,
-        bp_transcript_sha256_append_int64,
-        bp_transcript_sha256_append_str,
-        bp_transcript_sha256_append_point,
-        bp_transcript_sha256_append_bn,
-        bp_transcript_sha256_challange,
+    static const ZKP_TRANSCRIPT_METHOD ret = {
+        zkp_transcript_sha256_init,
+        zkp_transcript_sha256_reset,
+        zkp_transcript_sha256_cleanup,
+        zkp_transcript_sha256_append_int64,
+        zkp_transcript_sha256_append_str,
+        zkp_transcript_sha256_append_point,
+        zkp_transcript_sha256_append_bn,
+        zkp_transcript_sha256_challange,
     };
 
     return &ret;

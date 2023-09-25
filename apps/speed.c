@@ -1928,7 +1928,7 @@ int speed_main(int argc, char **argv)
 # endif
     };
     int bulletproofs_doit[BULLETPROOFS_NUM] = { 0 };
-    BP_TRANSCRIPT *bp_transcript[BULLETPROOFS_NUM][BULLETPROOFS_BITS_NUM][BULLETPROOFS_AGG_MAX_NUM] = { 0 };
+    ZKP_TRANSCRIPT *bp_transcript[BULLETPROOFS_NUM][BULLETPROOFS_BITS_NUM][BULLETPROOFS_AGG_MAX_NUM] = { 0 };
     BP_PUB_PARAM *bp_pp[BULLETPROOFS_NUM][BULLETPROOFS_BITS_NUM][BULLETPROOFS_AGG_MAX_NUM] = { 0 };
     BP_WITNESS *bp_witness[BULLETPROOFS_NUM][BULLETPROOFS_BITS_NUM][BULLETPROOFS_AGG_MAX_NUM][3] = { 0 };
     BP_RANGE_CTX *bp_ctx[BULLETPROOFS_NUM][BULLETPROOFS_BITS_NUM][BULLETPROOFS_AGG_MAX_NUM][3] = { 0 };
@@ -3837,7 +3837,7 @@ int speed_main(int argc, char **argv)
             EC_KEY_precompute_mult(loopargs[i].ec_elgamal_key[testnum], NULL);
             EC_KEY_generate_key(loopargs[i].ec_elgamal_key[testnum]);
 
-            ectx = EC_ELGAMAL_CTX_new(loopargs[i].ec_elgamal_key[testnum],
+            ectx = EC_ELGAMAL_CTX_new(loopargs[i].ec_elgamal_key[testnum], NULL,
                                       ec_elgamal_flag[testnum]);
             if (ectx == NULL) {
                 st = 0;
@@ -4193,7 +4193,7 @@ int speed_main(int argc, char **argv)
                 if (bp_pp[testnum][m][n] == NULL)
                     goto end;
 
-                if (!(bp_transcript[testnum][m][n] = BP_TRANSCRIPT_new(BP_TRANSCRIPT_METHOD_sha256(), "speed-test")))
+                if (!(bp_transcript[testnum][m][n] = ZKP_TRANSCRIPT_new(ZKP_TRANSCRIPT_METHOD_sha256(), "speed-test")))
                     goto end;
 
                 bp_proof[testnum][m][n] = BP_RANGE_PROOF_new(bp_pp[testnum][m][n]);
@@ -4711,7 +4711,7 @@ int speed_main(int argc, char **argv)
                     BP_PUB_PARAM_free(bp_pp[i][m][n]);
 
                 if (bp_transcript[i][m][n] != NULL)
-                    BP_TRANSCRIPT_free(bp_transcript[i][m][n]);
+                    ZKP_TRANSCRIPT_free(bp_transcript[i][m][n]);
             }
         }
     }

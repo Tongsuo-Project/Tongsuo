@@ -11,7 +11,11 @@
 #include <crypto/ec.h>
 #include <crypto/ec/ec_local.h>
 #include "r1cs.h"
-#include "util.h"
+
+DEFINE_STACK_OF(BIGNUM)
+DEFINE_STACK_OF(BP_R1CS_VARIABLE)
+DEFINE_STACK_OF(BP_R1CS_LINEAR_COMBINATION_ITEM)
+DEFINE_STACK_OF(BP_R1CS_LINEAR_COMBINATION)
 
 BP_R1CS_VARIABLE *BP_R1CS_VARIABLE_new(BP_R1CS_VARIABLE_TYPE type, uint64_t value)
 {
