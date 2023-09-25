@@ -19,7 +19,6 @@ extern "C" {
 # include <openssl/bn.h>
 # include <openssl/ec.h>
 # include "internal/refcount.h"
-# include "transcript.h"
 
 typedef struct bp_inner_product_pub_param_st {
     const EC_GROUP *group;
@@ -28,7 +27,7 @@ typedef struct bp_inner_product_pub_param_st {
 } bp_inner_product_pub_param_t;
 
 typedef struct bp_inner_product_ctx_st {
-    BP_TRANSCRIPT *transcript;
+    ZKP_TRANSCRIPT *transcript;
     EC_POINT *P;
     EC_POINT *U;
     STACK_OF(BIGNUM) *sk_G_factors;
@@ -53,7 +52,7 @@ bp_inner_product_pub_param_t *bp_inner_product_pub_param_new(const EC_GROUP *gro
                                                              STACK_OF(EC_POINT) *sk_H);
 void bp_inner_product_pub_param_free(bp_inner_product_pub_param_t *pp);
 bp_inner_product_ctx_t *bp_inner_product_ctx_new(bp_inner_product_pub_param_t *pp,
-                                                 BP_TRANSCRIPT *transcript,
+                                                 ZKP_TRANSCRIPT *transcript,
                                                  EC_POINT *U, EC_POINT *P,
                                                  STACK_OF(BIGNUM) *sk_G_factors,
                                                  STACK_OF(BIGNUM) *sk_H_factors);

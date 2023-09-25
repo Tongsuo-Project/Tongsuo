@@ -9,9 +9,10 @@
 
 #include <openssl/err.h>
 #include <openssl/zkpbperr.h>
+#include <openssl/zkp_transcript.h>
+#include <crypto/zkp/common/zkp_util.h>
 #include <crypto/ec/ec_local.h>
 #include "inner_product.h"
-#include "util.h"
 
 DEFINE_STACK_OF(BIGNUM)
 DEFINE_STACK_OF(EC_POINT)
@@ -48,7 +49,7 @@ void bp_inner_product_pub_param_free(bp_inner_product_pub_param_t *pp)
 }
 
 bp_inner_product_ctx_t *bp_inner_product_ctx_new(bp_inner_product_pub_param_t *pp,
-                                                 BP_TRANSCRIPT *transcript,
+                                                 ZKP_TRANSCRIPT *transcript,
                                                  EC_POINT *U, EC_POINT *P,
                                                  STACK_OF(BIGNUM) *sk_G_factors,
                                                  STACK_OF(BIGNUM) *sk_H_factors)
@@ -195,7 +196,7 @@ bp_inner_product_proof_t *bp_inner_product_proof_prove(bp_inner_product_ctx_t *c
                                                        bp_inner_product_witness_t *witness)
 {
     int i, j, m, n, pp_num, poly_num;
-    BP_TRANSCRIPT *transcript;
+    ZKP_TRANSCRIPT *transcript;
     BN_CTX *bn_ctx = NULL;
     BIGNUM *x, *x_inv, *t, *cL, *cR, *a, *b, *u, *u_inv;
     BIGNUM *G_factors_L, *G_factors_R, *H_factors_L, *H_factors_R;
@@ -204,7 +205,7 @@ bp_inner_product_proof_t *bp_inner_product_proof_prove(bp_inner_product_ctx_t *c
     EC_POINT *G_L, *G_R, *H_L, *H_R, *sk_G_L, *sk_H_L;
     STACK_OF(EC_POINT) *sk_G = NULL, *sk_H = NULL, *p_sk_G, *p_sk_H;
     STACK_OF(BIGNUM) *sk_a = NULL, *sk_b = NULL, *p_sk_a, *p_sk_b;
-    bp_poly_points_t *poly_l = NULL, *poly_r = NULL, *poly_g = NULL, *poly_h = NULL;
+    zkp_poly_points_t *poly_l = NULL, *poly_r = NULL, *poly_g = NULL, *poly_h = NULL;
     const BIGNUM *order;
     const EC_GROUP *group;
     bp_inner_product_pub_param_t *pp;
@@ -230,8 +231,8 @@ bp_inner_product_proof_t *bp_inner_product_proof_prove(bp_inner_product_ctx_t *c
     if (!(proof = bp_inner_product_proof_new(ctx)))
         goto end;
 
-    if (!(poly_l = bp_poly_points_new(poly_num)) || !(poly_r = bp_poly_points_new(poly_num))
-        || !(poly_g = bp_poly_points_new(2)) || !(poly_h = bp_poly_points_new(2)))
+    if (!(poly_l = zkp_poly_points_new(poly_num)) || !(poly_r = zkp_poly_points_new(poly_num))
+        || !(poly_g = zkp_poly_points_new(2)) || !(poly_h = zkp_poly_points_new(2)))
         goto end;
 
     if (!(sk_G = sk_EC_POINT_new_reserve(NULL, pp_num))
@@ -289,8 +290,8 @@ bp_inner_product_proof_t *bp_inner_product_proof_prove(bp_inner_product_ctx_t *c
             || !EC_POINT_set_to_infinity(group, R))
             goto end;
 
-        bp_poly_points_reset(poly_l);
-        bp_poly_points_reset(poly_r);
+        zkp_poly_points_reset(poly_l);
+        zkp_poly_points_reset(poly_r);
 
         for (i = 0; i < m; i++) {
             /* (21) */
@@ -344,28 +345,28 @@ bp_inner_product_proof_t *bp_inner_product_proof_prove(bp_inner_product_ctx_t *c
             H_L = sk_EC_POINT_value(p_sk_H, i);
             H_R = sk_EC_POINT_value(p_sk_H, i + m);
 
-            if (!bp_poly_points_append(poly_l, G_R, aL)
-                || !bp_poly_points_append(poly_l, H_L, bR)
-                || !bp_poly_points_append(poly_r, G_L, aR)
-                || !bp_poly_points_append(poly_r, H_R, bL))
+            if (!zkp_poly_points_append(poly_l, G_R, aL)
+                || !zkp_poly_points_append(poly_l, H_L, bR)
+                || !zkp_poly_points_append(poly_r, G_L, aR)
+                || !zkp_poly_points_append(poly_r, H_R, bL))
                 goto end;
         }
 
         /* (23, 24) */
-        if (!bp_poly_points_append(poly_l, ctx->U, cL)
-            || !bp_poly_points_append(poly_r, ctx->U, cR))
+        if (!zkp_poly_points_append(poly_l, ctx->U, cL)
+            || !zkp_poly_points_append(poly_r, ctx->U, cR))
             goto end;
 
-        if (!bp_poly_points_mul(poly_l, L, NULL, group, bn_ctx)
-            || !bp_poly_points_mul(poly_r, R, NULL, group, bn_ctx))
+        if (!zkp_poly_points_mul(poly_l, L, NULL, group, bn_ctx)
+            || !zkp_poly_points_mul(poly_r, R, NULL, group, bn_ctx))
             goto end;
 
         /* compute the challenge */
-        if (!BP_TRANSCRIPT_append_point(transcript, "L", L, group)
-            || !BP_TRANSCRIPT_append_point(transcript, "R", R, group))
+        if (!ZKP_TRANSCRIPT_append_point(transcript, "L", L, group)
+            || !ZKP_TRANSCRIPT_append_point(transcript, "R", R, group))
             goto end;
 
-        if (!BP_TRANSCRIPT_challange(transcript, "x", x))
+        if (!ZKP_TRANSCRIPT_challange(transcript, "x", x))
             goto end;
 
         /* (26, 27) */
@@ -390,18 +391,18 @@ bp_inner_product_proof_t *bp_inner_product_proof_prove(bp_inner_product_ctx_t *c
                     goto end;
             }
 
-            bp_poly_points_reset(poly_g);
+            zkp_poly_points_reset(poly_g);
 
             G_L = sk_EC_POINT_value(p_sk_G, i);
             G_R = sk_EC_POINT_value(p_sk_G, i + m);
             sk_G_L = sk_EC_POINT_value(sk_G, i);
 
-            if (!bp_poly_points_append(poly_g, G_L, u_inv)
-                || !bp_poly_points_append(poly_g, G_R, u))
+            if (!zkp_poly_points_append(poly_g, G_L, u_inv)
+                || !zkp_poly_points_append(poly_g, G_R, u))
                 goto end;
 
             /* (29) */
-            if (!bp_poly_points_mul(poly_g, sk_G_L, NULL, group, bn_ctx))
+            if (!zkp_poly_points_mul(poly_g, sk_G_L, NULL, group, bn_ctx))
                 goto end;
 
             u = BN_CTX_get(bn_ctx);
@@ -421,18 +422,18 @@ bp_inner_product_proof_t *bp_inner_product_proof_prove(bp_inner_product_ctx_t *c
                     goto end;
             }
 
-            bp_poly_points_reset(poly_h);
+            zkp_poly_points_reset(poly_h);
 
             H_L = sk_EC_POINT_value(p_sk_H, i);
             H_R = sk_EC_POINT_value(p_sk_H, i + m);
             sk_H_L = sk_EC_POINT_value(sk_H, i);
 
-            if (!bp_poly_points_append(poly_h, H_L, u)
-                || !bp_poly_points_append(poly_h, H_R, u_inv))
+            if (!zkp_poly_points_append(poly_h, H_L, u)
+                || !zkp_poly_points_append(poly_h, H_R, u_inv))
                 goto end;
 
             /* (30) */
-            if (!bp_poly_points_mul(poly_h, sk_H_L, NULL, group, bn_ctx))
+            if (!zkp_poly_points_mul(poly_h, sk_H_L, NULL, group, bn_ctx))
                 goto end;
 
             sk_a_L = sk_BIGNUM_value(sk_a, i);
@@ -491,10 +492,10 @@ end:
     BN_CTX_end(bn_ctx);
     BN_CTX_free(bn_ctx);
 
-    bp_poly_points_free(poly_l);
-    bp_poly_points_free(poly_r);
-    bp_poly_points_free(poly_g);
-    bp_poly_points_free(poly_h);
+    zkp_poly_points_free(poly_l);
+    zkp_poly_points_free(poly_r);
+    zkp_poly_points_free(poly_g);
+    zkp_poly_points_free(poly_h);
 
     bp_inner_product_proof_free(proof);
 
@@ -508,11 +509,11 @@ int bp_inner_product_proof_verify(bp_inner_product_ctx_t *ctx,
     int ret = 0;
     int i, j, m, n, proof_num, pp_num;
     EC_POINT *P = NULL, *L, *R, *G, *H;
-    BP_TRANSCRIPT *transcript;
+    ZKP_TRANSCRIPT *transcript;
     BN_CTX *bn_ctx = NULL;
     BIGNUM **vec_x = NULL, **vec_x_inv = NULL, *G_factors, *H_factors;
     BIGNUM *s, *s_inv, *u, *u_inv, *x2, *x2_inv;
-    bp_poly_points_t *poly = NULL;
+    zkp_poly_points_t *poly = NULL;
     const BIGNUM *order;
     const EC_GROUP *group;
     bp_inner_product_pub_param_t *pp;
@@ -536,7 +537,7 @@ int bp_inner_product_proof_verify(bp_inner_product_ctx_t *ctx,
         goto end;
     }
 
-    if (!(poly = bp_poly_points_new(n)))
+    if (!(poly = zkp_poly_points_new(n)))
         goto end;
 
     if (!(P = EC_POINT_new(group)))
@@ -564,11 +565,11 @@ int bp_inner_product_proof_verify(bp_inner_product_ctx_t *ctx,
         R = sk_EC_POINT_value(proof->sk_R, i);
 
         /* compute hash */
-        if (!BP_TRANSCRIPT_append_point(transcript, "L", L, group)
-            || !BP_TRANSCRIPT_append_point(transcript, "R", R, group))
+        if (!ZKP_TRANSCRIPT_append_point(transcript, "L", L, group)
+            || !ZKP_TRANSCRIPT_append_point(transcript, "R", R, group))
             goto end;
 
-        if (!BP_TRANSCRIPT_challange(transcript, "x", vec_x[i]))
+        if (!ZKP_TRANSCRIPT_challange(transcript, "x", vec_x[i]))
             goto end;
 
         if (!BN_mod_inverse(vec_x_inv[i], vec_x[i], order, bn_ctx)
@@ -579,7 +580,7 @@ int bp_inner_product_proof_verify(bp_inner_product_ctx_t *ctx,
         BN_set_negative(x2, !BN_is_negative(x2));
         BN_set_negative(x2_inv, !BN_is_negative(x2_inv));
 
-        if (!bp_poly_points_append(poly, L, x2) || !bp_poly_points_append(poly, R, x2_inv))
+        if (!zkp_poly_points_append(poly, L, x2) || !zkp_poly_points_append(poly, R, x2_inv))
             goto end;
     }
 
@@ -610,17 +611,17 @@ int bp_inner_product_proof_verify(bp_inner_product_ctx_t *ctx,
             || !BN_mod_mul(u_inv, s_inv, H_factors, order, bn_ctx))
             goto end;
 
-        if (!bp_poly_points_append(poly, G, u) || !bp_poly_points_append(poly, H, u_inv))
+        if (!zkp_poly_points_append(poly, G, u) || !zkp_poly_points_append(poly, H, u_inv))
             goto end;
     }
 
     if (!BN_mod_mul(s, proof->a, proof->b, order, bn_ctx))
         goto end;
 
-    if (!bp_poly_points_append(poly, ctx->U, s))
+    if (!zkp_poly_points_append(poly, ctx->U, s))
         goto end;
 
-    if (!bp_poly_points_mul(poly, P, NULL, group, bn_ctx))
+    if (!zkp_poly_points_mul(poly, P, NULL, group, bn_ctx))
         goto end;
 
     ret = EC_POINT_cmp(group, P, ctx->P, bn_ctx) == 0;
@@ -629,8 +630,8 @@ end:
     BN_CTX_end(bn_ctx);
     BN_CTX_free(bn_ctx);
 
+    zkp_poly_points_free(poly);
     EC_POINT_free(P);
-    bp_poly_points_free(poly);
     OPENSSL_free(vec_x);
     OPENSSL_free(vec_x_inv);
     return ret;

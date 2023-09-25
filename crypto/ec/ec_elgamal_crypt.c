@@ -12,6 +12,9 @@
 #include <openssl/sha.h>
 #include <string.h>
 
+DEFINE_STACK_OF(EC_KEY)
+DEFINE_STACK_OF(EC_POINT)
+
 #define HASH_TO_EC_POINT_TRY_COUNT  1000
 
 /*
@@ -66,12 +69,13 @@ end:
     return ret;
 }
 
-/** Creates a new EC_ELGAMAL object
+/** Creates a new EC_ELGAMAL_CTX object
  *  \param  key      EC_KEY to use
+ *  \param  h        EC_POINT object pointer
  *  \param  flag     flag of ctx
  *  \return newly created EC_ELGAMAL_CTX object or NULL in case of an error
  */
-EC_ELGAMAL_CTX *EC_ELGAMAL_CTX_new(EC_KEY *key, int32_t flag)
+EC_ELGAMAL_CTX *EC_ELGAMAL_CTX_new(EC_KEY *key, const EC_POINT *h, int32_t flag)
 {
 #ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
     size_t len;
@@ -99,36 +103,41 @@ EC_ELGAMAL_CTX *EC_ELGAMAL_CTX_new(EC_KEY *key, int32_t flag)
             goto err;
         }
 
-        ctx->h = EC_POINT_new(key->group);
-        if (ctx->h == NULL) {
-            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
-            goto err;
-        }
-
-        len = EC_POINT_point2oct(key->group, EC_GROUP_get0_generator(key->group),
-                                 POINT_CONVERSION_COMPRESSED, NULL, 0, bn_ctx);
-        if (len <= 0)
-            goto err;
-
-        buf = OPENSSL_zalloc(len);
-        if (buf == NULL)
-            goto err;
-
-        if (!EC_POINT_point2oct(key->group, EC_GROUP_get0_generator(key->group),
-                                POINT_CONVERSION_COMPRESSED, buf, len, bn_ctx))
-            goto err;
-
-        if (!EC_POINT_from_string(key->group, ctx->h, buf, len))
-            goto err;
-
-        if (key->priv_key) {
-            ctx->sk_inv = BN_new();
-            if (ctx->sk_inv == NULL) {
+        if (h != NULL) {
+            if (!(ctx->h = EC_POINT_dup(h, key->group)))
+                return 0;
+        } else {
+            ctx->h = EC_POINT_new(key->group);
+            if (ctx->h == NULL) {
                 ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
                 goto err;
             }
 
-            if (!BN_mod_inverse(ctx->sk_inv, key->priv_key,
+            len = EC_POINT_point2oct(key->group, EC_GROUP_get0_generator(key->group),
+                                     POINT_CONVERSION_COMPRESSED, NULL, 0, bn_ctx);
+            if (len <= 0)
+                goto err;
+
+            buf = OPENSSL_zalloc(len);
+            if (buf == NULL)
+                goto err;
+
+            if (!EC_POINT_point2oct(key->group, EC_GROUP_get0_generator(key->group),
+                                    POINT_CONVERSION_COMPRESSED, buf, len, bn_ctx))
+                goto err;
+
+            if (!EC_POINT_from_string(key->group, ctx->h, buf, len))
+                goto err;
+        }
+
+        if (key->priv_key) {
+            ctx->pk_inv = BN_new();
+            if (ctx->pk_inv == NULL) {
+                ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+                goto err;
+            }
+
+            if (!BN_mod_inverse(ctx->pk_inv, key->priv_key,
                                 EC_GROUP_get0_order(key->group), bn_ctx))
                 goto err;
         }
@@ -150,7 +159,15 @@ err:
     EC_ELGAMAL_CTX_free(ctx);
     return NULL;
 #endif
-    return ctx;
+}
+
+EC_ELGAMAL_CTX *EC_ELGAMAL_CTX_dup(EC_ELGAMAL_CTX *ctx)
+{
+#ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
+    return EC_ELGAMAL_CTX_new(ctx->key, ctx->h, ctx->flag);
+#else
+    return EC_ELGAMAL_CTX_new(ctx->key, NULL, ctx->flag);
+#endif
 }
 
 /** Frees a EC_ELGAMAL_CTX object
@@ -165,7 +182,144 @@ void EC_ELGAMAL_CTX_free(EC_ELGAMAL_CTX *ctx)
     EC_ELGAMAL_DECRYPT_TABLE_free(ctx->decrypt_table);
 #ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
     EC_POINT_free(ctx->h);
-    BN_free(ctx->sk_inv);
+    BN_free(ctx->pk_inv);
+#endif
+    OPENSSL_free(ctx);
+}
+
+/** Creates a new EC_ELGAMAL_MR_CTX object
+ *  \param  key      EC_KEY to use
+ *  \param  flag     flag of ctx
+ *  \return newly created EC_ELGAMAL_MR_CTX object or NULL in case of an error
+ */
+EC_ELGAMAL_MR_CTX *EC_ELGAMAL_MR_CTX_new(STACK_OF(EC_KEY) *keys, const EC_POINT *h,
+                                         int32_t flag)
+{
+#ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
+    size_t len;
+    unsigned char *buf = NULL;
+    BN_CTX *bn_ctx = NULL;
+#endif
+    int i;
+    EC_KEY *key;
+    EC_GROUP *group;
+    EC_ELGAMAL_MR_CTX *ctx = NULL;
+
+    if (keys == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_PASSED_NULL_PARAMETER);
+        return NULL;
+    }
+
+    if (sk_EC_KEY_num(keys) == 0) {
+        ERR_raise(ERR_LIB_EC, ERR_R_PASSED_INVALID_ARGUMENT);
+        return NULL;
+    }
+
+    key = sk_EC_KEY_value(keys, 0);
+    group = key->group;
+
+    ctx = OPENSSL_zalloc(sizeof(*ctx));
+    if (ctx == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+        return NULL;
+    }
+
+    if (!(ctx->group = EC_GROUP_dup(group)))
+        goto err;
+
+    ctx->sk_key = sk_EC_KEY_dup(keys);
+    if (ctx->sk_key == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+
+    for (i = 0; i < sk_EC_KEY_num(keys); i++) {
+        key = sk_EC_KEY_value(keys, i);
+        if (!ec_point_is_compat(key->pub_key, group))
+            goto err;
+
+        if (!EC_KEY_up_ref(key))
+            goto err;
+    }
+
+    ctx->flag = flag;
+
+#ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
+    if (flag == EC_ELGAMAL_FLAG_TWISTED) {
+        bn_ctx = BN_CTX_new();
+        if (bn_ctx == NULL) {
+            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+            goto err;
+        }
+
+        if (h != NULL) {
+            if (!(ctx->h = EC_POINT_dup(h, ctx->group)))
+                return 0;
+        } else {
+            ctx->h = EC_POINT_new(group);
+            if (ctx->h == NULL) {
+                ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+                goto err;
+            }
+
+            len = EC_POINT_point2oct(group, EC_GROUP_get0_generator(group),
+                                     POINT_CONVERSION_COMPRESSED, NULL, 0, bn_ctx);
+            if (len <= 0)
+                goto err;
+
+            buf = OPENSSL_zalloc(len);
+            if (buf == NULL)
+                goto err;
+
+            if (!EC_POINT_point2oct(group, EC_GROUP_get0_generator(group),
+                                    POINT_CONVERSION_COMPRESSED, buf, len, bn_ctx))
+                goto err;
+
+            if (!EC_POINT_from_string(group, ctx->h, buf, len))
+                goto err;
+        }
+
+        if (key->priv_key) {
+            ctx->pk_inv = BN_new();
+            if (ctx->pk_inv == NULL) {
+                ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+                goto err;
+            }
+
+            if (!BN_mod_inverse(ctx->pk_inv, key->priv_key,
+                                EC_GROUP_get0_order(group), bn_ctx))
+                goto err;
+        }
+
+        OPENSSL_free(buf);
+        BN_CTX_free(bn_ctx);
+    }
+#endif
+
+    return ctx;
+err:
+#ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
+    OPENSSL_free(buf);
+    BN_CTX_free(bn_ctx);
+#endif
+    EC_ELGAMAL_MR_CTX_free(ctx);
+    return NULL;
+}
+
+/** Frees a EC_ELGAMAL_MR_CTX object
+ *  \param  ctx  EC_ELGAMAL_MR_CTX object to be freed
+ */
+void EC_ELGAMAL_MR_CTX_free(EC_ELGAMAL_MR_CTX *ctx)
+{
+    if (ctx == NULL)
+        return;
+
+    EC_GROUP_free(ctx->group);
+    sk_EC_KEY_pop_free(ctx->sk_key, EC_KEY_free);
+    EC_ELGAMAL_DECRYPT_TABLE_free(ctx->decrypt_table);
+#ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
+    EC_POINT_free(ctx->h);
+    BN_free(ctx->pk_inv);
 #endif
     OPENSSL_free(ctx);
 }
@@ -180,10 +334,35 @@ void EC_ELGAMAL_CTX_free(EC_ELGAMAL_CTX *ctx)
 int EC_ELGAMAL_encrypt(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r, int32_t plaintext)
 {
     int ret = 0;
-    BN_CTX *bn_ctx = NULL;
-    BIGNUM *bn_plain = NULL, *rand = NULL;
+    BIGNUM *bn_plain = NULL;
 
     if (ctx == NULL || ctx->key == NULL || ctx->key->pub_key == NULL || r == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_PASSED_NULL_PARAMETER);
+        return ret;
+    }
+
+    bn_plain = BN_new();
+    if (bn_plain == NULL)
+        return ret;
+
+    BN_set_word(bn_plain, (BN_ULONG)(plaintext > 0 ? plaintext : -(int64_t)plaintext));
+    BN_set_negative(bn_plain, plaintext < 0 ? 1 : 0);
+
+    ret = EC_ELGAMAL_bn_encrypt(ctx, r, bn_plain, NULL);
+
+    BN_free(bn_plain);
+    return ret;
+}
+
+int EC_ELGAMAL_bn_encrypt(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r,
+                          const BIGNUM *plaintext, const BIGNUM *rand)
+{
+    int ret = 0;
+    BN_CTX *bn_ctx = NULL;
+    BIGNUM *random = NULL;
+
+    if (ctx == NULL || ctx->key == NULL || ctx->key->pub_key == NULL
+        || r == NULL || plaintext == NULL) {
         ERR_raise(ERR_LIB_EC, ERR_R_PASSED_NULL_PARAMETER);
         return ret;
     }
@@ -195,9 +374,8 @@ int EC_ELGAMAL_encrypt(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r, int32_t pl
     }
 
     BN_CTX_start(bn_ctx);
-    bn_plain = BN_CTX_get(bn_ctx);
-    rand = BN_CTX_get(bn_ctx);
-    if (rand == NULL) {
+    random = BN_CTX_get(bn_ctx);
+    if (random == NULL) {
         ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
         goto err;
     }
@@ -214,27 +392,27 @@ int EC_ELGAMAL_encrypt(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r, int32_t pl
             goto err;
     }
 
-    BN_rand_range(rand, EC_GROUP_get0_order(ctx->key->group));
-
-    BN_set_word(bn_plain, (BN_ULONG)(plaintext > 0 ? plaintext : -(int64_t)plaintext));
-    BN_set_negative(bn_plain, plaintext < 0 ? 1 : 0);
+    if (rand == NULL)
+        BN_rand_range(random, EC_GROUP_get0_order(ctx->key->group));
+    else
+        random = (BIGNUM *)rand;
 
 #ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
     if (ctx->flag == EC_ELGAMAL_FLAG_TWISTED) {
         if (!EC_POINT_mul(ctx->key->group, r->C1, NULL, ctx->key->pub_key,
-                          rand, bn_ctx))
+                          random, bn_ctx))
             goto err;
 
-        if (!EC_POINT_mul(ctx->key->group, r->C2, rand, ctx->h,
-                          bn_plain, bn_ctx))
+        if (!EC_POINT_mul(ctx->key->group, r->C2, random, ctx->h,
+                          plaintext, bn_ctx))
             goto err;
     } else {
 #endif
-        if (!EC_POINT_mul(ctx->key->group, r->C1, rand, NULL, NULL, bn_ctx))
+        if (!EC_POINT_mul(ctx->key->group, r->C1, random, NULL, NULL, bn_ctx))
             goto err;
 
-        if (!EC_POINT_mul(ctx->key->group, r->C2, bn_plain, ctx->key->pub_key,
-                          rand, bn_ctx))
+        if (!EC_POINT_mul(ctx->key->group, r->C2, plaintext, ctx->key->pub_key,
+                          random, bn_ctx))
             goto err;
 #ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
     }
@@ -250,6 +428,123 @@ err:
         EC_POINT_free(r->C1);
         EC_POINT_free(r->C2);
         r->C1 = NULL;
+        r->C2 = NULL;
+    }
+
+    return ret;
+}
+
+/** Encryption with one plaintext for multiple recipients.
+ *  \param  ctx        EC_ELGAMAL_CTX object.
+ *  \param  r          EC_ELGAMAL_CIPHERTEXT_MR object that stores the result of
+ *                     the encryption
+ *  \param  plaintext  The plaintext BIGNUM object to be encrypted
+ *  \return 1 on success and 0 otherwise
+ */
+int EC_ELGAMAL_MR_encrypt(EC_ELGAMAL_MR_CTX *ctx, EC_ELGAMAL_MR_CIPHERTEXT *r,
+                          const BIGNUM *plaintext, BIGNUM *rand)
+{
+    int ret = 0, i;
+    EC_KEY *key;
+    BN_CTX *bn_ctx = NULL;
+    BIGNUM *random = NULL;
+    EC_POINT *C1 = NULL;
+
+    if (ctx == NULL || ctx->sk_key == NULL || r == NULL || plaintext == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_PASSED_NULL_PARAMETER);
+        return ret;
+    }
+
+    bn_ctx = BN_CTX_new();
+    if (bn_ctx == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+        return ret;
+    }
+
+    BN_CTX_start(bn_ctx);
+    random = BN_CTX_get(bn_ctx);
+    if (random == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+
+    if (r->sk_C1 && sk_EC_POINT_num(r->sk_C1) != 0) {
+        sk_EC_POINT_pop_free(r->sk_C1, EC_POINT_free);
+        r->sk_C1 = NULL;
+    }
+
+    if (r->sk_C1 == NULL) {
+        r->sk_C1 = sk_EC_POINT_new_null();
+        if (r->sk_C1 == NULL)
+            goto err;
+    }
+
+    if (r->C2 == NULL) {
+        r->C2 = EC_POINT_new(ctx->group);
+        if (r->C2 == NULL)
+            goto err;
+    }
+
+    if (rand == NULL) {
+        BN_rand_range(random, EC_GROUP_get0_order(ctx->group));
+        rand = random;
+    }
+
+#ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
+    if (ctx->flag == EC_ELGAMAL_FLAG_TWISTED) {
+        for (i = 0; i < sk_EC_KEY_num(ctx->sk_key); i++) {
+            key = sk_EC_KEY_value(ctx->sk_key, i);
+
+            C1 = EC_POINT_new(ctx->group);
+            if (C1 == NULL)
+                goto err;
+
+            if (!EC_POINT_mul(ctx->group, C1, NULL, key->pub_key, rand, bn_ctx))
+                goto err;
+
+            if (sk_EC_POINT_push(r->sk_C1, C1) <= 0)
+                goto err;
+
+            C1 = NULL;
+        }
+
+        if (!EC_POINT_mul(ctx->group, r->C2, rand, ctx->h, plaintext, bn_ctx))
+            goto err;
+    } else {
+#endif
+        for (i = 0; i < sk_EC_KEY_num(ctx->sk_key); i++) {
+            key = sk_EC_KEY_value(ctx->sk_key, i);
+
+            C1 = EC_POINT_new(ctx->group);
+            if (C1 == NULL)
+                goto err;
+
+            if (!EC_POINT_mul(ctx->group, C1, plaintext, key->pub_key, rand, bn_ctx))
+                goto err;
+
+            if (sk_EC_POINT_push(r->sk_C1, C1) <= 0)
+                goto err;
+
+            C1 = NULL;
+        }
+
+        if (!EC_POINT_mul(ctx->group, r->C2, rand, NULL, NULL, bn_ctx))
+            goto err;
+#ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
+    }
+#endif
+
+    ret = 1;
+
+err:
+    BN_CTX_end(bn_ctx);
+    BN_CTX_free(bn_ctx);
+
+    if (!ret) {
+        EC_POINT_free(C1);
+        EC_POINT_free(r->C2);
+        sk_EC_POINT_pop_free(r->sk_C1, EC_POINT_free);
+        r->sk_C1 = NULL;
         r->C2 = NULL;
     }
 
@@ -289,7 +584,7 @@ int EC_ELGAMAL_decrypt(EC_ELGAMAL_CTX *ctx, int32_t *r,
 #ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
     if (ctx->flag == EC_ELGAMAL_FLAG_TWISTED) {
         if (!EC_POINT_mul(ctx->key->group, M, NULL, ciphertext->C1,
-                          ctx->sk_inv, bn_ctx))
+                          ctx->pk_inv, bn_ctx))
             goto err;
     } else {
 #endif

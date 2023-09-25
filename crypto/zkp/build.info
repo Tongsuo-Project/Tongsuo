@@ -1,17 +1,38 @@
 LIBS=../../libcrypto
 
+IF[{- !$disabled{bulletproofs} || !$disabled{nizk} || !$disabled{'zkp-gadget'} -}]
+    SOURCE[../../libcrypto]=common/zkp_util.c                               \
+                            common/zkp_err.c
+ENDIF
+
+IF[{- !$disabled{'zkp-transcript'} -}]
+    SOURCE[../../libcrypto]=common/zkp_transcript.c                         \
+                            common/zkp_transcript_sha256.c
+ENDIF
+
 IF[{- !$disabled{bulletproofs} -}]
     SOURCE[../../libcrypto]=bulletproofs/bulletproofs.c                     \
                             bulletproofs/range_proof.c                      \
                             bulletproofs/inner_product.c                    \
-                            bulletproofs/util.c                             \
                             bulletproofs/bulletproofs_encode.c              \
                             bulletproofs/bulletproofs_asn1.c                \
                             bulletproofs/bulletproofs_prn.c                 \
-                            bulletproofs/transcript.c                       \
-                            bulletproofs/transcript_sha256.c                \
                             bulletproofs/r1cs.c                             \
                             bulletproofs/r1cs_linear_combination.c          \
                             bulletproofs/r1cs_constraint_expression.c       \
                             bulletproofs/bp_err.c
+ENDIF
+
+IF[{- !$disabled{nizk} -}]
+    SOURCE[../../libcrypto]=nizk/nizk.c                                     \
+                            nizk/nizk_plaintext_knowledge.c                 \
+                            nizk/nizk_plaintext_equality.c                  \
+                            nizk/nizk_dlog_knowledge.c                      \
+                            nizk/nizk_dlog_equality.c                       \
+                            nizk/nizk_encode.c                              \
+                            nizk/nizk_err.c
+ENDIF
+
+IF[{- !$disabled{'zkp-gadget'} -}]
+    SOURCE[../../libcrypto]=gadget/zkp_range_proof.c
 ENDIF

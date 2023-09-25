@@ -451,7 +451,7 @@ opthelp2:
             goto end;
     }
 
-    if (!(ctx = EC_ELGAMAL_CTX_new(eckey, EC_ELGAMAL_FLAG_DEFAULT)))
+    if (!(ctx = EC_ELGAMAL_CTX_new(eckey, NULL, EC_ELGAMAL_FLAG_DEFAULT)))
         goto end;
 
     if (encrypt)

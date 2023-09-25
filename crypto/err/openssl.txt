@@ -1728,7 +1728,18 @@ ZKP_BP_R_R1CS_CONSTRAINT_EXPRESSION_VAR_NOT_FOUND:112:\
 	r1cs constraint expression var not found
 ZKP_BP_R_R1CS_CONSTRAINT_EXPRESSION_VAR_TOO_LONG:113:\
 	r1cs constraint expression var too long
+ZKP_BP_R_RANGE_LEN_MUST_BE_POWER_OF_TWO:114:range len must be power of two
 ZKP_BP_R_TRANSCRIPT_INIT_FAILED:103:transcript init failed
 ZKP_BP_R_VARIABLE_DUPLICATED:107:variable duplicated
 ZKP_BP_R_VARIABLE_NAME_TOO_LONG:108:variable name too long
 ZKP_BP_R_WITNESS_INVALID:105:witness invalid
+ZKP_NIZK_R_TRANSCRIPT_INIT_FAILED:100:transcript init failed
+ZKP_R_BULLETPROOFS_RANGE_PROVE_FAILED:101:bulletproofs range prove failed
+ZKP_R_BULLETPROOFS_RANGE_VERIFY_FAILED:102:bulletproofs range verify failed
+ZKP_R_NIZK_PLAINTEXT_KNOWLEDGE_PROVE_FAILED:103:\
+	nizk plaintext knowledge prove failed
+ZKP_R_NIZK_PLAINTEXT_KNOWLEDGE_VERIFY_FAILED:104:\
+	nizk plaintext knowledge verify failed
+ZKP_R_RANGE_PROVE_FAILED:105:range prove failed
+ZKP_R_RANGE_VERIFY_FAILED:106:range verify failed
+ZKP_R_TRANSCRIPT_INIT_FAILED:100:transcript init failed
