@@ -271,6 +271,9 @@ $config{builddir} = abs2rel($blddir, $blddir);
 # echo -n 'holy hand grenade of antioch' | openssl sha256
 $config{FIPSKEY} =
     'f4556650ac31d35461610bac4ed81b1a181b2d8a43ea2854cbae22ca74560813';
+# echo -n "Tongsuo in hand, no worries about compliance" | tongsuo sm3
+$config{SMTCKEY} =
+    '5b3d9ad84fd72961e63f27a3d5da2bb663e2ed9c7b761b8ad6d041ebc68f5098';
 
 # Collect reconfiguration information if needed
 my @argvcopy=@ARGV;
@@ -351,6 +354,8 @@ $config{tongsuo_prerelease} =
     defined $version{TONGSUO_PRE_RELEASE_TAG} ? "-$version{TONGSUO_PRE_RELEASE_TAG}" : '';
 $config{tongsuo_version} = "$config{tongsuo_major}.$config{tongsuo_minor}.$config{tongsuo_patch}";
 $config{tongsuo_full_version} = "$config{tongsuo_version}$config{tongsuo_prerelease}";
+
+$config{tongsuo_smtc_info} = $version{TONGSUO_SMTC_INFO};
 
 die "erroneous version information in VERSION.dat: ",
     "$config{version}, $config{shlib_version}\n"
@@ -465,6 +470,8 @@ my @disablables = (
     "rc5",
     "rdrand",
     "rfc3779",
+    "smtc",
+    "smtc-debug",
     "scrypt",
     "sctp",
     "secure-memory",
@@ -579,6 +586,8 @@ our %disabled = ( # "what"         => "comment"
                   "zkp-gadget"          => "default",
                   "zkp-transcript"      => "default",
                   "bn-method"           => "default",
+                  "smtc"                 => "default",
+                  "smtc-debug"           => "default",
                 );
 
 # Note: => pair form used for aesthetics, not to truly make a hash table
@@ -663,7 +672,10 @@ my @disable_cascades = (
 
     "fips"              => [ "fips-securitychecks", "acvp-tests" ],
 
-    "deprecated-3.0"    => [ "engine", "srp" ]
+    "deprecated-3.0"    => [ "engine", "srp" ],
+    # SMTC does not support ct for now
+    # SMTC only support builtin module for now
+    sub { !$disabled{"smtc"}} => [ "ct", "module" ],
     );
 
 # Avoid protocol support holes.  Also disable all versions below N, if version
@@ -1004,6 +1016,16 @@ while (@argvcopy)
                         die "FIPS key must have even number of characters\n"
                            if length $1 & 1;
                         die "FIPS key too long (64 bytes max)\n"
+                           if length $1 > 64;
+                        }
+                elsif (/^--smtc-key=(.*)$/)
+                        {
+                        $user{SMTCKEY}=lc($1);
+                        die "Non-hex character in SMTC key\n"
+                           if $user{SMTCKEY} =~ /[^a-f0-9]/;
+                        die "SMTC key must have even number of characters\n"
+                           if length $1 & 1;
+                        die "SMTC key too long (64 bytes max)\n"
                            if length $1 > 64;
                         }
                 elsif (/^--banner=(.*)$/)

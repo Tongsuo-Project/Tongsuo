@@ -217,6 +217,9 @@ static size_t get_entropy(PROV_DRBG *drbg, unsigned char **pout, int entropy,
 #ifdef FIPS_MODULE
         return ossl_crngt_get_entropy(drbg, pout, entropy, min_len, max_len,
                                       prediction_resistance);
+#elif defined(SMTC_MODULE)
+        return ossl_smtc_get_entropy(drbg, pout, entropy, min_len, max_len,
+                                     prediction_resistance);
 #else
         return ossl_prov_get_entropy(drbg->provctx, pout, entropy, min_len,
                                      max_len);

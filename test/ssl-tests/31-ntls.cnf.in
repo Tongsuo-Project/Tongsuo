@@ -405,44 +405,4 @@ our @tests = (
             "ExpectedProtocol" => "NTLS",
         },
     },
-
-    {
-        name => "test ntls client handshake with server which has set enable_force_ntls",
-        server => {
-            "SignCertificate" => test_pem("sm2", "server_sign.crt"),
-            "SignPrivateKey" => test_pem("sm2", "server_sign.key"),
-            "EncCertificate" => test_pem("sm2", "server_enc.crt"),
-            "EncPrivateKey" => test_pem("sm2", "server_enc.key"),
-            "Enable_ntls" => "on",
-            "Enable_force_ntls" => "on",
-        },
-        client => {
-            "VerifyCAFile" => test_pem("sm2", "chain-ca.crt"),
-            "Enable_ntls" => "on",
-        },
-        test   => {
-            "Method" => "NTLS",
-            "ExpectedResult" => "Success",
-            "ExpectedProtocol" => "NTLS",
-        },
-    },
-
-    {
-        name => "test tls client handshake with server which has set enable_force_ntls",
-        server => {
-            "SignCertificate" => test_pem("sm2", "server_sign.crt"),
-            "SignPrivateKey" => test_pem("sm2", "server_sign.key"),
-            "EncCertificate" => test_pem("sm2", "server_enc.crt"),
-            "EncPrivateKey" => test_pem("sm2", "server_enc.key"),
-            "Enable_ntls" => "on",
-            "Enable_force_ntls" => "on",
-        },
-        client => {
-            "Enable_ntls" => "off",
-        },
-        test   => {
-            "Method" => "TLS",
-            "ExpectedResult" => "ServerFail",
-        },
-    },
 );

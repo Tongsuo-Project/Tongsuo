@@ -1,0 +1,69 @@
+# Generated with generate_ssl_tests.pl
+
+num_tests = 2
+
+test-0 = 0-test ntls client handshake with server which has set enable_force_ntls
+test-1 = 1-test tls client handshake with server which has set enable_force_ntls
+# ===========================================================
+
+[0-test ntls client handshake with server which has set enable_force_ntls]
+ssl_conf = 0-test ntls client handshake with server which has set enable_force_ntls-ssl
+
+[0-test ntls client handshake with server which has set enable_force_ntls-ssl]
+server = 0-test ntls client handshake with server which has set enable_force_ntls-server
+client = 0-test ntls client handshake with server which has set enable_force_ntls-client
+
+[0-test ntls client handshake with server which has set enable_force_ntls-server]
+Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
+CipherString = DEFAULT
+Enable_force_ntls = on
+Enable_ntls = on
+EncCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_enc.crt
+EncPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_enc.key
+PrivateKey = ${ENV::TEST_CERTS_DIR}/serverkey.pem
+SignCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.crt
+SignPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.key
+
+[0-test ntls client handshake with server which has set enable_force_ntls-client]
+CipherString = DEFAULT
+Enable_ntls = on
+VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2/chain-ca.crt
+VerifyMode = Peer
+
+[test-0]
+ExpectedProtocol = NTLS
+ExpectedResult = Success
+Method = NTLS
+
+
+# ===========================================================
+
+[1-test tls client handshake with server which has set enable_force_ntls]
+ssl_conf = 1-test tls client handshake with server which has set enable_force_ntls-ssl
+
+[1-test tls client handshake with server which has set enable_force_ntls-ssl]
+server = 1-test tls client handshake with server which has set enable_force_ntls-server
+client = 1-test tls client handshake with server which has set enable_force_ntls-client
+
+[1-test tls client handshake with server which has set enable_force_ntls-server]
+Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
+CipherString = DEFAULT
+Enable_force_ntls = on
+Enable_ntls = on
+EncCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_enc.crt
+EncPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_enc.key
+PrivateKey = ${ENV::TEST_CERTS_DIR}/serverkey.pem
+SignCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.crt
+SignPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.key
+
+[1-test tls client handshake with server which has set enable_force_ntls-client]
+CipherString = DEFAULT
+Enable_ntls = off
+VerifyCAFile = ${ENV::TEST_CERTS_DIR}/rootcert.pem
+VerifyMode = Peer
+
+[test-1]
+ExpectedResult = ServerFail
+Method = TLS
+
+

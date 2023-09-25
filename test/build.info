@@ -955,6 +955,13 @@ IF[{- !$disabled{tests} -}]
     INCLUDE[bnmeth_test]=.. ../include ../apps/include
     DEPEND[bnmeth_test]=../libcrypto ../libssl libtestutil.a
   ENDIF
+
+  IF[{- !$disabled{'smtc'} -}]
+    PROGRAMS{noinst}=smtc_rand_self_test
+    SOURCE[smtc_rand_self_test]=smtc_rand_self_test.c
+    INCLUDE[smtc_rand_self_test]=.. ../include ../apps/include
+    DEPEND[smtc_rand_self_test]=../libcrypto ../providers/libsmtc.a libtestutil.a
+  ENDIF
 ENDIF
 
   SOURCE[ssl_ctx_test]=ssl_ctx_test.c
