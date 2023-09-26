@@ -9,65 +9,10 @@
 
 #include "ec_elgamal.h"
 #include <openssl/err.h>
-#include <openssl/sha.h>
 #include <string.h>
 
 DEFINE_STACK_OF(EC_KEY)
 DEFINE_STACK_OF(EC_POINT)
-
-#define HASH_TO_EC_POINT_TRY_COUNT  1000
-
-/*
- * Functions for convert string to ec_point on the elliptic curve.
- * This implementation belongs to the ad-hoc method, but it is also the
- * recommended implementation in the mcl library, the google open source project
- * and the cryptography conference paper.
- *  \param  group   underlying EC_GROUP object
- *  \param  r       EC_POINT object for the result
- *  \param  str     string pointer
- *  \param  len     length of the string
- *  \return 1 on success and 0 if an error occurred
- */
-int EC_POINT_from_string(const EC_GROUP *group, EC_POINT *r,
-                         const unsigned char *str, size_t len)
-{
-    int ret = 0, i = 0;
-    unsigned char hash_res[SHA256_DIGEST_LENGTH];
-    unsigned char *p = (unsigned char *)str;
-    BN_CTX *bn_ctx = NULL;
-    BIGNUM *x;
-
-    memset(hash_res, 0, sizeof(hash_res));
-
-    if ((bn_ctx = BN_CTX_new_ex(group->libctx)) == NULL)
-        goto end;
-
-    BN_CTX_start(bn_ctx);
-    if ((x = BN_CTX_get(bn_ctx)) == NULL)
-        goto end;
-
-    do {
-        if (!SHA256(p, len, hash_res))
-            goto end;
-
-        BN_bin2bn(hash_res, SHA256_DIGEST_LENGTH, x);
-
-        p  = &hash_res[0];
-        len = sizeof(hash_res);
-
-        if(EC_POINT_set_compressed_coordinates(group, r, x, 0, bn_ctx) == 1) {
-            ret = 1;
-            break;
-        }
-
-        ERR_clear_error();
-    } while (i++ < HASH_TO_EC_POINT_TRY_COUNT);
-
-end:
-    BN_CTX_end(bn_ctx);
-    BN_CTX_free(bn_ctx);
-    return ret;
-}
 
 /** Creates a new EC_ELGAMAL_CTX object
  *  \param  key      EC_KEY to use
