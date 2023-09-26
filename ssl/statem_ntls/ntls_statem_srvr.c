@@ -2378,9 +2378,13 @@ static int construct_stateless_ticket(SSL *s, WPACKET *pkt, uint32_t age_add,
         }
         iv_len = EVP_CIPHER_CTX_get_iv_length(ctx);
     } else {
+#ifdef SMTC_MODULE
+        EVP_CIPHER *cipher = EVP_CIPHER_fetch(s->ctx->libctx, "SM4-CBC",
+                                              s->ctx->propq);
+#else
         EVP_CIPHER *cipher = EVP_CIPHER_fetch(s->ctx->libctx, "AES-256-CBC",
                                               s->ctx->propq);
-
+#endif
         if (cipher == NULL) {
             /* Error is already recorded */
             SSLfatal_alert_ntls(s, SSL_AD_INTERNAL_ERROR);
@@ -2393,8 +2397,13 @@ static int construct_stateless_ticket(SSL *s, WPACKET *pkt, uint32_t age_add,
                 || !EVP_EncryptInit_ex(ctx, cipher, NULL,
                                        tctx->ext.secure->tick_aes_key, iv)
                 || !ssl_hmac_init(hctx, tctx->ext.secure->tick_hmac_key,
-                                 sizeof(tctx->ext.secure->tick_hmac_key),
-                                 "SHA256")) {
+                                  sizeof(tctx->ext.secure->tick_hmac_key),
+#ifdef SMTC_MODULE
+                                  "SM3"
+#else
+                                  "SHA256"
+#endif
+                                 )) {
             EVP_CIPHER_free(cipher);
             SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
             goto err;

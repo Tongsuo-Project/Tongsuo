@@ -22,6 +22,9 @@
 # include <openssl/engine.h>
 #endif
 #include <openssl/err.h>
+#include <openssl/core_names.h>
+#include <openssl/self_test.h>
+#include <openssl/provider.h>
 #include "apps.h"
 #include "progs.h"
 
@@ -392,6 +395,29 @@ static int do_cmd(LHASH_OF(FUNCTION) *prog, int argc, char *argv[])
 
     if (argc <= 0 || argv[0] == NULL)
         return 0;
+
+#ifdef SMTC_MODULE
+    /* Every app should run smtc self test firstly except mod, version and help */
+    if (strcmp(argv[0], "mod") != 0
+        && strcmp(argv[0], "version") != 0
+        && strcmp(argv[0], "help") != 0) {
+        if (OSSL_PROVIDER_available(app_get0_libctx(), "smtc")) {
+            OSSL_PROVIDER *prov = OSSL_PROVIDER_load(app_get0_libctx(), "smtc");
+            if (prov == NULL) {
+                BIO_printf(bio_err, "Failed to load smtc provider\n");
+                return 0;
+            }
+
+            if (OSSL_PROVIDER_self_test(prov) != 1) {
+                OSSL_PROVIDER_unload(prov);
+                BIO_printf(bio_err, "smtc self test failed\n");
+                return 0;
+            }
+
+            OSSL_PROVIDER_unload(prov);
+        }
+    }
+#endif
     memset(&f, 0, sizeof(f));
     f.name = argv[0];
     fp = lh_FUNCTION_retrieve(prog, &f);

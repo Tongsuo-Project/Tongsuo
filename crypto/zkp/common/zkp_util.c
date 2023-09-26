@@ -9,14 +9,16 @@
 
 #include <openssl/err.h>
 #include <openssl/ec.h>
-#include <openssl/zkpbperr.h>
+#include <openssl/zkperr.h>
 #include <crypto/ec/ec_local.h>
-#include "util.h"
+#include "zkp_util.h"
 
 DEFINE_STACK_OF(BIGNUM)
 DEFINE_STACK_OF(EC_POINT)
 
-EC_POINT *bp_random_ec_point_new(const EC_GROUP *group, BN_CTX *bn_ctx)
+static point_conversion_form_t form = POINT_CONVERSION_COMPRESSED;
+
+EC_POINT *zkp_random_ec_point_new(const EC_GROUP *group, BN_CTX *bn_ctx)
 {
     BIGNUM *r = NULL;
     BN_CTX *bctx = NULL;
@@ -39,7 +41,7 @@ EC_POINT *bp_random_ec_point_new(const EC_GROUP *group, BN_CTX *bn_ctx)
     if (r == NULL)
         goto err;
 
-    bp_rand_range(r, order);
+    zkp_rand_range(r, order);
 
     if (!(P = EC_POINT_new(group)) || !EC_POINT_mul(group, P, r, NULL, NULL, bn_ctx))
         goto err;
@@ -50,11 +52,11 @@ EC_POINT *bp_random_ec_point_new(const EC_GROUP *group, BN_CTX *bn_ctx)
 err:
     BN_CTX_end(bn_ctx);
     BN_CTX_free(bctx);
-    bp_random_ec_point_free(P);
+    zkp_random_ec_point_free(P);
     return NULL;
 }
 
-void bp_random_ec_point_free(EC_POINT *P)
+void zkp_random_ec_point_free(EC_POINT *P)
 {
     if (P == NULL)
         return;
@@ -62,7 +64,7 @@ void bp_random_ec_point_free(EC_POINT *P)
     EC_POINT_free(P);
 }
 
-int bp_random_bn_gen(const EC_GROUP *group, BIGNUM **r, size_t n, BN_CTX *bn_ctx)
+int zkp_random_bn_gen(const EC_GROUP *group, BIGNUM **r, size_t n, BN_CTX *bn_ctx)
 {
     size_t i;
     const BIGNUM *order;
@@ -73,15 +75,15 @@ int bp_random_bn_gen(const EC_GROUP *group, BIGNUM **r, size_t n, BN_CTX *bn_ctx
     order = EC_GROUP_get0_order(group);
 
     for (i = 0; i < n; i++) {
-        if (!(r[i] = BN_CTX_get(bn_ctx)) || !bp_rand_range(r[i], order))
+        if (!(r[i] = BN_CTX_get(bn_ctx)) || !zkp_rand_range(r[i], order))
             return 0;
     }
 
     return 1;
 }
 
-int bp_str2point(const EC_GROUP *group, const unsigned char *str, size_t len,
-                 EC_POINT *r, BN_CTX *bn_ctx)
+int zkp_str2point(const EC_GROUP *group, const unsigned char *str, size_t len,
+                  EC_POINT *r, BN_CTX *bn_ctx)
 {
     int ret = 0, i = 0;
     unsigned char hash_res[SHA256_DIGEST_LENGTH];
@@ -123,8 +125,8 @@ end:
     return ret;
 }
 
-size_t bp_point2oct(const EC_GROUP *group, const EC_POINT *P,
-                    unsigned char *buf, BN_CTX *bn_ctx)
+size_t zkp_point2oct(const EC_GROUP *group, const EC_POINT *P,
+                     unsigned char *buf, BN_CTX *bn_ctx)
 {
     size_t plen;
     point_conversion_form_t format = POINT_CONVERSION_COMPRESSED;
@@ -143,7 +145,47 @@ size_t bp_point2oct(const EC_GROUP *group, const EC_POINT *P,
     return plen;
 }
 
-int bp_bin_hash2bn(const unsigned char *data, size_t len, BIGNUM *r)
+int zkp_point2point(const EC_GROUP *group, const EC_POINT *P, EC_POINT *H, BN_CTX *bn_ctx)
+{
+    int ret = 0;
+    size_t len;
+    unsigned char *buf = NULL;
+    BN_CTX *bctx = NULL;
+
+    if (group == NULL || P == NULL || H == NULL)
+        return -1;
+
+    if (bn_ctx == NULL) {
+        bctx = bn_ctx = BN_CTX_new();
+    }
+
+    if (bn_ctx == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+
+    len = EC_POINT_point2oct(group, P, POINT_CONVERSION_COMPRESSED, NULL, 0, bn_ctx);
+    if (len <= 0)
+        goto err;
+
+    buf = OPENSSL_zalloc(len);
+    if (buf == NULL)
+        goto err;
+
+    if (!EC_POINT_point2oct(group, P, POINT_CONVERSION_COMPRESSED, buf, len, bn_ctx))
+        goto err;
+
+    if (!EC_POINT_from_string(group, H, buf, len))
+        goto err;
+
+    ret = 1;
+err:
+    OPENSSL_free(buf);
+    BN_CTX_free(bctx);
+    return ret;
+}
+
+int zkp_bin_hash2bn(const unsigned char *data, size_t len, BIGNUM *r)
 {
     int ret = 0;
     unsigned char hash_res[SHA256_DIGEST_LENGTH];
@@ -162,7 +204,7 @@ end:
     return ret;
 }
 
-int bp_next_power_of_two(int num)
+int zkp_next_power_of_two(int num)
 {
     int next_power_of_2 = 1;
 
@@ -173,7 +215,12 @@ int bp_next_power_of_two(int num)
     return next_power_of_2;
 }
 
-int bp_floor_log2(int x)
+int zkp_is_power_of_two(int num)
+{
+    return (num != 0) && ((num & (num - 1)) == 0);
+}
+
+int zkp_floor_log2(int x)
 {
     int result = 0;
 
@@ -185,8 +232,8 @@ int bp_floor_log2(int x)
     return result;
 }
 
-int bp_inner_product(BIGNUM *r, int num, const BIGNUM *a[], const BIGNUM *b[],
-                     const BIGNUM *order, BN_CTX *bn_ctx)
+int zkp_inner_product(BIGNUM *r, int num, const BIGNUM *a[], const BIGNUM *b[],
+                      const BIGNUM *order, BN_CTX *bn_ctx)
 {
     int ret = 0, i;
     BN_CTX *ctx = NULL;
@@ -234,10 +281,10 @@ end:
     return ret;
 }
 
-bp_poly3_t *bp_poly3_new(int n, const BIGNUM *order)
+zkp_poly3_t *zkp_poly3_new(int n, const BIGNUM *order)
 {
     int i;
-    bp_poly3_t *ret = NULL;
+    zkp_poly3_t *ret = NULL;
 
     if (n < 0 || order == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_INVALID_ARGUMENT);
@@ -284,11 +331,11 @@ bp_poly3_t *bp_poly3_new(int n, const BIGNUM *order)
 
     return ret;
 err:
-    bp_poly3_free(ret);
+    zkp_poly3_free(ret);
     return NULL;
 }
 
-void bp_poly3_free(bp_poly3_t *poly3)
+void zkp_poly3_free(zkp_poly3_t *poly3)
 {
     if (poly3 == NULL)
         return;
@@ -301,7 +348,7 @@ void bp_poly3_free(bp_poly3_t *poly3)
     OPENSSL_free(poly3);
 }
 
-STACK_OF(BIGNUM) *bp_poly3_eval(bp_poly3_t *poly3, const BIGNUM *x)
+STACK_OF(BIGNUM) *zkp_poly3_eval(zkp_poly3_t *poly3, const BIGNUM *x)
 {
     int i;
     BIGNUM *eval = NULL;
@@ -336,7 +383,7 @@ err:
     return NULL;
 }
 
-int bp_poly3_special_inner_product(bp_poly6_t *r, bp_poly3_t *lhs, bp_poly3_t *rhs)
+int zkp_poly3_special_inner_product(zkp_poly6_t *r, zkp_poly3_t *lhs, zkp_poly3_t *rhs)
 {
     int ret = 0;
     BIGNUM *t;
@@ -366,26 +413,26 @@ int bp_poly3_special_inner_product(bp_poly6_t *r, bp_poly3_t *lhs, bp_poly3_t *r
     if (!(t = BN_CTX_get(r->bn_ctx)))
         goto err;
 
-    if (!bp_inner_product(r->t1, lhs->n, (const BIGNUM **)lhs->x1,
+    if (!zkp_inner_product(r->t1, lhs->n, (const BIGNUM **)lhs->x1,
                           (const BIGNUM **)rhs->x0, r->order, r->bn_ctx)
-        || !bp_inner_product(r->t2, lhs->n, (const BIGNUM **)lhs->x1,
+        || !zkp_inner_product(r->t2, lhs->n, (const BIGNUM **)lhs->x1,
                              (const BIGNUM **)rhs->x1, r->order, r->bn_ctx)
-        || !bp_inner_product(t, lhs->n, (const BIGNUM **)lhs->x2,
+        || !zkp_inner_product(t, lhs->n, (const BIGNUM **)lhs->x2,
                              (const BIGNUM **)rhs->x0, r->order, r->bn_ctx)
         || !BN_mod_add(r->t2, r->t2, t, r->order, r->bn_ctx)
-        || !bp_inner_product(r->t3, lhs->n, (const BIGNUM **)lhs->x2,
+        || !zkp_inner_product(r->t3, lhs->n, (const BIGNUM **)lhs->x2,
                              (const BIGNUM **)rhs->x1, r->order, r->bn_ctx)
-        || !bp_inner_product(t, lhs->n, (const BIGNUM **)lhs->x3,
+        || !zkp_inner_product(t, lhs->n, (const BIGNUM **)lhs->x3,
                              (const BIGNUM **)rhs->x0, r->order, r->bn_ctx)
         || !BN_mod_add(r->t3, r->t3, t, r->order, r->bn_ctx)
-        || !bp_inner_product(r->t4, lhs->n, (const BIGNUM **)lhs->x1,
+        || !zkp_inner_product(r->t4, lhs->n, (const BIGNUM **)lhs->x1,
                              (const BIGNUM **)rhs->x3, r->order, r->bn_ctx)
-        || !bp_inner_product(t, lhs->n, (const BIGNUM **)lhs->x3,
+        || !zkp_inner_product(t, lhs->n, (const BIGNUM **)lhs->x3,
                              (const BIGNUM **)rhs->x1, r->order, r->bn_ctx)
         || !BN_mod_add(r->t4, r->t4, t, r->order, r->bn_ctx)
-        || !bp_inner_product(r->t5, lhs->n, (const BIGNUM **)lhs->x2,
+        || !zkp_inner_product(r->t5, lhs->n, (const BIGNUM **)lhs->x2,
                              (const BIGNUM **)rhs->x3, r->order, r->bn_ctx)
-        || !bp_inner_product(r->t6, lhs->n, (const BIGNUM **)lhs->x3,
+        || !zkp_inner_product(r->t6, lhs->n, (const BIGNUM **)lhs->x3,
                              (const BIGNUM **)rhs->x3, r->order, r->bn_ctx))
         goto err;
 
@@ -396,16 +443,16 @@ err:
     return ret;
 }
 
-bp_poly6_t *bp_poly6_new(const BIGNUM *order)
+zkp_poly6_t *zkp_poly6_new(const BIGNUM *order)
 {
-    bp_poly6_t *ret = NULL;
+    zkp_poly6_t *ret = NULL;
 
     if (order == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
         return NULL;
     }
 
-    if (!(ret = OPENSSL_zalloc(sizeof(bp_poly6_t)))) {
+    if (!(ret = OPENSSL_zalloc(sizeof(zkp_poly6_t)))) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
@@ -425,11 +472,11 @@ bp_poly6_t *bp_poly6_new(const BIGNUM *order)
     ret->order = order;
     return ret;
 err:
-    bp_poly6_free(ret);
+    zkp_poly6_free(ret);
     return NULL;
 }
 
-void bp_poly6_free(bp_poly6_t *poly6)
+void zkp_poly6_free(zkp_poly6_t *poly6)
 {
     if (poly6 == NULL)
         return;
@@ -438,7 +485,7 @@ void bp_poly6_free(bp_poly6_t *poly6)
     OPENSSL_free(poly6);
 }
 
-int bp_poly6_eval(bp_poly6_t *poly6, const BIGNUM *x, BIGNUM *r)
+int zkp_poly6_eval(zkp_poly6_t *poly6, const BIGNUM *x, BIGNUM *r)
 {
     int ret = 0;
 
@@ -465,9 +512,9 @@ err:
     return ret;
 }
 
-bp_poly_points_t *bp_poly_points_new(int capacity)
+zkp_poly_points_t *zkp_poly_points_new(int capacity)
 {
-    bp_poly_points_t *ret = NULL;
+    zkp_poly_points_t *ret = NULL;
 
     if (capacity <= 0) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_INVALID_ARGUMENT);
@@ -490,11 +537,11 @@ bp_poly_points_t *bp_poly_points_new(int capacity)
 
     return ret;
 err:
-    bp_poly_points_free(ret);
+    zkp_poly_points_free(ret);
     return NULL;
 }
 
-void bp_poly_points_free(bp_poly_points_t *ps)
+void zkp_poly_points_free(zkp_poly_points_t *ps)
 {
     if (ps == NULL)
         return;
@@ -504,7 +551,7 @@ void bp_poly_points_free(bp_poly_points_t *ps)
     OPENSSL_free(ps);
 }
 
-void bp_poly_points_reset(bp_poly_points_t *ps)
+void zkp_poly_points_reset(zkp_poly_points_t *ps)
 {
     if (ps == NULL || ps->num == 0)
         return;
@@ -514,7 +561,7 @@ void bp_poly_points_reset(bp_poly_points_t *ps)
     ps->num = 0;
 }
 
-int bp_poly_points_append(bp_poly_points_t *ps, EC_POINT *point, BIGNUM *scalar)
+int zkp_poly_points_append(zkp_poly_points_t *ps, EC_POINT *point, BIGNUM *scalar)
 {
     if (ps == NULL || point == NULL || scalar == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
@@ -531,8 +578,8 @@ int bp_poly_points_append(bp_poly_points_t *ps, EC_POINT *point, BIGNUM *scalar)
     return 1;
 }
 
-int bp_poly_points_mul(bp_poly_points_t *ps, EC_POINT *r, BIGNUM *scalar,
-                       const EC_GROUP *group, BN_CTX *bn_ctx)
+int zkp_poly_points_mul(zkp_poly_points_t *ps, EC_POINT *r, BIGNUM *scalar,
+                        const EC_GROUP *group, BN_CTX *bn_ctx)
 {
     if (ps == NULL || r == NULL || group == NULL || bn_ctx == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
@@ -542,3 +589,217 @@ int bp_poly_points_mul(bp_poly_points_t *ps, EC_POINT *r, BIGNUM *scalar,
     return EC_POINTs_mul(group, r, scalar, ps->num, (const EC_POINT **)ps->points,
                          (const BIGNUM **)ps->scalars, bn_ctx);
 }
+
+int zkp_bignum_encode(BIGNUM *bn, unsigned char *out, int bn_len)
+{
+    unsigned char *p = out;
+
+    if (bn == NULL)
+        return 0;
+
+    *p++ = BN_is_negative(bn) ? '-' : '+';
+
+    if (!BN_bn2binpad(bn, p, bn_len))
+        goto end;
+
+    p += bn_len;
+
+end:
+    return p - out;
+}
+
+BIGNUM *zkp_bignum_decode(const unsigned char *in, int *len, int bn_len)
+{
+    int neg;
+    unsigned char *p = (unsigned char *)in;
+    BIGNUM *b = NULL;
+
+    if (in == NULL)
+        return NULL;
+
+    b = BN_new();
+    if (b == NULL)
+        return NULL;
+
+    neg = *p++ == '-' ? 1 : 0;
+
+    if (!BN_bin2bn(p, bn_len, b))
+        goto err;
+
+    BN_set_negative(b, neg);
+
+    p += bn_len;
+
+    if (len != NULL)
+        *len = p - in;
+
+    return b;
+err:
+    BN_free(b);
+    return NULL;
+}
+
+int zkp_stack_of_bignum_encode(STACK_OF(BIGNUM) *sk, unsigned char *out,
+                               int bn_len)
+{
+    int i, n, *q;
+    unsigned char *p;
+    BIGNUM *b;
+
+    n = sk ? sk_BIGNUM_num(sk) : 0;
+    if (out == NULL)
+        return sizeof(n) + n * (bn_len + 1);
+
+    q = (int *)out;
+    *q++ = zkp_l2n((int)n);
+    p = (unsigned char *)q;
+
+    for (i = 0; i < n; i++) {
+        b = sk_BIGNUM_value(sk, i);
+        if (b == NULL)
+            goto end;
+
+        *p++ = BN_is_negative(b) ? '-' : '+';
+
+        if (!BN_bn2binpad(b, p, bn_len))
+            goto end;
+
+        p += bn_len;
+    }
+
+end:
+    return p - out;
+}
+
+STACK_OF(BIGNUM) *zkp_stack_of_bignum_decode(const unsigned char *in,
+                                             int *len, int bn_len)
+{
+    unsigned char *p;
+    int *q = (int *)in, n, i, neg;
+    BIGNUM *b = NULL;
+    STACK_OF(BIGNUM) *ret;
+
+    n = (int)zkp_n2l(*q);
+    q++;
+    p = (unsigned char *)q;
+
+    if (n < 0) {
+        return NULL;
+    }
+
+    if (!(ret = sk_BIGNUM_new_reserve(NULL, n)))
+        return NULL;
+
+    for (i = 0; i < n; i++) {
+        b = BN_new();
+        if (b == NULL)
+            goto err;
+
+        neg = *p++ == '-' ? 1 : 0;
+
+        if (!BN_bin2bn(p, (int)bn_len, b))
+            goto err;
+
+        BN_set_negative(b, neg);
+
+        if (sk_BIGNUM_push(ret, b) <= 0)
+            goto err;
+
+        p += bn_len;
+    }
+
+    if (len != NULL)
+        *len = p - in;
+
+    return ret;
+err:
+    BN_free(b);
+    sk_BIGNUM_pop_free(ret, BN_free);
+    return NULL;
+}
+
+int zkp_stack_of_point_encode(STACK_OF(EC_POINT) *sk, unsigned char *out,
+                              const EC_GROUP *group, BN_CTX *bn_ctx)
+{
+    int i, n, *q;
+    size_t point_len;
+    unsigned char *p;
+    EC_POINT *P;
+
+    if (sk == NULL || group == NULL)
+        return 0;
+
+    point_len = EC_POINT_point2oct(group, EC_GROUP_get0_generator(group),
+                                   form, NULL, 0, bn_ctx);
+    n = sk_EC_POINT_num(sk);
+    if (out == NULL)
+        return sizeof(n) + n * point_len;
+
+    q = (int *)out;
+    *q++ = zkp_l2n((int)n);
+    p = (unsigned char *)q;
+
+    for (i = 0; i < n; i++) {
+        P = sk_EC_POINT_value(sk, i);
+        if (P == NULL)
+            goto end;
+
+        if (EC_POINT_point2oct(group, P, form, p, point_len, bn_ctx) == 0)
+            goto end;
+
+        p += point_len;
+    }
+
+end:
+    return p - out;
+}
+
+STACK_OF(EC_POINT) *zkp_stack_of_point_decode(const unsigned char *in, int *len,
+                                              const EC_GROUP *group,
+                                              BN_CTX *bn_ctx)
+{
+    unsigned char *p;
+    int *q = (int *)in, n, i;
+    size_t point_len;
+    EC_POINT *P = NULL;
+    STACK_OF(EC_POINT) *ret = NULL;
+
+    if (in == NULL || group == NULL)
+        return 0;
+
+    point_len = EC_POINT_point2oct(group, EC_GROUP_get0_generator(group),
+                                   form, NULL, 0, bn_ctx);
+    n = (int)zkp_n2l(*q);
+    q++;
+    p = (unsigned char *)q;
+
+    if (n < 0) {
+        return NULL;
+    }
+
+    if (!(ret = sk_EC_POINT_new_reserve(NULL, n)))
+        return NULL;
+
+    for (i = 0; i < n; i++) {
+        if (!(P = EC_POINT_new(group)))
+            goto err;
+
+        if (!EC_POINT_oct2point(group, P, p, point_len, bn_ctx))
+            goto err;
+
+        if (sk_EC_POINT_push(ret, P) <= 0)
+            goto err;
+
+        p += point_len;
+    }
+
+    if (len != NULL)
+        *len = p - in;
+
+    return ret;
+err:
+    EC_POINT_free(P);
+    sk_EC_POINT_pop_free(ret, EC_POINT_free);
+    return NULL;
+}
+

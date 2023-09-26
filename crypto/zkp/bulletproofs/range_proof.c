@@ -10,9 +10,12 @@
 #include <openssl/err.h>
 #include <crypto/ec.h>
 #include <crypto/ec/ec_local.h>
+#include <crypto/zkp/common/zkp_util.h>
 #include "range_proof.h"
-#include "transcript.h"
-#include "util.h"
+
+DEFINE_STACK_OF(BIGNUM)
+DEFINE_STACK_OF(EC_POINT)
+DEFINE_STACK_OF(BP_VARIABLE)
 
 static void bp_range_proof_cleanup(BP_RANGE_PROOF *proof);
 
@@ -55,11 +58,11 @@ err:
 /** Creates a new BP_RANGE_CTX object
  *  \param  pp          BP_PUB_PARAM object
  *  \param  witness     BP_WITNESS object
- *  \param  transcript  BP_TRANSCRIPT object
+ *  \param  transcript  ZKP_TRANSCRIPT object
  *  \return newly created BP_RANGE_CTX object or NULL in case of an error
  */
 BP_RANGE_CTX *BP_RANGE_CTX_new(BP_PUB_PARAM *pp, BP_WITNESS *witness,
-                               BP_TRANSCRIPT *transcript)
+                               ZKP_TRANSCRIPT *transcript)
 {
     BP_RANGE_CTX *ctx = NULL;
 
@@ -199,7 +202,7 @@ int BP_RANGE_PROOF_prove(BP_RANGE_CTX *ctx, BP_RANGE_PROOF *proof)
     int i, j, m = 0, n, ret = 0;
     int bits, poly_num, witness_n, witness_r_n, witness_v_n, witness_padded_n;
     int *aL = NULL, *aR = NULL;
-    BP_TRANSCRIPT *transcript;
+    ZKP_TRANSCRIPT *transcript;
     BP_PUB_PARAM *pp;
     BP_WITNESS *witness;
     BIGNUM *witness_r, *witness_v;
@@ -212,7 +215,7 @@ int BP_RANGE_PROOF_prove(BP_RANGE_CTX *ctx, BP_RANGE_PROOF *proof)
     STACK_OF(BIGNUM) *sk_l = NULL, *sk_r = NULL;
     STACK_OF(EC_POINT) *sk_G = NULL, *sk_H = NULL;
     EC_POINT *P = NULL, *T = NULL, *U = NULL, *G, *H;
-    bp_poly_points_t *poly_a = NULL, *poly_s = NULL, *poly_p = NULL;
+    zkp_poly_points_t *poly_a = NULL, *poly_s = NULL, *poly_p = NULL;
     const BIGNUM *order;
     EC_GROUP *group;
     BN_CTX *bn_ctx = NULL;
@@ -271,7 +274,7 @@ int BP_RANGE_PROOF_prove(BP_RANGE_CTX *ctx, BP_RANGE_PROOF *proof)
     BN_one(pow_y_inv);
 
     witness_n = sk_BP_VARIABLE_num(witness->sk_V);
-    witness_padded_n = bp_next_power_of_two(witness_n);
+    witness_padded_n = zkp_next_power_of_two(witness_n);
     if (witness_padded_n > ctx->pp->party_capacity) {
         ERR_raise(ERR_LIB_ZKP_BP, ZKP_BP_R_EXCEEDS_PARTY_CAPACITY);
         goto err;
@@ -285,7 +288,7 @@ int BP_RANGE_PROOF_prove(BP_RANGE_CTX *ctx, BP_RANGE_PROOF *proof)
     witness_r_n = sk_BIGNUM_num(witness->sk_r);
     witness_v_n = sk_BIGNUM_num(witness->sk_v);
     witness_n = sk_BP_VARIABLE_num(witness->sk_V);
-    witness_padded_n = bp_next_power_of_two(witness_n);
+    witness_padded_n = zkp_next_power_of_two(witness_n);
 
     if (witness_r_n != witness_v_n || witness_v_n != witness_n) {
         ERR_raise(ERR_LIB_ZKP_BP, ZKP_BP_R_WITNESS_INVALID);
@@ -295,6 +298,11 @@ int BP_RANGE_PROOF_prove(BP_RANGE_CTX *ctx, BP_RANGE_PROOF *proof)
     n = pp->gens_capacity * witness_padded_n;
     poly_num = n * 2  + 1;
     bits = pp->gens_capacity;
+
+    if (!zkp_is_power_of_two(n)) {
+        ERR_raise(ERR_LIB_ZKP_BP, ZKP_BP_R_RANGE_LEN_MUST_BE_POWER_OF_TWO);
+        goto err;
+    }
 
     if (proof->ip_proof != NULL)
         bp_range_proof_cleanup(proof);
@@ -322,20 +330,20 @@ int BP_RANGE_PROOF_prove(BP_RANGE_CTX *ctx, BP_RANGE_PROOF *proof)
         goto err;
     }
 
-    if (!(poly_a = bp_poly_points_new(poly_num))
-        || !(poly_s = bp_poly_points_new(poly_num))
-        || !(poly_p = bp_poly_points_new(poly_num)))
+    if (!(poly_a = zkp_poly_points_new(poly_num))
+        || !(poly_s = zkp_poly_points_new(poly_num))
+        || !(poly_p = zkp_poly_points_new(poly_num)))
         goto err;
 
-    if (!bp_rand_range(alpha, order)
-        || !bp_rand_range(rho, order)
-        || !bp_rand_range(tau1, order)
-        || !bp_rand_range(tau2, order))
+    if (!zkp_rand_range(alpha, order)
+        || !zkp_rand_range(rho, order)
+        || !zkp_rand_range(tau1, order)
+        || !zkp_rand_range(tau2, order))
         goto err;
 
     /* (45) */
-    if (!bp_random_bn_gen(group, sL, n, bn_ctx)
-        || !bp_random_bn_gen(group, sR, n, bn_ctx))
+    if (!zkp_random_bn_gen(group, sL, n, bn_ctx)
+        || !zkp_random_bn_gen(group, sR, n, bn_ctx))
         goto err;
 
     for (i = 0; i < witness_n; i++) {
@@ -354,30 +362,30 @@ int BP_RANGE_PROOF_prove(BP_RANGE_CTX *ctx, BP_RANGE_PROOF *proof)
             if (G == NULL || H == NULL)
                 goto err;
 
-            if (!bp_poly_points_append(poly_a, G, aL[m] == 1 ? bn1 : bn0)
-                || !bp_poly_points_append(poly_a, H, aR[m] == -1 ? bn_1 : bn0)
-                || !bp_poly_points_append(poly_s, G, sL[m])
-                || !bp_poly_points_append(poly_s, H, sR[m]))
+            if (!zkp_poly_points_append(poly_a, G, aL[m] == 1 ? bn1 : bn0)
+                || !zkp_poly_points_append(poly_a, H, aR[m] == -1 ? bn_1 : bn0)
+                || !zkp_poly_points_append(poly_s, G, sL[m])
+                || !zkp_poly_points_append(poly_s, H, sR[m]))
                 goto err;
         }
     }
 
-    if (!bp_poly_points_append(poly_a, pp->H, alpha)
-        || !bp_poly_points_append(poly_s, pp->H, rho))
+    if (!zkp_poly_points_append(poly_a, pp->H, alpha)
+        || !zkp_poly_points_append(poly_s, pp->H, rho))
         goto err;
 
     /* (44, 47) */
-    if (!bp_poly_points_mul(poly_a, proof->A, NULL, group, bn_ctx)
-        || !bp_poly_points_mul(poly_s, proof->S, NULL, group, bn_ctx))
+    if (!zkp_poly_points_mul(poly_a, proof->A, NULL, group, bn_ctx)
+        || !zkp_poly_points_mul(poly_s, proof->S, NULL, group, bn_ctx))
         goto err;
 
     /* compute hash */
-    if (!BP_TRANSCRIPT_append_point(transcript, "A", proof->A, group)
-        || !BP_TRANSCRIPT_append_point(transcript, "S", proof->S, group))
+    if (!ZKP_TRANSCRIPT_append_point(transcript, "A", proof->A, group)
+        || !ZKP_TRANSCRIPT_append_point(transcript, "S", proof->S, group))
         goto err;
 
-    if (!BP_TRANSCRIPT_challange(transcript, "y", y)
-        || !BP_TRANSCRIPT_challange(transcript, "z", z))
+    if (!ZKP_TRANSCRIPT_challange(transcript, "y", y)
+        || !ZKP_TRANSCRIPT_challange(transcript, "z", z))
         goto err;
 
     if (!BN_mod_sqr(z2, z, order, bn_ctx) || !BN_copy(pow_zn, z2)
@@ -451,11 +459,11 @@ int BP_RANGE_PROOF_prove(BP_RANGE_CTX *ctx, BP_RANGE_PROOF *proof)
         goto err;
 
     /* (55, 56) */
-    if (!BP_TRANSCRIPT_append_point(transcript, "T1", proof->T1, group)
-        || !BP_TRANSCRIPT_append_point(transcript, "T2", proof->T2, group))
+    if (!ZKP_TRANSCRIPT_append_point(transcript, "T1", proof->T1, group)
+        || !ZKP_TRANSCRIPT_append_point(transcript, "T2", proof->T2, group))
         goto err;
 
-    if (!BP_TRANSCRIPT_challange(transcript, "x", x))
+    if (!ZKP_TRANSCRIPT_challange(transcript, "x", x))
         goto err;
 
     BN_zero(proof->tx);
@@ -506,8 +514,8 @@ int BP_RANGE_PROOF_prove(BP_RANGE_CTX *ctx, BP_RANGE_PROOF *proof)
             if (!BN_mod_mul(pow_y_inv, pow_y_inv, y_inv, order, bn_ctx))
                 goto err;
 
-            if (!bp_poly_points_append(poly_p, G, l)
-                || !bp_poly_points_append(poly_p, H, tmp))
+            if (!zkp_poly_points_append(poly_p, G, l)
+                || !zkp_poly_points_append(poly_p, H, tmp))
                 goto err;
         }
     }
@@ -527,8 +535,8 @@ int BP_RANGE_PROOF_prove(BP_RANGE_CTX *ctx, BP_RANGE_PROOF *proof)
 
     /* (67) */
     if (!EC_POINT_mul(group, U, NULL, pp->U, x, bn_ctx)
-        || !bp_poly_points_append(poly_p, U, proof->tx)
-        || !bp_poly_points_mul(poly_p, P, NULL, group, bn_ctx))
+        || !zkp_poly_points_append(poly_p, U, proof->tx)
+        || !zkp_poly_points_mul(poly_p, P, NULL, group, bn_ctx))
         goto err;
 
     if (!(ip_pp = bp_inner_product_pub_param_new(group, sk_G, sk_H))
@@ -541,15 +549,15 @@ int BP_RANGE_PROOF_prove(BP_RANGE_CTX *ctx, BP_RANGE_PROOF *proof)
     ret = 1;
 
 err:
-    BP_TRANSCRIPT_reset(transcript);
+    ZKP_TRANSCRIPT_reset(transcript);
 
     bp_inner_product_witness_free(ip_witness);
     bp_inner_product_pub_param_free(ip_pp);
     bp_inner_product_ctx_free(ip_ctx);
 
-    bp_poly_points_free(poly_a);
-    bp_poly_points_free(poly_s);
-    bp_poly_points_free(poly_p);
+    zkp_poly_points_free(poly_a);
+    zkp_poly_points_free(poly_s);
+    zkp_poly_points_free(poly_p);
 
     sk_EC_POINT_free(sk_G);
     sk_EC_POINT_free(sk_H);
@@ -608,7 +616,7 @@ err:
 int BP_RANGE_PROOF_verify(BP_RANGE_CTX *ctx, const BP_RANGE_PROOF *proof)
 {
     int ret = 0, i = 0, j, m, n, bits, poly_p_num, poly_r_num, witness_n, witness_padded_n;
-    BP_TRANSCRIPT *transcript;
+    ZKP_TRANSCRIPT *transcript;
     BP_PUB_PARAM *pp;
     BP_WITNESS *witness;
     BP_VARIABLE *V;
@@ -620,7 +628,7 @@ int BP_RANGE_PROOF_verify(BP_RANGE_CTX *ctx, const BP_RANGE_PROOF *proof)
     STACK_OF(EC_POINT) *sk_G = NULL, *sk_H = NULL;
     EC_POINT *O = NULL, *P = NULL, *U = NULL, *L = NULL, *R = NULL, *G, *H;
     BN_CTX *bn_ctx = NULL;
-    bp_poly_points_t *poly_p = NULL, *poly_r = NULL;
+    zkp_poly_points_t *poly_p = NULL, *poly_r = NULL;
     EC_GROUP *group;
     const BIGNUM *order;
     bp_inner_product_ctx_t *ip_ctx = NULL;
@@ -636,12 +644,17 @@ int BP_RANGE_PROOF_verify(BP_RANGE_CTX *ctx, const BP_RANGE_PROOF *proof)
     witness = ctx->witness;
     bits = pp->gens_capacity;
     witness_n = sk_BP_VARIABLE_num(witness->sk_V);
-    witness_padded_n = bp_next_power_of_two(witness_n);
+    witness_padded_n = zkp_next_power_of_two(witness_n);
     n = bits * witness_padded_n;
     poly_p_num = bits * witness_padded_n * 2 + 4;
     poly_r_num = bits * witness_padded_n + 3;
     group = pp->group;
     order = EC_GROUP_get0_order(group);
+
+    if (!zkp_is_power_of_two(n)) {
+        ERR_raise(ERR_LIB_ZKP_BP, ZKP_BP_R_RANGE_LEN_MUST_BE_POWER_OF_TWO);
+        return 0;
+    }
 
     if (witness_n != witness_padded_n) {
         ERR_raise(ERR_LIB_ZKP_BP, ZKP_BP_R_WITNESS_INVALID);
@@ -666,7 +679,7 @@ int BP_RANGE_PROOF_verify(BP_RANGE_CTX *ctx, const BP_RANGE_PROOF *proof)
         goto err;
     }
 
-    if (!(poly_p = bp_poly_points_new(poly_p_num)) || !(poly_r = bp_poly_points_new(poly_r_num)))
+    if (!(poly_p = zkp_poly_points_new(poly_p_num)) || !(poly_r = zkp_poly_points_new(poly_r_num)))
         goto err;
 
     if (!(O = EC_POINT_new(group))
@@ -715,19 +728,19 @@ int BP_RANGE_PROOF_verify(BP_RANGE_CTX *ctx, const BP_RANGE_PROOF *proof)
 
     EC_POINT_set_to_infinity(group, O);
 
-    if (!BP_TRANSCRIPT_append_point(transcript, "A", proof->A, group)
-        || !BP_TRANSCRIPT_append_point(transcript, "S", proof->S, group))
+    if (!ZKP_TRANSCRIPT_append_point(transcript, "A", proof->A, group)
+        || !ZKP_TRANSCRIPT_append_point(transcript, "S", proof->S, group))
         goto err;
 
-    if (!BP_TRANSCRIPT_challange(transcript, "y", y)
-        || !BP_TRANSCRIPT_challange(transcript, "z", z))
+    if (!ZKP_TRANSCRIPT_challange(transcript, "y", y)
+        || !ZKP_TRANSCRIPT_challange(transcript, "z", z))
         goto err;
 
-    if (!BP_TRANSCRIPT_append_point(transcript, "T1", proof->T1, group)
-        || !BP_TRANSCRIPT_append_point(transcript, "T2", proof->T2, group))
+    if (!ZKP_TRANSCRIPT_append_point(transcript, "T1", proof->T1, group)
+        || !ZKP_TRANSCRIPT_append_point(transcript, "T2", proof->T2, group))
         goto err;
 
-    if (!BP_TRANSCRIPT_challange(transcript, "x", x))
+    if (!ZKP_TRANSCRIPT_challange(transcript, "x", x))
         goto err;
 
     if (!BN_mod_inverse(y_inv, y, order, bn_ctx)
@@ -786,8 +799,8 @@ int BP_RANGE_PROOF_verify(BP_RANGE_CTX *ctx, const BP_RANGE_PROOF *proof)
             if (!BN_copy(tmp, t) || !BN_mod_mul(tmp, tmp, pow_y_inv, order, bn_ctx))
                 goto err;
 
-            if (!bp_poly_points_append(poly_p, G, nz)
-                || !bp_poly_points_append(poly_p, H, tmp))
+            if (!zkp_poly_points_append(poly_p, G, nz)
+                || !zkp_poly_points_append(poly_p, H, tmp))
                 goto err;
 
             if (!BN_mod_mul(pow_y, pow_y, y, order, bn_ctx)
@@ -800,7 +813,7 @@ int BP_RANGE_PROOF_verify(BP_RANGE_CTX *ctx, const BP_RANGE_PROOF *proof)
         if (tmp == NULL || !BN_copy(tmp, pow_z))
             goto err;
 
-        if (!bp_poly_points_append(poly_r, V->point, tmp))
+        if (!zkp_poly_points_append(poly_r, V->point, tmp))
             goto err;
     }
 
@@ -815,10 +828,10 @@ int BP_RANGE_PROOF_verify(BP_RANGE_CTX *ctx, const BP_RANGE_PROOF *proof)
         goto err;
 
     /* (72) */
-    if (!bp_poly_points_append(poly_r, pp->H, delta)
-        || !bp_poly_points_append(poly_r, proof->T1, x)
-        || !bp_poly_points_append(poly_r, proof->T2, x2)
-        || !bp_poly_points_mul(poly_r, R, NULL, group, bn_ctx))
+    if (!zkp_poly_points_append(poly_r, pp->H, delta)
+        || !zkp_poly_points_append(poly_r, proof->T1, x)
+        || !zkp_poly_points_append(poly_r, proof->T2, x2)
+        || !zkp_poly_points_mul(poly_r, R, NULL, group, bn_ctx))
         goto err;
 
     /* (65) */
@@ -840,11 +853,11 @@ int BP_RANGE_PROOF_verify(BP_RANGE_CTX *ctx, const BP_RANGE_PROOF *proof)
 
     BN_set_negative(tmp, !BN_is_negative(tmp));
 
-    if (!bp_poly_points_append(poly_p, proof->S, x)
-        || !bp_poly_points_append(poly_p, proof->A, bn1)
-        || !bp_poly_points_append(poly_p, pp->H, tmp)
-        || !bp_poly_points_append(poly_p, U, proof->tx)
-        || !bp_poly_points_mul(poly_p, P, NULL, group, bn_ctx))
+    if (!zkp_poly_points_append(poly_p, proof->S, x)
+        || !zkp_poly_points_append(poly_p, proof->A, bn1)
+        || !zkp_poly_points_append(poly_p, pp->H, tmp)
+        || !zkp_poly_points_append(poly_p, U, proof->tx)
+        || !zkp_poly_points_mul(poly_p, P, NULL, group, bn_ctx))
         goto err;
 
     if (!(ip_pp = bp_inner_product_pub_param_new(group, sk_G, sk_H))
@@ -855,13 +868,13 @@ int BP_RANGE_PROOF_verify(BP_RANGE_CTX *ctx, const BP_RANGE_PROOF *proof)
     ret = bp_inner_product_proof_verify(ip_ctx, proof->ip_proof);
 
 err:
-    BP_TRANSCRIPT_reset(transcript);
+    ZKP_TRANSCRIPT_reset(transcript);
 
     bp_inner_product_ctx_free(ip_ctx);
     bp_inner_product_pub_param_free(ip_pp);
 
-    bp_poly_points_free(poly_p);
-    bp_poly_points_free(poly_r);
+    zkp_poly_points_free(poly_p);
+    zkp_poly_points_free(poly_r);
 
     BN_CTX_end(bn_ctx);
     BN_CTX_free(bn_ctx);

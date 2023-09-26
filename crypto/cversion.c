@@ -92,6 +92,10 @@ const char *OpenSSL_version(int t)
     case OPENSSL_INFO_QUIC:
         return "QUIC";
 #endif
+#ifdef SMTC_MODULE
+    case TONGSUO_SMTC_INFO:
+        return TONGSUO_SMTC_INFO_STR;
+#endif
     }
     return "not available";
 }

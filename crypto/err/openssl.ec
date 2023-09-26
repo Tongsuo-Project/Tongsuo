@@ -44,7 +44,9 @@ L PROV          include/openssl/proverr.h       providers/common/provider_err.c 
 L OSSL_ENCODER  include/openssl/encodererr.h    crypto/encode_decode/encoder_err.c      include/crypto/encodererr.h
 L OSSL_DECODER  include/openssl/decodererr.h    crypto/encode_decode/decoder_err.c      include/crypto/decodererr.h
 L HTTP          include/openssl/httperr.h       crypto/http/http_err.c                  include/crypto/httperr.h
+L ZKP           include/openssl/zkperr.h        crypto/zkp/common/zkp_err.c             include/crypto/zkperr.h
 L ZKP_BP        include/openssl/zkpbperr.h      crypto/zkp/bulletproofs/bp_err.c        include/crypto/zkpbperr.h
+L ZKP_NIZK      include/openssl/zkpnizkerr.h    crypto/zkp/nizk/nizk_err.c              include/crypto/zkpnizkerr.h
 
 # SSL/TLS alerts
 R SSL_R_SSLV3_ALERT_UNEXPECTED_MESSAGE          1010
