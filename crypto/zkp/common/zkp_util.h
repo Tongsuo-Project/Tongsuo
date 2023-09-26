@@ -117,5 +117,3 @@ STACK_OF(EC_POINT) *zkp_stack_of_point_decode(const unsigned char *in, int *len,
 # endif
 
 #endif
-
-
