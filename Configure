@@ -1125,6 +1125,13 @@ if (!defined($disabled{'ec_elgamal'})) {
     $config{api}=$apitable->{"1.1.1"};
 }
 
+if (!defined($disabled{'twisted_ec_elgamal'})) {
+    die "twisted_ec_elgamal only supports api with 1.1.1\n"
+        if ($config{api} && $config{api} != $apitable->{"1.1.1"});
+    die "twisted_ec_elgamal depends on ec_elgamal\n"
+        if (defined($disabled{'ec_elgamal'}));
+}
+
 if (!defined($disabled{'bulletproofs'})) {
     die "bulletproofs only supports api with 1.1.1\n"
         if ($config{api} && $config{api} != $apitable->{"1.1.1"});
