@@ -492,7 +492,7 @@ end:
 int EC_ELGAMAL_MR_CIPHERTEXT_decode(EC_ELGAMAL_MR_CTX *ctx, EC_ELGAMAL_MR_CIPHERTEXT *r,
                                     unsigned char *in, size_t size)
 {
-    int ret = 0, len;
+    int ret = 0, len = 0;
     size_t point_len;
     unsigned char *p = in, zero[128];
     BN_CTX *bn_ctx = NULL;
