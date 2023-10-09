@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2016-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -336,8 +336,6 @@ int run_tests(const char *test_prog_name)
                 num_failed++;
             test_case_count++;
         } else {
-            int num_failed_inner = 0;
-
             verdict = TEST_SKIP_CODE;
             set_test_title(all_tests[i].test_case_name);
             if (all_tests[i].subtest) {
@@ -368,7 +366,6 @@ int run_tests(const char *test_prog_name)
                 v = all_tests[i].param_test_fn(j);
 
                 if (v == 0) {
-                    ++num_failed_inner;
                     verdict = 0;
                 } else if (v != TEST_SKIP_CODE && verdict != 0) {
                     verdict = 1;
