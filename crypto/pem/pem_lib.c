@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -791,7 +791,7 @@ static int get_header_and_data(BIO *bp, BIO **header, BIO **data, char *name,
 {
     BIO *tmp = *header;
     char *linebuf, *p;
-    int len, line, ret = 0, end = 0;
+    int len, ret = 0, end = 0;
     /* 0 if not seen (yet), 1 if reading header, 2 if finished header */
     enum header_status got_header = MAYBE_HEADER;
     unsigned int flags_mask;
@@ -805,7 +805,7 @@ static int get_header_and_data(BIO *bp, BIO **header, BIO **data, char *name,
         return 0;
     }
 
-    for (line = 0; ; line++) {
+    while (1) {
         flags_mask = ~0u;
         len = BIO_gets(bp, linebuf, LINESIZE);
         if (len <= 0) {

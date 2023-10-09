@@ -1,5 +1,11 @@
 /*
- * Copyright 2019 The BabaSSL Project Authors. All Rights Reserved.
+ * Copyright 2016-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2023 The Tongsuo Project Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
+ * this file except in compliance with the License.  You can obtain a copy
+ * in the file LICENSE in the source distribution or at
+ * https://www.openssl.org/source/license.html
  */
 
 #include <stdio.h>
@@ -1306,7 +1312,7 @@ MSG_PROCESS_RETURN tls_process_server_certificate_ntls(SSL *s, PACKET *pkt)
     const unsigned char *certstart, *certbytes;
     STACK_OF(X509) *sk = NULL;
     EVP_PKEY *pkey = NULL;
-    size_t chainidx, certidx;
+    size_t certidx;
     unsigned int context = 0;
     const SSL_CERT_LOOKUP *clu;
 
@@ -1324,7 +1330,7 @@ MSG_PROCESS_RETURN tls_process_server_certificate_ntls(SSL *s, PACKET *pkt)
                  SSL_R_LENGTH_MISMATCH);
         goto err;
     }
-    for (chainidx = 0; PACKET_remaining(pkt); chainidx++) {
+    while (PACKET_remaining(pkt)) {
         if (!PACKET_get_net_3(pkt, &cert_len)
             || !PACKET_get_bytes(pkt, &certbytes, cert_len)) {
             SSLfatal_ntls(s, SSL_AD_DECODE_ERROR,
