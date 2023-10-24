@@ -772,6 +772,38 @@ static int cmd_Enable_sign_by_dc(SSL_CONF_CTX *cctx, const char *value)
 
 #endif
 
+#ifndef OPENSSL_NO_SSL_TRACE
+static void trace_cb(int write_p, int version, int content_type,
+                     const void *buf, size_t msglen, SSL *ssl, void *arg)
+{
+    BIO *bio = NULL;
+    if (arg == NULL) {
+        bio = BIO_new_fp(stdout, BIO_NOCLOSE | BIO_FP_TEXT);
+        if (bio == NULL)
+            return;
+
+        arg = bio;
+    }
+
+    SSL_trace(write_p, version, content_type, buf, msglen, ssl, arg);
+
+    BIO_free(bio);
+}
+
+static int cmd_Trace(SSL_CONF_CTX *cctx, const char *value)
+{
+    if (strcmp(value, "on") == 0) {
+        if (cctx->ctx)
+            SSL_CTX_set_msg_callback(cctx->ctx, trace_cb);
+
+        if (cctx->ssl)
+            SSL_set_msg_callback(cctx->ssl, trace_cb);
+    }
+
+    return 1;
+}
+#endif
+
 typedef struct {
     int (*cmd) (SSL_CONF_CTX *cctx, const char *value);
     const char *str_file;
@@ -884,6 +916,9 @@ static const ssl_conf_cmd_tbl ssl_conf_cmds[] = {
                  SSL_CONF_TYPE_FILE),
     SSL_CONF_CMD_STRING(Enable_verify_peer_by_dc, "Enable_verify_peer_by_dc", 0),
     SSL_CONF_CMD_STRING(Enable_sign_by_dc, "Enable_sign_by_dc", 0),
+#endif
+#ifndef OPENSSL_NO_SSL_TRACE
+    SSL_CONF_CMD_STRING(Trace, "Trace", 0),
 #endif
 };
 
