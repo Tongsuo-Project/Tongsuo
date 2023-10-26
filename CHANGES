@@ -4,6 +4,8 @@
 
  Changes between 8.4.0 and 8.5.0 [xx XXX xxxx]
 
+  *) TEST
+
   *) 增加商用密码检测和认证Provider，包括身份认证、完整性验证、算法自测试、随机数自检、
      熵源健康测试；增加mod应用，包括生成SMTC配置、自测试功能
 
