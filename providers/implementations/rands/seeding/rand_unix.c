@@ -48,6 +48,7 @@
 # include <fcntl.h>
 # include <unistd.h>
 # include <sys/time.h>
+# include <time.h>
 
 static uint64_t get_time_stamp(void);
 static uint64_t get_timer_bits(void);
@@ -101,6 +102,7 @@ static uint64_t get_timer_bits(void);
 # undef OPENSSL_RAND_SEED_RDTSC
 # undef OPENSSL_RAND_SEED_RDCPU
 # undef OPENSSL_RAND_SEED_EGD
+# undef OPENSSL_RAND_SEED_RTC
 #endif
 
 #if defined(OPENSSL_SYS_UEFI) && !defined(OPENSSL_RAND_SEED_NONE)
@@ -604,6 +606,67 @@ void ossl_rand_pool_keep_random_devices_open(int keep)
 
 #  endif    /* defined(OPENSSL_RAND_SEED_DEVRANDOM) */
 
+#  if defined(OPENSSL_RAND_SEED_RTC)
+static size_t ossl_prov_acquire_entropy_from_rtc1(RAND_POOL *pool)
+{
+    size_t i, k, bytes_needed;
+    struct timespec ts;
+    unsigned char v;
+
+    bytes_needed = ossl_rand_pool_bytes_needed(pool, 4 /*entropy_factor*/);
+
+    for (i = 0; i < bytes_needed; i++) {
+        /*
+         * burn some cpu; hope for interrupts, cache collisions, bus
+         * interference, etc.
+         */
+        for (k = 0; k < 99; k++)
+            ts.tv_nsec = random();
+
+        /* sleep for 1/65536 of a second (15 us).  */
+        ts.tv_sec = 0;
+        ts.tv_nsec = 15000;
+        nanosleep(&ts, NULL);
+
+        /* Get wall clock time, take 8 bits. */
+        clock_gettime(CLOCK_REALTIME, &ts);
+        v = (unsigned char)(ts.tv_nsec & 0xFF);
+        ossl_rand_pool_add(pool, &v, sizeof(v), 2);
+    }
+    return ossl_rand_pool_entropy_available(pool);
+}
+
+static size_t ossl_prov_acquire_entropy_from_rtc2(RAND_POOL *pool)
+{
+    size_t i, k, bytes_needed;
+    struct timespec ts;
+    unsigned char v;
+
+    bytes_needed = ossl_rand_pool_bytes_needed(pool, 4 /*entropy_factor*/);
+
+    for (i = 0; i < bytes_needed; i++) {
+        long buf[100];
+        /*
+         * burn some cpu; hope for interrupts, cache collisions, bus
+         * interference, etc.
+         */
+        for (k = 1; k < OSSL_NELEM(buf); k++)
+            buf[k] = buf[k-1] ^ random();
+
+        /* sleep for 1/65536 of a second (15 us).  */
+        ts.tv_sec = 0;
+        ts.tv_nsec = 15000;
+        nanosleep(&ts, NULL);
+
+        /* Get wall clock time, take 8 bits. */
+        clock_gettime(CLOCK_REALTIME, &ts);
+        v = (unsigned char)(ts.tv_nsec & 0xFF);
+        ossl_rand_pool_add(pool, &v, sizeof(v), 2);
+    }
+    return ossl_rand_pool_entropy_available(pool);
+}
+#  endif
+
 /*
  * Try the various seeding methods in turn, exit when successful.
  *
@@ -739,6 +802,16 @@ size_t ossl_pool_acquire_entropy(RAND_POOL *pool)
         if (entropy_available > 0)
             return entropy_available;
     }
+#   endif
+
+#   if defined(OPENSSL_RAND_SEED_RTC)
+    entropy_available = ossl_prov_acquire_entropy_from_rtc1(pool);
+    if (entropy_available > 0)
+        return entropy_available;
+
+    entropy_available = ossl_prov_acquire_entropy_from_rtc2(pool);
+    if (entropy_available > 0)
+        return entropy_available;
 #   endif
 
     return ossl_rand_pool_entropy_available(pool);
