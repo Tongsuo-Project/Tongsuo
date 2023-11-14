@@ -50,13 +50,15 @@ void SM4_encrypt(const uint8_t *in, uint8_t *out, const SM4_KEY *ks);
  * You can't use MSVC to build this feature since it has no 'x86intrin.h'.
  */
 # ifndef OPENSSL_NO_SM4_NI
-# if defined(__i386) || defined(__i386__) || defined(__x86_64) || defined(__x86_64__)
-#   if defined (__has_include) && (__has_include(<x86intrin.h>))
-#    include <x86intrin.h>
-#    if defined(__SSE__) && defined(__SSE2__) && defined(__SSE3__) && defined(__AES__)
-#     define USE_SM4_NI
+#  if defined(__i386) || defined(__i386__) || defined(__x86_64) || defined(__x86_64__)
+#   if defined __has_include
+#    if __has_include(<x86intrin.h>)
+#     include <x86intrin.h>
+#     if defined(__SSE__) && defined(__SSE2__) && defined(__SSE3__) && defined(__AES__)
+#      define USE_SM4_NI
 void SM4_encrypt_affine_ni(const uint8_t *in, uint8_t *out,
                            const SM4_KEY *ks);
+#     endif
 #    endif
 #   endif
 #  endif
