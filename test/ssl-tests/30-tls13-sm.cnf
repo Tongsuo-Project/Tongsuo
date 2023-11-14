@@ -1,6 +1,6 @@
 # Generated with generate_ssl_tests.pl
 
-num_tests = 21
+num_tests = 23
 
 test-0 = 0-test ciphersuites TLS_SM4_GCM_SM3
 test-1 = 1-test series of ciphersuites includes TLS_SM4_GCM_SM3
@@ -23,6 +23,8 @@ test-17 = 17-test client success when enable sm_tls13_strict with SM2 key_share
 test-18 = 18-test client should fail when enable sm_tls13_strict with ecdsa cert and TLS_SM4_GCM_SM3 cipher
 test-19 = 19-test client auth fail when enable sm_tls13_strict, CertificateRequest with other signature algorithms except sm2sig_sm3
 test-20 = 20-test client auth success when both enable sm_tls13_strict
+test-21 = 21-test sm_tls13_strict server with sm2 and rsa certs, client signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3
+test-22 = 22-test sm_tls13_strict client with sm2 and rsa certs, server signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3
 # ===========================================================
 
 [0-test ciphersuites TLS_SM4_GCM_SM3]
@@ -678,5 +680,87 @@ VerifyMode = Peer
 ExpectedCipher = TLS_SM4_GCM_SM3
 ExpectedHRR = Yes
 ExpectedResult = Success
+
+
+# ===========================================================
+
+[21-test sm_tls13_strict server with sm2 and rsa certs, client signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3]
+ssl_conf = 21-test sm_tls13_strict server with sm2 and rsa certs, client signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3-ssl
+
+[21-test sm_tls13_strict server with sm2 and rsa certs, client signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3-ssl]
+server = 21-test sm_tls13_strict server with sm2 and rsa certs, client signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3-server
+client = 21-test sm_tls13_strict server with sm2 and rsa certs, client signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3-client
+
+[21-test sm_tls13_strict server with sm2 and rsa certs, client signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3-server]
+Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
+CipherString = DEFAULT
+Ciphersuites = TLS_SM4_GCM_SM3
+Enable_sm_tls13_strict = on
+MaxProtocol = TLSv1.3
+MinProtocol = TLSv1.3
+PrivateKey = ${ENV::TEST_CERTS_DIR}/serverkey.pem
+RSA.Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
+RSA.PrivateKey = ${ENV::TEST_CERTS_DIR}/serverkey.pem
+SM2.Certificate = ${ENV::TEST_CERTS_DIR}/sm2-leaf.crt
+SM2.PrivateKey = ${ENV::TEST_CERTS_DIR}/sm2-leaf.key
+VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-root-cert.pem
+VerifyMode = Require
+
+[21-test sm_tls13_strict server with sm2 and rsa certs, client signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3-client]
+Certificate = ${ENV::TEST_CERTS_DIR}/sm2-first-crt.pem
+CipherString = DEFAULT
+Ciphersuites = TLS_SM4_GCM_SM3
+Enable_sm_tls13_strict = on
+MaxProtocol = TLSv1.3
+MinProtocol = TLSv1.3
+PrivateKey = ${ENV::TEST_CERTS_DIR}/sm2-first-key.pem
+SignatureAlgorithms = rsa_pss_rsae_sha256:sm2sig_sm3
+VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-chain-ca.crt
+VerifyMode = Peer
+
+[test-21]
+ExpectedCipher = TLS_SM4_GCM_SM3
+ExpectedResult = Success
+ExpectedServerCertType = SM2
+
+
+# ===========================================================
+
+[22-test sm_tls13_strict client with sm2 and rsa certs, server signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3]
+ssl_conf = 22-test sm_tls13_strict client with sm2 and rsa certs, server signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3-ssl
+
+[22-test sm_tls13_strict client with sm2 and rsa certs, server signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3-ssl]
+server = 22-test sm_tls13_strict client with sm2 and rsa certs, server signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3-server
+client = 22-test sm_tls13_strict client with sm2 and rsa certs, server signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3-client
+
+[22-test sm_tls13_strict client with sm2 and rsa certs, server signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3-server]
+Certificate = ${ENV::TEST_CERTS_DIR}/sm2-leaf.crt
+CipherString = DEFAULT
+Ciphersuites = TLS_SM4_GCM_SM3
+Enable_sm_tls13_strict = off
+Groups = SM2
+MaxProtocol = TLSv1.3
+MinProtocol = TLSv1.3
+PrivateKey = ${ENV::TEST_CERTS_DIR}/sm2-leaf.key
+SignatureAlgorithms = rsa_pss_rsae_sha256:sm2sig_sm3
+VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-root-cert.pem
+VerifyMode = Require
+
+[22-test sm_tls13_strict client with sm2 and rsa certs, server signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3-client]
+CipherString = DEFAULT
+Ciphersuites = TLS_SM4_GCM_SM3
+Enable_sm_tls13_strict = on
+MaxProtocol = TLSv1.3
+MinProtocol = TLSv1.3
+RSA.Certificate = ${ENV::TEST_CERTS_DIR}/ee-client-chain.pem
+RSA.PrivateKey = ${ENV::TEST_CERTS_DIR}/ee-key.pem
+SM2.Certificate = ${ENV::TEST_CERTS_DIR}/sm2-first-crt.pem
+SM2.PrivateKey = ${ENV::TEST_CERTS_DIR}/sm2-first-key.pem
+VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-chain-ca.crt
+VerifyMode = Peer
+
+[test-22]
+ExpectedClientAlert = IllegalParameter
+ExpectedResult = ClientFail
 
 

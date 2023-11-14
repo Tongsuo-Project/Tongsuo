@@ -311,6 +311,8 @@ static const ssl_trace_tbl ssl_ciphers_tbl[] = {
     {0x1305, "TLS_AES_128_CCM_8_SHA256"},
     {0xFEFE, "SSL_RSA_FIPS_WITH_DES_CBC_SHA"},
     {0xFEFF, "SSL_RSA_FIPS_WITH_3DES_EDE_CBC_SHA"},
+    {0x00C6, "TLS_SM4_GCM_SM3"},
+    {0x00C7, "TLS_SM4_CCM_SM3"},
 #ifndef OPENSSL_NO_NTLS
     {0xE011, "ECDHE_SM4_CBC_SM3"},
     {0xE051, "ECDHE_SM4_GCM_SM3"},
