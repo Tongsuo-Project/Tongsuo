@@ -47,6 +47,8 @@
 * [Angie](https://angie.software/en/), Angie是一个可以替换掉NGINX的新型Web服务器，我们建议使用铜锁的用户优先选择Angie (We highly recommend you to replace NGINX with Angie to enable Tongsuo's functionality)
 * Apache APISIX
 * Tengine
+* [g3proxy](https://github.com/bytedance/g3/tree/master/g3proxy)，正向代理&基础反向代理
+* [g3bench](https://github.com/bytedance/g3/tree/master/g3bench)，HTTPS/H2/TLS握手等压测
 
 商业应用 (Commercial Application)
 

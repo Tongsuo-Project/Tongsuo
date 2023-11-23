@@ -152,6 +152,9 @@ DEFINE_RUN_ONCE_STATIC(init_info_strings)
 #ifdef OPENSSL_RAND_SEED_OS
         add_seeds_string("os-specific");
 #endif
+#ifdef OPENSSL_RAND_SEED_RTC
+        add_seeds_string("real-time-clock");
+#endif
         seed_sources = seeds;
     }
     return 1;

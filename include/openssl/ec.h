@@ -661,6 +661,19 @@ int EC_POINT_copy(EC_POINT *dst, const EC_POINT *src);
  */
 EC_POINT *EC_POINT_dup(const EC_POINT *src, const EC_GROUP *group);
 
+#ifndef FIPS_MODULE
+/*
+ * Functions for convert string to ec_point on the elliptic curve.
+ *  \param  group   underlying EC_GROUP object
+ *  \param  r       EC_POINT object for the result
+ *  \param  str     string pointer
+ *  \param  len     length of the string
+ *  \return 1 on success and 0 if an error occurred
+ */
+int EC_POINT_from_string(const EC_GROUP *group, EC_POINT *r,
+                         const unsigned char *str, size_t len);
+#endif
+
 /** Sets a point to infinity (neutral element)
  *  \param  group  underlying EC_GROUP object
  *  \param  point  EC_POINT to set to infinity
@@ -2049,17 +2062,6 @@ size_t EC_ELGAMAL_MR_CIPHERTEXT_encode(EC_ELGAMAL_MR_CTX *ctx, unsigned char *ou
  */
 int EC_ELGAMAL_MR_CIPHERTEXT_decode(EC_ELGAMAL_MR_CTX *ctx, EC_ELGAMAL_MR_CIPHERTEXT *r,
                                     unsigned char *in, size_t size);
-
-/*
- * Functions for convert string to ec_point on the elliptic curve.
- *  \param  group   underlying EC_GROUP object
- *  \param  r       EC_POINT object for the result
- *  \param  str     string pointer
- *  \param  len     length of the string
- *  \return 1 on success and 0 if an error occurred
- */
-int EC_POINT_from_string(const EC_GROUP *group, EC_POINT *r,
-                         const unsigned char *str, size_t len);
 
 #  endif
 
