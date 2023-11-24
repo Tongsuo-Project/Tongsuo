@@ -328,6 +328,30 @@ our @tests = (
     },
 
     {
+        name => "test client enable sm_tls13_strict, the key_share extension must include curveSM2",
+        server => {
+            "MinProtocol" => "TLSv1.3",
+            "MaxProtocol" => "TLSv1.3",
+            "Ciphersuites" => "TLS_SM4_GCM_SM3",
+            "Certificate" => test_pem("sm2-leaf.crt"),
+            "PrivateKey" => test_pem("sm2-leaf.key"),
+            "Enable_sm_tls13_strict" => "off",
+        },
+        client => {
+            "MinProtocol" => "TLSv1.3",
+            "MaxProtocol" => "TLSv1.3",
+            "Ciphersuites" => "TLS_SM4_GCM_SM3",
+            "VerifyCAFile" => test_pem("sm2-chain-ca.crt"),
+            "Enable_sm_tls13_strict" => "on",
+        },
+        test   => {
+            "ExpectedResult" => "Success",
+            "ExpectedCipher" => "TLS_SM4_GCM_SM3",
+            "ExpectedClientKeyShare" => "SM2",
+        },
+    },
+
+    {
         name => "test ClientHello1 no SM2 key_share, server should send HRR when enable sm_tls13_strict and choose TLS_SM4_GCM_SM3",
         server => {
             "MinProtocol" => "TLSv1.3",
@@ -343,53 +367,6 @@ our @tests = (
             "MaxProtocol" => "TLSv1.3",
             "Ciphersuites" => "TLS_SM4_GCM_SM3",
             "VerifyCAFile" => test_pem("sm2-chain-ca.crt"),
-        },
-        test   => {
-            "ExpectedResult" => "Success",
-            "ExpectedCipher" => "TLS_SM4_GCM_SM3",
-            "ExpectedHRR" => "Yes",
-        },
-    },
-
-    {
-        name => "test client should fail when enable sm_tls13_strict without SM2 key_share",
-        server => {
-            "MinProtocol" => "TLSv1.3",
-            "MaxProtocol" => "TLSv1.3",
-            "Ciphersuites" => "TLS_SM4_GCM_SM3",
-            "Certificate" => test_pem("sm2-leaf.crt"),
-            "PrivateKey" => test_pem("sm2-leaf.key"),
-            "Enable_sm_tls13_strict" => "off",
-        },
-        client => {
-            "MinProtocol" => "TLSv1.3",
-            "MaxProtocol" => "TLSv1.3",
-            "Ciphersuites" => "TLS_SM4_GCM_SM3",
-            "VerifyCAFile" => test_pem("sm2-chain-ca.crt"),
-            "Enable_sm_tls13_strict" => "on",
-        },
-        test   => {
-            "ExpectedResult" => "ClientFail",
-        },
-    },
-
-    {
-        name => "test client success when enable sm_tls13_strict with SM2 key_share",
-        server => {
-            "MinProtocol" => "TLSv1.3",
-            "MaxProtocol" => "TLSv1.3",
-            "Ciphersuites" => "TLS_SM4_GCM_SM3",
-            "Certificate" => test_pem("sm2-leaf.crt"),
-            "PrivateKey" => test_pem("sm2-leaf.key"),
-            "Enable_sm_tls13_strict" => "off",
-            "Groups" => "SM2",
-        },
-        client => {
-            "MinProtocol" => "TLSv1.3",
-            "MaxProtocol" => "TLSv1.3",
-            "Ciphersuites" => "TLS_SM4_GCM_SM3",
-            "VerifyCAFile" => test_pem("sm2-chain-ca.crt"),
-            "Enable_sm_tls13_strict" => "on",
         },
         test   => {
             "ExpectedResult" => "Success",
@@ -449,7 +426,7 @@ our @tests = (
     },
 
     {
-        name => "test client auth success when both enable sm_tls13_strict",
+        name => "test client auth success when also enable sm_tls13_strict",
         server => {
             "MinProtocol" => "TLSv1.3",
             "MaxProtocol" => "TLSv1.3",
@@ -472,7 +449,6 @@ our @tests = (
         test   => {
             "ExpectedResult" => "Success",
             "ExpectedCipher" => "TLS_SM4_GCM_SM3",
-            "ExpectedHRR" => "Yes",
         },
     },
 
