@@ -177,7 +177,6 @@ EXT_RETURN tls_construct_ctos_supported_groups(SSL *s, WPACKET *pkt,
 
     if (!use_ecc(s))
         return EXT_RETURN_NOT_SENT;
-
     /*
      * Add TLS extension supported_groups to the ClientHello message
      */
@@ -193,7 +192,69 @@ EXT_RETURN tls_construct_ctos_supported_groups(SSL *s, WPACKET *pkt,
                  ERR_R_INTERNAL_ERROR);
         return EXT_RETURN_FAIL;
     }
-    /* Copy curve ID if supported */
+
+#ifndef OPENSSL_NO_SM2
+    int min_version, max_version, reason;
+
+    reason = ssl_get_min_max_version(s, &min_version, &max_version, NULL);
+    if (reason != 0) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR,
+                 SSL_F_TLS_CONSTRUCT_CTOS_SUPPORTED_GROUPS, reason);
+        return EXT_RETURN_FAIL;
+    }
+    /*
+     * RFC 8998 requires that:
+     * For the key_share extension, a KeyShareEntry for the "curveSM2" group
+     * MUST be included. We re-order curveSM2 to the first supported group when
+     * enable_sm_tls13_strict so that the key_share extension will include a
+     * KeyShareEntry for the "curveSM2" group because only one KeyShareEntry is
+     * sent now.
+     */
+    if (!SSL_IS_DTLS(s) && max_version >= TLS1_3_VERSION
+        && s->enable_sm_tls13_strict == 1) {
+        int sm2_idx = -1;
+
+        for (i = 0; i < num_groups; i++) {
+            if (pgroups[i] == TLSEXT_curve_SM2) {
+                sm2_idx = i;
+                break;
+            }
+        }
+
+        if (sm2_idx > 0) {
+            int *groups = OPENSSL_malloc(sizeof(int) * num_groups);
+            if (groups == NULL) {
+                SSLfatal(s, SSL_AD_INTERNAL_ERROR,
+                         SSL_F_TLS_CONSTRUCT_CTOS_SUPPORTED_GROUPS,
+                         ERR_R_INTERNAL_ERROR);
+                return EXT_RETURN_FAIL;
+            }
+
+            for (i = 0; i < num_groups; i++)
+                groups[i] = tls1_group_id2nid(pgroups[i], 1);
+
+            for (i = sm2_idx; i > 0; i--)
+                groups[i] = groups[i - 1];
+
+            groups[0] = NID_sm2;
+
+            if (!tls1_set_groups(&s->ext.supportedgroups,
+                                 &s->ext.supportedgroups_len,
+                                 groups, num_groups)) {
+                SSLfatal(s, SSL_AD_INTERNAL_ERROR,
+                         SSL_F_TLS_CONSTRUCT_CTOS_SUPPORTED_GROUPS,
+                         ERR_R_INTERNAL_ERROR);
+                OPENSSL_free(groups);
+                return EXT_RETURN_FAIL;
+            }
+
+            OPENSSL_free(groups);
+            tls1_get_supported_groups(s, &pgroups, &num_groups);
+        }
+    }
+#endif
+
+    /* Copy group ID if supported */
     for (i = 0; i < num_groups; i++) {
         uint16_t ctmp = pgroups[i];
 

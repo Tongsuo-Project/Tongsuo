@@ -60,6 +60,8 @@ typedef struct handshake_result {
     int client_sign_hash;
     /* client signature type */
     int client_sign_type;
+    /* client key share */
+    int client_key_share;
     /* Client CA names */
     STACK_OF(X509_NAME) *client_ca_names;
     /* Session id status */
