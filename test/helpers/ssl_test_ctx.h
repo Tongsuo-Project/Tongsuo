@@ -233,6 +233,8 @@ typedef struct {
     int expected_client_sign_type;
     /* Expected CA names for client auth */
     STACK_OF(X509_NAME) *expected_client_ca_names;
+    /* Expected client key share */
+    int expected_client_key_share;
     /* Whether to use SCTP for the transport */
     int use_sctp;
     /* Enable SSL_MODE_DTLS_SCTP_LABEL_LENGTH_BUG on client side */
