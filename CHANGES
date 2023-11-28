@@ -4,7 +4,7 @@
 
  Changes between 8.4.0-pre3 and 8.4.0-pre4 [xx XXX xxxx]
 
-  *)
+  *) 修复CVE-2023-4807
 
  Changes between 8.4.0-pre2 and 8.4.0-pre3 [08 Oct 2023]
 
