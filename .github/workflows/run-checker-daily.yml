@@ -113,6 +113,10 @@ jobs:
           no-zlib,
           enable-zlib-dynamic,
           no-zlib-dynamic,
+          enable-ntls,
+          enable-ec_elgamal enable-twisted_ec_elgamal,
+          enable-bulletproofs,
+          enable-bulletproofs enable-nizk enable-zkp-gadget enable-ec_elgamal enable-twisted_ec_elgamal,
           -DOPENSSL_NO_BUILTIN_OVERFLOW_CHECKING
         ]
     runs-on: ubuntu-latest
