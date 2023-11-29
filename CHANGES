@@ -6,6 +6,8 @@
 
   *) 修复CVE-2023-4807
 
+  *) 修复CVE-2023-5363
+
  Changes between 8.4.0-pre2 and 8.4.0-pre3 [08 Oct 2023]
 
   *) 支持零知识证明算法-NIZKPoK 和实现 ZKP 范围证明工具
