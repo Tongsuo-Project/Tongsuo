@@ -497,14 +497,14 @@ static int test_handshake(int idx)
 #endif
 #ifndef OPENSSL_NO_NTLS
     if (test_ctx->method == SSL_TEST_METHOD_NTLS) {
-        server_ctx = SSL_CTX_new_ex(libctx, NULL, NTLS_server_method());
+        server_ctx = SSL_CTX_new_ex(libctx, NULL, TLS_server_method());
         if (!TEST_ptr(server_ctx)) {
             goto err;
         }
 
         if (test_ctx->extra.server.servername_callback !=
             SSL_TEST_SERVERNAME_CB_NONE) {
-            if (!TEST_ptr(server2_ctx = SSL_CTX_new_ex(libctx, NULL, NTLS_server_method())))
+            if (!TEST_ptr(server2_ctx = SSL_CTX_new_ex(libctx, NULL, TLS_server_method())))
                 goto err;
         }
 
@@ -514,7 +514,7 @@ static int test_handshake(int idx)
         }
 
         if (test_ctx->handshake_mode == SSL_TEST_HANDSHAKE_RESUME) {
-            resume_server_ctx = SSL_CTX_new_ex(libctx, NULL, NTLS_server_method());
+            resume_server_ctx = SSL_CTX_new_ex(libctx, NULL, TLS_server_method());
             resume_client_ctx = SSL_CTX_new_ex(libctx, NULL, NTLS_client_method());
 
             if (!TEST_ptr(resume_server_ctx)

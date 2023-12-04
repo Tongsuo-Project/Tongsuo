@@ -758,7 +758,7 @@ int tls_construct_extensions_ntls(SSL *s, WPACKET *pkt, unsigned int context,
                              X509 *x, size_t chainidx)
 {
     size_t i;
-    int min_version, max_version = 0, reason;
+    int max_version = NTLS_MAX_VERSION;
     const EXTENSION_DEFINITION *thisexd;
 
     if (!WPACKET_start_sub_packet_u16(pkt)
@@ -773,14 +773,6 @@ int tls_construct_extensions_ntls(SSL *s, WPACKET *pkt, unsigned int context,
                                      WPACKET_FLAGS_ABANDON_ON_ZERO_LENGTH))) {
         SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
         return 0;
-    }
-
-    if ((context & SSL_EXT_CLIENT_HELLO) != 0) {
-        reason = ssl_get_min_max_version_ntls(s, &min_version, &max_version, NULL);
-        if (reason != 0) {
-            SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, reason);
-            return 0;
-        }
     }
 
     /* Add custom extensions first */

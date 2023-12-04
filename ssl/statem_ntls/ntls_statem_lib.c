@@ -1103,69 +1103,29 @@ typedef struct {
 #endif
 
 /* Must be in order high to low */
-static const version_info tls_version_table[] = {
-#ifndef OPENSSL_NO_TLS1_3
-    {TLS1_3_VERSION, tlsv1_3_client_method, tlsv1_3_server_method},
-#else
-    {TLS1_3_VERSION, NULL, NULL},
-#endif
-#ifndef OPENSSL_NO_TLS1_2
-    {TLS1_2_VERSION, tlsv1_2_client_method, tlsv1_2_server_method},
-#else
-    {TLS1_2_VERSION, NULL, NULL},
-#endif
-#ifndef OPENSSL_NO_TLS1_1
-    {TLS1_1_VERSION, tlsv1_1_client_method, tlsv1_1_server_method},
-#else
-    {TLS1_1_VERSION, NULL, NULL},
-#endif
-#ifndef OPENSSL_NO_TLS1
-    {TLS1_VERSION, tlsv1_client_method, tlsv1_server_method},
-#else
-    {TLS1_VERSION, NULL, NULL},
-#endif
+static const version_info ntls_version_table[] = {
 #ifndef OPENSSL_NO_NTLS
-    {NTLS_VERSION, ntls_client_method, ntls_server_method},
+    {NTLS1_1_VERSION, ntls_client_method, ntls_server_method},
 #else
-    {NTLS_VERSION, NULL, NULL},
-#endif
-#ifndef OPENSSL_NO_SSL3
-    {SSL3_VERSION, sslv3_client_method, sslv3_server_method},
-#else
-    {SSL3_VERSION, NULL, NULL},
+    {NTLS1_1_VERSION, NULL, NULL},
 #endif
     {0, NULL, NULL},
 };
 
-
-
-
-
 /*
- * ssl_method_error - Check whether an SSL_METHOD is enabled.
- *
- * @s: The SSL handle for the candidate method
- * @method: the intended method.
+ * Now there is only version 1.1
  *
  * Returns 0 on success, or an SSL error reason on failure.
  */
-static int ssl_method_error(const SSL *s, const SSL_METHOD *method)
+static int ssl_method_error_ntls(const SSL *s, const SSL_METHOD *method)
 {
     int version = method->version;
 
-    if ((s->min_proto_version != 0 &&
-         version_cmp(s, version, s->min_proto_version) < 0) ||
-        ssl_security(s, SSL_SECOP_VERSION, 0, version, NULL) == 0)
+    if (ssl_security(s, SSL_SECOP_VERSION, 0, version, NULL) == 0)
         return SSL_R_VERSION_TOO_LOW;
-
-    if (s->max_proto_version != 0 &&
-        version_cmp(s, version, s->max_proto_version) > 0)
-        return SSL_R_VERSION_TOO_HIGH;
 
     if ((s->options & method->mask) != 0)
         return SSL_R_UNSUPPORTED_PROTOCOL;
-    if ((method->flags & SSL_METHOD_NO_SUITEB) != 0 && tls1_suiteb(s))
-        return SSL_R_AT_LEAST_TLS_1_2_NEEDED_IN_SUITEB_MODE;
 
     return 0;
 }
@@ -1189,7 +1149,7 @@ int ssl_version_supported_ntls(const SSL *s, int version, const SSL_METHOD **met
         /* Version should match method version for non-ANY method */
         return version_cmp(s, version, s->version) == 0;
     case TLS_ANY_VERSION:
-        table = tls_version_table;
+        table = ntls_version_table;
         break;
     }
 
@@ -1198,53 +1158,13 @@ int ssl_version_supported_ntls(const SSL *s, int version, const SSL_METHOD **met
          ++vent) {
         if (vent->cmeth != NULL
                 && version_cmp(s, version, vent->version) == 0
-                && ssl_method_error(s, vent->cmeth()) == 0
+                && ssl_method_error_ntls(s, vent->cmeth()) == 0
                 && (!s->server
                     || version != TLS1_3_VERSION)) {
             if (meth != NULL)
                 *meth = vent->cmeth();
             return 1;
         }
-    }
-    return 0;
-}
-
-/*
- * ssl_check_version_downgrade_ntls - In response to RFC7507 SCSV version
- * fallback indication from a client check whether we're using the highest
- * supported protocol version.
- *
- * @s server SSL handle.
- *
- * Returns 1 when using the highest enabled version, 0 otherwise.
- */
-int ssl_check_version_downgrade_ntls(SSL *s)
-{
-    const version_info *vent;
-    const version_info *table;
-
-    /*
-     * Check that the current protocol is the highest enabled version
-     * (according to s->ctx->method, as version negotiation may have changed
-     * s->method).
-     */
-    if (s->version == s->ctx->method->version)
-        return 1;
-
-    /*
-     * Apparently we're using a version-flexible SSL_METHOD (not at its
-     * highest protocol version).
-     */
-    if (s->ctx->method->version == TLS_method()->version)
-        table = tls_version_table;
-    else {
-        /* Unexpected state; fail closed. */
-        return 0;
-    }
-
-    for (vent = table; vent->version != 0; ++vent) {
-        if (vent->smeth != NULL && ssl_method_error(s, vent->smeth()) == 0)
-            return s->version == vent->version;
     }
     return 0;
 }
@@ -1357,13 +1277,8 @@ int ssl_choose_server_version_ntls(SSL *s, CLIENTHELLO_MSG *hello, DOWNGRADE *dg
             * ssl_method_error(s, s->method)
             */
         return 0;
-        /*
-         * Fall through if we are TLSv1.3 already (this means we must be after
-         * a HelloRetryRequest
-         */
-        /* fall thru */
     case TLS_ANY_VERSION:
-        table = tls_version_table;
+        table = ntls_version_table;
         break;
     }
 
@@ -1377,7 +1292,7 @@ int ssl_choose_server_version_ntls(SSL *s, CLIENTHELLO_MSG *hello, DOWNGRADE *dg
             version_cmp(s, client_version, vent->version) < 0)
             continue;
         method = vent->smeth();
-        if (ssl_method_error(s, method) == 0) {
+        if (ssl_method_error_ntls(s, method) == 0) {
             check_for_downgrade(s, vent->version, dgrd);
             s->version = vent->version;
             s->method = method;
@@ -1403,17 +1318,10 @@ int ssl_choose_client_version_ntls(SSL *s, int version, RAW_EXTENSION *extension
 {
     const version_info *vent;
     const version_info *table;
-    int ret, ver_min, ver_max, real_max, origv;
+    int origv;
 
     origv = s->version;
     s->version = version;
-
-    if (s->hello_retry_request != SSL_HRR_NONE
-            && s->version != TLS1_3_VERSION) {
-        s->version = origv;
-        SSLfatal_ntls(s, SSL_AD_PROTOCOL_VERSION, SSL_R_WRONG_SSL_VERSION);
-        return 0;
-    }
 
     switch (s->method->version) {
     default:
@@ -1422,60 +1330,10 @@ int ssl_choose_client_version_ntls(SSL *s, int version, RAW_EXTENSION *extension
             SSLfatal_ntls(s, SSL_AD_PROTOCOL_VERSION, SSL_R_WRONG_SSL_VERSION);
             return 0;
         }
-        /*
-         * If this SSL handle is not from a version flexible method we don't
-         * (and never did) check min/max, FIPS or Suite B constraints.  Hope
-         * that's OK.  It is up to the caller to not choose fixed protocol
-         * versions they don't want.  If not, then easy to fix, just return
-         * ssl_method_error(s, s->method)
-         */
         return 1;
     case TLS_ANY_VERSION:
-        table = tls_version_table;
+        table = ntls_version_table;
         break;
-    }
-
-    ret = ssl_get_min_max_version_ntls(s, &ver_min, &ver_max, &real_max);
-    if (ret != 0) {
-        s->version = origv;
-        SSLfatal_ntls(s, SSL_AD_PROTOCOL_VERSION, ret);
-        return 0;
-    }
-    if (s->version < ver_min) {
-        s->version = origv;
-        SSLfatal_ntls(s, SSL_AD_PROTOCOL_VERSION, SSL_R_UNSUPPORTED_PROTOCOL);
-        return 0;
-    } else if (s->version > ver_max) {
-        s->version = origv;
-        SSLfatal_ntls(s, SSL_AD_PROTOCOL_VERSION, SSL_R_UNSUPPORTED_PROTOCOL);
-        return 0;
-    }
-
-    if ((s->mode & SSL_MODE_SEND_FALLBACK_SCSV) == 0)
-        real_max = ver_max;
-
-    /* Check for downgrades */
-    if (s->version == TLS1_2_VERSION && real_max > s->version) {
-        if (memcmp(tls12downgrade,
-                   s->s3.server_random + SSL3_RANDOM_SIZE
-                                        - sizeof(tls12downgrade),
-                   sizeof(tls12downgrade)) == 0) {
-            s->version = origv;
-            SSLfatal_ntls(s, SSL_AD_ILLEGAL_PARAMETER,
-			              SSL_R_INAPPROPRIATE_FALLBACK);
-            return 0;
-        }
-    } else if (s->version < TLS1_2_VERSION
-               && real_max > s->version) {
-        if (memcmp(tls11downgrade,
-                   s->s3.server_random + SSL3_RANDOM_SIZE
-                                        - sizeof(tls11downgrade),
-                   sizeof(tls11downgrade)) == 0) {
-            s->version = origv;
-            SSLfatal_ntls(s, SSL_AD_ILLEGAL_PARAMETER,
-                          SSL_R_INAPPROPRIATE_FALLBACK);
-            return 0;
-        }
     }
 
     for (vent = table; vent->version != 0; ++vent) {
@@ -1488,158 +1346,6 @@ int ssl_choose_client_version_ntls(SSL *s, int version, RAW_EXTENSION *extension
 
     s->version = origv;
     SSLfatal_ntls(s, SSL_AD_PROTOCOL_VERSION, SSL_R_UNSUPPORTED_PROTOCOL);
-    return 0;
-}
-
-/*
- * ssl_get_min_max_version_ntls - get minimum and maximum protocol version
- * @s: The SSL connection
- * @min_version: The minimum supported version
- * @max_version: The maximum supported version
- * @real_max:    The highest version below the lowest compile time version hole
- *               where that hole lies above at least one run-time enabled
- *               protocol.
- *
- * Work out what version we should be using for the initial ClientHello if the
- * version is initially (D)TLS_ANY_VERSION.  We apply any explicit SSL_OP_NO_xxx
- * options, the MinProtocol and MaxProtocol configuration commands, any Suite B
- * constraints and any floor imposed by the security level here,
- * so we don't advertise the wrong protocol version to only reject the outcome later.
- *
- * Computing the right floor matters.  If, e.g., TLS 1.0 and 1.2 are enabled,
- * TLS 1.1 is disabled, but the security level, Suite-B  and/or MinProtocol
- * only allow TLS 1.2, we want to advertise TLS1.2, *not* TLS1.
- *
- * Returns 0 on success or an SSL error reason number on failure.  On failure
- * min_version and max_version will also be set to 0.
- */
-int ssl_get_min_max_version_ntls(const SSL *s, int *min_version, int *max_version,
-                            int *real_max)
-{
-    int version, tmp_real_max;
-    int hole;
-    const SSL_METHOD *single = NULL;
-    const SSL_METHOD *method;
-    const version_info *table;
-    const version_info *vent;
-
-    switch (s->method->version) {
-    default:
-        /*
-         * If this SSL handle is not from a version flexible method we don't
-         * (and never did) check min/max FIPS or Suite B constraints.  Hope
-         * that's OK.  It is up to the caller to not choose fixed protocol
-         * versions they don't want.  If not, then easy to fix, just return
-         * ssl_method_error(s, s->method)
-         */
-        *min_version = *max_version = s->version;
-        /*
-         * Providing a real_max only makes sense where we're using a version
-         * flexible method.
-         */
-        if (!ossl_assert(real_max == NULL))
-            return ERR_R_INTERNAL_ERROR;
-        return 0;
-    case TLS_ANY_VERSION:
-        table = tls_version_table;
-        break;
-    }
-
-    /*
-     * SSL_OP_NO_X disables all protocols above X *if* there are some protocols
-     * below X enabled. This is required in order to maintain the "version
-     * capability" vector contiguous. Any versions with a NULL client method
-     * (protocol version client is disabled at compile-time) is also a "hole".
-     *
-     * Our initial state is hole == 1, version == 0.  That is, versions above
-     * the first version in the method table are disabled (a "hole" above
-     * the valid protocol entries) and we don't have a selected version yet.
-     *
-     * Whenever "hole == 1", and we hit an enabled method, its version becomes
-     * the selected version, and the method becomes a candidate "single"
-     * method.  We're no longer in a hole, so "hole" becomes 0.
-     *
-     * If "hole == 0" and we hit an enabled method, then "single" is cleared,
-     * as we support a contiguous range of at least two methods.  If we hit
-     * a disabled method, then hole becomes true again, but nothing else
-     * changes yet, because all the remaining methods may be disabled too.
-     * If we again hit an enabled method after the new hole, it becomes
-     * selected, as we start from scratch.
-     */
-    *min_version = version = 0;
-    hole = 1;
-    if (real_max != NULL)
-        *real_max = 0;
-    tmp_real_max = 0;
-    for (vent = table; vent->version != 0; ++vent) {
-        /*
-         * A table entry with a NULL client method is still a hole in the
-         * "version capability" vector.
-         */
-        if (vent->cmeth == NULL) {
-            hole = 1;
-            tmp_real_max = 0;
-            continue;
-        }
-        method = vent->cmeth();
-
-        if (hole == 1 && tmp_real_max == 0)
-            tmp_real_max = vent->version;
-
-        if (ssl_method_error(s, method) != 0) {
-            hole = 1;
-        } else if (!hole) {
-            single = NULL;
-            *min_version = method->version;
-        } else {
-            if (real_max != NULL && tmp_real_max != 0)
-                *real_max = tmp_real_max;
-            version = (single = method)->version;
-            *min_version = version;
-            hole = 0;
-        }
-    }
-
-    *max_version = version;
-
-    /* Fail if everything is disabled */
-    if (version == 0)
-        return SSL_R_NO_PROTOCOLS_AVAILABLE;
-
-    return 0;
-}
-
-/*
- * ssl_set_client_hello_version_ntls - Work out what version we should be using for
- * the initial ClientHello.legacy_version field.
- *
- * @s: client SSL handle.
- *
- * Returns 0 on success or an SSL error reason number on failure.
- */
-int ssl_set_client_hello_version_ntls(SSL *s)
-{
-    int ver_min, ver_max, ret;
-
-    /*
-     * In a renegotiation we always send the same client_version that we sent
-     * last time, regardless of which version we eventually negotiated.
-     */
-    if (!SSL_IS_FIRST_HANDSHAKE(s))
-        return 0;
-
-    ret = ssl_get_min_max_version_ntls(s, &ver_min, &ver_max, NULL);
-
-    if (ret != 0)
-        return ret;
-
-    s->version = ver_max;
-
-    /* TLS1.3 always uses TLS1.2 in the legacy_version field */
-    if (ver_max > TLS1_2_VERSION)
-        ver_max = TLS1_2_VERSION;
-
-    s->client_version = ver_max;
     return 0;
 }
 

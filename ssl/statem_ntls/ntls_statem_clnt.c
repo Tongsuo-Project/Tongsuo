@@ -743,22 +743,13 @@ int tls_construct_client_hello_ntls(SSL *s, WPACKET *pkt)
 {
     unsigned char *p;
     size_t sess_id_len;
-    int i, protverr;
     SSL_SESSION *sess = s->session;
     unsigned char *session_id;
-
-    /* Work out what SSL/TLS version to use */
-    protverr = ssl_set_client_hello_version_ntls(s);
-    if (protverr != 0) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, protverr);
-        return 0;
-    }
 
     if (sess == NULL
             || !ssl_version_supported_ntls(s, sess->ssl_version, NULL)
             || !SSL_SESSION_is_resumable(sess)) {
-        if (s->hello_retry_request == SSL_HRR_NONE
-                && !ssl_get_new_session(s, 0)) {
+        if (!ssl_get_new_session(s, 0)) {
             /* SSLfatal_ntls() already called */
             return 0;
         }
@@ -766,10 +757,9 @@ int tls_construct_client_hello_ntls(SSL *s, WPACKET *pkt)
     /* else use the pre-loaded session */
 
     p = s->s3.client_random;
-    i = (s->hello_retry_request == SSL_HRR_NONE);
 
-    if (i && ssl_fill_hello_random(s, 0, p, sizeof(s->s3.client_random),
-                                   DOWNGRADE_NONE) <= 0) {
+    if (ssl_fill_hello_random(s, 0, p, sizeof(s->s3.client_random),
+                              DOWNGRADE_NONE) <= 0) {
         SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
         return 0;
     }
