@@ -75,11 +75,13 @@ int ERR_load_DH_strings(void);
 #  define DH_R_KEYS_NOT_SET                                108
 #  define DH_R_MISSING_PUBKEY                              125
 #  define DH_R_MODULUS_TOO_LARGE                           103
+#  define DH_R_MODULUS_TOO_SMALL                           126
 #  define DH_R_NOT_SUITABLE_GENERATOR                      120
 #  define DH_R_NO_PARAMETERS_SET                           107
 #  define DH_R_NO_PRIVATE_VALUE                            100
 #  define DH_R_PARAMETER_ENCODING_ERROR                    105
 #  define DH_R_PEER_KEY_ERROR                              111
+#  define DH_R_Q_TOO_LARGE                                 130
 #  define DH_R_SHARED_INFO_ERROR                           113
 #  define DH_R_UNABLE_TO_CHECK_GENERATOR                   121
 
