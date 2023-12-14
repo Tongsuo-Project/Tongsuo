@@ -2,6 +2,10 @@
  Tongsuo CHANGES
  _______________
 
+ Changes between 8.4.0 and 8.4.1 [xx XXX xxxx]
+
+  *)
+
  Changes between 8.3.0 and 8.4.0 [15 Dec 2023]
 
   *) 修复多个安全漏洞
