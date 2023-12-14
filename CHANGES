@@ -2,33 +2,15 @@
  Tongsuo CHANGES
  _______________
 
- Changes between 8.4.0-pre3 and 8.4.0-pre4 [xx XXX xxxx]
+ Changes between 8.3.0 and 8.4.0 [15 Dec 2023]
 
-  *) 修复CVE-2023-4807
-
-  *) 修复CVE-2023-5363
-
-  *) 修复CVE-2023-5678
-
- Changes between 8.4.0-pre2 and 8.4.0-pre3 [08 Oct 2023]
+  *) 修复多个安全漏洞
 
   *) 支持零知识证明算法-NIZKPoK 和实现 ZKP 范围证明工具
-
- Changes between 8.4.0-pre1 and 8.4.0-pre2 [17 Aug 2023]
-
-  *) 修复CVE-2023-3817
-
-  *) 修复CVE-2023-3446
-
-  *) 修复CVE-2023-2975
 
   *) 实现基于64位平台架构的SM2算法性能优化
 
   *) 实现基于SM2曲线参数特化的快速模约减和快速模逆元算法
-
- Changes between 8.3.0 and 8.4.0-pre1 [07 Jun 2023]
-
-  *) 修复CVE-2023-2650
 
   *) 支持零知识证明算法-bulletproofs (r1cs)
 
@@ -40,61 +22,31 @@
 
   *) 支持零知识证明算法-bulletproofs (range proof)
 
-  *) 修复CVE-2022-3996
-
   *) Paillier 支持硬件加速
 
   *) BIGNUM 运算支持 method 机制
 
   *) 支持半同态加密算法 Twisted-EC-ElGamal
 
-  *) 修复CVE-2022-3786和CVE-2022-3602
-
   *) 支持半同态加密算法 EC-ElGamal 命令行
 
   *) 支持半同态加密算法-Paillier
 
-  *) 删除Blake2算法
-
-  *) 删除Blowfish算法
-
-  *) 删除Whirlpool算法
-
-  *) 删除RC2算法
+  *) 删除多种不常用算法
 
   *) 删除对VMS系统的支持
 
   *) 删除多种文档相关、工具类代码
 
-  *) 删除RIPEMD算法
-
-  *) 删除MDC2算法
-
-  *) 删除MD4算法
-
-  *) 删除IDEA算法
-
-  *) 删除了对GOST的支持
-
   *) 支持新特性 - 添加导出符号前缀
 
-  *) 删除CAST算法
-
   *) 删除PA-RISC架构代码
-
-  *) 删除MD2算法
 
   *) 删除SPARC架构代码
 
   *) 支持椭圆曲线（EC）点计算硬件加速 API
 
-  *) 删除SEED算法
-
   *) 修复2处SM2签名算法的实现bug [0x9527-zhou]
-
-  *) 删除Camellia算法
-
-  *) 修复CVE-2022-0778
 
   *) 基础代码迁移到OpenSSL 3.0.2
 
