@@ -1716,6 +1716,9 @@ static HANDSHAKE_RESULT *do_handshake_internal(
     SSL_get_peer_signature_type_nid(client.ssl, &ret->server_sign_type);
     SSL_get_peer_signature_type_nid(server.ssl, &ret->client_sign_type);
 
+    if (SSL_IS_TLS13(client.ssl) && client.ssl->s3.did_kex)
+        ret->client_key_share = SSL_get_negotiated_group(client.ssl);
+
     names = SSL_get0_peer_CA_list(client.ssl);
     if (names == NULL)
         ret->client_ca_names = NULL;

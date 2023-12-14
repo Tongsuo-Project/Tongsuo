@@ -328,6 +328,30 @@ our @tests = (
     },
 
     {
+        name => "test client enable sm_tls13_strict, the key_share extension must include curveSM2",
+        server => {
+            "MinProtocol" => "TLSv1.3",
+            "MaxProtocol" => "TLSv1.3",
+            "Ciphersuites" => "TLS_SM4_GCM_SM3",
+            "Certificate" => test_pem("sm2-leaf.crt"),
+            "PrivateKey" => test_pem("sm2-leaf.key"),
+            "Enable_sm_tls13_strict" => "off",
+        },
+        client => {
+            "MinProtocol" => "TLSv1.3",
+            "MaxProtocol" => "TLSv1.3",
+            "Ciphersuites" => "TLS_SM4_GCM_SM3",
+            "VerifyCAFile" => test_pem("sm2-chain-ca.crt"),
+            "Enable_sm_tls13_strict" => "on",
+        },
+        test   => {
+            "ExpectedResult" => "Success",
+            "ExpectedCipher" => "TLS_SM4_GCM_SM3",
+            "ExpectedClientKeyShare" => "SM2",
+        },
+    },
+
+    {
         name => "test ClientHello1 no SM2 key_share, server should send HRR when enable sm_tls13_strict and choose TLS_SM4_GCM_SM3",
         server => {
             "MinProtocol" => "TLSv1.3",
@@ -343,53 +367,6 @@ our @tests = (
             "MaxProtocol" => "TLSv1.3",
             "Ciphersuites" => "TLS_SM4_GCM_SM3",
             "VerifyCAFile" => test_pem("sm2-chain-ca.crt"),
-        },
-        test   => {
-            "ExpectedResult" => "Success",
-            "ExpectedCipher" => "TLS_SM4_GCM_SM3",
-            "ExpectedHRR" => "Yes",
-        },
-    },
-
-    {
-        name => "test client should fail when enable sm_tls13_strict without SM2 key_share",
-        server => {
-            "MinProtocol" => "TLSv1.3",
-            "MaxProtocol" => "TLSv1.3",
-            "Ciphersuites" => "TLS_SM4_GCM_SM3",
-            "Certificate" => test_pem("sm2-leaf.crt"),
-            "PrivateKey" => test_pem("sm2-leaf.key"),
-            "Enable_sm_tls13_strict" => "off",
-        },
-        client => {
-            "MinProtocol" => "TLSv1.3",
-            "MaxProtocol" => "TLSv1.3",
-            "Ciphersuites" => "TLS_SM4_GCM_SM3",
-            "VerifyCAFile" => test_pem("sm2-chain-ca.crt"),
-            "Enable_sm_tls13_strict" => "on",
-        },
-        test   => {
-            "ExpectedResult" => "ClientFail",
-        },
-    },
-
-    {
-        name => "test client success when enable sm_tls13_strict with SM2 key_share",
-        server => {
-            "MinProtocol" => "TLSv1.3",
-            "MaxProtocol" => "TLSv1.3",
-            "Ciphersuites" => "TLS_SM4_GCM_SM3",
-            "Certificate" => test_pem("sm2-leaf.crt"),
-            "PrivateKey" => test_pem("sm2-leaf.key"),
-            "Enable_sm_tls13_strict" => "off",
-            "Groups" => "SM2",
-        },
-        client => {
-            "MinProtocol" => "TLSv1.3",
-            "MaxProtocol" => "TLSv1.3",
-            "Ciphersuites" => "TLS_SM4_GCM_SM3",
-            "VerifyCAFile" => test_pem("sm2-chain-ca.crt"),
-            "Enable_sm_tls13_strict" => "on",
         },
         test   => {
             "ExpectedResult" => "Success",
@@ -449,7 +426,7 @@ our @tests = (
     },
 
     {
-        name => "test client auth success when both enable sm_tls13_strict",
+        name => "test client auth success when also enable sm_tls13_strict",
         server => {
             "MinProtocol" => "TLSv1.3",
             "MaxProtocol" => "TLSv1.3",
@@ -472,7 +449,68 @@ our @tests = (
         test   => {
             "ExpectedResult" => "Success",
             "ExpectedCipher" => "TLS_SM4_GCM_SM3",
-            "ExpectedHRR" => "Yes",
+        },
+    },
+
+    {
+        name => "test sm_tls13_strict server with sm2 and rsa certs, client signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3",
+        server => {
+            "MinProtocol" => "TLSv1.3",
+            "MaxProtocol" => "TLSv1.3",
+            "Ciphersuites" => "TLS_SM4_GCM_SM3",
+            "SM2.Certificate" => test_pem("sm2-leaf.crt"),
+            "SM2.PrivateKey" => test_pem("sm2-leaf.key"),
+            "RSA.Certificate" => test_pem("servercert.pem"),
+            "RSA.PrivateKey"  => test_pem("serverkey.pem"),
+            "Enable_sm_tls13_strict" => "on",
+            "VerifyMode" => "Require",
+            "VerifyCAFile" => test_pem("sm2-root-cert.pem"),
+        },
+        client => {
+            "MinProtocol" => "TLSv1.3",
+            "MaxProtocol" => "TLSv1.3",
+            "Ciphersuites" => "TLS_SM4_GCM_SM3",
+            "SignatureAlgorithms" => "rsa_pss_rsae_sha256:sm2sig_sm3",
+            "Enable_sm_tls13_strict" => "on",
+            "VerifyCAFile" => test_pem("sm2-chain-ca.crt"),
+            "Certificate" => test_pem("sm2-first-crt.pem"),
+            "PrivateKey" => test_pem("sm2-first-key.pem"),
+        },
+        test   => {
+            "ExpectedResult" => "Success",
+            "ExpectedCipher" => "TLS_SM4_GCM_SM3",
+            "ExpectedServerCertType" =>, "SM2",
+        },
+    },
+
+    {
+        name => "test sm_tls13_strict client with sm2 and rsa certs, server signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3",
+        server => {
+            "MinProtocol" => "TLSv1.3",
+            "MaxProtocol" => "TLSv1.3",
+            "Ciphersuites" => "TLS_SM4_GCM_SM3",
+            "SignatureAlgorithms" => "rsa_pss_rsae_sha256:sm2sig_sm3",
+            "Groups" => "SM2",
+            "Certificate" => test_pem("sm2-leaf.crt"),
+            "PrivateKey" => test_pem("sm2-leaf.key"),
+            "Enable_sm_tls13_strict" => "off",
+            "VerifyMode" => "Require",
+            "VerifyCAFile" => test_pem("sm2-root-cert.pem"),
+        },
+        client => {
+            "MinProtocol" => "TLSv1.3",
+            "MaxProtocol" => "TLSv1.3",
+            "Ciphersuites" => "TLS_SM4_GCM_SM3",
+            "Enable_sm_tls13_strict" => "on",
+            "SM2.Certificate" => test_pem("sm2-first-crt.pem"),
+            "SM2.PrivateKey" => test_pem("sm2-first-key.pem"),
+            "RSA.Certificate" => test_pem("ee-client-chain.pem"),
+            "RSA.PrivateKey"  =>  test_pem("ee-key.pem"),
+            "VerifyCAFile" => test_pem("sm2-chain-ca.crt"),
+        },
+        test   => {
+            "ExpectedResult" => "ClientFail",
+            "ExpectedClientAlert" => "IllegalParameter",
         },
     },
 );
