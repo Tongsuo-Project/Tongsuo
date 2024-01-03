@@ -17,6 +17,30 @@ use OpenSSL::Test::Utils;
 our @tests = (
 
     {
+        name => "test server set min and max TLS version should not affect NTLS",
+        server => {
+            "SignCertificate" => test_pem("sm2", "server_sign.crt"),
+            "SignPrivateKey" => test_pem("sm2", "server_sign.key"),
+            "EncCertificate" => test_pem("sm2", "server_enc.crt"),
+            "EncPrivateKey" => test_pem("sm2", "server_enc.key"),
+            "Enable_ntls" => "on",
+            "MinProtocol" => "TLSv1.2",
+            "MaxProtocol" => "TLSv1.3"
+        },
+        client => {
+            "CipherString" => "ECC-SM2-SM4-CBC-SM3",
+            "VerifyCAFile" => test_pem("sm2", "chain-ca.crt"),
+            "Enable_ntls" => "on",
+        },
+        test   => {
+            "Method" => "NTLS",
+            "ExpectedResult" => "Success",
+            "ExpectedCipher" => "ECC-SM2-SM4-CBC-SM3",
+            "ExpectedProtocol" => "NTLS",
+        },
+    },
+
+    {
         name => "test cipher ECC-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only",
         server => {
             "SignCertificate" => test_pem("sm2", "server_sign.crt"),

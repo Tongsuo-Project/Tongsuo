@@ -13,6 +13,7 @@
 #include <openssl/crypto.h>
 
 #include "internal/nelem.h"
+#include "../../ssl/ssl_local.h"
 #include "ssl_test_ctx.h"
 #include "../testutil.h"
 
@@ -636,6 +637,22 @@ __owur static int parse_expected_sign_hash(int *ptype, const char *value)
     return 1;
 }
 
+__owur static int parse_expected_key_share(int *ptype, const char *value)
+{
+    int nid;
+
+    if (value == NULL)
+        return 0;
+    nid = OBJ_sn2nid(value);
+    if (nid == NID_undef)
+        nid = OBJ_ln2nid(value);
+    if (nid == NID_undef)
+        return 0;
+
+    *ptype = nid;
+    return 1;
+}
+
 __owur static int parse_expected_server_sign_hash(SSL_TEST_CTX *test_ctx,
                                                   const char *value)
 {
@@ -647,6 +664,13 @@ __owur static int parse_expected_client_sign_hash(SSL_TEST_CTX *test_ctx,
                                                   const char *value)
 {
     return parse_expected_sign_hash(&test_ctx->expected_client_sign_hash,
+                                    value);
+}
+
+__owur static int parse_expected_client_key_share(SSL_TEST_CTX *test_ctx,
+                                                  const char *value)
+{
+    return parse_expected_key_share(&test_ctx->expected_client_key_share,
                                     value);
 }
 
@@ -737,6 +761,7 @@ static const ssl_test_ctx_option ssl_test_ctx_options[] = {
     { "ExpectedClientSignHash", &parse_expected_client_sign_hash },
     { "ExpectedClientSignType", &parse_expected_client_sign_type },
     { "ExpectedClientCANames", &parse_expected_client_ca_names },
+    { "ExpectedClientKeyShare", &parse_expected_client_key_share },
     { "UseSCTP", &parse_test_use_sctp },
     { "EnableClientSCTPLabelBug", &parse_test_enable_client_sctp_label_bug },
     { "EnableServerSCTPLabelBug", &parse_test_enable_server_sctp_label_bug },
