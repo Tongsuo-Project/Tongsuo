@@ -4,7 +4,7 @@
 
  Changes between 8.4.0 and 8.4.1 [xx XXX xxxx]
 
-  *)
+  *) 修复TLS1.3中X25519握手失败问题
 
  Changes between 8.3.0 and 8.4.0 [15 Dec 2023]
 
