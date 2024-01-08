@@ -479,6 +479,7 @@ my @disablables = (
     "siphash",
     "siv",
     "sm2",
+    "sm2_threshold",
     "sm3",
     "sm4",
     "zuc",
@@ -566,6 +567,7 @@ our %disabled = ( # "what"         => "comment"
                   "ntls"                => "default",
                   "rc5"                 => "default",
                   "sctp"                => "default",
+                  "sm2_threshold"       => "default",
                   "ssl3"                => "default",
                   "ssl3-method"         => "default",
                   "trace"               => "default",
@@ -615,6 +617,7 @@ my @disable_cascades = (
     "ssl3-method"       => [ "ssl3" ],
     "zlib"              => [ "zlib-dynamic" ],
     "ec"                => [ "ec2m", "ecdsa", "ecdh", "sm2" ],
+    "sm2"               => [ "sm2_threshold" ],
     "ec_elgamal"        => [ "twisted_ec_elgamal" ],
     "dgram"             => [ "dtls", "sctp" ],
     "sock"              => [ "dgram" ],
@@ -1162,6 +1165,12 @@ if (!defined($disabled{'zkp-gadget'})) {
 
 if (!defined($disabled{'bn-method'})) {
     die "bn-method only supports api with 1.1.1\n"
+        if ($config{api} && $config{api} != $apitable->{"1.1.1"});
+    $config{api}=$apitable->{"1.1.1"};
+}
+
+if (!defined($disabled{'sm2_threshold'})) {
+    die "sm2_threshold only supports api with 1.1.1\n"
         if ($config{api} && $config{api} != $apitable->{"1.1.1"});
     $config{api}=$apitable->{"1.1.1"};
 }
