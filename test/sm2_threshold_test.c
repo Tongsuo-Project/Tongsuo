@@ -26,7 +26,7 @@
 static const char *userid = "ALICE123@YAHOO.COM";
 static const char *message = "message digest";
 
-static int sm2_threshold_keygen_test(void)
+static int test_sm2_threshold_keygen(void)
 {
     int ret = 0;
     EVP_PKEY *key1 = NULL, *key2 = NULL;
@@ -62,7 +62,7 @@ err:
     return ret;
 }
 
-static int sm2_threshold_sign_test(int id)
+static int test_sm2_threshold_sign(int id)
 {
     int ret = 0;
     int msg_len = strlen(message);
@@ -158,6 +158,85 @@ err:
     return ret;
 }
 
+static int test_sm2_threshold_decrypt(void)
+{
+    int ret = 0;
+    const char *msg = "hello sm2 threshold";
+    int msg_len = strlen(msg);
+    EVP_PKEY *key1 = NULL, *key2 = NULL, *pubkey1 = NULL, *pubkey2 = NULL;
+    EVP_PKEY *complete_key1 = NULL, *complete_key2 = NULL;
+    EVP_PKEY_CTX *pctx = NULL;
+    BIGNUM *w = NULL;
+    EC_POINT *T1 = NULL, *T2 = NULL;
+    unsigned char *ct = NULL, *pt = NULL;
+    size_t pt_len, outlen;
+
+    if (!TEST_ptr(key1 = EVP_PKEY_Q_keygen(NULL, NULL, "SM2"))
+        || !TEST_ptr(key2 = EVP_PKEY_Q_keygen(NULL, NULL, "SM2")))
+        goto err;
+
+    if (!TEST_ptr(pubkey1 = SM2_THRESHOLD_derive_partial_pubkey(key1))
+        || !TEST_ptr(pubkey2 = SM2_THRESHOLD_derive_partial_pubkey(key2)))
+        goto err;
+
+    if (!TEST_ptr(complete_key1 =
+                        SM2_THRESHOLD_derive_complete_pubkey(key1, pubkey2))
+        || !TEST_ptr(complete_key2 =
+                        SM2_THRESHOLD_derive_complete_pubkey(key2, pubkey1)))
+        goto err;
+
+    if (!TEST_true(EVP_PKEY_eq(complete_key1, complete_key2)))
+        goto err;
+
+    if (!TEST_ptr(pctx = EVP_PKEY_CTX_new(complete_key1, NULL)))
+        goto err;
+
+    if (!TEST_true(EVP_PKEY_encrypt_init(pctx) == 1))
+        goto err;
+
+    if (!TEST_true(EVP_PKEY_encrypt(pctx, NULL, &outlen,
+                                   (const unsigned char *)msg, msg_len) == 1))
+        goto err;
+
+    if (!TEST_ptr(ct = OPENSSL_malloc(outlen)))
+        goto err;
+
+    if (!TEST_true(EVP_PKEY_encrypt(pctx, ct, &outlen,
+                                   (const unsigned char *)msg, msg_len) == 1))
+        goto err;
+
+    if (!TEST_true(SM2_THRESHOLD_decrypt1(ct, outlen, &w, &T1)))
+        goto err;
+
+    if (!TEST_true(SM2_THRESHOLD_decrypt2(key2, T1, &T2)))
+        goto err;
+
+    if (!TEST_true(SM2_THRESHOLD_decrypt3(key1, ct, outlen, w, T2, &pt, &pt_len)))
+        goto err;
+
+    if (!TEST_int_eq(pt_len, msg_len))
+        goto err;
+
+    if (!TEST_strn_eq((const char *)pt, msg, msg_len))
+        goto err;
+
+    ret = 1;
+err:
+    EVP_PKEY_free(key1);
+    EVP_PKEY_free(key2);
+    EVP_PKEY_free(pubkey1);
+    EVP_PKEY_free(pubkey2);
+    EVP_PKEY_free(complete_key1);
+    EVP_PKEY_free(complete_key2);
+    EVP_PKEY_CTX_free(pctx);
+    OPENSSL_free(ct);
+    BN_free(w);
+    EC_POINT_free(T1);
+    EC_POINT_free(T2);
+    OPENSSL_free(pt);
+
+    return ret;
+}
 #endif
 
 int setup_tests(void)
@@ -165,8 +244,9 @@ int setup_tests(void)
 #ifdef OPENSSL_NO_SM2_THRESHOLD
     TEST_note("SM2 threshold is disabled.");
 #else
-    ADD_TEST(sm2_threshold_keygen_test);
-    ADD_ALL_TESTS(sm2_threshold_sign_test, 2);
+    ADD_TEST(test_sm2_threshold_keygen);
+    ADD_ALL_TESTS(test_sm2_threshold_sign, 2);
+    ADD_TEST(test_sm2_threshold_decrypt);
 #endif
     return 1;
 }

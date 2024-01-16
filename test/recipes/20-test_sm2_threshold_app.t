@@ -17,7 +17,7 @@ setup("test_threshold_sm2_app");
 plan skip_all => "This test is unsupported in a no-sm2_threshold build"
     if disabled("sm2_threshold");
 
-plan tests => 3;
+plan tests => 4;
 
 sub hex_to_binary {
     my ($infile, $outfile) = @_;
@@ -112,4 +112,24 @@ subtest "SM2 two-party threshold signature, newkey + hex format sigfile" => sub 
     ok(run(app(['openssl', 'dgst', '-sm3', '-verify', 'ABpub.key',
                 '-signature', 'signature.bin',
                 srctop_file('test', 'data.bin')])));
+};
+
+subtest "SM2 two-party threshold decryption" => sub {
+    plan tests => 5;
+
+    ok(run(app(['openssl', 'pkeyutl', '-encrypt', '-pubin', '-inkey',
+                'ABpub.key', '-in', srctop_file('test', 'data.bin'), '-out',
+                'data.bin.enc'])));
+
+    ok(run(app(['openssl', 'sm2_threshold', '-decrypt1', '-in', 'data.bin.enc',
+                '-newrand', 'w.bin', '-newpoint', 'T1.bin'])));
+
+    ok(run(app(['openssl', 'sm2_threshold', '-decrypt2', '-inkey', 'B-sm2.key',
+                '-pointin', 'T1.bin', '-pointout', 'T2.bin'])));
+
+    ok(run(app(['openssl', 'sm2_threshold', '-decrypt3', '-inkey', 'A-sm2.key',
+                '-randin', 'w.bin', '-pointin', 'T2.bin', '-in', 'data.bin.enc',
+                '-out', 'data.bin'])));
+
+    is(compare("data.bin", srctop_file('test', 'data.bin')), 0);
 };
