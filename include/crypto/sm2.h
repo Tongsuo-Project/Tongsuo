@@ -30,7 +30,6 @@ int ossl_sm2_compute_z_digest(uint8_t *out,
                               const uint8_t *id,
                               size_t id_len,
                               const EC_KEY *key);
-
 /*
  * SM2 signature operation. Computes Z and then signs H(Z || msg) using SM2
  */
