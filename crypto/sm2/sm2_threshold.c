@@ -282,25 +282,22 @@ int SM2_THRESHOLD_sign2(const EVP_PKEY *key, const EVP_PKEY *peer_Q1,
                         uint8_t *digest, size_t dlen,
                         unsigned char **sig, size_t *siglen)
 {
-    int ret = 0;
+    int ok = 0, len;
     const EC_KEY *eckey;
     const EC_GROUP *group;
     const BIGNUM *dA, *order;
     EC_POINT *Q = NULL;
     const EC_POINT *Q1 = NULL;
     BN_CTX *ctx = NULL;
-    BIGNUM *dA_inv = NULL, *w2 = NULL, *x1 = NULL, *r = NULL, *s1 = NULL, *e;
+    BIGNUM *dA_inv, *w2, *x1, *r = NULL, *s1 = NULL, *e = NULL;
     OSSL_LIB_CTX *libctx;
     ECDSA_SIG *tmpsig = NULL;
 
-    if (key == NULL || peer_Q1 == NULL || digest == NULL || sig == NULL) {
+    if (key == NULL || peer_Q1 == NULL || digest == NULL || sig == NULL
+        || siglen == NULL) {
         ERR_raise(ERR_LIB_SM2, ERR_R_PASSED_NULL_PARAMETER);
         return 0;
     }
-
-    e = BN_bin2bn(digest, dlen, NULL);
-    if (e == NULL)
-        return 0;
 
     eckey = EVP_PKEY_get0_EC_KEY(peer_Q1);
     if (eckey == NULL)
@@ -319,6 +316,10 @@ int SM2_THRESHOLD_sign2(const EVP_PKEY *key, const EVP_PKEY *peer_Q1,
     dA = EC_KEY_get0_private_key(eckey);
     libctx = ossl_ec_key_get_libctx(eckey);
 
+    e = BN_bin2bn(digest, dlen, NULL);
+    if (e == NULL)
+        return 0;
+
     Q = EC_POINT_new(group);
     if (Q == NULL)
         goto done;
@@ -334,10 +335,6 @@ int SM2_THRESHOLD_sign2(const EVP_PKEY *key, const EVP_PKEY *peer_Q1,
     if (x1 == NULL)
         goto done;
 
-    /*
-     * These values are returned and so should not be allocated out of the
-     * context
-     */
     r = BN_new();
     if (r == NULL)
         goto done;
@@ -348,7 +345,7 @@ int SM2_THRESHOLD_sign2(const EVP_PKEY *key, const EVP_PKEY *peer_Q1,
 
     /*
      * SM2 threshold signature part 2:
-     * 1. Generate a random number w2 in [1,n-1] using random number generators;
+     * 1. Generate a random number w2 in [1,n-1]
      * 2. Compute Q = [w2]G + dA^(-1) * Q1
      * 3. Compute r = (e + x1) mod n
      * 4. Compute s1 = dA(r + w2) mod n
@@ -382,32 +379,30 @@ int SM2_THRESHOLD_sign2(const EVP_PKEY *key, const EVP_PKEY *peer_Q1,
     r = NULL;
     s1 = NULL;
 
-    ret = i2d_ECDSA_SIG(tmpsig, sig);
-    if (ret <= 0)
+    len = i2d_ECDSA_SIG(tmpsig, sig);
+    if (len < 0)
         goto done;
 
-    if (siglen != NULL)
-        *siglen = ret;
+    *siglen = len;
 
-    ret = 1;
-
+    ok = 1;
  done:
+    ECDSA_SIG_free(tmpsig);
     BN_free(r);
     BN_free(s1);
-    BN_free(e);
-    ECDSA_SIG_free(tmpsig);
-    EC_POINT_free(Q);
     BN_CTX_end(ctx);
     BN_CTX_free(ctx);
+    EC_POINT_free(Q);
+    BN_free(e);
 
-    return ret;
+    return ok;
 }
 
 int SM2_THRESHOLD_sign3(const EVP_PKEY *key, const EVP_PKEY *temp_key,
                         const unsigned char *sig2, size_t sig2_len,
                         unsigned char **sig, size_t *siglen)
 {
-    int ret = 0;
+    int ok = 0, len;
     const EC_KEY *eckey;
     BIGNUM *w1 = NULL, *r = NULL, *s = NULL;
     const EC_GROUP *group;
@@ -416,10 +411,15 @@ int SM2_THRESHOLD_sign3(const EVP_PKEY *key, const EVP_PKEY *temp_key,
     OSSL_LIB_CTX *libctx;
     ECDSA_SIG *tmpsig = NULL;
 
-    if (key == NULL || temp_key == NULL || sig2 == NULL || sig == NULL) {
+    if (key == NULL || temp_key == NULL || sig2 == NULL || sig == NULL
+        || siglen == NULL) {
         ERR_raise(ERR_LIB_SM2, ERR_R_PASSED_NULL_PARAMETER);
         return 0;
     }
+
+    eckey = EVP_PKEY_get0_EC_KEY(key);
+    if (eckey == NULL)
+        return 0;
 
     tmpsig = d2i_ECDSA_SIG(NULL, &sig2, sig2_len);
     if (tmpsig == NULL)
@@ -427,10 +427,6 @@ int SM2_THRESHOLD_sign3(const EVP_PKEY *key, const EVP_PKEY *temp_key,
 
     if (!EVP_PKEY_get_bn_param(temp_key, OSSL_PKEY_PARAM_PRIV_KEY, &w1))
         goto done;
-
-    eckey = EVP_PKEY_get0_EC_KEY(key);
-    if (eckey == NULL)
-        return 0;
 
     group = EC_KEY_get0_group(eckey);
     dA = EC_KEY_get0_private_key(eckey);
@@ -441,10 +437,6 @@ int SM2_THRESHOLD_sign3(const EVP_PKEY *key, const EVP_PKEY *temp_key,
     if (ctx == NULL)
         goto done;
 
-    /*
-     * These values are returned and so should not be allocated out of the
-     * context
-     */
     r = BN_dup(ECDSA_SIG_get0_r(tmpsig));
     if (r == NULL)
         goto done;
@@ -467,19 +459,21 @@ int SM2_THRESHOLD_sign3(const EVP_PKEY *key, const EVP_PKEY *temp_key,
     if (!ECDSA_SIG_set0(tmpsig, r, s))
         goto done;
 
-    ret = i2d_ECDSA_SIG(tmpsig, sig);
-    if (siglen != NULL)
-        *siglen = ret;
+    r = NULL;
+    s = NULL;
 
-    ret = 1;
+    len = i2d_ECDSA_SIG(tmpsig, sig);
+    if (len < 0)
+        goto done;
 
+    *siglen = len;
+
+    ok = 1;
  done:
-    if (ret == 0) {
-        BN_free(r);
-        BN_free(s);
-    }
-
+    BN_free(r);
+    BN_free(s);
     BN_CTX_free(ctx);
     BN_free(w1);
-    return ret;
+    ECDSA_SIG_free(tmpsig);
+    return ok;
 }
