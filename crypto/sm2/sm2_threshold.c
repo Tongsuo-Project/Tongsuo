@@ -32,12 +32,12 @@ EVP_PKEY *SM2_THRESHOLD_derive_partial_pubkey(const EVP_PKEY *key)
 
     if (key == NULL) {
         ERR_raise(ERR_LIB_SM2, ERR_R_PASSED_NULL_PARAMETER);
-        return 0;
+        return NULL;
     }
 
     eckey = EVP_PKEY_get0_EC_KEY(key);
     if (eckey == NULL)
-        return 0;
+        return NULL;
 
     dA = EC_KEY_get0_private_key(eckey);
     group = EC_KEY_get0_group(eckey);
@@ -45,7 +45,7 @@ EVP_PKEY *SM2_THRESHOLD_derive_partial_pubkey(const EVP_PKEY *key)
 
     ctx = BN_CTX_new_ex(libctx);
     if (ctx == NULL)
-        return 0;
+        return NULL;
 
     BN_CTX_start(ctx);
     dA_inv = BN_CTX_get(ctx);
@@ -683,8 +683,8 @@ int SM2_THRESHOLD_decrypt3(const EVP_PKEY *key, const unsigned char *ct,
      */
     if (!ossl_ec_group_do_inverse_ord(group, d1_inv, d1, ctx)
         || !ossl_ec_group_do_inverse_ord(group, w_inv, w, ctx)
-        || !EC_POINT_mul(group, kP, NULL, T2, w_inv, ctx)
-        || !EC_POINT_mul(group, kP, NULL, kP, d1_inv, ctx)
+        || !BN_mul(d1_inv, d1_inv, w_inv, ctx)
+        || !EC_POINT_mul(group, kP, NULL, T2, d1_inv, ctx)
         || !EC_POINT_invert(group, C1_inv, ctx)
         || !EC_POINT_add(group, kP, kP, C1_inv, ctx)
         || !EC_POINT_get_affine_coordinates(group, kP, x2, y2, ctx)) {
