@@ -684,7 +684,7 @@ NIZK_PLAINTEXT_EQUALITY_PROOF *NIZK_PLAINTEXT_EQUALITY_PROOF_decode(const unsign
     proof->B = sk_EC_POINT_pop(sk_point);
 
     sk_bn = zkp_stack_of_bignum_decode(p, &len, bn_len);
-    if (sk_point == NULL)
+    if (sk_bn == NULL)
         goto err;
     p += len;
 

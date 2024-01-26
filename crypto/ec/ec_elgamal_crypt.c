@@ -50,7 +50,7 @@ EC_ELGAMAL_CTX *EC_ELGAMAL_CTX_new(EC_KEY *key, const EC_POINT *h, int32_t flag)
 
         if (h != NULL) {
             if (!(ctx->h = EC_POINT_dup(h, key->group)))
-                return 0;
+                goto err;
         } else {
             ctx->h = EC_POINT_new(key->group);
             if (ctx->h == NULL) {
