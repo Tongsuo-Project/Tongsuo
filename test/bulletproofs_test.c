@@ -36,10 +36,10 @@ static int r1cs_example_logic1(BP_R1CS_CTX *ctx,
         return 0;
     }
 
-    if (!(a = BP_R1CS_LINEAR_COMBINATION_dup(lc->a1))
-        || !(b = BP_R1CS_LINEAR_COMBINATION_dup(lc->b1))
-        || !(c = BP_R1CS_LINEAR_COMBINATION_dup(lc->c1))) {
-        return 0;
+    if ((a = BP_R1CS_LINEAR_COMBINATION_dup(lc->a1)) == NULL
+        || (b = BP_R1CS_LINEAR_COMBINATION_dup(lc->b1)) == NULL
+        || (c = BP_R1CS_LINEAR_COMBINATION_dup(lc->c1)) == NULL) {
+        goto err;
     }
 
     if (!BP_R1CS_LINEAR_COMBINATION_add(a, lc->a2)

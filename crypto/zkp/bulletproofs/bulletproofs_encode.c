@@ -662,10 +662,15 @@ size_t BP_RANGE_PROOF_encode(const BP_RANGE_PROOF *proof, unsigned char *out,
     }
 
     sk_point = sk_EC_POINT_new_reserve(NULL, 4);
-    sk_bn = sk_BIGNUM_new_reserve(NULL, 3);
-    if (sk_point == NULL || sk_bn == NULL) {
+    if (sk_point == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         return 0;
+    }
+
+    sk_bn = sk_BIGNUM_new_reserve(NULL, 3);
+    if (sk_bn == NULL) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
+        goto end;
     }
 
     ip_proof = proof->ip_proof;
@@ -894,10 +899,15 @@ size_t BP_R1CS_PROOF_encode(const BP_R1CS_PROOF *proof, unsigned char *out,
     }
 
     sk_point = sk_EC_POINT_new_reserve(NULL, 11);
-    sk_bn = sk_BIGNUM_new_reserve(NULL, 3);
-    if (sk_point == NULL || sk_bn == NULL) {
+    if (sk_point == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         return 0;
+    }
+
+    sk_bn = sk_BIGNUM_new_reserve(NULL, 3);
+    if (sk_bn == NULL) {
+        ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
+        goto end;
     }
 
     ip_proof = proof->ip_proof;
