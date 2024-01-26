@@ -756,6 +756,11 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_prove(BP_R1CS_CTX *ctx)
 err:
     ZKP_TRANSCRIPT_reset(transcript);
 
+    OPENSSL_free(wV);
+    OPENSSL_free(wO);
+    OPENSSL_free(wR);
+    OPENSSL_free(wL);
+
     bp_inner_product_ctx_free(ip_ctx);
     bp_inner_product_pub_param_free(ip_pp);
 

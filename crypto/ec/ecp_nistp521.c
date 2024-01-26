@@ -2148,8 +2148,10 @@ int ossl_ec_GFp_nistp521_precompute_mult(EC_GROUP *group, BN_CTX *ctx)
     generator = EC_POINT_new(group);
     if (generator == NULL)
         goto err;
-    BN_bin2bn(nistp521_curve_params[3], sizeof(felem_bytearray), x);
-    BN_bin2bn(nistp521_curve_params[4], sizeof(felem_bytearray), y);
+    if (BN_bin2bn(nistp521_curve_params[3], sizeof(felem_bytearray), x) == NULL)
+        goto err;
+    if (BN_bin2bn(nistp521_curve_params[4], sizeof(felem_bytearray), y) == NULL)
+        goto err;
     if (!EC_POINT_set_affine_coordinates(group, generator, x, y, ctx))
         goto err;
     if ((pre = nistp521_pre_comp_new()) == NULL)
