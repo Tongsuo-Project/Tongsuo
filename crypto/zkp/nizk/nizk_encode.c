@@ -340,10 +340,15 @@ size_t NIZK_PLAINTEXT_KNOWLEDGE_PROOF_encode(const NIZK_PLAINTEXT_KNOWLEDGE_PROO
     }
 
     sk_point = sk_EC_POINT_new_reserve(NULL, 2);
-    sk_bn = sk_BIGNUM_new_reserve(NULL, 2);
-    if (sk_point == NULL || sk_bn == NULL) {
+    if (sk_point == NULL) {
         ERR_raise(ERR_LIB_ZKP_NIZK, ERR_R_MALLOC_FAILURE);
         return 0;
+    }
+
+    sk_bn = sk_BIGNUM_new_reserve(NULL, 2);
+    if (sk_bn == NULL) {
+        ERR_raise(ERR_LIB_ZKP_NIZK, ERR_R_MALLOC_FAILURE);
+        goto end;
     }
 
     if ((curve_id = EC_POINT_get_curve_name(proof->A)) == NID_undef) {
@@ -537,10 +542,15 @@ size_t NIZK_PLAINTEXT_EQUALITY_PROOF_encode(const NIZK_PLAINTEXT_EQUALITY_PROOF 
     }
 
     sk_point = sk_EC_POINT_dup(proof->sk_A);
-    sk_bn = sk_BIGNUM_new_reserve(NULL, 2);
-    if (sk_point == NULL || sk_bn == NULL) {
+    if (sk_point == NULL) {
         ERR_raise(ERR_LIB_ZKP_NIZK, ERR_R_MALLOC_FAILURE);
         return 0;
+    }
+
+    sk_bn = sk_BIGNUM_new_reserve(NULL, 2);
+    if (sk_bn == NULL) {
+        ERR_raise(ERR_LIB_ZKP_NIZK, ERR_R_MALLOC_FAILURE);
+        goto end;
     }
 
     if ((curve_id = EC_POINT_get_curve_name(proof->B)) == NID_undef) {
@@ -732,10 +742,15 @@ size_t NIZK_DLOG_KNOWLEDGE_PROOF_encode(const NIZK_DLOG_KNOWLEDGE_PROOF *proof,
     }
 
     sk_point = sk_EC_POINT_new_reserve(NULL, 1);
-    sk_bn = sk_BIGNUM_new_reserve(NULL, 1);
-    if (sk_point == NULL || sk_bn == NULL) {
+    if (sk_point == NULL) {
         ERR_raise(ERR_LIB_ZKP_NIZK, ERR_R_MALLOC_FAILURE);
         return 0;
+    }
+
+    sk_bn = sk_BIGNUM_new_reserve(NULL, 1);
+    if (sk_bn == NULL) {
+        ERR_raise(ERR_LIB_ZKP_NIZK, ERR_R_MALLOC_FAILURE);
+        goto end;
     }
 
     if ((curve_id = EC_POINT_get_curve_name(proof->A)) == NID_undef) {
@@ -925,10 +940,15 @@ size_t NIZK_DLOG_EQUALITY_PROOF_encode(const NIZK_DLOG_EQUALITY_PROOF *proof,
     }
 
     sk_point = sk_EC_POINT_new_reserve(NULL, 2);
-    sk_bn = sk_BIGNUM_new_reserve(NULL, 1);
-    if (sk_point == NULL || sk_bn == NULL) {
+    if (sk_point == NULL) {
         ERR_raise(ERR_LIB_ZKP_NIZK, ERR_R_MALLOC_FAILURE);
         return 0;
+    }
+
+    sk_bn = sk_BIGNUM_new_reserve(NULL, 1);
+    if (sk_bn == NULL) {
+        ERR_raise(ERR_LIB_ZKP_NIZK, ERR_R_MALLOC_FAILURE);
+        goto end;
     }
 
     if ((curve_id = EC_POINT_get_curve_name(proof->A1)) == NID_undef) {
