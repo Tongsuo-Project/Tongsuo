@@ -74,10 +74,10 @@ static int r1cs_example_logic2(BP_R1CS_CTX *ctx,
         return 0;
     }
 
-    if (!(a = BP_R1CS_LINEAR_COMBINATION_dup(lc->a1))
-        || !(b = BP_R1CS_LINEAR_COMBINATION_dup(lc->b1))
-        || !(c = BP_R1CS_LINEAR_COMBINATION_dup(lc->c1))) {
-        return 0;
+    if ((a = BP_R1CS_LINEAR_COMBINATION_dup(lc->a1)) == NULL
+        || (b = BP_R1CS_LINEAR_COMBINATION_dup(lc->b1)) == NULL
+        || (c = BP_R1CS_LINEAR_COMBINATION_dup(lc->c1)) == NULL) {
+        goto err;
     }
 
     if (!BP_R1CS_LINEAR_COMBINATION_mul(a, lc->a2, ctx)
@@ -112,10 +112,10 @@ static int r1cs_example_logic3(BP_R1CS_CTX *ctx,
         return 0;
     }
 
-    if (!(a = BP_R1CS_LINEAR_COMBINATION_dup(lc->a1))
-        || !(b = BP_R1CS_LINEAR_COMBINATION_dup(lc->b1))
-        || !(c = BP_R1CS_LINEAR_COMBINATION_dup(lc->c1))) {
-        return 0;
+    if ((a = BP_R1CS_LINEAR_COMBINATION_dup(lc->a1)) == NULL
+        || (b = BP_R1CS_LINEAR_COMBINATION_dup(lc->b1)) == NULL
+        || (c = BP_R1CS_LINEAR_COMBINATION_dup(lc->c1)) == NULL) {
+        goto err;
     }
 
     if (!BP_R1CS_LINEAR_COMBINATION_mul(a, lc->a2, ctx)
@@ -156,10 +156,10 @@ static int r1cs_example_logic4(BP_R1CS_CTX *ctx,
 
     BN_set_word(bn7, 7);
 
-    if (!(a = BP_R1CS_LINEAR_COMBINATION_dup(lc->a1))
-        || !(b = BP_R1CS_LINEAR_COMBINATION_dup(lc->b1))
-        || !(c = BP_R1CS_LINEAR_COMBINATION_dup(lc->c1))) {
-        return 0;
+    if ((a = BP_R1CS_LINEAR_COMBINATION_dup(lc->a1)) == NULL
+        || (b = BP_R1CS_LINEAR_COMBINATION_dup(lc->b1)) == NULL
+        || (c = BP_R1CS_LINEAR_COMBINATION_dup(lc->c1)) == NULL) {
+        goto err;
     }
 
     if (!BP_R1CS_LINEAR_COMBINATION_mul(a, lc->a2, ctx)
@@ -202,10 +202,10 @@ static int r1cs_example_logic5(BP_R1CS_CTX *ctx,
 
     BN_set_word(bn7, 7);
 
-    if (!(a = BP_R1CS_LINEAR_COMBINATION_dup(lc->a1))
-        || !(b = BP_R1CS_LINEAR_COMBINATION_dup(lc->b1))
-        || !(c = BP_R1CS_LINEAR_COMBINATION_dup(lc->c1))) {
-        return 0;
+    if ((a = BP_R1CS_LINEAR_COMBINATION_dup(lc->a1)) == NULL
+        || (b = BP_R1CS_LINEAR_COMBINATION_dup(lc->b1)) == NULL
+        || (c = BP_R1CS_LINEAR_COMBINATION_dup(lc->c1)) == NULL) {
+        goto err;
     }
 
     if (!BP_R1CS_LINEAR_COMBINATION_mul(a, lc->a2, ctx)
@@ -279,9 +279,8 @@ static int r1cs_example_logic7(BP_R1CS_CTX *ctx,
 
     BN_set_word(bn10, 10);
 
-    if (!(a = BP_R1CS_LINEAR_COMBINATION_dup(lc->a1))) {
-        return 0;
-    }
+    if ((a = BP_R1CS_LINEAR_COMBINATION_dup(lc->a1)) == NULL)
+        goto err;
 
     if (!BP_R1CS_LINEAR_COMBINATION_mul(a, lc->a2, ctx)
         || !BP_R1CS_LINEAR_COMBINATION_sub_bn(a, bn10)
@@ -311,9 +310,8 @@ static int r1cs_example_logic8(BP_R1CS_CTX *ctx,
         return 0;
     }
 
-    if (!(a = BP_R1CS_LINEAR_COMBINATION_dup(lc->a1))) {
-        return 0;
-    }
+    if ((a = BP_R1CS_LINEAR_COMBINATION_dup(lc->a1)) == NULL)
+        goto err;
 
     if (!BP_R1CS_LINEAR_COMBINATION_add(a, lc->b1)
         || !BP_R1CS_LINEAR_COMBINATION_add(a, lc->c1)
@@ -1105,6 +1103,8 @@ err:
 
     BN_free(l);
     BN_free(r);
+    BN_free(bn_1);
+    BN_free(pow_2);
 
     return ret;
 }

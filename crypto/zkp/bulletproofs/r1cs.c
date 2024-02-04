@@ -353,7 +353,7 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_prove(BP_R1CS_CTX *ctx)
 
     bn_ctx = BN_CTX_new();
     if (bn_ctx == NULL)
-        return NULL;
+        goto err;
 
     BN_CTX_start(bn_ctx);
 

@@ -88,6 +88,7 @@ static size_t paillier_encrypt(PAILLIER_CTX *ctx,
     ret = size;
 
 err:
+    OPENSSL_free(buf);
     PAILLIER_CIPHERTEXT_free(r);
     return ret;
 }
