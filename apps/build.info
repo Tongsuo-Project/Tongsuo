@@ -75,6 +75,10 @@ IF[{- !$disabled{'sm2_threshold'} -}]
   $OPENSSLSRC=$OPENSSLSRC sm2_threshold.c
 ENDIF
 
+IF[{- !$disabled{'sdf-lib'} -}]
+  $OPENSSLSRC=$OPENSSLSRC sdf.c
+ENDIF
+
 IF[{- !$disabled{apps} -}]
   PROGRAMS=openssl
   SOURCE[openssl]=$INITSRC $OPENSSLSRC

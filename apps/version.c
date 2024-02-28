@@ -167,7 +167,6 @@ opthelp:
     }
 #ifdef SMTC_MODULE
     if (smtc) {
-        printf("%s\n", OpenSSL_version(TONGSUO_VERSION));
         printf("%s\n", OpenSSL_version(TONGSUO_SMTC_INFO));
     }
 #endif

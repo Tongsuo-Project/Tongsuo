@@ -45,7 +45,7 @@ int rand_self_test_maurer_universal_statistical(const unsigned char *buf,
 int rand_self_test_discrete_fourier_transform(const unsigned char *buf,
                                               size_t nbit, double *P);
 
-int smtc_randomness_test_delivery(OSSL_SELF_TEST *st, OSSL_LIB_CTX *libctx);
-int smtc_randomness_test_poweron(OSSL_SELF_TEST *st, OSSL_LIB_CTX *libctx);
-int smtc_randomness_test_cyclical(OSSL_SELF_TEST *st, OSSL_LIB_CTX *libctx);
-int smtc_randomness_test_single(OSSL_SELF_TEST *st, OSSL_LIB_CTX *libctx);
+int smtc_rand_delivery_test(OSSL_SELF_TEST *st, int sdf);
+int smtc_rand_poweron_test(OSSL_SELF_TEST *st, int sdf);
+int smtc_rand_cyclical_test(OSSL_SELF_TEST *st, int sdf);
+int smtc_rand_single_test(OSSL_SELF_TEST *st, int sdf);

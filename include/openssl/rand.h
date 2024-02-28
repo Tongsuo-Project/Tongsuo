@@ -87,6 +87,7 @@ int RAND_set_DRBG_type(OSSL_LIB_CTX *ctx, const char *drbg, const char *propq,
                        const char *cipher, const char *digest);
 int RAND_set_seed_source_type(OSSL_LIB_CTX *ctx, const char *seed,
                               const char *propq);
+void RAND_set_entropy_source(unsigned int source);
 
 void RAND_seed(const void *buf, int num);
 void RAND_keep_random_devices_open(int keep);

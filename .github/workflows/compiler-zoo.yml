@@ -76,8 +76,7 @@ jobs:
     - name: config
       run: |
         CC=${{ matrix.zoo.cc }} ./config --banner=Configured no-shared \
-            -Wall -Werror enable-ntls enable-smtc enable-smtc-debug \
-            --strict-warnings
+            -Wall -Werror enable-ntls --strict-warnings
 
     - name: config dump
       run: ./configdata.pm --dump

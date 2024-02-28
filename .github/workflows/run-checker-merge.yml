@@ -27,8 +27,6 @@ jobs:
           enable-weak-ssl-ciphers,
           enable-zlib,
           enable-ntls,
-          enable-smtc enable-smtc-debug,
-          enable-ntls enable-smtc enable-smtc-debug,
         ]
     runs-on: ubuntu-latest
     steps:

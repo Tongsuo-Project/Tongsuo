@@ -16,6 +16,8 @@
 #include "internal/thread_once.h"
 #include "crypto/rand_pool.h"
 
+static unsigned int default_entropy_source = 0xFFFFFFFF;
+
 /*
  * Allocate memory and initialize a new random pool
  */
@@ -49,6 +51,7 @@ RAND_POOL *ossl_rand_pool_new(int entropy_requested, int secure,
 
     pool->entropy_requested = entropy_requested;
     pool->secure = secure;
+    pool->entropy_source = default_entropy_source;
     return pool;
 
 err:
@@ -409,4 +412,9 @@ int ossl_rand_pool_add_end(RAND_POOL *pool, size_t len, size_t entropy)
     }
 
     return 1;
+}
+
+void ossl_rand_pool_set_default_entropy_source(unsigned int source)
+{
+    default_entropy_source = source;
 }
