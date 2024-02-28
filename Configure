@@ -271,9 +271,14 @@ $config{builddir} = abs2rel($blddir, $blddir);
 # echo -n 'holy hand grenade of antioch' | openssl sha256
 $config{FIPSKEY} =
     'f4556650ac31d35461610bac4ed81b1a181b2d8a43ea2854cbae22ca74560813';
-# echo -n "Tongsuo in hand, no worries about compliance" | tongsuo sm3
-$config{SMTCKEY} =
-    '5b3d9ad84fd72961e63f27a3d5da2bb663e2ed9c7b761b8ad6d041ebc68f5098';
+$config{SMTCPASSWD} = 'Tongsuo123';
+$config{SMTCPUBKEY} =
+'-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoEcz1UBgi0DQgAERjiZ5ubxrnOZnjhvqvuJ5UcdRI64
+sBEVwF0UztQK9eYzqOsFEm0PKkCjoYkdmiZ+Und0agHk94eFKhtUYsu0bw==
+-----END PUBLIC KEY-----';
+$config{SMTCPUBKEY} =~ s|\n|\\n|g;
+
 
 # Collect reconfiguration information if needed
 my @argvcopy=@ARGV;
@@ -355,8 +360,6 @@ $config{tongsuo_prerelease} =
 $config{tongsuo_version} = "$config{tongsuo_major}.$config{tongsuo_minor}.$config{tongsuo_patch}";
 $config{tongsuo_full_version} = "$config{tongsuo_version}$config{tongsuo_prerelease}";
 
-$config{tongsuo_smtc_info} = $version{TONGSUO_SMTC_INFO};
-
 die "erroneous version information in VERSION.dat: ",
     "$config{version}, $config{shlib_version}\n"
     unless (defined $version{MAJOR}
@@ -404,6 +407,7 @@ my @dtls = qw(dtls1 dtls1_2);
 my @disablables = (
     "acvp-tests",
     "afalgeng",
+    "atf_slibce",
     "asan",
     "asm",
     "async",
@@ -474,6 +478,8 @@ my @disablables = (
     "smtc-debug",
     "scrypt",
     "sctp",
+    "sdf-lib",
+    "sdf-lib-dynamic",
     "secure-memory",
     "shared",
     "siphash",
@@ -605,6 +611,9 @@ our %disabled = ( # "what"         => "comment"
                   "ripemd"              => "default", # RIPEMD has been removed
                   "seed"                => "default", # SEED has been removed
                   "whirlpool"           => "default", # Whirlpool has been removed
+                  "atf_slibce"          => "default",
+                  "sdf-lib"             => "default",
+                  "sdf-lib-dynamic"     => "default",
                 );
 
 # Note: => pair form used for aesthetics, not to truly make a hash table
@@ -692,8 +701,8 @@ my @disable_cascades = (
 
     "deprecated-3.0"    => [ "engine", "srp" ],
     # SMTC does not support ct for now
-    # SMTC only support builtin module for now
-    sub { !$disabled{"smtc"}} => [ "ct", "module" ],
+    sub { !$disabled{"smtc"}} => [ "ct" ],
+    "sdf-lib"           => [ "sdf-lib-dynamic" ],
     );
 
 # Avoid protocol support holes.  Also disable all versions below N, if version
@@ -811,7 +820,7 @@ my %cmdvars = ();               # Stores FOO='blah' type arguments
 my %unsupported_options = ();
 my %deprecated_options = ();
 # If you change this, update apps/version.c
-my @known_seed_sources = qw(getrandom devrandom os egd none rdcpu librandom rtc);
+my @known_seed_sources = qw(getrandom devrandom os egd none rdcpu librandom rtcode rtmem rtsock);
 my @seed_sources = ();
 while (@argvcopy)
         {
@@ -929,6 +938,10 @@ while (@argvcopy)
                         {
                         delete $disabled{"zlib"};
                         }
+                elsif ($1 eq "sdf-lib-dynamic")
+                        {
+                        delete $disabled{"sdf-lib"};
+                        }
                 my $algo = $1;
                 delete $disabled{$algo};
 
@@ -1026,6 +1039,18 @@ while (@argvcopy)
                             push @seed_sources, $x;
                             }
                         }
+                elsif (/^--with-atf_slibce-lib=(.*)$/)
+                        {
+                        $withargs{atf_slibce_lib}=$1;
+                        }
+                elsif (/^--with-sdf-lib=(.*)$/)
+                        {
+                        $withargs{sdf_lib}=$1;
+                        }
+                elsif (/^--with-sdf-include=(.*)$/)
+                        {
+                        $withargs{sdf_include}=$1;
+                        }
                 elsif (/^--fips-key=(.*)$/)
                         {
                         $user{FIPSKEY}=lc($1);
@@ -1036,15 +1061,25 @@ while (@argvcopy)
                         die "FIPS key too long (64 bytes max)\n"
                            if length $1 > 64;
                         }
-                elsif (/^--smtc-key=(.*)$/)
+                elsif (/^--smtc-pubkey=(.*)$/)
                         {
-                        $user{SMTCKEY}=lc($1);
-                        die "Non-hex character in SMTC key\n"
-                           if $user{SMTCKEY} =~ /[^a-f0-9]/;
-                        die "SMTC key must have even number of characters\n"
-                           if length $1 & 1;
-                        die "SMTC key too long (64 bytes max)\n"
-                           if length $1 > 64;
+                        open my $fh, "<", $1 or die "Can't open $1: $!\n";
+                        $user{SMTCPUBKEY} = do { local $/; <$fh> };
+                        close $fh;
+                        chomp $user{SMTCPUBKEY};
+                        $user{SMTCPUBKEY} =~ s|\n|\\n|g;
+                        }
+                elsif (/^--smtc-passwd=(.*)$/)
+                        {
+                        $user{SMTCPASSWD} = $1;
+                        die "Invalid character in SMTC password (A-Z, a-z, 0-9)\n"
+                           if $user{SMTCPASSWD} =~ /[^A-Za-z0-9]/;
+                        die "Invalid SMTC password length (8 ~ 64 bytes)\n"
+                           if length $1 < 8 or length $1 > 64;
+                        }
+                elsif (/^--smtc-info=(.*)$/)
+                        {
+                        $config{tongsuo_smtc_info} = $1;
                         }
                 elsif (/^--banner=(.*)$/)
                         {

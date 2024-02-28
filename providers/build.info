@@ -134,30 +134,26 @@ IF[{- !$disabled{smtc} -}]
   LIBS{noinst}=$LIBSMTC
   SUBDIRS=smtc
 
-  # Note: only support builtin module for now
-  IF[{- $disabled{module} -}]
-    # Become built in
-    $SMTCGOAL=../libcrypto
-    SOURCE[$SMTCGOAL]=$LIBSMTC
-    DEFINE[$SMTCGOAL]=STATIC_SMTC
-    DEFINE[$LIBSMTC]=STATIC_SMTC
-  ELSE
-    # TODO: become a module
-    $SMTCGOAL=smtc
-    MODULES=$SMTCGOAL
-    DEPEND[$SMTCGOAL]=$LIBSMTC
-    SOURCE[$SMTCGOAL]=smtc/smtc_entry.c
-    INCLUDE[$SMTCGOAL]=../include
-    IF[{- defined $target{shared_defflag} -}]
-      SOURCE[$SMTCGOAL]=smtc.ld
-      GENERATE[smtc.ld]=../util/providers.num
-    ENDIF
-    SOURCE[$LIBSMTC]=prov_running.c
-  ENDIF
+  # Note: only support builtin for now
+  $SMTCGOAL=../libcrypto
+  SOURCE[$SMTCGOAL]=$LIBSMTC
+  DEFINE[$SMTCGOAL]=STATIC_SMTC
+  DEFINE[$LIBSMTC]=STATIC_SMTC
 
   DEFINE[$SMTCGOAL]=SMTC_MODULE
   DEFINE[$LIBDEFAULT]=SMTC_MODULE
   DEFINE[../libssl]=SMTC_MODULE
+
+{- use File::Spec::Functions;
+  our $ex_lib = $withargs{atf_slibce_lib} &&
+    (file_name_is_absolute($withargs{atf_slibce_lib}) ?
+    $withargs{atf_slibce_lib} : catfile(updir(), $withargs{atf_slibce_lib}));
+   ""
+-}
+
+  IF[{- !$disabled{atf_slibce} -}]
+    DEPEND[$SMTCGOAL]={- $ex_lib -}
+  ENDIF
 ENDIF
 
 #

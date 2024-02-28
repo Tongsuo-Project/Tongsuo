@@ -69,7 +69,11 @@ ASN1_OCTET_STRING *ossl_x509_pubkey_hash(X509_PUBKEY *pubkey)
     }
     if (!ossl_x509_PUBKEY_get0_libctx(&libctx, &propq, pubkey))
         return NULL;
-    if ((md = EVP_MD_fetch(libctx, SN_sha1, propq)) == NULL)
+#ifdef SMTC_MODULE
+    if ((md = EVP_MD_fetch(libctx, SN_sm3, propq)) == NULL)
+#else
+    if ((md = EVP_MD_fetch(libctx, SN_sha1, NULL)) == NULL)
+#endif
         return NULL;
     if ((oct = ASN1_OCTET_STRING_new()) == NULL) {
         EVP_MD_free(md);

@@ -12,10 +12,22 @@
 #include <openssl/kdf.h>
 #include <openssl/core_names.h>
 #include <openssl/param_build.h>
+#include <openssl/x509.h>
+#include <openssl/engine.h>
+#include <openssl/sdf.h>
+#include <openssl/tsapi.h>
+#include "crypto/evp.h"
 #include "internal/cryptlib.h"
 #include "internal/nelem.h"
 #include "self_test.h"
 #include "self_test_data.inc"
+#include "../implementations/rands/drbg_local.h"
+#include "../../crypto/evp/evp_local.h"
+#include "../../crypto/sdf/sdf_local.h"
+#ifdef SDF_LIB
+# include "sdfe_api.h"
+#endif
+
 
 static int self_test_digest(const ST_KAT_DIGEST *t, OSSL_SELF_TEST *st,
                             OSSL_LIB_CTX *libctx)
@@ -247,13 +259,15 @@ err:
     return ret;
 }
 
-static int self_test_drbg(const ST_KAT_DRBG *t, OSSL_SELF_TEST *st,
+static int self_test_drbg(const ST_KAT_SMTC_DRBG *t, OSSL_SELF_TEST *st,
                           OSSL_LIB_CTX *libctx)
 {
     int ret = 0;
     unsigned char out[256];
     EVP_RAND *rand;
     EVP_RAND_CTX *test = NULL, *drbg = NULL;
+    PROV_DRBG *prov_drbg = NULL;
+    PROV_DRBG_HASH *hash_drbg = NULL;
     unsigned int strength = 256;
     int prediction_resistance = 1; /* Causes a reseed */
     OSSL_PARAM drbg_params[3] = {
@@ -289,9 +303,6 @@ static int self_test_drbg(const ST_KAT_DRBG *t, OSSL_SELF_TEST *st,
 
     drbg_params[0] = OSSL_PARAM_construct_utf8_string(t->param_name,
                                                       t->param_value, 0);
-    /* This is only used by HMAC-DRBG but it is ignored by the others */
-    drbg_params[1] =
-        OSSL_PARAM_construct_utf8_string(OSSL_DRBG_PARAM_MAC, "HMAC", 0);
     if (!EVP_RAND_CTX_set_params(drbg, drbg_params))
         goto err;
 
@@ -308,6 +319,18 @@ static int self_test_drbg(const ST_KAT_DRBG *t, OSSL_SELF_TEST *st,
                               NULL))
         goto err;
 
+    prov_drbg = (PROV_DRBG *)drbg->algctx;
+    if (prov_drbg == NULL)
+        goto err;
+
+    hash_drbg = (PROV_DRBG_HASH *)prov_drbg->data;
+    if (hash_drbg == NULL)
+        goto err;
+
+    if (memcmp(hash_drbg->V, t->V, t->Vlen) != 0
+        || memcmp(hash_drbg->C, t->C, t->Clen) != 0)
+        goto err;
+
     drbg_params[0] =
         OSSL_PARAM_construct_octet_string(OSSL_RAND_PARAM_TEST_ENTROPY,
                                           (void *)t->entropyinpr1,
@@ -315,9 +338,13 @@ static int self_test_drbg(const ST_KAT_DRBG *t, OSSL_SELF_TEST *st,
     if (!EVP_RAND_CTX_set_params(test, drbg_params))
         goto err;
 
-    if (!EVP_RAND_generate(drbg, out, t->expectedlen, strength,
-                           prediction_resistance,
-                           t->entropyaddin1, t->entropyaddin1len))
+    if (EVP_RAND_reseed(drbg, prediction_resistance,
+                        t->entropyinpr1, t->entropyinpr1len,
+                        t->entropyaddin1, t->entropyaddin1len) != 1)
+        goto err;
+
+    if (memcmp(hash_drbg->V, t->V1, t->V1len) != 0
+        || memcmp(hash_drbg->C, t->C1, t->C1len) != 0)
         goto err;
 
     drbg_params[0] =
@@ -358,8 +385,128 @@ err:
     return ret;
 }
 
-static int self_test_sign(const ST_KAT_SIGN *t,
-                         OSSL_SELF_TEST *st, OSSL_LIB_CTX *libctx)
+#ifdef SDF_LIB
+static int bitmap_is_inuse(uint64_t *pu64, int32_t index)
+{
+
+	int32_t pos, offset;
+	uint64_t mask;
+
+	mask = 0x1ull;
+
+	pos = index >> 6;
+	offset = (63 - (index & 0x3f));
+	mask <<= offset;
+
+	return (pu64[pos] & mask) ? 1 : 0;
+}
+
+static int self_test_sign_with_sdf(const ST_KAT_SIGN *t, OSSL_SELF_TEST *st,
+                                   OSSL_LIB_CTX *libctx)
+{
+    int ok = 0;
+    void *hDeviceHandle = NULL;
+    void *hSessionHandle = NULL;
+    sdfe_login_arg_t login_arg;
+    OSSL_ECCrefPrivateKey privkey;
+    OSSL_ECCrefPublicKey pubkey;
+    sdfe_bitmap_t bitmap;
+    sdfe_asym_key_ecc_t asym;
+    const ST_KAT_PARAM *param;
+    OSSL_ECCSignature sig;
+    uint32_t cnt, i;
+    int index = -1;
+    const char *typ = OSSL_SELF_TEST_TYPE_KAT_SIGNATURE;
+
+    if (t->sig_expected == NULL)
+        typ = OSSL_SELF_TEST_TYPE_PCT_SIGNATURE;
+
+    OSSL_SELF_TEST_onbegin(st, typ, t->desc);
+
+    memset(&privkey, 0, sizeof(privkey));
+    memset(&pubkey, 0, sizeof(pubkey));
+    memset(&asym, 0, sizeof(asym));
+    memset(&login_arg, 0, sizeof(login_arg));
+
+    strcpy((char *)login_arg.name, "admin");
+    login_arg.passwd = (uint8_t *)"123123";
+    login_arg.passwd_len = 6;
+
+    if (TSAPI_SDF_OpenDevice(&hDeviceHandle) != OSSL_SDR_OK)
+        goto end;
+
+    if (TSAPI_SDF_OpenSession(hDeviceHandle, &hSessionHandle) != OSSL_SDR_OK)
+        goto end;
+
+    if (SDFE_LoginUsr(hSessionHandle, &login_arg) != OSSL_SDR_OK)
+        goto end;
+
+    bitmap.start = 0;
+    bitmap.cnt = SDFE_BITMAP_U64_MAX_CNT;
+    if (SDFE_BitmapAsymKey(hSessionHandle, SDFE_ASYM_KEY_AREA_ENC,
+                           SDFE_ASYM_KEY_TYPE_SM2, &bitmap) != OSSL_SDR_OK)
+        goto end;
+
+    cnt = bitmap.cnt << 6;
+    for(i = 0; i < cnt; i++){
+        if(!bitmap_is_inuse(bitmap.bitmap, i)) {
+            index = i;
+            break;
+        }
+    }
+
+    if (index < 0)
+        goto end;
+
+    asym.area = SDFE_ASYM_KEY_AREA_SIGN;
+    asym.index = index;
+    asym.type = SDFE_ASYM_KEY_TYPE_SM2;
+    asym.privkey_bits = 256;
+    asym.privkey_len = asym.privkey_bits >> 3;
+    asym.pubkey_bits = 256;
+    asym.pubkey_len = (asym.pubkey_bits >> 3) << 1;
+
+    for (param = t->key; param->data; param++) {
+        if (strcmp(param->name, OSSL_PKEY_PARAM_PUB_KEY) == 0) {
+            pubkey.bits = 256;
+            memcpy(pubkey.x + sizeof(pubkey.x) - 32,
+                   (unsigned char *)param->data + 1, 32);
+            memcpy(pubkey.y + sizeof(pubkey.y) - 32,
+                   (unsigned char *)param->data + 1 + 32, 32);
+        } else if (strcmp(param->name, OSSL_PKEY_PARAM_PRIV_KEY) == 0) {
+            privkey.bits = 256;
+            memcpy(privkey.K + sizeof(privkey.K) - param->data_len, param->data,
+                   param->data_len);
+        }
+    }
+
+    memcpy(asym.pubkey, &pubkey, sizeof(pubkey));
+    memcpy(asym.privkey, &privkey, sizeof(privkey));
+
+    if (SDFE_ImportECCKey(hSessionHandle, &asym, NULL) != OSSL_SDR_OK)
+        goto end;
+
+    if (TSAPI_SDF_GetPrivateKeyAccessRight(hSessionHandle, index, NULL, 0)
+            != OSSL_SDR_OK)
+        goto end;
+
+    if (TSAPI_SDF_InternalSign_ECC(hSessionHandle, index,
+                                   (unsigned char *)t->dgst,
+                                   t->dgst_len, &sig) != OSSL_SDR_OK)
+        goto end;
+
+    ok = 1;
+end:
+    (void)SDFE_DelECCKey(hSessionHandle, asym.area, index);
+    TSAPI_SDF_CloseSession(hSessionHandle);
+    TSAPI_SDF_CloseDevice(hDeviceHandle);
+    OSSL_SELF_TEST_onend(st, ok);
+    return ok;
+}
+#endif
+
+static int self_test_sign(const ST_KAT_SIGN *t, OSSL_SELF_TEST *st,
+                          OSSL_LIB_CTX *libctx)
 {
     int ret = 0;
     OSSL_PARAM *params = NULL, *params_sig = NULL;
@@ -369,12 +516,12 @@ static int self_test_sign(const ST_KAT_SIGN *t,
     unsigned char sig[256];
     BN_CTX *bnctx = NULL;
     size_t siglen = sizeof(sig);
-    static const unsigned char dgst[] = {
-        0x7f, 0x83, 0xb1, 0x65, 0x7f, 0xf1, 0xfc, 0x53, 0xb9, 0x2d, 0xc1, 0x81,
-        0x48, 0xa1, 0xd6, 0x5d, 0xfc, 0x2d, 0x4b, 0x1f, 0xa3, 0xd6, 0x77, 0x28,
-        0x4a, 0xdd, 0xd2, 0x00, 0x12, 0x6d, 0x90, 0x69
-    };
     const char *typ = OSSL_SELF_TEST_TYPE_KAT_SIGNATURE;
+
+#ifdef SDF_LIB
+    if (t->sign)
+        return self_test_sign_with_sdf(t, st, libctx);
+#endif
 
     if (t->sig_expected == NULL)
         typ = OSSL_SELF_TEST_TYPE_PCT_SIGNATURE;
@@ -391,20 +538,20 @@ static int self_test_sign(const ST_KAT_SIGN *t,
 
     if (!add_params(bld, t->key, bnctx))
         goto err;
+
     params = OSSL_PARAM_BLD_to_param(bld);
 
-    /* Create a EVP_PKEY_CTX to load the DSA key into */
-    kctx = EVP_PKEY_CTX_new_from_name(libctx, t->algorithm, "");
+    kctx = EVP_PKEY_CTX_new_from_name_provided(libctx, t->algorithm, NULL);
+
     if (kctx == NULL || params == NULL)
         goto err;
+
     if (EVP_PKEY_fromdata_init(kctx) <= 0
         || EVP_PKEY_fromdata(kctx, &pkey, EVP_PKEY_KEYPAIR, params) <= 0)
         goto err;
 
-    /* Create a EVP_PKEY_CTX to use for the signing operation */
-    sctx = EVP_PKEY_CTX_new_from_pkey(libctx, pkey, NULL);
-    if (sctx == NULL
-        || EVP_PKEY_sign_init(sctx) <= 0)
+    sctx = EVP_PKEY_CTX_new_from_pkey_provided(libctx, pkey, NULL);
+    if (sctx == NULL)
         goto err;
 
     /* set signature parameters */
@@ -412,47 +559,172 @@ static int self_test_sign(const ST_KAT_SIGN *t,
                                          t->mdalgorithm,
                                          strlen(t->mdalgorithm) + 1))
         goto err;
+
     params_sig = OSSL_PARAM_BLD_to_param(bld);
-    if (EVP_PKEY_CTX_set_params(sctx, params_sig) <= 0)
+    if (params_sig == NULL)
         goto err;
 
-    if (EVP_PKEY_sign(sctx, sig, &siglen, dgst, sizeof(dgst)) <= 0
-        || EVP_PKEY_verify_init(sctx) <= 0
+    if (t->sign) {
+        if (EVP_PKEY_sign_init(sctx) <= 0)
+            goto err;
+
+        if (EVP_PKEY_CTX_set_params(sctx, params_sig) <= 0)
+            goto err;
+
+        if (EVP_PKEY_sign(sctx, sig, &siglen, t->dgst, t->dgst_len) <= 0)
+            goto err;
+
+        OSSL_SELF_TEST_oncorrupt_byte(st, sig);
+
+        if (t->sig_expected != NULL
+            && (siglen != t->sig_expected_len
+                || memcmp(sig, t->sig_expected, t->sig_expected_len) != 0))
+            goto err;
+    }
+
+    if (EVP_PKEY_verify_init(sctx) <= 0
         || EVP_PKEY_CTX_set_params(sctx, params_sig) <= 0)
         goto err;
 
-    /*
-     * Used by RSA, for other key types where the signature changes, we
-     * can only use the verify.
-     */
-    if (t->sig_expected != NULL
-        && (siglen != t->sig_expected_len
-            || memcmp(sig, t->sig_expected, t->sig_expected_len) != 0))
-        goto err;
+    if (!t->sign) {
+        memcpy(sig, t->sig_expected, t->sig_expected_len);
+        siglen = t->sig_expected_len;
+    }
 
     OSSL_SELF_TEST_oncorrupt_byte(st, sig);
-    if (EVP_PKEY_verify(sctx, sig, siglen, dgst, sizeof(dgst)) <= 0)
+    if (EVP_PKEY_verify(sctx, sig, siglen, t->dgst, t->dgst_len) <= 0)
         goto err;
+
     ret = 1;
 err:
     BN_CTX_free(bnctx);
     EVP_PKEY_free(pkey);
-    EVP_PKEY_CTX_free(kctx);
     EVP_PKEY_CTX_free(sctx);
-    OSSL_PARAM_free(params);
     OSSL_PARAM_free(params_sig);
     OSSL_PARAM_BLD_free(bld);
     OSSL_SELF_TEST_onend(st, ret);
     return ret;
 }
 
-/*
- * Test an encrypt or decrypt KAT..
- *
- * FIPS 140-2 IG D.9 states that separate KAT tests are needed for encrypt
- * and decrypt..
- */
-static int self_test_asym_cipher(const ST_KAT_ASYM_CIPHER *t, OSSL_SELF_TEST *st,
+#ifdef SDF_LIB
+static int self_test_asym_decrypt_with_sdf(const ST_KAT_ASYM_CIPHER *t,
+                                           OSSL_SELF_TEST *st,
+                                           OSSL_LIB_CTX *libctx)
+{
+    int ok = 0;
+    void *hDeviceHandle = NULL;
+    void *hSessionHandle = NULL;
+    sdfe_login_arg_t login_arg;
+    OSSL_ECCrefPrivateKey privkey;
+    OSSL_ECCrefPublicKey pubkey;
+    sdfe_bitmap_t bitmap;
+    sdfe_asym_key_ecc_t asym;
+    const ST_KAT_PARAM *param;
+    OSSL_ECCCipher *pECCCipher = NULL;
+    unsigned char out[256];
+    unsigned int outlen = sizeof(out);
+    uint32_t cnt, i;
+    int index = -1;
+    const char *typ = OSSL_SELF_TEST_TYPE_KAT_ASYM_CIPHER;
+
+    if (t->expected == NULL)
+        typ = OSSL_SELF_TEST_TYPE_PCT_ASYM_CIPHER;
+
+    OSSL_SELF_TEST_onbegin(st, typ, t->desc);
+
+    memset(&privkey, 0, sizeof(privkey));
+    memset(&pubkey, 0, sizeof(pubkey));
+    memset(&asym, 0, sizeof(asym));
+    memset(&login_arg, 0, sizeof(login_arg));
+
+    strcpy((char *)login_arg.name, "admin");
+    login_arg.passwd = (uint8_t *)"123123";
+    login_arg.passwd_len = 6;
+
+    if (TSAPI_SDF_OpenDevice(&hDeviceHandle) != OSSL_SDR_OK)
+        goto end;
+
+    if (TSAPI_SDF_OpenSession(hDeviceHandle, &hSessionHandle) != OSSL_SDR_OK)
+        goto end;
+
+    if (SDFE_LoginUsr(hSessionHandle, &login_arg) != OSSL_SDR_OK)
+        goto end;
+
+    bitmap.start = 0;
+    bitmap.cnt = SDFE_BITMAP_U64_MAX_CNT;
+    if (SDFE_BitmapAsymKey(hSessionHandle, SDFE_ASYM_KEY_AREA_ENC,
+                           SDFE_ASYM_KEY_TYPE_SM2, &bitmap) != OSSL_SDR_OK)
+        goto end;
+
+    cnt = bitmap.cnt << 6;
+    for(i = 0; i < cnt; i++){
+        if(!bitmap_is_inuse(bitmap.bitmap, i)) {
+            index = i;
+            break;
+        }
+    }
+
+    if (index < 0)
+        goto end;
+
+    asym.area = SDFE_ASYM_KEY_AREA_ENC;
+    asym.index = index;
+    asym.type = SDFE_ASYM_KEY_TYPE_SM2;
+    asym.privkey_bits = 256;
+    asym.privkey_len = asym.privkey_bits >> 3;
+    asym.pubkey_bits = 256;
+    asym.pubkey_len = (asym.pubkey_bits >> 3) << 1;
+
+    for (param = t->key; param->data; param++) {
+        if (strcmp(param->name, OSSL_PKEY_PARAM_PUB_KEY) == 0) {
+            pubkey.bits = 256;
+            memcpy(pubkey.x + sizeof(pubkey.x) - 32,
+                   (unsigned char *)param->data + 1, 32);
+            memcpy(pubkey.y + sizeof(pubkey.y) - 32,
+                   (unsigned char *)param->data + 1 + 32, 32);
+        } else if (strcmp(param->name, OSSL_PKEY_PARAM_PRIV_KEY) == 0) {
+            privkey.bits = 256;
+            memcpy(privkey.K + sizeof(privkey.K) - param->data_len, param->data,
+                   param->data_len);
+        }
+    }
+
+    memcpy(asym.pubkey, &pubkey, sizeof(pubkey));
+    memcpy(asym.privkey, &privkey, sizeof(privkey));
+
+    if (SDFE_ImportECCKey(hSessionHandle, &asym, NULL) != OSSL_SDR_OK)
+        goto end;
+
+    if (TSAPI_SDF_GetPrivateKeyAccessRight(hSessionHandle, index, NULL, 0)
+            != OSSL_SDR_OK)
+        goto end;
+
+    pECCCipher = TSAPI_SM2Ciphertext_to_ECCCipher(t->in, t->in_len);
+
+    if (TSAPI_SDF_InternalDecrypt_ECC(hSessionHandle, index, pECCCipher,
+                                      out, &outlen) != OSSL_SDR_OK)
+        goto end;
+
+    OSSL_SELF_TEST_oncorrupt_byte(st, out);
+
+    if (t->expected != NULL
+        && (outlen != t->expected_len
+            || memcmp(out, t->expected, t->expected_len) != 0))
+        goto end;
+
+    ok = 1;
+end:
+    OPENSSL_free(pECCCipher);
+    (void)SDFE_DelECCKey(hSessionHandle, asym.area, index);
+    TSAPI_SDF_CloseSession(hSessionHandle);
+    TSAPI_SDF_CloseDevice(hDeviceHandle);
+    OSSL_SELF_TEST_onend(st, ok);
+    return ok;
+}
+#endif
+
+static int self_test_asym_cipher(const ST_KAT_ASYM_CIPHER *t,
+                                 OSSL_SELF_TEST *st,
                                  OSSL_LIB_CTX *libctx)
 {
     int ret = 0;
@@ -463,8 +735,17 @@ static int self_test_asym_cipher(const ST_KAT_ASYM_CIPHER *t, OSSL_SELF_TEST *st
     BN_CTX *bnctx = NULL;
     unsigned char out[256];
     size_t outlen = sizeof(out);
+    const char *typ = OSSL_SELF_TEST_TYPE_KAT_ASYM_CIPHER;
 
-    OSSL_SELF_TEST_onbegin(st, OSSL_SELF_TEST_TYPE_KAT_ASYM_CIPHER, t->desc);
+#ifdef SDF_LIB
+    if (!t->encrypt)
+        return self_test_asym_decrypt_with_sdf(t, st, libctx);
+#endif
+
+    if (t->expected == NULL)
+        typ = OSSL_SELF_TEST_TYPE_PCT_ASYM_CIPHER;
+
+    OSSL_SELF_TEST_onbegin(st, typ, t->desc);
 
     bnctx = BN_CTX_new_ex(libctx);
     if (bnctx == NULL)
@@ -476,7 +757,7 @@ static int self_test_asym_cipher(const ST_KAT_ASYM_CIPHER *t, OSSL_SELF_TEST *st
         || !add_params(keybld, t->key, bnctx))
         goto err;
     keyparams = OSSL_PARAM_BLD_to_param(keybld);
-    keyctx = EVP_PKEY_CTX_new_from_name(libctx, t->algorithm, NULL);
+    keyctx = EVP_PKEY_CTX_new_from_name_provided(libctx, t->algorithm, NULL);
     if (keyctx == NULL || keyparams == NULL)
         goto err;
     if (EVP_PKEY_fromdata_init(keyctx) <= 0
@@ -484,7 +765,7 @@ static int self_test_asym_cipher(const ST_KAT_ASYM_CIPHER *t, OSSL_SELF_TEST *st
         goto err;
 
     /* Create a EVP_PKEY_CTX to use for the encrypt or decrypt operation */
-    encctx = EVP_PKEY_CTX_new_from_pkey(libctx, key, NULL);
+    encctx = EVP_PKEY_CTX_new_from_pkey_provided(libctx, key, NULL);
     if (encctx == NULL
         || (t->encrypt && EVP_PKEY_encrypt_init(encctx) <= 0)
         || (!t->encrypt && EVP_PKEY_decrypt_init(encctx) <= 0))
@@ -614,17 +895,12 @@ int SELF_TEST_kats(OSSL_SELF_TEST *st, OSSL_LIB_CTX *libctx)
 {
     int ret = 1;
 
-    if (!self_test_digests(st, libctx))
-        ret = 0;
-    if (!self_test_ciphers(st, libctx))
-        ret = 0;
-    if (!self_test_signatures(st, libctx))
-        ret = 0;
-    if (!self_test_kdfs(st, libctx))
-        ret = 0;
-    if (!self_test_drbgs(st, libctx))
-        ret = 0;
-    if (!self_test_asym_ciphers(st, libctx))
+    if (!self_test_digests(st, libctx)
+        || !self_test_ciphers(st, libctx)
+        || !self_test_asym_ciphers(st, libctx)
+        || !self_test_signatures(st, libctx)
+        || !self_test_kdfs(st, libctx)
+        || !self_test_drbgs(st, libctx))
         ret = 0;
 
     return ret;

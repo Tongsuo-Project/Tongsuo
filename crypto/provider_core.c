@@ -172,6 +172,8 @@ struct ossl_provider_st {
     OSSL_FUNC_provider_self_test_fn *self_test;
     OSSL_FUNC_provider_query_operation_fn *query_operation;
     OSSL_FUNC_provider_unquery_operation_fn *unquery_operation;
+    OSSL_FUNC_provider_status_fn *status;
+    OSSL_FUNC_provider_reset_fn *reset;
 
     /*
      * Cache of bit to indicate of query_operation() has been called on
@@ -944,6 +946,12 @@ static int provider_init(OSSL_PROVIDER *prov)
             prov->unquery_operation =
                 OSSL_FUNC_provider_unquery_operation(provider_dispatch);
             break;
+        case OSSL_FUNC_PROVIDER_STATUS:
+            prov->status = OSSL_FUNC_provider_status(provider_dispatch);
+            break;
+        case OSSL_FUNC_PROVIDER_RESET:
+            prov->reset = OSSL_FUNC_provider_reset(provider_dispatch);
+            break;
 #ifndef OPENSSL_NO_ERR
 # ifndef FIPS_MODULE
         case OSSL_FUNC_PROVIDER_GET_REASON_STRINGS:
@@ -1490,6 +1498,22 @@ int ossl_provider_get_params(const OSSL_PROVIDER *prov, OSSL_PARAM params[])
 {
     return prov->get_params == NULL
         ? 0 : prov->get_params(prov->provctx, params);
+}
+
+int ossl_provider_reset(OSSL_PROVIDER *prov)
+{
+    if (prov->reset == NULL)
+        return 1;
+
+    return prov->reset(prov->provctx);
+}
+
+int ossl_provider_status(const OSSL_PROVIDER *prov)
+{
+    if (prov->status == NULL)
+        return 1;
+
+    return prov->status(prov->provctx);
 }
 
 int ossl_provider_self_test(const OSSL_PROVIDER *prov)
