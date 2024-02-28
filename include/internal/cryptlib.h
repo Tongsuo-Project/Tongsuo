@@ -70,6 +70,11 @@ DEFINE_LHASH_OF(MEM);
 # define X509_PRIVATE_DIR        OPENSSLDIR "/private"
 # define CTLOG_FILE              OPENSSLDIR "/ct_log_list.cnf"
 
+# ifdef SMTC_MODULE
+#  define SMTC_MODULE_CONF       OPENSSLDIR "/smtcmodule.cnf"
+#  define SMTC_AUTH_KEK          OPENSSLDIR "/auth_kek.pem"
+# endif
+
 # define X509_CERT_DIR_EVP        "SSL_CERT_DIR"
 # define X509_CERT_FILE_EVP       "SSL_CERT_FILE"
 # define CTLOG_FILE_EVP           "CTLOG_FILE"

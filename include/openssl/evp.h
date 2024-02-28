@@ -1681,8 +1681,14 @@ EVP_PKEY_CTX *EVP_PKEY_CTX_new_id(int id, ENGINE *e);
 EVP_PKEY_CTX *EVP_PKEY_CTX_new_from_name(OSSL_LIB_CTX *libctx,
                                          const char *name,
                                          const char *propquery);
+EVP_PKEY_CTX *EVP_PKEY_CTX_new_from_name_provided(OSSL_LIB_CTX *libctx,
+                                                  const char *name,
+                                                  const char *propquery);
 EVP_PKEY_CTX *EVP_PKEY_CTX_new_from_pkey(OSSL_LIB_CTX *libctx,
                                          EVP_PKEY *pkey, const char *propquery);
+EVP_PKEY_CTX *EVP_PKEY_CTX_new_from_pkey_provided(OSSL_LIB_CTX *libctx,
+                                                  EVP_PKEY *pkey,
+                                                  const char *propquery);
 EVP_PKEY_CTX *EVP_PKEY_CTX_dup(const EVP_PKEY_CTX *ctx);
 void EVP_PKEY_CTX_free(EVP_PKEY_CTX *ctx);
 int EVP_PKEY_CTX_is_a(EVP_PKEY_CTX *ctx, const char *keytype);

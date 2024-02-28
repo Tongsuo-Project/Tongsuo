@@ -25,7 +25,6 @@ use lib srctop_dir('Configurations');
 use lib bldtop_dir('.');
 
 my $no_fips = disabled('fips') || ($ENV{NO_FIPS} // 0);
-my $no_smtc = disabled('smtc') || disabled('smtc-debug');
 
 $ENV{TEST_CERTS_DIR} = srctop_dir("test", "certs");
 $ENV{TEST_RUNS_DIR} = catdir(result_dir(), "..", "test_dc_sign");
@@ -35,7 +34,7 @@ my @conf_files = map { basename($_, ".in") } @conf_srcs;
 
 # We hard-code the number of tests to double-check that the globbing above
 # finds all files as expected.
-plan tests => 37;
+plan tests => 32;
 
 # Some test results depend on the configuration of enabled protocols. We only
 # verify generated sources in the default configuration.
@@ -81,12 +80,7 @@ my %conf_dependent_tests = (
   "27-ticket-appdata.cnf" => !$is_default_tls,
   "28-seclevel.cnf" => disabled("tls1_2") || $no_ec,
   "30-extended-master-secret.cnf" => disabled("tls1_2"),
-  "31-ntls.cnf" => disabled("ntls"),
-  "32-ntls-force-ntls.cnf" => disabled("ntls"),
   "38-delegated-credential.cnf" => disabled("delegated-credential"),
-  "39-ntls-sni-ticket.cnf" => disabled("ntls"),
-  "40-ntls_client_auth.cnf" => disabled("ntls"),
-  "41-ntls-alpn.cnf" => disabled("ntls"),
 );
 
 # Add your test here if it should be skipped for some compile-time
@@ -123,26 +117,12 @@ my %skip = (
   "29-dtls-sctp-label-bug.cnf" => disabled("sctp") || disabled("sock"),
   "30-tls13-sm.cnf" => disabled("sm2") || disabled("sm3") || disabled("sm4")
                         || disabled("tls1_3") || !$no_fips,
-  "31-ntls.cnf" => disabled("ntls") || disabled("sm2") || disabled("sm3")
-                    || disabled("sm4") || !$no_fips,
-  "32-ntls-force-ntls.cnf" => disabled("ntls") || disabled("sm2")
-                                || disabled("sm3") || disabled("sm4")
-                                || !$no_fips || !disabled("smtc"),
   "38-delegated-credential.cnf" => disabled("delegated-credential"),
-  "39-ntls-sni-ticket.cnf" => disabled("ntls") || disabled("sm2")
-                                || disabled("sm3") || disabled("sm4")
-                                || !$no_fips,
-  "40-ntls_client_auth.cnf" => disabled("ntls") || disabled("sm2")
-                                || disabled("sm3") || disabled("sm4")
-                                || !$no_fips,
-  "41-ntls-alpn.cnf" => disabled("ntls") || disabled("sm2")
-                         || disabled("sm3") || disabled("sm4") || !$no_fips,
 );
 
 foreach my $conf (@conf_files) {
     subtest "Test configuration $conf" => sub {
-        plan tests => 6 + ($no_fips ? 0 : 3)
-                      + ($conf !~ /^[0-9]+-ntls/ || $no_smtc ? 0 : 3);
+        plan tests => 6 + ($no_fips ? 0 : 3);
         test_conf($conf,
                   $conf_dependent_tests{$conf} ? 0 : 1,
                   defined($skip{$conf}) ? $skip{$conf} : $no_tls,
@@ -155,10 +135,6 @@ foreach my $conf (@conf_files) {
                   0,
                   defined($skip{$conf}) ? $skip{$conf} : $no_tls,
                   "fips") unless $no_fips;
-        test_conf($conf,
-                  0,
-                  defined($skip{$conf}) ? $skip{$conf} : $no_tls,
-                  "smtc") unless ($conf !~ /^[0-9]+-ntls/ || $no_smtc);
     };
 }
 
@@ -200,10 +176,6 @@ sub test_conf {
       if ($provider eq "fips") {
           ok(run(test(["ssl_test", $output_file, $provider,
                        srctop_file("test", "fips-and-base.cnf")])),
-             "running ssl_test $conf");
-      } elsif ($provider eq "smtc") {
-          ok(run(test(["ssl_test", $output_file, $provider,
-                       srctop_file("test", "smtc-and-base.cnf")])),
              "running ssl_test $conf");
       } else {
           ok(run(test(["ssl_test", $output_file, $provider])),

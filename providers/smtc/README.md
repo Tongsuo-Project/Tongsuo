@@ -1,25 +1,23 @@
-# 构建SMTC
+# Build SMTC
+
+build SMTC with atf_slibce and atf_sdf as follows:
 
 ```
-./config  enable-smtc enable-ntls no-shared enable-ssl-trace --prefix=/opt/tongsuo -Wl,-rpath,/opt/tongsuo/lib64
+./config no-shared no-module enable-ntls enable-smtc enable-smtc-debug enable-ssl-trace enable-trace --debug --prefix=/path/to/tongsuo --libdir=/path/to/tongsuo/lib/ --api=1.1.1 --with-rand-seed=rtcode,rtmem,rtsock -DTONGSUO_RAND_GM_SRNG --strict-warnings enable-atf_slibce --with-atf_slibce-lib=../libatf_slibce.a --smtc-pubkey=/tmp/smtcpub.key enable-sdf-lib --with-sdf-lib=/atf-libs-static/libatf_sdf.a --with-sdf-include=/atf-includes/atf-sdf
 
-make
+make -j
 
 make install
 ```
 
-# 配置SMTC
+# Install SMTC
 
 ```
-/opt/tongsuo/bin/tongsuo mod -module /opt/tongsuo/bin/tongsuo -provider_name smtc -section_name smtc_sect -show_selftest -out /opt/tongsuo/ssl/smtcmodule.cnf
-
-# 修改/opt/tongsuo/ssl/openssl.cnf，包含smtcmodule.cnf，设置smtc section
-sed -i -e 's|^# .include smtcmodule.cnf|.include /opt/tongsuo/ssl/smtcmodule.cnf|;s/^# smtc = smtc_sect/smtc = smtc_sect/' /opt/tongsuo/ssl/openssl.cnf
-
+tongsuo mod -install -module /bin/tongsuo -sigfile signature.bin
 ```
 
-# SMTC自测试
+# SMTC Self Test
 
 ```
-/opt/tongsuo/bin/tongsuo mod -test
+tongsuo mod -test
 ```

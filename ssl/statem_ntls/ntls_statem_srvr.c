@@ -1584,7 +1584,7 @@ int tls_construct_server_key_exchange_ntls(SSL *s, WPACKET *pkt)
 {
     unsigned char *encodedPoint = NULL;
     size_t encodedlen = 0;
-    int curve_id = 0;
+    uint16_t curve_id = 0;
     const SIGALG_LOOKUP *lu = s->s3.tmp.sigalg;
     unsigned long type;
     EVP_MD_CTX *md_ctx = EVP_MD_CTX_new();

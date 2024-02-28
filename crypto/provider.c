@@ -99,6 +99,16 @@ const OSSL_DISPATCH *OSSL_PROVIDER_get0_dispatch(const OSSL_PROVIDER *prov)
     return ossl_provider_get0_dispatch(prov);
 }
 
+int OSSL_PROVIDER_reset(OSSL_PROVIDER *prov)
+{
+    return ossl_provider_reset(prov);
+}
+
+int OSSL_PROVIDER_status(const OSSL_PROVIDER *prov)
+{
+    return ossl_provider_status(prov);
+}
+
 int OSSL_PROVIDER_self_test(const OSSL_PROVIDER *prov)
 {
     return ossl_provider_self_test(prov);

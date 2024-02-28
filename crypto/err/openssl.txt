@@ -1,4 +1,4 @@
-# Copyright 1999-2023 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 1999-2024 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -651,7 +651,6 @@ ESS_R_ESS_SIGNING_CERT_V2_ADD_ERROR:101:ess signing cert v2 add error
 ESS_R_MISSING_SIGNING_CERTIFICATE_ATTRIBUTE:108:\
 	missing signing certificate attribute
 EVP_R_AES_KEY_SETUP_FAILED:143:aes key setup failed
-EVP_R_ARIA_KEY_SETUP_FAILED:176:aria key setup failed
 EVP_R_BAD_ALGORITHM_NAME:200:bad algorithm name
 EVP_R_BAD_DECRYPT:100:bad decrypt
 EVP_R_BAD_KEY_LENGTH:195:bad key length
@@ -990,6 +989,7 @@ PROV_R_FIPS_MODULE_IN_ERROR_STATE:225:fips module in error state
 PROV_R_GENERATE_ERROR:191:generate error
 PROV_R_ILLEGAL_OR_UNSUPPORTED_PADDING_MODE:165:\
 	illegal or unsupported padding mode
+PROV_R_INCORRECT_PASSWORD:231:incorrect password
 PROV_R_INDICATOR_INTEGRITY_FAILURE:210:indicator integrity failure
 PROV_R_INSUFFICIENT_DRBG_STRENGTH:181:insufficient drbg strength
 PROV_R_INVALID_AAD:108:invalid aad
@@ -1069,6 +1069,9 @@ PROV_R_SEED_SOURCES_MUST_NOT_HAVE_A_PARENT:229:\
 	seed sources must not have a parent
 PROV_R_SELF_TEST_KAT_FAILURE:215:self test kat failure
 PROV_R_SELF_TEST_POST_FAILURE:216:self test post failure
+PROV_R_SMTC_MODULE_CONDITIONAL_ERROR:232:smtc module conditional error
+PROV_R_SMTC_MODULE_ENTERING_ERROR_STATE:350:smtc module entering error state
+PROV_R_SMTC_MODULE_IN_ERROR_STATE:351:smtc module in error state
 PROV_R_TAG_NOT_NEEDED:120:tag not needed
 PROV_R_TAG_NOT_SET:119:tag not set
 PROV_R_TOO_MANY_RECORDS:126:too many records

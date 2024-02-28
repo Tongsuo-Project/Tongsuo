@@ -10,8 +10,3 @@ providers = provider_sect
 
 [provider_sect]
 smtc = smtc_sect
-base = base_sect
-
-[base_sect]
-activate = 1
-

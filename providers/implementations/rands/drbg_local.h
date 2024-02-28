@@ -18,6 +18,7 @@
 # include "internal/nelem.h"
 # include "internal/numbers.h"
 # include "prov/provider_ctx.h"
+# include "prov/provider_util.h"
 
 /* How many times to read the TSC as a randomness source. */
 # define TSC_READ_COUNT                 4
@@ -49,13 +50,26 @@
  */
 # define DRBG_MAX_LENGTH                         INT32_MAX
 
+/* 888 bits from SP800-90Ar1 10.1 table 2 */
+#define HASH_PRNG_MAX_SEEDLEN    (888/8)
+
 /* The default nonce */
-#ifdef CHARSET_EBCDIC
-# define DRBG_DEFAULT_PERS_STRING      { 0x4f, 0x70, 0x65, 0x6e, 0x53, 0x53, \
+#ifdef TONGSUO_RAND_GM_SRNG
+# ifdef CHARSET_EBCDIC
+#  define DRBG_DEFAULT_PERS_STRING      { 0x54, 0x6f, 0x6e, 0x67, 0x73, 0x75, \
+     0x6f, 0x20, 0x47, 0x4d, 0x2f, 0x54, 0x20, 0x30, 0x31, 0x30, 0x35, 0x2d, \
+     0x32, 0x30, 0x32, 0x31, 0x20, 0x53, 0x52, 0x4e, 0x47, 0x00};
+# else
+#  define DRBG_DEFAULT_PERS_STRING      "Tongsuo GM/T 0105-2021 SRNG"
+# endif
+#else
+# ifdef CHARSET_EBCDIC
+#  define DRBG_DEFAULT_PERS_STRING      { 0x4f, 0x70, 0x65, 0x6e, 0x53, 0x53, \
      0x4c, 0x20, 0x4e, 0x49, 0x53, 0x54, 0x20, 0x53, 0x50, 0x20, 0x38, 0x30, \
      0x30, 0x2d, 0x39, 0x30, 0x41, 0x20, 0x44, 0x52, 0x42, 0x47, 0x00};
-#else
-# define DRBG_DEFAULT_PERS_STRING                "OpenSSL NIST SP 800-90A DRBG"
+# else
+#  define DRBG_DEFAULT_PERS_STRING      "OpenSSL NIST SP 800-90A DRBG"
+# endif
 #endif
 
 typedef struct prov_drbg_st PROV_DRBG;
@@ -177,6 +191,16 @@ struct prov_drbg_st {
     OSSL_INOUT_CALLBACK *get_nonce_fn;
     OSSL_CALLBACK *cleanup_nonce_fn;
 };
+
+typedef struct rand_drbg_hash_st {
+    PROV_DIGEST digest;
+    EVP_MD_CTX *ctx;
+    size_t blocklen;
+    unsigned char V[HASH_PRNG_MAX_SEEDLEN];
+    unsigned char C[HASH_PRNG_MAX_SEEDLEN];
+    /* Temporary value storage: should always exceed max digest length */
+    unsigned char vtmp[HASH_PRNG_MAX_SEEDLEN];
+} PROV_DRBG_HASH;
 
 PROV_DRBG *ossl_rand_drbg_new
     (void *provctx, void *parent, const OSSL_DISPATCH *parent_dispatch,

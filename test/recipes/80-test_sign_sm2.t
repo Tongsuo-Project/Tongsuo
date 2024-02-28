@@ -11,7 +11,7 @@ use warnings;
 
 use POSIX;
 use File::Path 2.00 qw/rmtree/;
-use OpenSSL::Test qw/:DEFAULT data_file merge_files/;
+use OpenSSL::Test qw/:DEFAULT data_file merge_files srctop_file/;
 use OpenSSL::Test::Utils;
 use File::Spec::Functions qw/catfile catdir/;
 
@@ -22,6 +22,11 @@ plan skip_all => "sm2 is not supported by this OpenSSL build"
     if disabled("sm2") || disabled("sm3");
 
 plan tests => 22;
+
+my $no_smtc = disabled('smtc') || disabled('smtc-debug');
+if (!$no_smtc) {
+    $ENV{OPENSSL_CONF} = srctop_file("test", "smtc.cnf");
+}
 
 my $CADIR = catdir(".", "ca");
 my $SUBCADIR = catdir(".", "subca");

@@ -10,6 +10,7 @@
 #include <openssl/e_os2.h>
 #include "prov/providercommon.h"
 
+#ifndef SMTC_MODULE
 /* By default, our providers don't have an error state */
 void ossl_set_error_state(const char *type)
 {
@@ -20,3 +21,4 @@ int ossl_prov_is_running(void)
 {
     return 1;
 }
+#endif

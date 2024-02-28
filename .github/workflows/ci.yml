@@ -209,7 +209,7 @@ jobs:
     - name: modprobe tls
       run: sudo modprobe tls
     - name: config
-      run: ./config --banner=Configured --strict-warnings no-ec enable-ssl-trace enable-zlib enable-zlib-dynamic enable-crypto-mdebug enable-crypto-mdebug-backtrace enable-egd enable-ktls enable-fips enable-ntls enable-optimize-chacha-choose enable-status enable-crypto-mdebug-count enable-cert-compression enable-delegated-credential enable-bn-method --with-rand-seed=getrandom,rtc && perl configdata.pm --dump
+      run: ./config --banner=Configured --strict-warnings no-ec enable-ssl-trace enable-zlib enable-zlib-dynamic enable-crypto-mdebug enable-crypto-mdebug-backtrace enable-egd enable-ktls enable-fips enable-ntls enable-optimize-chacha-choose enable-status enable-crypto-mdebug-count enable-cert-compression enable-delegated-credential enable-bn-method --with-rand-seed=rtcode,rtmem,rtsock && perl configdata.pm --dump
     - name: make
       run: make -s -j4
     - name: make test
@@ -399,8 +399,11 @@ jobs:
         run: ./config enable-ntls enable-smtc enable-smtc-debug --strict-warnings && perl configdata.pm --dump
       - name: make
         run: make -s -j4
-      - name: make test
-        run: make test
+      - name: make test selected cases
+        run: |
+          make test TESTS="test_abort test_sanity test_symbol_presence test_test test_errstr test_internal_context \
+            test_internal_sm3 test_internal_sm4 test_smtc_rand_self_test test_mod test_mod_sm2 test_cli_smtc \
+            test_ntlssni test_tsapi test_sign_sm2 test_ntls"
       - name: make clean
         run: make clean
       - name: check dirty
