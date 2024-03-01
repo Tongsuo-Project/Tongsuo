@@ -287,8 +287,6 @@ MSG_PROCESS_RETURN tls_process_cert_verify_ntls(SSL *s, PACKET *pkt)
     EVP_MD_CTX *mctx = EVP_MD_CTX_new();
     EVP_MD_CTX *mctx2 = EVP_MD_CTX_new();
     EVP_PKEY_CTX *pctx = NULL;
-    unsigned char out[EVP_MAX_MD_SIZE];
-    size_t outlen = 0;
 
     if (mctx == NULL || mctx2 == NULL) {
         SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
@@ -376,13 +374,6 @@ MSG_PROCESS_RETURN tls_process_cert_verify_ntls(SSL *s, PACKET *pkt)
     }
 
 
-    if (!EVP_DigestInit_ex(mctx2, md, NULL)
-            || !EVP_DigestUpdate(mctx2, hdata, hdatalen)
-            || !EVP_DigestFinal(mctx2, out, (unsigned int *)&outlen)) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, ERR_R_EVP_LIB);
-        goto err;
-    }
-
     if (EVP_PKEY_is_a(pkey, "SM2")) {
         if (EVP_PKEY_CTX_set1_id(pctx, SM2_DEFAULT_ID, SM2_DEFAULT_ID_LEN) <= 0) {
             SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, ERR_R_EVP_LIB);
@@ -391,7 +382,7 @@ MSG_PROCESS_RETURN tls_process_cert_verify_ntls(SSL *s, PACKET *pkt)
     }
 
 
-    j = EVP_DigestVerify(mctx, data, len, out, outlen);
+    j = EVP_DigestVerify(mctx, data, len, hdata, hdatalen);
     if (j <= 0) {
         SSLfatal_ntls(s, SSL_AD_DECRYPT_ERROR, SSL_R_BAD_SIGNATURE);
         goto err;
