@@ -5640,3 +5640,6 @@ SM2_THRESHOLD_decrypt2                  5955	3_0_3	EXIST::FUNCTION:SM2_THRESHOLD
 SM2_THRESHOLD_decrypt3                  5956	3_0_3	EXIST::FUNCTION:SM2_THRESHOLD
 PKCS12_SAFEBAG_set0_attrs               5957	3_0_3	EXIST::FUNCTION:
 PKCS12_create_ex2                       5958	3_0_3	EXIST::FUNCTION:
+ASN1_item_unpack_ex                     5960	3_0_3	EXIST::FUNCTION:
+PKCS12_SAFEBAG_get1_cert_ex             5961	3_0_3	EXIST::FUNCTION:
+PKCS12_SAFEBAG_get1_crl_ex              5962	3_0_3	EXIST::FUNCTION:
