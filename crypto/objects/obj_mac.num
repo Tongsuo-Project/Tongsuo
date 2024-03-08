@@ -1025,3 +1025,5 @@ auth_sm2		1254
 zuc_128_eia3		1255
 delegation_usage		1256
 hmacWithSM3		1257
+oracle		1258
+oracle_jdk_trustedkeyusage		1259
