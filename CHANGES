@@ -8,6 +8,8 @@
 
   *) 修复CVE-2023-6237
 
+  *) 修复CVE-2024-0727
+
   *) 增加SM2两方门限解密算法
 
   *) 增加SM2两方门限签名算法 [with work originated from FullyRobert]
