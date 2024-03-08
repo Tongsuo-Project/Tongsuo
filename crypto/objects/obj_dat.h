@@ -10,7 +10,7 @@
  */
 
 /* Serialized OID's */
-static const unsigned char so[6609] = {
+static const unsigned char so[6628] = {
     0x2A,0x86,0x48,0x86,0xF7,0x0D,                 /* [    0] OBJ_rsadsi */
     0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,            /* [    6] OBJ_pkcs */
     0x2A,0x86,0x48,0x86,0xF7,0x0D,0x02,0x05,       /* [   13] OBJ_md5 */
@@ -929,9 +929,11 @@ static const unsigned char so[6609] = {
     0x2A,0x81,0x1C,0xCF,0x55,0x01,0x86,0x22,       /* [ 6581] OBJ_zuc_128_eia3 */
     0x2B,0x06,0x01,0x04,0x01,0x82,0xDA,0x4B,0x2C,  /* [ 6589] OBJ_delegation_usage */
     0x2A,0x81,0x1C,0xCF,0x55,0x01,0x83,0x11,0x03,0x01,  /* [ 6598] OBJ_hmacWithSM3 */
+    0x60,0x86,0x48,0x01,0x86,0xF9,0x66,            /* [ 6608] OBJ_oracle */
+    0x60,0x86,0x48,0x01,0x86,0xF9,0x66,0xAD,0xCA,0x7B,0x01,0x01,  /* [ 6615] OBJ_oracle_jdk_trustedkeyusage */
 };
 
-#define NUM_NID 1258
+#define NUM_NID 1260
 static const ASN1_OBJECT nid_objs[NUM_NID] = {
     {"UNDEF", "undefined", NID_undef},
     {"rsadsi", "RSA Data Security, Inc.", NID_rsadsi, 6, &so[0]},
@@ -2191,9 +2193,11 @@ static const ASN1_OBJECT nid_objs[NUM_NID] = {
     {"ZUC-128-EIA3", "zuc-128-eia3", NID_zuc_128_eia3, 8, &so[6581]},
     {"delegationUsage", "X509v3 Delegation Usage", NID_delegation_usage, 9, &so[6589]},
     {"hmacWithSM3", "hmacWithSM3", NID_hmacWithSM3, 10, &so[6598]},
+    {"oracle-organization", "Oracle organization", NID_oracle, 7, &so[6608]},
+    {"oracle-jdk-trustedkeyusage", "Trusted key usage (Oracle)", NID_oracle_jdk_trustedkeyusage, 12, &so[6615]},
 };
 
-#define NUM_SN 1008
+#define NUM_SN 1010
 static const unsigned int sn_objs[NUM_SN] = {
      364,    /* "AD_DVCS" */
      419,    /* "AES-128-CBC" */
@@ -2883,6 +2887,8 @@ static const unsigned int sn_objs[NUM_SN] = {
      139,    /* "nsSGC" */
       77,    /* "nsSslServerName" */
      681,    /* "onBasis" */
+    1259,    /* "oracle-jdk-trustedkeyusage" */
+    1258,    /* "oracle-organization" */
     1089,    /* "organizationIdentifier" */
      491,    /* "organizationalStatus" */
     1141,    /* "oscca" */
@@ -3205,7 +3211,7 @@ static const unsigned int sn_objs[NUM_SN] = {
     1093,    /* "x509ExtAdmission" */
 };
 
-#define NUM_LN 1008
+#define NUM_LN 1010
 static const unsigned int ln_objs[NUM_LN] = {
      363,    /* "AD Time Stamping" */
      405,    /* "ANSI X9.62" */
@@ -3305,6 +3311,7 @@ static const unsigned int ln_objs[NUM_LN] = {
      366,    /* "OCSP Nonce" */
      371,    /* "OCSP Service Locator" */
      180,    /* "OCSP Signing" */
+    1258,    /* "Oracle organization" */
      161,    /* "PBES2" */
       69,    /* "PBKDF2" */
      162,    /* "PBMAC1" */
@@ -3348,6 +3355,7 @@ static const unsigned int ln_objs[NUM_LN] = {
      129,    /* "TLS Web Server Authentication" */
      133,    /* "Time Stamping" */
      375,    /* "Trust Root" */
+    1259,    /* "Trusted key usage (Oracle)" */
     1034,    /* "X25519" */
     1035,    /* "X448" */
       12,    /* "X509" */
@@ -4217,7 +4225,7 @@ static const unsigned int ln_objs[NUM_LN] = {
     1255,    /* "zuc-128-eia3" */
 };
 
-#define NUM_OBJ 924
+#define NUM_OBJ 926
 static const unsigned int obj_objs[NUM_OBJ] = {
        0,    /* OBJ_undef                        0 */
      181,    /* OBJ_iso                          1 */
@@ -4591,6 +4599,7 @@ static const unsigned int obj_objs[NUM_OBJ] = {
      507,    /* OBJ_id_hex_partial_message       1 3 6 1 7 1 1 1 */
      508,    /* OBJ_id_hex_multipart_message     1 3 6 1 7 1 1 2 */
       57,    /* OBJ_netscape                     2 16 840 1 113730 */
+    1258,    /* OBJ_oracle                       2 16 840 1 113894 */
      437,    /* OBJ_pilot                        0 9 2342 19200300 100 */
     1133,    /* OBJ_sm4_ecb                      1 2 156 10197 1 104 1 */
     1134,    /* OBJ_sm4_cbc                      1 2 156 10197 1 104 2 */
@@ -5132,6 +5141,7 @@ static const unsigned int obj_objs[NUM_OBJ] = {
      955,    /* OBJ_jurisdictionLocalityName     1 3 6 1 4 1 311 60 2 1 1 */
      956,    /* OBJ_jurisdictionStateOrProvinceName 1 3 6 1 4 1 311 60 2 1 2 */
      957,    /* OBJ_jurisdictionCountryName      1 3 6 1 4 1 311 60 2 1 3 */
+    1259,    /* OBJ_oracle_jdk_trustedkeyusage   2 16 840 1 113894 746875 1 1 */
     1159,    /* OBJ_dstu4145be                   1 2 804 2 1 1 1 1 3 1 1 1 1 */
     1160,    /* OBJ_uacurve0                     1 2 804 2 1 1 1 1 3 1 1 2 0 */
     1161,    /* OBJ_uacurve1                     1 2 804 2 1 1 1 1 3 1 1 2 1 */
