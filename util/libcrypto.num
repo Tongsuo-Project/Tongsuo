@@ -5629,3 +5629,6 @@ ZKP_RANGE_PROOF_prove                   5944	3_0_3	EXIST::FUNCTION:ZKP_GADGET
 ZKP_RANGE_PROOF_verify                  5945	3_0_3	EXIST::FUNCTION:ZKP_GADGET
 PKCS12_SAFEBAG_set0_attrs               5946	3_0_3	EXIST::FUNCTION:
 PKCS12_create_ex2                       5947	3_0_3	EXIST::FUNCTION:
+ASN1_item_unpack_ex                     5948	3_0_3	EXIST::FUNCTION:
+PKCS12_SAFEBAG_get1_cert_ex             5949	3_0_3	EXIST::FUNCTION:
+PKCS12_SAFEBAG_get1_crl_ex              5950	3_0_3	EXIST::FUNCTION:
