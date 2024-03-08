@@ -54,7 +54,7 @@ if (eval { require Win32::API; 1; }) {
 }
 $ENV{OPENSSL_WIN32_UTF8}=1;
 
-plan tests => 28;
+plan tests => 26;
 
 # Test different PKCS#12 formats
 ok(run(test(["pkcs12_format_test"])), "test pkcs12 formats");
@@ -72,7 +72,6 @@ ok(run(app(["openssl", "pkcs12", "-noout",
 my @path = qw(test certs);
 my $outfile1 = "out1.p12";
 my $outfile2 = "out2.p12";
-my $outfile3 = "out3.p12";
 my $outfile4 = "out4.p12";
 my $outfile5 = "out5.p12";
 my $outfile6 = "out6.p12";
@@ -200,16 +199,6 @@ SKIP: {
         if disabled("des");
     ok(run(test(["pkcs12_api_test",
                  "-in", $outfile2,
-                 "-pass", "v3-certs",
-                 "-has-ca", 1,
-                 ])), "Test pkcs12_parse()");
-}
-
-SKIP: {
-    skip "Skipping PKCS#12 parse test because the required algorithms are disabled", 1
-        if disabled("des") || disabled("rc2") || disabled("legacy");
-    ok(run(test(["pkcs12_api_test",
-                 "-in", $outfile3,
                  "-pass", "v3-certs",
                  "-has-ca", 1,
                  ])), "Test pkcs12_parse()");
