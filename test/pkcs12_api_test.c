@@ -96,7 +96,7 @@ err:
     PKCS12_free(p12new);
     EVP_PKEY_free(key2);
     X509_free(cert2);
-    OSSL_STACK_OF_X509_free(ca2);
+    sk_X509_pop_free(ca2, X509_free);
     return ret;
 }
 
@@ -130,7 +130,7 @@ err:
     PKCS12_free(p12);
     EVP_PKEY_free(key);
     X509_free(cert);
-    OSSL_STACK_OF_X509_free(ca);
+    sk_X509_pop_free(ca, X509_free);
     return TEST_true(ret);
 }
 
@@ -222,7 +222,7 @@ err:
     PKCS12_free(ptr);
     EVP_PKEY_free(key);
     X509_free(cert);
-    OSSL_STACK_OF_X509_free(ca);
+    sk_X509_pop_free(ca, X509_free);
     return TEST_true(ret);
 }
 
