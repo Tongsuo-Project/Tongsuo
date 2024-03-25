@@ -113,7 +113,11 @@ jobs:
   non-caching:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
+    - name: Adjust ASLR for sanitizer
+      run: |
+        sudo cat /proc/sys/vm/mmap_rnd_bits
+        sudo sysctl -w vm.mmap_rnd_bits=28
     - name: config
       run: ./config --banner=Configured --debug enable-asan enable-ubsan no-cached-fetch no-fips no-dtls no-tls1 no-tls1-method no-tls1_1 no-tls1_1-method no-async && perl configdata.pm --dump
     - name: make
@@ -124,7 +128,11 @@ jobs:
   address_ub_sanitizer:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
+    - name: Adjust ASLR for sanitizer
+      run: |
+        sudo cat /proc/sys/vm/mmap_rnd_bits
+        sudo sysctl -w vm.mmap_rnd_bits=28
     - name: config
       run: ./config --banner=Configured --debug enable-asan enable-ubsan enable-rc5 enable-ec_nistp_64_gcc_128 enable-fips enable-cert-compression enable-bn-method enable-delegated-credential -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION && perl configdata.pm --dump
     - name: make
@@ -135,7 +143,11 @@ jobs:
   ntls_address_ub_sanitizer:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
+    - name: Adjust ASLR for sanitizer
+      run: |
+        sudo cat /proc/sys/vm/mmap_rnd_bits
+        sudo sysctl -w vm.mmap_rnd_bits=28
     - name: config
       run: ./config --banner=Configured --debug enable-asan enable-ubsan enable-rc5 enable-ec_nistp_64_gcc_128 enable-ec_sm2p_64_gcc_128 enable-ntls -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION && perl configdata.pm --dump
     - name: make
@@ -146,7 +158,11 @@ jobs:
   memory_sanitizer:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
+    - name: Adjust ASLR for sanitizer
+      run: |
+        sudo cat /proc/sys/vm/mmap_rnd_bits
+        sudo sysctl -w vm.mmap_rnd_bits=28
     - name: config
       # --debug -O1 is to produce a debug build that runs in a reasonable amount of time
       run: CC=clang ./config --banner=Configured --debug -O1 -fsanitize=memory -DOSSL_SANITIZE_MEMORY -fno-optimize-sibling-calls enable-rc5 enable-ec_nistp_64_gcc_128 enable-fips enable-cert-compression enable-delegated-credential enable-bn-method && perl configdata.pm --dump
@@ -158,7 +174,11 @@ jobs:
   ntls_memory_sanitizer:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
+    - name: Adjust ASLR for sanitizer
+      run: |
+        sudo cat /proc/sys/vm/mmap_rnd_bits
+        sudo sysctl -w vm.mmap_rnd_bits=28
     - name: config
       # --debug -O1 is to produce a debug build that runs in a reasonable amount of time
       run: CC=clang ./config --banner=Configured --debug -O1 -fsanitize=memory -DOSSL_SANITIZE_MEMORY -fno-optimize-sibling-calls enable-rc5 enable-ec_nistp_64_gcc_128 enable-ec_sm2p_64_gcc_128 enable-ntls && perl configdata.pm --dump
@@ -170,7 +190,11 @@ jobs:
   threads_sanitizer:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
+    - name: Adjust ASLR for sanitizer
+      run: |
+        sudo cat /proc/sys/vm/mmap_rnd_bits
+        sudo sysctl -w vm.mmap_rnd_bits=28
     - name: config
       run: CC=clang ./config --banner=Configured no-fips --strict-warnings -fsanitize=thread && perl configdata.pm --dump
     - name: make
@@ -268,7 +292,11 @@ jobs:
   EC_POINTs_api_test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+      - name: Adjust ASLR for sanitizer
+        run: |
+          sudo cat /proc/sys/vm/mmap_rnd_bits
+          sudo sysctl -w vm.mmap_rnd_bits=28
       - name: config
         run: ./config --strict-warnings --debug --api=1.1.1 enable-asan enable-ubsan enable-ssl-trace enable-zlib enable-zlib-dynamic no-fips enable-engine enable-dynamic-engine no-deprecated && perl configdata.pm --dump
       - name: make
@@ -394,7 +422,11 @@ jobs:
   sm2-threshold-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+      - name: Adjust ASLR for sanitizer
+        run: |
+          sudo cat /proc/sys/vm/mmap_rnd_bits
+          sudo sysctl -w vm.mmap_rnd_bits=28
       - name: config
         run: CC=clang ./config --strict-warnings --debug -O1 -fsanitize=memory -DOSSL_SANITIZE_MEMORY enable-sm2_threshold && perl configdata.pm --dump
       - name: make
