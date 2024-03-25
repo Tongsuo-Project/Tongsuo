@@ -870,7 +870,9 @@ static void trace_cb(int write_p, int version, int content_type,
 {
     BIO *bio = NULL;
     if (arg == NULL) {
+#ifndef OPENSSL_NO_STDIO
         bio = BIO_new_fp(stdout, BIO_NOCLOSE | BIO_FP_TEXT);
+#endif
         if (bio == NULL)
             return;
 

@@ -137,6 +137,7 @@ custom_ext_free_cb                      datatype
 custom_ext_parse_cb                     datatype
 pem_password_cb                         datatype
 ssl_ct_validation_cb                    datatype
+PKCS12_create_cb                        datatype
 #
 ASN1_BIT_STRING_digest                  define
 BIO_append_filename                     define

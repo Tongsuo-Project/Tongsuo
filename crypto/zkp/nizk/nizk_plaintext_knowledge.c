@@ -219,6 +219,7 @@ int NIZK_PLAINTEXT_KNOWLEDGE_PROOF_verify(NIZK_PLAINTEXT_KNOWLEDGE_CTX *ctx,
     if (bn_ctx == NULL)
         goto err;
 
+    BN_CTX_start(bn_ctx);
     e = BN_CTX_get(bn_ctx);
     bn_1 = BN_CTX_get(bn_ctx);
     bn1 = BN_CTX_get(bn_ctx);
@@ -284,5 +285,7 @@ err:
     EC_POINT_free(R);
     zkp_poly_points_free(poly);
     ZKP_TRANSCRIPT_reset(transcript);
+    BN_CTX_end(bn_ctx);
+    BN_CTX_free(bn_ctx);
     return ret;
 }
