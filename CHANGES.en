@@ -5,9 +5,43 @@
  This is a high-level summary of the most important changes.
  For a full list of changes, see the git commit log.
 
- Changes between 8.3.2 and 8.3.3 [xx XXX xxxx]
+ Changes between 8.3.3 and 8.3.4 [xx XXX xxxx]
 
-  *)
+  *) Fix CVE-2024-0727
+
+  *) Fix CVE-2023-4807
+
+  *) Fix CVE-2023-5678
+
+  *) Fix the compilation problem of SM4NI
+
+ Changes between 8.3.2 and 8.3.3 [28 Aug 2023]
+
+  *) Fix CVE-2023-3446
+
+  *) Fix CVE-2023-3817
+
+  *) Support for OpenHarmony OS version 3.2
+
+  *) Fix CVE-2022-2097
+
+  *) Fix unknown option --prefix on CFLAGS [daipingh]
+
+  *) Fix not checking OPENSSL_memdup return value issue
+
+  *) Change SSL_connection_is_ntls to use preread mode to determine whether it's NTLS
+
+  *) Fix CVE-2022-4304
+
+  *) Fix CVE-2023-0286
+
+  *) Fix CVE-2022-4450
+
+  *) Fix CVE-2023-0215
+
+  *) Support SM4-NI optimization
+
+  *) Fix CVE-2023-2650
 
  Changes between 8.3.1 and 8.3.2 [12 Dec 2022]
 
