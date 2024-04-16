@@ -31,7 +31,7 @@ jobs:
     - name: tool download
       run: |
         wget https://scan.coverity.com/download/linux64 \
-             --post-data "token=${{ secrets.COVERITY_TOKEN }}&project=Tongsuo-Project%2FTongsuo" \
+             --post-data "token=${{ secrets.COVERITY_TOKEN_84 }}&project=Tongsuo8.4" \
              --progress=dot:giga -O coverity_tool.tgz
     - name: config
       run: CC=gcc ./config --banner=Configured --debug enable-ntls enable-rc5 enable-ssl3 enable-nextprotoneg enable-ssl3-method enable-weak-ssl-ciphers enable-zlib enable-ec_nistp_64_gcc_128 no-shared enable-buildtest-c++ enable-external-tests enable-ec_elgamal enable-twisted_ec_elgamal enable-paillier enable-cert-compression enable-delegated-credential enable-bn-method enable-bulletproofs enable-nizk enable-zkp-gadget -DPEDANTIC
@@ -45,9 +45,9 @@ jobs:
       run: tar czvf tongsuo.tgz cov-int
     - name: Coverity upload
       run: |
-        curl --form token="${{ secrets.COVERITY_TOKEN }}" \
+        curl --form token="${{ secrets.COVERITY_TOKEN_84 }}" \
              --form email=tongsuo-dev@tongsuo.net \
              --form file=@tongsuo.tgz \
              --form version="`date -u -I` `git rev-parse --short HEAD`" \
              --form description="analysis of `git branch --show-current`" \
-             https://scan.coverity.com/builds?project=Tongsuo-Project%2FTongsuo
+             https://scan.coverity.com/builds?project=Tongsuo8.4
