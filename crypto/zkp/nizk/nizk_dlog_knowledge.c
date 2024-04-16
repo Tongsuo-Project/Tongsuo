@@ -125,6 +125,7 @@ NIZK_DLOG_KNOWLEDGE_PROOF *NIZK_DLOG_KNOWLEDGE_PROOF_prove(NIZK_DLOG_KNOWLEDGE_C
     if (bn_ctx == NULL)
         goto err;
 
+    BN_CTX_start(bn_ctx);
     a = BN_CTX_get(bn_ctx);
     e = BN_CTX_get(bn_ctx);
     t = BN_CTX_get(bn_ctx);
@@ -152,6 +153,7 @@ NIZK_DLOG_KNOWLEDGE_PROOF *NIZK_DLOG_KNOWLEDGE_PROOF_prove(NIZK_DLOG_KNOWLEDGE_C
     ret = proof;
     proof = NULL;
 err:
+    BN_CTX_end(bn_ctx);
     BN_CTX_free(bn_ctx);
     NIZK_DLOG_KNOWLEDGE_PROOF_free(proof);
     ZKP_TRANSCRIPT_reset(transcript);
@@ -186,6 +188,7 @@ int NIZK_DLOG_KNOWLEDGE_PROOF_verify(NIZK_DLOG_KNOWLEDGE_CTX *ctx,
     if (bn_ctx == NULL)
         goto err;
 
+    BN_CTX_start(bn_ctx);
     e = BN_CTX_get(bn_ctx);
     bn1 = BN_CTX_get(bn_ctx);
     bn_1 = BN_CTX_get(bn_ctx);
@@ -223,6 +226,8 @@ int NIZK_DLOG_KNOWLEDGE_PROOF_verify(NIZK_DLOG_KNOWLEDGE_CTX *ctx,
 
     ret = 1;
 err:
+    BN_CTX_end(bn_ctx);
+    BN_CTX_free(bn_ctx);
     EC_POINT_free(L);
     EC_POINT_free(R);
     zkp_poly_points_free(poly);
