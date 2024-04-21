@@ -1,0 +1,17 @@
+commit: ae6c5158b8b52ffb7a71c150548ba307f8115fe8
+date: 2024-04-21 08:55:30
+version: 3.0.3
+built on: Sun Apr 21 00:42:31 2024 UTC
+options: bn(64,64)
+compiler: gcc -fPIC -pthread -m64 -Wa,--noexecstack -Wall -O3 -DPEDANTIC -pedantic -Wno-long-long -DUNUSEDRESULT_DEBUG -Wall -Wmissing-declarations -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wswitch -Wsign-compare -Wshadow -Wformat -Wtype-limits -Wundef -Werror -Wmissing-prototypes -Wstrict-prototypes -DOPENSSL_USE_NODELETE -DL_ENDIAN -DOPENSSL_PIC -DOPENSSL_BUILDING_OPENSSL -DNDEBUG 
+CPUINFO: OPENSSL_ia32cap=0xfffa32035f8bffff:0xd01e4fbb
+EC-ElGamal curve          init[+](s)     init[+-](s)
+nistp256                        32.4            32.5
+
+EC-ElGamal curve        a            b   encrypt(b)/s   decrypt(b)/s   add(a,b)/s   sub(a,b)/s   mul(a,b)/s
+nistp256                9           10        12020.8        14565.0     335432.6    293999.6       8475.5
+nistp256                9       100000        12329.5        14724.4     335665.6    290709.4       8139.7
+nistp256                9    100000000        12226.6         2239.3     333726.7    279215.6       8243.2
+nistp256                9          -10        11923.4           64.1     330922.6    273819.6       8222.6
+nistp256                9      -100000        11542.4           62.8     337320.6    284749.5       8304.4
+nistp256                9   -100000000        12063.8           59.8     323914.4    285245.3       8232.3
