@@ -12,7 +12,9 @@
 
 铜锁获得了国家密码管理局商用密码检测中心颁发的商用密码产品认证证书，助力用户在国密改造、密评、等保等过程中，更加严谨地满足我国商用密码技术合规的要求。可在[此处](https://www.yuque.com/tsdoc/misc/st247r05s8b5dtct)下载资质原始文件。
 
-<img src="https://github.com/Tongsuo-Project/Tongsuo/blob/master/validation-android.png" width=50% height=50% />
+<div align="center">    
+ <img src="https://github.com/Tongsuo-Project/Tongsuo/blob/master/validation-android.png" width=50% height=50% align=center />
+</div>
 
 
 特性
@@ -142,7 +144,7 @@ make install_programs
 
 铜锁/Tongsuo 是由开放原子开源基金会（OpenAtom Foundation）孵化及运营的开源项目。
 
-![OpenAtom Foundation](atom-logo.svg)
+<img src="atom-logo.svg" alt="OpenAtom Foundation" width=50% height=50% />
 
 报告安全缺陷
 =========================
