@@ -391,8 +391,8 @@ BIO* PKCS7_dataInit(PKCS7* p7, BIO* bio, int no_hash)
     }
 #ifndef OPENSSL_NO_CNSM
 	int have_z = 0;
-	unsigned char digest[32];
-	size_t dgst_len = 32;
+	unsigned char digest[EVP_MAX_MD_SIZE];
+	size_t dgst_len = EVP_MAX_MD_SIZE;
 	X509_ALGOR* alg = NULL;
 	const EVP_MD* md = NULL;
 	if (md_sk) {
@@ -426,6 +426,7 @@ BIO* PKCS7_dataInit(PKCS7* p7, BIO* bio, int no_hash)
 				goto err;
 			}
 			else {
+                dgst_len = 32;
 				have_z = 1;
 			}
 		}
@@ -1176,13 +1177,13 @@ int PKCS7_dataVerify(X509_STORE *cert_store, X509_STORE_CTX *ctx, BIO *bio,
         goto err;
     }
 
-    return PKCS7_signatureVerify(bio, p7, si, x509);
+    return PKCS7_signatureVerify(bio, p7, si, x509,0);
  err:
     return ret;
 }
 
 int PKCS7_signatureVerify(BIO *bio, PKCS7 *p7, PKCS7_SIGNER_INFO *si,
-                          X509 *x509)
+                          X509 *x509, int no_hash)
 {
     ASN1_OCTET_STRING *os;
     EVP_MD_CTX *mdc_tmp, *mdc;
@@ -1274,7 +1275,35 @@ int PKCS7_signatureVerify(BIO *bio, PKCS7 *p7, PKCS7_SIGNER_INFO *si,
             goto err;
         }
         (void)ERR_pop_to_mark();
+#ifndef OPENSSL_NO_CNSM        
+		pkey = X509_get_pubkey(x509);
+		if (!pkey) {
+			ret = -1;
+			goto err;
+		}
 
+		if (EVP_PKEY_get0_EC_KEY(pkey))
+		{
+			if (EC_GROUP_get_curve_name(EC_KEY_get0_group(EVP_PKEY_get0_EC_KEY(pkey))) == NID_sm2)
+			{
+				/*Need Set SM2 Sign And Verify Extra Data: Add Message Z*/
+				unsigned char ex_dgst[EVP_MAX_MD_SIZE];
+				size_t ex_dgstlen = EVP_MAX_MD_SIZE;
+                
+                if (!ossl_sm2_compute_z_digest(ex_dgst, EVP_get_digestbynid(md_type), NULL, 0, (const EC_KEY*)EVP_PKEY_get0_EC_KEY(pkey))) //”¶∏√ «EVP_sm3()
+                {
+                    goto err;
+                }
+                else
+                {
+                    ex_dgstlen = 32; //sm3
+                }                 
+				if (!EVP_DigestUpdate(mdc_tmp, ex_dgst, ex_dgstlen))
+					goto err;
+			}
+		}
+		EVP_PKEY_free(pkey);
+#endif
         alen = ASN1_item_i2d((ASN1_VALUE *)sk, &abuf,
                              ASN1_ITEM_rptr(PKCS7_ATTR_VERIFY));
         if (alen <= 0) {

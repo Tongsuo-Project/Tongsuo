@@ -59,5 +59,6 @@
 # define PKCS7_R_UNSUPPORTED_CONTENT_TYPE                 112
 # define PKCS7_R_WRONG_CONTENT_TYPE                       113
 # define PKCS7_R_WRONG_PKCS7_TYPE                         114
+# define PKCS7_R_DECRYPT_VERIFY_ERROR                     115
 
 #endif

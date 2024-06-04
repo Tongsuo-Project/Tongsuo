@@ -412,7 +412,7 @@ int PKCS7_verify(PKCS7 *p7, STACK_OF(X509) *certs, X509_STORE *store,
         for (i = 0; i < sk_PKCS7_SIGNER_INFO_num(sinfos); i++) {
             si = sk_PKCS7_SIGNER_INFO_value(sinfos, i);
             signer = sk_X509_value(signers, i);
-            j = PKCS7_signatureVerify(p7bio, p7, si, signer);
+            j = PKCS7_signatureVerify(p7bio, p7, si, signer,0);
             if (j <= 0) {
                 ERR_raise(ERR_LIB_PKCS7, PKCS7_R_SIGNATURE_FAILURE);
                 goto err;
