@@ -137,7 +137,7 @@ int TS_RESP_verify_signature(PKCS7 *token, STACK_OF(X509) *certs,
         goto err;
     if (!ts_check_signing_certs(si, chain))
         goto err;
-    p7bio = PKCS7_dataInit(token, NULL);
+    p7bio = PKCS7_dataInit(token, NULL,2);
 
     /* We now have to 'read' from p7bio to calculate digests etc. */
     while ((i = BIO_read(p7bio, buf, sizeof(buf))) > 0)

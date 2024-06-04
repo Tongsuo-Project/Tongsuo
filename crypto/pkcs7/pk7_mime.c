@@ -66,5 +66,6 @@ PKCS7 *SMIME_read_PKCS7_ex(BIO *bio, BIO **bcont, PKCS7 **p7)
 
 PKCS7 *SMIME_read_PKCS7(BIO *bio, BIO **bcont)
 {
-    return SMIME_read_PKCS7_ex(bio, bcont, NULL);
+    //return SMIME_read_PKCS7_ex(bio, bcont, NULL);
+	 return (PKCS7 *)SMIME_read_ASN1(bio, bcont, ASN1_ITEM_rptr(PKCS7));
 }

@@ -42,6 +42,7 @@ X9-57 4			: X9cm			: X9.57 CM ?
 member-body 156         : ISO-CN        : ISO CN Member Body
 ISO-CN 10197            : oscca
 oscca 1                 : sm-scheme
+oscca 6                 : sm-pkcs
 
 !Cname dsa
 X9cm 1			: DSA			: dsaEncryption
@@ -370,7 +371,15 @@ sm-scheme 401           : SM3                   : sm3
 sm-scheme 504           : RSA-SM3		: sm3WithRSAEncryption
 
 sm-scheme 501           : SM2-SM3               : SM2-with-SM3
-
+# From GM/T 0010-2012
+sm-pkcs 1 4 2    : sm-pkcs7                      : china pkcs7 series
+                                                 
+sm-pkcs7 1       : pkcs7_sm2_data                : pkcs7_sm2_data           
+sm-pkcs7 2       : pkcs7_sm2_signed              : pkcs7_sm2_signed         
+sm-pkcs7 3       : pkcs7_sm2_enveloped           : pkcs7_sm2_enveloped
+sm-pkcs7 4       : pkcs7_sm2_signedAndEnveloped  : pkcs7_sm2_signedAndEnveloped
+sm-pkcs7 5       : pkcs7_sm2_encryptedData       : pkcs7_sm2_encryptedData
+sm-pkcs7 6       : pkcs7_sm2_keyAgreementInfo    : pkcs7_sm2_keyAgreementInfo
 # From GM/T 0091-2020
 sm3 3 1			:			: hmacWithSM3
 

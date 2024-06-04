@@ -755,7 +755,7 @@ static int ts_RESP_sign(TS_RESP_CTX *ctx)
 
     if (!ts_TST_INFO_content_new(p7))
         goto err;
-    if ((p7bio = PKCS7_dataInit(p7, NULL)) == NULL) {
+    if ((p7bio = PKCS7_dataInit(p7, NULL,2)) == NULL) {
         ERR_raise(ERR_LIB_TS, ERR_R_MALLOC_FAILURE);
         goto err;
     }
@@ -763,7 +763,7 @@ static int ts_RESP_sign(TS_RESP_CTX *ctx)
         ERR_raise(ERR_LIB_TS, TS_R_TS_DATASIGN);
         goto err;
     }
-    if (!PKCS7_dataFinal(p7, p7bio)) {
+    if (!PKCS7_dataFinal(p7, p7bio,0)) {
         ERR_raise(ERR_LIB_TS, TS_R_TS_DATASIGN);
         goto err;
     }

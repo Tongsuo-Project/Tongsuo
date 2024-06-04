@@ -88,7 +88,22 @@ int PKCS7_add_attrib_content_type(PKCS7_SIGNER_INFO *si, ASN1_OBJECT *coid)
     if (PKCS7_get_signed_attribute(si, NID_pkcs9_contentType))
         return 0;
     if (!coid)
-        coid = OBJ_nid2obj(NID_pkcs7_data);
+    {
+        //2023年6月11日23:48:06 沈雪冰 begin add,根据pkey类型设置SM2 PKCS7的类型,即GMT 0010-2012 SM2密码算法加密签名消息语法规范中的要求的oid
+        if (si->pkey)
+        {
+            int type = EVP_PKEY_base_id(si->pkey);
+            if (type == EVP_PKEY_SM2 || type == EVP_PKEY_EC) {
+                coid = OBJ_nid2obj(NID_pkcs7_sm2_data); //1.2.156.10197.6.1.4.2.1
+            }
+            //2023年6月11日23:48:06 沈雪冰 end add,根据pkey类型设置SM2 PKCS7的类型,即GMT 0010-2012 SM2密码算法加密签名消息语法规范中的要求的oid
+            else
+            {
+                coid = OBJ_nid2obj(NID_pkcs7_data);
+            }
+        }
+        
+    }
     return PKCS7_add_signed_attribute(si, NID_pkcs9_contentType,
                                       V_ASN1_OBJECT, coid);
 }

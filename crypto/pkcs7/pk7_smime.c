@@ -31,12 +31,43 @@ PKCS7 *PKCS7_sign_ex(X509 *signcert, EVP_PKEY *pkey, STACK_OF(X509) *certs,
         ERR_raise(ERR_LIB_PKCS7, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
+    //2023年6月11日23:48:06 沈雪冰 begin add,根据pkey类型设置SM2 PKCS7的类型,即GMT 0010-2012 SM2密码算法加密签名消息语法规范中的要求的oid
+    if (pkey)
+    {
+        int type = EVP_PKEY_base_id(pkey);
+        if (type == EVP_PKEY_SM2 || type == EVP_PKEY_EC) {
+            if (!PKCS7_set_type(p7, NID_pkcs7_sm2_signed)) //1.2.156.10197.6.1.4.2.2
+                goto err;
 
-    if (!PKCS7_set_type(p7, NID_pkcs7_signed))
-        goto err;
+            if (!PKCS7_content_new(p7, NID_pkcs7_sm2_data)) //1.2.156.10197.6.1.4.2.1
+                goto err;
+        }
+        else
+        {
+            if (!PKCS7_set_type(p7, NID_pkcs7_signed))
+                goto err;
 
-    if (!PKCS7_content_new(p7, NID_pkcs7_data))
-        goto err;
+            if (!PKCS7_content_new(p7, NID_pkcs7_data))
+                goto err;
+        }
+    }
+    else if (flags & PKCS7_SM2_GMT0010)
+    {
+        if (!PKCS7_set_type(p7, NID_pkcs7_sm2_signed)) //1.2.156.10197.6.1.4.2.2
+            goto err;
+
+        if (!PKCS7_content_new(p7, NID_pkcs7_sm2_data)) //1.2.156.10197.6.1.4.2.1
+            goto err;
+    }  
+    //2023年6月11日23:48:06 沈雪冰 end add,根据pkey类型设置SM2 PKCS7的类型,即GMT 0010-2012 SM2密码算法加密签名消息语法规范中的要求的oid
+    else
+    {
+        if (!PKCS7_set_type(p7, NID_pkcs7_signed))
+            goto err;
+
+        if (!PKCS7_content_new(p7, NID_pkcs7_data))
+            goto err;
+    }
 
     if (pkey && !PKCS7_sign_add_signer(p7, signcert, pkey, NULL, flags)) {
         ERR_raise(ERR_LIB_PKCS7, PKCS7_R_PKCS7_ADD_SIGNER_ERROR);
@@ -75,8 +106,20 @@ int PKCS7_final(PKCS7 *p7, BIO *data, int flags)
 {
     BIO *p7bio;
     int ret = 0;
-
-    if ((p7bio = PKCS7_dataInit(p7, NULL)) == NULL) {
+	int hashType = 0;
+	if (flags & PKCS7_SM2_HASH)
+	{
+		hashType = 1; //外送hash值
+	}
+	else if (flags & PKCS7_SM2_ADDHASH_Z)
+	{
+		hashType = 0; //计算Z值到P7摘要中
+	}
+	else
+	{
+		hashType = 2;//原文裸签
+	}
+    if ((p7bio = PKCS7_dataInit(p7, NULL, hashType)) == NULL) {
         ERR_raise(ERR_LIB_PKCS7, ERR_R_MALLOC_FAILURE);
         return 0;
     }
@@ -85,7 +128,7 @@ int PKCS7_final(PKCS7 *p7, BIO *data, int flags)
 
     (void)BIO_flush(p7bio);
 
-    if (!PKCS7_dataFinal(p7, p7bio)) {
+    if (!PKCS7_dataFinal(p7, p7bio,hashType)) {
         ERR_raise(ERR_LIB_PKCS7, PKCS7_R_PKCS7_DATASIGN);
         goto err;
     }
@@ -208,13 +251,15 @@ int PKCS7_verify(PKCS7 *p7, STACK_OF(X509) *certs, X509_STORE *store,
     BIO *p7bio = NULL;
     BIO *tmpin = NULL, *tmpout = NULL;
     const PKCS7_CTX *p7_ctx;
+	int hashType = 0;
+	int setCerts = 0;
 
     if (p7 == NULL) {
         ERR_raise(ERR_LIB_PKCS7, PKCS7_R_INVALID_NULL_POINTER);
         return 0;
     }
 
-    if (!PKCS7_type_is_signed(p7)) {
+    if (!PKCS7_type_is_signed(p7)&& !PKCS7_type_is_signedAndEnveloped(p7)) {
         ERR_raise(ERR_LIB_PKCS7, PKCS7_R_WRONG_CONTENT_TYPE);
         return 0;
     }
@@ -303,8 +348,33 @@ int PKCS7_verify(PKCS7 *p7, STACK_OF(X509) *certs, X509_STORE *store,
     } else
         tmpin = indata;
 
-    if ((p7bio = PKCS7_dataInit(p7, tmpin)) == NULL)
-        goto err;
+	if (flags & PKCS7_SM2_HASH)
+	{
+		hashType = 1; //外送hash值
+	}
+	else if (flags & PKCS7_SM2_ADDHASH_Z)
+	{
+		hashType = 0; //计算Z值到P7摘要中
+	}
+	else
+	{
+		hashType = 2;//原文裸签
+	}
+	//2023年6月18日22:53:25 沈雪冰 bengin add, 添加证书链用于计算SM2签名时的Z值
+	if ((OBJ_obj2nid(p7->type) == NID_pkcs7_sm2_signed) || (OBJ_obj2nid(p7->type) == NID_pkcs7_sm2_signedAndEnveloped) && (!p7->d.sign->cert))
+	{
+		setCerts = 1;
+		p7->d.sign->cert = certs; //为了SM2做Z值计算，必须要有证书链
+	}
+	//2023年6月18日22:53:25 沈雪冰 end add, 添加证书链用于计算SM2签名时的Z值
+	if ((p7bio = PKCS7_dataInit(p7, tmpin, hashType)) == NULL)
+		goto err;
+	//2023年6月18日22:53:25 沈雪冰 bengin add, 添加证书链用于计算SM2签名时的Z值,需要重新设置为NULL
+	if (setCerts)
+	{
+		p7->d.sign->cert = NULL;
+	}
+	//2023年6月18日22:53:25 沈雪冰 end add, 添加证书链用于计算SM2签名时的Z值,需要重新设置为NULL
 
     if (flags & PKCS7_TEXT) {
         if ((tmpout = BIO_new(BIO_s_mem())) == NULL) {
@@ -378,7 +448,7 @@ STACK_OF(X509) *PKCS7_get0_signers(PKCS7 *p7, STACK_OF(X509) *certs,
         return NULL;
     }
 
-    if (!PKCS7_type_is_signed(p7)) {
+    if (!PKCS7_type_is_signed(p7)&& !PKCS7_type_is_signedAndEnveloped(p7)) {
         ERR_raise(ERR_LIB_PKCS7, PKCS7_R_WRONG_CONTENT_TYPE);
         return NULL;
     }
@@ -474,7 +544,101 @@ PKCS7 *PKCS7_encrypt(STACK_OF(X509) *certs, BIO *in, const EVP_CIPHER *cipher,
 {
     return PKCS7_encrypt_ex(certs, in, cipher, flags, NULL, NULL);
 }
+PKCS7* PKCS7_encryptEx(STACK_OF(X509)* recipientCerts, BIO* in, const EVP_CIPHER* cipher, X509_CRL* crl,
+	X509* signcert, EVP_PKEY* pkey, STACK_OF(X509)* signCerts, int flags)
+{
+	PKCS7* p7;
+	BIO* p7bio = NULL;
+	int i;
+	X509* x509;
 
+	if (!(flags & PKCS7_DETACHED)) //不能有原文，必须是分离式的原文
+	{
+		PKCS7err(PKCS7_F_PKCS7_ENCRYPT, EINVAL);
+		return NULL;
+	}
+
+	if ((p7 = PKCS7_new()) == NULL) {
+		PKCS7err(PKCS7_F_PKCS7_ENCRYPT, ERR_R_MALLOC_FAILURE);
+		return NULL;
+	}
+	//2023年7月1日13:54:57 沈雪冰 begin add,根据pkey类型设置SM2 PKCS7的类型,即GMT 0010-2012 SM2密码算法加密签名消息语法规范中的要求的oid
+	if (flags & PKCS7_SM2_GMT0010)
+	{
+		if (flags & PKCS7_NOSIGS)
+		{
+			PKCS7err(PKCS7_F_PKCS7_ENCRYPT, EINVAL); //这个方法必须有签名
+			goto err;
+		}
+		else //2023年7月1日14:18:48 沈雪冰 add,如果是签名加密,则设置为signedAndEnveloped
+		{
+			if (!PKCS7_set_type(p7, NID_pkcs7_sm2_signedAndEnveloped))//1.2.156.10197.6.1.4.2.4
+				goto err;
+		}
+	}
+	//2023年7月1日13:54:57 沈雪冰 end add,根据pkey类型设置SM2 PKCS7的类型,即GMT 0010-2012 SM2密码算法加密签名消息语法规范中的要求的oid
+	else
+	{
+		if (flags & PKCS7_NOSIGS)
+		{
+			PKCS7err(PKCS7_F_PKCS7_ENCRYPT, EINVAL); //这个方法必须有签名
+			goto err;
+		}
+		else //2023年7月1日14:18:48 沈雪冰 add,如果是签名加密,则设置为signedAndEnveloped
+		{
+			if (!PKCS7_set_type(p7, NID_pkcs7_signedAndEnveloped))
+				goto err;
+		}
+
+	}
+
+	if (!PKCS7_set_cipher(p7, cipher)) {
+		PKCS7err(PKCS7_F_PKCS7_ENCRYPT, PKCS7_R_ERROR_SETTING_CIPHER);
+		goto err;
+	}
+
+	for (i = 0; i < sk_X509_num(recipientCerts); i++) {
+		x509 = sk_X509_value(recipientCerts, i);
+		if (!PKCS7_add_recipient(p7, x509)) {
+			PKCS7err(PKCS7_F_PKCS7_ENCRYPT, PKCS7_R_ERROR_ADDING_RECIPIENT);
+			goto err;
+		}
+	}
+
+	if ((!flags & PKCS7_NOCRL) && crl)
+	{
+		PKCS7_add_crl(p7, crl);
+	}
+
+
+	if (pkey && !PKCS7_sign_add_signer(p7, signcert, pkey, NULL, flags)) {
+		PKCS7err(PKCS7_F_PKCS7_SIGN, PKCS7_R_PKCS7_ADD_SIGNER_ERROR);
+		goto err;
+	}
+
+	if (!(flags & PKCS7_NOCERTS)) {
+		for (i = 0; i < sk_X509_num(signCerts); i++) {
+			if (!PKCS7_add_certificate(p7, sk_X509_value(signCerts, i)))
+				goto err;
+		}
+	}
+
+	if (flags & PKCS7_DETACHED)
+		PKCS7_set_detached(p7, 1);
+
+	if (flags & (PKCS7_STREAM | PKCS7_PARTIAL))
+		return p7;
+
+	if (PKCS7_final(p7, in, flags))
+		return p7;
+
+err:
+
+	BIO_free_all(p7bio);
+	PKCS7_free(p7);
+	return NULL;
+
+}
 
 int PKCS7_decrypt(PKCS7 *p7, EVP_PKEY *pkey, X509 *cert, BIO *data, int flags)
 {
@@ -547,5 +711,99 @@ int PKCS7_decrypt(PKCS7 *p7, EVP_PKEY *pkey, X509 *cert, BIO *data, int flags)
 err:
     OPENSSL_free(buf);
     BIO_free_all(tmpmem);
+    return ret;
+}
+
+int PKCS7_decryptEx(PKCS7* p7, EVP_PKEY* pkey, X509* cert,
+    STACK_OF(X509)* certs, X509_STORE* store, BIO* data, int flags)
+{
+    BIO* tmpmem;
+    int ret = 0, i;
+    char* buf = NULL;
+    BIO* indata = NULL;
+
+    if (!p7) {
+        PKCS7err(PKCS7_F_PKCS7_DECRYPT, PKCS7_R_INVALID_NULL_POINTER);
+        return 0;
+    }
+
+    if (!PKCS7_type_is_signedAndEnveloped(p7)) {
+        PKCS7err(PKCS7_F_PKCS7_DECRYPT, PKCS7_R_WRONG_CONTENT_TYPE);
+        return 0;
+    }
+
+    if (cert && !X509_check_private_key(cert, pkey)) {
+        PKCS7err(PKCS7_F_PKCS7_DECRYPT,
+            PKCS7_R_PRIVATE_KEY_DOES_NOT_MATCH_CERTIFICATE);
+        return 0;
+    }
+
+    if ((tmpmem = PKCS7_dataDecode(p7, pkey, NULL, cert)) == NULL) {
+        PKCS7err(PKCS7_F_PKCS7_DECRYPT, PKCS7_R_DECRYPT_ERROR);
+        return 0;
+    }
+
+    if (flags & PKCS7_TEXT) {
+        BIO* tmpbuf, * bread;
+        /* Encrypt BIOs can't do BIO_gets() so add a buffer BIO */
+        if ((tmpbuf = BIO_new(BIO_f_buffer())) == NULL) {
+            PKCS7err(PKCS7_F_PKCS7_DECRYPT, ERR_R_MALLOC_FAILURE);
+            BIO_free_all(tmpmem);
+            return 0;
+        }
+        if ((bread = BIO_push(tmpbuf, tmpmem)) == NULL) {
+            PKCS7err(PKCS7_F_PKCS7_DECRYPT, ERR_R_MALLOC_FAILURE);
+            BIO_free_all(tmpbuf);
+            BIO_free_all(tmpmem);
+            return 0;
+        }
+        ret = SMIME_text(bread, data);
+        if (ret > 0 && BIO_method_type(tmpmem) == BIO_TYPE_CIPHER) {
+            if (!BIO_get_cipher_status(tmpmem))
+                ret = 0;
+        }
+        BIO_free_all(bread);
+        return ret;
+    }
+    if ((buf = OPENSSL_malloc(BUFFERSIZE)) == NULL) {
+        PKCS7err(PKCS7_F_PKCS7_DECRYPT, ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+    for (;;) {
+        i = BIO_read(tmpmem, buf, BUFFERSIZE);
+        if (i <= 0) {
+            ret = 1;
+            if (BIO_method_type(tmpmem) == BIO_TYPE_CIPHER) {
+                if (!BIO_get_cipher_status(tmpmem))
+                    ret = 0;
+            }
+
+            break;
+        }
+        if (!(flags & PKCS7_NOSIGS))
+        {
+            indata = BIO_new_mem_buf(buf, i);
+            if (!indata)
+            {
+                PKCS7err(PKCS7_F_PKCS7_DECRYPT, ERR_R_MALLOC_FAILURE);
+                goto err;
+            }
+            //验证P7签名
+            ret = PKCS7_verify(p7, certs, store, indata, NULL, flags);
+            if (!ret)
+            {
+                PKCS7err(PKCS7_F_PKCS7_DECRYPT, ERR_R_MALLOC_FAILURE);
+                goto err;
+            }
+        }
+        if (BIO_write(data, buf, i) != i) {
+                        break;
+        }
+        
+    }
+err:
+    OPENSSL_free(buf);
+    BIO_free_all(tmpmem);
+    BIO_free(indata);
     return ret;
 }

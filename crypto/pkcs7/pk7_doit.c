@@ -16,6 +16,7 @@
 #include "internal/cryptlib.h"
 #include "internal/sizes.h"
 #include "pk7_local.h"
+#include "crypto/sm2.h"
 
 static int add_attribute(STACK_OF(X509_ATTRIBUTE) **sk, int nid, int atrtype,
                          void *value);
@@ -29,9 +30,13 @@ int PKCS7_type_is_other(PKCS7 *p7)
 
     switch (nid) {
     case NID_pkcs7_data:
+    case NID_pkcs7_sm2_data:
     case NID_pkcs7_signed:
+    case NID_pkcs7_sm2_signed:
     case NID_pkcs7_enveloped:
+    case NID_pkcs7_sm2_enveloped:
     case NID_pkcs7_signedAndEnveloped:
+	case NID_pkcs7_sm2_signedAndEnveloped:
     case NID_pkcs7_digest:
     case NID_pkcs7_encrypted:
         isOther = 0;
@@ -204,7 +209,14 @@ static int pkcs7_decrypt_rinfo(unsigned char **pek, int *peklen,
     return ret;
 }
 
-BIO *PKCS7_dataInit(PKCS7 *p7, BIO *bio)
+/*
+** no_hash:
+**         0:原流程，如果是SM2签名则增加Z值到待hash的数据中
+**         1:直接返回一个空BIO，不进行其他操作，相当于裸签，不计算Z值
+**         2:裸签，区别于1的是按照原流程，不是返回一个空BIO，在进行TSTINFO时，不增加Z值，需要按照原模板，否则d2i_TS_TST_INFO失败
+**         3:信封验签 暂时先不用，我看验签时 bio参数都是空，暂时先使用这个参数判断 //2023年7月11日01:06:23 沈雪冰 add
+*/
+BIO* PKCS7_dataInit(PKCS7* p7, BIO* bio, int no_hash)
 {
     int i;
     BIO *out = NULL, *btmp = NULL;
@@ -220,6 +232,10 @@ BIO *PKCS7_dataInit(PKCS7 *p7, BIO *bio)
     const PKCS7_CTX *p7_ctx;
     OSSL_LIB_CTX *libctx;
     const char *propq;
+
+	X509* cert = NULL;
+	EVP_PKEY* pkey = NULL;
+	int pkey_new_flag = 0;
 
     if (p7 == NULL) {
         ERR_raise(ERR_LIB_PKCS7, PKCS7_R_INVALID_NULL_POINTER);
@@ -244,29 +260,49 @@ BIO *PKCS7_dataInit(PKCS7 *p7, BIO *bio)
         return NULL;
     }
 
+	//0：计算Z值，填充到bio中，标准签名
+   //1:不进行计算Z值操作，直接返回一个先创建的空bio，外部进行hash计算，配合PKCS7_dataFinal传入32字节的hash值，然后进行裸签； 
+	if (no_hash == 1)
+	{
+		out = BIO_new(BIO_s_mem());
+		if (out)
+		{
+			return out;
+		}
+		else
+		{
+			PKCS7err(PKCS7_F_PKCS7_DATAINIT, ERR_R_BIO_LIB);
+			return NULL;
+		}
+	}
+
+
     i = OBJ_obj2nid(p7->type);
     p7->state = PKCS7_S_HEADER;
 
     switch (i) {
     case NID_pkcs7_signed:
+    case NID_pkcs7_sm2_signed:
         md_sk = p7->d.sign->md_algs;
         os = PKCS7_get_octet_string(p7->d.sign->contents);
         break;
     case NID_pkcs7_signedAndEnveloped:
+	case NID_pkcs7_sm2_signedAndEnveloped:
         rsk = p7->d.signed_and_enveloped->recipientinfo;
         md_sk = p7->d.signed_and_enveloped->md_algs;
         xalg = p7->d.signed_and_enveloped->enc_data->algorithm;
         evp_cipher = p7->d.signed_and_enveloped->enc_data->cipher;
-        if (evp_cipher == NULL) {
+        if (evp_cipher == NULL && !bio) {
             ERR_raise(ERR_LIB_PKCS7, PKCS7_R_CIPHER_NOT_INITIALIZED);
             goto err;
         }
         break;
     case NID_pkcs7_enveloped:
+    case NID_pkcs7_sm2_enveloped:
         rsk = p7->d.enveloped->recipientinfo;
         xalg = p7->d.enveloped->enc_data->algorithm;
         evp_cipher = p7->d.enveloped->enc_data->cipher;
-        if (evp_cipher == NULL) {
+        if (evp_cipher == NULL && !bio) {
             ERR_raise(ERR_LIB_PKCS7, PKCS7_R_CIPHER_NOT_INITIALIZED);
             goto err;
         }
@@ -276,6 +312,7 @@ BIO *PKCS7_dataInit(PKCS7 *p7, BIO *bio)
         os = PKCS7_get_octet_string(p7->d.digest->contents);
         break;
     case NID_pkcs7_data:
+    case NID_pkcs7_sm2_data:
         break;
     default:
         ERR_raise(ERR_LIB_PKCS7, PKCS7_R_UNSUPPORTED_CONTENT_TYPE);
@@ -352,7 +389,49 @@ BIO *PKCS7_dataInit(PKCS7 *p7, BIO *bio)
             BIO_push(out, btmp);
         btmp = NULL;
     }
+#ifndef OPENSSL_NO_CNSM
+	int have_z = 0;
+	unsigned char digest[32];
+	size_t dgst_len = 32;
+	X509_ALGOR* alg = NULL;
+	const EVP_MD* md = NULL;
+	if (md_sk) {
+		alg = sk_X509_ALGOR_value(md_sk, 0);
+		if (alg == NULL) {
+			printf("sk_x509_ALGOR_value fail!\n");
+			goto err;
+		}
 
+		md = EVP_get_digestbyobj(alg->algorithm);
+
+		/* compute Z */
+		if (EVP_MD_type(md) == NID_sm3) {
+			PKCS7_SIGNER_INFO* si = NULL;
+			si = sk_PKCS7_SIGNER_INFO_value(p7->d.sign->signer_info, 0);
+			pkey = si->pkey;
+			if (pkey == NULL) {
+				//获得签名者证书
+				cert = PKCS7_cert_from_signer_info(p7, si);
+				if (!cert) {
+					goto  err;
+				}
+				pkey = X509_get_pubkey(cert);
+				if (!pkey) {
+					goto err;
+				}
+				pkey_new_flag = 1;
+			}
+
+			if (!ossl_sm2_compute_z_digest(digest,EVP_sm3(),NULL,0, (const EC_KEY*)EVP_PKEY_get0_EC_KEY(pkey) )) {
+				goto err;
+			}
+			else {
+				have_z = 1;
+			}
+		}
+	}
+
+#endif
     if (bio == NULL) {
         if (PKCS7_is_detached(p7)) {
             bio = BIO_new(BIO_s_null());
@@ -371,12 +450,23 @@ BIO *PKCS7_dataInit(PKCS7 *p7, BIO *bio)
         BIO_push(out, bio);
     else
         out = bio;
+	if (have_z == 1 && no_hash != 2 && dgst_len == 32) {
+		if (BIO_write(out, digest, dgst_len) != dgst_len) {
+			goto err;
+		}
+	}
     return out;
 
  err:
     EVP_CIPHER_free(fetched_cipher);
     BIO_free_all(out);
     BIO_free_all(btmp);
+
+	if (pkey != NULL && pkey_new_flag == 1) {
+		EVP_PKEY_free(pkey);
+		pkey = NULL;
+	}
+
     return NULL;
 }
 
@@ -433,6 +523,7 @@ BIO *PKCS7_dataDecode(PKCS7 *p7, EVP_PKEY *pkey, BIO *in_bio, X509 *pcert)
 
     switch (i) {
     case NID_pkcs7_signed:
+    case NID_pkcs7_sm2_signed:
         /*
          * p7->d.sign->contents is a PKCS7 structure consisting of a contentType
          * field and optional content.
@@ -447,6 +538,9 @@ BIO *PKCS7_dataDecode(PKCS7 *p7, EVP_PKEY *pkey, BIO *in_bio, X509 *pcert)
         md_sk = p7->d.sign->md_algs;
         break;
     case NID_pkcs7_signedAndEnveloped:
+#ifndef OPENSSL_NO_CNSM
+    case NID_pkcs7_sm2_signedAndEnveloped:
+#endif
         rsk = p7->d.signed_and_enveloped->recipientinfo;
         md_sk = p7->d.signed_and_enveloped->md_algs;
         /* data_body is NULL if the optional EncryptedContent is missing. */
@@ -456,7 +550,7 @@ BIO *PKCS7_dataDecode(PKCS7 *p7, EVP_PKEY *pkey, BIO *in_bio, X509 *pcert)
         OBJ_obj2txt(name, sizeof(name), enc_alg->algorithm, 0);
 
         (void)ERR_set_mark();
-        evp_cipher = EVP_CIPHER_fetch(libctx, name, propq);
+        evp_cipher = EVP_CIPHER_fetch(libctx, name, propq); //此处oid可能需要换成GMT 0006的oid，而不是iso的1.0.18033.3.2.4，后续测试决定要不要修改
         if (evp_cipher != NULL)
             cipher = evp_cipher;
         else
@@ -470,6 +564,9 @@ BIO *PKCS7_dataDecode(PKCS7 *p7, EVP_PKEY *pkey, BIO *in_bio, X509 *pcert)
         (void)ERR_pop_to_mark();
         break;
     case NID_pkcs7_enveloped:
+#ifndef OPENSSL_NO_CNSM
+    case NID_pkcs7_sm2_enveloped:
+#endif
         rsk = p7->d.enveloped->recipientinfo;
         enc_alg = p7->d.enveloped->enc_data->algorithm;
         /* data_body is NULL if the optional EncryptedContent is missing. */
@@ -477,7 +574,7 @@ BIO *PKCS7_dataDecode(PKCS7 *p7, EVP_PKEY *pkey, BIO *in_bio, X509 *pcert)
         OBJ_obj2txt(name, sizeof(name), enc_alg->algorithm, 0);
 
         (void)ERR_set_mark();
-        evp_cipher = EVP_CIPHER_fetch(libctx, name, propq);
+        evp_cipher = EVP_CIPHER_fetch(libctx, name, propq); //此处oid可能需要换成GMT 0006的oid，而不是iso的1.0.18033.3.2.4，后续测试决定要不要修改
         if (evp_cipher != NULL)
             cipher = evp_cipher;
         else
@@ -724,7 +821,7 @@ static int do_pkcs7_signed_attrib(PKCS7_SIGNER_INFO *si, EVP_MD_CTX *mctx)
     return 1;
 }
 
-int PKCS7_dataFinal(PKCS7 *p7, BIO *bio)
+int PKCS7_dataFinal(PKCS7* p7, BIO* bio, int no_hash)
 {
     int ret = 0;
     int i, j;
@@ -759,9 +856,11 @@ int PKCS7_dataFinal(PKCS7 *p7, BIO *bio)
 
     switch (i) {
     case NID_pkcs7_data:
+    case NID_pkcs7_sm2_data:
         os = p7->d.data;
         break;
     case NID_pkcs7_signedAndEnveloped:
+    case NID_pkcs7_sm2_signedAndEnveloped:
         /* XXXXXXXXXXXXXXXX */
         si_sk = p7->d.signed_and_enveloped->signer_info;
         os = p7->d.signed_and_enveloped->enc_data->enc_data;
@@ -775,6 +874,7 @@ int PKCS7_dataFinal(PKCS7 *p7, BIO *bio)
         }
         break;
     case NID_pkcs7_enveloped:
+    case NID_pkcs7_sm2_enveloped:
         /* XXXXXXXXXXXXXXXX */
         os = p7->d.enveloped->enc_data->enc_data;
         if (os == NULL) {
@@ -787,6 +887,7 @@ int PKCS7_dataFinal(PKCS7 *p7, BIO *bio)
         }
         break;
     case NID_pkcs7_signed:
+    case NID_pkcs7_sm2_signed:
         si_sk = p7->d.sign->signer_info;
         os = PKCS7_get_octet_string(p7->d.sign->contents);
         /* If detached data then the content is excluded */
@@ -819,45 +920,114 @@ int PKCS7_dataFinal(PKCS7 *p7, BIO *bio)
                 continue;
 
             j = OBJ_obj2nid(si->digest_alg->algorithm);
+            if (no_hash == 1)
+            {
+                unsigned char* abuf = NULL;
+                size_t abuflen;
+                unsigned char dgst[32];
+                EVP_PKEY_CTX* pkctx = NULL;
 
-            btmp = bio;
-
-            btmp = PKCS7_find_digest(&mdc, btmp, j);
-
-            if (btmp == NULL)
-                goto err;
-
-            /*
-             * We now have the EVP_MD_CTX, lets do the signing.
-             */
-            if (!EVP_MD_CTX_copy_ex(ctx_tmp, mdc))
-                goto err;
-
-            sk = si->auth_attr;
-
-            /*
-             * If there are attributes, we add the digest attribute and only
-             * sign the attributes
-             */
-            if (sk_X509_ATTRIBUTE_num(sk) > 0) {
-                if (!do_pkcs7_signed_attrib(si, ctx_tmp))
+                if (32 != BIO_read(bio, dgst, 32)) {
+                    printf("read from bio fail!\n");
                     goto err;
-            } else {
-                unsigned char *abuf = NULL;
-                unsigned int abuflen;
-                abuflen = EVP_PKEY_get_size(si->pkey);
+                }
+
+                if (!PKCS7_is_detached(p7)) {
+                    if (32 != BIO_write(bio, dgst, 32)) {
+                        printf("write from bio fail!\n");
+                        goto err;
+                    }
+                }
+                abuflen = EVP_PKEY_size(si->pkey);
                 abuf = OPENSSL_malloc(abuflen);
-                if (abuf == NULL)
+                if (!abuf)
+                {
+                    if (pkctx != NULL)
+                    {
+                        EVP_PKEY_CTX_free(pkctx);
+                        pkctx = NULL;
+                    }
                     goto err;
-
-                if (!EVP_SignFinal_ex(ctx_tmp, abuf, &abuflen, si->pkey,
-                                      ossl_pkcs7_ctx_get0_libctx(p7_ctx),
-                                      ossl_pkcs7_ctx_get0_propq(p7_ctx))) {
-                    OPENSSL_free(abuf);
-                    ERR_raise(ERR_LIB_PKCS7, ERR_R_EVP_LIB);
+                }
+                pkctx = EVP_PKEY_CTX_new(si->pkey, NULL);
+                if (!pkctx)
+                {
+                    if (pkctx != NULL)
+                    {
+                        EVP_PKEY_CTX_free(pkctx);
+                        pkctx = NULL;
+                    }
+                    goto err;
+                }
+                if (EVP_PKEY_sign_init(pkctx) <= 0)
+                {
+                    if (pkctx != NULL)
+                    {
+                        EVP_PKEY_CTX_free(pkctx);
+                        pkctx = NULL;
+                    }
+                    goto err;
+                }
+                if (EVP_PKEY_sign(pkctx, abuf, &abuflen, dgst, 32) <= 0)
+                {
+                    if (pkctx != NULL)
+                    {
+                        EVP_PKEY_CTX_free(pkctx);
+                        pkctx = NULL;
+                    }
                     goto err;
                 }
                 ASN1_STRING_set0(si->enc_digest, abuf, abuflen);
+
+                if (pkctx != NULL)
+                {
+                    EVP_PKEY_CTX_free(pkctx);
+                    pkctx = NULL;
+                }
+                break;
+            }
+            else
+            {
+                btmp = bio;
+
+                btmp = PKCS7_find_digest(&mdc, btmp, j);
+
+                if (btmp == NULL)
+                    goto err;
+
+                /*
+                 * We now have the EVP_MD_CTX, lets do the signing.
+                 */
+                if (!EVP_MD_CTX_copy_ex(ctx_tmp, mdc))
+                    goto err;
+
+                sk = si->auth_attr;
+
+                /*
+                 * If there are attributes, we add the digest attribute and only
+                 * sign the attributes
+                 */
+                if (sk_X509_ATTRIBUTE_num(sk) > 0) {
+                    if (!do_pkcs7_signed_attrib(si, ctx_tmp))
+                        goto err;
+                }
+                else {
+                    unsigned char* abuf = NULL;
+                    unsigned int abuflen;
+                    abuflen = EVP_PKEY_get_size(si->pkey);
+                    abuf = OPENSSL_malloc(abuflen);
+                    if (abuf == NULL)
+                        goto err;
+
+                    if (!EVP_SignFinal_ex(ctx_tmp, abuf, &abuflen, si->pkey,
+                        ossl_pkcs7_ctx_get0_libctx(p7_ctx),
+                        ossl_pkcs7_ctx_get0_propq(p7_ctx))) {
+                        OPENSSL_free(abuf);
+                        ERR_raise(ERR_LIB_PKCS7, ERR_R_EVP_LIB);
+                        goto err;
+                    }
+                    ASN1_STRING_set0(si->enc_digest, abuf, abuflen);
+                }
             }
         }
     } else if (i == NID_pkcs7_digest) {
