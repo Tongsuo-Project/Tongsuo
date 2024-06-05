@@ -131,14 +131,14 @@ static __inline int CRYPTO_DOWN_REF(volatile int *val, int *ret,
 #     endif
 #    endif
 
-static __inline int CRYPTO_UP_REF(volatile int *val, int *ret,
+static __inline int CRYPTO_UP_REF(volatile long *val, int *ret,
                                   ossl_unused void *lock)
 {
     *ret = _InterlockedExchangeAdd(val, 1) + 1;
     return 1;
 }
 
-static __inline int CRYPTO_DOWN_REF(volatile int *val, int *ret,
+static __inline int CRYPTO_DOWN_REF(volatile long*val, int *ret,
                                     ossl_unused void *lock)
 {
     *ret = _InterlockedExchangeAdd(val, -1) - 1;

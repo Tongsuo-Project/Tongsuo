@@ -19,76 +19,81 @@
 
 #  include <openssl/ec.h>
 #  include "crypto/types.h"
+# ifdef  __cplusplus
+extern "C" {
+# endif
+    int ossl_sm2_key_private_check(const EC_KEY* eckey);
 
-int ossl_sm2_key_private_check(const EC_KEY *eckey);
-
-/* The default user id as specified in GM/T 0009-2012 */
+    /* The default user id as specified in GM/T 0009-2012 */
 #  define SM2_DEFAULT_USERID "1234567812345678"
 
-int ossl_sm2_compute_z_digest(uint8_t *out,
-                              const EVP_MD *digest,
-                              const uint8_t *id,
-                              size_t id_len,
-                              const EC_KEY *key);
+    int ossl_sm2_compute_z_digest(uint8_t* out,
+        const EVP_MD* digest,
+        const uint8_t* id,
+        size_t id_len,
+        const EC_KEY* key);
 
-/*
- * SM2 signature operation. Computes Z and then signs H(Z || msg) using SM2
- */
-ECDSA_SIG *ossl_sm2_do_sign(const EC_KEY *key,
-                            const EVP_MD *digest,
-                            const uint8_t *id,
-                            const size_t id_len,
-                            const uint8_t *msg, size_t msg_len);
+    /*
+     * SM2 signature operation. Computes Z and then signs H(Z || msg) using SM2
+     */
+    ECDSA_SIG* ossl_sm2_do_sign(const EC_KEY* key,
+        const EVP_MD* digest,
+        const uint8_t* id,
+        const size_t id_len,
+        const uint8_t* msg, size_t msg_len);
 
-int ossl_sm2_do_verify(const EC_KEY *key,
-                       const EVP_MD *digest,
-                       const ECDSA_SIG *signature,
-                       const uint8_t *id,
-                       const size_t id_len,
-                       const uint8_t *msg, size_t msg_len);
+    int ossl_sm2_do_verify(const EC_KEY* key,
+        const EVP_MD* digest,
+        const ECDSA_SIG* signature,
+        const uint8_t* id,
+        const size_t id_len,
+        const uint8_t* msg, size_t msg_len);
 
-/*
- * SM2 signature generation.
- */
-int ossl_sm2_internal_sign(const unsigned char *dgst, int dgstlen,
-                           unsigned char *sig, unsigned int *siglen,
-                           EC_KEY *eckey);
+    /*
+     * SM2 signature generation.
+     */
+    int ossl_sm2_internal_sign(const unsigned char* dgst, int dgstlen,
+        unsigned char* sig, unsigned int* siglen,
+        EC_KEY* eckey);
 
-/*
- * SM2 signature verification.
- */
-int ossl_sm2_internal_verify(const unsigned char *dgst, int dgstlen,
-                             const unsigned char *sig, int siglen,
-                             EC_KEY *eckey);
+    /*
+     * SM2 signature verification.
+     */
+    int ossl_sm2_internal_verify(const unsigned char* dgst, int dgstlen,
+        const unsigned char* sig, int siglen,
+        EC_KEY* eckey);
 
-/*
- * SM2 encryption
- */
-int ossl_sm2_ciphertext_size(const EC_KEY *key, const EVP_MD *digest,
-                             size_t msg_len, size_t *ct_size);
+    /*
+     * SM2 encryption
+     */
+    int ossl_sm2_ciphertext_size(const EC_KEY* key, const EVP_MD* digest,
+        size_t msg_len, size_t* ct_size);
 
-int ossl_sm2_plaintext_size(const unsigned char *ct, size_t ct_size,
-                            size_t *pt_size);
+    int ossl_sm2_plaintext_size(const unsigned char* ct, size_t ct_size,
+        size_t* pt_size);
 
-int ossl_sm2_encrypt(const EC_KEY *key,
-                     const EVP_MD *digest,
-                     const uint8_t *msg, size_t msg_len,
-                     uint8_t *ciphertext_buf, size_t *ciphertext_len);
+    int ossl_sm2_encrypt(const EC_KEY* key,
+        const EVP_MD* digest,
+        const uint8_t* msg, size_t msg_len,
+        uint8_t* ciphertext_buf, size_t* ciphertext_len);
 
-int ossl_sm2_decrypt(const EC_KEY *key,
-                     const EVP_MD *digest,
-                     const uint8_t *ciphertext, size_t ciphertext_len,
-                     uint8_t *ptext_buf, size_t *ptext_len);
+    int ossl_sm2_decrypt(const EC_KEY* key,
+        const EVP_MD* digest,
+        const uint8_t* ciphertext, size_t ciphertext_len,
+        uint8_t* ptext_buf, size_t* ptext_len);
 
-const unsigned char *ossl_sm2_algorithmidentifier_encoding(int md_nid,
-                                                           size_t *len);
+    const unsigned char* ossl_sm2_algorithmidentifier_encoding(int md_nid,
+        size_t* len);
 
-int SM2_compute_key(void *out, size_t outlen, int initiator,
-                    const uint8_t *peer_id, size_t peer_id_len,
-                    const uint8_t *self_id, size_t self_id_len,
-                    const EC_KEY *peer_ecdhe_key, const EC_KEY *self_ecdhe_key,
-                    const EC_KEY *peer_pub_key, const EC_KEY *self_eckey,
-                    const EVP_MD *md, OSSL_LIB_CTX *libctx,
-                    const char *propq);
+    int SM2_compute_key(void* out, size_t outlen, int initiator,
+        const uint8_t* peer_id, size_t peer_id_len,
+        const uint8_t* self_id, size_t self_id_len,
+        const EC_KEY* peer_ecdhe_key, const EC_KEY* self_ecdhe_key,
+        const EC_KEY* peer_pub_key, const EC_KEY* self_eckey,
+        const EVP_MD* md, OSSL_LIB_CTX* libctx,
+        const char* propq);
+# ifdef  __cplusplus
+}
+# endif
 # endif /* OPENSSL_NO_SM2 */
 #endif
