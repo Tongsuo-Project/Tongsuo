@@ -212,6 +212,9 @@ typedef struct pkcs7_st {
 # define PKCS7_PARTIAL           0x4000
 # define PKCS7_REUSE_DIGEST      0x8000
 # define PKCS7_NO_DUAL_CONTENT   0x10000
+# define PKCS7_SM2_GMT0010       0x20000    //2023年6月14日00:59:36 沈雪冰 add，SM2时使用GMT 0010-2012中的oid
+# define PKCS7_SM2_HASH          0x40000    //2023年6月14日00:59:36 沈雪冰 add，签名原文已经是Hash了
+# define PKCS7_SM2_ADDHASH_Z     0x80000    //2023年6月14日00:59:36 沈雪冰 add，p7结构中摘要值为Z值
 
 /* Flags: for compatibility with older code */
 
