@@ -1160,17 +1160,17 @@
 
 #define SN_pkcs7_sm2_signedAndEnveloped         "pkcs7_sm2_signedAndEnveloped"
 #define LN_pkcs7_sm2_signedAndEnveloped         "pkcs7_sm2_signedAndEnveloped"
-#define NID_pkcs7_sm2_signedAndEnveloped                1263
+#define NID_pkcs7_sm2_signedAndEnveloped                1266
 #define OBJ_pkcs7_sm2_signedAndEnveloped                OBJ_sm_pkcs7,4L
 
 #define SN_pkcs7_sm2_encryptedData              "pkcs7_sm2_encryptedData"
 #define LN_pkcs7_sm2_encryptedData              "pkcs7_sm2_encryptedData"
-#define NID_pkcs7_sm2_encryptedData             1264
+#define NID_pkcs7_sm2_encryptedData             1267
 #define OBJ_pkcs7_sm2_encryptedData             OBJ_sm_pkcs7,5L
 
 #define SN_pkcs7_sm2_keyAgreementInfo           "pkcs7_sm2_keyAgreementInfo"
 #define LN_pkcs7_sm2_keyAgreementInfo           "pkcs7_sm2_keyAgreementInfo"
-#define NID_pkcs7_sm2_keyAgreementInfo          1265
+#define NID_pkcs7_sm2_keyAgreementInfo          1268
 #define OBJ_pkcs7_sm2_keyAgreementInfo          OBJ_sm_pkcs7,6L
 
 #define LN_hmacWithSM3          "hmacWithSM3"

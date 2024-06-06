@@ -1025,3 +1025,14 @@ auth_sm2		1254
 zuc_128_eia3		1255
 delegation_usage		1256
 hmacWithSM3		1257
+sm_pkcs		1258
+sm_pkcs7		1259
+pkcs7_sm2_data		1260
+pkcs7_sm2_signed		1261
+pkcs7_sm2_enveloped		1262
+pkcs7_sm2_signedandenveloped		1263
+pkcs7_sm2_encrypteddata		1264
+pkcs7_sm2_keyagreementinfo		1265
+pkcs7_sm2_signedAndEnveloped		1266
+pkcs7_sm2_encryptedData		1267
+pkcs7_sm2_keyAgreementInfo		1268
