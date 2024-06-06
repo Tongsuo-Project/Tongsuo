@@ -9,7 +9,9 @@
 #ifndef OSSL_INTERNAL_REFCOUNT_H
 # define OSSL_INTERNAL_REFCOUNT_H
 # pragma once
-
+#ifdef _WIN32
+#include <intrin.h>
+#endif // _WIN32
 # include <openssl/e_os2.h>
 # include <openssl/trace.h>
 
@@ -131,17 +133,17 @@ static __inline int CRYPTO_DOWN_REF(volatile int *val, int *ret,
 #     endif
 #    endif
 
-static __inline int CRYPTO_UP_REF(volatile long *val, int *ret,
+static __inline int CRYPTO_UP_REF(volatile int *val, int *ret,
                                   ossl_unused void *lock)
 {
-    *ret = _InterlockedExchangeAdd(val, 1) + 1;
+    *ret = _InterlockedExchangeAdd((volatile long*)val, 1) + 1;
     return 1;
 }
 
-static __inline int CRYPTO_DOWN_REF(volatile long*val, int *ret,
+static __inline int CRYPTO_DOWN_REF(volatile int*val, int *ret,
                                     ossl_unused void *lock)
 {
-    *ret = _InterlockedExchangeAdd(val, -1) - 1;
+    *ret = _InterlockedExchangeAdd((volatile long*)val, -1) - 1;
     return 1;
 }
 #   endif
