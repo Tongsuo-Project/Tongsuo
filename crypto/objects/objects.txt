@@ -380,6 +380,12 @@ sm-pkcs7 3       : pkcs7_sm2_enveloped           : pkcs7_sm2_enveloped
 sm-pkcs7 4       : pkcs7_sm2_signedAndEnveloped  : pkcs7_sm2_signedAndEnveloped
 sm-pkcs7 5       : pkcs7_sm2_encryptedData       : pkcs7_sm2_encryptedData
 sm-pkcs7 6       : pkcs7_sm2_keyAgreementInfo    : pkcs7_sm2_keyAgreementInfo
+
+# From GM/T 0006-2012
+sm2 1                               : sm2Signature
+sm2 2                               : sm2Keyagreement
+sm2 3                               : sm2Encrypt
+
 # From GM/T 0091-2020
 sm3 3 1			:			: hmacWithSM3
 

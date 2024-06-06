@@ -1173,6 +1173,18 @@
 #define NID_pkcs7_sm2_keyAgreementInfo          1268
 #define OBJ_pkcs7_sm2_keyAgreementInfo          OBJ_sm_pkcs7,6L
 
+#define SN_sm2Signature         "sm2Signature"
+#define NID_sm2Signature                1269
+#define OBJ_sm2Signature                OBJ_sm2,1L
+
+#define SN_sm2Keyagreement              "sm2Keyagreement"
+#define NID_sm2Keyagreement             1270
+#define OBJ_sm2Keyagreement             OBJ_sm2,2L
+
+#define SN_sm2Encrypt           "sm2Encrypt"
+#define NID_sm2Encrypt          1271
+#define OBJ_sm2Encrypt          OBJ_sm2,3L
+
 #define LN_hmacWithSM3          "hmacWithSM3"
 #define NID_hmacWithSM3         1257
 #define OBJ_hmacWithSM3         OBJ_sm3,3L,1L

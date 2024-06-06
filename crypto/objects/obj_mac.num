@@ -1036,3 +1036,6 @@ pkcs7_sm2_keyagreementinfo		1265
 pkcs7_sm2_signedAndEnveloped		1266
 pkcs7_sm2_encryptedData		1267
 pkcs7_sm2_keyAgreementInfo		1268
+sm2Signature		1269
+sm2Keyagreement		1270
+sm2Encrypt		1271
