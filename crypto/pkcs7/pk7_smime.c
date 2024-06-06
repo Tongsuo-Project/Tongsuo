@@ -31,7 +31,7 @@ PKCS7 *PKCS7_sign_ex(X509 *signcert, EVP_PKEY *pkey, STACK_OF(X509) *certs,
         ERR_raise(ERR_LIB_PKCS7, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
-    //2023Äê6ÔÂ11ÈÕ23:48:06 ÉòÑ©±ù begin add,¸ù¾İpkeyÀàĞÍÉèÖÃSM2 PKCS7µÄÀàĞÍ,¼´GMT 0010-2012 SM2ÃÜÂëËã·¨¼ÓÃÜÇ©ÃûÏûÏ¢Óï·¨¹æ·¶ÖĞµÄÒªÇóµÄoid
+    //2023å¹´6æœˆ11æ—¥23:48:06 æ²ˆé›ªå†° begin add,æ ¹æ®pkeyç±»å‹è®¾ç½®SM2 PKCS7çš„ç±»å‹,å³GMT 0010-2012 SM2å¯†ç ç®—æ³•åŠ å¯†ç­¾åæ¶ˆæ¯è¯­æ³•è§„èŒƒä¸­çš„è¦æ±‚çš„oid
     if (pkey)
     {
         int type = EVP_PKEY_base_id(pkey);
@@ -59,7 +59,7 @@ PKCS7 *PKCS7_sign_ex(X509 *signcert, EVP_PKEY *pkey, STACK_OF(X509) *certs,
         if (!PKCS7_content_new(p7, NID_pkcs7_sm2_data)) //1.2.156.10197.6.1.4.2.1
             goto err;
     }  
-    //2023Äê6ÔÂ11ÈÕ23:48:06 ÉòÑ©±ù end add,¸ù¾İpkeyÀàĞÍÉèÖÃSM2 PKCS7µÄÀàĞÍ,¼´GMT 0010-2012 SM2ÃÜÂëËã·¨¼ÓÃÜÇ©ÃûÏûÏ¢Óï·¨¹æ·¶ÖĞµÄÒªÇóµÄoid
+    //2023å¹´6æœˆ11æ—¥23:48:06 æ²ˆé›ªå†° end add,æ ¹æ®pkeyç±»å‹è®¾ç½®SM2 PKCS7çš„ç±»å‹,å³GMT 0010-2012 SM2å¯†ç ç®—æ³•åŠ å¯†ç­¾åæ¶ˆæ¯è¯­æ³•è§„èŒƒä¸­çš„è¦æ±‚çš„oid
     else
     {
         if (!PKCS7_set_type(p7, NID_pkcs7_signed))
@@ -109,15 +109,15 @@ int PKCS7_final(PKCS7 *p7, BIO *data, int flags)
 	int hashType = 0;
 	if (flags & PKCS7_SM2_HASH)
 	{
-		hashType = 1; //ÍâËÍhashÖµ
+		hashType = 1; //å¤–é€hashå€¼
 	}
 	else if (flags & PKCS7_SM2_ADDHASH_Z)
 	{
-		hashType = 0; //¼ÆËãZÖµµ½P7ÕªÒªÖĞ
+		hashType = 0; //è®¡ç®—Zå€¼åˆ°P7æ‘˜è¦ä¸­
 	}
 	else
 	{
-		hashType = 2;//Ô­ÎÄÂãÇ©
+		hashType = 2;//åŸæ–‡è£¸ç­¾
 	}
     if ((p7bio = PKCS7_dataInit(p7, NULL, hashType)) == NULL) {
         ERR_raise(ERR_LIB_PKCS7, ERR_R_MALLOC_FAILURE);
@@ -350,31 +350,31 @@ int PKCS7_verify(PKCS7 *p7, STACK_OF(X509) *certs, X509_STORE *store,
 
 	if (flags & PKCS7_SM2_HASH)
 	{
-		hashType = 1; //ÍâËÍhashÖµ
+		hashType = 1; //å¤–é€hashå€¼
 	}
 	else if (flags & PKCS7_SM2_ADDHASH_Z)
 	{
-		hashType = 0; //¼ÆËãZÖµµ½P7ÕªÒªÖĞ
+		hashType = 0; //è®¡ç®—Zå€¼åˆ°P7æ‘˜è¦ä¸­
 	}
 	else
 	{
-		hashType = 2;//Ô­ÎÄÂãÇ©
+		hashType = 2;//åŸæ–‡è£¸ç­¾
 	}
-	//2023Äê6ÔÂ18ÈÕ22:53:25 ÉòÑ©±ù bengin add, Ìí¼ÓÖ¤ÊéÁ´ÓÃÓÚ¼ÆËãSM2Ç©ÃûÊ±µÄZÖµ
+	//2023å¹´6æœˆ18æ—¥22:53:25 æ²ˆé›ªå†° bengin add, æ·»åŠ è¯ä¹¦é“¾ç”¨äºè®¡ç®—SM2ç­¾åæ—¶çš„Zå€¼
 	if ((OBJ_obj2nid(p7->type) == NID_pkcs7_sm2_signed) || (OBJ_obj2nid(p7->type) == NID_pkcs7_sm2_signedAndEnveloped) && (!p7->d.sign->cert))
 	{
 		setCerts = 1;
-		p7->d.sign->cert = certs; //ÎªÁËSM2×öZÖµ¼ÆËã£¬±ØĞëÒªÓĞÖ¤ÊéÁ´
+		p7->d.sign->cert = certs; //ä¸ºäº†SM2åšZå€¼è®¡ç®—ï¼Œå¿…é¡»è¦æœ‰è¯ä¹¦é“¾
 	}
-	//2023Äê6ÔÂ18ÈÕ22:53:25 ÉòÑ©±ù end add, Ìí¼ÓÖ¤ÊéÁ´ÓÃÓÚ¼ÆËãSM2Ç©ÃûÊ±µÄZÖµ
+	//2023å¹´6æœˆ18æ—¥22:53:25 æ²ˆé›ªå†° end add, æ·»åŠ è¯ä¹¦é“¾ç”¨äºè®¡ç®—SM2ç­¾åæ—¶çš„Zå€¼
 	if ((p7bio = PKCS7_dataInit(p7, tmpin, hashType)) == NULL)
 		goto err;
-	//2023Äê6ÔÂ18ÈÕ22:53:25 ÉòÑ©±ù bengin add, Ìí¼ÓÖ¤ÊéÁ´ÓÃÓÚ¼ÆËãSM2Ç©ÃûÊ±µÄZÖµ,ĞèÒªÖØĞÂÉèÖÃÎªNULL
+	//2023å¹´6æœˆ18æ—¥22:53:25 æ²ˆé›ªå†° bengin add, æ·»åŠ è¯ä¹¦é“¾ç”¨äºè®¡ç®—SM2ç­¾åæ—¶çš„Zå€¼,éœ€è¦é‡æ–°è®¾ç½®ä¸ºNULL
 	if (setCerts)
 	{
 		p7->d.sign->cert = NULL;
 	}
-	//2023Äê6ÔÂ18ÈÕ22:53:25 ÉòÑ©±ù end add, Ìí¼ÓÖ¤ÊéÁ´ÓÃÓÚ¼ÆËãSM2Ç©ÃûÊ±µÄZÖµ,ĞèÒªÖØĞÂÉèÖÃÎªNULL
+	//2023å¹´6æœˆ18æ—¥22:53:25 æ²ˆé›ªå†° end add, æ·»åŠ è¯ä¹¦é“¾ç”¨äºè®¡ç®—SM2ç­¾åæ—¶çš„Zå€¼,éœ€è¦é‡æ–°è®¾ç½®ä¸ºNULL
 
     if (flags & PKCS7_TEXT) {
         if ((tmpout = BIO_new(BIO_s_mem())) == NULL) {
@@ -552,7 +552,7 @@ PKCS7* PKCS7_encryptEx(STACK_OF(X509)* recipientCerts, BIO* in, const EVP_CIPHER
 	int i;
 	X509* x509;
 
-	if (!(flags & PKCS7_DETACHED)) //²»ÄÜÓĞÔ­ÎÄ£¬±ØĞëÊÇ·ÖÀëÊ½µÄÔ­ÎÄ
+	if (!(flags & PKCS7_DETACHED)) //ä¸èƒ½æœ‰åŸæ–‡ï¼Œå¿…é¡»æ˜¯åˆ†ç¦»å¼çš„åŸæ–‡
 	{
 		PKCS7err(PKCS7_F_PKCS7_ENCRYPT, EINVAL);
 		return NULL;
@@ -562,29 +562,29 @@ PKCS7* PKCS7_encryptEx(STACK_OF(X509)* recipientCerts, BIO* in, const EVP_CIPHER
 		PKCS7err(PKCS7_F_PKCS7_ENCRYPT, ERR_R_MALLOC_FAILURE);
 		return NULL;
 	}
-	//2023Äê7ÔÂ1ÈÕ13:54:57 ÉòÑ©±ù begin add,¸ù¾İpkeyÀàĞÍÉèÖÃSM2 PKCS7µÄÀàĞÍ,¼´GMT 0010-2012 SM2ÃÜÂëËã·¨¼ÓÃÜÇ©ÃûÏûÏ¢Óï·¨¹æ·¶ÖĞµÄÒªÇóµÄoid
+	//2023å¹´7æœˆ1æ—¥13:54:57 æ²ˆé›ªå†° begin add,æ ¹æ®pkeyç±»å‹è®¾ç½®SM2 PKCS7çš„ç±»å‹,å³GMT 0010-2012 SM2å¯†ç ç®—æ³•åŠ å¯†ç­¾åæ¶ˆæ¯è¯­æ³•è§„èŒƒä¸­çš„è¦æ±‚çš„oid
 	if (flags & PKCS7_SM2_GMT0010)
 	{
 		if (flags & PKCS7_NOSIGS)
 		{
-			PKCS7err(PKCS7_F_PKCS7_ENCRYPT, EINVAL); //Õâ¸ö·½·¨±ØĞëÓĞÇ©Ãû
+			PKCS7err(PKCS7_F_PKCS7_ENCRYPT, EINVAL); //è¿™ä¸ªæ–¹æ³•å¿…é¡»æœ‰ç­¾å
 			goto err;
 		}
-		else //2023Äê7ÔÂ1ÈÕ14:18:48 ÉòÑ©±ù add,Èç¹ûÊÇÇ©Ãû¼ÓÃÜ,ÔòÉèÖÃÎªsignedAndEnveloped
+		else //2023å¹´7æœˆ1æ—¥14:18:48 æ²ˆé›ªå†° add,å¦‚æœæ˜¯ç­¾ååŠ å¯†,åˆ™è®¾ç½®ä¸ºsignedAndEnveloped
 		{
 			if (!PKCS7_set_type(p7, NID_pkcs7_sm2_signedAndEnveloped))//1.2.156.10197.6.1.4.2.4
 				goto err;
 		}
 	}
-	//2023Äê7ÔÂ1ÈÕ13:54:57 ÉòÑ©±ù end add,¸ù¾İpkeyÀàĞÍÉèÖÃSM2 PKCS7µÄÀàĞÍ,¼´GMT 0010-2012 SM2ÃÜÂëËã·¨¼ÓÃÜÇ©ÃûÏûÏ¢Óï·¨¹æ·¶ÖĞµÄÒªÇóµÄoid
+	//2023å¹´7æœˆ1æ—¥13:54:57 æ²ˆé›ªå†° end add,æ ¹æ®pkeyç±»å‹è®¾ç½®SM2 PKCS7çš„ç±»å‹,å³GMT 0010-2012 SM2å¯†ç ç®—æ³•åŠ å¯†ç­¾åæ¶ˆæ¯è¯­æ³•è§„èŒƒä¸­çš„è¦æ±‚çš„oid
 	else
 	{
 		if (flags & PKCS7_NOSIGS)
 		{
-			PKCS7err(PKCS7_F_PKCS7_ENCRYPT, EINVAL); //Õâ¸ö·½·¨±ØĞëÓĞÇ©Ãû
+			PKCS7err(PKCS7_F_PKCS7_ENCRYPT, EINVAL); //è¿™ä¸ªæ–¹æ³•å¿…é¡»æœ‰ç­¾å
 			goto err;
 		}
-		else //2023Äê7ÔÂ1ÈÕ14:18:48 ÉòÑ©±ù add,Èç¹ûÊÇÇ©Ãû¼ÓÃÜ,ÔòÉèÖÃÎªsignedAndEnveloped
+		else //2023å¹´7æœˆ1æ—¥14:18:48 æ²ˆé›ªå†° add,å¦‚æœæ˜¯ç­¾ååŠ å¯†,åˆ™è®¾ç½®ä¸ºsignedAndEnveloped
 		{
 			if (!PKCS7_set_type(p7, NID_pkcs7_signedAndEnveloped))
 				goto err;
@@ -788,7 +788,7 @@ int PKCS7_decryptEx(PKCS7* p7, EVP_PKEY* pkey, X509* cert,
                 PKCS7err(PKCS7_F_PKCS7_DECRYPT, ERR_R_MALLOC_FAILURE);
                 goto err;
             }
-            //ÑéÖ¤P7Ç©Ãû
+            //éªŒè¯P7ç­¾å
             ret = PKCS7_verify(p7, certs, store, indata, NULL, flags);
             if (!ret)
             {
