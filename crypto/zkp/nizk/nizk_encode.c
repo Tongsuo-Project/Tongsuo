@@ -296,7 +296,7 @@ NIZK_WITNESS *NIZK_WITNESS_decode(const unsigned char *in, size_t size, int flag
     if (flag == 1) {
         if (size < (sizeof(int) + bn_len * 3)) {
             ERR_raise(ERR_LIB_ZKP_NIZK, ERR_R_PASSED_INVALID_ARGUMENT);
-            return NULL;
+            goto err;
         }
 
         witness->v = zkp_bignum_decode(p, NULL, bn_len);

@@ -93,6 +93,8 @@ static int nizk_plaintext_knowledge_test(int plaintext)
     ret = 1;
 
 err:
+    EC_ELGAMAL_CIPHERTEXT_free(enc_ct);
+    EC_ELGAMAL_CTX_free(enc_ctx);
     NIZK_PLAINTEXT_KNOWLEDGE_PROOF_free(proof);
     NIZK_PLAINTEXT_KNOWLEDGE_CTX_free(ctx);
     NIZK_WITNESS_free(witness);
@@ -176,6 +178,8 @@ static int nizk_plaintext_equality_test(int plaintext)
     ret = 1;
 
 err:
+    EC_ELGAMAL_MR_CTX_free(enc_ctx);
+    EC_ELGAMAL_MR_CIPHERTEXT_free(enc_ct);
     NIZK_PLAINTEXT_EQUALITY_PROOF_free(proof);
     NIZK_PLAINTEXT_EQUALITY_CTX_free(ctx);
     NIZK_WITNESS_free(witness);
