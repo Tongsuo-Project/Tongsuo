@@ -5357,6 +5357,7 @@ static int do_multi(int multi, int size_num)
             close(1);
             if (dup(fd[1]) == -1) {
                 BIO_printf(bio_err, "dup failed\n");
+                close(fd[1]);
                 exit(1);
             }
             close(fd[1]);
