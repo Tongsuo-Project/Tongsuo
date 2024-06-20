@@ -643,6 +643,18 @@ static int pkcs7_rsa_encrypt_decrypt_setup(PKCS7_RECIP_INFO *ri, int decrypt)
     return 1;
 }
 
+static int pkcs7_sm2_encrypt_decrypt_setup(PKCS7_RECIP_INFO* ri, int decrypt)
+{
+	X509_ALGOR* alg = NULL;
+
+	if (decrypt == 0) {
+		PKCS7_RECIP_INFO_get0_alg(ri, &alg);
+		if (alg != NULL)
+			X509_ALGOR_set0(alg, OBJ_nid2obj(NID_sm2Encrypt), V_ASN1_NULL, 0);
+	}
+	return 1;
+}
+
 int PKCS7_RECIP_INFO_set(PKCS7_RECIP_INFO *p7i, X509 *x509)
 {
     int ret;
@@ -669,6 +681,17 @@ int PKCS7_RECIP_INFO_set(PKCS7_RECIP_INFO *p7i, X509 *x509)
             goto err;
         goto finished;
     }
+    else if (EVP_PKEY_is_a(pkey, "EC"))
+    {
+       // if (!EVP_PKEY_set_type(pkey, EVP_PKEY_EC))
+       //     goto err;
+	}
+	else if (EVP_PKEY_is_a(pkey, "SM2"))
+	{
+		if (pkcs7_sm2_encrypt_decrypt_setup(p7i, 0) <= 0)
+			goto err;
+        goto finished;
+	}
 
     if (pkey->ameth == NULL || pkey->ameth->pkey_ctrl == NULL) {
         ERR_raise(ERR_LIB_PKCS7,

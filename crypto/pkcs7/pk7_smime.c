@@ -149,6 +149,13 @@ static int add_cipher_smcap(STACK_OF(X509_ALGOR) *sk, int nid, int arg)
     return 1;
 }
 
+static int add_digest_smcap(STACK_OF(X509_ALGOR)* sk, int nid, int arg)
+{
+	if (EVP_get_digestbynid(nid))
+		return PKCS7_simple_smimecap(sk, nid, arg);
+	return 1;
+}
+
 PKCS7_SIGNER_INFO *PKCS7_sign_add_signer(PKCS7 *p7, X509 *signcert,
                                          EVP_PKEY *pkey, const EVP_MD *md,
                                          int flags)
@@ -182,7 +189,10 @@ PKCS7_SIGNER_INFO *PKCS7_sign_add_signer(PKCS7 *p7, X509 *signcert,
                 ERR_raise(ERR_LIB_PKCS7, ERR_R_MALLOC_FAILURE);
                 goto err;
             }
-            if (!add_cipher_smcap(smcap, NID_aes_256_cbc, -1)
+			if (!add_cipher_smcap(smcap, NID_sm4_ecb, -1)
+				|| !add_cipher_smcap(smcap, NID_sm4_cbc, -1)
+				|| !add_digest_smcap(smcap, NID_sm3, -1)
+                || !add_cipher_smcap(smcap, NID_aes_256_cbc, -1)
                 || !add_cipher_smcap(smcap, NID_aes_192_cbc, -1)
                 || !add_cipher_smcap(smcap, NID_aes_128_cbc, -1)
                 || !add_cipher_smcap(smcap, NID_des_ede3_cbc, -1)
@@ -509,9 +519,46 @@ PKCS7 *PKCS7_encrypt_ex(STACK_OF(X509) *certs, BIO *in,
         ERR_raise(ERR_LIB_PKCS7, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
+    //2023年7月1日13:54:57 沈雪冰 begin add,根据pkey类型设置SM2 PKCS7的类型,即GMT 0010-2012 SM2密码算法加密签名消息语法规范中的要求的oid
+    if (flags & PKCS7_SM2_GMT0010)
+    {
+        if (flags & PKCS7_NOSIGS)
+        {
+            if (!PKCS7_set_type(p7, NID_pkcs7_sm2_enveloped)) //1.2.156.10197.6.1.4.2.3
+                goto err;
+        }
+        else //2023年7月1日14:18:48 沈雪冰 add,如果是签名加密,则设置为signedAndEnveloped
+        {
+            PKCS7err(PKCS7_F_PKCS7_ENCRYPT, EINVAL); //2023年7月5日22:23:10 沈雪冰 add，不支持签名加密
+            goto err;
+            /*if (!PKCS7_set_type(p7, NID_pkcs7_sm2_signedAndEnveloped))//1.2.156.10197.6.1.4.2.4
+            {
+                 PKCS7err(PKCS7_F_PKCS7_ENCRYPT, ERR_R_MALLOC_FAILURE);
+            goto err;
+            }*/
 
-    if (!PKCS7_set_type(p7, NID_pkcs7_enveloped))
-        goto err;
+        }
+    }
+    //2023年7月1日13:54:57 沈雪冰 end add,根据pkey类型设置SM2 PKCS7的类型,即GMT 0010-2012 SM2密码算法加密签名消息语法规范中的要求的oid
+    else
+    {
+        if (flags & PKCS7_NOSIGS)
+        {
+            if (!PKCS7_set_type(p7, NID_pkcs7_enveloped))
+                goto err;
+        }
+        else //2023年7月1日14:18:48 沈雪冰 add,如果是签名加密,则设置为signedAndEnveloped
+        {
+            PKCS7err(PKCS7_F_PKCS7_ENCRYPT, EINVAL); //2023年7月5日22:23:10 沈雪冰 add，不支持签名加密
+            goto err;
+            /*if (!PKCS7_set_type(p7, NID_pkcs7_sm2_signedAndEnveloped))//1.2.156.10197.6.1.4.2.4
+            {
+                 PKCS7err(PKCS7_F_PKCS7_ENCRYPT, ERR_R_MALLOC_FAILURE);
+            goto err;
+            }*/
+        }
+
+    }
     if (!PKCS7_set_cipher(p7, cipher)) {
         ERR_raise(ERR_LIB_PKCS7, PKCS7_R_ERROR_SETTING_CIPHER);
         goto err;
