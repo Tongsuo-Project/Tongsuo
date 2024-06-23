@@ -14,6 +14,34 @@
 #ifndef OPENSSL_NO_SM2
 
 # ifndef OPENSSL_NO_ERR
+static const ERR_STRING_DATA SM2_str_functs[] = {
+	{ERR_PACK(ERR_LIB_SM2, SM2_F_ECDSA_SM2_GET_Z, 0), "ECDSA_sm2_get_Z"},
+	{ERR_PACK(ERR_LIB_SM2, SM2_F_KDF_GMT003_2012, 0), "kdf_gmt003_2012"},
+	{ERR_PACK(ERR_LIB_SM2, SM2_F_PKEY_SM2_COPY, 0), "pkey_sm2_copy"},
+	{ERR_PACK(ERR_LIB_SM2, SM2_F_PKEY_SM2_CTRL, 0), "pkey_sm2_ctrl"},
+	{ERR_PACK(ERR_LIB_SM2, SM2_F_PKEY_SM2_CTRL_STR, 0), "pkey_sm2_ctrl_str"},
+	{ERR_PACK(ERR_LIB_SM2, SM2_F_PKEY_SM2_DIGEST_CUSTOM, 0),
+	 "pkey_sm2_digest_custom"},
+	{ERR_PACK(ERR_LIB_SM2, SM2_F_PKEY_SM2_INIT, 0), "pkey_sm2_init"},
+	{ERR_PACK(ERR_LIB_SM2, SM2_F_PKEY_SM2_SIGN, 0), "pkey_sm2_sign"},
+	{ERR_PACK(ERR_LIB_SM2, SM2_F_SM2KAP_COMPUTE_KEY, 0), "SM2Kap_compute_key"},
+	{ERR_PACK(ERR_LIB_SM2, SM2_F_SM2_COMPUTE_MSG_HASH, 0),
+	 "sm2_compute_msg_hash"},
+	{ERR_PACK(ERR_LIB_SM2, SM2_F_SM2_COMPUTE_USERID_DIGEST, 0),
+	 "sm2_compute_userid_digest"},
+	{ERR_PACK(ERR_LIB_SM2, SM2_F_SM2_COMPUTE_Z_DIGEST, 0),
+	 "sm2_compute_z_digest"},
+	{ERR_PACK(ERR_LIB_SM2, SM2_F_SM2_DECRYPT, 0), "sm2_decrypt"},
+	{ERR_PACK(ERR_LIB_SM2, SM2_F_SM2_ENCRYPT, 0), "sm2_encrypt"},
+	{ERR_PACK(ERR_LIB_SM2, SM2_F_SM2_ENVELOPED_KEY_DATADECODE, 0),
+	 "SM2_Enveloped_Key_dataDecode"},
+	{ERR_PACK(ERR_LIB_SM2, SM2_F_SM2_PLAINTEXT_SIZE, 0), "sm2_plaintext_size"},
+	{ERR_PACK(ERR_LIB_SM2, SM2_F_SM2_SIGN, 0), "sm2_sign"},
+	{ERR_PACK(ERR_LIB_SM2, SM2_F_SM2_SIG_GEN, 0), "sm2_sig_gen"},
+	{ERR_PACK(ERR_LIB_SM2, SM2_F_SM2_SIG_VERIFY, 0), "sm2_sig_verify"},
+	{ERR_PACK(ERR_LIB_SM2, SM2_F_SM2_VERIFY, 0), "sm2_verify"},
+	{0, NULL}
+};
 
 static const ERR_STRING_DATA SM2_str_reasons[] = {
     {ERR_PACK(ERR_LIB_SM2, 0, SM2_R_ASN1_ERROR), "asn1 error"},
@@ -34,6 +62,12 @@ static const ERR_STRING_DATA SM2_str_reasons[] = {
     {ERR_PACK(ERR_LIB_SM2, 0, SM2_R_POINT_ARITHMETIC_FAILURE),
     "point arithmetic failure"},
     {ERR_PACK(ERR_LIB_SM2, 0, SM2_R_USER_ID_TOO_LARGE), "user id too large"},
+	{ERR_PACK(ERR_LIB_SM2, 0, SM2_R_INVALID_ARGUMENT), "invalid argument"},
+	{ERR_PACK(ERR_LIB_SM2, 0, SM2_R_KEY_LENGTH_ERROR), "key length error"},
+	{ERR_PACK(ERR_LIB_SM2, 0, SM2_R_DATA_LENGTH_ERROR), "data length error"},
+	{ERR_PACK(ERR_LIB_SM2, 0, SM2_R_UNSUPPORTED_CIPHER_TYPE),
+	"unsupported cipher type"},
+	{ERR_PACK(ERR_LIB_SM2, 0, SM2_R_MALLOC_FAILURE), "malloc failure"},
     {0, NULL}
 };
 

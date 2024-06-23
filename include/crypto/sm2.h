@@ -22,6 +22,34 @@
 # ifdef  __cplusplus
 extern "C" {
 # endif
+    typedef struct SM2_Ciphertext_st SM2_Ciphertext;
+    DECLARE_STATIC_ASN1_FUNCTIONS(SM2_Ciphertext)
+
+    typedef struct SM2_CiphertextEx_st SM2_CiphertextEx;
+    DECLARE_STATIC_ASN1_FUNCTIONS(SM2_CiphertextEx)
+
+    /*described in section 7.4, GMT 0009/2014.*/
+    typedef struct SM2_Enveloped_Key_st SM2_Enveloped_Key;
+    DECLARE_STATIC_ASN1_FUNCTIONS(SM2_Enveloped_Key)
+
+    BIO* SM2_Enveloped_Key_dataDecode(SM2_Enveloped_Key* sm2evpkey, EVP_PKEY* pkey);
+
+
+
+    int SM2_Ciphertext_get0(const SM2_Ciphertext* cipher,
+        const BIGNUM** pC1x, const BIGNUM** pC1y,
+        const ASN1_OCTET_STRING** pC3, const ASN1_OCTET_STRING** pC2);
+
+    const BIGNUM* SM2_Ciphertext_get0_C1x(const SM2_Ciphertext* cipher);
+
+    const BIGNUM* SM2_Ciphertext_get0_C1y(const SM2_Ciphertext* cipher);
+
+    const ASN1_OCTET_STRING* SM2_Ciphertext_get0_C3(const SM2_Ciphertext* cipher);
+
+    const ASN1_OCTET_STRING* SM2_Ciphertext_get0_C2(const SM2_Ciphertext* cipher);
+
+    int SM2_Ciphertext_set0(SM2_Ciphertext* cipher, BIGNUM* C1x, BIGNUM* C1y, ASN1_OCTET_STRING* C3, ASN1_OCTET_STRING* C2);
+
     int ossl_sm2_key_private_check(const EC_KEY* eckey);
 
     /* The default user id as specified in GM/T 0009-2012 */
@@ -70,17 +98,17 @@ extern "C" {
         size_t msg_len, size_t* ct_size);
 
     int ossl_sm2_plaintext_size(const unsigned char* ct, size_t ct_size,
-        size_t* pt_size);
+        size_t* pt_size,int en);
 
     int ossl_sm2_encrypt(const EC_KEY* key,
         const EVP_MD* digest,
         const uint8_t* msg, size_t msg_len,
-        uint8_t* ciphertext_buf, size_t* ciphertext_len);
+        uint8_t* ciphertext_buf, size_t* ciphertext_len, int encdata_format);
 
     int ossl_sm2_decrypt(const EC_KEY* key,
         const EVP_MD* digest,
         const uint8_t* ciphertext, size_t ciphertext_len,
-        uint8_t* ptext_buf, size_t* ptext_len);
+        uint8_t* ptext_buf, size_t* ptext_len, int encdata_format);
 
     const unsigned char* ossl_sm2_algorithmidentifier_encoding(int md_nid,
         size_t* len);

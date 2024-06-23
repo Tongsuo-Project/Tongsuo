@@ -402,7 +402,6 @@ BIO* PKCS7_dataInit(PKCS7* p7, BIO* bio, int no_hash)
             BIO_push(out, btmp);
         btmp = NULL;
     }
-#ifndef OPENSSL_NO_CNSM
 	int have_z = 0;
 	unsigned char digest[EVP_MAX_MD_SIZE];
 	size_t dgst_len = EVP_MAX_MD_SIZE;
@@ -444,8 +443,6 @@ BIO* PKCS7_dataInit(PKCS7* p7, BIO* bio, int no_hash)
 			}
 		}
 	}
-
-#endif
     if (bio == NULL) {
         if (PKCS7_is_detached(p7)) {
             bio = BIO_new(BIO_s_null());
@@ -552,9 +549,7 @@ BIO *PKCS7_dataDecode(PKCS7 *p7, EVP_PKEY *pkey, BIO *in_bio, X509 *pcert)
         md_sk = p7->d.sign->md_algs;
         break;
     case NID_pkcs7_signedAndEnveloped:
-#ifndef OPENSSL_NO_CNSM
     case NID_pkcs7_sm2_signedAndEnveloped:
-#endif
         rsk = p7->d.signed_and_enveloped->recipientinfo;
         md_sk = p7->d.signed_and_enveloped->md_algs;
         /* data_body is NULL if the optional EncryptedContent is missing. */
@@ -578,9 +573,7 @@ BIO *PKCS7_dataDecode(PKCS7 *p7, EVP_PKEY *pkey, BIO *in_bio, X509 *pcert)
         (void)ERR_pop_to_mark();
         break;
     case NID_pkcs7_enveloped:
-#ifndef OPENSSL_NO_CNSM
     case NID_pkcs7_sm2_enveloped:
-#endif
         rsk = p7->d.enveloped->recipientinfo;
         enc_alg = p7->d.enveloped->enc_data->algorithm;
         /* data_body is NULL if the optional EncryptedContent is missing. */
@@ -1287,8 +1280,7 @@ int PKCS7_signatureVerify(BIO *bio, PKCS7 *p7, PKCS7_SIGNER_INFO *si,
             (void)ERR_clear_last_mark();
             goto err;
         }
-        (void)ERR_pop_to_mark();
-#ifndef OPENSSL_NO_CNSM        
+        (void)ERR_pop_to_mark();       
 		pkey = X509_get_pubkey(x509);
 		if (!pkey) {
 			ret = -1;
@@ -1316,7 +1308,6 @@ int PKCS7_signatureVerify(BIO *bio, PKCS7 *p7, PKCS7_SIGNER_INFO *si,
 			}
 		}
 		EVP_PKEY_free(pkey);
-#endif
         alen = ASN1_item_i2d((ASN1_VALUE *)sk, &abuf,
                              ASN1_ITEM_rptr(PKCS7_ATTR_VERIFY));
         if (alen <= 0) {

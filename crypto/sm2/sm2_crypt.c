@@ -23,16 +23,30 @@
 #include <openssl/bn.h>
 #include <openssl/asn1.h>
 #include <openssl/asn1t.h>
+#include <openssl/x509.h>
 #include <string.h>
 
 typedef struct SM2_Ciphertext_st SM2_Ciphertext;
 DECLARE_STATIC_ASN1_FUNCTIONS(SM2_Ciphertext)
+
+typedef struct SM2_CiphertextEx_st SM2_CiphertextEx;
+DECLARE_STATIC_ASN1_FUNCTIONS(SM2_CiphertextEx)
+
+typedef struct SM2_Enveloped_Key_st SM2_Enveloped_Key;
+DECLARE_STATIC_ASN1_FUNCTIONS(SM2_Enveloped_Key)
 
 struct SM2_Ciphertext_st {
     BIGNUM *C1x;
     BIGNUM *C1y;
     ASN1_OCTET_STRING *C3;
     ASN1_OCTET_STRING *C2;
+};
+
+struct SM2_CiphertextEx_st {
+	BIGNUM* C1x;
+	BIGNUM* C1y;
+    ASN1_OCTET_STRING* C2;
+	ASN1_OCTET_STRING* C3;
 };
 
 ASN1_SEQUENCE(SM2_Ciphertext) = {
@@ -43,6 +57,279 @@ ASN1_SEQUENCE(SM2_Ciphertext) = {
 } static_ASN1_SEQUENCE_END(SM2_Ciphertext)
 
 IMPLEMENT_STATIC_ASN1_FUNCTIONS(SM2_Ciphertext)
+
+ASN1_SEQUENCE(SM2_CiphertextEx) = {
+	ASN1_SIMPLE(SM2_CiphertextEx, C1x, BIGNUM),
+	ASN1_SIMPLE(SM2_CiphertextEx, C1y, BIGNUM),
+	ASN1_SIMPLE(SM2_CiphertextEx, C2, ASN1_OCTET_STRING),
+	ASN1_SIMPLE(SM2_CiphertextEx, C3, ASN1_OCTET_STRING),
+} static_ASN1_SEQUENCE_END(SM2_CiphertextEx)
+
+IMPLEMENT_STATIC_ASN1_FUNCTIONS(SM2_CiphertextEx)
+
+/*described in section 7.4, GMT 0009/2014.*/
+    struct SM2_Enveloped_Key_st {
+    X509_ALGOR* symAlgID;
+    SM2_Ciphertext* symEncryptedKey;
+    ASN1_BIT_STRING* Sm2PublicKey;
+    ASN1_BIT_STRING* Sm2EncryptedPrivateKey;
+};
+
+ASN1_SEQUENCE(SM2_Enveloped_Key) = {
+    ASN1_SIMPLE(SM2_Enveloped_Key, symAlgID, X509_ALGOR),
+    ASN1_SIMPLE(SM2_Enveloped_Key, symEncryptedKey, SM2_Ciphertext),
+    ASN1_SIMPLE(SM2_Enveloped_Key, Sm2PublicKey, ASN1_BIT_STRING),
+    ASN1_SIMPLE(SM2_Enveloped_Key, Sm2EncryptedPrivateKey, ASN1_BIT_STRING),
+} static_ASN1_SEQUENCE_END(SM2_Enveloped_Key)
+
+IMPLEMENT_STATIC_ASN1_FUNCTIONS(SM2_Enveloped_Key)
+
+
+//2023年7月1日12:09:43 沈雪冰 begin add，C|C2|C3  相互转换 C1|C2|C3
+SM2_Ciphertext * SM2_Ciphertext_C1C2C3_to_C1C3C2(const SM2_CiphertextEx * c1c2c3, SM2_Ciphertext * c1c3c2)
+{
+    if (c1c2c3)
+    {
+        c1c3c2->C1x = c1c2c3->C1x;
+        c1c3c2->C1y = c1c2c3->C1y;
+        c1c3c2->C2 = c1c2c3->C2;
+        c1c3c2->C3 = c1c2c3->C3;
+    }
+    return c1c3c2;
+}
+SM2_CiphertextEx* SM2_Ciphertext_C1C3C2_to_C1C2C3(const SM2_Ciphertext* c1c2c3, SM2_CiphertextEx* c1c3c2)
+{
+    if (c1c2c3)
+    {
+        c1c3c2->C1x = c1c2c3->C1x;
+        c1c3c2->C1y = c1c2c3->C1y;
+        c1c3c2->C2 = c1c2c3->C2;
+        c1c3c2->C3 = c1c2c3->C3;
+    }
+    return c1c3c2;
+}
+//2023年7月1日12:09:43 沈雪冰 end add，C|C2|C3  相互转换 C1|C2|C3
+
+BIO* SM2_Enveloped_Key_dataDecode(SM2_Enveloped_Key* sm2evpkey, EVP_PKEY* pkey)
+{
+    BIO* out = NULL, * etmp = NULL, * bio = NULL;
+    const EVP_CIPHER* evp_cipher = NULL;
+    EVP_CIPHER_CTX* evp_ctx = NULL;
+    EVP_PKEY_CTX* pctx = NULL;
+    X509_ALGOR* enc_alg = NULL;
+    ASN1_BIT_STRING* data_body = NULL;
+    SM2_Ciphertext* enc_key = NULL;
+    unsigned char* sm2_ciphertext_data = NULL, * p = NULL;
+    size_t sm2_ciphertext_len;
+    unsigned char* ek = NULL;
+    size_t eklen;
+
+    enc_alg = sm2evpkey->symAlgID;
+    enc_key = sm2evpkey->symEncryptedKey;
+    data_body = sm2evpkey->Sm2EncryptedPrivateKey;
+    evp_cipher = EVP_get_cipherbyobj(enc_alg->algorithm);
+    if (NULL == evp_cipher)
+    {
+        //for compatible SM4 OID (defined in GMT 0006-2014)
+#define SM4_OID_OLD     "\x2a\x81\x1c\xcf\x55\x01\x68" 
+#define SM4_OID_OLD_LEN 7
+        if (NULL != enc_alg && NULL != enc_alg->algorithm &&
+            SM4_OID_OLD_LEN == OBJ_length(enc_alg->algorithm) &&
+            0 == memcmp(OBJ_get0_data(enc_alg->algorithm), SM4_OID_OLD, SM4_OID_OLD_LEN))
+        {
+            if (NULL == enc_alg->parameter)
+            {
+                evp_cipher = EVP_sm4_ecb();
+                if (NULL == evp_cipher)
+                {
+                    SM2err(SM2_F_SM2_ENVELOPED_KEY_DATADECODE, SM2_R_UNSUPPORTED_CIPHER_TYPE);
+                    goto err;
+                }
+            }
+            else
+            {
+                evp_cipher = EVP_sm4_cbc();
+                if (NULL == evp_cipher)
+                {
+                    SM2err(SM2_F_SM2_ENVELOPED_KEY_DATADECODE, SM2_R_UNSUPPORTED_CIPHER_TYPE);
+                    goto err;
+                }
+            }
+        }
+        else
+        {
+            SM2err(SM2_F_SM2_ENVELOPED_KEY_DATADECODE, SM2_R_UNSUPPORTED_CIPHER_TYPE);
+            goto err;
+        }
+    }
+    sm2_ciphertext_len = i2d_SM2_Ciphertext(enc_key, NULL);
+    if (sm2_ciphertext_len <= 0)
+    {
+        SM2err(SM2_F_SM2_ENVELOPED_KEY_DATADECODE, ERR_R_INTERNAL_ERROR);
+        goto err;
+    }
+
+    p = sm2_ciphertext_data = OPENSSL_malloc(sm2_ciphertext_len);
+    if (NULL == sm2_ciphertext_data)
+    {
+        SM2err(SM2_F_SM2_ENVELOPED_KEY_DATADECODE, ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+
+    sm2_ciphertext_len = i2d_SM2_Ciphertext(enc_key, &p);
+    if (sm2_ciphertext_len <= 0)
+    {
+        SM2err(SM2_F_SM2_ENVELOPED_KEY_DATADECODE, ERR_R_INTERNAL_ERROR);
+        goto err;
+    }
+
+    pctx = EVP_PKEY_CTX_new(pkey, NULL);
+    if (!pctx)
+        goto err;
+
+    if (EVP_PKEY_decrypt_init(pctx) <= 0)
+        goto err;
+
+    if (EVP_PKEY_decrypt(pctx, NULL, &eklen, sm2_ciphertext_data, sm2_ciphertext_len) <= 0)
+        goto err;
+
+    ek = OPENSSL_malloc(eklen);
+
+    if (ek == NULL)
+    {
+        SM2err(SM2_F_SM2_ENVELOPED_KEY_DATADECODE, ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+
+    if (EVP_PKEY_decrypt(pctx, ek, &eklen, sm2_ciphertext_data, sm2_ciphertext_len) <= 0)
+    {
+        SM2err(SM2_F_SM2_ENVELOPED_KEY_DATADECODE, ERR_R_EVP_LIB);
+        goto err;
+    }
+
+    if ((etmp = BIO_new(BIO_f_cipher())) == NULL)
+    {
+        SM2err(SM2_F_SM2_ENVELOPED_KEY_DATADECODE, ERR_R_BIO_LIB);
+        goto err;
+    }
+    BIO_get_cipher_ctx(etmp, &evp_ctx);
+
+    if (EVP_CipherInit_ex(evp_ctx, evp_cipher, NULL, NULL, NULL, 0) <= 0)
+        goto err;
+    if (EVP_CIPHER_asn1_to_param(evp_ctx, enc_alg->parameter) < 0)
+        goto err;
+
+    if (eklen != EVP_CIPHER_CTX_key_length(evp_ctx))
+    {
+        SM2err(SM2_F_SM2_ENVELOPED_KEY_DATADECODE, SM2_R_KEY_LENGTH_ERROR);
+        goto err;
+    }
+
+    if (EVP_CipherInit_ex(evp_ctx, NULL, NULL, ek, NULL, 0) <= 0)
+        goto err;
+
+    EVP_CIPHER_CTX_set_padding(evp_ctx, 0);
+
+    if (data_body->length >= 32)
+    {
+        bio = BIO_new_mem_buf(data_body->data + data_body->length - 32, 32);
+        if (NULL == bio)
+        {
+            SM2err(SM2_F_SM2_ENVELOPED_KEY_DATADECODE, ERR_R_BIO_LIB);
+            goto err;
+        }
+    }
+    else
+    {
+        SM2err(SM2_F_SM2_ENVELOPED_KEY_DATADECODE, SM2_R_DATA_LENGTH_ERROR);
+        goto err;
+    }
+
+    BIO_push(etmp, bio);
+    bio = NULL;
+
+    out = etmp;
+    etmp = NULL;
+
+err:
+    if (sm2_ciphertext_data)
+        OPENSSL_free(sm2_ciphertext_data);
+    if (ek)
+        OPENSSL_free(ek);
+    if (pctx)
+        EVP_PKEY_CTX_free(pctx);
+    if (etmp)
+        BIO_free_all(etmp);
+    if (bio)
+        BIO_free_all(bio);
+    return out;
+}
+
+int SM2_Ciphertext_get0(const SM2_Ciphertext* cipher,
+	const BIGNUM** pC1x, const BIGNUM** pC1y,
+	const ASN1_OCTET_STRING** pC3, const ASN1_OCTET_STRING** pC2)
+{
+	if (!cipher)
+		return 0;
+
+	if (pC1x != NULL)
+		*pC1x = cipher->C1x;
+	if (pC1y != NULL)
+		*pC1y = cipher->C1y;
+	if (pC3 != NULL)
+		*pC3 = cipher->C3;
+	if (pC2 != NULL)
+		*pC2 = cipher->C2;
+	return 1;
+}
+
+const BIGNUM* SM2_Ciphertext_get0_C1x(const SM2_Ciphertext* cipher)
+{
+	return (cipher ? cipher->C1x : NULL);
+}
+
+const BIGNUM* SM2_Ciphertext_get0_C1y(const SM2_Ciphertext* cipher)
+{
+	return (cipher ? cipher->C1y : NULL);
+}
+
+const ASN1_OCTET_STRING* SM2_Ciphertext_get0_C3(const SM2_Ciphertext* cipher)
+{
+	return (cipher ? cipher->C3 : NULL);
+}
+
+const ASN1_OCTET_STRING* SM2_Ciphertext_get0_C2(const SM2_Ciphertext* cipher)
+{
+	return (cipher ? cipher->C2 : NULL);
+}
+
+int SM2_Ciphertext_set0(SM2_Ciphertext* cipher, BIGNUM* C1x, BIGNUM* C1y, ASN1_OCTET_STRING* C3, ASN1_OCTET_STRING* C2)
+{
+	if (!cipher)
+		return 0;
+
+	if (C1x)
+	{
+		BN_clear_free(cipher->C1x);
+		cipher->C1x = C1x;
+	}
+	if (C1y)
+	{
+		BN_clear_free(cipher->C1y);
+		cipher->C1y = C1y;
+	}
+	if (C3)
+	{
+		ASN1_STRING_clear_free(cipher->C3);
+		cipher->C3 = C3;
+	}
+	if (C2)
+	{
+		ASN1_STRING_clear_free(cipher->C2);
+		cipher->C2 = C2;
+	}
+	return 1;
+}
 
 static size_t ec_field_size(const EC_GROUP *group)
 {
@@ -68,12 +355,17 @@ static size_t ec_field_size(const EC_GROUP *group)
 }
 
 int ossl_sm2_plaintext_size(const unsigned char *ct, size_t ct_size,
-                            size_t *pt_size)
+                            size_t *pt_size, int encdata_format)
 {
     struct SM2_Ciphertext_st *sm2_ctext = NULL;
-
-    sm2_ctext = d2i_SM2_Ciphertext(NULL, &ct, ct_size);
-
+    if (encdata_format)
+    {
+        sm2_ctext = d2i_SM2_Ciphertext(NULL, &ct, ct_size);
+    }
+    else
+    {          
+        sm2_ctext =(SM2_Ciphertext*) d2i_SM2_CiphertextEx(NULL, &ct, ct_size);
+    } 
     if (sm2_ctext == NULL) {
         ERR_raise(ERR_LIB_SM2, SM2_R_INVALID_ENCODING);
         return 0;
@@ -108,7 +400,7 @@ int ossl_sm2_ciphertext_size(const EC_KEY *key, const EVP_MD *digest,
 int ossl_sm2_encrypt(const EC_KEY *key,
                      const EVP_MD *digest,
                      const uint8_t *msg, size_t msg_len,
-                     uint8_t *ciphertext_buf, size_t *ciphertext_len)
+                     uint8_t *ciphertext_buf, size_t *ciphertext_len, int encdata_format)
 {
     int rc = 0, ciphertext_leni;
     size_t i;
@@ -243,7 +535,15 @@ int ossl_sm2_encrypt(const EC_KEY *key,
         goto done;
     }
 
-    ciphertext_leni = i2d_SM2_Ciphertext(&ctext_struct, &ciphertext_buf);
+	if (encdata_format)
+	{
+		ciphertext_leni = i2d_SM2_Ciphertext(&ctext_struct, &ciphertext_buf);
+	}
+	else//2023年7月1日00:36:27 沈雪冰 add C1|C2|C3格式
+	{
+		ciphertext_leni = i2d_SM2_CiphertextEx((SM2_CiphertextEx*)&ctext_struct, &ciphertext_buf);
+	}
+
     /* Ensure cast to size_t is safe */
     if (ciphertext_leni < 0) {
         ERR_raise(ERR_LIB_SM2, ERR_R_INTERNAL_ERROR);
@@ -270,7 +570,7 @@ int ossl_sm2_encrypt(const EC_KEY *key,
 int ossl_sm2_decrypt(const EC_KEY *key,
                      const EVP_MD *digest,
                      const uint8_t *ciphertext, size_t ciphertext_len,
-                     uint8_t *ptext_buf, size_t *ptext_len)
+                     uint8_t *ptext_buf, size_t *ptext_len, int encdata_format)
 {
     int rc = 0;
     int i;
@@ -296,6 +596,14 @@ int ossl_sm2_decrypt(const EC_KEY *key,
        goto done;
 
     memset(ptext_buf, 0xFF, *ptext_len);
+	if (encdata_format)
+	{
+		sm2_ctext = d2i_SM2_Ciphertext(NULL, &ciphertext, ciphertext_len);
+	}
+	else //2023年7月1日00:36:27 沈雪冰 add C1|C2|C3格式
+	{
+		sm2_ctext = (SM2_Ciphertext*)d2i_SM2_CiphertextEx(NULL, &ciphertext, ciphertext_len);
+	}
 
     sm2_ctext = d2i_SM2_Ciphertext(NULL, &ciphertext, ciphertext_len);
 
@@ -403,4 +711,327 @@ int ossl_sm2_decrypt(const EC_KEY *key,
     EVP_MD_CTX_free(hash);
 
     return rc;
+}
+
+/* GM/T003_2012 Defined Key Derive Function */
+int kdf_gmt003_2012(unsigned char* out, size_t outlen, const unsigned char* Z, size_t Zlen, const unsigned char* SharedInfo, size_t SharedInfolen, const EVP_MD* md)
+{
+	EVP_MD_CTX* mctx = NULL;
+	unsigned int counter;
+	unsigned char ctr[4];
+	size_t mdlen;
+	int retval = 0;
+
+	if (!out || !outlen)
+		return retval;
+	if (md == NULL) md = EVP_sm3();
+	mdlen = EVP_MD_size(md);
+	mctx = EVP_MD_CTX_new();
+	if (mctx == NULL) {
+		SM2err(SM2_F_KDF_GMT003_2012, ERR_R_MALLOC_FAILURE);
+		goto err;
+	}
+
+	for (counter = 1;; counter++)
+	{
+		unsigned char dgst[EVP_MAX_MD_SIZE];
+
+		EVP_DigestInit(mctx, md);
+		ctr[0] = (unsigned char)((counter >> 24) & 0xFF);
+		ctr[1] = (unsigned char)((counter >> 16) & 0xFF);
+		ctr[2] = (unsigned char)((counter >> 8) & 0xFF);
+		ctr[3] = (unsigned char)(counter & 0xFF);
+		if (!EVP_DigestUpdate(mctx, Z, Zlen))
+			goto err;
+		if (!EVP_DigestUpdate(mctx, ctr, sizeof(ctr)))
+			goto err;
+		if (!EVP_DigestUpdate(mctx, SharedInfo, SharedInfolen))
+			goto err;
+		if (!EVP_DigestFinal(mctx, dgst, NULL))
+			goto err;
+
+		if (outlen > mdlen)
+		{
+			memcpy(out, dgst, mdlen);
+			out += mdlen;
+			outlen -= mdlen;
+		}
+		else
+		{
+			memcpy(out, dgst, outlen);
+			memset(dgst, 0, mdlen);
+			break;
+		}
+	}
+
+	retval = 1;
+
+err:
+	EVP_MD_CTX_free(mctx);
+	return retval;
+}
+
+
+int SM2Kap_compute_key(void* out, size_t outlen, int responsor, \
+	const char* peer_uid, int peer_uid_len, const char* self_uid, int self_uid_len, \
+	const EC_KEY* peer_ecdhe_key, const EC_KEY* self_ecdhe_key, const EC_KEY* peer_pub_key, const EC_KEY* self_eckey, \
+	const EVP_MD* md)
+{
+	BN_CTX* ctx = NULL;
+	EC_POINT* UorV = NULL;
+	const EC_POINT* Rs, * Rp;
+	BIGNUM* Xs = NULL, * Xp = NULL, * h = NULL, * t = NULL, * two_power_w = NULL, * order = NULL;
+	const BIGNUM* priv_key, * r;
+	const EC_GROUP* group;
+	int w;
+	int ret = -1;
+	unsigned char* buf = NULL;
+
+	if (outlen > INT_MAX)
+	{
+		SM2err(SM2_F_SM2KAP_COMPUTE_KEY, ERR_R_INTERNAL_ERROR);
+		goto err;
+	}
+
+	if (!peer_pub_key || !self_eckey)
+	{
+		SM2err(SM2_F_SM2KAP_COMPUTE_KEY, ERR_R_INTERNAL_ERROR);
+		goto err;
+	}
+
+	priv_key = EC_KEY_get0_private_key(self_eckey);
+	if (!priv_key)
+	{
+		SM2err(SM2_F_SM2KAP_COMPUTE_KEY, ERR_R_INTERNAL_ERROR);
+		goto err;
+	}
+
+	if (!peer_ecdhe_key || !self_ecdhe_key)
+	{
+		SM2err(SM2_F_SM2KAP_COMPUTE_KEY, ERR_R_INTERNAL_ERROR);
+		goto err;
+	}
+
+	Rs = EC_KEY_get0_public_key(self_ecdhe_key);
+	Rp = EC_KEY_get0_public_key(peer_ecdhe_key);
+	r = EC_KEY_get0_private_key(self_ecdhe_key);
+
+	if (!Rs || !Rp || !r)
+	{
+		SM2err(SM2_F_SM2KAP_COMPUTE_KEY, ERR_R_INTERNAL_ERROR);
+		goto err;
+	}
+
+	ctx = BN_CTX_new();
+	Xs = BN_new();
+	Xp = BN_new();
+	h = BN_new();
+	t = BN_new();
+	two_power_w = BN_new();
+	order = BN_new();
+
+	if (!Xs || !Xp || !h || !t || !two_power_w || !order)
+	{
+		SM2err(SM2_F_SM2KAP_COMPUTE_KEY, ERR_R_MALLOC_FAILURE);
+		goto err;
+	}
+
+	group = EC_KEY_get0_group(self_eckey);
+
+	/*Second: Caculate -- w*/
+	if (!EC_GROUP_get_order(group, order, ctx) || !EC_GROUP_get_cofactor(group, h, ctx))
+	{
+		SM2err(SM2_F_SM2KAP_COMPUTE_KEY, ERR_R_MALLOC_FAILURE);
+		goto err;
+	}
+
+	w = (BN_num_bits(order) + 1) / 2 - 1;
+	if (!BN_lshift(two_power_w, BN_value_one(), w))
+	{
+		SM2err(SM2_F_SM2KAP_COMPUTE_KEY, ERR_R_BN_LIB);
+		goto err;
+	}
+
+	/*Third: Caculate -- X =  2 ^ w + (x & (2 ^ w - 1)) = 2 ^ w + (x mod 2 ^ w)*/
+	UorV = EC_POINT_new(group);
+
+	if (!UorV)
+	{
+		SM2err(SM2_F_SM2KAP_COMPUTE_KEY, ERR_R_MALLOC_FAILURE);
+		goto err;
+	}
+
+	/*Test peer public key On curve*/
+	if (!EC_POINT_is_on_curve(group, Rp, ctx))
+	{
+		SM2err(SM2_F_SM2KAP_COMPUTE_KEY, ERR_R_EC_LIB);
+		goto err;
+	}
+
+	/*Get x*/
+	if (EC_METHOD_get_field_type(EC_GROUP_method_of(group)) == NID_X9_62_prime_field)
+	{
+		if (!EC_POINT_get_affine_coordinates_GFp(group, Rs, Xs, NULL, ctx))
+		{
+			SM2err(SM2_F_SM2KAP_COMPUTE_KEY, ERR_R_EC_LIB);
+			goto err;
+		}
+
+		if (!EC_POINT_get_affine_coordinates_GFp(group, Rp, Xp, NULL, ctx))
+		{
+			SM2err(SM2_F_SM2KAP_COMPUTE_KEY, ERR_R_EC_LIB);
+			goto err;
+		}
+	}
+#ifndef OPENSSL_NO_EC2M
+	else
+	{
+		if (!EC_POINT_get_affine_coordinates_GF2m(group, Rs, Xs, NULL, ctx))
+		{
+			SM2err(SM2_F_SM2KAP_COMPUTE_KEY, ERR_R_EC_LIB);
+			goto err;
+		}
+
+		if (!EC_POINT_get_affine_coordinates_GF2m(group, Rp, Xp, NULL, ctx))
+		{
+			SM2err(SM2_F_SM2KAP_COMPUTE_KEY, ERR_R_EC_LIB);
+			goto err;
+		}
+	}
+#endif
+
+	/*x mod 2 ^ w*/
+	/*Caculate Self x*/
+	if (!BN_nnmod(Xs, Xs, two_power_w, ctx))
+	{
+		SM2err(SM2_F_SM2KAP_COMPUTE_KEY, ERR_R_BN_LIB);
+		goto err;
+	}
+
+	if (!BN_add(Xs, Xs, two_power_w))
+	{
+		SM2err(SM2_F_SM2KAP_COMPUTE_KEY, ERR_R_BN_LIB);
+		goto err;
+	}
+
+	/*Caculate Peer x*/
+	if (!BN_nnmod(Xp, Xp, two_power_w, ctx))
+	{
+		SM2err(SM2_F_SM2KAP_COMPUTE_KEY, ERR_R_BN_LIB);
+		goto err;
+	}
+
+	if (!BN_add(Xp, Xp, two_power_w))
+	{
+		SM2err(SM2_F_SM2KAP_COMPUTE_KEY, ERR_R_BN_LIB);
+		goto err;
+	}
+
+	/*Forth: Caculate t*/
+	if (!BN_mod_mul(t, Xs, r, order, ctx))
+	{
+		SM2err(SM2_F_SM2KAP_COMPUTE_KEY, ERR_R_BN_LIB);
+		goto err;
+	}
+
+	if (!BN_mod_add(t, t, priv_key, order, ctx))
+	{
+		SM2err(SM2_F_SM2KAP_COMPUTE_KEY, ERR_R_BN_LIB);
+		goto err;
+	}
+
+	/*Fifth: Caculate V or U*/
+	if (!BN_mul(t, t, h, ctx))
+	{
+		SM2err(SM2_F_SM2KAP_COMPUTE_KEY, ERR_R_BN_LIB);
+		goto err;
+	}
+
+	/* [x]R */
+	if (!EC_POINT_mul(group, UorV, NULL, Rp, Xp, ctx))
+	{
+		SM2err(SM2_F_SM2KAP_COMPUTE_KEY, ERR_R_EC_LIB);
+		goto err;
+	}
+
+	/* P + [x]R */
+	if (!EC_POINT_add(group, UorV, UorV, EC_KEY_get0_public_key(peer_pub_key), ctx))
+	{
+		SM2err(SM2_F_SM2KAP_COMPUTE_KEY, ERR_R_EC_LIB);
+		goto err;
+	}
+
+	if (!EC_POINT_mul(group, UorV, NULL, UorV, t, ctx))
+	{
+		SM2err(SM2_F_SM2KAP_COMPUTE_KEY, ERR_R_EC_LIB);
+		goto err;
+	}
+
+	/* Detect UorV is in */
+	if (EC_POINT_is_at_infinity(group, UorV))
+	{
+		SM2err(SM2_F_SM2KAP_COMPUTE_KEY, ERR_R_EC_LIB);
+		goto err;
+	}
+
+	/*Sixth: Caculate Key -- Need Xuorv, Yuorv, Zc, Zs, klen*/
+	{
+		size_t len, buflen;
+
+		len = (size_t)((EC_GROUP_get_degree(group) + 7) / 8);
+		buflen = len * 2 + 32 * 2 + 1;    /*add 1 byte tag*/
+		buf = (unsigned char*)OPENSSL_malloc(buflen);
+		if (!buf)
+		{
+			SM2err(SM2_F_SM2KAP_COMPUTE_KEY, ERR_R_MALLOC_FAILURE);
+			goto err;
+		}
+
+		/*1 : Get public key for UorV, Notice: the first byte is a tag, not a valid char*/
+		len = EC_POINT_point2oct(group, UorV, POINT_CONVERSION_UNCOMPRESSED, buf, buflen, ctx);
+		if (!len)
+		{
+			SM2err(SM2_F_SM2KAP_COMPUTE_KEY, ERR_R_EC_LIB);
+			goto err;
+		}
+
+		if (!ossl_sm2_compute_z_digest((unsigned char*)(buf + len), md,
+			!responsor ? (const uint8_t*)self_uid : (const uint8_t*)peer_uid,
+			!responsor ? self_uid_len : peer_uid_len,
+			!responsor ? self_eckey : peer_pub_key))
+		{
+			goto err;
+		}
+		len += 32;
+
+		if (!ossl_sm2_compute_z_digest((unsigned char*)(buf + len), md,
+			responsor ? (const uint8_t*)self_uid : (const uint8_t*)peer_uid,
+			responsor ? self_uid_len : peer_uid_len,
+			responsor ? self_eckey : peer_pub_key))
+		{
+			goto err;
+		}
+		len += 32;
+
+		if (!kdf_gmt003_2012(out, outlen, (const unsigned char*)(buf + 1), len - 1, NULL, 0, md))
+		{
+			SM2err(SM2_F_SM2KAP_COMPUTE_KEY, ERR_R_INTERNAL_ERROR);
+			goto err;
+		}
+	}
+
+	ret = outlen;
+
+err:
+	if (Xs) BN_free(Xs);
+	if (Xp) BN_free(Xp);
+	if (h) BN_free(h);
+	if (t) BN_free(t);
+	if (two_power_w) BN_free(two_power_w);
+	if (order) BN_free(order);
+	if (UorV) EC_POINT_free(UorV);
+	if (buf) OPENSSL_free(buf);
+	if (ctx) BN_CTX_free(ctx);
+
+	return ret;
 }

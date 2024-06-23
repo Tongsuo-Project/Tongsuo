@@ -345,7 +345,7 @@ static int pkcs7_ecdsa_or_dsa_sign_verify_setup(PKCS7_SIGNER_INFO *si,
             return -1;
         if (!OBJ_find_sigid_by_algs(&snid, hnid, EVP_PKEY_get_id(pkey)))
             return -1;
-        X509_ALGOR_set0(alg2, OBJ_nid2obj(snid), V_ASN1_UNDEF, 0);
+        X509_ALGOR_set0(alg2, OBJ_nid2obj(snid), V_ASN1_NULL, 0);
     }
     return 1;
 }
@@ -392,7 +392,7 @@ int PKCS7_SIGNER_INFO_set(PKCS7_SIGNER_INFO *p7i, X509 *x509, EVP_PKEY *pkey,
     X509_ALGOR_set0(p7i->digest_alg, OBJ_nid2obj(EVP_MD_get_type(dgst)),
                     V_ASN1_NULL, NULL);
 
-    if (EVP_PKEY_is_a(pkey, "EC") || EVP_PKEY_is_a(pkey, "DSA"))
+    if (EVP_PKEY_is_a(pkey, "EC") || EVP_PKEY_is_a(pkey, "DSA") || EVP_PKEY_is_a(pkey, "SM2"))
         return pkcs7_ecdsa_or_dsa_sign_verify_setup(p7i, 0);
     if (EVP_PKEY_is_a(pkey, "RSA"))
         return pkcs7_rsa_sign_verify_setup(p7i, 0);

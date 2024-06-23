@@ -24,6 +24,31 @@ extern "C" {
 int ossl_err_load_SM2_strings(void);
 
 /*
+ * SM2 function codes.
+ */
+#  define SM2_F_ECDSA_SM2_GET_Z                            116
+#  define SM2_F_KDF_GMT003_2012                            117
+#  define SM2_F_PKEY_SM2_COPY                              115
+#  define SM2_F_PKEY_SM2_CTRL                              109
+#  define SM2_F_PKEY_SM2_CTRL_STR                          110
+#  define SM2_F_PKEY_SM2_DIGEST_CUSTOM                     114
+#  define SM2_F_PKEY_SM2_INIT                              111
+#  define SM2_F_PKEY_SM2_SIGN                              112
+#  define SM2_F_SM2KAP_COMPUTE_KEY                         118
+#  define SM2_F_SM2_COMPUTE_MSG_HASH                       100
+#  define SM2_F_SM2_COMPUTE_USERID_DIGEST                  101
+#  define SM2_F_SM2_COMPUTE_Z_DIGEST                       113
+#  define SM2_F_SM2_DECRYPT                                102
+#  define SM2_F_SM2_ENCRYPT                                103
+#  define SM2_F_SM2_ENVELOPED_KEY_DATADECODE               119
+#  define SM2_F_SM2_PLAINTEXT_SIZE                         104
+#  define SM2_F_SM2_SIGN                                   105
+#  define SM2_F_SM2_SIG_GEN                                106
+#  define SM2_F_SM2_SIG_VERIFY                             107
+#  define SM2_F_SM2_VERIFY                                 108
+
+
+/*
  * SM2 reason codes.
  */
 #  define SM2_R_ASN1_ERROR                                 100
@@ -41,6 +66,11 @@ int ossl_err_load_SM2_strings(void);
 #  define SM2_R_NO_PARAMETERS_SET                          109
 #  define SM2_R_POINT_ARITHMETIC_FAILURE                   114
 #  define SM2_R_USER_ID_TOO_LARGE                          106
+#  define SM2_R_INVALID_ARGUMENT                           115
+#  define SM2_R_KEY_LENGTH_ERROR                           116
+#  define SM2_R_DATA_LENGTH_ERROR                          117
+#  define SM2_R_UNSUPPORTED_CIPHER_TYPE                    118
+#  define SM2_R_MALLOC_FAILURE							   119
 
 # endif
 
