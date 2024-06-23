@@ -795,8 +795,10 @@ EC_POINTS *EC_POINTS_new(const EC_GROUP *group, int count)
 
     for (i = 0; i < count; i++) {
         point = EC_POINT_new(group);
-        if (point == NULL)
+        if (point == NULL) {
             EC_POINTS_free(ret);
+            return NULL;
+        }
 
         ret->items[i] = point;
     }
