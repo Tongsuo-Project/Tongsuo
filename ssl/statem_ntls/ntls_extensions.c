@@ -29,29 +29,15 @@ static int init_alpn(SSL *s, unsigned int context);
 static int final_alpn(SSL *s, unsigned int context, int sent);
 static int init_sig_algs_cert(SSL *s, unsigned int context);
 static int init_sig_algs(SSL *s, unsigned int context);
-static int init_certificate_authorities(SSL *s, unsigned int context);
-static EXT_RETURN tls_construct_certificate_authorities(SSL *s, WPACKET *pkt,
-                                                        unsigned int context,
-                                                        X509 *x,
-                                                        size_t chainidx);
-static int tls_parse_certificate_authorities(SSL *s, PACKET *pkt,
-                                             unsigned int context, X509 *x,
-                                             size_t chainidx);
-
 static int init_ec_point_formats(SSL *s, unsigned int context);
 static int init_etm(SSL *s, unsigned int context);
 static int init_ems(SSL *s, unsigned int context);
 static int final_ems(SSL *s, unsigned int context, int sent);
-static int init_psk_kex_modes(SSL *s, unsigned int context);
-static int final_key_share(SSL *s, unsigned int context, int sent);
 #ifndef OPENSSL_NO_SRTP
 static int init_srtp(SSL *s, unsigned int context);
 #endif
 static int final_sig_algs(SSL *s, unsigned int context, int sent);
-static int final_early_data(SSL *s, unsigned int context, int sent);
 static int final_maxfragmentlen(SSL *s, unsigned int context, int sent);
-static int init_post_handshake_auth(SSL *s, unsigned int context);
-static int final_psk(SSL *s, unsigned int context, int sent);
 
 /* Structure to define a built-in extension */
 typedef struct extensions_definition_st {
@@ -267,14 +253,7 @@ static const EXTENSION_DEFINITION ext_defs[] = {
         /* We do not generate signature_algorithms_cert at present. */
         NULL, NULL, NULL
     },
-    {
-        TLSEXT_TYPE_post_handshake_auth,
-        SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS1_3_ONLY,
-        init_post_handshake_auth,
-        tls_parse_ctos_post_handshake_auth_ntls, NULL,
-        NULL, tls_construct_ctos_post_handshake_auth_ntls,
-        NULL,
-    },
+    INVALID_EXTENSION, /* TLSEXT_IDX_post_handshake_auth */
     {
         TLSEXT_TYPE_signature_algorithms,
         SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS1_3_CERTIFICATE_REQUEST,
@@ -292,54 +271,14 @@ static const EXTENSION_DEFINITION ext_defs[] = {
         tls_construct_stoc_supported_versions_ntls,
         tls_construct_ctos_supported_versions_ntls, NULL
     },
-    {
-        TLSEXT_TYPE_psk_kex_modes,
-        SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS_IMPLEMENTATION_ONLY
-        | SSL_EXT_TLS1_3_ONLY,
-        init_psk_kex_modes, tls_parse_ctos_psk_kex_modes_ntls, NULL, NULL,
-        tls_construct_ctos_psk_kex_modes_ntls, NULL
-    },
-    {
-        /*
-         * Must be in this list after supported_groups. We need that to have
-         * been parsed before we do this one.
-         */
-        TLSEXT_TYPE_key_share,
-        SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS1_3_SERVER_HELLO
-        | SSL_EXT_TLS1_3_HELLO_RETRY_REQUEST | SSL_EXT_TLS_IMPLEMENTATION_ONLY
-        | SSL_EXT_TLS1_3_ONLY,
-        NULL, tls_parse_ctos_key_share_ntls, tls_parse_stoc_key_share_ntls,
-        tls_construct_stoc_key_share_ntls, tls_construct_ctos_key_share_ntls,
-        final_key_share
-    },
-    {
-        /* Must be after key_share */
-        TLSEXT_TYPE_cookie,
-        SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS1_3_HELLO_RETRY_REQUEST
-        | SSL_EXT_TLS_IMPLEMENTATION_ONLY | SSL_EXT_TLS1_3_ONLY,
-        NULL, tls_parse_ctos_cookie_ntls, tls_parse_stoc_cookie_ntls,
-        tls_construct_stoc_cookie_ntls, tls_construct_ctos_cookie_ntls, NULL
-    },
-    {
-        TLSEXT_TYPE_early_data,
-        SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS1_3_ENCRYPTED_EXTENSIONS
-        | SSL_EXT_TLS1_3_NEW_SESSION_TICKET | SSL_EXT_TLS1_3_ONLY,
-        NULL, tls_parse_ctos_early_data_ntls, tls_parse_stoc_early_data_ntls,
-        tls_construct_stoc_early_data_ntls, tls_construct_ctos_early_data_ntls,
-        final_early_data
-    },
-    {
-        TLSEXT_TYPE_certificate_authorities,
-        SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS1_3_CERTIFICATE_REQUEST
-        | SSL_EXT_TLS1_3_ONLY,
-        init_certificate_authorities,
-        tls_parse_certificate_authorities, tls_parse_certificate_authorities,
-        tls_construct_certificate_authorities,
-        tls_construct_certificate_authorities, NULL,
-    },
-    INVALID_EXTENSION, /* TLSEXT_TYPE_quic_transport_parameters_draft */
-    INVALID_EXTENSION, /* TLSEXT_TYPE_quic_transport_parameters */
-    INVALID_EXTENSION, /* TLSEXT_TYPE_compress_certificate */
+    INVALID_EXTENSION, /* TLSEXT_IDX_psk_kex_modes */
+    INVALID_EXTENSION, /* TLSEXT_IDX_key_share */
+    INVALID_EXTENSION, /* TLSEXT_IDX_cookie */
+    INVALID_EXTENSION, /* TLSEXT_IDX_early_data */
+    INVALID_EXTENSION, /* TLSEXT_IDX_certificate_authorities */
+    INVALID_EXTENSION, /* TLSEXT_IDX_quic_transport_params_draft */
+    INVALID_EXTENSION, /* TLSEXT_IDX_quic_transport_params */
+    INVALID_EXTENSION, /* TLSEXT_IDX_compress_certificate */
     {
         /* Must be immediately before pre_shared_key */
         TLSEXT_TYPE_padding,
@@ -348,14 +287,7 @@ static const EXTENSION_DEFINITION ext_defs[] = {
         /* We send this, but don't read it */
         NULL, NULL, NULL, tls_construct_ctos_padding_ntls, NULL
     },
-    {
-        /* Required by the TLSv1.3 spec to always be the last extension */
-        TLSEXT_TYPE_psk,
-        SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS1_3_SERVER_HELLO
-        | SSL_EXT_TLS_IMPLEMENTATION_ONLY | SSL_EXT_TLS1_3_ONLY,
-        NULL, tls_parse_ctos_psk_ntls, tls_parse_stoc_psk_ntls, tls_construct_stoc_psk_ntls,
-        tls_construct_ctos_psk_ntls, final_psk
-    }
+    INVALID_EXTENSION /* TLSEXT_IDX_psk */
 };
 
 /* Check whether an extension's context matches the current context */
@@ -1069,55 +1001,6 @@ static int final_ems(SSL *s, unsigned int context, int sent)
     return 1;
 }
 
-static int init_certificate_authorities(SSL *s, unsigned int context)
-{
-    sk_X509_NAME_pop_free(s->s3.tmp.peer_ca_names, X509_NAME_free);
-    s->s3.tmp.peer_ca_names = NULL;
-    return 1;
-}
-
-static EXT_RETURN tls_construct_certificate_authorities(SSL *s, WPACKET *pkt,
-                                                        unsigned int context,
-                                                        X509 *x,
-                                                        size_t chainidx)
-{
-    const STACK_OF(X509_NAME) *ca_sk = get_ca_names_ntls(s);
-
-    if (ca_sk == NULL || sk_X509_NAME_num(ca_sk) == 0)
-        return EXT_RETURN_NOT_SENT;
-
-    if (!WPACKET_put_bytes_u16(pkt, TLSEXT_TYPE_certificate_authorities)
-        || !WPACKET_start_sub_packet_u16(pkt)) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
-        return EXT_RETURN_FAIL;
-    }
-
-    if (!construct_ca_names_ntls(s, ca_sk, pkt)) {
-        /* SSLfatal_ntls() already called */
-        return EXT_RETURN_FAIL;
-    }
-
-    if (!WPACKET_close(pkt)) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
-        return EXT_RETURN_FAIL;
-    }
-
-    return EXT_RETURN_SENT;
-}
-
-static int tls_parse_certificate_authorities(SSL *s, PACKET *pkt,
-                                             unsigned int context, X509 *x,
-                                             size_t chainidx)
-{
-    if (!parse_ca_names_ntls(s, pkt))
-        return 0;
-    if (PACKET_remaining(pkt) != 0) {
-        SSLfatal_ntls(s, SSL_AD_DECODE_ERROR, SSL_R_BAD_EXTENSION);
-        return 0;
-    }
-    return 1;
-}
-
 #ifndef OPENSSL_NO_SRTP
 static int init_srtp(SSL *s, unsigned int context)
 {
@@ -1130,17 +1013,6 @@ static int init_srtp(SSL *s, unsigned int context)
 
 static int final_sig_algs(SSL *s, unsigned int context, int sent)
 {
-    return 1;
-}
-
-static int final_key_share(SSL *s, unsigned int context, int sent)
-{
-    return 1;
-}
-
-static int init_psk_kex_modes(SSL *s, unsigned int context)
-{
-    s->ext.psk_kex_mode = TLSEXT_KEX_MODE_FLAG_NONE;
     return 1;
 }
 
@@ -1324,49 +1196,6 @@ int tls_psk_do_binder_ntls(SSL *s, const EVP_MD *md, const unsigned char *msgsta
     return ret;
 }
 
-static int final_early_data(SSL *s, unsigned int context, int sent)
-{
-    if (!sent)
-        return 1;
-
-    if (!s->server) {
-        if (context == SSL_EXT_TLS1_3_ENCRYPTED_EXTENSIONS
-                && sent
-                && !s->ext.early_data_ok) {
-            /*
-             * If we get here then the server accepted our early_data but we
-             * later realised that it shouldn't have done (e.g. inconsistent
-             * ALPN)
-             */
-            SSLfatal_ntls(s, SSL_AD_ILLEGAL_PARAMETER, SSL_R_BAD_EARLY_DATA);
-            return 0;
-        }
-
-        return 1;
-    }
-
-    if (s->max_early_data == 0
-            || !s->hit
-            || s->early_data_state != SSL_EARLY_DATA_ACCEPTING
-            || !s->ext.early_data_ok
-            || s->hello_retry_request != SSL_HRR_NONE
-            || (s->allow_early_data_cb != NULL
-                && !s->allow_early_data_cb(s,
-                                         s->allow_early_data_cb_data))) {
-        s->ext.early_data = SSL_EARLY_DATA_REJECTED;
-    } else {
-        s->ext.early_data = SSL_EARLY_DATA_ACCEPTED;
-
-        if (!tls13_change_cipher_state(s,
-                    SSL3_CC_EARLY | SSL3_CHANGE_CIPHER_SERVER_READ)) {
-            /* SSLfatal_ntls() already called */
-            return 0;
-        }
-    }
-
-    return 1;
-}
-
 static int final_maxfragmentlen(SSL *s, unsigned int context, int sent)
 {
     /*
@@ -1387,29 +1216,6 @@ static int final_maxfragmentlen(SSL *s, unsigned int context, int sent)
             /* SSLfatal_ntls() already called */
             return 0;
         }
-
-    return 1;
-}
-
-static int init_post_handshake_auth(SSL *s, ossl_unused unsigned int context)
-{
-    s->post_handshake_auth = SSL_PHA_NONE;
-
-    return 1;
-}
-
-/*
- * If clients offer "pre_shared_key" without a "psk_key_exchange_modes"
- * extension, servers MUST abort the handshake.
- */
-static int final_psk(SSL *s, unsigned int context, int sent)
-{
-    if (s->server && sent && s->clienthello != NULL
-            && !s->clienthello->pre_proc_exts[TLSEXT_IDX_psk_kex_modes].present) {
-        SSLfatal(s, TLS13_AD_MISSING_EXTENSION,
-                 SSL_R_MISSING_PSK_KEX_MODES_EXTENSION);
-        return 0;
-    }
 
     return 1;
 }
