@@ -1956,7 +1956,7 @@ int smtc_randomness_test_poweron(OSSL_SELF_TEST *st, OSSL_LIB_CTX *libctx)
 {
     int nbit = 1000000;
     unsigned char buf[nbit / 8];
-    int fail[15];
+    int fail[15] = {0};
     size_t i = 0, j, k;
     int retry = 1, res = 0;
 
