@@ -605,8 +605,6 @@ int ossl_sm2_decrypt(const EC_KEY *key,
 		sm2_ctext = (SM2_Ciphertext*)d2i_SM2_CiphertextEx(NULL, &ciphertext, ciphertext_len);
 	}
 
-    sm2_ctext = d2i_SM2_Ciphertext(NULL, &ciphertext, ciphertext_len);
-
     if (sm2_ctext == NULL) {
         ERR_raise(ERR_LIB_SM2, SM2_R_ASN1_ERROR);
         goto done;
