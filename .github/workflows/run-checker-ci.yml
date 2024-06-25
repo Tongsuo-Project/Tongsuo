@@ -31,6 +31,9 @@ jobs:
           no-tls1_2,
           no-tls1_3,
           enable-trace enable-fips,
+          enable-ntls,
+          enable-smtc enable-smtc-debug,
+          enable-ntls enable-smtc enable-smtc-debug,
           no-ts,
           no-ui,
         ]

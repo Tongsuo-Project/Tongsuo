@@ -416,9 +416,13 @@ int ossl_x509v3_cache_extensions(X509 *x)
         CRYPTO_THREAD_unlock(x->lock);
         return (x->ex_flags & EXFLAG_INVALID) == 0;
     }
-
+#ifdef SMTC_MODULE
+    /* Cache the SM3 digest of the cert */
+    if (!X509_digest(x, EVP_sm3(), x->sm3_hash, NULL))
+#else
     /* Cache the SHA1 digest of the cert */
     if (!X509_digest(x, EVP_sha1(), x->sha1_hash, NULL))
+#endif
         x->ex_flags |= EXFLAG_NO_FINGERPRINT;
 
     ERR_set_mark();

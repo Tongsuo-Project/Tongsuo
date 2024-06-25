@@ -333,25 +333,12 @@ int SM2_Ciphertext_set0(SM2_Ciphertext* cipher, BIGNUM* C1x, BIGNUM* C1y, ASN1_O
 
 static size_t ec_field_size(const EC_GROUP *group)
 {
-    /* Is there some simpler way to do this? */
-    BIGNUM *p = BN_new();
-    BIGNUM *a = BN_new();
-    BIGNUM *b = BN_new();
-    size_t field_size = 0;
+    const BIGNUM *p = EC_GROUP_get0_field(group);
 
-    if (p == NULL || a == NULL || b == NULL)
-       goto done;
+    if (p == NULL)
+        return 0;
 
-    if (!EC_GROUP_get_curve(group, p, a, b, NULL))
-        goto done;
-    field_size = (BN_num_bits(p) + 7) / 8;
-
- done:
-    BN_free(p);
-    BN_free(a);
-    BN_free(b);
-
-    return field_size;
+    return BN_num_bytes(p);
 }
 
 int ossl_sm2_plaintext_size(const unsigned char *ct, size_t ct_size,
@@ -709,6 +696,83 @@ int ossl_sm2_decrypt(const EC_KEY *key,
     EVP_MD_CTX_free(hash);
 
     return rc;
+}
+
+int ossl_sm2_ciphertext_decode(const uint8_t *ciphertext, size_t ciphertext_len,
+                               EC_POINT **C1p, uint8_t **C2_data,
+                               size_t *C2_len, uint8_t **C3_data,
+                               size_t *C3_len)
+{
+    int ok = 0;
+    EC_GROUP *group = NULL;
+    EC_POINT *C1 = NULL;
+    void *temp = NULL;
+    struct SM2_Ciphertext_st *sm2_ctext = NULL;
+
+    if (ciphertext == NULL) {
+        ERR_raise(ERR_LIB_SM2, ERR_R_PASSED_NULL_PARAMETER);
+        return 0;
+    }
+
+    sm2_ctext = d2i_SM2_Ciphertext(NULL, &ciphertext, ciphertext_len);
+    if (sm2_ctext == NULL) {
+        ERR_raise(ERR_LIB_SM2, SM2_R_ASN1_ERROR);
+        goto done;
+    }
+
+    if (C1p) {
+        group = EC_GROUP_new_by_curve_name(NID_sm2);
+        if (group == NULL)
+            goto done;
+
+        C1 = EC_POINT_new(group);
+        if (C1 == NULL)
+            goto done;
+
+        if (!EC_POINT_set_affine_coordinates(group, C1, sm2_ctext->C1x,
+                                            sm2_ctext->C1y, NULL))
+            goto done;
+
+        EC_POINT_free(*C1p);
+        *C1p = C1;
+        C1 = NULL;
+    }
+
+    if (C2_data) {
+        temp = OPENSSL_memdup(sm2_ctext->C2->data, sm2_ctext->C2->length);
+        if (temp == NULL) {
+            ERR_raise(ERR_LIB_SM2, ERR_R_MALLOC_FAILURE);
+            goto done;
+        }
+
+        OPENSSL_free(*C2_data);
+        *C2_data = temp;
+
+        if (C2_len)
+            *C2_len = sm2_ctext->C2->length;
+    }
+
+    if (C3_data) {
+        temp = OPENSSL_memdup(sm2_ctext->C3->data, sm2_ctext->C3->length);
+        if (temp == NULL) {
+            ERR_raise(ERR_LIB_SM2, ERR_R_MALLOC_FAILURE);
+            goto done;
+        }
+
+        OPENSSL_free(*C3_data);
+        *C3_data = temp;
+
+        if (C3_len)
+            *C3_len = sm2_ctext->C3->length;
+    }
+
+    ok = 1;
+done:
+    EC_POINT_free(C1);
+    EC_GROUP_free(group);
+    SM2_Ciphertext_free(sm2_ctext);
+
+    return ok;
 }
 
 /* GM/T003_2012 Defined Key Derive Function */

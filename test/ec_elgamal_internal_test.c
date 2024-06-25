@@ -269,7 +269,7 @@ static int ec_elgamal_test(int curve_id, operation_t op, int flag)
         goto err;
     BIO_free(bio);
 
-    if (!TEST_ptr(ectx = EC_ELGAMAL_CTX_new(ec_pub_key, flag)))
+    if (!TEST_ptr(ectx = EC_ELGAMAL_CTX_new(ec_pub_key, NULL, flag)))
         goto err;
 
     /*
@@ -289,7 +289,7 @@ static int ec_elgamal_test(int curve_id, operation_t op, int flag)
         goto err;
     BIO_free(bio);
 
-    if (!TEST_ptr(dctx = EC_ELGAMAL_CTX_new(ec_pri_key, flag)))
+    if (!TEST_ptr(dctx = EC_ELGAMAL_CTX_new(ec_pri_key, NULL, flag)))
         goto err;
 
     if (!TEST_ptr(dtable = EC_ELGAMAL_DECRYPT_TABLE_new(dctx, 1)))

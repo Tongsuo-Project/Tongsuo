@@ -1,16 +1,20 @@
-概述
+ OpenAtom 铜锁/Tongsuo
 =========================
 
 [![tongsuo logo]][www.tongsuo.net]
 
 [![github actions ci badge]][github actions ci]
 [![Coverage Status](https://coveralls.io/repos/github/Tongsuo-Project/Tongsuo/badge.svg?branch=master)](https://coveralls.io/github/Tongsuo-Project/Tongsuo?branch=master)
+![GitHub Release][github release]
+[![GitHub Downloads (all assets, all releases)][github downloads]](https://github.com/Tongsuo-Project/Tongsuo/releases)
 
 铜锁/Tongsuo是一个提供现代密码学算法和安全通信协议的开源基础密码库，为存储、网络、密钥管理、隐私计算等诸多业务场景提供底层的密码学基础能力，实现数据在传输、使用、存储等过程中的私密性、完整性和可认证性，为数据生命周期中的隐私和安全提供保护能力。
 
 铜锁获得了国家密码管理局商用密码检测中心颁发的商用密码产品认证证书，助力用户在国密改造、密评、等保等过程中，更加严谨地满足我国商用密码技术合规的要求。可在[此处](https://www.yuque.com/tsdoc/misc/st247r05s8b5dtct)下载资质原始文件。
 
-<img src="https://github.com/Tongsuo-Project/Tongsuo/blob/master/validation-android.png" width=50% height=50% />
+<div align="center">    
+ <img src="https://github.com/Tongsuo-Project/Tongsuo/blob/master/validation-android.png" width=50% height=50% align=center />
+</div>
 
 
 特性
@@ -47,6 +51,8 @@
 * [Angie](https://angie.software/en/), Angie是一个可以替换掉NGINX的新型Web服务器，我们建议使用铜锁的用户优先选择Angie (We highly recommend you to replace NGINX with Angie to enable Tongsuo's functionality)
 * Apache APISIX
 * Tengine
+* [g3proxy](https://github.com/bytedance/g3/tree/master/g3proxy)，正向代理&基础反向代理
+* [g3bench](https://github.com/bytedance/g3/tree/master/g3bench)，HTTPS/H2/TLS握手等压测
 
 商业应用 (Commercial Application)
 
@@ -122,7 +128,7 @@ make install_programs
 文档
 =========================
 
-铜锁的相关文档组织在 [铜锁文档网站](https://yuque.com/tsdoc) 上。
+铜锁的相关文档组织在 [铜锁文档网站](https://www.tongsuo.net/docs) 上。
 
 交流合作
 =========================
@@ -132,6 +138,13 @@ make install_programs
 欢迎关注铜锁公众号，获取最新的铜锁动态：
 
 ![tongsuo public qr](tongsuo-public-qr.jpg)
+
+声明
+=========================
+
+铜锁/Tongsuo 是由开放原子开源基金会（OpenAtom Foundation）孵化及运营的开源项目。
+
+<img src="atom-logo.svg" alt="OpenAtom Foundation" width=50% height=50% />
 
 报告安全缺陷
 =========================
@@ -161,3 +174,11 @@ make install_programs
 [github actions ci]:
     <https://github.com/Tongsuo-Project/Tongsuo/actions?query=workflow%3A%22GitHub+CI%22>
     "GitHub Actions CI"
+
+[github release]:
+    <https://img.shields.io/github/v/release/Tongsuo-Project/Tongsuo>
+    "GitHub Release"
+
+[github downloads]:
+    <https://img.shields.io/github/downloads/Tongsuo-Project/Tongsuo/total?link=https%3A%2F%2Fgithub.com%2FTongsuo-Project%2FTongsuo%2Freleases>
+    "GitHub Downloads"

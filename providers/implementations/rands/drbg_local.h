@@ -255,5 +255,10 @@ size_t ossl_crngt_get_entropy(PROV_DRBG *drbg,
                               int prediction_resistance);
 void ossl_crngt_cleanup_entropy(PROV_DRBG *drbg,
                                 unsigned char *out, size_t outlen);
+#ifdef SMTC_MODULE
+size_t ossl_smtc_get_entropy(PROV_DRBG *drbg, unsigned char **pout, int entropy,
+                             size_t min_len, size_t max_len,
+                             int prediction_resistance);
+#endif
 
 #endif

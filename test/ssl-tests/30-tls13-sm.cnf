@@ -1,6 +1,6 @@
 # Generated with generate_ssl_tests.pl
 
-num_tests = 21
+num_tests = 22
 
 test-0 = 0-test ciphersuites TLS_SM4_GCM_SM3
 test-1 = 1-test series of ciphersuites includes TLS_SM4_GCM_SM3
@@ -17,12 +17,13 @@ test-11 = 11-test server can accept TLS_SM4_CCM_SM3 with ecdsa cert when disable
 test-12 = 12-test server can not accept TLS_SM4_CCM_SM3 with rsa cert when enable sm_tls13_strict tag
 test-13 = 13-test server can accept TLS_SM4_CCM_SM3 with rsa cert when disable sm_tls13_strict tag
 test-14 = 14-test server can accept TLS_SM4_CCM_SM3 with long sm2 cert chain
-test-15 = 15-test ClientHello1 no SM2 key_share, server should send HRR when enable sm_tls13_strict and choose TLS_SM4_GCM_SM3
-test-16 = 16-test client should fail when enable sm_tls13_strict without SM2 key_share
-test-17 = 17-test client success when enable sm_tls13_strict with SM2 key_share
-test-18 = 18-test client should fail when enable sm_tls13_strict with ecdsa cert and TLS_SM4_GCM_SM3 cipher
-test-19 = 19-test client auth fail when enable sm_tls13_strict, CertificateRequest with other signature algorithms except sm2sig_sm3
-test-20 = 20-test client auth success when both enable sm_tls13_strict
+test-15 = 15-test client enable sm_tls13_strict, the key_share extension must include curveSM2
+test-16 = 16-test ClientHello1 no SM2 key_share, server should send HRR when enable sm_tls13_strict and choose TLS_SM4_GCM_SM3
+test-17 = 17-test client should fail when enable sm_tls13_strict with ecdsa cert and TLS_SM4_GCM_SM3 cipher
+test-18 = 18-test client auth fail when enable sm_tls13_strict, CertificateRequest with other signature algorithms except sm2sig_sm3
+test-19 = 19-test client auth success when also enable sm_tls13_strict
+test-20 = 20-test sm_tls13_strict server with sm2 and rsa certs, client signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3
+test-21 = 21-test sm_tls13_strict client with sm2 and rsa certs, server signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3
 # ===========================================================
 
 [0-test ciphersuites TLS_SM4_GCM_SM3]
@@ -479,25 +480,26 @@ ExpectedResult = Success
 
 # ===========================================================
 
-[15-test ClientHello1 no SM2 key_share, server should send HRR when enable sm_tls13_strict and choose TLS_SM4_GCM_SM3]
-ssl_conf = 15-test ClientHello1 no SM2 key_share, server should send HRR when enable sm_tls13_strict and choose TLS_SM4_GCM_SM3-ssl
+[15-test client enable sm_tls13_strict, the key_share extension must include curveSM2]
+ssl_conf = 15-test client enable sm_tls13_strict, the key_share extension must include curveSM2-ssl
 
-[15-test ClientHello1 no SM2 key_share, server should send HRR when enable sm_tls13_strict and choose TLS_SM4_GCM_SM3-ssl]
-server = 15-test ClientHello1 no SM2 key_share, server should send HRR when enable sm_tls13_strict and choose TLS_SM4_GCM_SM3-server
-client = 15-test ClientHello1 no SM2 key_share, server should send HRR when enable sm_tls13_strict and choose TLS_SM4_GCM_SM3-client
+[15-test client enable sm_tls13_strict, the key_share extension must include curveSM2-ssl]
+server = 15-test client enable sm_tls13_strict, the key_share extension must include curveSM2-server
+client = 15-test client enable sm_tls13_strict, the key_share extension must include curveSM2-client
 
-[15-test ClientHello1 no SM2 key_share, server should send HRR when enable sm_tls13_strict and choose TLS_SM4_GCM_SM3-server]
+[15-test client enable sm_tls13_strict, the key_share extension must include curveSM2-server]
 Certificate = ${ENV::TEST_CERTS_DIR}/sm2-leaf.crt
 CipherString = DEFAULT
 Ciphersuites = TLS_SM4_GCM_SM3
-Enable_sm_tls13_strict = on
+Enable_sm_tls13_strict = off
 MaxProtocol = TLSv1.3
 MinProtocol = TLSv1.3
 PrivateKey = ${ENV::TEST_CERTS_DIR}/sm2-leaf.key
 
-[15-test ClientHello1 no SM2 key_share, server should send HRR when enable sm_tls13_strict and choose TLS_SM4_GCM_SM3-client]
+[15-test client enable sm_tls13_strict, the key_share extension must include curveSM2-client]
 CipherString = DEFAULT
 Ciphersuites = TLS_SM4_GCM_SM3
+Enable_sm_tls13_strict = on
 MaxProtocol = TLSv1.3
 MinProtocol = TLSv1.3
 VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-chain-ca.crt
@@ -505,70 +507,37 @@ VerifyMode = Peer
 
 [test-15]
 ExpectedCipher = TLS_SM4_GCM_SM3
-ExpectedHRR = Yes
+ExpectedClientKeyShare = SM2
 ExpectedResult = Success
 
 
 # ===========================================================
 
-[16-test client should fail when enable sm_tls13_strict without SM2 key_share]
-ssl_conf = 16-test client should fail when enable sm_tls13_strict without SM2 key_share-ssl
+[16-test ClientHello1 no SM2 key_share, server should send HRR when enable sm_tls13_strict and choose TLS_SM4_GCM_SM3]
+ssl_conf = 16-test ClientHello1 no SM2 key_share, server should send HRR when enable sm_tls13_strict and choose TLS_SM4_GCM_SM3-ssl
 
-[16-test client should fail when enable sm_tls13_strict without SM2 key_share-ssl]
-server = 16-test client should fail when enable sm_tls13_strict without SM2 key_share-server
-client = 16-test client should fail when enable sm_tls13_strict without SM2 key_share-client
+[16-test ClientHello1 no SM2 key_share, server should send HRR when enable sm_tls13_strict and choose TLS_SM4_GCM_SM3-ssl]
+server = 16-test ClientHello1 no SM2 key_share, server should send HRR when enable sm_tls13_strict and choose TLS_SM4_GCM_SM3-server
+client = 16-test ClientHello1 no SM2 key_share, server should send HRR when enable sm_tls13_strict and choose TLS_SM4_GCM_SM3-client
 
-[16-test client should fail when enable sm_tls13_strict without SM2 key_share-server]
+[16-test ClientHello1 no SM2 key_share, server should send HRR when enable sm_tls13_strict and choose TLS_SM4_GCM_SM3-server]
 Certificate = ${ENV::TEST_CERTS_DIR}/sm2-leaf.crt
 CipherString = DEFAULT
 Ciphersuites = TLS_SM4_GCM_SM3
-Enable_sm_tls13_strict = off
+Enable_sm_tls13_strict = on
 MaxProtocol = TLSv1.3
 MinProtocol = TLSv1.3
 PrivateKey = ${ENV::TEST_CERTS_DIR}/sm2-leaf.key
 
-[16-test client should fail when enable sm_tls13_strict without SM2 key_share-client]
+[16-test ClientHello1 no SM2 key_share, server should send HRR when enable sm_tls13_strict and choose TLS_SM4_GCM_SM3-client]
 CipherString = DEFAULT
 Ciphersuites = TLS_SM4_GCM_SM3
-Enable_sm_tls13_strict = on
 MaxProtocol = TLSv1.3
 MinProtocol = TLSv1.3
 VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-chain-ca.crt
 VerifyMode = Peer
 
 [test-16]
-ExpectedResult = ClientFail
-
-
-# ===========================================================
-
-[17-test client success when enable sm_tls13_strict with SM2 key_share]
-ssl_conf = 17-test client success when enable sm_tls13_strict with SM2 key_share-ssl
-
-[17-test client success when enable sm_tls13_strict with SM2 key_share-ssl]
-server = 17-test client success when enable sm_tls13_strict with SM2 key_share-server
-client = 17-test client success when enable sm_tls13_strict with SM2 key_share-client
-
-[17-test client success when enable sm_tls13_strict with SM2 key_share-server]
-Certificate = ${ENV::TEST_CERTS_DIR}/sm2-leaf.crt
-CipherString = DEFAULT
-Ciphersuites = TLS_SM4_GCM_SM3
-Enable_sm_tls13_strict = off
-Groups = SM2
-MaxProtocol = TLSv1.3
-MinProtocol = TLSv1.3
-PrivateKey = ${ENV::TEST_CERTS_DIR}/sm2-leaf.key
-
-[17-test client success when enable sm_tls13_strict with SM2 key_share-client]
-CipherString = DEFAULT
-Ciphersuites = TLS_SM4_GCM_SM3
-Enable_sm_tls13_strict = on
-MaxProtocol = TLSv1.3
-MinProtocol = TLSv1.3
-VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-chain-ca.crt
-VerifyMode = Peer
-
-[test-17]
 ExpectedCipher = TLS_SM4_GCM_SM3
 ExpectedHRR = Yes
 ExpectedResult = Success
@@ -576,14 +545,14 @@ ExpectedResult = Success
 
 # ===========================================================
 
-[18-test client should fail when enable sm_tls13_strict with ecdsa cert and TLS_SM4_GCM_SM3 cipher]
-ssl_conf = 18-test client should fail when enable sm_tls13_strict with ecdsa cert and TLS_SM4_GCM_SM3 cipher-ssl
+[17-test client should fail when enable sm_tls13_strict with ecdsa cert and TLS_SM4_GCM_SM3 cipher]
+ssl_conf = 17-test client should fail when enable sm_tls13_strict with ecdsa cert and TLS_SM4_GCM_SM3 cipher-ssl
 
-[18-test client should fail when enable sm_tls13_strict with ecdsa cert and TLS_SM4_GCM_SM3 cipher-ssl]
-server = 18-test client should fail when enable sm_tls13_strict with ecdsa cert and TLS_SM4_GCM_SM3 cipher-server
-client = 18-test client should fail when enable sm_tls13_strict with ecdsa cert and TLS_SM4_GCM_SM3 cipher-client
+[17-test client should fail when enable sm_tls13_strict with ecdsa cert and TLS_SM4_GCM_SM3 cipher-ssl]
+server = 17-test client should fail when enable sm_tls13_strict with ecdsa cert and TLS_SM4_GCM_SM3 cipher-server
+client = 17-test client should fail when enable sm_tls13_strict with ecdsa cert and TLS_SM4_GCM_SM3 cipher-client
 
-[18-test client should fail when enable sm_tls13_strict with ecdsa cert and TLS_SM4_GCM_SM3 cipher-server]
+[17-test client should fail when enable sm_tls13_strict with ecdsa cert and TLS_SM4_GCM_SM3 cipher-server]
 Certificate = ${ENV::TEST_CERTS_DIR}/server-ecdsa-cert.pem
 CipherString = DEFAULT
 Ciphersuites = TLS_SM4_GCM_SM3
@@ -593,7 +562,7 @@ MaxProtocol = TLSv1.3
 MinProtocol = TLSv1.3
 PrivateKey = ${ENV::TEST_CERTS_DIR}/server-ecdsa-key.pem
 
-[18-test client should fail when enable sm_tls13_strict with ecdsa cert and TLS_SM4_GCM_SM3 cipher-client]
+[17-test client should fail when enable sm_tls13_strict with ecdsa cert and TLS_SM4_GCM_SM3 cipher-client]
 CipherString = DEFAULT
 Ciphersuites = TLS_SM4_GCM_SM3
 Enable_sm_tls13_strict = on
@@ -602,21 +571,21 @@ MinProtocol = TLSv1.3
 VerifyCAFile = ${ENV::TEST_CERTS_DIR}/rootcert.pem
 VerifyMode = Peer
 
-[test-18]
+[test-17]
 ExpectedClientAlert = BadCertificate
 ExpectedResult = ClientFail
 
 
 # ===========================================================
 
-[19-test client auth fail when enable sm_tls13_strict, CertificateRequest with other signature algorithms except sm2sig_sm3]
-ssl_conf = 19-test client auth fail when enable sm_tls13_strict, CertificateRequest with other signature algorithms except sm2sig_sm3-ssl
+[18-test client auth fail when enable sm_tls13_strict, CertificateRequest with other signature algorithms except sm2sig_sm3]
+ssl_conf = 18-test client auth fail when enable sm_tls13_strict, CertificateRequest with other signature algorithms except sm2sig_sm3-ssl
 
-[19-test client auth fail when enable sm_tls13_strict, CertificateRequest with other signature algorithms except sm2sig_sm3-ssl]
-server = 19-test client auth fail when enable sm_tls13_strict, CertificateRequest with other signature algorithms except sm2sig_sm3-server
-client = 19-test client auth fail when enable sm_tls13_strict, CertificateRequest with other signature algorithms except sm2sig_sm3-client
+[18-test client auth fail when enable sm_tls13_strict, CertificateRequest with other signature algorithms except sm2sig_sm3-ssl]
+server = 18-test client auth fail when enable sm_tls13_strict, CertificateRequest with other signature algorithms except sm2sig_sm3-server
+client = 18-test client auth fail when enable sm_tls13_strict, CertificateRequest with other signature algorithms except sm2sig_sm3-client
 
-[19-test client auth fail when enable sm_tls13_strict, CertificateRequest with other signature algorithms except sm2sig_sm3-server]
+[18-test client auth fail when enable sm_tls13_strict, CertificateRequest with other signature algorithms except sm2sig_sm3-server]
 Certificate = ${ENV::TEST_CERTS_DIR}/sm2-leaf.crt
 CipherString = DEFAULT
 Ciphersuites = TLS_SM4_GCM_SM3
@@ -628,7 +597,42 @@ PrivateKey = ${ENV::TEST_CERTS_DIR}/sm2-leaf.key
 VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-root-cert.pem
 VerifyMode = Require
 
-[19-test client auth fail when enable sm_tls13_strict, CertificateRequest with other signature algorithms except sm2sig_sm3-client]
+[18-test client auth fail when enable sm_tls13_strict, CertificateRequest with other signature algorithms except sm2sig_sm3-client]
+Certificate = ${ENV::TEST_CERTS_DIR}/sm2-first-crt.pem
+CipherString = DEFAULT
+Ciphersuites = TLS_SM4_GCM_SM3
+Enable_sm_tls13_strict = on
+MaxProtocol = TLSv1.3
+MinProtocol = TLSv1.3
+PrivateKey = ${ENV::TEST_CERTS_DIR}/sm2-first-key.pem
+VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-chain-ca.crt
+VerifyMode = Peer
+
+[test-18]
+ExpectedResult = ClientFail
+
+
+# ===========================================================
+
+[19-test client auth success when also enable sm_tls13_strict]
+ssl_conf = 19-test client auth success when also enable sm_tls13_strict-ssl
+
+[19-test client auth success when also enable sm_tls13_strict-ssl]
+server = 19-test client auth success when also enable sm_tls13_strict-server
+client = 19-test client auth success when also enable sm_tls13_strict-client
+
+[19-test client auth success when also enable sm_tls13_strict-server]
+Certificate = ${ENV::TEST_CERTS_DIR}/sm2-leaf.crt
+CipherString = DEFAULT
+Ciphersuites = TLS_SM4_GCM_SM3
+Enable_sm_tls13_strict = on
+MaxProtocol = TLSv1.3
+MinProtocol = TLSv1.3
+PrivateKey = ${ENV::TEST_CERTS_DIR}/sm2-leaf.key
+VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-root-cert.pem
+VerifyMode = Require
+
+[19-test client auth success when also enable sm_tls13_strict-client]
 Certificate = ${ENV::TEST_CERTS_DIR}/sm2-first-crt.pem
 CipherString = DEFAULT
 Ciphersuites = TLS_SM4_GCM_SM3
@@ -640,30 +644,35 @@ VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-chain-ca.crt
 VerifyMode = Peer
 
 [test-19]
-ExpectedResult = ClientFail
+ExpectedCipher = TLS_SM4_GCM_SM3
+ExpectedResult = Success
 
 
 # ===========================================================
 
-[20-test client auth success when both enable sm_tls13_strict]
-ssl_conf = 20-test client auth success when both enable sm_tls13_strict-ssl
+[20-test sm_tls13_strict server with sm2 and rsa certs, client signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3]
+ssl_conf = 20-test sm_tls13_strict server with sm2 and rsa certs, client signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3-ssl
 
-[20-test client auth success when both enable sm_tls13_strict-ssl]
-server = 20-test client auth success when both enable sm_tls13_strict-server
-client = 20-test client auth success when both enable sm_tls13_strict-client
+[20-test sm_tls13_strict server with sm2 and rsa certs, client signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3-ssl]
+server = 20-test sm_tls13_strict server with sm2 and rsa certs, client signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3-server
+client = 20-test sm_tls13_strict server with sm2 and rsa certs, client signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3-client
 
-[20-test client auth success when both enable sm_tls13_strict-server]
-Certificate = ${ENV::TEST_CERTS_DIR}/sm2-leaf.crt
+[20-test sm_tls13_strict server with sm2 and rsa certs, client signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3-server]
+Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
 CipherString = DEFAULT
 Ciphersuites = TLS_SM4_GCM_SM3
 Enable_sm_tls13_strict = on
 MaxProtocol = TLSv1.3
 MinProtocol = TLSv1.3
-PrivateKey = ${ENV::TEST_CERTS_DIR}/sm2-leaf.key
+PrivateKey = ${ENV::TEST_CERTS_DIR}/serverkey.pem
+RSA.Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
+RSA.PrivateKey = ${ENV::TEST_CERTS_DIR}/serverkey.pem
+SM2.Certificate = ${ENV::TEST_CERTS_DIR}/sm2-leaf.crt
+SM2.PrivateKey = ${ENV::TEST_CERTS_DIR}/sm2-leaf.key
 VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-root-cert.pem
 VerifyMode = Require
 
-[20-test client auth success when both enable sm_tls13_strict-client]
+[20-test sm_tls13_strict server with sm2 and rsa certs, client signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3-client]
 Certificate = ${ENV::TEST_CERTS_DIR}/sm2-first-crt.pem
 CipherString = DEFAULT
 Ciphersuites = TLS_SM4_GCM_SM3
@@ -671,12 +680,53 @@ Enable_sm_tls13_strict = on
 MaxProtocol = TLSv1.3
 MinProtocol = TLSv1.3
 PrivateKey = ${ENV::TEST_CERTS_DIR}/sm2-first-key.pem
+SignatureAlgorithms = rsa_pss_rsae_sha256:sm2sig_sm3
 VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-chain-ca.crt
 VerifyMode = Peer
 
 [test-20]
 ExpectedCipher = TLS_SM4_GCM_SM3
-ExpectedHRR = Yes
 ExpectedResult = Success
+ExpectedServerCertType = SM2
+
+
+# ===========================================================
+
+[21-test sm_tls13_strict client with sm2 and rsa certs, server signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3]
+ssl_conf = 21-test sm_tls13_strict client with sm2 and rsa certs, server signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3-ssl
+
+[21-test sm_tls13_strict client with sm2 and rsa certs, server signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3-ssl]
+server = 21-test sm_tls13_strict client with sm2 and rsa certs, server signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3-server
+client = 21-test sm_tls13_strict client with sm2 and rsa certs, server signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3-client
+
+[21-test sm_tls13_strict client with sm2 and rsa certs, server signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3-server]
+Certificate = ${ENV::TEST_CERTS_DIR}/sm2-leaf.crt
+CipherString = DEFAULT
+Ciphersuites = TLS_SM4_GCM_SM3
+Enable_sm_tls13_strict = off
+Groups = SM2
+MaxProtocol = TLSv1.3
+MinProtocol = TLSv1.3
+PrivateKey = ${ENV::TEST_CERTS_DIR}/sm2-leaf.key
+SignatureAlgorithms = rsa_pss_rsae_sha256:sm2sig_sm3
+VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-root-cert.pem
+VerifyMode = Require
+
+[21-test sm_tls13_strict client with sm2 and rsa certs, server signature_algorithms with rsa_pss_rsae_sha256 and sm2sig_sm3-client]
+CipherString = DEFAULT
+Ciphersuites = TLS_SM4_GCM_SM3
+Enable_sm_tls13_strict = on
+MaxProtocol = TLSv1.3
+MinProtocol = TLSv1.3
+RSA.Certificate = ${ENV::TEST_CERTS_DIR}/ee-client-chain.pem
+RSA.PrivateKey = ${ENV::TEST_CERTS_DIR}/ee-key.pem
+SM2.Certificate = ${ENV::TEST_CERTS_DIR}/sm2-first-crt.pem
+SM2.PrivateKey = ${ENV::TEST_CERTS_DIR}/sm2-first-key.pem
+VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2-chain-ca.crt
+VerifyMode = Peer
+
+[test-21]
+ExpectedClientAlert = IllegalParameter
+ExpectedResult = ClientFail
 
 

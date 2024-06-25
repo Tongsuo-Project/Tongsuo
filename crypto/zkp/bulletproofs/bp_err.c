@@ -35,6 +35,8 @@ static const ERR_STRING_DATA ZKP_BP_str_reasons[] = {
     "r1cs constraint expression var not found"},
     {ERR_PACK(ERR_LIB_ZKP_BP, 0, ZKP_BP_R_R1CS_CONSTRAINT_EXPRESSION_VAR_TOO_LONG),
     "r1cs constraint expression var too long"},
+    {ERR_PACK(ERR_LIB_ZKP_BP, 0, ZKP_BP_R_RANGE_LEN_MUST_BE_POWER_OF_TWO),
+    "range len must be power of two"},
     {ERR_PACK(ERR_LIB_ZKP_BP, 0, ZKP_BP_R_TRANSCRIPT_INIT_FAILED),
     "transcript init failed"},
     {ERR_PACK(ERR_LIB_ZKP_BP, 0, ZKP_BP_R_VARIABLE_DUPLICATED),

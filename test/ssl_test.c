@@ -358,6 +358,18 @@ static int check_client_sign_type(HANDSHAKE_RESULT *result,
                      result->client_sign_type);
 }
 
+static int check_client_key_share(HANDSHAKE_RESULT *result,
+                                  SSL_TEST_CTX *test_ctx)
+{
+    if (test_ctx->expected_client_key_share == 0
+        || test_ctx->expected_client_key_share == result->client_key_share)
+        return 1;
+
+    TEST_error("Client key share type mismatch, %d vs %d\n",
+               test_ctx->expected_client_key_share, result->client_key_share);
+    return 0;
+}
+
 static int check_client_ca_names(HANDSHAKE_RESULT *result,
                                  SSL_TEST_CTX *test_ctx)
 {
@@ -422,6 +434,7 @@ static int check_test(HANDSHAKE_RESULT *result, SSL_TEST_CTX *test_ctx)
         ret &= check_client_cert_type(result, test_ctx);
         ret &= check_client_sign_hash(result, test_ctx);
         ret &= check_client_sign_type(result, test_ctx);
+        ret &= check_client_key_share(result, test_ctx);
         ret &= check_client_ca_names(result, test_ctx);
         ret &= check_hrr(result, test_ctx);
 #ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
@@ -484,14 +497,14 @@ static int test_handshake(int idx)
 #endif
 #ifndef OPENSSL_NO_NTLS
     if (test_ctx->method == SSL_TEST_METHOD_NTLS) {
-        server_ctx = SSL_CTX_new_ex(libctx, NULL, NTLS_server_method());
+        server_ctx = SSL_CTX_new_ex(libctx, NULL, TLS_server_method());
         if (!TEST_ptr(server_ctx)) {
             goto err;
         }
 
         if (test_ctx->extra.server.servername_callback !=
             SSL_TEST_SERVERNAME_CB_NONE) {
-            if (!TEST_ptr(server2_ctx = SSL_CTX_new_ex(libctx, NULL, NTLS_server_method())))
+            if (!TEST_ptr(server2_ctx = SSL_CTX_new_ex(libctx, NULL, TLS_server_method())))
                 goto err;
         }
 
@@ -501,7 +514,7 @@ static int test_handshake(int idx)
         }
 
         if (test_ctx->handshake_mode == SSL_TEST_HANDSHAKE_RESUME) {
-            resume_server_ctx = SSL_CTX_new_ex(libctx, NULL, NTLS_server_method());
+            resume_server_ctx = SSL_CTX_new_ex(libctx, NULL, TLS_server_method());
             resume_client_ctx = SSL_CTX_new_ex(libctx, NULL, NTLS_client_method());
 
             if (!TEST_ptr(resume_server_ctx)

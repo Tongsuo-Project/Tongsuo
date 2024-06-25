@@ -137,7 +137,7 @@ jobs:
     - name: config without FIPS
       if: matrix.platform.fips == 'no'
       run: |
-        ./config --banner=Configured --strict-warnings \
+        ./config --banner=Configured --strict-warnings enable-ntls \
                  --cross-compile-prefix=${{ matrix.platform.arch }}- \
                  ${{ matrix.platform.target }}
     - name: config dump

@@ -436,12 +436,25 @@ int X509_pubkey_digest(const X509 *data, const EVP_MD *type,
 int X509_digest(const X509 *cert, const EVP_MD *md, unsigned char *data,
                 unsigned int *len)
 {
-    if (EVP_MD_is_a(md, SN_sha1) && (cert->ex_flags & EXFLAG_SET) != 0
+    if (
+#ifdef SMTC_MODULE
+        EVP_MD_is_a(md, SN_sm3)
+#else
+        EVP_MD_is_a(md, SN_sha1)
+#endif
+            && (cert->ex_flags & EXFLAG_SET) != 0
             && (cert->ex_flags & EXFLAG_NO_FINGERPRINT) == 0) {
+#ifdef SMTC_MODULE
+        /* Asking for SM3 and we already computed it. */
+        if (len != NULL)
+            *len = sizeof(cert->sm3_hash);
+        memcpy(data, cert->sm3_hash, sizeof(cert->sm3_hash));
+#else
         /* Asking for SHA1 and we already computed it. */
         if (len != NULL)
             *len = sizeof(cert->sha1_hash);
         memcpy(data, cert->sha1_hash, sizeof(cert->sha1_hash));
+#endif
         return 1;
     }
     return ossl_asn1_item_digest_ex(ASN1_ITEM_rptr(X509), md, (char *)cert,
@@ -547,13 +560,25 @@ int X509_CRL_digest(const X509_CRL *data, const EVP_MD *type,
         ERR_raise(ERR_LIB_X509, ERR_R_PASSED_NULL_PARAMETER);
         return 0;
     }
-    if (EVP_MD_is_a(type, SN_sha1)
+    if (
+#ifdef SMTC_MODULE
+        EVP_MD_is_a(type, SN_sm3)
+#else
+        EVP_MD_is_a(type, SN_sha1)
+#endif
             && (data->flags & EXFLAG_SET) != 0
             && (data->flags & EXFLAG_NO_FINGERPRINT) == 0) {
+#ifdef SMTC_MODULE
+        /* Asking for SM3; always computed in CRL d2i. */
+        if (len != NULL)
+            *len = sizeof(data->sm3_hash);
+        memcpy(md, data->sm3_hash, sizeof(data->sm3_hash));
+#else
         /* Asking for SHA1; always computed in CRL d2i. */
         if (len != NULL)
             *len = sizeof(data->sha1_hash);
         memcpy(md, data->sha1_hash, sizeof(data->sha1_hash));
+#endif
         return 1;
     }
     return ossl_asn1_item_digest_ex(ASN1_ITEM_rptr(X509_CRL), type, (char *)data,

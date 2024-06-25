@@ -88,6 +88,7 @@ static size_t paillier_encrypt(PAILLIER_CTX *ctx,
     ret = size;
 
 err:
+    OPENSSL_free(buf);
     PAILLIER_CIPHERTEXT_free(r);
     return ret;
 }
@@ -150,6 +151,7 @@ static size_t paillier_add(PAILLIER_CTX *ctx, unsigned char **out,
     ret = size;
 
 err:
+    OPENSSL_free(buf);
     PAILLIER_CIPHERTEXT_free(c1);
     PAILLIER_CIPHERTEXT_free(c2);
     PAILLIER_CIPHERTEXT_free(r);
@@ -230,6 +232,7 @@ static size_t paillier_sub(PAILLIER_CTX *ctx, unsigned char **out,
     ret = size;
 
 err:
+    OPENSSL_free(buf);
     PAILLIER_CIPHERTEXT_free(c1);
     PAILLIER_CIPHERTEXT_free(c2);
     PAILLIER_CIPHERTEXT_free(r);

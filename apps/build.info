@@ -67,11 +67,23 @@ IF[{- !$disabled{'bulletproofs'} -}]
   $OPENSSLSRC=$OPENSSLSRC bulletproofs.c
 ENDIF
 
+IF[{- !$disabled{'smtc'} -}]
+  $OPENSSLSRC=$OPENSSLSRC mod.c
+ENDIF
+
+IF[{- !$disabled{'sm2_threshold'} -}]
+  $OPENSSLSRC=$OPENSSLSRC sm2_threshold.c
+ENDIF
+
 IF[{- !$disabled{apps} -}]
   PROGRAMS=openssl
   SOURCE[openssl]=$INITSRC $OPENSSLSRC
   INCLUDE[openssl]=.. ../include include
   DEPEND[openssl]=libapps.a ../libssl
+
+  IF[{- !$disabled{'smtc'} -}]
+    DEFINE[openssl]=SMTC_MODULE
+  ENDIF
 
   # The nocheck attribute is picked up by progs.pl as a signal not to look
   # at that file; some systems may have locked it as the output file, and

@@ -55,20 +55,19 @@ extern "C" {
     /* The default user id as specified in GM/T 0009-2012 */
 #  define SM2_DEFAULT_USERID "1234567812345678"
 
-    int ossl_sm2_compute_z_digest(uint8_t* out,
-        const EVP_MD* digest,
-        const uint8_t* id,
-        size_t id_len,
-        const EC_KEY* key);
-
-    /*
-     * SM2 signature operation. Computes Z and then signs H(Z || msg) using SM2
-     */
-    ECDSA_SIG* ossl_sm2_do_sign(const EC_KEY* key,
-        const EVP_MD* digest,
-        const uint8_t* id,
-        const size_t id_len,
-        const uint8_t* msg, size_t msg_len);
+int ossl_sm2_compute_z_digest(uint8_t *out,
+                              const EVP_MD *digest,
+                              const uint8_t *id,
+                              size_t id_len,
+                              const EC_KEY *key);
+/*
+ * SM2 signature operation. Computes Z and then signs H(Z || msg) using SM2
+ */
+ECDSA_SIG *ossl_sm2_do_sign(const EC_KEY *key,
+                            const EVP_MD *digest,
+                            const uint8_t *id,
+                            const size_t id_len,
+                            const uint8_t *msg, size_t msg_len);
 
     int ossl_sm2_do_verify(const EC_KEY* key,
         const EVP_MD* digest,
@@ -110,8 +109,12 @@ extern "C" {
         const uint8_t* ciphertext, size_t ciphertext_len,
         uint8_t* ptext_buf, size_t* ptext_len, int encdata_format);
 
-    const unsigned char* ossl_sm2_algorithmidentifier_encoding(int md_nid,
-        size_t* len);
+int ossl_sm2_ciphertext_decode(const uint8_t *ciphertext, size_t ciphertext_len,
+                               EC_POINT **C1p, uint8_t **C2p, size_t *C2_len,
+                               uint8_t **C3p, size_t *C3_len);
+
+const unsigned char *ossl_sm2_algorithmidentifier_encoding(int md_nid,
+                                                           size_t *len);
 
     int SM2_compute_key(void* out, size_t outlen, int initiator,
         const uint8_t* peer_id, size_t peer_id_len,

@@ -493,6 +493,7 @@ DH_R_NO_PARAMETERS_SET:107:no parameters set
 DH_R_NO_PRIVATE_VALUE:100:no private value
 DH_R_PARAMETER_ENCODING_ERROR:105:parameter encoding error
 DH_R_PEER_KEY_ERROR:111:peer key error
+DH_R_Q_TOO_LARGE:130:q too large
 DH_R_SHARED_INFO_ERROR:113:shared info error
 DH_R_UNABLE_TO_CHECK_GENERATOR:121:unable to check generator
 DSA_R_BAD_FFC_PARAMETERS:114:bad ffc parameters
@@ -887,6 +888,7 @@ PEM_R_UNSUPPORTED_CIPHER:113:unsupported cipher
 PEM_R_UNSUPPORTED_ENCRYPTION:114:unsupported encryption
 PEM_R_UNSUPPORTED_KEY_COMPONENTS:126:unsupported key components
 PEM_R_UNSUPPORTED_PUBLIC_KEY_TYPE:110:unsupported public key type
+PKCS12_R_CALLBACK_FAILED:115:callback failed
 PKCS12_R_CANT_PACK_STRUCTURE:100:cant pack structure
 PKCS12_R_CONTENT_TYPE_NOT_DATA:121:content type not data
 PKCS12_R_DECODE_ERROR:101:decode error
@@ -1728,7 +1730,18 @@ ZKP_BP_R_R1CS_CONSTRAINT_EXPRESSION_VAR_NOT_FOUND:112:\
 	r1cs constraint expression var not found
 ZKP_BP_R_R1CS_CONSTRAINT_EXPRESSION_VAR_TOO_LONG:113:\
 	r1cs constraint expression var too long
+ZKP_BP_R_RANGE_LEN_MUST_BE_POWER_OF_TWO:114:range len must be power of two
 ZKP_BP_R_TRANSCRIPT_INIT_FAILED:103:transcript init failed
 ZKP_BP_R_VARIABLE_DUPLICATED:107:variable duplicated
 ZKP_BP_R_VARIABLE_NAME_TOO_LONG:108:variable name too long
 ZKP_BP_R_WITNESS_INVALID:105:witness invalid
+ZKP_NIZK_R_TRANSCRIPT_INIT_FAILED:100:transcript init failed
+ZKP_R_BULLETPROOFS_RANGE_PROVE_FAILED:101:bulletproofs range prove failed
+ZKP_R_BULLETPROOFS_RANGE_VERIFY_FAILED:102:bulletproofs range verify failed
+ZKP_R_NIZK_PLAINTEXT_KNOWLEDGE_PROVE_FAILED:103:\
+	nizk plaintext knowledge prove failed
+ZKP_R_NIZK_PLAINTEXT_KNOWLEDGE_VERIFY_FAILED:104:\
+	nizk plaintext knowledge verify failed
+ZKP_R_RANGE_PROVE_FAILED:105:range prove failed
+ZKP_R_RANGE_VERIFY_FAILED:106:range verify failed
+ZKP_R_TRANSCRIPT_INIT_FAILED:100:transcript init failed

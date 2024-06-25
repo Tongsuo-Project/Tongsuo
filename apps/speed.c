@@ -8,7 +8,7 @@
  * https://www.openssl.org/source/license.html
  */
 /*
- * Copyright 2023 The Tongsuo Project Authors. All Rights Reserved.
+ * Copyright 2023-2024 The Tongsuo Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -81,6 +81,10 @@
 #include <openssl/dsa.h>
 #include "./testdsa.h"
 #include <openssl/modes.h>
+#ifndef OPENSSL_NO_SM2_THRESHOLD
+# include <crypto/sm2.h>
+# include <openssl/sm2_threshold.h>
+#endif
 
 #ifndef HAVE_FORK
 # if defined(OPENSSL_SYS_WINDOWS) || defined(OPENSSL_SYS_VXWORKS)
@@ -160,7 +164,11 @@ static const int *lengths = lengths_list;
 static const int aead_lengths_list[] = {
     2, 31, 136, 1024, 8 * 1024, 16 * 1024
 };
-
+#ifndef OPENSSL_NO_SM2
+static const int sm2_lengths_list[] = {
+    16, 64, 128, 256, 512, 1024
+};
+#endif
 #define START   0
 #define STOP    1
 
@@ -309,7 +317,8 @@ enum {
     D_CBC_RC5,
     D_CBC_128_AES, D_CBC_192_AES, D_CBC_256_AES,
     D_EVP, D_GHASH, D_RAND, D_EVP_CMAC, D_SM3, D_CBC_SM4,
-    D_EEA3_128_ZUC, D_EIA3_128_ZUC, ALGOR_NUM
+    D_EEA3_128_ZUC, D_EIA3_128_ZUC, D_SM2_ENCRYPT, D_SM2_DECRYPT,
+    D_SM2_THRESHOLD_DECRYPT, ALGOR_NUM
 };
 /* name of algorithms to test. MUST BE KEEP IN SYNC with above enum ! */
 static const char *names[ALGOR_NUM] = {
@@ -319,7 +328,7 @@ static const char *names[ALGOR_NUM] = {
     "rc5-cbc",
     "aes-128-cbc", "aes-192-cbc", "aes-256-cbc",
     "evp", "ghash", "rand", "cmac", "sm3", "sm4",
-    "zuc-128-eea3", "zuc-128-eia3"
+    "zuc-128-eea3", "zuc-128-eia3", "sm2-encrypt", "sm2-decrypt", "sm2-thr-dec",
 };
 
 /* list of configured algorithm (remaining), with some few alias */
@@ -349,6 +358,13 @@ static const OPT_PAIR doit_choices[] = {
 #ifndef OPENSSL_NO_ZUC
     {"zuc-128-eea3", D_EEA3_128_ZUC},
     {"zuc-128-eia3", D_EIA3_128_ZUC},
+#endif
+#ifndef OPENSSL_NO_SM2
+    {"sm2-encrypt", D_SM2_ENCRYPT},
+    {"sm2-decrypt", D_SM2_DECRYPT},
+# ifndef OPENSSL_NO_SM2_THRESHOLD
+    {"sm2-threshold-decrypt", D_SM2_THRESHOLD_DECRYPT},
+# endif
 #endif
 };
 
@@ -480,6 +496,10 @@ static const OPT_PAIR sm2_choices[SM2_NUM] = {
 # define SM2_ID        "TLSv1.3+GM+Cipher+Suite"
 # define SM2_ID_LEN    sizeof("TLSv1.3+GM+Cipher+Suite") - 1
 static double sm2_results[SM2_NUM][2];    /* 2 ops: sign then verify */
+
+# ifndef OPENSSL_NO_SM2_THRESHOLD
+static double sm2_threshold_results[SM2_NUM][2];   /* 2 ops: sign then decrypt */
+# endif
 #endif /* OPENSSL_NO_SM2 */
 
 #ifndef OPENSSL_NO_EC_ELGAMAL
@@ -652,6 +672,14 @@ typedef struct loopargs_st {
     EVP_MD_CTX *sm2_ctx[SM2_NUM];
     EVP_MD_CTX *sm2_vfy_ctx[SM2_NUM];
     EVP_PKEY *sm2_pkey[SM2_NUM];
+    EVP_PKEY_CTX *sm2_enc_pctx;
+    EVP_PKEY_CTX *sm2_dec_pctx;
+# ifndef OPENSSL_NO_SM2_THRESHOLD
+    EVP_PKEY *pubkey;
+    EVP_PKEY *pkeyA;
+    EVP_PKEY *pkeyB;
+    EVP_PKEY *temp_key;
+#endif
 #endif
 #ifndef OPENSSL_NO_EC_ELGAMAL
     EC_KEY *ec_elgamal_key[EC_ELGAMAL_NUM];
@@ -696,6 +724,11 @@ static char *evp_hmac_name = NULL;
 static const char *evp_md_name = NULL;
 static char *evp_mac_ciphername = "aes-128-cbc";
 static char *evp_cmac_name = NULL;
+
+#ifndef OPENSSL_NO_SM2_THRESHOLD
+int sm2_threshold_keygen(EVP_PKEY **key1, EVP_PKEY **key2, EVP_PKEY **pubkey,
+                         EVP_PKEY **temp_key);
+#endif
 
 static int have_md(const char *name)
 {
@@ -1307,6 +1340,157 @@ static int SM2_verify_loop(void *args)
     }
     return count;
 }
+
+static int SM2_encrypt_loop(void *args)
+{
+    loopargs_t *tempargs = *(loopargs_t **)args;
+    unsigned char *buf = tempargs->buf, *buf2 = tempargs->buf2;
+    EVP_PKEY_CTX *pctx = tempargs->sm2_enc_pctx;
+    int count;
+
+    for (count = 0; COND(c[algindex][testnum]); count++) {
+        if (EVP_PKEY_encrypt(pctx, buf2, &tempargs->outlen[0], buf, (size_t)lengths[testnum])
+            <= 0) {
+            BIO_printf(bio_err, "SM2 encrypt failure\n");
+            ERR_print_errors(bio_err);
+            break;
+        }
+    }
+
+    return count;
+}
+
+static int SM2_decrypt_loop(void *args)
+{
+    loopargs_t *tempargs = *(loopargs_t **)args;
+    unsigned char *buf = tempargs->buf, *buf2 = tempargs->buf2;
+    EVP_PKEY_CTX *pctx = tempargs->sm2_dec_pctx;
+    size_t outlen = tempargs->buflen;
+    int count;
+
+    for (count = 0; COND(c[algindex][testnum]); count++) {
+        if (EVP_PKEY_decrypt(pctx, buf, &outlen, buf2, tempargs->outlen[0])
+            <= 0) {
+            BIO_printf(bio_err, "SM2 decrypt failure\n");
+            ERR_print_errors(bio_err);
+            break;
+        }
+    }
+
+    return count;
+}
+# ifndef OPENSSL_NO_SM2_THRESHOLD
+static long sm2_threshold_c[2];
+
+static int SM2_THRESHOLD_decrypt_loop(void *args)
+{
+    loopargs_t *tempargs = *(loopargs_t **)args;
+    EVP_PKEY *pkeyA = tempargs->pkeyA;
+    EVP_PKEY *pkeyB = tempargs->pkeyB;
+    unsigned char *ct = tempargs->buf2;
+    size_t ct_len = tempargs->outlen[0];
+    int count;
+    EC_POINT *T1 = NULL, *T2 = NULL;
+    unsigned char *pt = NULL;
+    size_t pt_len = 0;
+    BIGNUM *w = NULL;
+
+    for (count = 0; COND(c[algindex][testnum]); count++) {
+
+        if (!SM2_THRESHOLD_decrypt1(ct, ct_len, &w, &T1)) {
+            BIO_printf(bio_err, "SM2 threshold decrypt1 failure\n");
+            ERR_print_errors(bio_err);
+            count = -1;
+            break;
+        }
+
+        if (!SM2_THRESHOLD_decrypt2(pkeyB, T1, &T2)) {
+            BIO_printf(bio_err, "SM2 threshold decrypt2 failure\n");
+            ERR_print_errors(bio_err);
+            count = -1;
+            break;
+        }
+
+        if (!SM2_THRESHOLD_decrypt3(pkeyA, ct, ct_len, w, T2, &pt, &pt_len)) {
+            BIO_printf(bio_err, "SM2 threshold decrypt3 failure\n");
+            ERR_print_errors(bio_err);
+            count = -1;
+            break;
+        }
+
+        BN_free(w);
+        w = NULL;
+        EC_POINT_free(T1);
+        T1 = NULL;
+        EC_POINT_free(T2);
+        T2 = NULL;
+        OPENSSL_free(pt);
+        pt = NULL;
+    }
+
+    BN_free(w);
+    EC_POINT_free(T1);
+    EC_POINT_free(T2);
+    OPENSSL_free(pt);
+
+    return count;
+}
+
+static int SM2_THRESHOLD_sign_loop(void *args)
+{
+    loopargs_t *tempargs = *(loopargs_t **)args;
+    unsigned char *buf = tempargs->buf;
+    EVP_PKEY *pkeyA = tempargs->pkeyA;
+    EVP_PKEY *pkeyB = tempargs->pkeyB;
+    EVP_PKEY *pubkey = tempargs->pubkey;
+    EVP_PKEY *temp_key = tempargs->temp_key;
+    int count;
+    unsigned char digest[EVP_MAX_MD_SIZE];
+    unsigned char *sigbuf = NULL, *final_sig = NULL;
+    size_t dlen = 0, siglen = 0, final_siglen = 0;
+
+    for (count = 0; COND(sm2_threshold_c[0]); count++) {
+        if (!SM2_THRESHOLD_sign1_oneshot(pubkey, EVP_sm3(),
+                                         (const uint8_t *)SM2_DEFAULT_USERID,
+                                         strlen(SM2_DEFAULT_USERID), buf, 20,
+                                         digest, &dlen)) {
+            BIO_printf(bio_err, "SM2 threshold sign1 failure\n");
+            ERR_print_errors(bio_err);
+            count = -1;
+            break;
+        }
+
+        if (!SM2_THRESHOLD_sign2(pkeyB, temp_key, digest, dlen, &sigbuf,
+                                 &siglen)) {
+            BIO_printf(bio_err, "SM2 threshold sign2 failure\n");
+            ERR_print_errors(bio_err);
+            count = -1;
+            break;
+        }
+
+        if (!SM2_THRESHOLD_sign3(pkeyA, temp_key, sigbuf, siglen, &final_sig,
+                                 &final_siglen)) {
+            BIO_printf(bio_err, "SM2 threshold sign3 failure\n");
+            ERR_print_errors(bio_err);
+            count = -1;
+            break;
+        }
+
+        memcpy(tempargs->buf2, final_sig, final_siglen);
+        tempargs->sigsize = final_siglen;
+
+        OPENSSL_free(sigbuf);
+        sigbuf = NULL;
+        OPENSSL_free(final_sig);
+        final_sig = NULL;
+    }
+
+    OPENSSL_free(sigbuf);
+    OPENSSL_free(final_sig);
+
+    return count;
+}
+# endif
 #endif                         /* OPENSSL_NO_SM2 */
 
 #ifndef OPENSSL_NO_EC_ELGAMAL
@@ -1870,6 +2054,9 @@ int speed_main(int argc, char **argv)
         {"CurveSM2", NID_sm2, 256}
     };
     uint8_t sm2_doit[SM2_NUM] = { 0 };
+# ifndef OPENSSL_NO_SM2_THRESHOLD
+    uint8_t sm2_threshold_doit[SM2_NUM] = { 0 };
+# endif
 #endif
 #ifndef OPENSSL_NO_EC_ELGAMAL
     static const EC_CURVE test_ec_elgamal_curves[] = {
@@ -1939,7 +2126,7 @@ int speed_main(int argc, char **argv)
 # endif
     };
     int bulletproofs_doit[BULLETPROOFS_NUM] = { 0 };
-    BP_TRANSCRIPT *bp_transcript[BULLETPROOFS_NUM][BULLETPROOFS_BITS_NUM][BULLETPROOFS_AGG_MAX_NUM] = { 0 };
+    ZKP_TRANSCRIPT *bp_transcript[BULLETPROOFS_NUM][BULLETPROOFS_BITS_NUM][BULLETPROOFS_AGG_MAX_NUM] = { 0 };
     BP_PUB_PARAM *bp_pp[BULLETPROOFS_NUM][BULLETPROOFS_BITS_NUM][BULLETPROOFS_AGG_MAX_NUM] = { 0 };
     BP_WITNESS *bp_witness[BULLETPROOFS_NUM][BULLETPROOFS_BITS_NUM][BULLETPROOFS_AGG_MAX_NUM][3] = { 0 };
     BP_RANGE_CTX *bp_ctx[BULLETPROOFS_NUM][BULLETPROOFS_BITS_NUM][BULLETPROOFS_AGG_MAX_NUM][3] = { 0 };
@@ -2203,6 +2390,16 @@ int speed_main(int argc, char **argv)
             sm2_doit[i] = 2;
             continue;
         }
+        if (strcmp(algo, "sm2-crypt") == 0) {
+            doit[D_SM2_DECRYPT] = 1;
+            continue;
+        }
+# ifndef OPENSSL_NO_SM2_THRESHOLD
+        if (strcmp(algo, "sm2-threshold-sign") == 0) {
+            memset(sm2_threshold_doit, 1, sizeof(sm2_threshold_doit));
+            continue;
+        }
+# endif
 #endif
 #ifndef OPENSSL_NO_EC_ELGAMAL
         if (strcmp(algo, "ecelgamal") == 0
@@ -2403,6 +2600,9 @@ int speed_main(int argc, char **argv)
         memset(eddsa_doit, 1, sizeof(eddsa_doit));
 #ifndef OPENSSL_NO_SM2
         memset(sm2_doit, 1, sizeof(sm2_doit));
+# ifndef OPENSSL_NO_SM2_THRESHOLD
+        memset(sm2_threshold_doit, 1, sizeof(sm2_threshold_doit));
+# endif
 #endif
     }
     for (i = 0; i < ALGOR_NUM; i++)
@@ -3507,6 +3707,245 @@ int speed_main(int argc, char **argv)
     }
 
 #ifndef OPENSSL_NO_SM2
+    if (doit[D_SM2_DECRYPT]) {
+        int st = 1;
+        doit[D_SM2_ENCRYPT] = 1;
+        lengths = sm2_lengths_list;
+        size_num = OSSL_NELEM(sm2_lengths_list);
+
+        for (i = 0; st && i < loopargs_len; i++) {
+            EVP_PKEY *pkey = NULL, *pubkey = NULL;
+            OSSL_PARAM *pub_params = NULL;
+            EVP_PKEY_CTX *ctx = NULL;
+            st = 0;
+
+            pkey = EVP_PKEY_Q_keygen(app_get0_libctx(), app_get0_propq(), "SM2");
+            if (pkey == NULL)
+                break;
+
+            if (!EVP_PKEY_todata(pkey, EVP_PKEY_PUBLIC_KEY, &pub_params)) {
+                EVP_PKEY_free(pkey);
+                break;
+            }
+
+            ctx = EVP_PKEY_CTX_new_from_name(NULL, "SM2", NULL);
+            if (ctx == NULL) {
+                EVP_PKEY_free(pkey);
+                break;
+            }
+
+            if (EVP_PKEY_fromdata_init(ctx) <= 0
+                || EVP_PKEY_fromdata(ctx, &pubkey, EVP_PKEY_PUBLIC_KEY,
+                                     pub_params) <= 0) {
+                EVP_PKEY_free(pkey);
+                EVP_PKEY_CTX_free(ctx);
+                break;
+            }
+
+            EVP_PKEY_CTX_free(ctx);
+
+            loopargs[i].sm2_enc_pctx = EVP_PKEY_CTX_new(pubkey, NULL);
+            if (loopargs[i].sm2_enc_pctx == NULL) {
+                EVP_PKEY_free(pkey);
+                break;
+            }
+
+            loopargs[i].sm2_dec_pctx = EVP_PKEY_CTX_new(pkey, NULL);
+            if (loopargs[i].sm2_dec_pctx == NULL) {
+                EVP_PKEY_free(pkey);
+                break;
+            }
+
+            EVP_PKEY_free(pkey);
+
+            if (EVP_PKEY_encrypt_init(loopargs[i].sm2_enc_pctx) <= 0)
+                break;
+
+            if (EVP_PKEY_decrypt_init(loopargs[i].sm2_dec_pctx) <= 0)
+                break;
+
+            st = 1;
+        }
+
+        for (testnum = 0; st && testnum < size_num; testnum++) {
+            algindex = D_SM2_ENCRYPT;
+            print_message(names[D_SM2_ENCRYPT], c[D_SM2_ENCRYPT][testnum],
+                          lengths[testnum], seconds.sym);
+            Time_F(START);
+            count = run_benchmark(async_jobs, SM2_encrypt_loop, loopargs);
+            d = Time_F(STOP);
+            print_result(D_SM2_ENCRYPT, testnum, count, d);
+
+            algindex = D_SM2_DECRYPT;
+            print_message(names[D_SM2_DECRYPT],
+                          c[D_SM2_DECRYPT][testnum],
+                          lengths[testnum], seconds.sym);
+            Time_F(START);
+            count =
+                run_benchmark(async_jobs, SM2_decrypt_loop, loopargs);
+            d = Time_F(STOP);
+            print_result(D_SM2_DECRYPT, testnum, count, d);
+        }
+
+        for (i = 0; i < loopargs_len; i++) {
+            EVP_PKEY_CTX_free(loopargs[i].sm2_enc_pctx);
+            loopargs[i].sm2_enc_pctx = NULL;
+            EVP_PKEY_CTX_free(loopargs[i].sm2_dec_pctx);
+            loopargs[i].sm2_dec_pctx = NULL;
+        }
+    }
+#ifndef OPENSSL_NO_SM2_THRESHOLD
+    if (doit[D_SM2_THRESHOLD_DECRYPT]) {
+        int st = 1;
+        doit[D_SM2_ENCRYPT] = 1;
+        lengths = sm2_lengths_list;
+        size_num = OSSL_NELEM(sm2_lengths_list);
+
+        for (i = 0; st && i < loopargs_len; i++) {
+            EVP_PKEY *key1 = NULL, *key2 = NULL, *pubkey = NULL;
+            EVP_PKEY_CTX *pctx = NULL;
+
+            st = 0;
+
+            st = sm2_threshold_keygen(&key1, &key2, &pubkey, NULL);
+
+            if (st == 0)
+                break;
+
+            loopargs[i].pkeyA = key1;
+            loopargs[i].pkeyB = key2;
+            loopargs[i].pubkey = pubkey;
+
+            pctx = EVP_PKEY_CTX_new(pubkey, NULL);
+            if (pctx == NULL)
+                break;
+
+            loopargs[i].sm2_enc_pctx = pctx;
+
+            if (EVP_PKEY_encrypt_init(pctx) <= 0)
+                break;
+
+            st = 1;
+        }
+
+        for (testnum = 0; st && testnum < size_num; testnum++) {
+            algindex = D_SM2_ENCRYPT;
+            print_message(names[D_SM2_ENCRYPT], c[D_SM2_ENCRYPT][testnum],
+                          lengths[testnum], seconds.sym);
+            Time_F(START);
+            count = run_benchmark(async_jobs, SM2_encrypt_loop, loopargs);
+            d = Time_F(STOP);
+            print_result(D_SM2_ENCRYPT, testnum, count, d);
+
+            algindex = D_SM2_THRESHOLD_DECRYPT;
+            print_message(names[D_SM2_THRESHOLD_DECRYPT],
+                          c[D_SM2_THRESHOLD_DECRYPT][testnum],
+                          lengths[testnum], seconds.sym);
+            Time_F(START);
+            count =
+                run_benchmark(async_jobs, SM2_THRESHOLD_decrypt_loop, loopargs);
+            d = Time_F(STOP);
+            print_result(D_SM2_THRESHOLD_DECRYPT, testnum, count, d);
+        }
+
+        for (i = 0; i < loopargs_len; i++) {
+            EVP_PKEY_free(loopargs[i].pkeyA);
+            loopargs[i].pkeyA = NULL;
+            EVP_PKEY_free(loopargs[i].pkeyB);
+            loopargs[i].pkeyB = NULL;
+            EVP_PKEY_free(loopargs[i].pubkey);
+            loopargs[i].pubkey = NULL;
+            EVP_PKEY_CTX_free(loopargs[i].sm2_enc_pctx);
+            loopargs[i].sm2_enc_pctx = NULL;
+        }
+    }
+
+    /* SM2 threshold sign */
+    if (sm2_threshold_doit[0]) {
+        int st = 1;
+
+        for (i = 0; st && i < loopargs_len; i++) {
+            EVP_PKEY *key1 = NULL, *key2 = NULL, *pubkey = NULL, *temp_key = NULL;
+
+            st = sm2_threshold_keygen(&key1, &key2, &pubkey, &temp_key);
+
+            if (st == 0)
+                break;
+
+            loopargs[i].pkeyA = key1;
+            loopargs[i].pkeyB = key2;
+            loopargs[i].pubkey = pubkey;
+            loopargs[i].temp_key = temp_key;
+            loopargs[i].sm2_pkey[0] = pubkey;
+
+            loopargs[i].sm2_vfy_ctx[0] = EVP_MD_CTX_new();
+            if (loopargs[i].sm2_vfy_ctx[0] == NULL)
+                break;
+
+            if (!EVP_DigestVerifyInit(loopargs[i].sm2_vfy_ctx[0], NULL,
+                                      EVP_sm3(), NULL, pubkey))
+                break;
+        }
+
+        pkey_print_message("sign", "SM2_THRESHOLD",
+                            sm2_threshold_c[0],
+                            sm2_curves[0].bits, seconds.sm2);
+        Time_F(START);
+        count = run_benchmark(async_jobs, SM2_THRESHOLD_sign_loop, loopargs);
+        d = Time_F(STOP);
+
+        BIO_printf(bio_err, mr ? "+R25:%ld:%u:%s:%.2f\n"
+                    : "%ld %u bits %s sign in %.2fs \n", count,
+                    sm2_curves[0].bits, "SM2_THRESHOLD", d);
+        sm2_threshold_results[0][0] = (double)count / d;
+
+
+        testnum = 0;
+        pkey_print_message("verify", sm2_curves[0].name,
+                            sm2_c[0][1],
+                            sm2_curves[0].bits, seconds.sm2);
+        Time_F(START);
+        count = run_benchmark(async_jobs, SM2_verify_loop, loopargs);
+        d = Time_F(STOP);
+        BIO_printf(bio_err,
+                    mr ? "+R26:%ld:%u:%s:%.2f\n"
+                    : "%ld %u bits %s verify in %.2fs\n",
+                    count, sm2_curves[0].bits,
+                    sm2_curves[0].name, d);
+        sm2_results[0][1] = (double)count / d;
+
+        for (i = 0; i < loopargs_len; i++) {
+            EVP_PKEY_free(loopargs[i].pkeyA);
+            loopargs[i].pkeyA = NULL;
+            EVP_PKEY_free(loopargs[i].pkeyB);
+            loopargs[i].pkeyB = NULL;
+            EVP_PKEY_free(loopargs[i].pubkey);
+            loopargs[i].pubkey = NULL;
+            EVP_PKEY_free(loopargs[i].temp_key);
+            loopargs[i].temp_key = NULL;
+            loopargs[i].sm2_pkey[0] = NULL;
+            EVP_MD_CTX_free(loopargs[i].sm2_vfy_ctx[0]);
+            loopargs[i].sm2_vfy_ctx[0] = NULL;
+        }
+
+        if (mr) {
+            printf("+F13:%u:%u:%s:%f\n",
+                   0, sm2_curves[0].bits, sm2_curves[0].name,
+                   sm2_threshold_results[0][0]);
+        } else {
+            printf("%28ssign    verify    sign/s verify/s\n", " ");
+            printf("%4u bits SM2_THRESHOLD %8.4fs  %16.1f\n",
+                   sm2_curves[0].bits,
+                   1.0 / sm2_threshold_results[0][0],
+                   sm2_threshold_results[0][0]);
+            printf("%4u bits SM2 (%s) %16.4fs %16.1f\n",
+                   sm2_curves[0].bits, sm2_curves[0].name,
+                   1.0 / sm2_results[0][1],
+                   sm2_results[0][1]);
+        }
+    }
+#endif
+
     for (testnum = 0; testnum < SM2_NUM; testnum++) {
         int st = 1;
         EVP_PKEY *sm2_pkey = NULL;
@@ -3845,7 +4284,7 @@ int speed_main(int argc, char **argv)
             EC_KEY_precompute_mult(loopargs[i].ec_elgamal_key[testnum], NULL);
             EC_KEY_generate_key(loopargs[i].ec_elgamal_key[testnum]);
 
-            ectx = EC_ELGAMAL_CTX_new(loopargs[i].ec_elgamal_key[testnum],
+            ectx = EC_ELGAMAL_CTX_new(loopargs[i].ec_elgamal_key[testnum], NULL,
                                       ec_elgamal_flag[testnum]);
             if (ectx == NULL) {
                 st = 0;
@@ -4228,7 +4667,7 @@ int speed_main(int argc, char **argv)
                 if (bp_pp[testnum][m][n] == NULL)
                     goto end;
 
-                if (!(bp_transcript[testnum][m][n] = BP_TRANSCRIPT_new(BP_TRANSCRIPT_METHOD_sha256(), "speed-test")))
+                if (!(bp_transcript[testnum][m][n] = ZKP_TRANSCRIPT_new(ZKP_TRANSCRIPT_METHOD_sha256(), "speed-test")))
                     goto end;
 
                 bp_proof[testnum][m][n] = BP_RANGE_PROOF_new(bp_pp[testnum][m][n]);
@@ -4746,7 +5185,7 @@ int speed_main(int argc, char **argv)
                     BP_PUB_PARAM_free(bp_pp[i][m][n]);
 
                 if (bp_transcript[i][m][n] != NULL)
-                    BP_TRANSCRIPT_free(bp_transcript[i][m][n]);
+                    ZKP_TRANSCRIPT_free(bp_transcript[i][m][n]);
             }
         }
     }
@@ -5250,3 +5689,76 @@ static void multiblock_speed(const EVP_CIPHER *evp_cipher, int lengths_single,
     OPENSSL_free(out);
     EVP_CIPHER_CTX_free(ctx);
 }
+
+#ifndef OPENSSL_NO_SM2_THRESHOLD
+int sm2_threshold_keygen(EVP_PKEY **key1, EVP_PKEY **key2, EVP_PKEY **pubkey,
+                         EVP_PKEY **temp_key)
+{
+    int ok = 0;
+    EVP_PKEY *pkey1 = NULL, *pkey2 = NULL, *pubkey1 = NULL, *pubkey2 = NULL;
+    EVP_PKEY *complete_key1 = NULL, *complete_key2 = NULL, *temp = NULL;
+
+    pkey1 = EVP_PKEY_Q_keygen(app_get0_libctx(), app_get0_propq(), "SM2");
+    if (pkey1 == NULL)
+        goto end;
+
+    pkey2 = EVP_PKEY_Q_keygen(app_get0_libctx(), app_get0_propq(), "SM2");
+    if (pkey2 == NULL)
+        goto end;
+
+    if (temp_key) {
+        temp = EVP_PKEY_Q_keygen(app_get0_libctx(), app_get0_propq(), "SM2");
+        if (temp == NULL)
+            goto end;
+    }
+
+    pubkey1 = SM2_THRESHOLD_derive_partial_pubkey(pkey1);
+    if (pubkey1 == NULL)
+        goto end;
+
+    pubkey2 = SM2_THRESHOLD_derive_partial_pubkey(pkey2);
+    if (pubkey2 == NULL)
+        goto end;
+
+    complete_key1 = SM2_THRESHOLD_derive_complete_pubkey(pkey1, pubkey2);
+    if (complete_key1 == NULL)
+        goto end;
+
+    complete_key2 = SM2_THRESHOLD_derive_complete_pubkey(pkey2, pubkey1);
+    if (complete_key2 == NULL)
+        goto end;
+
+    if (!EVP_PKEY_eq(complete_key1, complete_key2))
+        goto end;
+
+    EVP_PKEY_free(*key1);
+    *key1 = pkey1;
+    pkey1 = NULL;
+
+    EVP_PKEY_free(*key2);
+    *key2 = pkey2;
+    pkey2 = NULL;
+
+    EVP_PKEY_free(*pubkey);
+    *pubkey = complete_key1;
+    complete_key1 = NULL;
+
+    if (temp_key) {
+        EVP_PKEY_free(*temp_key);
+        *temp_key = temp;
+        temp = NULL;
+    }
+
+    ok = 1;
+end:
+    EVP_PKEY_free(pkey1);
+    EVP_PKEY_free(pkey2);
+    EVP_PKEY_free(pubkey1);
+    EVP_PKEY_free(pubkey2);
+    EVP_PKEY_free(temp);
+    EVP_PKEY_free(complete_key1);
+    EVP_PKEY_free(complete_key2);
+
+    return ok;
+}
+#endif

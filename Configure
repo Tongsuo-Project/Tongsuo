@@ -271,6 +271,9 @@ $config{builddir} = abs2rel($blddir, $blddir);
 # echo -n 'holy hand grenade of antioch' | openssl sha256
 $config{FIPSKEY} =
     'f4556650ac31d35461610bac4ed81b1a181b2d8a43ea2854cbae22ca74560813';
+# echo -n "Tongsuo in hand, no worries about compliance" | tongsuo sm3
+$config{SMTCKEY} =
+    '5b3d9ad84fd72961e63f27a3d5da2bb663e2ed9c7b761b8ad6d041ebc68f5098';
 
 # Collect reconfiguration information if needed
 my @argvcopy=@ARGV;
@@ -351,6 +354,8 @@ $config{tongsuo_prerelease} =
     defined $version{TONGSUO_PRE_RELEASE_TAG} ? "-$version{TONGSUO_PRE_RELEASE_TAG}" : '';
 $config{tongsuo_version} = "$config{tongsuo_major}.$config{tongsuo_minor}.$config{tongsuo_patch}";
 $config{tongsuo_full_version} = "$config{tongsuo_version}$config{tongsuo_prerelease}";
+
+$config{tongsuo_smtc_info} = $version{TONGSUO_SMTC_INFO};
 
 die "erroneous version information in VERSION.dat: ",
     "$config{version}, $config{shlib_version}\n"
@@ -465,6 +470,8 @@ my @disablables = (
     "rc5",
     "rdrand",
     "rfc3779",
+    "smtc",
+    "smtc-debug",
     "scrypt",
     "sctp",
     "secure-memory",
@@ -472,6 +479,7 @@ my @disablables = (
     "siphash",
     "siv",
     "sm2",
+    "sm2_threshold",
     "sm3",
     "sm4",
     "zuc",
@@ -508,6 +516,9 @@ my @disablables = (
     "cert-compression",
     "paillier",
     "bulletproofs",
+    "nizk",
+    "zkp-gadget",
+    "zkp-transcript",
     "bn-method"
     );
 foreach my $proto ((@tls, @dtls))
@@ -556,6 +567,7 @@ our %disabled = ( # "what"         => "comment"
                   "ntls"                => "default",
                   "rc5"                 => "default",
                   "sctp"                => "default",
+                  "sm2_threshold"       => "default",
                   "ssl3"                => "default",
                   "ssl3-method"         => "default",
                   "trace"               => "default",
@@ -572,7 +584,12 @@ our %disabled = ( # "what"         => "comment"
                   "cert-compression"    => "default",
                   "paillier"            => "default",
                   "bulletproofs"        => "default",
+                  "nizk"                => "default",
+                  "zkp-gadget"          => "default",
+                  "zkp-transcript"      => "default",
                   "bn-method"           => "default",
+                  "smtc"                 => "default",
+                  "smtc-debug"           => "default",
                 );
 
 # Note: => pair form used for aesthetics, not to truly make a hash table
@@ -600,6 +617,7 @@ my @disable_cascades = (
     "ssl3-method"       => [ "ssl3" ],
     "zlib"              => [ "zlib-dynamic" ],
     "ec"                => [ "ec2m", "ecdsa", "ecdh", "sm2" ],
+    "sm2"               => [ "sm2_threshold" ],
     "ec_elgamal"        => [ "twisted_ec_elgamal" ],
     "dgram"             => [ "dtls", "sctp" ],
     "sock"              => [ "dgram" ],
@@ -657,7 +675,10 @@ my @disable_cascades = (
 
     "fips"              => [ "fips-securitychecks", "acvp-tests" ],
 
-    "deprecated-3.0"    => [ "engine", "srp" ]
+    "deprecated-3.0"    => [ "engine", "srp" ],
+    # SMTC does not support ct for now
+    # SMTC only support builtin module for now
+    sub { !$disabled{"smtc"}} => [ "ct", "module" ],
     );
 
 # Avoid protocol support holes.  Also disable all versions below N, if version
@@ -775,7 +796,7 @@ my %cmdvars = ();               # Stores FOO='blah' type arguments
 my %unsupported_options = ();
 my %deprecated_options = ();
 # If you change this, update apps/version.c
-my @known_seed_sources = qw(getrandom devrandom os egd none rdcpu librandom);
+my @known_seed_sources = qw(getrandom devrandom os egd none rdcpu librandom rtc);
 my @seed_sources = ();
 while (@argvcopy)
         {
@@ -1000,6 +1021,16 @@ while (@argvcopy)
                         die "FIPS key too long (64 bytes max)\n"
                            if length $1 > 64;
                         }
+                elsif (/^--smtc-key=(.*)$/)
+                        {
+                        $user{SMTCKEY}=lc($1);
+                        die "Non-hex character in SMTC key\n"
+                           if $user{SMTCKEY} =~ /[^a-f0-9]/;
+                        die "SMTC key must have even number of characters\n"
+                           if length $1 & 1;
+                        die "SMTC key too long (64 bytes max)\n"
+                           if length $1 > 64;
+                        }
                 elsif (/^--banner=(.*)$/)
                         {
                         $banner = $1 . "\n";
@@ -1097,14 +1128,49 @@ if (!defined($disabled{'ec_elgamal'})) {
     $config{api}=$apitable->{"1.1.1"};
 }
 
+if (!defined($disabled{'twisted_ec_elgamal'})) {
+    die "twisted_ec_elgamal only supports api with 1.1.1\n"
+        if ($config{api} && $config{api} != $apitable->{"1.1.1"});
+    die "twisted_ec_elgamal depends on ec_elgamal\n"
+        if (defined($disabled{'ec_elgamal'}));
+}
+
 if (!defined($disabled{'bulletproofs'})) {
     die "bulletproofs only supports api with 1.1.1\n"
         if ($config{api} && $config{api} != $apitable->{"1.1.1"});
     $config{api}=$apitable->{"1.1.1"};
+    delete $disabled{'zkp-transcript'};
+}
+
+if (!defined($disabled{'nizk'})) {
+    die "nizk only supports api with 1.1.1\n"
+        if ($config{api} && $config{api} != $apitable->{"1.1.1"});
+    $config{api}=$apitable->{"1.1.1"};
+    delete $disabled{'zkp-transcript'};
+    die "nizk depends on twisted_ec_elgamal\n"
+        if (defined($disabled{'twisted_ec_elgamal'}));
+}
+
+if (!defined($disabled{'zkp-gadget'})) {
+    die "zkp-gadget only supports api with 1.1.1\n"
+        if ($config{api} && $config{api} != $apitable->{"1.1.1"});
+    die "zkp-gadget depends on bulletproofs\n"
+        if (defined($disabled{'bulletproofs'}));
+    die "zkp-gadget depends on nizk\n"
+        if (defined($disabled{'nizk'}));
+    die "zkp-gadget depends on twisted_ec_elgamal\n"
+        if (defined($disabled{'twisted_ec_elgamal'}));
+    delete $disabled{'zkp-transcript'};
 }
 
 if (!defined($disabled{'bn-method'})) {
     die "bn-method only supports api with 1.1.1\n"
+        if ($config{api} && $config{api} != $apitable->{"1.1.1"});
+    $config{api}=$apitable->{"1.1.1"};
+}
+
+if (!defined($disabled{'sm2_threshold'})) {
+    die "sm2_threshold only supports api with 1.1.1\n"
         if ($config{api} && $config{api} != $apitable->{"1.1.1"});
     $config{api}=$apitable->{"1.1.1"};
 }

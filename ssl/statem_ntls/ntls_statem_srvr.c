@@ -1,6 +1,6 @@
 /*
- * Copyright 2016-2022 The OpenSSL Project Authors. All Rights Reserved.
- * Copyright 2022 The Tongsuo Project Authors. All Rights Reserved.
+ * Copyright 2016-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2023 The Tongsuo Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -749,31 +749,16 @@ static void ssl_check_for_safari(SSL *s, const CLIENTHELLO_MSG *hello)
                                              ext_len);
 }
 
-#define RENEG_OPTIONS_OK(options) \
-    ((options & SSL_OP_NO_RENEGOTIATION) == 0 \
-     && (options & SSL_OP_ALLOW_CLIENT_RENEGOTIATION) != 0)
-
 MSG_PROCESS_RETURN tls_process_client_hello_ntls(SSL *s, PACKET *pkt)
 {
     PACKET session_id, compression, extensions, cookie;
     static const unsigned char null_compression = 0;
     CLIENTHELLO_MSG *clienthello = NULL;
 
-    /* Check if this is actually an unexpected renegotiation ClientHello */
-    if (s->renegotiate == 0 && !SSL_IS_FIRST_HANDSHAKE(s)) {
-        if (!ossl_assert(!SSL_IS_TLS13(s))) {
-            SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
-            goto err;
-        }
-        if (!RENEG_OPTIONS_OK(s->options)
-                || (!s->s3.send_connection_binding
-                    && (s->options
-                        & SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION) == 0)) {
-            ssl3_send_alert(s, SSL3_AL_WARNING, SSL_AD_NO_RENEGOTIATION);
-            return MSG_PROCESS_FINISHED_READING;
-        }
-        s->renegotiate = 1;
-        s->new_session = 1;
+    /* unexpected ClientHello */
+    if (!SSL_IS_FIRST_HANDSHAKE(s)) {
+        ssl3_send_alert(s, SSL3_AL_WARNING, SSL_AD_NO_RENEGOTIATION);
+        return MSG_PROCESS_FINISHED_READING;
     }
 
     clienthello = OPENSSL_zalloc(sizeof(*clienthello));
@@ -964,7 +949,7 @@ MSG_PROCESS_RETURN tls_process_client_hello_ntls(SSL *s, PACKET *pkt)
     return MSG_PROCESS_ERROR;
 }
 
-static int tls_early_post_process_client_hello(SSL *s)
+static int tls_early_post_process_client_hello_ntls(SSL *s)
 {
     unsigned int j;
     int i, al = SSL_AD_INTERNAL_ERROR;
@@ -974,7 +959,6 @@ static int tls_early_post_process_client_hello(SSL *s)
 
     const SSL_CIPHER *c;
     STACK_OF(SSL_CIPHER) *ciphers = NULL;
-    STACK_OF(SSL_CIPHER) *scsvs = NULL;
     CLIENTHELLO_MSG *clienthello = s->clienthello;
     DOWNGRADE dgrd = DOWNGRADE_NONE;
 
@@ -1046,39 +1030,10 @@ static int tls_early_post_process_client_hello(SSL *s)
 
     if (!ssl_cache_cipherlist(s, &clienthello->ciphersuites,
                               clienthello->isv2) ||
-        !bytes_to_cipher_list(s, &clienthello->ciphersuites, &ciphers, &scsvs,
+        !bytes_to_cipher_list(s, &clienthello->ciphersuites, &ciphers, NULL,
                               clienthello->isv2, 1)) {
         /* SSLfatal_ntls() already called */
         goto err;
-    }
-
-    s->s3.send_connection_binding = 0;
-    /* Check what signalling cipher-suite values were received. */
-    if (scsvs != NULL) {
-        for(i = 0; i < sk_SSL_CIPHER_num(scsvs); i++) {
-            c = sk_SSL_CIPHER_value(scsvs, i);
-            if (SSL_CIPHER_get_id(c) == SSL3_CK_SCSV) {
-                if (s->renegotiate) {
-                    /* SCSV is fatal if renegotiating */
-                    SSLfatal_ntls(s, SSL_AD_HANDSHAKE_FAILURE,
-                                  SSL_R_SCSV_RECEIVED_WHEN_RENEGOTIATING);
-                    goto err;
-                }
-                s->s3.send_connection_binding = 1;
-            } else if (SSL_CIPHER_get_id(c) == SSL3_CK_FALLBACK_SCSV &&
-                       !ssl_check_version_downgrade_ntls(s)) {
-                /*
-                 * This SCSV indicates that the client previously tried
-                 * a higher version.  We should fail if the current version
-                 * is an unexpected downgrade, as that indicates that the first
-                 * connection may have been tampered with in order to trigger
-                 * an insecure downgrade.
-                 */
-                SSLfatal_ntls(s, SSL_AD_INAPPROPRIATE_FALLBACK,
-                              SSL_R_INAPPROPRIATE_FALLBACK);
-                goto err;
-            }
-        }
     }
 
     /*
@@ -1270,14 +1225,12 @@ static int tls_early_post_process_client_hello(SSL *s)
     }
 
     sk_SSL_CIPHER_free(ciphers);
-    sk_SSL_CIPHER_free(scsvs);
     OPENSSL_free(clienthello->pre_proc_exts);
     OPENSSL_free(s->clienthello);
     s->clienthello = NULL;
     return 1;
  err:
     sk_SSL_CIPHER_free(ciphers);
-    sk_SSL_CIPHER_free(scsvs);
     OPENSSL_free(clienthello->pre_proc_exts);
     OPENSSL_free(s->clienthello);
     s->clienthello = NULL;
@@ -1418,7 +1371,7 @@ WORK_STATE tls_post_process_client_hello_ntls(SSL *s, WORK_STATE wst)
     const SSL_CIPHER *cipher;
 
     if (wst == WORK_MORE_A) {
-        int rv = tls_early_post_process_client_hello(s);
+        int rv = tls_early_post_process_client_hello_ntls(s);
         if (rv == 0) {
             /* SSLfatal_ntls() was already called */
             goto err;
@@ -2086,7 +2039,6 @@ MSG_PROCESS_RETURN tls_process_client_certificate_ntls(SSL *s, PACKET *pkt)
     const unsigned char *certstart, *certbytes;
     STACK_OF(X509) *sk = NULL;
     PACKET spkt;
-    size_t chainidx;
     SSL_SESSION *new_sess = NULL;
 
     /*
@@ -2107,7 +2059,7 @@ MSG_PROCESS_RETURN tls_process_client_certificate_ntls(SSL *s, PACKET *pkt)
         goto err;
     }
 
-    for (chainidx = 0; PACKET_remaining(&spkt) > 0; chainidx++) {
+    while (PACKET_remaining(&spkt) > 0) {
         if (!PACKET_get_net_3(&spkt, &l)
             || !PACKET_get_bytes(&spkt, &certbytes, l)) {
             SSLfatal_ntls(s, SSL_AD_DECODE_ERROR, SSL_R_CERT_LENGTH_MISMATCH);
@@ -2378,9 +2330,13 @@ static int construct_stateless_ticket(SSL *s, WPACKET *pkt, uint32_t age_add,
         }
         iv_len = EVP_CIPHER_CTX_get_iv_length(ctx);
     } else {
+#ifdef SMTC_MODULE
+        EVP_CIPHER *cipher = EVP_CIPHER_fetch(s->ctx->libctx, "SM4-CBC",
+                                              s->ctx->propq);
+#else
         EVP_CIPHER *cipher = EVP_CIPHER_fetch(s->ctx->libctx, "AES-256-CBC",
                                               s->ctx->propq);
-
+#endif
         if (cipher == NULL) {
             /* Error is already recorded */
             SSLfatal_alert_ntls(s, SSL_AD_INTERNAL_ERROR);
@@ -2393,8 +2349,13 @@ static int construct_stateless_ticket(SSL *s, WPACKET *pkt, uint32_t age_add,
                 || !EVP_EncryptInit_ex(ctx, cipher, NULL,
                                        tctx->ext.secure->tick_aes_key, iv)
                 || !ssl_hmac_init(hctx, tctx->ext.secure->tick_hmac_key,
-                                 sizeof(tctx->ext.secure->tick_hmac_key),
-                                 "SHA256")) {
+                                  sizeof(tctx->ext.secure->tick_hmac_key),
+#ifdef SMTC_MODULE
+                                  "SM3"
+#else
+                                  "SHA256"
+#endif
+                                 )) {
             EVP_CIPHER_free(cipher);
             SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
             goto err;

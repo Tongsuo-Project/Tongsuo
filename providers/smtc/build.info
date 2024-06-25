@@ -1,0 +1,6 @@
+GENERATE[smtckey.h]=smtckey.h.in
+DEPEND[self_test.o]=smtckey.h
+
+# We include the provider implementation into ../libsmtc.a, so that all
+# platforms can resolve symbols in other members of that library.
+SOURCE[../libsmtc.a]=smtcprov.c self_test_kats.c self_test_rand.c self_test.c

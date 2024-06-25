@@ -1,6 +1,6 @@
 /*
- * Copyright 2016-2022 The OpenSSL Project Authors. All Rights Reserved.
- * Copyright 2022 The Tongsuo Project Authors. All Rights Reserved.
+ * Copyright 2016-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2023 The Tongsuo Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -743,22 +743,13 @@ int tls_construct_client_hello_ntls(SSL *s, WPACKET *pkt)
 {
     unsigned char *p;
     size_t sess_id_len;
-    int i, protverr;
     SSL_SESSION *sess = s->session;
     unsigned char *session_id;
-
-    /* Work out what SSL/TLS version to use */
-    protverr = ssl_set_client_hello_version_ntls(s);
-    if (protverr != 0) {
-        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, protverr);
-        return 0;
-    }
 
     if (sess == NULL
             || !ssl_version_supported_ntls(s, sess->ssl_version, NULL)
             || !SSL_SESSION_is_resumable(sess)) {
-        if (s->hello_retry_request == SSL_HRR_NONE
-                && !ssl_get_new_session(s, 0)) {
+        if (!ssl_get_new_session(s, 0)) {
             /* SSLfatal_ntls() already called */
             return 0;
         }
@@ -766,10 +757,9 @@ int tls_construct_client_hello_ntls(SSL *s, WPACKET *pkt)
     /* else use the pre-loaded session */
 
     p = s->s3.client_random;
-    i = (s->hello_retry_request == SSL_HRR_NONE);
 
-    if (i && ssl_fill_hello_random(s, 0, p, sizeof(s->s3.client_random),
-                                   DOWNGRADE_NONE) <= 0) {
+    if (ssl_fill_hello_random(s, 0, p, sizeof(s->s3.client_random),
+                              DOWNGRADE_NONE) <= 0) {
         SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
         return 0;
     }
@@ -1241,7 +1231,6 @@ MSG_PROCESS_RETURN tls_process_server_certificate_ntls(SSL *s, PACKET *pkt)
     unsigned long cert_list_len, cert_len;
     X509 *x = NULL;
     const unsigned char *certstart, *certbytes;
-    size_t chainidx;
     unsigned int context = 0;
 
     if ((s->session->peer_chain = sk_X509_new_null()) == NULL) {
@@ -1256,7 +1245,7 @@ MSG_PROCESS_RETURN tls_process_server_certificate_ntls(SSL *s, PACKET *pkt)
         SSLfatal_ntls(s, SSL_AD_DECODE_ERROR, SSL_R_LENGTH_MISMATCH);
         goto err;
     }
-    for (chainidx = 0; PACKET_remaining(pkt); chainidx++) {
+    while (PACKET_remaining(pkt)) {
         if (!PACKET_get_net_3(pkt, &cert_len)
             || !PACKET_get_bytes(pkt, &certbytes, cert_len)) {
             SSLfatal_ntls(s, SSL_AD_DECODE_ERROR, SSL_R_CERT_LENGTH_MISMATCH);

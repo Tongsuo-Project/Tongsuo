@@ -1039,3 +1039,5 @@ pkcs7_sm2_keyAgreementInfo		1268
 sm2Signature		1269
 sm2Keyagreement		1270
 sm2Encrypt		1271
+oracle		1272
+oracle_jdk_trustedkeyusage		1273

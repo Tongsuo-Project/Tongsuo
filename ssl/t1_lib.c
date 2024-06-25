@@ -677,13 +677,7 @@ int tls1_set_groups(uint16_t **pext, size_t *pextlen,
 {
     uint16_t *glist;
     size_t i;
-    /*
-     * Bitmap of groups included to detect duplicates: two variables are added
-     * to detect duplicates as some values are more than 32.
-     */
-    unsigned long *dup_list = NULL;
-    unsigned long dup_list_egrp = 0;
-    unsigned long dup_list_dhgrp = 0;
+    uint8_t bitmap[64] = { 0 };
 
     if (ngroups == 0) {
         ERR_raise(ERR_LIB_SSL, SSL_R_BAD_LENGTH);
@@ -694,20 +688,19 @@ int tls1_set_groups(uint16_t **pext, size_t *pextlen,
         return 0;
     }
     for (i = 0; i < ngroups; i++) {
-        unsigned long idmask;
         uint16_t id;
         id = tls1_nid2group_id(groups[i]);
         if (ngroups == 1) {
             glist[i] = id;
             break;
         }
-        if ((id & 0x00FF) >= (sizeof(unsigned long) * 8))
+        if (id == 0 || id >= sizeof(bitmap) * 8)
             goto err;
-        idmask = 1L << (id & 0x00FF);
-        dup_list = (id < 0x100) ? &dup_list_egrp : &dup_list_dhgrp;
-        if (!id || ((*dup_list) & idmask))
+
+        if (bitmap[id / 8] & (1 << (id % 8)))
             goto err;
-        *dup_list |= idmask;
+
+        bitmap[id / 8] |= 1 << (id % 8);
         glist[i] = id;
     }
     OPENSSL_free(*pext);
@@ -1475,6 +1468,25 @@ int tls12_check_peer_sigalg(SSL *s, uint16_t sig, EVP_PKEY *pkey)
     if (pkeyid == -1)
         return -1;
     if (SSL_IS_TLS13(s)) {
+#ifndef OPENSSL_NO_SM2
+        /*
+         * RFC 8998 requires that if TLS_SM4_GCM_SM3 or TLS_SM4_CCM_SM3 was
+         * choosen, the only valid signature algorithm MUST be "sm2sig_sm3".
+         */
+        if (s->enable_sm_tls13_strict == 1) {
+            const SSL_CIPHER *cipher = s->s3.tmp.new_cipher;
+
+            if (cipher != NULL && (cipher->id == TLS1_3_CK_SM4_GCM_SM3
+                || cipher->id == TLS1_3_CK_SM4_CCM_SM3)) {
+                if (sig != TLSEXT_SIGALG_sm2sig_sm3) {
+                    SSLfatal(s, SSL_AD_HANDSHAKE_FAILURE,
+                             SSL_R_WRONG_SIGNATURE_TYPE);
+                    return 0;
+                }
+            }
+        }
+#endif
+
         /* Disallow DSA for TLS 1.3 */
         if (pkeyid == EVP_PKEY_DSA) {
             SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER, SSL_R_WRONG_SIGNATURE_TYPE);
@@ -1880,29 +1892,58 @@ SSL_TICKET_STATUS tls_decrypt_ticket(SSL *s, const unsigned char *etick,
         if (rv == 2)
             renew_ticket = 1;
     } else {
-        EVP_CIPHER *aes256cbc = NULL;
+#if !defined(OPENSSL_NO_NTLS) && defined(SMTC_MODULE)
+        if (SSL_is_ntls(s)) {
+            EVP_CIPHER *sm4cbc = NULL;
 
-        /* Check key name matches */
-        if (memcmp(etick, tctx->ext.tick_key_name,
-                   TLSEXT_KEYNAME_LENGTH) != 0) {
-            ret = SSL_TICKET_NO_DECRYPT;
-            goto end;
-        }
+            /* Check key name matches */
+            if (memcmp(etick, tctx->ext.tick_key_name,
+                    TLSEXT_KEYNAME_LENGTH) != 0) {
+                ret = SSL_TICKET_NO_DECRYPT;
+                goto end;
+            }
 
-        aes256cbc = EVP_CIPHER_fetch(s->ctx->libctx, "AES-256-CBC",
-                                     s->ctx->propq);
-        if (aes256cbc == NULL
-            || ssl_hmac_init(hctx, tctx->ext.secure->tick_hmac_key,
-                             sizeof(tctx->ext.secure->tick_hmac_key),
-                             "SHA256") <= 0
-            || EVP_DecryptInit_ex(ctx, aes256cbc, NULL,
-                                  tctx->ext.secure->tick_aes_key,
-                                  etick + TLSEXT_KEYNAME_LENGTH) <= 0) {
+            sm4cbc = EVP_CIPHER_fetch(s->ctx->libctx, "SM4-CBC",
+                                    s->ctx->propq);
+            if (sm4cbc == NULL
+                || ssl_hmac_init(hctx, tctx->ext.secure->tick_hmac_key,
+                                sizeof(tctx->ext.secure->tick_hmac_key),
+                                "SM3") <= 0
+                || EVP_DecryptInit_ex(ctx, sm4cbc, NULL,
+                                    tctx->ext.secure->tick_aes_key,
+                                    etick + TLSEXT_KEYNAME_LENGTH) <= 0) {
+                EVP_CIPHER_free(sm4cbc);
+                ret = SSL_TICKET_FATAL_ERR_OTHER;
+                goto end;
+            }
+            EVP_CIPHER_free(sm4cbc);
+        } else
+#endif
+        {
+            EVP_CIPHER *aes256cbc = NULL;
+
+            /* Check key name matches */
+            if (memcmp(etick, tctx->ext.tick_key_name,
+                    TLSEXT_KEYNAME_LENGTH) != 0) {
+                ret = SSL_TICKET_NO_DECRYPT;
+                goto end;
+            }
+
+            aes256cbc = EVP_CIPHER_fetch(s->ctx->libctx, "AES-256-CBC",
+                                        s->ctx->propq);
+            if (aes256cbc == NULL
+                || ssl_hmac_init(hctx, tctx->ext.secure->tick_hmac_key,
+                                sizeof(tctx->ext.secure->tick_hmac_key),
+                                "SHA256") <= 0
+                || EVP_DecryptInit_ex(ctx, aes256cbc, NULL,
+                                    tctx->ext.secure->tick_aes_key,
+                                    etick + TLSEXT_KEYNAME_LENGTH) <= 0) {
+                EVP_CIPHER_free(aes256cbc);
+                ret = SSL_TICKET_FATAL_ERR_OTHER;
+                goto end;
+            }
             EVP_CIPHER_free(aes256cbc);
-            ret = SSL_TICKET_FATAL_ERR_OTHER;
-            goto end;
         }
-        EVP_CIPHER_free(aes256cbc);
         if (SSL_IS_TLS13(s))
             renew_ticket = 1;
     }
@@ -3162,6 +3203,25 @@ static const SIGALG_LOOKUP *find_sig_alg(SSL *s, X509 *x, EVP_PKEY *pkey)
         if ((pkey == NULL && !has_usable_cert(s, lu, -1))
                 || (pkey != NULL && !is_cert_usable(s, lu, x, pkey)))
             continue;
+
+#ifndef OPENSSL_NO_SM2
+        /*
+         * RFC 8998 requires that
+         * if the server chooses TLS_SM4_GCM_SM3 or TLS_SM4_CCM_SM3,
+         * the only valid signature algorithm present in
+         * "signature_algorithms" extension MUST be "sm2sig_sm3".
+         */
+        if (SSL_IS_TLS13(s) && s->enable_sm_tls13_strict == 1 && s->server) {
+            const SSL_CIPHER *cipher = s->s3.tmp.new_cipher;
+
+            if (cipher != NULL &&
+                (cipher->id == TLS1_3_CK_SM4_GCM_SM3
+                    || cipher->id == TLS1_3_CK_SM4_CCM_SM3)) {
+                if (lu->sigalg != TLSEXT_SIGALG_sm2sig_sm3)
+                    continue;
+            }
+        }
+#endif
 
         tmppkey = (pkey != NULL) ? pkey
                                  : s->cert->pkeys[lu->sig_idx].privatekey;
