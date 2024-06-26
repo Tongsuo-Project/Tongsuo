@@ -175,5 +175,7 @@ int ssl3_release_read_buffer(SSL *s)
     b = RECORD_LAYER_get_rbuf(&s->rlayer);
     OPENSSL_free(b->buf);
     b->buf = NULL;
+    s->rlayer.packet = NULL;
+    s->rlayer.packet_length = 0;
     return 1;
 }
