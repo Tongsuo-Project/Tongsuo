@@ -52,5 +52,5 @@ int mempacket_test_inject(BIO *bio, const char *in, int inl, int pktnum,
 typedef struct mempacket_st MEMPACKET;
 
 DEFINE_STACK_OF(MEMPACKET)
-
+ENGINE *load_dasync(void);
 #endif /* OSSL_TEST_SSLTESTLIB_H */

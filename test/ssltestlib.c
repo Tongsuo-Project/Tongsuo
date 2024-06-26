@@ -8,7 +8,7 @@
  */
 
 #include <string.h>
-
+#include <openssl/engine.h>
 #include "internal/nelem.h"
 #include "ssltestlib.h"
 #include "testutil.h"
@@ -946,4 +946,28 @@ void shutdown_ssl_connection(SSL *serverssl, SSL *clientssl)
     SSL_shutdown(serverssl);
     SSL_free(serverssl);
     SSL_free(clientssl);
+}
+
+ENGINE *load_dasync(void)
+{
+#if !defined(OPENSSL_NO_TLS1_2) && !defined(OPENSSL_NO_DYNAMIC_ENGINE)
+    ENGINE *e;
+
+    if (!TEST_ptr(e = ENGINE_by_id("dasync")))
+        return NULL;
+
+    if (!TEST_true(ENGINE_init(e))) {
+        ENGINE_free(e);
+        return NULL;
+    }
+
+    if (!TEST_true(ENGINE_register_ciphers(e))) {
+        ENGINE_free(e);
+        return NULL;
+    }
+
+    return e;
+#else
+    return NULL;
+#endif
 }
