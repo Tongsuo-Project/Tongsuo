@@ -85,30 +85,64 @@ ASN1_SEQUENCE(SM2_Enveloped_Key) = {
 IMPLEMENT_STATIC_ASN1_FUNCTIONS(SM2_Enveloped_Key)
 
 
-//2023年7月1日12:09:43 沈雪冰 begin add，C|C2|C3  相互转换 C1|C2|C3
-SM2_Ciphertext * SM2_Ciphertext_C1C2C3_to_C1C3C2(const SM2_CiphertextEx * c1c2c3, SM2_Ciphertext * c1c3c2)
+//2023年7月1日12:09:43 沈雪冰 begin add，C1|C2|C3  相互转换 C1|C2|C3
+SM2_CiphertextEx* SM2_Ciphertext_to_SM2_CiphertextEx(const SM2_Ciphertext* c1c3c2) 
 {
-    if (c1c2c3)
+	if (!c1c3c2) 
     {
-        c1c3c2->C1x = c1c2c3->C1x;
-        c1c3c2->C1y = c1c2c3->C1y;
-        c1c3c2->C2 = c1c2c3->C2;
-        c1c3c2->C3 = c1c2c3->C3;
-    }
-    return c1c3c2;
+		return NULL;
+	}
+	SM2_CiphertextEx* c1c2c3_ex = SM2_CiphertextEx_new();
+	if (!c1c2c3_ex) 
+    {
+		return NULL;
+	}
+	// 由于 BIGNUM 是引用计数的，我们需要复制 BIGNUM 而不是直接赋值
+	c1c2c3_ex->C1x = BN_dup(c1c3c2->C1x);
+	c1c2c3_ex->C1y = BN_dup(c1c3c2->C1y);
+	// ASN1_OCTET_STRING 也需要复制
+	c1c2c3_ex->C2 = ASN1_OCTET_STRING_dup(c1c3c2->C2);
+	c1c2c3_ex->C3 = ASN1_OCTET_STRING_dup(c1c3c2->C3);
+
+	// 检查复制是否成功
+	if (!c1c2c3_ex->C1x || !c1c2c3_ex->C1y || !c1c2c3_ex->C2 || !c1c2c3_ex->C3) 
+    {
+		// 清理并返回错误
+		SM2_CiphertextEx_free(c1c2c3_ex);
+		return NULL;
+	}
+	return c1c2c3_ex;
 }
-SM2_CiphertextEx* SM2_Ciphertext_C1C3C2_to_C1C2C3(const SM2_Ciphertext* c1c2c3, SM2_CiphertextEx* c1c3c2)
+SM2_Ciphertext* SM2_CiphertextEx_to_SM2_Ciphertext(const SM2_CiphertextEx* c1c2c3_ex) 
 {
-    if (c1c2c3)
+	if (!c1c2c3_ex) 
     {
-        c1c3c2->C1x = c1c2c3->C1x;
-        c1c3c2->C1y = c1c2c3->C1y;
-        c1c3c2->C2 = c1c2c3->C2;
-        c1c3c2->C3 = c1c2c3->C3;
-    }
-    return c1c3c2;
+		return NULL;
+	}
+	SM2_Ciphertext* c1c3c2 = SM2_Ciphertext_new();
+	if (!c1c3c2) 
+    {
+		return NULL;
+	}
+	// 由于 BIGNUM 是引用计数的，我们需要复制 BIGNUM 而不是直接赋值
+	c1c3c2->C1x = BN_dup(c1c2c3_ex->C1x);
+	c1c3c2->C1y = BN_dup(c1c2c3_ex->C1y);
+	// ASN1_OCTET_STRING 也需要复制
+	c1c3c2->C3 = ASN1_OCTET_STRING_dup(c1c2c3_ex->C3);
+	c1c3c2->C2 = ASN1_OCTET_STRING_dup(c1c2c3_ex->C2);
+
+	// 检查复制是否成功
+	if (!c1c3c2->C1x || !c1c3c2->C1y || !c1c3c2->C3 || !c1c3c2->C2) 
+    {
+		// 清理并返回错误
+		SM2_Ciphertext_free(c1c3c2);
+		return NULL;
+	}
+	return c1c3c2;
 }
-//2023年7月1日12:09:43 沈雪冰 end add，C|C2|C3  相互转换 C1|C2|C3
+
+
+//2023年7月1日12:09:43 沈雪冰 end add，C1|C2|C3  相互转换 C1|C2|C3
 
 BIO* SM2_Enveloped_Key_dataDecode(SM2_Enveloped_Key* sm2evpkey, EVP_PKEY* pkey)
 {
@@ -345,22 +379,27 @@ int ossl_sm2_plaintext_size(const unsigned char *ct, size_t ct_size,
                             size_t *pt_size, int encdata_format)
 {
     struct SM2_Ciphertext_st *sm2_ctext = NULL;
+    struct SM2_CiphertextEx_st* sm2_ctextEx = NULL;
     if (encdata_format)
     {
         sm2_ctext = d2i_SM2_Ciphertext(NULL, &ct, ct_size);
+		if (sm2_ctext == NULL) {
+			ERR_raise(ERR_LIB_SM2, SM2_R_INVALID_ENCODING);
+			return 0;
+		}
+		*pt_size = sm2_ctext->C2->length;
+		SM2_Ciphertext_free(sm2_ctext);
     }
     else
-    {          
-        sm2_ctext =(SM2_Ciphertext*) d2i_SM2_CiphertextEx(NULL, &ct, ct_size);
+    {           
+        sm2_ctextEx = d2i_SM2_CiphertextEx(NULL, &ct, ct_size);
+		if (sm2_ctextEx == NULL) {
+			ERR_raise(ERR_LIB_SM2, SM2_R_INVALID_ENCODING);
+			return 0;
+		}
+		*pt_size = sm2_ctextEx->C2->length;
+		SM2_CiphertextEx_free(sm2_ctextEx);
     } 
-    if (sm2_ctext == NULL) {
-        ERR_raise(ERR_LIB_SM2, SM2_R_INVALID_ENCODING);
-        return 0;
-    }
-
-    *pt_size = sm2_ctext->C2->length;
-    SM2_Ciphertext_free(sm2_ctext);
-
     return 1;
 }
 
@@ -528,7 +567,12 @@ int ossl_sm2_encrypt(const EC_KEY *key,
 	}
 	else//2023年7月1日00:36:27 沈雪冰 add C1|C2|C3格式
 	{
-		ciphertext_leni = i2d_SM2_CiphertextEx((SM2_CiphertextEx*)&ctext_struct, &ciphertext_buf);
+        SM2_CiphertextEx ctext_structEx;
+        ctext_structEx.C1x = ctext_struct.C1x;
+        ctext_structEx.C1y = ctext_struct.C1y;
+        ctext_structEx.C2 = ctext_struct.C2;
+        ctext_structEx.C3 = ctext_struct.C3;
+		ciphertext_leni = i2d_SM2_CiphertextEx(&ctext_structEx, &ciphertext_buf);
 	}
 
     /* Ensure cast to size_t is safe */
@@ -589,7 +633,13 @@ int ossl_sm2_decrypt(const EC_KEY *key,
 	}
 	else //2023年7月1日00:36:27 沈雪冰 add C1|C2|C3格式
 	{
-		sm2_ctext = (SM2_Ciphertext*)d2i_SM2_CiphertextEx(NULL, &ciphertext, ciphertext_len);
+        SM2_CiphertextEx *sm2_ctext_ex = NULL;
+        sm2_ctext_ex = d2i_SM2_CiphertextEx(NULL, &ciphertext, ciphertext_len);       
+        sm2_ctext=SM2_CiphertextEx_to_SM2_Ciphertext(sm2_ctext_ex);
+        if (sm2_ctext_ex)
+        {
+        	SM2_CiphertextEx_free(sm2_ctext_ex);
+        }
 	}
 
     if (sm2_ctext == NULL) {
