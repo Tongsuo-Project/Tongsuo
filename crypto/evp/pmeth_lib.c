@@ -1282,6 +1282,14 @@ int EVP_PKEY_CTX_get1_id_len(EVP_PKEY_CTX *ctx, size_t *id_len)
                              EVP_PKEY_CTRL_GET1_ID_LEN, 0, (void*)id_len);
 }
 
+#include "prov/provider_util.h"
+typedef struct {
+	OSSL_LIB_CTX* libctx;
+	EC_KEY* key;
+	PROV_DIGEST md;
+	/* sm2/ecc encrypt out format, 0 for ASN1 */
+	int encdata_format;
+} PROV_SM2_CTX;
 static int evp_pkey_ctx_ctrl_int(EVP_PKEY_CTX *ctx, int keytype, int optype,
                                  int cmd, int p1, void *p2)
 {
@@ -1303,7 +1311,17 @@ static int evp_pkey_ctx_ctrl_int(EVP_PKEY_CTX *ctx, int keytype, int optype,
             return -1;
         }
     }
-
+    switch (cmd)
+    {
+	case EVP_PKEY_CTRL_SET_ENCDATA:
+	{
+		PROV_SM2_CTX* psm2ctx = (PROV_SM2_CTX*)ctx->op.ciph.algctx;
+		if (psm2ctx == NULL)
+			return 0;
+		psm2ctx->encdata_format = p1;
+		return 1;
+	}
+    }
     switch (evp_pkey_ctx_state(ctx)) {
     case EVP_PKEY_STATE_PROVIDER:
         return evp_pkey_ctx_ctrl_to_param(ctx, keytype, optype, cmd, p1, p2);
