@@ -125,18 +125,7 @@ static int pkcs7_encode_rinfo(PKCS7_RECIP_INFO *ri,
     pkey = X509_get0_pubkey(ri->cert);
     if (pkey == NULL)
         return 0;
-	/*if (EVP_PKEY_is_a(pkey, "EC"))
-	{
-		if (!EVP_PKEY_set_type(pkey, EVP_PKEY_EC))
-			goto err;
-	}
-	else if (EVP_PKEY_is_a(pkey, "SM2"))
-	{
-		if (!EVP_PKEY_set_type(pkey, EVP_PKEY_SM2))
-			goto err;
-	}
-    const EC_KEY* key11 = EVP_PKEY_get0_EC_KEY(pkey);
-    int len = i2d_PublicKey(key11, &out);*/
+
     pctx = EVP_PKEY_CTX_new_from_pkey(ossl_pkcs7_ctx_get0_libctx(ctx), pkey,
                                       ossl_pkcs7_ctx_get0_propq(ctx));
     if (pctx == NULL)
