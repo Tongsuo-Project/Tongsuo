@@ -58,6 +58,11 @@ int ssl3_setup_read_buffer(SSL *s)
         if (ssl_allow_compression(s))
             len += SSL3_RT_MAX_COMPRESSED_OVERHEAD;
 #endif
+
+        /* Ensure our buffer is large enough to support all our pipelines */
+        if (s->max_pipelines > 1)
+            len *= s->max_pipelines;
+
         if (b->default_len > len)
             len = b->default_len;
         if ((p = OPENSSL_malloc(len)) == NULL) {
@@ -175,5 +180,7 @@ int ssl3_release_read_buffer(SSL *s)
     b = RECORD_LAYER_get_rbuf(&s->rlayer);
     OPENSSL_free(b->buf);
     b->buf = NULL;
+    s->rlayer.packet = NULL;
+    s->rlayer.packet_length = 0;
     return 1;
 }

@@ -7,6 +7,8 @@
 
  Changes between 8.3.3 and 8.3.4 [xx XXX xxxx]
 
+  *) Fix CVE-2024-4741
+
   *) Fix CVE-2024-2511
 
   *) Fix CVE-2024-0727

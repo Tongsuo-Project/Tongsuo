@@ -16,6 +16,7 @@
 #include <openssl/rand.h>
 #include "record_local.h"
 #include "../packet_local.h"
+#include "internal/cryptlib.h"
 
 #if     defined(OPENSSL_SMALL_FOOTPRINT) || \
         !(      defined(AESNI_ASM) &&   ( \
@@ -78,6 +79,15 @@ void RECORD_LAYER_release(RECORD_LAYER *rl)
 int RECORD_LAYER_read_pending(const RECORD_LAYER *rl)
 {
     return SSL3_BUFFER_get_left(&rl->rbuf) != 0;
+}
+
+int RECORD_LAYER_data_present(const RECORD_LAYER *rl)
+{
+    if (rl->rstate == SSL_ST_READ_BODY)
+        return 1;
+    if (RECORD_LAYER_processed_read_pending(rl))
+        return 1;
+    return 0;
 }
 
 /* Checks if we have decrypted unread record data pending */
@@ -202,28 +212,17 @@ int ssl3_read_n(SSL *s, size_t n, size_t max, int extend, int clearold,
         /* start with empty packet ... */
         if (left == 0)
             rb->offset = align;
-        else if (align != 0 && left >= SSL3_RT_HEADER_LENGTH) {
-            /*
-             * check if next packet length is large enough to justify payload
-             * alignment...
-             */
-            pkt = rb->buf + rb->offset;
-            if (pkt[0] == SSL3_RT_APPLICATION_DATA
-                && (pkt[3] << 8 | pkt[4]) >= 128) {
-                /*
-                 * Note that even if packet is corrupted and its length field
-                 * is insane, we can only be led to wrong decision about
-                 * whether memmove will occur or not. Header values has no
-                 * effect on memmove arguments and therefore no buffer
-                 * overrun can be triggered.
-                 */
-                memmove(rb->buf + align, pkt, left);
-                rb->offset = align;
-            }
-        }
+
         s->rlayer.packet = rb->buf + rb->offset;
         s->rlayer.packet_length = 0;
         /* ... now we can act as if 'extend' was set */
+    }
+
+    if (!ossl_assert(s->rlayer.packet != NULL)) {
+        /* does not happen */
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_SSL3_READ_N,
+                 ERR_R_INTERNAL_ERROR);
+        return -1;
     }
 
     len = s->rlayer.packet_length;
@@ -598,14 +597,13 @@ int ssl3_write_bytes(SSL *s, int type, const void *buf_, size_t len,
         if (numpipes > maxpipes)
             numpipes = maxpipes;
 
-        if (n / numpipes >= max_send_fragment) {
+        if (n / numpipes >= split_send_fragment) {
             /*
              * We have enough data to completely fill all available
              * pipelines
              */
-            for (j = 0; j < numpipes; j++) {
-                pipelens[j] = max_send_fragment;
-            }
+            for (j = 0; j < numpipes; j++)
+                pipelens[j] = split_send_fragment;
         } else {
             /* We can partially fill all available pipelines */
             tmppipelen = n / numpipes;
@@ -1162,7 +1160,13 @@ int ssl3_write_pending(SSL *s, int type, const unsigned char *buf, size_t len,
                      SSL_R_BIO_NOT_SET);
             i = -1;
         }
-        if (i > 0 && tmpwrit == SSL3_BUFFER_get_left(&wb[currbuf])) {
+
+        /*
+         * If zero byte write succeeds, i will be 0 rather than a non-zero
+         * value. Treat i == 0 as success rather than an error for zero byte
+         * writes to permit this case.
+         */
+        if (i >= 0 && tmpwrit == SSL3_BUFFER_get_left(&wb[currbuf])) {
             SSL3_BUFFER_set_left(&wb[currbuf], 0);
             SSL3_BUFFER_add_offset(&wb[currbuf], tmpwrit);
             if (currbuf + 1 < s->rlayer.numwpipes)
