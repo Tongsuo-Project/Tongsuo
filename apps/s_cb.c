@@ -915,8 +915,8 @@ int generate_cookie_callback(SSL *ssl, unsigned char *cookie,
 int verify_cookie_callback(SSL *ssl, const unsigned char *cookie,
                            unsigned int cookie_len)
 {
-    unsigned char result[EVP_MAX_MD_SIZE];
-    unsigned int resultlength;
+    unsigned char result[EVP_MAX_MD_SIZE] = {0};
+    unsigned int resultlength = 0;
 
     /* Note: we check cookie_initialized because if it's not,
      * it cannot be valid */
