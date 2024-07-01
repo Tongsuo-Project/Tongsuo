@@ -5643,3 +5643,6 @@ PKCS12_create_ex2                       5958	3_0_3	EXIST::FUNCTION:
 ASN1_item_unpack_ex                     5960	3_0_3	EXIST::FUNCTION:
 PKCS12_SAFEBAG_get1_cert_ex             5961	3_0_3	EXIST::FUNCTION:
 PKCS12_SAFEBAG_get1_crl_ex              5962	3_0_3	EXIST::FUNCTION:
+PKCS7_decryptEx              						5963	3_0_3	EXIST::FUNCTION:
+PKCS7_encryptEx              						5964	3_0_3	EXIST::FUNCTION:
+ossl_sm2_compute_z_digest								5965	3_0_3	EXIST::FUNCTION:
