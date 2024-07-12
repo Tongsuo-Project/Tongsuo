@@ -410,6 +410,7 @@ void ZKP_RANGE_PROOF_free(ZKP_RANGE_PROOF *proof)
 
     NIZK_PLAINTEXT_KNOWLEDGE_PROOF_free(proof->ptke_proof);
     BP_RANGE_PROOF_free(proof->bp_proof);
+    OPENSSL_free(proof);
 }
 
 ZKP_RANGE_PROOF *ZKP_RANGE_PROOF_prove(ZKP_RANGE_CTX *ctx, int left_bound_bits,

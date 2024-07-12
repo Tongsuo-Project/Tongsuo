@@ -184,8 +184,10 @@ static int bp_inner_product_proof_encode(bp_inner_product_proof_t *ip_proof,
 
     len += sk_len;
 
-    if (out == NULL)
+    if (out == NULL) {
+        sk_BIGNUM_free(sk_bn);
         return len;
+    }
 
     sk_len = zkp_stack_of_bignum_encode(sk_bn, p, bn_len);
     if (sk_len == 0)

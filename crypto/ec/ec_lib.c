@@ -795,8 +795,10 @@ EC_POINTS *EC_POINTS_new(const EC_GROUP *group, int count)
 
     for (i = 0; i < count; i++) {
         point = EC_POINT_new(group);
-        if (point == NULL)
+        if (point == NULL) {
             EC_POINTS_free(ret);
+            return NULL;
+        }
 
         ret->items[i] = point;
     }
@@ -1544,13 +1546,13 @@ int EC_POINTs_from_strings(const EC_GROUP *group, EC_POINTS **r,
 {
     int ret = 0;
     BN_CTX *new_ctx = NULL;
-    EC_POINTS *result = NULL;
+    EC_POINTS *result = NULL, *new_r = NULL;
 
     if (r == NULL || strings == NULL || num <= 0)
         return 0;
 
     if (*r == NULL) {
-        result = EC_POINTS_new(group, (uint32_t)num);
+        new_r = result = EC_POINTS_new(group, (uint32_t)num);
         if (result == NULL)
             return 0;
     } else {
@@ -1574,14 +1576,13 @@ int EC_POINTs_from_strings(const EC_GROUP *group, EC_POINTS **r,
     }
 #endif
 
-    result = NULL;
-
     /*
      * TODO
      */
 err:
     BN_CTX_free(new_ctx);
-    EC_POINTS_free(result);
+    if (*r != new_r)
+        EC_POINTS_free(new_r);
     return ret;
 }
 
@@ -1600,13 +1601,13 @@ int EC_POINTs_from_strings_scalar_mul(const EC_GROUP *group, EC_POINTS **r,
 {
     int ret = 0;
     BN_CTX *new_ctx = NULL;
-    EC_POINTS *result = NULL;
+    EC_POINTS *result, *new_r = NULL;
 
     if (r == NULL || strings == NULL || num <= 0)
         return 0;
 
     if (*r == NULL) {
-        result = EC_POINTS_new(group, (uint32_t)num);
+        new_r = result = EC_POINTS_new(group, (uint32_t)num);
         if (result == NULL)
             return 0;
     } else {
@@ -1632,14 +1633,13 @@ int EC_POINTs_from_strings_scalar_mul(const EC_GROUP *group, EC_POINTS **r,
     }
 #endif
 
-    result = NULL;
-
     /*
      * TODO
      */
 err:
     BN_CTX_free(new_ctx);
-    EC_POINTS_free(result);
+    if (*r != new_r)
+        EC_POINTS_free(new_r);
     return ret;
 }
 

@@ -37,9 +37,6 @@ static int zkp_poly3_eval_test(void)
     BN_CTX *bn_ctx = NULL;
     STACK_OF(BIGNUM) *sk_eval = NULL;
 
-    if (!(sk_eval = sk_BIGNUM_new_reserve(NULL, n)))
-        goto err;
-
     bn_ctx = BN_CTX_new();
     if (bn_ctx == NULL)
         goto err;

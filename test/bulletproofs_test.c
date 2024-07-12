@@ -1134,9 +1134,11 @@ static BP_R1CS_PROOF *r1cs_range_prove(BP_R1CS_CTX *ctx, BP_WITNESS *witness,
     if (!(proof = BP_R1CS_PROOF_prove(ctx)))
         goto err;
 
+    BN_free(v);
     return proof;
 
 err:
+    BN_free(v);
     BP_R1CS_LINEAR_COMBINATION_free(lc);
     BP_R1CS_PROOF_free(proof);
     return NULL;

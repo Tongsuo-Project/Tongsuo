@@ -101,6 +101,7 @@ static BIGNUM *getBN(STANZA *s, const char *attribute)
 
     if (parseBN(&ret, hex) != (int)strlen(hex)) {
         TEST_error("Could not decode '%s'", hex);
+        BN_free(ret);
         return NULL;
     }
     return ret;

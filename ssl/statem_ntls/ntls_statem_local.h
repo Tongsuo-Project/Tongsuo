@@ -205,8 +205,6 @@ int tls_parse_ctos_server_name_ntls(SSL *s, PACKET *pkt, unsigned int context,
                                X509 *x, size_t chainidx);
 int tls_parse_ctos_maxfragmentlen_ntls(SSL *s, PACKET *pkt, unsigned int context,
                                   X509 *x, size_t chainidx);
-int tls_parse_ctos_early_data_ntls(SSL *s, PACKET *pkt, unsigned int context,
-                              X509 *x, size_t chainidx);
 int tls_parse_ctos_ec_pt_formats_ntls(SSL *s, PACKET *pkt, unsigned int context,
                                  X509 *x, size_t chainidx);
 int tls_parse_ctos_supported_groups_ntls(SSL *s, PACKET *pkt, unsigned int context,
@@ -233,24 +231,11 @@ int tls_parse_ctos_use_srtp_ntls(SSL *s, PACKET *pkt, unsigned int context, X509
 #endif
 int tls_parse_ctos_etm_ntls(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
                        size_t chainidx);
-int tls_parse_ctos_key_share_ntls(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
-                             size_t chainidx);
-int tls_parse_ctos_cookie_ntls(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
-                          size_t chainidx);
 int tls_parse_ctos_ems_ntls(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
                        size_t chainidx);
-int tls_parse_ctos_psk_kex_modes_ntls(SSL *s, PACKET *pkt, unsigned int context,
-                                 X509 *x, size_t chainidx);
-int tls_parse_ctos_psk_ntls(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
-                       size_t chainidx);
-int tls_parse_ctos_post_handshake_auth_ntls(SSL *, PACKET *pkt, unsigned int context,
-                                       X509 *x, size_t chainidx);
 EXT_RETURN tls_construct_stoc_server_name_ntls(SSL *s, WPACKET *pkt,
                                           unsigned int context, X509 *x,
                                           size_t chainidx);
-EXT_RETURN tls_construct_stoc_early_data_ntls(SSL *s, WPACKET *pkt,
-                                         unsigned int context, X509 *x,
-                                         size_t chainidx);
 EXT_RETURN tls_construct_stoc_maxfragmentlen_ntls(SSL *s, WPACKET *pkt,
                                              unsigned int context, X509 *x,
                                              size_t chainidx);
@@ -286,15 +271,6 @@ EXT_RETURN tls_construct_stoc_ems_ntls(SSL *s, WPACKET *pkt, unsigned int contex
 EXT_RETURN tls_construct_stoc_supported_versions_ntls(SSL *s, WPACKET *pkt,
                                                  unsigned int context, X509 *x,
                                                  size_t chainidx);
-EXT_RETURN tls_construct_stoc_key_share_ntls(SSL *s, WPACKET *pkt,
-                                        unsigned int context, X509 *x,
-                                        size_t chainidx);
-EXT_RETURN tls_construct_stoc_cookie_ntls(SSL *s, WPACKET *pkt, unsigned int context,
-                                     X509 *x, size_t chainidx);
-
-EXT_RETURN tls_construct_stoc_psk_ntls(SSL *s, WPACKET *pkt, unsigned int context,
-                                  X509 *x, size_t chainidx);
-
 /* Client Extension processing */
 EXT_RETURN tls_construct_ctos_server_name_ntls(SSL *s, WPACKET *pkt, unsigned int context,
                                    X509 *x, size_t chainidx);
@@ -307,9 +283,6 @@ EXT_RETURN tls_construct_ctos_ec_pt_formats_ntls(SSL *s, WPACKET *pkt,
 EXT_RETURN tls_construct_ctos_supported_groups_ntls(SSL *s, WPACKET *pkt,
                                                unsigned int context, X509 *x,
                                                size_t chainidx);
-EXT_RETURN tls_construct_ctos_early_data_ntls(SSL *s, WPACKET *pkt,
-                                         unsigned int context, X509 *x,
-                                         size_t chainidx);
 EXT_RETURN tls_construct_ctos_session_ticket_ntls(SSL *s, WPACKET *pkt,
                                              unsigned int context, X509 *x,
                                              size_t chainidx);
@@ -342,26 +315,11 @@ EXT_RETURN tls_construct_ctos_ems_ntls(SSL *s, WPACKET *pkt, unsigned int contex
 EXT_RETURN tls_construct_ctos_supported_versions_ntls(SSL *s, WPACKET *pkt,
                                                  unsigned int context, X509 *x,
                                                  size_t chainidx);
-EXT_RETURN tls_construct_ctos_key_share_ntls(SSL *s, WPACKET *pkt,
-                                        unsigned int context, X509 *x,
-                                        size_t chainidx);
-EXT_RETURN tls_construct_ctos_psk_kex_modes_ntls(SSL *s, WPACKET *pkt,
-                                            unsigned int context, X509 *x,
-                                            size_t chainidx);
-EXT_RETURN tls_construct_ctos_cookie_ntls(SSL *s, WPACKET *pkt, unsigned int context,
-                                     X509 *x, size_t chainidx);
 EXT_RETURN tls_construct_ctos_padding_ntls(SSL *s, WPACKET *pkt,
                                       unsigned int context, X509 *x,
                                       size_t chainidx);
-EXT_RETURN tls_construct_ctos_psk_ntls(SSL *s, WPACKET *pkt, unsigned int context,
-                                  X509 *x, size_t chainidx);
-EXT_RETURN tls_construct_ctos_post_handshake_auth_ntls(SSL *s, WPACKET *pkt, unsigned int context,
-                                                  X509 *x, size_t chainidx);
-
 int tls_parse_stoc_server_name_ntls(SSL *s, PACKET *pkt, unsigned int context,
                                X509 *x, size_t chainidx);
-int tls_parse_stoc_early_data_ntls(SSL *s, PACKET *pkt, unsigned int context,
-                              X509 *x, size_t chainidx);
 int tls_parse_stoc_maxfragmentlen_ntls(SSL *s, PACKET *pkt, unsigned int context,
                                   X509 *x, size_t chainidx);
 int tls_parse_stoc_ec_pt_formats_ntls(SSL *s, PACKET *pkt, unsigned int context,
@@ -392,13 +350,6 @@ int tls_parse_stoc_ems_ntls(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
                        size_t chainidx);
 int tls_parse_stoc_supported_versions_ntls(SSL *s, PACKET *pkt, unsigned int context,
                                       X509 *x, size_t chainidx);
-int tls_parse_stoc_key_share_ntls(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
-                             size_t chainidx);
-int tls_parse_stoc_cookie_ntls(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
-                       size_t chainidx);
-int tls_parse_stoc_psk_ntls(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
-                       size_t chainidx);
-
 int tls_handle_alpn_ntls(SSL *s);
 
 int tls13_save_handshake_digest_for_pha_ntls(SSL *s);

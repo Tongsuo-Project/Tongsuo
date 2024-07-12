@@ -189,6 +189,7 @@ static size_t paillier_add_plain(PAILLIER_CTX *ctx, unsigned char **out,
     ret = size;
 
 err:
+    OPENSSL_free(buf);
     PAILLIER_CIPHERTEXT_free(c);
     PAILLIER_CIPHERTEXT_free(r);
     return ret;
@@ -270,6 +271,7 @@ static size_t paillier_mul(PAILLIER_CTX *ctx, unsigned char **out,
     ret = size;
 
 err:
+    OPENSSL_free(buf);
     PAILLIER_CIPHERTEXT_free(c);
     PAILLIER_CIPHERTEXT_free(r);
     return ret;
