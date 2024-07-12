@@ -1719,7 +1719,8 @@ int tls_parse_stoc_npn(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
                                   PACKET_data(pkt),
                                   PACKET_remaining(pkt),
                                   s->ctx->ext.npn_select_cb_arg) !=
-             SSL_TLSEXT_ERR_OK) {
+                                  SSL_TLSEXT_ERR_OK
+            || selected_len == 0) {
         SSLfatal(s, SSL_AD_HANDSHAKE_FAILURE, SSL_F_TLS_PARSE_STOC_NPN,
                  SSL_R_BAD_EXTENSION);
         return 0;
