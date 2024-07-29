@@ -57,7 +57,7 @@ int test_arg_libctx(OSSL_LIB_CTX **libctx, OSSL_PROVIDER **default_null_prov,
         TEST_error("usage: <prog> %s", usage);
         return 0;
     }
-    if (strcmp(module_name, "none") == 0)
+    if (strcmp(module_name, "none") == 0 || strcmp(module_name, "smtc") == 0)
         return 1;
     return test_get_libctx(libctx, default_null_prov,
                            test_get_argument(argn + 1), provider, module_name);

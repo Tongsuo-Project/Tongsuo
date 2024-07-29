@@ -375,6 +375,82 @@ EVP_PKEY_CTX *EVP_PKEY_CTX_new_from_pkey(OSSL_LIB_CTX *libctx, EVP_PKEY *pkey,
     return int_ctx_new(libctx, pkey, NULL, NULL, propquery, -1);
 }
 
+EVP_PKEY_CTX *EVP_PKEY_CTX_new_from_pkey_provided(OSSL_LIB_CTX *libctx,
+                                                  EVP_PKEY *pkey,
+                                                  const char *propquery)
+{
+    EVP_PKEY_CTX *ret = NULL;
+
+    if (pkey == NULL) {
+        ERR_raise(ERR_LIB_EVP, ERR_R_PASSED_NULL_PARAMETER);
+        return NULL;
+    }
+
+    if (!evp_pkey_is_provided(pkey)) {
+        ERR_raise(ERR_LIB_EVP, EVP_R_INVALID_KEY);
+        return NULL;
+    }
+
+    ret = OPENSSL_zalloc(sizeof(*ret));
+    if (ret == NULL) {
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
+        return NULL;
+    }
+
+    if (propquery != NULL) {
+        ret->propquery = OPENSSL_strdup(propquery);
+        if (ret->propquery == NULL) {
+            OPENSSL_free(ret);
+            return NULL;
+        }
+    }
+
+    ret->libctx = libctx;
+    ret->operation = EVP_PKEY_OP_UNDEFINED;
+    ret->keymgmt = pkey->keymgmt;
+    EVP_KEYMGMT_up_ref(pkey->keymgmt);
+
+    ret->keytype = EVP_KEYMGMT_get0_name(ret->keymgmt);
+    ret->pkey = pkey;
+    EVP_PKEY_up_ref(pkey);
+
+    return ret;
+}
+
+EVP_PKEY_CTX *EVP_PKEY_CTX_new_from_name_provided(OSSL_LIB_CTX *libctx,
+                                                  const char *name,
+                                                  const char *propquery)
+{
+    EVP_PKEY_CTX *ret = NULL;
+    EVP_KEYMGMT *keymgmt;
+
+    keymgmt = EVP_KEYMGMT_fetch(libctx, name, propquery);
+    if (keymgmt == NULL)
+        return NULL;
+
+    ret = OPENSSL_zalloc(sizeof(*ret));
+    if (ret == NULL) {
+        EVP_KEYMGMT_free(keymgmt);
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
+        return NULL;
+    }
+
+    if (propquery != NULL) {
+        ret->propquery = OPENSSL_strdup(propquery);
+        if (ret->propquery == NULL) {
+            OPENSSL_free(ret);
+            EVP_KEYMGMT_free(keymgmt);
+            return NULL;
+        }
+    }
+
+    ret->operation = EVP_PKEY_OP_UNDEFINED;
+    ret->keymgmt = keymgmt;
+    ret->keytype = EVP_KEYMGMT_get0_name(keymgmt);
+
+    return ret;
+}
+
 void evp_pkey_ctx_free_old_ops(EVP_PKEY_CTX *ctx)
 {
     if (EVP_PKEY_CTX_IS_SIGNATURE_OP(ctx)) {

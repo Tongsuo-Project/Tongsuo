@@ -1898,8 +1898,6 @@ int s_server_main(int argc, char *argv[])
     if (s_key_file == NULL)
         s_key_file = s_cert_file;
 
-
-
     if (!load_excert(&exc))
         goto end;
 

@@ -19,15 +19,17 @@
 
 typedef struct self_test_post_params_st {
     const char *module_filename;            /* Module file to perform MAC on */
-    const char *module_checksum_data;       /* Expected module MAC integrity */
-    const char *show_selftest;              /* Output selftest results */
-    const char *admin_pass;                 /* Admin password */
-    const char *admin_salt;                 /* Salt of password */
-    const char *rng_poweron_test;           /* 熵源上电健康测试 */
-    const char *rng_continuous_test;        /* 熵源连续健康测试 */
-    const char *randomness_poweron_test;    /* 随机数上电自检 */
+    const char *module_sig;                 /* Signature of module */
+    const char *auth_key;                   /* key of HMAC, PBKDF(password, salt) */
+    const char *auth_salt;                  /* Salt of PBKDF */
+    const char *kek;                        /* key for encrypting HMAC key */
+    const char *eng;                        /* Engine ID */
+    const char *syslog;                     /* syslog switch */
+    const char *rng_poweron_test;           /* Entropy power-on health test */
+    const char *rng_continuous_test;        /* Entropy continuous health test */
+    const char *randomness_poweron_test;    /* Random power-on self-test */
 #ifndef OPENSSL_NO_SMTC_DEBUG
-    const char *verify_mac;
+    const char *verify_sig;
     const char *verify_pass;
 #endif
 

@@ -32,9 +32,15 @@
  * The factor 1.5 below is the pessimistic estimate for the extra amount
  * of entropy required when no get_nonce() callback is defined.
  */
-# define RAND_POOL_FACTOR        256
-# define RAND_POOL_MAX_LENGTH    (RAND_POOL_FACTOR * \
-                                  3 * (RAND_DRBG_STRENGTH / 16))
+
+# ifdef TONGSUO_RAND_GM_SRNG
+/* As required by GM/T 0105-2021 section 5.3 */
+#  define RAND_POOL_MAX_LENGTH  4096
+# else
+#  define RAND_POOL_FACTOR      256
+#  define RAND_POOL_MAX_LENGTH  (RAND_POOL_FACTOR * \
+                                3 * (RAND_DRBG_STRENGTH / 16))
+# endif
 /*
  *                             = (RAND_POOL_FACTOR * \
  *                                1.5 * (RAND_DRBG_STRENGTH / 8))
@@ -57,7 +63,12 @@
  * with 40 bytes.  The value of forty eight is comfortably above this which
  * allows some slack in the platform specific values used.
  */
-# define RAND_POOL_MIN_ALLOCATION(secure) ((secure) ? 16 : 48)
+# ifdef TONGSUO_RAND_GM_SRNG
+/* GM/T 0105-2021 DRNG requires the entropy pool should at least 512 bytes. */
+#  define RAND_POOL_MIN_ALLOCATION(secure) ((secure) ? 512 : 1024)
+# else
+#  define RAND_POOL_MIN_ALLOCATION(secure) ((secure) ? 16 : 48)
+# endif
 
 /*
  * The 'random pool' acts as a dumb container for collecting random
@@ -80,6 +91,8 @@ typedef struct rand_pool_st {
     size_t alloc_len; /* current number of bytes allocated */
     size_t entropy; /* current entropy count in bits */
     size_t entropy_requested; /* requested entropy count in bits */
+
+    unsigned int entropy_source;
 } RAND_POOL;
 
 RAND_POOL *ossl_rand_pool_new(int entropy_requested, int secure,
@@ -105,5 +118,5 @@ int ossl_rand_pool_add(RAND_POOL *pool,
                        const unsigned char *buffer, size_t len, size_t entropy);
 unsigned char *ossl_rand_pool_add_begin(RAND_POOL *pool, size_t len);
 int ossl_rand_pool_add_end(RAND_POOL *pool, size_t len, size_t entropy);
-
+void ossl_rand_pool_set_default_entropy_source(unsigned int source);
 #endif /* OSSL_PROVIDER_RAND_POOL_H */

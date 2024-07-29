@@ -63,10 +63,16 @@ static int do_sigver_init(EVP_MD_CTX *ctx, EVP_PKEY_CTX **pctx,
 
     if (ctx->pctx == NULL) {
         reinit = 0;
-        if (e == NULL)
-            ctx->pctx = EVP_PKEY_CTX_new_from_pkey(libctx, pkey, props);
-        else
+        if (e == NULL) {
+#ifdef SMTC_MODULE
+            if (ver)
+                ctx->pctx = EVP_PKEY_CTX_new_from_pkey_provided(libctx, pkey, props);
+            else
+#endif
+                ctx->pctx = EVP_PKEY_CTX_new_from_pkey(libctx, pkey, props);
+        } else {
             ctx->pctx = EVP_PKEY_CTX_new(pkey, e);
+        }
     }
     if (ctx->pctx == NULL)
         return 0;

@@ -102,7 +102,14 @@ static uint64_t get_timer_bits(void);
 # undef OPENSSL_RAND_SEED_RDTSC
 # undef OPENSSL_RAND_SEED_RDCPU
 # undef OPENSSL_RAND_SEED_EGD
-# undef OPENSSL_RAND_SEED_RTC
+# undef OPENSSL_RAND_SEED_RTCODE
+# undef OPENSSL_RAND_SEED_RTMEM
+# undef OPENSSL_RAND_SEED_RTSOCK
+#endif
+
+#if defined(OPENSSL_RAND_SEED_RTSOCK)
+# include <sys/types.h>
+# include <sys/socket.h>
 #endif
 
 #if defined(OPENSSL_SYS_UEFI) && !defined(OPENSSL_RAND_SEED_NONE)
@@ -606,8 +613,8 @@ void ossl_rand_pool_keep_random_devices_open(int keep)
 
 #  endif    /* defined(OPENSSL_RAND_SEED_DEVRANDOM) */
 
-#  if defined(OPENSSL_RAND_SEED_RTC)
-static size_t ossl_prov_acquire_entropy_from_rtc1(RAND_POOL *pool)
+#  if defined(OPENSSL_RAND_SEED_RTCODE)
+static size_t ossl_prov_acquire_entropy_from_rtcode(RAND_POOL *pool)
 {
     size_t i, k, bytes_needed;
     struct timespec ts;
@@ -635,8 +642,9 @@ static size_t ossl_prov_acquire_entropy_from_rtc1(RAND_POOL *pool)
     }
     return ossl_rand_pool_entropy_available(pool);
 }
-
-static size_t ossl_prov_acquire_entropy_from_rtc2(RAND_POOL *pool)
+#  endif
+#  if defined(OPENSSL_RAND_SEED_RTMEM)
+static size_t ossl_prov_acquire_entropy_from_rtmem(RAND_POOL *pool)
 {
     size_t i, k, bytes_needed;
     struct timespec ts;
@@ -667,6 +675,55 @@ static size_t ossl_prov_acquire_entropy_from_rtc2(RAND_POOL *pool)
 }
 #  endif
 
+#  if defined(OPENSSL_RAND_SEED_RTSOCK)
+static size_t ossl_prov_acquire_entropy_from_rtsock(RAND_POOL *pool)
+{
+    int fd[2], ret;
+    long data;
+    size_t i, bytes_needed;
+    struct timespec ts;
+    unsigned char v;
+
+    bytes_needed = ossl_rand_pool_bytes_needed(pool, 4 /*entropy_factor*/);
+
+    for (i = 0; i < bytes_needed; i++) {
+        ret = socketpair(AF_UNIX, SOCK_STREAM, 0, fd);
+        if (ret == -1)
+            break;
+
+        data = random();
+
+        while ((ret = write(fd[0], &data, sizeof(data))) < 0 && errno == EINTR);
+        if (ret < 0) {
+            close(fd[0]);
+            close(fd[1]);
+            break;
+        }
+
+        while ((ret = read(fd[1], &data, sizeof(data))) < 0 && errno == EINTR);
+        if (ret < 0) {
+            close(fd[0]);
+            close(fd[1]);
+            break;
+        }
+
+        /* sleep for 1/65536 of a second (15 us). */
+        ts.tv_sec = 0;
+        ts.tv_nsec = 15000;
+        nanosleep(&ts, NULL);
+
+        /* Get wall clock time, take 8 bits. */
+        clock_gettime(CLOCK_REALTIME, &ts);
+        v = (unsigned char)(ts.tv_nsec & 0xFF);
+        ossl_rand_pool_add(pool, &v, sizeof(v), 2);
+
+        close(fd[0]);
+        close(fd[1]);
+    }
+
+    return ossl_rand_pool_entropy_available(pool);
+}
+#  endif
 /*
  * Try the various seeding methods in turn, exit when successful.
  *
@@ -694,7 +751,7 @@ size_t ossl_pool_acquire_entropy(RAND_POOL *pool)
     (void)entropy_available;    /* avoid compiler warning */
 
 #   if defined(OPENSSL_RAND_SEED_GETRANDOM)
-    {
+    if (pool->entropy_source & RAND_ENTROPY_SOURCE_GETRANDOM) {
         size_t bytes_needed;
         unsigned char *buffer;
         ssize_t bytes;
@@ -713,10 +770,11 @@ size_t ossl_pool_acquire_entropy(RAND_POOL *pool)
                 break;
             }
         }
+
+        entropy_available = ossl_rand_pool_entropy_available(pool);
+        if (entropy_available > 0)
+            return entropy_available;
     }
-    entropy_available = ossl_rand_pool_entropy_available(pool);
-    if (entropy_available > 0)
-        return entropy_available;
 #   endif
 
 #   if defined(OPENSSL_RAND_SEED_LIBRANDOM)
@@ -726,7 +784,8 @@ size_t ossl_pool_acquire_entropy(RAND_POOL *pool)
 #   endif
 
 #   if defined(OPENSSL_RAND_SEED_DEVRANDOM)
-    if (wait_random_seeded()) {
+    if ((pool->entropy_source & RAND_ENTROPY_SOURCE_DEVRANDOM)
+        && wait_random_seeded()) {
         size_t bytes_needed;
         unsigned char *buffer;
         size_t i;
@@ -766,19 +825,23 @@ size_t ossl_pool_acquire_entropy(RAND_POOL *pool)
 #   endif
 
 #   if defined(OPENSSL_RAND_SEED_RDTSC)
-    entropy_available = ossl_prov_acquire_entropy_from_tsc(pool);
-    if (entropy_available > 0)
-        return entropy_available;
+    if (pool->entropy_source & RAND_ENTROPY_SOURCE_RDTSC) {
+        entropy_available = ossl_prov_acquire_entropy_from_tsc(pool);
+        if (entropy_available > 0)
+            return entropy_available;
+    }
 #   endif
 
 #   if defined(OPENSSL_RAND_SEED_RDCPU)
-    entropy_available = ossl_prov_acquire_entropy_from_cpu(pool);
-    if (entropy_available > 0)
-        return entropy_available;
+    if (pool->entropy_source & RAND_ENTROPY_SOURCE_RDCPU) {
+        entropy_available = ossl_prov_acquire_entropy_from_cpu(pool);
+        if (entropy_available > 0)
+            return entropy_available;
+    }
 #   endif
 
 #   if defined(OPENSSL_RAND_SEED_EGD)
-    {
+    if (pool->entropy_source & RAND_ENTROPY_SOURCE_EGD) {
         static const char *paths[] = { DEVRANDOM_EGD, NULL };
         size_t bytes_needed;
         unsigned char *buffer;
@@ -804,14 +867,28 @@ size_t ossl_pool_acquire_entropy(RAND_POOL *pool)
     }
 #   endif
 
-#   if defined(OPENSSL_RAND_SEED_RTC)
-    entropy_available = ossl_prov_acquire_entropy_from_rtc1(pool);
-    if (entropy_available > 0)
-        return entropy_available;
+#   if defined(OPENSSL_RAND_SEED_RTCODE)
+    if (pool->entropy_source & RAND_ENTROPY_SOURCE_RTCODE) {
+        entropy_available = ossl_prov_acquire_entropy_from_rtcode(pool);
+        if (entropy_available > 0)
+            return entropy_available;
+    }
+#   endif
 
-    entropy_available = ossl_prov_acquire_entropy_from_rtc2(pool);
-    if (entropy_available > 0)
-        return entropy_available;
+#   if defined(OPENSSL_RAND_SEED_RTMEM)
+    if (pool->entropy_source & RAND_ENTROPY_SOURCE_RTMEM) {
+        entropy_available = ossl_prov_acquire_entropy_from_rtmem(pool);
+        if (entropy_available > 0)
+            return entropy_available;
+    }
+#   endif
+
+#   if defined(OPENSSL_RAND_SEED_RTSOCK)
+    if (pool->entropy_source & RAND_ENTROPY_SOURCE_RTSOCK) {
+        entropy_available = ossl_prov_acquire_entropy_from_rtsock(pool);
+        if (entropy_available > 0)
+            return entropy_available;
+    }
 #   endif
 
     return ossl_rand_pool_entropy_available(pool);

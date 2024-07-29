@@ -32,6 +32,18 @@
 #  endif
 # endif
 
+#define RAND_ENTROPY_SOURCE_GETRANDOM                  0x0001
+#define RAND_ENTROPY_SOURCE_DEVRANDOM                  0x0002
+#define RAND_ENTROPY_SOURCE_RDTSC                      0x0004
+#define RAND_ENTROPY_SOURCE_RDCPU                      0x0008
+#define RAND_ENTROPY_SOURCE_EGD                        0x0010
+#define RAND_ENTROPY_SOURCE_BCRYPTGENRANDOM            0x0020
+#define RAND_ENTROPY_SOURCE_CRYPTGENRANDOM_DEF_PROV    0x0040
+#define RAND_ENTROPY_SOURCE_CRYPTGENRANDOM_INTEL_PROV  0x0080
+#define RAND_ENTROPY_SOURCE_RTCODE                     0x0100
+#define RAND_ENTROPY_SOURCE_RTMEM                      0x0200
+#define RAND_ENTROPY_SOURCE_RTSOCK                     0x0400
+
 /*
  * Defines related to seed sources
  */
@@ -111,6 +123,9 @@ void ossl_random_add_conf_module(void);
 size_t ossl_rand_get_entropy(ossl_unused OSSL_CORE_HANDLE *handle,
                              unsigned char **pout, int entropy,
                              size_t min_len, size_t max_len);
+size_t ossl_rand_get_entropy_from_source(unsigned int source,
+                                         unsigned char **pout, int entropy,
+                                         size_t min_len, size_t max_len);
 void ossl_rand_cleanup_entropy(ossl_unused OSSL_CORE_HANDLE *handle,
                                unsigned char *buf, size_t len);
 size_t ossl_rand_get_nonce(ossl_unused OSSL_CORE_HANDLE *handle,

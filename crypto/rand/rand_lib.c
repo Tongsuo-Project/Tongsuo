@@ -564,7 +564,11 @@ static EVP_RAND_CTX *rand_new_drbg(OSSL_LIB_CTX *libctx, EVP_RAND_CTX *parent,
 
     if (dgbl == NULL)
         return NULL;
+#ifdef SMTC_MODULE
+    name = dgbl->rng_name != NULL ? dgbl->rng_name : "HASH-DRBG";
+#else
     name = dgbl->rng_name != NULL ? dgbl->rng_name : "CTR-DRBG";
+#endif
     rand = EVP_RAND_fetch(libctx, name, dgbl->rng_propq);
     if (rand == NULL) {
         ERR_raise(ERR_LIB_RAND, RAND_R_UNABLE_TO_FETCH_DRBG);
@@ -581,12 +585,22 @@ static EVP_RAND_CTX *rand_new_drbg(OSSL_LIB_CTX *libctx, EVP_RAND_CTX *parent,
      * Rather than trying to decode the DRBG settings, just pass them through
      * and rely on the other end to ignore those it doesn't care about.
      */
+#ifdef SMTC_MODULE
+    cipher = dgbl->rng_digest != NULL ? dgbl->rng_digest : "SM3";
+    *p++ = OSSL_PARAM_construct_utf8_string(OSSL_DRBG_PARAM_DIGEST,
+                                            cipher, 0);
+
+    if (dgbl->rng_cipher != NULL)
+        *p++ = OSSL_PARAM_construct_utf8_string(OSSL_DRBG_PARAM_CIPHER,
+                                                dgbl->rng_cipher, 0);
+#else
     cipher = dgbl->rng_cipher != NULL ? dgbl->rng_cipher : "AES-256-CTR";
     *p++ = OSSL_PARAM_construct_utf8_string(OSSL_DRBG_PARAM_CIPHER,
                                             cipher, 0);
     if (dgbl->rng_digest != NULL)
         *p++ = OSSL_PARAM_construct_utf8_string(OSSL_DRBG_PARAM_DIGEST,
                                                 dgbl->rng_digest, 0);
+#endif
     if (dgbl->rng_propq != NULL)
         *p++ = OSSL_PARAM_construct_utf8_string(OSSL_DRBG_PARAM_PROPERTIES,
                                                 dgbl->rng_propq, 0);
@@ -806,6 +820,11 @@ void ossl_random_add_conf_module(void)
 {
     OSSL_TRACE(CONF, "Adding config module 'random'\n");
     CONF_module_add("random", random_conf_init, random_conf_deinit);
+}
+
+void RAND_set_entropy_source(unsigned int type)
+{
+    ossl_rand_pool_set_default_entropy_source(type);
 }
 
 int RAND_set_DRBG_type(OSSL_LIB_CTX *ctx, const char *drbg, const char *propq,

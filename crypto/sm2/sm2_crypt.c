@@ -392,6 +392,62 @@ int ossl_sm2_decrypt(const EC_KEY *key,
     return rc;
 }
 
+unsigned char *ossl_sm2_ciphertext_encode(const BIGNUM *C1x, const BIGNUM *C1y,
+                                          const uint8_t *C2_data, size_t C2_len,
+                                          const uint8_t *C3_data, size_t C3_len,
+                                          size_t *ciphertext_len)
+{
+    unsigned char *ciphertext_buf = NULL;
+    struct SM2_Ciphertext_st ctext_struct;
+    int ciphertext_leni;
+
+    if (C1x == NULL || C1y == NULL || C2_data == NULL || C3_data == NULL) {
+        ERR_raise(ERR_LIB_SM2, ERR_R_PASSED_NULL_PARAMETER);
+        return NULL;
+    }
+
+    memset(&ctext_struct, 0, sizeof(ctext_struct));
+
+    ctext_struct.C1x = (BIGNUM *)C1x;
+    ctext_struct.C1y = (BIGNUM *)C1y;
+    ctext_struct.C2 = ASN1_OCTET_STRING_new();
+
+    if (ctext_struct.C2 == NULL) {
+        ERR_raise(ERR_LIB_SM2, ERR_R_MALLOC_FAILURE);
+        goto end;
+    }
+
+    if (!ASN1_OCTET_STRING_set(ctext_struct.C2, C2_data, C2_len))
+        goto end;
+
+    ctext_struct.C3 = ASN1_OCTET_STRING_new();
+
+    if (ctext_struct.C3 == NULL) {
+        ERR_raise(ERR_LIB_SM2, ERR_R_MALLOC_FAILURE);
+        goto end;
+    }
+
+    if (!ASN1_OCTET_STRING_set(ctext_struct.C3, C3_data, C3_len))
+        goto end;
+
+    ciphertext_leni = i2d_SM2_Ciphertext(&ctext_struct, &ciphertext_buf);
+    /* Ensure cast to size_t is safe */
+    if (ciphertext_leni < 0) {
+        ERR_raise(ERR_LIB_SM2, ERR_R_INTERNAL_ERROR);
+        goto end;
+    }
+    *ciphertext_len = (size_t)ciphertext_leni;
+
+ end:
+    if (ctext_struct.C2 != NULL)
+        ASN1_OCTET_STRING_free(ctext_struct.C2);
+
+    if (ctext_struct.C3 != NULL)
+        ASN1_OCTET_STRING_free(ctext_struct.C3);
+
+    return ciphertext_buf;
+}
+
 int ossl_sm2_ciphertext_decode(const uint8_t *ciphertext, size_t ciphertext_len,
                                EC_POINT **C1p, uint8_t **C2_data,
                                size_t *C2_len, uint8_t **C3_data,

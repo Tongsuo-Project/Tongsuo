@@ -32,6 +32,7 @@ extern "C" {
 # define OSSL_SELF_TEST_TYPE_PCT                "Conditional_PCT"
 # define OSSL_SELF_TEST_TYPE_KAT_CIPHER         "KAT_Cipher"
 # define OSSL_SELF_TEST_TYPE_KAT_ASYM_CIPHER    "KAT_AsymmetricCipher"
+# define OSSL_SELF_TEST_TYPE_PCT_ASYM_CIPHER    "PCT_AsymmetricCipher"
 # define OSSL_SELF_TEST_TYPE_KAT_DIGEST         "KAT_Digest"
 # define OSSL_SELF_TEST_TYPE_KAT_SIGNATURE      "KAT_Signature"
 # define OSSL_SELF_TEST_TYPE_PCT_SIGNATURE      "PCT_Signature"
@@ -42,6 +43,7 @@ extern "C" {
 /* Test event sub categories */
 # define OSSL_SELF_TEST_DESC_NONE           "None"
 # define OSSL_SELF_TEST_DESC_INTEGRITY_HMAC "HMAC"
+# define OSSL_SELF_TEST_DESC_INTEGRITY_VERIFY   "Verify_Integrity"
 # define OSSL_SELF_TEST_DESC_PCT_RSA_PKCS1  "RSA"
 # define OSSL_SELF_TEST_DESC_PCT_ECDSA      "ECDSA"
 # define OSSL_SELF_TEST_DESC_PCT_DSA        "DSA"
@@ -56,6 +58,8 @@ extern "C" {
 # define OSSL_SELF_TEST_DESC_SIGN_DSA       "DSA"
 # define OSSL_SELF_TEST_DESC_SIGN_RSA       "RSA"
 # define OSSL_SELF_TEST_DESC_SIGN_SM2       "SM2"
+# define OSSL_SELF_TEST_DESC_SIGN_SM2_SIGN  "SM2_Sign"
+# define OSSL_SELF_TEST_DESC_SIGN_SM2_VERIFY    "SM2_Verify"
 # define OSSL_SELF_TEST_DESC_SIGN_ECDSA     "ECDSA"
 # define OSSL_SELF_TEST_DESC_DRBG_CTR       "CTR"
 # define OSSL_SELF_TEST_DESC_DRBG_HASH      "HASH"
@@ -76,6 +80,8 @@ extern "C" {
 # define OSSL_SELF_TEST_DESC_RNG            "RNG"
 # define OSSL_SELF_TEST_DESC_ASYM_SM2_ENC   "SM2_Encrypt"
 # define OSSL_SELF_TEST_DESC_ASYM_SM2_DEC   "SM2_Decrypt"
+# define OSSL_SELF_TEST_DESC_SM2_SIGN_PAIRWISE  "SM2_Sign_Pairwise"
+# define OSSL_SELF_TEST_DESC_SM2_ENC_PAIRWISE   "SM2_Enc_Pairwise"
 
 
 void OSSL_SELF_TEST_set_callback(OSSL_LIB_CTX *libctx, OSSL_CALLBACK *cb,

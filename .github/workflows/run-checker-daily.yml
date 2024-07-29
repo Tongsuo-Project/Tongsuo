@@ -114,8 +114,6 @@ jobs:
           enable-zlib-dynamic,
           no-zlib-dynamic,
           enable-ntls,
-          enable-smtc enable-smtc-debug,
-          enable-ntls enable-smtc enable-smtc-debug,
           enable-ec_elgamal enable-twisted_ec_elgamal,
           enable-bulletproofs,
           enable-bulletproofs enable-nizk enable-zkp-gadget enable-ec_elgamal enable-twisted_ec_elgamal,

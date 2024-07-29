@@ -35,9 +35,6 @@ static OSSL_FUNC_rand_gettable_ctx_params_fn drbg_hash_gettable_ctx_params;
 static OSSL_FUNC_rand_get_ctx_params_fn drbg_hash_get_ctx_params;
 static OSSL_FUNC_rand_verify_zeroization_fn drbg_hash_verify_zeroization;
 
-/* 888 bits from SP800-90Ar1 10.1 table 2 */
-#define HASH_PRNG_MAX_SEEDLEN    (888/8)
-
 /* 440 bits from SP800-90Ar1 10.1 table 2 */
 #define HASH_PRNG_SMALL_SEEDLEN   (440/8)
 
@@ -45,15 +42,6 @@ static OSSL_FUNC_rand_verify_zeroization_fn drbg_hash_verify_zeroization;
 #define MAX_BLOCKLEN_USING_SMALL_SEEDLEN (256/8)
 #define INBYTE_IGNORE ((unsigned char)0xFF)
 
-typedef struct rand_drbg_hash_st {
-    PROV_DIGEST digest;
-    EVP_MD_CTX *ctx;
-    size_t blocklen;
-    unsigned char V[HASH_PRNG_MAX_SEEDLEN];
-    unsigned char C[HASH_PRNG_MAX_SEEDLEN];
-    /* Temporary value storage: should always exceed max digest length */
-    unsigned char vtmp[HASH_PRNG_MAX_SEEDLEN];
-} PROV_DRBG_HASH;
 
 /*
  * SP800-90Ar1 10.3.1 Derivation function using a Hash Function (Hash_df).
@@ -309,8 +297,10 @@ static int drbg_hash_reseed(PROV_DRBG *drbg,
                      adin, adin_len))
             return 0;
     } else {
-        /* (Step 1-2) V = Hash_df(0x01 || V || entropy_input || additional_input) */
-        /* V about to be updated so use C as output instead */
+        /*
+         * (Step 1-2) V=Hash_df(0x01 || V || entropy_input || additional_input)
+         * V about to be updated so use C as output instead
+         */
         if (!hash_df(drbg, hash->C, 0x01, hash->V, drbg->seedlen, ent, ent_len,
                      adin, adin_len))
             return 0;

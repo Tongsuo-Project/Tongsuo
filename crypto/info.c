@@ -152,8 +152,14 @@ DEFINE_RUN_ONCE_STATIC(init_info_strings)
 #ifdef OPENSSL_RAND_SEED_OS
         add_seeds_string("os-specific");
 #endif
-#ifdef OPENSSL_RAND_SEED_RTC
-        add_seeds_string("real-time-clock");
+#ifdef OPENSSL_RAND_SEED_RTCODE
+        add_seeds_string("real-time-code");
+#endif
+#ifdef OPENSSL_RAND_SEED_RTMEM
+        add_seeds_string("real-time-memory");
+#endif
+#ifdef OPENSSL_RAND_SEED_RTSOCK
+        add_seeds_string("real-time-socket");
 #endif
         seed_sources = seeds;
     }
@@ -200,6 +206,12 @@ const char *OPENSSL_info(int t)
         if (ossl_cpu_info_str[0] != '\0')
             return ossl_cpu_info_str + strlen(CPUINFO_PREFIX);
         break;
+#ifdef SMTC_MODULE
+    case OPENSSL_INFO_SMTC_MODULE_CONF:
+        return SMTC_MODULE_CONF;
+    case OPENSSL_INFO_SMTC_AUTH_KEK:
+        return SMTC_AUTH_KEK;
+#endif
     default:
         break;
     }
