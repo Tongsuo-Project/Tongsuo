@@ -588,8 +588,23 @@ our %disabled = ( # "what"         => "comment"
                   "zkp-gadget"          => "default",
                   "zkp-transcript"      => "default",
                   "bn-method"           => "default",
-                  "smtc"                 => "default",
-                  "smtc-debug"           => "default",
+                  "smtc"                => "default",
+                  "smtc-debug"          => "default",
+                  "aria"                => "default", # ARIA has been removed
+                  "bf"                  => "default", # Blowfish has been removed
+                  "blake2"              => "default", # Blake2 has been removed
+                  "camellia"            => "default", # Camellia has been removed
+                  "cast"                => "default", # CAST has been removed
+                  "idea"                => "default", # IDEA has been removed
+                  "md2"                 => "default", # MD2 has been removed
+                  "mdc2"                => "default", # MDC2 has been removed
+                  "md4"                 => "default", # MD4 has been removed
+                  "gost"                => "default", # GOST has been removed
+                  "rc2"                 => "default", # RC2 has been removed
+                  "rmd160"              => "default", # RIPEMD has been removed
+                  "ripemd"              => "default", # RIPEMD has been removed
+                  "seed"                => "default", # SEED has been removed
+                  "whirlpool"           => "default", # Whirlpool has been removed
                 );
 
 # Note: => pair form used for aesthetics, not to truly make a hash table
