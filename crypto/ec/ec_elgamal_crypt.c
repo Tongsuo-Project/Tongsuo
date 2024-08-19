@@ -199,7 +199,7 @@ EC_ELGAMAL_MR_CTX *EC_ELGAMAL_MR_CTX_new(STACK_OF(EC_KEY) *keys, const EC_POINT 
 
         if (h != NULL) {
             if (!(ctx->h = EC_POINT_dup(h, ctx->group)))
-                return 0;
+                goto err;
         } else {
             ctx->h = EC_POINT_new(group);
             if (ctx->h == NULL) {
