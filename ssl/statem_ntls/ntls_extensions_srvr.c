@@ -587,9 +587,10 @@ EXT_RETURN tls_construct_stoc_next_proto_neg_ntls(SSL *s, WPACKET *pkt,
             return EXT_RETURN_FAIL;
         }
         s->s3.npn_seen = 1;
+        return EXT_RETURN_SENT;
     }
 
-    return EXT_RETURN_SENT;
+    return EXT_RETURN_NOT_SENT;
 }
 #endif
 
