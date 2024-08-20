@@ -16,6 +16,9 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 #include <openssl/pem.h>
+#ifdef SMTC_MODULE
+# include <openssl/self_test.h>
+#endif
 
 static int ssl_set_cert(CERT *c, X509 *x509);
 static int ssl_set_pkey(CERT *c, EVP_PKEY *pkey);
@@ -1278,8 +1281,125 @@ static int ssl_set_cert_idx(CERT *c, X509 *x, int i)
     return 1;
 }
 
+# ifdef SMTC_MODULE
+static int sm2_enc_pairwise_test(const X509 *x, EVP_PKEY *k,
+                                 OSSL_CALLBACK *cb, void *cbarg)
+{
+    int ret = 0;
+    unsigned char in[16] = {0};
+    unsigned char in2[16];
+    size_t inlen2 = sizeof(in2);
+    unsigned char out[256];
+    size_t outlen = sizeof(out);
+    EVP_PKEY *xk;
+    EVP_PKEY_CTX *ectx = NULL, *dctx = NULL;
+    OSSL_SELF_TEST *st = NULL;
+
+    xk = X509_get0_pubkey(x);
+    if (xk == NULL) {
+        ERR_raise(ERR_LIB_X509, X509_R_UNABLE_TO_GET_CERTS_PUBLIC_KEY);
+        return 0;
+    }
+
+    st = OSSL_SELF_TEST_new(cb, cbarg);
+    if (st == NULL)
+        return 0;
+
+    OSSL_SELF_TEST_onbegin(st, OSSL_SELF_TEST_TYPE_PCT,
+                           OSSL_SELF_TEST_DESC_SM2_ENC_PAIRWISE);
+
+    ectx = EVP_PKEY_CTX_new_from_pkey(NULL, xk, NULL);
+    if (ectx == NULL)
+        goto err;
+
+    if (EVP_PKEY_encrypt_init(ectx) <= 0
+        || EVP_PKEY_encrypt(ectx, out, &outlen, in, sizeof(in)) <= 0)
+        goto err;
+
+    dctx = EVP_PKEY_CTX_new_from_pkey(NULL, k, NULL);
+    if (dctx == NULL)
+        goto err;
+
+    if (EVP_PKEY_decrypt_init(dctx) <= 0)
+        goto err;
+
+    if (EVP_PKEY_decrypt(dctx, in2, &inlen2, out, outlen) <= 0)
+        goto err;
+
+    OSSL_SELF_TEST_oncorrupt_byte(st, in2);
+
+    if (inlen2 != sizeof(in) || memcmp(in, in2, sizeof(in)) != 0)
+        goto err;
+
+    ret = 1;
+err:
+    OSSL_SELF_TEST_onend(st, ret);
+    OSSL_SELF_TEST_free(st);
+    EVP_PKEY_CTX_free(ectx);
+    EVP_PKEY_CTX_free(dctx);
+    return ret;
+}
+
+static int sm2_sign_pairwise_test(const X509 *x, EVP_PKEY *k,
+                                  OSSL_CALLBACK *cb, void *cbarg)
+{
+    int ret = 0;
+    unsigned char dgst[32] = {0};
+    unsigned char sig[256];
+    size_t siglen = sizeof(sig);
+    EVP_PKEY *xk;
+    EVP_PKEY_CTX *sctx = NULL, *vctx = NULL;
+    OSSL_SELF_TEST *st = NULL;
+
+    xk = X509_get0_pubkey(x);
+    if (xk == NULL) {
+        ERR_raise(ERR_LIB_X509, X509_R_UNABLE_TO_GET_CERTS_PUBLIC_KEY);
+        return 0;
+    }
+
+    st = OSSL_SELF_TEST_new(cb, cbarg);
+    if (st == NULL)
+        return 0;
+
+    OSSL_SELF_TEST_onbegin(st, OSSL_SELF_TEST_TYPE_PCT,
+                           OSSL_SELF_TEST_DESC_SM2_SIGN_PAIRWISE);
+
+    sctx = EVP_PKEY_CTX_new_from_pkey(NULL, k, NULL);
+    if (sctx == NULL)
+        goto err;
+
+    if (EVP_PKEY_sign_init(sctx) <= 0
+        || EVP_PKEY_sign(sctx, sig, &siglen, dgst, sizeof(dgst)) <= 0)
+        goto err;
+
+    vctx = EVP_PKEY_CTX_new_from_pkey(NULL, xk, NULL);
+    if (vctx == NULL)
+        goto err;
+
+    if (EVP_PKEY_verify_init(vctx) <= 0)
+        goto err;
+
+    OSSL_SELF_TEST_oncorrupt_byte(st, dgst);
+
+    if (EVP_PKEY_verify(vctx, sig, siglen, dgst, sizeof(dgst)) <= 0)
+        goto err;
+
+    ret = 1;
+err:
+    OSSL_SELF_TEST_onend(st, ret);
+    OSSL_SELF_TEST_free(st);
+    EVP_PKEY_CTX_free(sctx);
+    EVP_PKEY_CTX_free(vctx);
+    return ret;
+}
+# endif
+
 static int ssl_set_pkey_idx(CERT *c, EVP_PKEY *pkey, int i)
 {
+#ifdef SMTC_MODULE
+        OSSL_CALLBACK *cb = NULL;
+        void *cbarg = NULL;
+#endif
     if (c->pkeys[i].x509 != NULL) {
         EVP_PKEY *pktmp;
         pktmp = X509_get0_pubkey(c->pkeys[i].x509);
@@ -1299,6 +1419,25 @@ static int ssl_set_pkey_idx(CERT *c, EVP_PKEY *pkey, int i)
             c->pkeys[i].x509 = NULL;
             return 0;
         }
+#ifdef SMTC_MODULE
+        if (i == SSL_PKEY_SM2_SIGN || i == SSL_PKEY_SM2_ENC) {
+            OSSL_SELF_TEST_get_callback(NULL, &cb, &cbarg);
+
+            if (i == SSL_PKEY_SM2_SIGN
+                && !sm2_sign_pairwise_test(c->pkeys[i].x509, pkey, cb, cbarg)) {
+                X509_free(c->pkeys[i].x509);
+                c->pkeys[i].x509 = NULL;
+                return 0;
+            }
+
+            if (i == SSL_PKEY_SM2_ENC
+                && !sm2_enc_pairwise_test(c->pkeys[i].x509, pkey, cb, cbarg)) {
+                X509_free(c->pkeys[i].x509);
+                c->pkeys[i].x509 = NULL;
+                return 0;
+            }
+        }
+#endif
     }
 
     EVP_PKEY_free(c->pkeys[i].privatekey);

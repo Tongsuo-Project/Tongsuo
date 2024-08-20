@@ -13,6 +13,7 @@
 #include <math.h>
 #include <openssl/crypto.h>
 #include <openssl/rand.h>
+#include <openssl/sdf.h>
 #include <openssl/self_test.h>
 #include "internal/nelem.h"
 #include "self_test_rand.h"
@@ -438,7 +439,7 @@ static double psi2(const unsigned char *buf, size_t m, size_t n)
 
     pow_len = (size_t)pow(2, m + 1) - 1;
 
-    if ((P = OPENSSL_zalloc(pow_len * sizeof(size_t))) == NULL)
+    if ((P = OPENSSL_zalloc(pow_len * sizeof(unsigned int))) == NULL)
         return 0.0;
 
     for (i = 1; i < pow_len - 1; i++)
@@ -1903,19 +1904,36 @@ int rand_self_test_discrete_fourier_transform(const unsigned char *buf,
     return p_value >= alpha;
 }
 
-int smtc_randomness_test_delivery(OSSL_SELF_TEST *st, OSSL_LIB_CTX *libctx)
+int smtc_rand_delivery_test(OSSL_SELF_TEST *st, int sdf)
 {
     int nbit = 1000000;
     unsigned char buf[nbit / 8];
     int fail[15] = {0};
     size_t i = 0, j, k;
     int retry = 1, res = 0;
+    void *hDeviceHandle = NULL, *hSessionHandle = NULL;
 
-    OSSL_SELF_TEST_onbegin(st, "Delivery_Test", "Randomness");
+    if (sdf)
+        OSSL_SELF_TEST_onbegin(st, "Delivery_Test", "Randomness for device");
+    else
+        OSSL_SELF_TEST_onbegin(st, "Delivery_Test", "Randomness");
+
+    if (sdf) {
+        if (TSAPI_SDF_OpenDevice(&hDeviceHandle) != 0)
+            goto end;
+
+        if (TSAPI_SDF_OpenSession(hDeviceHandle, &hSessionHandle) != 0)
+            goto end;
+    }
 
     while (i++ < 50) {
-        if (RAND_bytes(buf, nbit / 8) != 1)
-            return 0;
+        if (sdf) {
+            if (TSAPI_SDF_GenerateRandom(hSessionHandle, nbit / 8, buf) != 0)
+                goto end;
+        } else {
+            if (RAND_bytes(buf, nbit / 8) != 1)
+                goto end;
+        }
 
         j = 0;
         fail[j++] += rand_self_test_frequency(buf, nbit, NULL) ^ 1;
@@ -1948,23 +1966,42 @@ int smtc_randomness_test_delivery(OSSL_SELF_TEST *st, OSSL_LIB_CTX *libctx)
 
     res = 1;
 end:
+    TSAPI_SDF_CloseSession(hSessionHandle);
+    TSAPI_SDF_CloseDevice(hDeviceHandle);
     OSSL_SELF_TEST_onend(st, res);
     return 1;
 }
 
-int smtc_randomness_test_poweron(OSSL_SELF_TEST *st, OSSL_LIB_CTX *libctx)
+int smtc_rand_poweron_test(OSSL_SELF_TEST *st, int sdf)
 {
     int nbit = 1000000;
     unsigned char buf[nbit / 8];
     int fail[15] = {0};
     size_t i = 0, j, k;
     int retry = 1, res = 0;
+    void *hDeviceHandle = NULL, *hSessionHandle = NULL;
 
-    OSSL_SELF_TEST_onbegin(st, "Poweron_Test", "Randomness");
+    if (sdf)
+        OSSL_SELF_TEST_onbegin(st, "Poweron_Test", "Randomness for device");
+    else
+        OSSL_SELF_TEST_onbegin(st, "Poweron_Test", "Randomness");
+
+    if (sdf) {
+        if (TSAPI_SDF_OpenDevice(&hDeviceHandle) != 0)
+            goto end;
+
+        if (TSAPI_SDF_OpenSession(hDeviceHandle, &hSessionHandle) != 0)
+            goto end;
+    }
 
     while(i++ < 20) {
-        if (RAND_bytes(buf, nbit / 8) != 1)
-            goto end;
+        if (sdf) {
+            if (TSAPI_SDF_GenerateRandom(hSessionHandle, nbit / 8, buf) != 0)
+                goto end;
+        } else {
+            if (RAND_bytes(buf, nbit / 8) != 1)
+                goto end;
+        }
 
         j = 0;
         fail[j++] += rand_self_test_frequency(buf, nbit, NULL) ^ 1;
@@ -1997,25 +2034,37 @@ int smtc_randomness_test_poweron(OSSL_SELF_TEST *st, OSSL_LIB_CTX *libctx)
 
     res = 1;
 end:
+    TSAPI_SDF_CloseSession(hSessionHandle);
+    TSAPI_SDF_CloseDevice(hDeviceHandle);
     OSSL_SELF_TEST_onend(st, res);
     return 1;
 }
 
-int smtc_randomness_test_cyclical(OSSL_SELF_TEST *st, OSSL_LIB_CTX *libctx)
+int smtc_rand_cyclical_test(OSSL_SELF_TEST *st, int sdf)
 {
     int nbit = 20000;
     unsigned char buf[nbit / 8];
     int fail[12] = {0};
     size_t i = 0, j, k;
     int retry = 1, res = 0;
+    void *hDeviceHandle = NULL, *hSessionHandle = NULL;
 
-    OSSL_SELF_TEST_onbegin(st, "Cyclical_Test", "Randomness");
+    if (sdf)
+        OSSL_SELF_TEST_onbegin(st, "Cyclical_Test", "Randomness for device");
+    else
+        OSSL_SELF_TEST_onbegin(st, "Cyclical_Test", "Randomness");
 
     while(i++ < 20) {
-        if (RAND_bytes(buf, nbit / 8) != 1)
-            goto end;
+        if (sdf) {
+            if (TSAPI_SDF_GenerateRandom(hSessionHandle, nbit / 8, buf) != 0)
+                goto end;
+        } else {
+            if (RAND_bytes(buf, nbit / 8) != 1)
+                goto end;
+        }
 
         j = 0;
+
         fail[j++] += rand_self_test_frequency(buf, nbit, NULL) ^ 1;
         fail[j++] += rand_self_test_block_frequency(buf, nbit, 1000, NULL) ^ 1;
         fail[j++] += rand_self_test_poker(buf, nbit, 8, NULL) ^ 1;
@@ -2043,21 +2092,40 @@ int smtc_randomness_test_cyclical(OSSL_SELF_TEST *st, OSSL_LIB_CTX *libctx)
 
     res = 1;
 end:
+    TSAPI_SDF_CloseSession(hSessionHandle);
+    TSAPI_SDF_CloseDevice(hDeviceHandle);
     OSSL_SELF_TEST_onend(st, res);
     return 1;
 }
 
-int smtc_randomness_test_single(OSSL_SELF_TEST *st, OSSL_LIB_CTX *libctx)
+int smtc_rand_single_test(OSSL_SELF_TEST *st, int sdf)
 {
     int nbit = 256;
     unsigned char buf[nbit / 8];
     int retry = 1, res = 0;
+    void *hDeviceHandle = NULL, *hSessionHandle = NULL;
 
-    OSSL_SELF_TEST_onbegin(st, "Single_Test", "Randomness");
+    if (sdf)
+        OSSL_SELF_TEST_onbegin(st, "Single_Test", "Randomness for device");
+    else
+        OSSL_SELF_TEST_onbegin(st, "Single_Test", "Randomness");
+
+    if (sdf) {
+        if (TSAPI_SDF_OpenDevice(&hDeviceHandle) != 0)
+            goto end;
+
+        if (TSAPI_SDF_OpenSession(hDeviceHandle, &hSessionHandle) != 0)
+            goto end;
+    }
 
     do {
-        if (RAND_bytes(buf, nbit / 8) != 1)
-            goto end;
+        if (sdf) {
+            if (TSAPI_SDF_GenerateRandom(hSessionHandle, nbit / 8, buf) != 0)
+                goto end;
+        } else {
+            if (RAND_bytes(buf, nbit / 8) != 1)
+                goto end;
+        }
 
         if (rand_self_test_poker(buf, nbit, 2, NULL) == 1)
             break;
@@ -2067,6 +2135,8 @@ int smtc_randomness_test_single(OSSL_SELF_TEST *st, OSSL_LIB_CTX *libctx)
 
     res = 1;
 end:
+    TSAPI_SDF_CloseSession(hSessionHandle);
+    TSAPI_SDF_CloseDevice(hDeviceHandle);
     OSSL_SELF_TEST_onend(st, res);
     return 1;
 }

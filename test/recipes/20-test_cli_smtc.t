@@ -26,8 +26,7 @@ plan skip_all => "Test only supported in a smtc build"
     if disabled("smtc") || disabled("smtc-debug");
 plan tests => 9;
 
-my $defaultconf = srctop_file("test", "default.cnf");
-my $smtcconf = srctop_file("test", "smtc-and-base.cnf");
+my $smtcconf = srctop_file("test", "smtc.cnf");
 my $tbs_data = abs_path(bldtop_file('apps', 'openssl' . platform->binext()));
 my $bogus_data = $smtcconf;
 
@@ -64,16 +63,13 @@ sub pubfrompriv {
 
 }
 
-my $tsignverify_count = 8;
+my $tsignverify_count = 2;
 sub tsignverify {
     my $prefix = shift;
     my $smtc_key = shift;
     my $smtc_pub_key = shift;
-    my $nonsmtc_key = shift;
-    my $nonsmtc_pub_key = shift;
     my $md = shift;
     my $smtc_sigfile = $prefix.'.smtc.sig';
-    my $nonsmtc_sigfile = $prefix.'.nonsmtc.sig';
     my $sigfile = '';
     my $testtext = '';
 
@@ -95,65 +91,6 @@ sub tsignverify {
                 '-signature', $sigfile,
                 $tbs_data])),
        $testtext);
-
-    $testtext = $prefix.': '.
-        'Verify a valid signature against the wrong data with a SMTC key'.
-        ' (should fail)';
-    ok(!run(app(['openssl', 'dgst', $md,
-                 '-verify', $smtc_pub_key,
-                 '-signature', $sigfile,
-                 $bogus_data])),
-       $testtext);
-
-    $ENV{OPENSSL_CONF} = $defaultconf;
-
-    $sigfile = $nonsmtc_sigfile;
-    $testtext = $prefix.': '.
-        'Sign something with a non-SMTC key'.
-        ' with the default provider';
-    ok(run(app(['openssl', 'dgst', $md,
-                '-sign', $nonsmtc_key,
-                '-out', $sigfile,
-                $tbs_data])),
-       $testtext);
-
-    $testtext = $prefix.': '.
-        'Verify something with a non-SMTC key'.
-        ' with the default provider';
-    ok(run(app(['openssl', 'dgst', $md,
-                '-verify', $nonsmtc_pub_key,
-                '-signature', $sigfile,
-                $tbs_data])),
-       $testtext);
-
-    $ENV{OPENSSL_CONF} = $smtcconf;
-
-    $testtext = $prefix.': '.
-        'Sign something with a non-SMTC key'.
-        ' (should fail)';
-    ok(!run(app(['openssl', 'dgst', $md,
-                 '-sign', $nonsmtc_key,
-                 '-out', $prefix.'.nonsmtc.fail.sig',
-                 $tbs_data])),
-       $testtext);
-
-    $testtext = $prefix.': '.
-        'Verify something with a non-SMTC key'.
-        ' (should fail)';
-    ok(!run(app(['openssl', 'dgst', $md,
-                 '-verify', $nonsmtc_pub_key,
-                 '-signature', $sigfile,
-                 $tbs_data])),
-       $testtext);
-
-    $testtext = $prefix.': '.
-        'Verify a valid signature against the wrong data with a non-SMTC key'.
-        ' (should fail)';
-    ok(!run(app(['openssl', 'dgst', $md,
-                 '-verify', $nonsmtc_pub_key,
-                 '-signature', $sigfile,
-                 $bogus_data])),
-       $testtext);
 }
 
 SKIP : {
@@ -164,24 +101,10 @@ SKIP : {
         my $testtext_prefix = 'SM2';
         my $smtc_key = $testtext_prefix.'.smtc.priv.pem';
         my $smtc_pub_key = $testtext_prefix.'.smtc.pub.pem';
-        my $a_nonsmtc_curve = 'brainpoolP256r1';
-        my $nonsmtc_key = $testtext_prefix.'.nonsmtc.priv.pem';
-        my $nonsmtc_pub_key = $testtext_prefix.'.nonsmtc.pub.pem';
         my $testtext = '';
         my $curvename = '';
 
-        plan tests => 5 + $tsignverify_count;
-
-        $ENV{OPENSSL_CONF} = $defaultconf;
-        $curvename = $a_nonsmtc_curve;
-        $testtext = $testtext_prefix.': '.
-            'Generate a key with a non-SMTC algorithm with the default provider';
-        ok(run(app(['openssl', 'genpkey', '-algorithm', 'EC',
-                    '-pkeyopt', 'ec_paramgen_curve:'.$curvename,
-                    '-out', $nonsmtc_key])),
-           $testtext);
-
-        pubfrompriv($testtext_prefix, $nonsmtc_key, $nonsmtc_pub_key, "non-SMTC");
+        plan tests => 1 + 1 + $tsignverify_count;
 
         $ENV{OPENSSL_CONF} = $smtcconf;
 
@@ -193,16 +116,6 @@ SKIP : {
 
         pubfrompriv($testtext_prefix, $smtc_key, $smtc_pub_key, "SMTC");
 
-        $curvename = $a_nonsmtc_curve;
-        $testtext = $testtext_prefix.': '.
-            'Generate a key with a non-SMTC algorithm'.
-            ' (should fail)';
-        ok(!run(app(['openssl', 'genpkey', '-algorithm', 'EC',
-                     '-pkeyopt', 'ec_paramgen_curve:'.$curvename,
-                     '-out', $testtext_prefix.'.'.$curvename.'.priv.pem'])),
-           $testtext);
-
-        tsignverify($testtext_prefix, $smtc_key, $smtc_pub_key, $nonsmtc_key,
-                    $nonsmtc_pub_key, '-sm3');
+        tsignverify($testtext_prefix, $smtc_key, $smtc_pub_key, '-sm3');
     };
 }

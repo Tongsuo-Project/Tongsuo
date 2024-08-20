@@ -53,9 +53,30 @@ use OpenSSL::stackhash qw(generate_stack_macros);
 #  include <openssl/opensslv.h>
 # endif
 
+#if defined(OPENSSL_SYS_WINCE)
+#elif defined(OPENSSL_SYS_WIN32)
+#elif (!defined(MSDOS) || defined(WATT32)) && !defined(OPENSSL_SYS_VXWORKS) && !defined(NO_SYSLOG)
+# include <syslog.h>
+#endif
+
 #ifdef  __cplusplus
 extern "C" {
 #endif
+
+# ifndef NO_SYSLOG
+#  if defined(OPENSSL_SYS_WIN32)
+#   define LOG_EMERG       0
+#   define LOG_ALERT       1
+#   define LOG_CRIT        2
+#   define LOG_ERR         3
+#   define LOG_WARNING     4
+#   define LOG_NOTICE      5
+#   define LOG_INFO        6
+#   define LOG_DEBUG       7
+
+#   define LOG_DAEMON      (3<<3)
+#  endif
+# endif
 
 # ifndef OPENSSL_NO_DEPRECATED_1_1_0
 #  define SSLeay                  OpenSSL_version_num
@@ -184,6 +205,8 @@ const char *OPENSSL_info(int type);
 # define OPENSSL_INFO_LIST_SEPARATOR            1006
 # define OPENSSL_INFO_SEED_SOURCE               1007
 # define OPENSSL_INFO_CPU_SETTINGS              1008
+# define OPENSSL_INFO_SMTC_MODULE_CONF          1009
+# define OPENSSL_INFO_SMTC_AUTH_KEK             1010
 
 int OPENSSL_issetugid(void);
 
@@ -541,6 +564,10 @@ int OSSL_LIB_CTX_load_config(OSSL_LIB_CTX *ctx, const char *config_file);
 void OSSL_LIB_CTX_free(OSSL_LIB_CTX *);
 OSSL_LIB_CTX *OSSL_LIB_CTX_get0_global_default(void);
 OSSL_LIB_CTX *OSSL_LIB_CTX_set0_default(OSSL_LIB_CTX *libctx);
+
+void OSSL_enable_syslog(void);
+void OSSL_disable_syslog(void);
+void OSSL_syslog(int priority, const char *message, ...);
 
 # ifdef  __cplusplus
 }

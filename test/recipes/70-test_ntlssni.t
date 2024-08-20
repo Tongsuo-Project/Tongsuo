@@ -1,5 +1,5 @@
 #! /usr/bin/env perl
-# Copyright 2023 The Tongsuo Project Authors. All Rights Reserved.
+# Copyright 2023-2024 The Tongsuo Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -29,6 +29,10 @@ plan skip_all => "$test_name needs SM2, SM3 and SM4 enabled"
 
 $ENV{OPENSSL_ia32cap} = '~0x200000200000000';
 
+my $no_smtc = disabled('smtc') || disabled('smtc-debug');
+if (!$no_smtc) {
+    $ENV{OPENSSL_CONF} = srctop_file("test", "smtc.cnf");
+}
 
 my $proxy = TLSProxy::Proxy->new(
     undef,

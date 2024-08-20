@@ -29,8 +29,9 @@ my $smtcconf = bldtop_file('test', 'smtcmodule.cnf');
 
 plan tests => 1;
 
+$ENV{OPENSSL_CONF} = "";
+
 # Create the smtc conf file
-ok(run(app(['openssl', 'mod',
-            '-module', $bin, '-provider_name', 'smtc', '-no_pass',
-            '-section_name', 'smtc_sect', '-out', $smtcconf])),
-   "smtc install");
+ok(run(app(['openssl', 'mod', '-install', '-no_verify', '-no_auth',
+    '-no_rand_poweron_test', '-module', $bin, '-out', $smtcconf])),
+    "smtc install");

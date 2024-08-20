@@ -126,7 +126,7 @@ extern "C" {
 # define BABASSL_VERSION_NUMBER  TONGSUO_VERSION_NUMBER
 # define BABASSL_VERSION_TEXT    TONGSUO_VERSION_TEXT
 
-# define TONGSUO_SMTC_INFO_STR "{- $config{TONGSUO_SMTC_INFO} -}"
+# define TONGSUO_SMTC_INFO_STR "{- $config{tongsuo_smtc_info} -}"
 
 # ifdef  __cplusplus
 }

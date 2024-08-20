@@ -32,6 +32,8 @@ int OSSL_PROVIDER_do_all(OSSL_LIB_CTX *ctx,
 
 const OSSL_PARAM *OSSL_PROVIDER_gettable_params(const OSSL_PROVIDER *prov);
 int OSSL_PROVIDER_get_params(const OSSL_PROVIDER *prov, OSSL_PARAM params[]);
+int OSSL_PROVIDER_reset(OSSL_PROVIDER *prov);
+int OSSL_PROVIDER_status(const OSSL_PROVIDER *prov);
 int OSSL_PROVIDER_self_test(const OSSL_PROVIDER *prov);
 int OSSL_PROVIDER_get_capabilities(const OSSL_PROVIDER *prov,
                                    const char *capability,

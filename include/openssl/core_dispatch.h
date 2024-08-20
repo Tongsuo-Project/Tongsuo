@@ -249,6 +249,12 @@ OSSL_CORE_MAKE_FUNC(int, provider_get_capabilities, (void *provctx,
 # define OSSL_FUNC_PROVIDER_SELF_TEST          1031
 OSSL_CORE_MAKE_FUNC(int, provider_self_test, (void *provctx))
 
+# define OSSL_FUNC_PROVIDER_STATUS             1032
+OSSL_CORE_MAKE_FUNC(int, provider_status, (void *provctx))
+
+# define OSSL_FUNC_PROVIDER_RESET              1033
+OSSL_CORE_MAKE_FUNC(int, provider_reset, (void *provctx))
+
 /* Operations */
 
 # define OSSL_OP_DIGEST                              1

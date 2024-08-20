@@ -230,6 +230,11 @@ int EVP_PKEY_generate(EVP_PKEY_CTX *ctx, EVP_PKEY **ppkey)
     default:
         goto not_supported;
     }
+
+# ifndef OPENSSL_NO_SM2
+    if (ret > 0 && EVP_PKEY_CTX_is_a(ctx, "SM2"))
+        ret = EVP_PKEY_set_alias_type(*ppkey, EVP_PKEY_SM2);
+# endif
 #endif
 
  end:
@@ -271,6 +276,10 @@ int EVP_PKEY_keygen(EVP_PKEY_CTX *ctx, EVP_PKEY **ppkey)
         ERR_raise(ERR_LIB_EVP, EVP_R_OPERATION_NOT_INITIALIZED);
         return -1;
     }
+
+#ifdef SMTC_MODULE
+    OSSL_syslog(LOG_INFO, "Creating a key pair\n");
+#endif
     return EVP_PKEY_generate(ctx, ppkey);
 }
 
