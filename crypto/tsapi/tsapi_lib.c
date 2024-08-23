@@ -430,6 +430,8 @@ int TSAPI_ImportSM2Key(int index, int sign, const char *user,
 
     ok = 1;
 end:
+    OPENSSL_free(privkey);
+    OPENSSL_free(pubkey);
     TSAPI_SDF_CloseSession(hSessionHandle);
     TSAPI_SDF_CloseDevice(hDeviceHandle);
 #endif
