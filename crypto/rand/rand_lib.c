@@ -822,9 +822,66 @@ void ossl_random_add_conf_module(void)
     CONF_module_add("random", random_conf_init, random_conf_deinit);
 }
 
-void RAND_set_entropy_source(unsigned int type)
+static int entropy_source_to_type(const char *name)
 {
+    int ret;
+
+    if (strcmp(name, "getrandom") == 0)
+        ret = RAND_ENTROPY_SOURCE_GETRANDOM;
+    else if (strcmp(name, "devrandom") == 0)
+        ret = RAND_ENTROPY_SOURCE_DEVRANDOM;
+    else if (strcmp(name, "rdtsc") == 0)
+        ret = RAND_ENTROPY_SOURCE_RDTSC;
+    else if (strcmp(name, "rdcpu") == 0)
+        ret = RAND_ENTROPY_SOURCE_RDCPU;
+    else if (strcmp(name, "egd") == 0)
+        ret = RAND_ENTROPY_SOURCE_EGD;
+    else if (strcmp(name, "bcryptgenrandom") == 0)
+        ret = RAND_ENTROPY_SOURCE_BCRYPTGENRANDOM;
+    else if (strcmp(name, "cryptgenrandom_def_prov") == 0)
+        ret = RAND_ENTROPY_SOURCE_CRYPTGENRANDOM_DEF_PROV;
+    else if (strcmp(name, "cryptgenrandom_intel_prov") == 0)
+        ret = RAND_ENTROPY_SOURCE_CRYPTGENRANDOM_INTEL_PROV;
+    else if (strcmp(name, "rtcode") == 0)
+        ret = RAND_ENTROPY_SOURCE_RTCODE;
+    else if (strcmp(name, "rtmem") == 0)
+        ret = RAND_ENTROPY_SOURCE_RTMEM;
+    else if (strcmp(name, "rtsock") == 0)
+        ret = RAND_ENTROPY_SOURCE_RTSOCK;
+    else
+        ret = -1;
+
+    return ret;
+}
+
+int RAND_set_entropy_source(const char *source)
+{
+    int ok = 0;
+    int type = 0, cur_type;
+    char *val, *valp, *item;
+
+    val = OPENSSL_strdup(source);
+    if (val == NULL) {
+        ERR_raise(ERR_LIB_RAND, ERR_R_MALLOC_FAILURE);
+        return 0;
+    }
+
+    for (valp = val; (item = strtok(valp, ",")) != NULL; valp = NULL) {
+        cur_type = entropy_source_to_type(item);
+        if (cur_type < 0) {
+            ERR_raise_data(ERR_LIB_RAND, RAND_R_INVALID_ENTROPY_SOURCE,
+                           "source=%s", item);
+            goto end;
+        }
+
+        type |= cur_type;
+    }
+
     ossl_rand_pool_set_default_entropy_source(type);
+    ok = 1;
+end:
+    OPENSSL_free(val);
+    return ok;
 }
 
 int RAND_set_DRBG_type(OSSL_LIB_CTX *ctx, const char *drbg, const char *propq,
