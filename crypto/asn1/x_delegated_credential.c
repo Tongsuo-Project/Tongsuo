@@ -91,7 +91,7 @@ DELEGATED_CREDENTIAL *DC_new_from_raw_byte(const unsigned char *byte,
 
     if(!DC_set1_raw_byte(dc, byte, len)) {
         ASN1err(ASN1_F_DC_NEW_FROM_RAW_BYTE, ERR_R_MALLOC_FAILURE);
-        return NULL;
+        goto err;
     }
 
     if (!PACKET_buf_init(&pkt, dc->raw_byte, dc->raw_byte_len))
