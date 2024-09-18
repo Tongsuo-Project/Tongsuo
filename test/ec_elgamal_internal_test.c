@@ -46,6 +46,7 @@ static size_t ec_elgamal_encrypt(EC_ELGAMAL_CTX *ctx,
     ret = size;
 
 err:
+    OPENSSL_free(buf);
     EC_ELGAMAL_CIPHERTEXT_free(r);
     return ret;
 }

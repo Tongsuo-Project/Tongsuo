@@ -268,7 +268,7 @@ int ocsp_main(int argc, char **argv)
     if (ids == NULL)
         goto end;
     if ((vpm = X509_VERIFY_PARAM_new()) == NULL)
-        return 1;
+        goto end;
 
     prog = opt_init(argc, argv, ocsp_options);
     while ((o = opt_next()) != OPT_EOF) {

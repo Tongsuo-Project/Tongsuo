@@ -496,9 +496,11 @@ static int sig_in(BIO *b)
     void *md_data;
 
     ctx = BIO_get_data(b);
-    md = ctx->md;
+    if ((md = ctx->md) == NULL)
+        goto berr;
     digest = EVP_MD_CTX_md(md);
-    md_size = EVP_MD_size(digest);
+    if ((md_size = EVP_MD_size(digest)) <= 0)
+        goto berr;
     md_data = EVP_MD_CTX_md_data(md);
 
     if ((int)(ctx->buf_len - ctx->buf_off) < 2 * md_size)

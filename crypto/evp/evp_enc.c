@@ -88,6 +88,8 @@ int EVP_CipherInit_ex(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *cipher,
                       ENGINE *impl, const unsigned char *key,
                       const unsigned char *iv, int enc)
 {
+    int n;
+
     if (enc == -1)
         enc = ctx->encrypt;
     else {
@@ -204,19 +206,27 @@ int EVP_CipherInit_ex(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *cipher,
             /* fall-through */
 
         case EVP_CIPH_CBC_MODE:
-
-            OPENSSL_assert(EVP_CIPHER_CTX_iv_length(ctx) <=
-                           (int)sizeof(ctx->iv));
+            n = EVP_CIPHER_CTX_iv_length(ctx);
+            if (n < 0 || n > (int)sizeof(ctx->iv)) {
+                EVPerr(EVP_F_EVP_CIPHERINIT_EX, EVP_R_INVALID_IV_LENGTH);
+                return 0;
+            }
             if (iv)
-                memcpy(ctx->oiv, iv, EVP_CIPHER_CTX_iv_length(ctx));
-            memcpy(ctx->iv, ctx->oiv, EVP_CIPHER_CTX_iv_length(ctx));
+                memcpy(ctx->oiv, iv, n);
+            memcpy(ctx->iv, ctx->oiv, n);
             break;
 
         case EVP_CIPH_CTR_MODE:
             ctx->num = 0;
             /* Don't reuse IV for CTR mode */
-            if (iv)
-                memcpy(ctx->iv, iv, EVP_CIPHER_CTX_iv_length(ctx));
+            if (iv) {
+                n = EVP_CIPHER_CTX_iv_length(ctx);
+                if (n <= 0 || n > (int)sizeof(ctx->iv)) {
+                    EVPerr(EVP_F_EVP_CIPHERINIT_EX, EVP_R_INVALID_IV_LENGTH);
+                    return 0;
+                }
+                memcpy(ctx->iv, iv, n);
+            }
             break;
 
         default:
