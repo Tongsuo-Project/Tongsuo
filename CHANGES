@@ -6,6 +6,8 @@
 
   *) 修复CVE-2024-9143
 
+  *) 修复CVE-2024-6119
+
   *) SMTC Provider适配蚂蚁密码卡（atf_slibce）
 
   *) 增加SDF框架和部分功能接口
