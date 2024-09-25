@@ -22,7 +22,7 @@
 
 typedef enum OPTION_choice {
     OPT_COMMON,
-    OPT_OUT, OPT_ENGINE, OPT_BASE64, OPT_HEX, OPT_ENTROPY, OPT_SOURCE,
+    OPT_OUT, OPT_ENGINE, OPT_BASE64, OPT_HEX, OPT_ENTROPY, OPT_ENTROPY_SOURCE,
     OPT_R_ENUM, OPT_PROV_ENUM
 } OPTION_CHOICE;
 
@@ -40,7 +40,7 @@ const OPTIONS rand_options[] = {
     {"base64", OPT_BASE64, '-', "Base64 encode output"},
     {"hex", OPT_HEX, '-', "Hex encode output"},
     {"entropy", OPT_ENTROPY, '-', "Output entropy instead of random data"},
-    {"source", OPT_SOURCE, 's', "Specify the entropy source"},
+    {"entropy_source", OPT_ENTROPY_SOURCE, 's', "Specify the entropy source"},
 
     OPT_R_OPTIONS,
     OPT_PROV_OPTIONS,
@@ -50,43 +50,10 @@ const OPTIONS rand_options[] = {
     {NULL}
 };
 
-static int opt_rand_source(const char *name)
-{
-    int ret = 0;
-
-    if (strcmp(name, "getrandom") == 0)
-        ret = RAND_ENTROPY_SOURCE_GETRANDOM;
-    else if (strcmp(name, "devrandom") == 0)
-        ret = RAND_ENTROPY_SOURCE_DEVRANDOM;
-    else if (strcmp(name, "rdtsc") == 0)
-        ret = RAND_ENTROPY_SOURCE_RDTSC;
-    else if (strcmp(name, "rdcpu") == 0)
-        ret = RAND_ENTROPY_SOURCE_RDCPU;
-    else if (strcmp(name, "egd") == 0)
-        ret = RAND_ENTROPY_SOURCE_EGD;
-    else if (strcmp(name, "bcryptgenrandom") == 0)
-        ret = RAND_ENTROPY_SOURCE_BCRYPTGENRANDOM;
-    else if (strcmp(name, "cryptgenrandom_def_prov") == 0)
-        ret = RAND_ENTROPY_SOURCE_CRYPTGENRANDOM_DEF_PROV;
-    else if (strcmp(name, "cryptgenrandom_intel_prov") == 0)
-        ret = RAND_ENTROPY_SOURCE_CRYPTGENRANDOM_INTEL_PROV;
-    else if (strcmp(name, "rtcode") == 0)
-        ret = RAND_ENTROPY_SOURCE_RTCODE;
-    else if (strcmp(name, "rtmem") == 0)
-        ret = RAND_ENTROPY_SOURCE_RTMEM;
-    else if (strcmp(name, "rtsock") == 0)
-        ret = RAND_ENTROPY_SOURCE_RTSOCK;
-    else
-        BIO_printf(bio_err, "Unknown entropy source '%s'\n", name);
-
-    return ret;
-}
-
 int rand_main(int argc, char **argv)
 {
     ENGINE *e = NULL;
     BIO *out = NULL;
-    int source = 0;
     char *outfile = NULL, *prog;
     OPTION_CHOICE o;
     unsigned char *ent_buf = NULL, *p;
@@ -124,9 +91,9 @@ int rand_main(int argc, char **argv)
         case OPT_ENTROPY:
             entropy = 1;
             break;
-        case OPT_SOURCE:
-            source |= opt_rand_source(opt_arg());
-            RAND_set_entropy_source(source);
+        case OPT_ENTROPY_SOURCE:
+            if (!RAND_set_entropy_source(opt_arg()))
+                goto end;
             break;
         case OPT_PROV_CASES:
             if (!opt_provider(o))
