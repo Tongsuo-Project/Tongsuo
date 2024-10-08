@@ -202,7 +202,7 @@ DELEGATED_CREDENTIAL *DC_load_from_file_ex(const char *file,
     BIO *bio_dc = NULL;
     char *dc_hex_buf = NULL;
     unsigned char *dc_buf = NULL;
-    size_t dc_hex_len, len;
+    int dc_hex_len, len;
     size_t dc_buf_len;
 
     dc_hex_buf = OPENSSL_malloc(DC_MAX_LEN);
