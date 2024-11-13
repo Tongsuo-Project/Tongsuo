@@ -170,6 +170,11 @@ opthelp:
     if (out == NULL)
         goto err;
 
+#ifndef OPENSSL_NO_WBSM4
+    if (OPENSSL_strcasecmp(argv[0], "wbsm4kdf") == 0)
+        dkm_len = EVP_KDF_CTX_get_kdf_size(ctx);
+#endif
+
     if (dkm_len <= 0) {
         BIO_printf(bio_err, "Invalid derived key length.\n");
         goto err;

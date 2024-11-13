@@ -323,6 +323,9 @@ enum {
     D_CBC_RC5,
     D_CBC_128_AES, D_CBC_192_AES, D_CBC_256_AES,
     D_EVP, D_GHASH, D_RAND, D_EVP_CMAC, D_SM3, D_CBC_SM4, D_ECB_SM4,
+    D_CBC_WBSM4_XIAOLAI, D_ECB_WBSM4_XIAOLAI,
+    D_CBC_WBSM4_BAIWU, D_ECB_WBSM4_BAIWU,
+    D_CBC_WBSM4_WSISE, D_ECB_WBSM4_WSISE,
     D_EEA3_128_ZUC, D_EIA3_128_ZUC, D_SM2_ENCRYPT, D_SM2_DECRYPT,
     D_SM2_THRESHOLD_DECRYPT, ALGOR_NUM
 };
@@ -334,6 +337,9 @@ static const char *names[ALGOR_NUM] = {
     "rc5-cbc",
     "aes-128-cbc", "aes-192-cbc", "aes-256-cbc",
     "evp", "ghash", "rand", "cmac", "sm3", "sm4-cbc", "sm4-ecb",
+    "wbsm4-xiaolai-cbc", "wbsm4-xiaolai-ecb",
+    "wbsm4-baiwu-cbc", "wbsm4-baiwu-ecb",
+    "wbsm4-wsise-cbc", "wbsm4-wsise-ecb",
     "zuc-128-eea3", "zuc-128-eia3", "sm2-encrypt", "sm2-decrypt", "sm2-thr-dec",
 };
 
@@ -361,6 +367,19 @@ static const OPT_PAIR doit_choices[] = {
     {"sm4-cbc", D_CBC_SM4},
     {"sm4", D_CBC_SM4},
     {"sm4-ecb", D_ECB_SM4},
+#endif
+#ifndef OPENSSL_NO_WBSM4
+    {"wbsm4-xiaolai-cbc", D_CBC_WBSM4_XIAOLAI},
+    {"wbsm4-xiaolai", D_CBC_WBSM4_XIAOLAI},
+    {"wbsm4-xiaolai-ecb", D_ECB_WBSM4_XIAOLAI},
+
+    {"wbsm4-baiwu-cbc", D_CBC_WBSM4_BAIWU},
+    {"wbsm4-baiwu", D_CBC_WBSM4_BAIWU},
+    {"wbsm4-baiwu-ecb", D_ECB_WBSM4_BAIWU},
+
+    {"wbsm4-wsise-cbc", D_CBC_WBSM4_WSISE},
+    {"wbsm4-wsise", D_CBC_WBSM4_WSISE},
+    {"wbsm4-wsise-ecb", D_ECB_WBSM4_WSISE},
 #endif
 #ifndef OPENSSL_NO_ZUC
     {"zuc-128-eea3", D_EEA3_128_ZUC},
@@ -3096,6 +3115,125 @@ int speed_main(int argc, char **argv)
             }
 
             for (testnum = 0; st && testnum < size_num; testnum++) {
+                print_message(names[algindex], c[algindex][testnum],
+                            lengths[testnum], seconds.sym);
+                Time_F(START);
+                count =
+                    run_benchmark(async_jobs, EVP_Cipher_loop, loopargs);
+                d = Time_F(STOP);
+                print_result(algindex, testnum, count, d);
+            }
+            for (i = 0; i < loopargs_len; i++)
+                EVP_CIPHER_CTX_free(loopargs[i].ctx);
+        }
+    }
+#endif
+#ifndef OPENSSL_NO_WBSM4
+    for (k = 0; k < 2; k++)
+    {
+        algindex = D_CBC_WBSM4_XIAOLAI + k;
+        if (doit[algindex])
+        {
+            int st = 1;
+
+            const EVP_CIPHER *cipher = EVP_get_cipherbyname("WBSM4-XIAOLAI");
+            if (cipher == NULL)
+                continue;
+
+            keylen = EVP_CIPHER_key_length(cipher);
+            unsigned char *local_key = (unsigned char *)OPENSSL_malloc(keylen);
+            if (local_key == NULL)
+                continue;
+            RAND_bytes(local_key, keylen);
+
+            for (i = 0; st && i < loopargs_len; i++)
+            {
+                loopargs[i].ctx = init_evp_cipher_ctx(names[algindex],
+                                                      local_key, keylen);
+                st = loopargs[i].ctx != NULL;
+            }
+            OPENSSL_free(local_key);
+
+            for (testnum = 0; st && testnum < size_num; testnum++)
+            {
+                print_message(names[algindex], c[algindex][testnum],
+                            lengths[testnum], seconds.sym);
+                Time_F(START);
+                count =
+                    run_benchmark(async_jobs, EVP_Cipher_loop, loopargs);
+                d = Time_F(STOP);
+                print_result(algindex, testnum, count, d);
+            }
+            for (i = 0; i < loopargs_len; i++)
+                EVP_CIPHER_CTX_free(loopargs[i].ctx);
+        }
+    }
+    for (k = 0; k < 2; k++)
+    {
+        algindex = D_CBC_WBSM4_BAIWU + k;
+        if (doit[algindex])
+        {
+            int st = 1;
+
+            const EVP_CIPHER *cipher = EVP_get_cipherbyname("WBSM4-BAIWU");
+            if (cipher == NULL)
+                continue;
+
+            keylen = EVP_CIPHER_key_length(cipher);
+            unsigned char *local_key = (unsigned char *)OPENSSL_malloc(keylen);
+            if (local_key == NULL)
+                continue;
+            RAND_bytes(local_key, keylen);
+
+            for (i = 0; st && i < loopargs_len; i++)
+            {
+                loopargs[i].ctx = init_evp_cipher_ctx(names[algindex],
+                                                      local_key, keylen);
+                st = loopargs[i].ctx != NULL;
+            }
+            OPENSSL_free(local_key);
+
+            for (testnum = 0; st && testnum < size_num; testnum++)
+            {
+                print_message(names[algindex], c[algindex][testnum],
+                            lengths[testnum], seconds.sym);
+                Time_F(START);
+                count =
+                    run_benchmark(async_jobs, EVP_Cipher_loop, loopargs);
+                d = Time_F(STOP);
+                print_result(algindex, testnum, count, d);
+            }
+            for (i = 0; i < loopargs_len; i++)
+                EVP_CIPHER_CTX_free(loopargs[i].ctx);
+        }
+    }
+    for (k = 0; k < 2; k++)
+    {
+        algindex = D_CBC_WBSM4_WSISE + k;
+        if (doit[algindex])
+        {
+            int st = 1;
+
+            const EVP_CIPHER *cipher = EVP_get_cipherbyname("WBSM4-WSISE");
+            if (cipher == NULL)
+                continue;
+
+            keylen = EVP_CIPHER_key_length(cipher);
+            unsigned char *local_key = (unsigned char *)OPENSSL_malloc(keylen);
+            if (local_key == NULL)
+                continue;
+            RAND_bytes(local_key, keylen);
+
+            for (i = 0; st && i < loopargs_len; i++)
+            {
+                loopargs[i].ctx = init_evp_cipher_ctx(names[algindex],
+                                                      local_key, keylen);
+                st = loopargs[i].ctx != NULL;
+            }
+            OPENSSL_free(local_key);
+
+            for (testnum = 0; st && testnum < size_num; testnum++)
+            {
                 print_message(names[algindex], c[algindex][testnum],
                             lengths[testnum], seconds.sym);
                 Time_F(START);

@@ -933,7 +933,7 @@ static const unsigned char so[6628] = {
     0x60,0x86,0x48,0x01,0x86,0xF9,0x66,0xAD,0xCA,0x7B,0x01,0x01,  /* [ 6615] OBJ_oracle_jdk_trustedkeyusage */
 };
 
-#define NUM_NID 1260
+#define NUM_NID 1281
 static const ASN1_OBJECT nid_objs[NUM_NID] = {
     {"UNDEF", "undefined", NID_undef},
     {"rsadsi", "RSA Data Security, Inc.", NID_rsadsi, 6, &so[0]},
@@ -2195,9 +2195,30 @@ static const ASN1_OBJECT nid_objs[NUM_NID] = {
     {"hmacWithSM3", "hmacWithSM3", NID_hmacWithSM3, 10, &so[6598]},
     {"oracle-organization", "Oracle organization", NID_oracle, 7, &so[6608]},
     {"oracle-jdk-trustedkeyusage", "Trusted key usage (Oracle)", NID_oracle_jdk_trustedkeyusage, 12, &so[6615]},
+    {"WBSM4-XIAOLAI-ECB", "wbsm4-xiaolai-ecb", NID_wbsm4_xiaolai_ecb},
+    {"WBSM4-XIAOLAI-CBC", "wbsm4-xiaolai-cbc", NID_wbsm4_xiaolai_cbc},
+    {"WBSM4-XIAOLAI-OFB", "wbsm4-xiaolai-ofb", NID_wbsm4_xiaolai_ofb128},
+    {"WBSM4-XIAOLAI-CFB", "wbsm4-xiaolai-cfb", NID_wbsm4_xiaolai_cfb128},
+    {"WBSM4-XIAOLAI-CTR", "wbsm4-xiaolai-ctr", NID_wbsm4_xiaolai_ctr},
+    {"WBSM4-XIAOLAI-GCM", "wbsm4-xiaolai-gcm", NID_wbsm4_xiaolai_gcm},
+    {"WBSM4-XIAOLAI-CCM", "wbsm4-xiaolai-ccm", NID_wbsm4_xiaolai_ccm},
+    {"WBSM4-BAIWU-ECB", "wbsm4-baiwu-ecb", NID_wbsm4_baiwu_ecb},
+    {"WBSM4-BAIWU-CBC", "wbsm4-baiwu-cbc", NID_wbsm4_baiwu_cbc},
+    {"WBSM4-BAIWU-CTR", "wbsm4-baiwu-ctr", NID_wbsm4_baiwu_ctr},
+    {"WBSM4-BAIWU-GCM", "wbsm4-baiwu-gcm", NID_wbsm4_baiwu_gcm},
+    {"WBSM4-BAIWU-CCM", "wbsm4-baiwu-ccm", NID_wbsm4_baiwu_ccm},
+    {"WBSM4-WSISE-ECB", "wbsm4-wsise-ecb", NID_wbsm4_wsise_ecb},
+    {"WBSM4-WSISE-CBC", "wbsm4-wsise-cbc", NID_wbsm4_wsise_cbc},
+    {"WBSM4-WSISE-CTR", "wbsm4-wsise-ctr", NID_wbsm4_wsise_ctr},
+    {"WBSM4-WSISE-GCM", "wbsm4-wsise-gcm", NID_wbsm4_wsise_gcm},
+    {"WBSM4-WSISE-CCM", "wbsm4-wsise-ccm", NID_wbsm4_wsise_ccm},
+    {"WBSM4-BAIWU-OFB", "wbsm4-baiwu-ofb", NID_wbsm4_baiwu_ofb128},
+    {"WBSM4-BAIWU-CFB", "wbsm4-baiwu-cfb", NID_wbsm4_baiwu_cfb128},
+    {"WBSM4-WSISE-OFB", "wbsm4-wsise-ofb", NID_wbsm4_wsise_ofb128},
+    {"WBSM4-WSISE-CFB", "wbsm4-wsise-cfb", NID_wbsm4_wsise_cfb128},
 };
 
-#define NUM_SN 1010
+#define NUM_SN 1031
 static const unsigned int sn_objs[NUM_SN] = {
      364,    /* "AD_DVCS" */
      419,    /* "AES-128-CBC" */
@@ -2393,6 +2414,27 @@ static const unsigned int sn_objs[NUM_SN] = {
     1021,    /* "TLS1-PRF" */
      458,    /* "UID" */
        0,    /* "UNDEF" */
+    1268,    /* "WBSM4-BAIWU-CBC" */
+    1271,    /* "WBSM4-BAIWU-CCM" */
+    1278,    /* "WBSM4-BAIWU-CFB" */
+    1269,    /* "WBSM4-BAIWU-CTR" */
+    1267,    /* "WBSM4-BAIWU-ECB" */
+    1270,    /* "WBSM4-BAIWU-GCM" */
+    1277,    /* "WBSM4-BAIWU-OFB" */
+    1273,    /* "WBSM4-WSISE-CBC" */
+    1276,    /* "WBSM4-WSISE-CCM" */
+    1280,    /* "WBSM4-WSISE-CFB" */
+    1274,    /* "WBSM4-WSISE-CTR" */
+    1272,    /* "WBSM4-WSISE-ECB" */
+    1275,    /* "WBSM4-WSISE-GCM" */
+    1279,    /* "WBSM4-WSISE-OFB" */
+    1261,    /* "WBSM4-XIAOLAI-CBC" */
+    1266,    /* "WBSM4-XIAOLAI-CCM" */
+    1263,    /* "WBSM4-XIAOLAI-CFB" */
+    1264,    /* "WBSM4-XIAOLAI-CTR" */
+    1260,    /* "WBSM4-XIAOLAI-ECB" */
+    1265,    /* "WBSM4-XIAOLAI-GCM" */
+    1262,    /* "WBSM4-XIAOLAI-OFB" */
     1034,    /* "X25519" */
     1035,    /* "X448" */
       11,    /* "X500" */
@@ -3211,7 +3253,7 @@ static const unsigned int sn_objs[NUM_SN] = {
     1093,    /* "x509ExtAdmission" */
 };
 
-#define NUM_LN 1010
+#define NUM_LN 1031
 static const unsigned int ln_objs[NUM_LN] = {
      363,    /* "AD Time Stamping" */
      405,    /* "ANSI X9.62" */
@@ -4213,6 +4255,27 @@ static const unsigned int ln_objs[NUM_LN] = {
      740,    /* "wap-wsg-idm-ecid-wtls7" */
      741,    /* "wap-wsg-idm-ecid-wtls8" */
      742,    /* "wap-wsg-idm-ecid-wtls9" */
+    1268,    /* "wbsm4-baiwu-cbc" */
+    1271,    /* "wbsm4-baiwu-ccm" */
+    1278,    /* "wbsm4-baiwu-cfb" */
+    1269,    /* "wbsm4-baiwu-ctr" */
+    1267,    /* "wbsm4-baiwu-ecb" */
+    1270,    /* "wbsm4-baiwu-gcm" */
+    1277,    /* "wbsm4-baiwu-ofb" */
+    1273,    /* "wbsm4-wsise-cbc" */
+    1276,    /* "wbsm4-wsise-ccm" */
+    1280,    /* "wbsm4-wsise-cfb" */
+    1274,    /* "wbsm4-wsise-ctr" */
+    1272,    /* "wbsm4-wsise-ecb" */
+    1275,    /* "wbsm4-wsise-gcm" */
+    1279,    /* "wbsm4-wsise-ofb" */
+    1261,    /* "wbsm4-xiaolai-cbc" */
+    1266,    /* "wbsm4-xiaolai-ccm" */
+    1263,    /* "wbsm4-xiaolai-cfb" */
+    1264,    /* "wbsm4-xiaolai-ctr" */
+    1260,    /* "wbsm4-xiaolai-ecb" */
+    1265,    /* "wbsm4-xiaolai-gcm" */
+    1262,    /* "wbsm4-xiaolai-ofb" */
      868,    /* "x121Address" */
      503,    /* "x500UniqueIdentifier" */
      158,    /* "x509Certificate" */

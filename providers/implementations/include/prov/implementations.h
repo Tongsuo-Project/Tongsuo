@@ -97,6 +97,31 @@ extern const OSSL_DISPATCH ossl_sm4128cfb128_functions[];
 extern const OSSL_DISPATCH ossl_sm4128gcm_functions[];
 extern const OSSL_DISPATCH ossl_sm4128ccm_functions[];
 #endif /* OPENSSL_NO_SM4 */
+#ifndef OPENSSL_NO_WBSM4
+extern const OSSL_DISPATCH ossl_wbsm4_xiaolai1225984ecb_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_xiaolai1225984cbc_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_xiaolai1225984ctr_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_xiaolai1225984ofb128_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_xiaolai1225984cfb128_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_xiaolai1225984gcm_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_xiaolai1225984ccm_functions[];
+
+extern const OSSL_DISPATCH ossl_wbsm4_baiwu272638208ecb_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_baiwu272638208cbc_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_baiwu272638208ctr_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_baiwu272638208ofb128_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_baiwu272638208cfb128_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_baiwu272638208gcm_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_baiwu272638208ccm_functions[];
+
+extern const OSSL_DISPATCH ossl_wbsm4_wsise2274560ecb_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_wsise2274560cbc_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_wsise2274560ctr_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_wsise2274560ofb128_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_wsise2274560cfb128_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_wsise2274560gcm_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_wsise2274560ccm_functions[];
+#endif /* OPENSSL_NO_WBSM4 */
 #ifndef OPENSSL_NO_RC5
 extern const OSSL_DISPATCH ossl_rc5128ecb_functions[];
 extern const OSSL_DISPATCH ossl_rc5128cbc_functions[];
@@ -181,6 +206,9 @@ extern const OSSL_DISPATCH ossl_kdf_x963_kdf_functions[];
 extern const OSSL_DISPATCH ossl_kdf_kbkdf_functions[];
 extern const OSSL_DISPATCH ossl_kdf_x942_kdf_functions[];
 extern const OSSL_DISPATCH ossl_kdf_krb5kdf_functions[];
+#ifndef OPENSSL_NO_WBSM4
+extern const OSSL_DISPATCH ossl_kdf_wbsm4_functions[];
+#endif
 
 /* RNGs */
 extern const OSSL_DISPATCH ossl_test_rng_functions[];
