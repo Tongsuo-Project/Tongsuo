@@ -26,8 +26,7 @@ static OSSL_FUNC_kdf_set_ctx_params_fn kdf_wbsm4_set_ctx_params;
 static OSSL_FUNC_kdf_gettable_ctx_params_fn kdf_wbsm4_gettable_ctx_params;
 static OSSL_FUNC_kdf_get_ctx_params_fn kdf_wbsm4_get_ctx_params;
 
-typedef struct
-{
+typedef struct {
     void *provctx;
     unsigned char *key;
     size_t key_len;
@@ -43,8 +42,7 @@ static void *kdf_wbsm4_new(void *provctx)
         return NULL;
 
     ctx = OPENSSL_zalloc(sizeof(*ctx));
-    if (ctx == NULL)
-    {
+    if (ctx == NULL) {
         ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
@@ -65,8 +63,7 @@ static void kdf_wbsm4_free(void *vctx)
 {
     KDF_WBSM4 *ctx = (KDF_WBSM4 *)vctx;
 
-    if (ctx != NULL)
-    {
+    if (ctx != NULL) {
         kdf_wbsm4_cleanup(ctx);
         OPENSSL_free(ctx);
     }
@@ -88,16 +85,12 @@ static int kdf_wbsm4_set_membuf(unsigned char **buffer, size_t *buflen,
     *buffer = NULL;
     *buflen = 0;
 
-    if (p->data_size == 0)
-    {
-        if ((*buffer = OPENSSL_zalloc(1)) == NULL)
-        {
+    if (p->data_size == 0) {
+        if ((*buffer = OPENSSL_zalloc(1)) == NULL) {
             ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
             return 0;
         }
-    }
-    else if (p->data != NULL)
-    {
+    } else if (p->data != NULL) {
         if (!OSSL_PARAM_get_utf8_string(p, (char **)buffer, *buflen))
             return 0;
     }
@@ -112,49 +105,42 @@ static int kdf_wbsm4_derive(void *vctx, unsigned char *key, size_t keylen,
     if (!ossl_prov_is_running() || !kdf_wbsm4_set_ctx_params(ctx, params))
         return 0;
 
-    if (ctx->cipher == NULL)
-    {
+    if (ctx->cipher == NULL) {
         ERR_raise(ERR_LIB_PROV, PROV_R_MISSING_CIPHER);
         return 0;
     }
 
-    if (ctx->key == NULL)
-    {
+    if (ctx->key == NULL) {
         ERR_raise(ERR_LIB_PROV, PROV_R_MISSING_KEY);
         return 0;
     }
-    if (ctx->key_len != 32)
-    {
+    if (ctx->key_len != 32) {
         ERR_raise(ERR_LIB_PROV, PROV_R_INVALID_KEY_LENGTH);
         return 0;
     }
 
     unsigned char sm4key[16];
     size_t sm4key_len = sizeof(sm4key);
-    if (!OPENSSL_hexstr2buf_ex(sm4key, sm4key_len, &sm4key_len, (const char *)ctx->key, 0))
-    {
+    if (!OPENSSL_hexstr2buf_ex(sm4key, sm4key_len, &sm4key_len,
+                               (const char *)ctx->key, 0)) {
         ERR_raise(ERR_LIB_PROV, PROV_R_INVALID_KEY);
         return 0;
     }
 
-    if (OPENSSL_strcasecmp((char *)ctx->cipher, "WBSM4-XIAOLAI") == 0)
-    {
-        if (keylen != sizeof(wbsm4_xiaolai_key))
-        {
+    if (OPENSSL_strcasecmp((char *)ctx->cipher, "WBSM4-XIAOLAI") == 0) {
+        if (keylen != sizeof(wbsm4_xiaolai_key)) {
             OPENSSL_cleanse(sm4key, sm4key_len);
             ERR_raise(ERR_LIB_PROV, PROV_R_BAD_LENGTH);
             return 0;
         }
 
-        if (key == NULL)
-        {
+        if (key == NULL) {
             OPENSSL_cleanse(sm4key, sm4key_len);
             return 1;
         }
 
         wbsm4_xiaolai_key *wbsm4key = OPENSSL_zalloc(sizeof(wbsm4_xiaolai_key));
-        if (wbsm4key == NULL)
-        {
+        if (wbsm4key == NULL) {
             OPENSSL_cleanse(sm4key, sm4key_len);
             ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
             return 0;
@@ -167,25 +153,20 @@ static int kdf_wbsm4_derive(void *vctx, unsigned char *key, size_t keylen,
         OPENSSL_cleanse(wbsm4key, sizeof(wbsm4_xiaolai_key));
 
         return 1;
-    }
-    else if (OPENSSL_strcasecmp((char *)ctx->cipher, "WBSM4-BAIWU") == 0)
-    {
-        if (keylen != sizeof(wbsm4_baiwu_key))
-        {
+    } else if (OPENSSL_strcasecmp((char *)ctx->cipher, "WBSM4-BAIWU") == 0) {
+        if (keylen != sizeof(wbsm4_baiwu_key)) {
             OPENSSL_cleanse(sm4key, sm4key_len);
             ERR_raise(ERR_LIB_PROV, PROV_R_BAD_LENGTH);
             return 0;
         }
 
-        if (key == NULL)
-        {
+        if (key == NULL) {
             OPENSSL_cleanse(sm4key, sm4key_len);
             return 1;
         }
 
         wbsm4_baiwu_key *wbsm4key = OPENSSL_zalloc(sizeof(wbsm4_baiwu_key));
-        if (wbsm4key == NULL)
-        {
+        if (wbsm4key == NULL) {
             OPENSSL_cleanse(sm4key, sm4key_len);
             ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
             return 0;
@@ -198,25 +179,20 @@ static int kdf_wbsm4_derive(void *vctx, unsigned char *key, size_t keylen,
         OPENSSL_cleanse(wbsm4key, sizeof(wbsm4_baiwu_key));
 
         return 1;
-    }
-    else if (OPENSSL_strcasecmp((char *)ctx->cipher, "WBSM4-WSISE") == 0)
-    {
-        if (keylen != sizeof(wbsm4_wsise_key))
-        {
+    } else if (OPENSSL_strcasecmp((char *)ctx->cipher, "WBSM4-WSISE") == 0) {
+        if (keylen != sizeof(wbsm4_wsise_key)) {
             OPENSSL_cleanse(sm4key, sm4key_len);
             ERR_raise(ERR_LIB_PROV, PROV_R_BAD_LENGTH);
             return 0;
         }
 
-        if (key == NULL)
-        {
+        if (key == NULL) {
             OPENSSL_cleanse(sm4key, sm4key_len);
             return 1;
         }
 
         wbsm4_wsise_key *wbsm4key = OPENSSL_zalloc(sizeof(wbsm4_wsise_key));
-        if (wbsm4key == NULL)
-        {
+        if (wbsm4key == NULL) {
             OPENSSL_cleanse(sm4key, sm4key_len);
             ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
             return 0;
@@ -229,9 +205,7 @@ static int kdf_wbsm4_derive(void *vctx, unsigned char *key, size_t keylen,
         OPENSSL_cleanse(wbsm4key, sizeof(wbsm4_wsise_key));
 
         return 1;
-    }
-    else
-    {
+    } else {
         OPENSSL_cleanse(sm4key, sm4key_len);
         ERR_raise(ERR_LIB_PROV, PROV_R_MISSING_CIPHER);
         return 0;
@@ -243,15 +217,13 @@ static int kdf_wbsm4_set_ctx_params(void *vctx, const OSSL_PARAM params[])
     const OSSL_PARAM *p;
     KDF_WBSM4 *ctx = vctx;
 
-    if ((p = OSSL_PARAM_locate_const(params, OSSL_KDF_PARAM_KEY)) != NULL)
-    {
+    if ((p = OSSL_PARAM_locate_const(params, OSSL_KDF_PARAM_KEY)) != NULL) {
         if (!kdf_wbsm4_set_membuf(&ctx->key, &ctx->key_len, p))
             return 0;
         ctx->key_len = strlen((char *)ctx->key);
     }
 
-    if ((p = OSSL_PARAM_locate_const(params, OSSL_KDF_PARAM_CIPHER)) != NULL)
-    {
+    if ((p = OSSL_PARAM_locate_const(params, OSSL_KDF_PARAM_CIPHER)) != NULL) {
         if (!kdf_wbsm4_set_membuf(&ctx->cipher, &ctx->cipher_len, p))
             return 0;
         ctx->cipher_len = strlen((char *)ctx->cipher);
@@ -266,7 +238,8 @@ static const OSSL_PARAM *kdf_wbsm4_settable_ctx_params(ossl_unused void *ctx,
     static const OSSL_PARAM known_settable_ctx_params[] = {
         OSSL_PARAM_utf8_string(OSSL_KDF_PARAM_KEY, NULL, 0),
         OSSL_PARAM_utf8_string(OSSL_KDF_PARAM_CIPHER, NULL, 0),
-        OSSL_PARAM_END};
+        OSSL_PARAM_END
+    };
     return known_settable_ctx_params;
 }
 
@@ -277,8 +250,7 @@ static int kdf_wbsm4_get_ctx_params(void *vctx, OSSL_PARAM params[])
     OSSL_PARAM *p;
     size_t keylen = 0;
 
-    if ((p = OSSL_PARAM_locate(params, OSSL_KDF_PARAM_SIZE)) != NULL)
-    {
+    if ((p = OSSL_PARAM_locate(params, OSSL_KDF_PARAM_SIZE)) != NULL) {
         if (ctx->cipher == NULL)
             keylen = 0;
         else if (OPENSSL_strcasecmp((char *)ctx->cipher, "WBSM4-XIAOLAI") == 0)
@@ -300,7 +272,8 @@ static const OSSL_PARAM *kdf_wbsm4_gettable_ctx_params(ossl_unused void *ctx,
 {
     static const OSSL_PARAM known_gettable_ctx_params[] = {
         OSSL_PARAM_size_t(OSSL_KDF_PARAM_SIZE, NULL),
-        OSSL_PARAM_END};
+        OSSL_PARAM_END
+    };
     return known_gettable_ctx_params;
 }
 
@@ -315,5 +288,6 @@ const OSSL_DISPATCH ossl_kdf_wbsm4_functions[] = {
     {OSSL_FUNC_KDF_GETTABLE_CTX_PARAMS,
      (void (*)(void))kdf_wbsm4_gettable_ctx_params},
     {OSSL_FUNC_KDF_GET_CTX_PARAMS, (void (*)(void))kdf_wbsm4_get_ctx_params},
-    {0, NULL}};
+    {0, NULL}
+};
 #endif

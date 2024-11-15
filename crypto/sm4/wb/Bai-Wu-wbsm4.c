@@ -26,7 +26,7 @@
     (ct)[2] = (uint8_t)((st) >> 8);  \
     (ct)[3] = (uint8_t)(st)
 
-static uint8_t  SBOX[256]={
+static uint8_t  SBOX[256] = {
 	0xd6, 0x90, 0xe9, 0xfe, 0xcc, 0xe1, 0x3d, 0xb7,
 	0x16, 0xb6, 0x14, 0xc2, 0x28, 0xfb, 0x2c, 0x05,
 	0x2b, 0x67, 0x9a, 0x76, 0x2a, 0xbe, 0x04, 0xc3,
@@ -106,8 +106,7 @@ void wbsm4_baiwu_set_key(const uint8_t *key, wbsm4_baiwu_key *wbsm4_key)
 
     uint8_t *p = (uint8_t *)wbsm4_key;
     uint8_t *end = p + sizeof(wbsm4_baiwu_key);
-    while (p < end)
-    {
+    while (p < end) {
         uint8_t t;
         t = p[0];
         p[0] = p[3];
@@ -132,8 +131,7 @@ void wbsm4_baiwu_export_key(const wbsm4_baiwu_key *wbsm4_key, uint8_t *key)
 
     uint8_t *p = (uint8_t *)out;
     uint8_t *end = p + sizeof(wbsm4_baiwu_key);
-    while (p < end)
-    {
+    while (p < end) {
         uint8_t t;
         t = p[0];
         p[0] = p[3];
@@ -152,7 +150,8 @@ void wbsm4_baiwu_gen(const uint8_t *sm4_key, wbsm4_baiwu_key *wbsm4_key)
     int i, j, r, x, y;
     uint8_t temp_u8_x, temp_u8_y, temp_u8;
     uint32_t temp_u32;
-    uint32_t TD0_u32[6], TD1_u32[6], TD2_u32[3], TR_u32[4], Lc[36], Ec0[32], Ec1[32];
+    uint32_t TD0_u32[6], TD1_u32[6], TD2_u32[3], TR_u32[4], Lc[36];
+    uint32_t Ec0[32], Ec1[32];
     M32 L[36];
     M32 L_inv[36];
     M8 E[32][2][4];
@@ -165,22 +164,21 @@ void wbsm4_baiwu_gen(const uint8_t *sm4_key, wbsm4_baiwu_key *wbsm4_key)
     uint32_t SK[32];
     wbsm4_sm4_setkey(SK, sm4_key);
 
-    for (r = 0; r < 36; r++)
-    {
+    for (r = 0; r < 36; r++) {
         genMatpairM32(&L[r], &L_inv[r]);
         Lc[r] = cus_random();
     }
 
-    for (r = 0; r < 32; r++)
-    {
-        for (j = 0; j < 4; j++)
-        {
+    for (r = 0; r < 32; r++) {
+        for (j = 0; j < 4; j++) {
             genMatpairM8(&E[r][0][j], &E_inv[r][0][j]);
             genMatpairM8(&E[r][1][j], &E_inv[r][1][j]);
         }
 
-        MatrixcomM8to32(E_inv[r][0][0], E_inv[r][0][1], E_inv[r][0][2], E_inv[r][0][3], &Ei_inv[r][0]);
-        MatrixcomM8to32(E_inv[r][1][0], E_inv[r][1][1], E_inv[r][1][2], E_inv[r][1][3], &Ei_inv[r][1]);
+        MatrixcomM8to32(E_inv[r][0][0], E_inv[r][0][1], E_inv[r][0][2],
+                        E_inv[r][0][3], &Ei_inv[r][0]);
+        MatrixcomM8to32(E_inv[r][1][0], E_inv[r][1][1], E_inv[r][1][2],
+                        E_inv[r][1][3], &Ei_inv[r][1]);
 
         MatMulMatM32(Ei_inv[r][0], L_inv[r + 1], &M[r][0][0]);
         MatMulMatM32(Ei_inv[r][0], L_inv[r + 2], &M[r][0][1]);
@@ -197,80 +195,77 @@ void wbsm4_baiwu_gen(const uint8_t *sm4_key, wbsm4_baiwu_key *wbsm4_key)
     {
         MatMulMatM32(L[r + 4], L_matrix, &LL);
 
-        for (i = 0; i < 6; i++)
-        {
+        for (i = 0; i < 6; i++) {
             TD0_u32[i] = cus_random();
             TD1_u32[i] = cus_random();
         }
-        for (i = 0; i < 4; i++)
-        {
+        for (i = 0; i < 4; i++) {
             TR_u32[i] = cus_random();
         }
-        for (i = 0; i < 3; i++)
-        {
+        for (i = 0; i < 3; i++) {
             TD2_u32[i] = cus_random();
         }
-        Ec0[r] = TD0_u32[0] ^ TD0_u32[1] ^ TD0_u32[2] ^ TD0_u32[3] ^ TD0_u32[4] ^ TD0_u32[5];
-        Ec1[r] = TD1_u32[0] ^ TD1_u32[1] ^ TD1_u32[2] ^ TD1_u32[3] ^ TD1_u32[4] ^ TD1_u32[5];
+        Ec0[r] = TD0_u32[0] ^ TD0_u32[1] ^ TD0_u32[2] ^ TD0_u32[3] ^
+                 TD0_u32[4] ^ TD0_u32[5];
+        Ec1[r] = TD1_u32[0] ^ TD1_u32[1] ^ TD1_u32[2] ^ TD1_u32[3] ^
+                 TD1_u32[4] ^ TD1_u32[5];
 
-        for (x = 0; x < 256; x++)
-        {
-            for (j = 0; j < 4; j++)
-            {
+        for (x = 0; x < 256; x++) {
+            for (j = 0; j < 4; j++) {
                 temp_u8 = x ^ ((Lc[r] >> (24 - j * 8)) & 0xff);
                 temp_u32 = temp_u8 << (24 - j * 8);
                 wbsm4_key->TD[r][0][j][x] = MatMulNumM32(C[r], temp_u32);
             }
-            for (j = 0; j < 3; j++)
-            {
+            for (j = 0; j < 3; j++) {
                 wbsm4_key->TD[r][0][j][x] ^= TD2_u32[j];
             }
-            wbsm4_key->TD[r][0][3][x] ^= Lc[r + 4] ^ TD2_u32[0] ^ TD2_u32[1] ^ TD2_u32[2] ^ TR_u32[0] ^ TR_u32[1] ^ TR_u32[2] ^ TR_u32[3];
+            wbsm4_key->TD[r][0][3][x] ^= Lc[r + 4] ^ TD2_u32[0] ^ TD2_u32[1] ^
+                                         TD2_u32[2] ^ TR_u32[0] ^ TR_u32[1] ^
+                                         TR_u32[2] ^ TR_u32[3];
 
-            for (i = 1; i < 4; i++)
-            {
+            for (i = 1; i < 4; i++) {
                 temp_u8 = x ^ ((Lc[r + i] >> 24) & 0xff);
                 temp_u32 = temp_u8 << 24;
-                wbsm4_key->TD[r][i][0][x] = MatMulNumM32(M[r][0][i - 1], temp_u32);
+                wbsm4_key->TD[r][i][0][x] = MatMulNumM32(M[r][0][i - 1],
+                                                         temp_u32);
                 temp_u8 = x ^ ((Lc[r + i] >> 16) & 0xff);
                 temp_u32 = temp_u8 << 16;
-                wbsm4_key->TD[r][i][1][x] = MatMulNumM32(M[r][0][i - 1], temp_u32);
+                wbsm4_key->TD[r][i][1][x] = MatMulNumM32(M[r][0][i - 1],
+                                            temp_u32);
 
                 temp_u8 = x ^ ((Lc[r + i] >> 8) & 0xff);
                 temp_u32 = temp_u8 << 8;
-                wbsm4_key->TD[r][i][2][x] = MatMulNumM32(M[r][1][i - 1], temp_u32);
+                wbsm4_key->TD[r][i][2][x] = MatMulNumM32(M[r][1][i - 1],
+                                                         temp_u32);
                 temp_u8 = x ^ (Lc[r + i] & 0xff);
                 temp_u32 = temp_u8;
-                wbsm4_key->TD[r][i][3][x] = MatMulNumM32(M[r][1][i - 1], temp_u32);
+                wbsm4_key->TD[r][i][3][x] = MatMulNumM32(M[r][1][i - 1],
+                                                         temp_u32);
             }
 
             j = 0;
-            for (i = 1; i < 4; i++)
-            {
+            for (i = 1; i < 4; i++) {
                 wbsm4_key->TD[r][i][0][x] ^= TD0_u32[j++];
                 wbsm4_key->TD[r][i][1][x] ^= TD0_u32[j++];
             }
 
             j = 0;
-            for (i = 1; i < 4; i++)
-            {
+            for (i = 1; i < 4; i++) {
                 wbsm4_key->TD[r][i][2][x] ^= TD1_u32[j++];
                 wbsm4_key->TD[r][i][3][x] ^= TD1_u32[j++];
             }
         }
 
-        for (x = 0; x < 256; x++)
-        {
-            for (y = 0; y < 256; y++)
-            {
-                for (j = 0; j < 4; j++)
-                {
+        for (x = 0; x < 256; x++) {
+            for (y = 0; y < 256; y++) {
+                for (j = 0; j < 4; j++) {
                     temp_u8_x = x ^ ((Ec0[r] >> (24 - j * 8)) & 0xff);
                     temp_u8_x = MatMulNumM8(E[r][0][j], temp_u8_x);
 
                     temp_u8_y = y ^ ((Ec1[r] >> (24 - j * 8)) & 0xff);
                     temp_u8_y = MatMulNumM8(E[r][1][j], temp_u8_y);
-                    temp_u8 = SBOX[temp_u8_x ^ temp_u8_y ^ ((SK[r] >> (24 - j * 8)) & 0xff)];
+                    temp_u8 = SBOX[temp_u8_x ^ temp_u8_y ^
+                              ((SK[r] >> (24 - j * 8)) & 0xff)];
                     temp_u32 = temp_u8 << (24 - j * 8);
                     wbsm4_key->TR[r][j][x][y] = MatMulNumM32(LL, temp_u32);
                     wbsm4_key->TR[r][j][x][y] ^= TR_u32[j];
@@ -279,9 +274,8 @@ void wbsm4_baiwu_gen(const uint8_t *sm4_key, wbsm4_baiwu_key *wbsm4_key)
         }
     }
 
-    // external encoding
-    for (i = 0; i < 4; i++)
-    {
+    /* external encoding */
+    for (i = 0; i < 4; i++) {
         wbsm4_key->SE[i].Mat = L[i];
         wbsm4_key->SE[i].Vec.V = Lc[i];
 
@@ -290,7 +284,8 @@ void wbsm4_baiwu_gen(const uint8_t *sm4_key, wbsm4_baiwu_key *wbsm4_key)
     }
 }
 
-void wbsm4_baiwu_encrypt(const unsigned char IN[], unsigned char OUT[], const wbsm4_baiwu_key *wbsm4_key)
+void wbsm4_baiwu_encrypt(const unsigned char IN[], unsigned char OUT[],
+                         const wbsm4_baiwu_key *wbsm4_key)
 {
     int r, i, j;
     uint32_t x[36];
@@ -305,22 +300,20 @@ void wbsm4_baiwu_encrypt(const unsigned char IN[], unsigned char OUT[], const wb
     x[2] = affineU32(wbsm4_key->SE[2], x[2]);
     x[3] = affineU32(wbsm4_key->SE[3], x[3]);
 
-    for (r = 0; r < 32; r++)
-    {
+    for (r = 0; r < 32; r++) {
         x[r + 4] = 0;
         s0 = 0;
         s1 = 0;
 
-        for (i = 1; i < 4; i++)
-        {
+        for (i = 1; i < 4; i++) {
             s0 ^= wbsm4_key->TD[r][i][0][(x[r + i] >> 24) & 0xff];
             s0 ^= wbsm4_key->TD[r][i][1][(x[r + i] >> 16) & 0xff];
             s1 ^= wbsm4_key->TD[r][i][2][(x[r + i] >> 8) & 0xff];
             s1 ^= wbsm4_key->TD[r][i][3][x[r + i] & 0xff];
         }
-        for (j = 0; j < 4; j++)
-        {
-            x[r + 4] ^= wbsm4_key->TR[r][j][(s0 >> (24 - j * 8)) & 0xff][(s1 >> (24 - j * 8)) & 0xff];
+        for (j = 0; j < 4; j++) {
+            x[r + 4] ^= wbsm4_key->TR[r][j][(s0 >> (24 - j * 8)) &
+                        0xff][(s1 >> (24 - j * 8)) & 0xff];
             x[r + 4] ^= wbsm4_key->TD[r][0][j][(x[r] >> (24 - j * 8)) & 0xff];
         }
     }

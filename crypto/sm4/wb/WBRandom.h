@@ -22,4 +22,4 @@ static ossl_inline unsigned int cus_random()
     return ret;
 }
 
-#endif // _WBRANDOM_H_
+#endif /* _WBRANDOM_H_ */

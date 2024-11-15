@@ -11,12 +11,10 @@
 #include "prov/ciphercommon.h"
 #include "crypto/wbsm4.h"
 
-// xiaolai
-typedef struct
-{
+/* xiaolai */
+typedef struct {
     PROV_CIPHER_CTX base; /* Must be first */
-    union
-    {
+    union {
         OSSL_UNION_ALIGN;
         wbsm4_xiaolai_key ks;
     } ks;
@@ -28,12 +26,10 @@ const PROV_CIPHER_HW *ossl_prov_cipher_hw_wbsm4_xiaolai_ctr(size_t keybits);
 const PROV_CIPHER_HW *ossl_prov_cipher_hw_wbsm4_xiaolai_ofb128(size_t keybits);
 const PROV_CIPHER_HW *ossl_prov_cipher_hw_wbsm4_xiaolai_cfb128(size_t keybits);
 
-// baiwu
-typedef struct
-{
+/* baiwu */
+typedef struct {
     PROV_CIPHER_CTX base; /* Must be first */
-    union
-    {
+    union {
         OSSL_UNION_ALIGN;
         wbsm4_baiwu_key ks;
     } ks;
@@ -45,12 +41,10 @@ const PROV_CIPHER_HW *ossl_prov_cipher_hw_wbsm4_baiwu_ctr(size_t keybits);
 const PROV_CIPHER_HW *ossl_prov_cipher_hw_wbsm4_baiwu_ofb128(size_t keybits);
 const PROV_CIPHER_HW *ossl_prov_cipher_hw_wbsm4_baiwu_cfb128(size_t keybits);
 
-// wsise
-typedef struct
-{
+/* wsise */
+typedef struct {
     PROV_CIPHER_CTX base; /* Must be first */
-    union
-    {
+    union {
         OSSL_UNION_ALIGN;
         wbsm4_wsise_key ks;
     } ks;

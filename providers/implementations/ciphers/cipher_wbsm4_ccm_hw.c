@@ -12,9 +12,9 @@
 
 #include "cipher_wbsm4_ccm.h"
 
-// xiaolai
-static int wbsm4_xiaolai_ccm_initkey(PROV_CCM_CTX *ctx, const unsigned char *key,
-                                     size_t keylen)
+/* xiaolai */
+static int wbsm4_xiaolai_ccm_initkey(PROV_CCM_CTX *ctx,
+                                     const unsigned char *key, size_t keylen)
 {
     PROV_WBSM4_XIAOLAI_CCM_CTX *actx = (PROV_WBSM4_XIAOLAI_CCM_CTX *)ctx;
     wbsm4_xiaolai_key *ks = &actx->ks.ks;
@@ -35,14 +35,15 @@ static const PROV_CCM_HW wbsm4_xiaolai_ccm = {
     ossl_ccm_generic_setaad,
     ossl_ccm_generic_auth_encrypt,
     ossl_ccm_generic_auth_decrypt,
-    ossl_ccm_generic_gettag};
+    ossl_ccm_generic_gettag
+};
 
 const PROV_CCM_HW *ossl_prov_wbsm4_xiaolai_hw_ccm(size_t keybits)
 {
     return &wbsm4_xiaolai_ccm;
 }
 
-// baiwu
+/* baiwu */
 static int wbsm4_baiwu_ccm_initkey(PROV_CCM_CTX *ctx, const unsigned char *key,
                                    size_t keylen)
 {
@@ -65,14 +66,15 @@ static const PROV_CCM_HW wbsm4_baiwu_ccm = {
     ossl_ccm_generic_setaad,
     ossl_ccm_generic_auth_encrypt,
     ossl_ccm_generic_auth_decrypt,
-    ossl_ccm_generic_gettag};
+    ossl_ccm_generic_gettag
+};
 
 const PROV_CCM_HW *ossl_prov_wbsm4_baiwu_hw_ccm(size_t keybits)
 {
     return &wbsm4_baiwu_ccm;
 }
 
-// wsise
+/* wsise */
 static int wbsm4_wsise_ccm_initkey(PROV_CCM_CTX *ctx, const unsigned char *key,
                                    size_t keylen)
 {
@@ -95,7 +97,8 @@ static const PROV_CCM_HW wbsm4_wsise_ccm = {
     ossl_ccm_generic_setaad,
     ossl_ccm_generic_auth_encrypt,
     ossl_ccm_generic_auth_decrypt,
-    ossl_ccm_generic_gettag};
+    ossl_ccm_generic_gettag
+};
 
 const PROV_CCM_HW *ossl_prov_wbsm4_wsise_hw_ccm(size_t keybits)
 {

@@ -40,16 +40,8 @@ static int test_wbsm4_Xiao_Lai(void)
         0x68, 0x1e, 0xdf, 0x34, 0xd2, 0x06, 0x96, 0x5e,
         0x86, 0xb3, 0xe9, 0x4f, 0x53, 0x6e, 0x42, 0x46};
 
-    /*
-     * This test vector comes from Example 2 from GB/T 32907-2016,
-     * and described in Internet Draft draft-ribose-cfrg-sm4-02.
-     * After 1,000,000 iterations.
-     */
-    static const uint8_t expected_iter[SM4_BLOCK_SIZE] = {
-        0x59, 0x52, 0x98, 0xc7, 0xc6, 0xfd, 0x27, 0x1f,
-        0x04, 0x02, 0xf8, 0x04, 0xc3, 0x3d, 0x3f, 0x66};
-
-    wbsm4_xiaolai_key *wbsm4_key = (wbsm4_xiaolai_key *)malloc(sizeof(wbsm4_xiaolai_key));
+    wbsm4_xiaolai_key *wbsm4_key =
+                      (wbsm4_xiaolai_key *)malloc(sizeof(wbsm4_xiaolai_key));
     if (wbsm4_key == NULL)
         return 0;
     memset(wbsm4_key, 0, sizeof(wbsm4_xiaolai_key));
@@ -60,15 +52,13 @@ static int test_wbsm4_Xiao_Lai(void)
 
     memcpy(block, input, SM4_BLOCK_SIZE);
     wbsm4_xiaolai_encrypt(block, block, wbsm4_key);
-    if (!TEST_mem_eq(block, SM4_BLOCK_SIZE, expected, SM4_BLOCK_SIZE))
-    {
+    if (!TEST_mem_eq(block, SM4_BLOCK_SIZE, expected, SM4_BLOCK_SIZE)) {
         free(wbsm4_key);
         return 0;
     }
 
     unsigned char *keybuf = (unsigned char *)malloc(sizeof(wbsm4_xiaolai_key));
-    if (!TEST_ptr_ne(keybuf, NULL))
-    {
+    if (!TEST_ptr_ne(keybuf, NULL)) {
         free(wbsm4_key);
         return 0;
     }
@@ -78,47 +68,33 @@ static int test_wbsm4_Xiao_Lai(void)
 
     memcpy(block, input, SM4_BLOCK_SIZE);
     wbsm4_xiaolai_encrypt(block, block, wbsm4_key);
-    if (!TEST_mem_eq(block, SM4_BLOCK_SIZE, expected, SM4_BLOCK_SIZE))
-    {
+    if (!TEST_mem_eq(block, SM4_BLOCK_SIZE, expected, SM4_BLOCK_SIZE)) {
         free(wbsm4_key);
         free(keybuf);
         return 0;
     }
 
-    // int i;
-    // for (i = 0; i != 999999; ++i)
-    //     wbsm4_xiaolai_encrypt(block, block, wbsm4_key);
-
-    // if (!TEST_mem_eq(block, SM4_BLOCK_SIZE, expected_iter, SM4_BLOCK_SIZE))
-    //     return 0;
-    // return 1;
-    (void)expected_iter;
-
     const EVP_CIPHER *cipher = EVP_get_cipherbyname("WBSM4-XIAOLAI-ECB");
-    if (!TEST_ptr_ne(cipher, NULL))
-    {
+    if (!TEST_ptr_ne(cipher, NULL)) {
         free(wbsm4_key);
         return 0;
     }
     int key_length = EVP_CIPHER_get_key_length(cipher);
-    if (!TEST_int_eq(key_length, sizeof(wbsm4_xiaolai_key)))
-    {
+    if (!TEST_int_eq(key_length, sizeof(wbsm4_xiaolai_key))) {
         free(wbsm4_key);
         free(keybuf);
         return 0;
     }
 
     EVP_CIPHER_CTX *cipher_ctx = EVP_CIPHER_CTX_new();
-    if (!TEST_ptr_ne(cipher_ctx, NULL))
-    {
+    if (!TEST_ptr_ne(cipher_ctx, NULL)) {
         free(wbsm4_key);
         free(keybuf);
         return 0;
     }
 
     int ret = EVP_EncryptInit(cipher_ctx, cipher, (unsigned char *)keybuf, NULL);
-    if (!TEST_int_eq(ret, 1))
-    {
+    if (!TEST_int_eq(ret, 1)) {
         EVP_CIPHER_CTX_free(cipher_ctx);
         free(wbsm4_key);
         free(keybuf);
@@ -128,15 +104,13 @@ static int test_wbsm4_Xiao_Lai(void)
     int outl = SM4_BLOCK_SIZE;
     memcpy(block, input, SM4_BLOCK_SIZE);
     ret = EVP_EncryptUpdate(cipher_ctx, block, &outl, block, SM4_BLOCK_SIZE);
-    if (!TEST_int_eq(ret, 1) && !TEST_int_eq(outl, 16))
-    {
+    if (!TEST_int_eq(ret, 1) && !TEST_int_eq(outl, 16)) {
         EVP_CIPHER_CTX_free(cipher_ctx);
         free(wbsm4_key);
         free(keybuf);
         return 0;
     }
-    if (!TEST_mem_eq(block, SM4_BLOCK_SIZE, expected, SM4_BLOCK_SIZE))
-    {
+    if (!TEST_mem_eq(block, SM4_BLOCK_SIZE, expected, SM4_BLOCK_SIZE)) {
         EVP_CIPHER_CTX_free(cipher_ctx);
         free(wbsm4_key);
         free(keybuf);
@@ -167,16 +141,8 @@ static int test_wbsm4_Bai_Wu(void)
         0x68, 0x1e, 0xdf, 0x34, 0xd2, 0x06, 0x96, 0x5e,
         0x86, 0xb3, 0xe9, 0x4f, 0x53, 0x6e, 0x42, 0x46};
 
-    /*
-     * This test vector comes from Example 2 from GB/T 32907-2016,
-     * and described in Internet Draft draft-ribose-cfrg-sm4-02.
-     * After 1,000,000 iterations.
-     */
-    static const uint8_t expected_iter[SM4_BLOCK_SIZE] = {
-        0x59, 0x52, 0x98, 0xc7, 0xc6, 0xfd, 0x27, 0x1f,
-        0x04, 0x02, 0xf8, 0x04, 0xc3, 0x3d, 0x3f, 0x66};
-
-    wbsm4_baiwu_key *wbsm4_key = (wbsm4_baiwu_key *)malloc(sizeof(wbsm4_baiwu_key));
+    wbsm4_baiwu_key *wbsm4_key =
+                    (wbsm4_baiwu_key *)malloc(sizeof(wbsm4_baiwu_key));
     if (wbsm4_key == NULL)
         return 0;
     memset(wbsm4_key, 0, sizeof(wbsm4_baiwu_key));
@@ -187,15 +153,13 @@ static int test_wbsm4_Bai_Wu(void)
 
     memcpy(block, input, SM4_BLOCK_SIZE);
     wbsm4_baiwu_encrypt(block, block, wbsm4_key);
-    if (!TEST_mem_eq(block, SM4_BLOCK_SIZE, expected, SM4_BLOCK_SIZE))
-    {
+    if (!TEST_mem_eq(block, SM4_BLOCK_SIZE, expected, SM4_BLOCK_SIZE)) {
         free(wbsm4_key);
         return 0;
     }
 
     unsigned char *keybuf = (unsigned char *)malloc(sizeof(wbsm4_baiwu_key));
-    if (!TEST_ptr_ne(keybuf, NULL))
-    {
+    if (!TEST_ptr_ne(keybuf, NULL)) {
         free(wbsm4_key);
         return 0;
     }
@@ -205,47 +169,33 @@ static int test_wbsm4_Bai_Wu(void)
 
     memcpy(block, input, SM4_BLOCK_SIZE);
     wbsm4_baiwu_encrypt(block, block, wbsm4_key);
-    if (!TEST_mem_eq(block, SM4_BLOCK_SIZE, expected, SM4_BLOCK_SIZE))
-    {
+    if (!TEST_mem_eq(block, SM4_BLOCK_SIZE, expected, SM4_BLOCK_SIZE)) {
         free(wbsm4_key);
         free(keybuf);
         return 0;
     }
 
-    // int i;
-    // for (i = 0; i != 999999; ++i)
-    //     wbsm4_baiwu_encrypt(block, block, wbsm4_key);
-
-    // if (!TEST_mem_eq(block, SM4_BLOCK_SIZE, expected_iter, SM4_BLOCK_SIZE))
-    //     return 0;
-    // return 1;
-    (void)expected_iter;
-
     const EVP_CIPHER *cipher = EVP_get_cipherbyname("WBSM4-BAIWU-ECB");
-    if (!TEST_ptr_ne(cipher, NULL))
-    {
+    if (!TEST_ptr_ne(cipher, NULL)) {
         free(wbsm4_key);
         return 0;
     }
     int key_length = EVP_CIPHER_get_key_length(cipher);
-    if (!TEST_int_eq(key_length, sizeof(wbsm4_baiwu_key)))
-    {
+    if (!TEST_int_eq(key_length, sizeof(wbsm4_baiwu_key))) {
         free(wbsm4_key);
         free(keybuf);
         return 0;
     }
 
     EVP_CIPHER_CTX *cipher_ctx = EVP_CIPHER_CTX_new();
-    if (!TEST_ptr_ne(cipher_ctx, NULL))
-    {
+    if (!TEST_ptr_ne(cipher_ctx, NULL)) {
         free(wbsm4_key);
         free(keybuf);
         return 0;
     }
 
     int ret = EVP_EncryptInit(cipher_ctx, cipher, (unsigned char *)keybuf, NULL);
-    if (!TEST_int_eq(ret, 1))
-    {
+    if (!TEST_int_eq(ret, 1)) {
         EVP_CIPHER_CTX_free(cipher_ctx);
         free(wbsm4_key);
         free(keybuf);
@@ -255,15 +205,13 @@ static int test_wbsm4_Bai_Wu(void)
     int outl = SM4_BLOCK_SIZE;
     memcpy(block, input, SM4_BLOCK_SIZE);
     ret = EVP_EncryptUpdate(cipher_ctx, block, &outl, block, SM4_BLOCK_SIZE);
-    if (!TEST_int_eq(ret, 1) && !TEST_int_eq(outl, 16))
-    {
+    if (!TEST_int_eq(ret, 1) && !TEST_int_eq(outl, 16)) {
         EVP_CIPHER_CTX_free(cipher_ctx);
         free(wbsm4_key);
         free(keybuf);
         return 0;
     }
-    if (!TEST_mem_eq(block, SM4_BLOCK_SIZE, expected, SM4_BLOCK_SIZE))
-    {
+    if (!TEST_mem_eq(block, SM4_BLOCK_SIZE, expected, SM4_BLOCK_SIZE)) {
         EVP_CIPHER_CTX_free(cipher_ctx);
         free(wbsm4_key);
         free(keybuf);
@@ -294,16 +242,8 @@ static int test_wbsm4_WSISE(void)
         0x68, 0x1e, 0xdf, 0x34, 0xd2, 0x06, 0x96, 0x5e,
         0x86, 0xb3, 0xe9, 0x4f, 0x53, 0x6e, 0x42, 0x46};
 
-    /*
-     * This test vector comes from Example 2 from GB/T 32907-2016,
-     * and described in Internet Draft draft-ribose-cfrg-sm4-02.
-     * After 1,000,000 iterations.
-     */
-    static const uint8_t expected_iter[SM4_BLOCK_SIZE] = {
-        0x59, 0x52, 0x98, 0xc7, 0xc6, 0xfd, 0x27, 0x1f,
-        0x04, 0x02, 0xf8, 0x04, 0xc3, 0x3d, 0x3f, 0x66};
-
-    wbsm4_wsise_key *wbsm4_key = (wbsm4_wsise_key *)malloc(sizeof(wbsm4_wsise_key));
+    wbsm4_wsise_key *wbsm4_key =
+                    (wbsm4_wsise_key *)malloc(sizeof(wbsm4_wsise_key));
     if (wbsm4_key == NULL)
         return 0;
     memset(wbsm4_key, 0, sizeof(wbsm4_wsise_key));
@@ -314,15 +254,13 @@ static int test_wbsm4_WSISE(void)
 
     memcpy(block, input, SM4_BLOCK_SIZE);
     wbsm4_wsise_encrypt(block, block, wbsm4_key);
-    if (!TEST_mem_eq(block, SM4_BLOCK_SIZE, expected, SM4_BLOCK_SIZE))
-    {
+    if (!TEST_mem_eq(block, SM4_BLOCK_SIZE, expected, SM4_BLOCK_SIZE)) {
         free(wbsm4_key);
         return 0;
     }
 
     unsigned char *keybuf = (unsigned char *)malloc(sizeof(wbsm4_wsise_key));
-    if (!TEST_ptr_ne(keybuf, NULL))
-    {
+    if (!TEST_ptr_ne(keybuf, NULL)) {
         free(wbsm4_key);
         return 0;
     }
@@ -332,47 +270,33 @@ static int test_wbsm4_WSISE(void)
 
     memcpy(block, input, SM4_BLOCK_SIZE);
     wbsm4_wsise_encrypt(block, block, wbsm4_key);
-    if (!TEST_mem_eq(block, SM4_BLOCK_SIZE, expected, SM4_BLOCK_SIZE))
-    {
+    if (!TEST_mem_eq(block, SM4_BLOCK_SIZE, expected, SM4_BLOCK_SIZE)) {
         free(wbsm4_key);
         free(keybuf);
         return 0;
     }
 
-    // int i;
-    // for (i = 0; i != 999999; ++i)
-    //     wbsm4_wsise_encrypt(block, block, wbsm4_key);
-
-    // if (!TEST_mem_eq(block, SM4_BLOCK_SIZE, expected_iter, SM4_BLOCK_SIZE))
-    //     return 0;
-    // return 1;
-    (void)expected_iter;
-
     const EVP_CIPHER *cipher = EVP_get_cipherbyname("WBSM4-WSISE-ECB");
-    if (!TEST_ptr_ne(cipher, NULL))
-    {
+    if (!TEST_ptr_ne(cipher, NULL)) {
         free(wbsm4_key);
         return 0;
     }
     int key_length = EVP_CIPHER_get_key_length(cipher);
-    if (!TEST_int_eq(key_length, sizeof(wbsm4_wsise_key)))
-    {
+    if (!TEST_int_eq(key_length, sizeof(wbsm4_wsise_key))) {
         free(wbsm4_key);
         free(keybuf);
         return 0;
     }
 
     EVP_CIPHER_CTX *cipher_ctx = EVP_CIPHER_CTX_new();
-    if (!TEST_ptr_ne(cipher_ctx, NULL))
-    {
+    if (!TEST_ptr_ne(cipher_ctx, NULL)) {
         free(wbsm4_key);
         free(keybuf);
         return 0;
     }
 
     int ret = EVP_EncryptInit(cipher_ctx, cipher, (unsigned char *)keybuf, NULL);
-    if (!TEST_int_eq(ret, 1))
-    {
+    if (!TEST_int_eq(ret, 1)) {
         EVP_CIPHER_CTX_free(cipher_ctx);
         free(wbsm4_key);
         free(keybuf);
@@ -382,15 +306,13 @@ static int test_wbsm4_WSISE(void)
     int outl = SM4_BLOCK_SIZE;
     memcpy(block, input, SM4_BLOCK_SIZE);
     ret = EVP_EncryptUpdate(cipher_ctx, block, &outl, block, SM4_BLOCK_SIZE);
-    if (!TEST_int_eq(ret, 1) && !TEST_int_eq(outl, 16))
-    {
+    if (!TEST_int_eq(ret, 1) && !TEST_int_eq(outl, 16)) {
         EVP_CIPHER_CTX_free(cipher_ctx);
         free(wbsm4_key);
         free(keybuf);
         return 0;
     }
-    if (!TEST_mem_eq(block, SM4_BLOCK_SIZE, expected, SM4_BLOCK_SIZE))
-    {
+    if (!TEST_mem_eq(block, SM4_BLOCK_SIZE, expected, SM4_BLOCK_SIZE)) {
         EVP_CIPHER_CTX_free(cipher_ctx);
         free(wbsm4_key);
         free(keybuf);

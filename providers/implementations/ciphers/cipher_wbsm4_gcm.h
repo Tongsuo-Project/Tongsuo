@@ -12,12 +12,10 @@
 #include "prov/ciphercommon.h"
 #include "prov/ciphercommon_gcm.h"
 
-// xiaolai
-typedef struct prov_wbsm4_xiaolai_gcm_ctx_st
-{
+/* xiaolai */
+typedef struct prov_wbsm4_xiaolai_gcm_ctx_st {
     PROV_GCM_CTX base; /* must be first entry in struct */
-    union
-    {
+    union {
         OSSL_UNION_ALIGN;
         wbsm4_xiaolai_key ks;
     } ks; /* WBSM4 key schedule to use */
@@ -25,12 +23,10 @@ typedef struct prov_wbsm4_xiaolai_gcm_ctx_st
 
 const PROV_GCM_HW *ossl_prov_wbsm4_xiaolai_hw_gcm(size_t keybits);
 
-// baiwu
-typedef struct prov_wbsm4_baiwu_gcm_ctx_st
-{
+/* baiwu */
+typedef struct prov_wbsm4_baiwu_gcm_ctx_st {
     PROV_GCM_CTX base; /* must be first entry in struct */
-    union
-    {
+    union {
         OSSL_UNION_ALIGN;
         wbsm4_baiwu_key ks;
     } ks; /* WBSM4 key schedule to use */
@@ -38,12 +34,10 @@ typedef struct prov_wbsm4_baiwu_gcm_ctx_st
 
 const PROV_GCM_HW *ossl_prov_wbsm4_baiwu_hw_gcm(size_t keybits);
 
-// wsise
-typedef struct prov_wbsm4_wsise_gcm_ctx_st
-{
+/* wsise */
+typedef struct prov_wbsm4_wsise_gcm_ctx_st {
     PROV_GCM_CTX base; /* must be first entry in struct */
-    union
-    {
+    union {
         OSSL_UNION_ALIGN;
         wbsm4_wsise_key ks;
     } ks; /* WBSM4 key schedule to use */

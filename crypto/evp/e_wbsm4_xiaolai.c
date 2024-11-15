@@ -29,23 +29,28 @@ typedef struct {
 } EVP_WBSM4_XIAOLAI_KEY;
 
 # define BLOCK_CIPHER_generic(nid,blocksize,ivlen,nmode,mode,MODE,flags) \
-static const EVP_CIPHER wbsm4_xiaolai_##mode = { \
-        nid##_##nmode,blocksize,sizeof(wbsm4_xiaolai_key),ivlen, \
-        flags|EVP_CIPH_##MODE##_MODE,   \
-        EVP_ORIG_GLOBAL,                \
-        wbsm4_xiaolai_init_key,                   \
-        wbsm4_xiaolai_##mode##_cipher,            \
-        NULL,                           \
-        sizeof(EVP_WBSM4_XIAOLAI_KEY),            \
-        NULL,NULL,NULL,NULL }; \
-const EVP_CIPHER *EVP_wbsm4_xiaolai_##mode(void) \
+static const EVP_CIPHER wbsm4_xiaolai_##mode = {                         \
+        nid##_##nmode,blocksize,sizeof(wbsm4_xiaolai_key),ivlen,         \
+        flags|EVP_CIPH_##MODE##_MODE,                                    \
+        EVP_ORIG_GLOBAL,                                                 \
+        wbsm4_xiaolai_init_key,                                          \
+        wbsm4_xiaolai_##mode##_cipher,                                   \
+        NULL,                                                            \
+        sizeof(EVP_WBSM4_XIAOLAI_KEY),                                   \
+        NULL,NULL,NULL,NULL                                              \
+};                                                                       \
+const EVP_CIPHER *EVP_wbsm4_xiaolai_##mode(void)                         \
 { return &wbsm4_xiaolai_##mode; }
 
-#define DEFINE_BLOCK_CIPHERS(nid,flags)             \
-        BLOCK_CIPHER_generic(nid,16,16,cbc,cbc,CBC,flags|EVP_CIPH_FLAG_DEFAULT_ASN1)     \
-        BLOCK_CIPHER_generic(nid,16,0,ecb,ecb,ECB,flags|EVP_CIPH_FLAG_DEFAULT_ASN1)      \
-        BLOCK_CIPHER_generic(nid,1,16,ofb128,ofb,OFB,flags|EVP_CIPH_FLAG_DEFAULT_ASN1)   \
-        BLOCK_CIPHER_generic(nid,1,16,cfb128,cfb,CFB,flags|EVP_CIPH_FLAG_DEFAULT_ASN1)   \
+#define DEFINE_BLOCK_CIPHERS(nid,flags)                        \
+        BLOCK_CIPHER_generic(nid,16,16,cbc,cbc,CBC,            \
+                            flags|EVP_CIPH_FLAG_DEFAULT_ASN1)  \
+        BLOCK_CIPHER_generic(nid,16,0,ecb,ecb,ECB,             \
+                             flags|EVP_CIPH_FLAG_DEFAULT_ASN1) \
+        BLOCK_CIPHER_generic(nid,1,16,ofb128,ofb,OFB,          \
+                             flags|EVP_CIPH_FLAG_DEFAULT_ASN1) \
+        BLOCK_CIPHER_generic(nid,1,16,cfb128,cfb,CFB,          \
+                             flags|EVP_CIPH_FLAG_DEFAULT_ASN1) \
         BLOCK_CIPHER_generic(nid,1,16,ctr,ctr,CTR,flags)
 
 static int wbsm4_xiaolai_init_key(EVP_CIPHER_CTX *ctx, const unsigned char *key,
@@ -138,20 +143,21 @@ static int wbsm4_xiaolai_ctr_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
 DEFINE_BLOCK_CIPHERS(NID_wbsm4_xiaolai, 0)
 
 # define BLOCK_CIPHER_custom(nid,blocksize,ivlen,mode,MODE,flags) \
-static const EVP_CIPHER wbsm4_xiaolai_##mode = { \
+static const EVP_CIPHER wbsm4_xiaolai_##mode = {                  \
         nid##_##mode,blocksize, sizeof(wbsm4_xiaolai_key), ivlen, \
-        flags|EVP_CIPH_##MODE##_MODE,   \
-        EVP_ORIG_GLOBAL,                \
-        wbsm4_xiaolai_##mode##_init,              \
-        wbsm4_xiaolai_##mode##_cipher,            \
-        wbsm4_xiaolai_##mode##_cleanup,           \
-        sizeof(EVP_SM4_##MODE##_CTX),   \
-        NULL,NULL,wbsm4_xiaolai_##mode##_ctrl,NULL }; \
-const EVP_CIPHER *EVP_wbsm4_xiaolai_##mode(void) \
+        flags|EVP_CIPH_##MODE##_MODE,                             \
+        EVP_ORIG_GLOBAL,                                          \
+        wbsm4_xiaolai_##mode##_init,                              \
+        wbsm4_xiaolai_##mode##_cipher,                            \
+        wbsm4_xiaolai_##mode##_cleanup,                           \
+        sizeof(EVP_SM4_##MODE##_CTX),                             \
+        NULL,NULL,wbsm4_xiaolai_##mode##_ctrl,NULL                \
+};                                                                \
+const EVP_CIPHER *EVP_wbsm4_xiaolai_##mode(void)                  \
 { return &wbsm4_xiaolai_##mode; }
 
 typedef struct {
-    wbsm4_xiaolai_key ks;      /* WBSM4 key schedule to use */
+    wbsm4_xiaolai_key ks;       /* WBSM4 key schedule to use */
     int key_set;                /* Set if key initialized */
     int iv_set;                 /* Set if an iv is set */
     GCM128_CONTEXT gcm;
@@ -164,7 +170,7 @@ typedef struct {
 } EVP_SM4_GCM_CTX;
 
 typedef struct {
-    wbsm4_xiaolai_key ks;      /* WBSM4 key schedule to use */
+    wbsm4_xiaolai_key ks;       /* WBSM4 key schedule to use */
     int key_set;                /* Set if key initialized */
     int iv_set;                 /* Set if an iv is set */
     int tag_set;                /* Set if tag is valid */
@@ -175,14 +181,16 @@ typedef struct {
     ccm128_f str;
 } EVP_SM4_CCM_CTX;
 
-static int wbsm4_xiaolai_gcm_ctrl(EVP_CIPHER_CTX *c, int type, int arg, void *ptr);
+static int wbsm4_xiaolai_gcm_ctrl(EVP_CIPHER_CTX *c, int type, int arg,
+                                  void *ptr);
 static int wbsm4_xiaolai_gcm_init(EVP_CIPHER_CTX *ctx, const unsigned char *key,
                         const unsigned char *iv, int enc);
 static int wbsm4_xiaolai_gcm_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
                           const unsigned char *in, size_t len);
 static int wbsm4_xiaolai_gcm_cleanup(EVP_CIPHER_CTX *c);
 
-static int wbsm4_xiaolai_ccm_ctrl(EVP_CIPHER_CTX *c, int type, int arg, void *ptr);
+static int wbsm4_xiaolai_ccm_ctrl(EVP_CIPHER_CTX *c, int type, int arg,
+                                  void *ptr);
 static int wbsm4_xiaolai_ccm_init(EVP_CIPHER_CTX *ctx, const unsigned char *key,
                         const unsigned char *iv, int enc);
 static int wbsm4_xiaolai_ccm_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
@@ -205,7 +213,8 @@ static void ctr64_inc(unsigned char *counter)
     } while (n);
 }
 
-static int wbsm4_xiaolai_gcm_ctrl(EVP_CIPHER_CTX *c, int type, int arg, void *ptr)
+static int wbsm4_xiaolai_gcm_ctrl(EVP_CIPHER_CTX *c, int type, int arg,
+                                  void *ptr)
 {
     EVP_SM4_GCM_CTX *gctx = EVP_C_DATA(EVP_SM4_GCM_CTX,c);
 
@@ -485,7 +494,8 @@ static int wbsm4_xiaolai_gcm_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
                 return -1;
         } else if (ctx->encrypt) {
             if (gctx->ctr != NULL) {
-                if (CRYPTO_gcm128_encrypt_ctr32(&gctx->gcm, in, out, len, gctx->ctr))
+                if (CRYPTO_gcm128_encrypt_ctr32(&gctx->gcm, in, out, len,
+                                                gctx->ctr))
                     return -1;
             } else {
                 if (CRYPTO_gcm128_encrypt(&gctx->gcm, in, out, len))
@@ -493,7 +503,8 @@ static int wbsm4_xiaolai_gcm_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
             }
         } else {
             if (gctx->ctr != NULL) {
-                if (CRYPTO_gcm128_decrypt_ctr32(&gctx->gcm, in, out, len, gctx->ctr))
+                if (CRYPTO_gcm128_decrypt_ctr32(&gctx->gcm, in, out, len,
+                                                gctx->ctr))
                     return -1;
             } else {
                 if (CRYPTO_gcm128_decrypt(&gctx->gcm, in, out, len))
@@ -534,7 +545,8 @@ static int wbsm4_xiaolai_gcm_cleanup(EVP_CIPHER_CTX *c)
     return 1;
 }
 
-static int wbsm4_xiaolai_ccm_ctrl(EVP_CIPHER_CTX *c, int type, int arg, void *ptr)
+static int wbsm4_xiaolai_ccm_ctrl(EVP_CIPHER_CTX *c, int type, int arg,
+                                  void *ptr)
 {
     EVP_SM4_CCM_CTX *cctx = EVP_C_DATA(EVP_SM4_CCM_CTX,c);
 
@@ -737,9 +749,9 @@ static int wbsm4_xiaolai_ccm_cleanup(EVP_CIPHER_CTX *c)
     return 1;
 }
 
-#define CUSTOM_FLAGS    (EVP_CIPH_FLAG_DEFAULT_ASN1 \
+#define CUSTOM_FLAGS    (EVP_CIPH_FLAG_DEFAULT_ASN1                         \
                          | EVP_CIPH_CUSTOM_IV | EVP_CIPH_FLAG_CUSTOM_CIPHER \
-                         | EVP_CIPH_ALWAYS_CALL_INIT | EVP_CIPH_CTRL_INIT \
+                         | EVP_CIPH_ALWAYS_CALL_INIT | EVP_CIPH_CTRL_INIT   \
                          | EVP_CIPH_CUSTOM_COPY | EVP_CIPH_CUSTOM_IV_LENGTH)
 
 BLOCK_CIPHER_custom(NID_wbsm4_xiaolai, 1, 12, gcm, GCM,

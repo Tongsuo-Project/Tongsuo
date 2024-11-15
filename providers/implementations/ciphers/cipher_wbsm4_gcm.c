@@ -14,7 +14,7 @@
 #include "prov/implementations.h"
 #include "prov/providercommon.h"
 
-// xiaolai
+/* xiaolai */
 static void *wbsm4_xiaolai_gcm_newctx(void *provctx, size_t keybits)
 {
     PROV_WBSM4_XIAOLAI_GCM_CTX *ctx;
@@ -40,7 +40,7 @@ static void wbsm4_xiaolai_gcm_freectx(void *vctx)
 /* ossl_wbsm4_xiaolai1225984gcm_functions */
 IMPLEMENT_aead_cipher(wbsm4_xiaolai, gcm, GCM, AEAD_FLAGS, 1225984, 8, 96);
 
-// baiwu
+/* baiwu */
 static void *wbsm4_baiwu_gcm_newctx(void *provctx, size_t keybits)
 {
     PROV_WBSM4_BAIWU_GCM_CTX *ctx;
@@ -66,7 +66,7 @@ static void wbsm4_baiwu_gcm_freectx(void *vctx)
 /* ossl_wbsm4_baiwu272638208gcm_functions */
 IMPLEMENT_aead_cipher(wbsm4_baiwu, gcm, GCM, AEAD_FLAGS, 272638208, 8, 96);
 
-// wsise
+/* wsise */
 static void *wbsm4_wsise_gcm_newctx(void *provctx, size_t keybits)
 {
     PROV_WBSM4_WSISE_GCM_CTX *ctx;

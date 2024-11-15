@@ -3129,11 +3129,9 @@ int speed_main(int argc, char **argv)
     }
 #endif
 #ifndef OPENSSL_NO_WBSM4
-    for (k = 0; k < 2; k++)
-    {
+    for (k = 0; k < 2; k++) {
         algindex = D_CBC_WBSM4_XIAOLAI + k;
-        if (doit[algindex])
-        {
+        if (doit[algindex]) {
             int st = 1;
 
             const EVP_CIPHER *cipher = EVP_get_cipherbyname("WBSM4-XIAOLAI");
@@ -3146,16 +3144,14 @@ int speed_main(int argc, char **argv)
                 continue;
             RAND_bytes(local_key, keylen);
 
-            for (i = 0; st && i < loopargs_len; i++)
-            {
+            for (i = 0; st && i < loopargs_len; i++) {
                 loopargs[i].ctx = init_evp_cipher_ctx(names[algindex],
                                                       local_key, keylen);
                 st = loopargs[i].ctx != NULL;
             }
             OPENSSL_free(local_key);
 
-            for (testnum = 0; st && testnum < size_num; testnum++)
-            {
+            for (testnum = 0; st && testnum < size_num; testnum++) {
                 print_message(names[algindex], c[algindex][testnum],
                             lengths[testnum], seconds.sym);
                 Time_F(START);
@@ -3168,11 +3164,9 @@ int speed_main(int argc, char **argv)
                 EVP_CIPHER_CTX_free(loopargs[i].ctx);
         }
     }
-    for (k = 0; k < 2; k++)
-    {
+    for (k = 0; k < 2; k++) {
         algindex = D_CBC_WBSM4_BAIWU + k;
-        if (doit[algindex])
-        {
+        if (doit[algindex]) {
             int st = 1;
 
             const EVP_CIPHER *cipher = EVP_get_cipherbyname("WBSM4-BAIWU");
@@ -3185,16 +3179,14 @@ int speed_main(int argc, char **argv)
                 continue;
             RAND_bytes(local_key, keylen);
 
-            for (i = 0; st && i < loopargs_len; i++)
-            {
+            for (i = 0; st && i < loopargs_len; i++) {
                 loopargs[i].ctx = init_evp_cipher_ctx(names[algindex],
                                                       local_key, keylen);
                 st = loopargs[i].ctx != NULL;
             }
             OPENSSL_free(local_key);
 
-            for (testnum = 0; st && testnum < size_num; testnum++)
-            {
+            for (testnum = 0; st && testnum < size_num; testnum++) {
                 print_message(names[algindex], c[algindex][testnum],
                             lengths[testnum], seconds.sym);
                 Time_F(START);
@@ -3207,11 +3199,9 @@ int speed_main(int argc, char **argv)
                 EVP_CIPHER_CTX_free(loopargs[i].ctx);
         }
     }
-    for (k = 0; k < 2; k++)
-    {
+    for (k = 0; k < 2; k++) {
         algindex = D_CBC_WBSM4_WSISE + k;
-        if (doit[algindex])
-        {
+        if (doit[algindex]) {
             int st = 1;
 
             const EVP_CIPHER *cipher = EVP_get_cipherbyname("WBSM4-WSISE");
@@ -3224,16 +3214,14 @@ int speed_main(int argc, char **argv)
                 continue;
             RAND_bytes(local_key, keylen);
 
-            for (i = 0; st && i < loopargs_len; i++)
-            {
+            for (i = 0; st && i < loopargs_len; i++) {
                 loopargs[i].ctx = init_evp_cipher_ctx(names[algindex],
                                                       local_key, keylen);
                 st = loopargs[i].ctx != NULL;
             }
             OPENSSL_free(local_key);
 
-            for (testnum = 0; st && testnum < size_num; testnum++)
-            {
+            for (testnum = 0; st && testnum < size_num; testnum++) {
                 print_message(names[algindex], c[algindex][testnum],
                             lengths[testnum], seconds.sym);
                 Time_F(START);

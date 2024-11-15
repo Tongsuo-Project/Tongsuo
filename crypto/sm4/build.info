@@ -15,7 +15,7 @@ ENDIF
 SOURCE[../../libcrypto]= $SM4ASM sm4.c
 
 IF[{- !$disabled{wbsm4} -}]
-SOURCE[../../libcrypto]= ${SOURCE[../../libcrypto]} \
+SOURCE[../../libcrypto]=${SOURCE[../../libcrypto]} \
   wb/wbsm4.c \
   wb/Bai-Wu-wbsm4.c \
   wb/Xiao-Lai-wbsm4.c \

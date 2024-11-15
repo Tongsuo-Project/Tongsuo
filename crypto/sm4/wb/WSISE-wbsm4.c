@@ -294,8 +294,7 @@ void wbsm4_wsise_set_key(const uint8_t *key, wbsm4_wsise_key *wbsm4_key)
     uint8_t *p = (uint8_t *)wbsm4_key;
     uint8_t *table = (uint8_t *)&wbsm4_key->Table;
     uint8_t *end = p + sizeof(wbsm4_wsise_key);
-    while (p < table)
-    {
+    while (p < table) {
         uint8_t t;
         t = p[0];
         p[0] = p[3];
@@ -309,8 +308,7 @@ void wbsm4_wsise_set_key(const uint8_t *key, wbsm4_wsise_key *wbsm4_key)
     }
 
     p = table;
-    while (p < end)
-    {
+    while (p < end) {
         uint8_t t;
         t = p[0];
         p[0] = p[7];
@@ -344,8 +342,7 @@ void wbsm4_wsise_export_key(const wbsm4_wsise_key *wbsm4_key, uint8_t *key)
     uint8_t *p = (uint8_t *)out;
     uint8_t *table = (uint8_t *)&out->Table;
     uint8_t *end = p + sizeof(wbsm4_wsise_key);
-    while (p < table)
-    {
+    while (p < table) {
         uint8_t t;
         t = p[0];
         p[0] = p[3];
@@ -359,8 +356,7 @@ void wbsm4_wsise_export_key(const wbsm4_wsise_key *wbsm4_key, uint8_t *key)
     }
 
     p = table;
-    while (p < end)
-    {
+    while (p < end) {
         uint8_t t;
         t = p[0];
         p[0] = p[7];
@@ -402,34 +398,34 @@ void wbsm4_wsise_gen(const uint8_t *sm4_key, wbsm4_wsise_key *wbsm4_key)
     uint32_t SK[32];
     wbsm4_sm4_setkey(SK, sm4_key);
 
-    for (i = 0; i < 36; i++)
-    {
-        // affine P
+    for (i = 0; i < 36; i++) {
+        /* affine P */
         genaffinepairM32(&P[i], &P_inv[i]);
     }
 
-    for (i = 0; i < 32; i++)
-    {
-        // affine E
-        for (j = 0; j < 4; j++)
-        {
+    for (i = 0; i < 32; i++) {
+        /* affine E */
+        for (j = 0; j < 4; j++) {
             genaffinepairM8(&Eij[i][j], &Eij_inv[i][j]);
             genaffinepairM8(&Qij[i][j], &Qij_inv[i][j]);
         }
 
-        // combine 4 E8 to 1 E32
-        affinecomM8to32(Eij_inv[i][0], Eij_inv[i][1], Eij_inv[i][2], Eij_inv[i][3], &Ei_inv[i]);
+        /* combine 4 E8 to 1 E32 */
+        affinecomM8to32(Eij_inv[i][0], Eij_inv[i][1], Eij_inv[i][2],
+                        Eij_inv[i][3], &Ei_inv[i]);
 
-        // affine M
+        /* affine M */
         affinemixM32(Ei_inv[i], P_inv[i + 1], &wbsm4_key->M[i][0]);
         affinemixM32(Ei_inv[i], P_inv[i + 2], &wbsm4_key->M[i][1]);
         affinemixM32(Ei_inv[i], P_inv[i + 3], &wbsm4_key->M[i][2]);
 
-        // affine Q
-        affinecomM8to64(Qij[i][0], Qij[i][1], Qij[i][2], Qij[i][3], Qij[i][0], Qij[i][1], Qij[i][2], Qij[i][3], &Q[i]);
-        affinecomM8to32(Qij_inv[i][0], Qij_inv[i][1], Qij_inv[i][2], Qij_inv[i][3], &Q_inv[i]);
+        /* affine Q */
+        affinecomM8to64(Qij[i][0], Qij[i][1], Qij[i][2], Qij[i][3], Qij[i][0],
+                        Qij[i][1], Qij[i][2], Qij[i][3], &Q[i]);
+        affinecomM8to32(Qij_inv[i][0], Qij_inv[i][1], Qij_inv[i][2],
+                        Qij_inv[i][3], &Q_inv[i]);
 
-        // affine C D, C for Xi0, D for T(Xi1+Xi2+Xi3+rk)
+        /* affine C D, C for Xi0, D for T(Xi1+Xi2+Xi3+rk) */
         affinemixM32(P[i + 4], P_inv[i], &wbsm4_key->C[i]);
         affinemixM32(P[i + 4], Q_inv[i], &wbsm4_key->D[i]);
         temp_u32 = cus_random();
@@ -437,31 +433,28 @@ void wbsm4_wsise_gen(const uint8_t *sm4_key, wbsm4_wsise_key *wbsm4_key)
         wbsm4_key->D[i].Vec.V ^= P[i + 4].Vec.V ^ temp_u32;
     }
 
-    for (i = 0; i < 32; i++)
-    {
+    for (i = 0; i < 32; i++) {
         V64 Q_constant[3];
-        for (j = 0; j < 3; j++)
-        {
+        for (j = 0; j < 3; j++) {
             randV64(&Q_constant[j]);
         }
 
         uint8_t randnum[4];
         V8 randvec[4];
-        for (j = 0; j < 4; j++)
-        {
+        for (j = 0; j < 4; j++) {
             randnum[j] = cus_random() % 2;
             randV8(&randvec[j]);
         }
 
-        for (x = 0; x < 256; x++)
-        {
-            for (j = 0; j < 4; j++)
-            {
+        for (x = 0; x < 256; x++) {
+            for (j = 0; j < 4; j++) {
                 temp_u8 = affineU8(Eij[i][j], x);
                 if (randnum[j] == 0)
-                    temp_u16 = (SBOX[temp_u8 ^ ((SK[i] >> (24 - j * 8)) & 0xff)] << 8) | SBOX[temp_u8 ^ randvec[j].V];
+                    temp_u16 = (SBOX[temp_u8 ^ ((SK[i] >> (24 - j * 8)) & 0xff)]
+                                << 8) | SBOX[temp_u8 ^ randvec[j].V];
                 else
-                    temp_u16 = (SBOX[temp_u8 ^ randvec[j].V] << 8) | SBOX[temp_u8 ^ ((SK[i] >> (24 - j * 8)) & 0xff)];
+                    temp_u16 = (SBOX[temp_u8 ^ randvec[j].V] << 8) |
+                               SBOX[temp_u8 ^ ((SK[i] >> (24 - j * 8)) & 0xff)];
                 temp_u64 = ((uint64_t)temp_u16) << (48 - 16 * j);
                 temp_u64 = MatMulNumM64(L_matrix, temp_u64);
                 if (randnum[j] == 0)
@@ -470,17 +463,16 @@ void wbsm4_wsise_gen(const uint8_t *sm4_key, wbsm4_wsise_key *wbsm4_key)
                     temp_u64 = MatMulNumM64(SR1, temp_u64);
                 wbsm4_key->Table[i][j][x] = MatMulNumM64(Q[i].Mat, temp_u64);
             }
-            for (j = 0; j < 3; j++)
-            {
+            for (j = 0; j < 3; j++) {
                 wbsm4_key->Table[i][j][x] ^= Q_constant[j].V;
             }
-            wbsm4_key->Table[i][3][x] ^= Q[i].Vec.V ^ Q_constant[0].V ^ Q_constant[1].V ^ Q_constant[2].V;
+            wbsm4_key->Table[i][3][x] ^= Q[i].Vec.V ^ Q_constant[0].V ^
+                                         Q_constant[1].V ^ Q_constant[2].V;
         }
     }
 
-    // external encoding
-    for (i = 0; i < 4; i++)
-    {
+    /* external encoding */
+    for (i = 0; i < 4; i++) {
         wbsm4_key->SE[i].Mat = P[i].Mat;
         wbsm4_key->SE[i].Vec = P[i].Vec;
 
@@ -489,7 +481,8 @@ void wbsm4_wsise_gen(const uint8_t *sm4_key, wbsm4_wsise_key *wbsm4_key)
     }
 }
 
-void wbsm4_wsise_encrypt(const unsigned char IN[], unsigned char OUT[], const wbsm4_wsise_key *wbsm4_key)
+void wbsm4_wsise_encrypt(const unsigned char IN[], unsigned char OUT[],
+                         const wbsm4_wsise_key *wbsm4_key)
 {
     int i;
     uint32_t x0, x1, x2, x3, x4;
@@ -506,13 +499,15 @@ void wbsm4_wsise_encrypt(const unsigned char IN[], unsigned char OUT[], const wb
     x2 = affineU32(wbsm4_key->SE[2], x2);
     x3 = affineU32(wbsm4_key->SE[3], x3);
 
-    for (i = 0; i < 32; i++)
-    {
+    for (i = 0; i < 32; i++) {
         xt1 = affineU32(wbsm4_key->M[i][0], x1);
         xt2 = affineU32(wbsm4_key->M[i][1], x2);
         xt3 = affineU32(wbsm4_key->M[i][2], x3);
         x4 = xt1 ^ xt2 ^ xt3;
-        xx4 = wbsm4_key->Table[i][0][(x4 >> 24) & 0xff] ^ wbsm4_key->Table[i][1][(x4 >> 16) & 0xff] ^ wbsm4_key->Table[i][2][(x4 >> 8) & 0xff] ^ wbsm4_key->Table[i][3][x4 & 0xff];
+        xx4 = wbsm4_key->Table[i][0][(x4 >> 24) & 0xff] ^
+              wbsm4_key->Table[i][1][(x4 >> 16) & 0xff] ^
+              wbsm4_key->Table[i][2][(x4 >> 8) & 0xff] ^
+              wbsm4_key->Table[i][3][x4 & 0xff];
         x4 = xx4 >> 32;
         xt0 = affineU32(wbsm4_key->C[i], x0);
         xt4 = affineU32(wbsm4_key->D[i], x4);

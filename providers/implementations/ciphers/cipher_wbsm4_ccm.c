@@ -14,7 +14,7 @@
 #include "prov/implementations.h"
 #include "prov/providercommon.h"
 
-// xiaolai
+/* xiaolai */
 static void *wbsm4_xiaolai_ccm_newctx(void *provctx, size_t keybits)
 {
     PROV_WBSM4_XIAOLAI_CCM_CTX *ctx;
@@ -24,7 +24,8 @@ static void *wbsm4_xiaolai_ccm_newctx(void *provctx, size_t keybits)
 
     ctx = OPENSSL_zalloc(sizeof(*ctx));
     if (ctx != NULL)
-        ossl_ccm_initctx(&ctx->base, keybits, ossl_prov_wbsm4_xiaolai_hw_ccm(keybits));
+        ossl_ccm_initctx(&ctx->base, keybits,
+                        ossl_prov_wbsm4_xiaolai_hw_ccm(keybits));
     return ctx;
 }
 
@@ -39,7 +40,7 @@ static void wbsm4_xiaolai_ccm_freectx(void *vctx)
 /* ossl_wbsm4_xiaolai1225984ccm_functions */
 IMPLEMENT_aead_cipher(wbsm4_xiaolai, ccm, CCM, AEAD_FLAGS, 1225984, 8, 96);
 
-// baiwu
+/* baiwu */
 static void *wbsm4_baiwu_ccm_newctx(void *provctx, size_t keybits)
 {
     PROV_WBSM4_BAIWU_CCM_CTX *ctx;
@@ -49,7 +50,8 @@ static void *wbsm4_baiwu_ccm_newctx(void *provctx, size_t keybits)
 
     ctx = OPENSSL_zalloc(sizeof(*ctx));
     if (ctx != NULL)
-        ossl_ccm_initctx(&ctx->base, keybits, ossl_prov_wbsm4_baiwu_hw_ccm(keybits));
+        ossl_ccm_initctx(&ctx->base, keybits,
+                        ossl_prov_wbsm4_baiwu_hw_ccm(keybits));
     return ctx;
 }
 
@@ -64,7 +66,7 @@ static void wbsm4_baiwu_ccm_freectx(void *vctx)
 /* ossl_wbsm4_baiwu272638208ccm_functions */
 IMPLEMENT_aead_cipher(wbsm4_baiwu, ccm, CCM, AEAD_FLAGS, 272638208, 8, 96);
 
-// wsise
+/* wsise */
 static void *wbsm4_wsise_ccm_newctx(void *provctx, size_t keybits)
 {
     PROV_WBSM4_WSISE_CCM_CTX *ctx;
@@ -74,7 +76,8 @@ static void *wbsm4_wsise_ccm_newctx(void *provctx, size_t keybits)
 
     ctx = OPENSSL_zalloc(sizeof(*ctx));
     if (ctx != NULL)
-        ossl_ccm_initctx(&ctx->base, keybits, ossl_prov_wbsm4_wsise_hw_ccm(keybits));
+        ossl_ccm_initctx(&ctx->base, keybits,
+                        ossl_prov_wbsm4_wsise_hw_ccm(keybits));
     return ctx;
 }
 

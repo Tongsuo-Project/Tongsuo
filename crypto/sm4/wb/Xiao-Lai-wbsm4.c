@@ -26,7 +26,7 @@
     (ct)[2] = (uint8_t)((st) >> 8);  \
     (ct)[3] = (uint8_t)(st)
 
-static uint8_t  SBOX[256]={
+static uint8_t  SBOX[256] = {
 	0xd6, 0x90, 0xe9, 0xfe, 0xcc, 0xe1, 0x3d, 0xb7,
 	0x16, 0xb6, 0x14, 0xc2, 0x28, 0xfb, 0x2c, 0x05,
 	0x2b, 0x67, 0x9a, 0x76, 0x2a, 0xbe, 0x04, 0xc3,
@@ -93,7 +93,8 @@ static M32 L_matrix = {
     .M[28] = 0x202080A,
     .M[29] = 0x1010405,
     .M[30] = 0x80808202,
-    .M[31] = 0x40404101};
+    .M[31] = 0x40404101
+};
 
 void wbsm4_xiaolai_set_key(const uint8_t *key, wbsm4_xiaolai_key *wbsm4_key)
 {
@@ -105,8 +106,7 @@ void wbsm4_xiaolai_set_key(const uint8_t *key, wbsm4_xiaolai_key *wbsm4_key)
 
     uint8_t *p = (uint8_t *)wbsm4_key;
     uint8_t *end = p + sizeof(wbsm4_xiaolai_key);
-    while (p < end)
-    {
+    while (p < end) {
         uint8_t t;
         t = p[0];
         p[0] = p[3];
@@ -131,8 +131,7 @@ void wbsm4_xiaolai_export_key(const wbsm4_xiaolai_key *wbsm4_key, uint8_t *key)
 
     uint8_t *p = (uint8_t *)out;
     uint8_t *end = p + sizeof(wbsm4_xiaolai_key);
-    while (p < end)
-    {
+    while (p < end) {
         uint8_t t;
         t = p[0];
         p[0] = p[3];
@@ -160,32 +159,30 @@ void wbsm4_xiaolai_gen(const uint8_t *sm4_key, wbsm4_xiaolai_key *wbsm4_key)
     uint32_t SK[32];
     wbsm4_sm4_setkey(SK, sm4_key);
 
-    for (i = 0; i < 36; i++)
-    {
-        // affine P
+    for (i = 0; i < 36; i++) {
+        /* affine P */
         genaffinepairM32(&P[i], &P_inv[i]);
     }
 
-    for (i = 0; i < 32; i++)
-    {
-        // affine E
-        for (j = 0; j < 4; j++)
-        {
+    for (i = 0; i < 32; i++) {
+        /* affine E */
+        for (j = 0; j < 4; j++) {
             genaffinepairM8(&Eij[i][j], &Eij_inv[i][j]);
         }
 
-        // combine 4 E8 to 1 E32
-        affinecomM8to32(Eij_inv[i][0], Eij_inv[i][1], Eij_inv[i][2], Eij_inv[i][3], &Ei_inv[i]);
+        /* combine 4 E8 to 1 E32 */
+        affinecomM8to32(Eij_inv[i][0], Eij_inv[i][1], Eij_inv[i][2],
+                        Eij_inv[i][3], &Ei_inv[i]);
 
-        // affine M
+        /* affine M */
         affinemixM32(Ei_inv[i], P_inv[i + 1], &wbsm4_key->M[i][0]);
         affinemixM32(Ei_inv[i], P_inv[i + 2], &wbsm4_key->M[i][1]);
         affinemixM32(Ei_inv[i], P_inv[i + 3], &wbsm4_key->M[i][2]);
 
-        // affine Q
+        /* affine Q */
         genaffinepairM32(&Q[i], &Q_inv[i]);
 
-        // affine C D, C for Xi0, D for T(Xi1+Xi2+Xi3+rk)
+        /* affine C D, C for Xi0, D for T(Xi1+Xi2+Xi3+rk) */
         affinemixM32(P[i + 4], P_inv[i], &wbsm4_key->C[i]);
         affinemixM32(P[i + 4], Q_inv[i], &wbsm4_key->D[i]);
         uint32_t temp_u32 = cus_random();
@@ -193,38 +190,33 @@ void wbsm4_xiaolai_gen(const uint8_t *sm4_key, wbsm4_xiaolai_key *wbsm4_key)
         wbsm4_key->D[i].Vec.V ^= P[i + 4].Vec.V ^ temp_u32;
     }
 
-    for (i = 0; i < 32; i++)
-    {
-        // combine QL
+    for (i = 0; i < 32; i++) {
+        /* combine QL */
         M32 QL;
         MatMulMatM32(Q[i].Mat, L_matrix, &QL);
 
         uint32_t Q_constant[3] = {0};
-        for (j = 0; j < 3; j++)
-        {
+        for (j = 0; j < 3; j++) {
             Q_constant[j] = cus_random();
         }
 
-        for (x = 0; x < 256; x++)
-        {
-            for (j = 0; j < 4; j++)
-            {
+        for (x = 0; x < 256; x++) {
+            for (j = 0; j < 4; j++) {
                 uint8_t temp_u8 = affineU8(Eij[i][j], x);
                 temp_u8 = SBOX[temp_u8 ^ ((SK[i] >> (24 - j * 8)) & 0xff)];
                 uint32_t temp_32 = temp_u8 << (24 - j * 8);
                 wbsm4_key->Table[i][j][x] = MatMulNumM32(QL, temp_32);
             }
-            for (j = 0; j < 3; j++)
-            {
+            for (j = 0; j < 3; j++) {
                 wbsm4_key->Table[i][j][x] ^= Q_constant[j];
             }
-            wbsm4_key->Table[i][3][x] ^= Q[i].Vec.V ^ Q_constant[0] ^ Q_constant[1] ^ Q_constant[2];
+            wbsm4_key->Table[i][3][x] ^= Q[i].Vec.V ^ Q_constant[0] ^
+                                         Q_constant[1] ^ Q_constant[2];
         }
     }
 
-    // external encoding
-    for (i = 0; i < 4; i++)
-    {
+    /* external encoding */
+    for (i = 0; i < 4; i++) {
         wbsm4_key->SE[i].Mat = P[i].Mat;
         wbsm4_key->SE[i].Vec = P[i].Vec;
 
@@ -233,7 +225,8 @@ void wbsm4_xiaolai_gen(const uint8_t *sm4_key, wbsm4_xiaolai_key *wbsm4_key)
     }
 }
 
-void wbsm4_xiaolai_encrypt(const unsigned char IN[], unsigned char OUT[], const wbsm4_xiaolai_key *wbsm4_key)
+void wbsm4_xiaolai_encrypt(const unsigned char IN[], unsigned char OUT[],
+                           const wbsm4_xiaolai_key *wbsm4_key)
 {
     int i;
     uint32_t x0, x1, x2, x3, x4;
@@ -248,13 +241,15 @@ void wbsm4_xiaolai_encrypt(const unsigned char IN[], unsigned char OUT[], const 
     x2 = affineU32(wbsm4_key->SE[2], x2);
     x3 = affineU32(wbsm4_key->SE[3], x3);
 
-    for (i = 0; i < 32; i++)
-    {
+    for (i = 0; i < 32; i++) {
         xt1 = affineU32(wbsm4_key->M[i][0], x1);
         xt2 = affineU32(wbsm4_key->M[i][1], x2);
         xt3 = affineU32(wbsm4_key->M[i][2], x3);
         x4 = xt1 ^ xt2 ^ xt3;
-        x4 = wbsm4_key->Table[i][0][(x4 >> 24) & 0xff] ^ wbsm4_key->Table[i][1][(x4 >> 16) & 0xff] ^ wbsm4_key->Table[i][2][(x4 >> 8) & 0xff] ^ wbsm4_key->Table[i][3][x4 & 0xff];
+        x4 = wbsm4_key->Table[i][0][(x4 >> 24) & 0xff] ^
+             wbsm4_key->Table[i][1][(x4 >> 16) & 0xff] ^
+             wbsm4_key->Table[i][2][(x4 >> 8) & 0xff] ^
+             wbsm4_key->Table[i][3][x4 & 0xff];
         xt0 = affineU32(wbsm4_key->C[i], x0);
         xt4 = affineU32(wbsm4_key->D[i], x4);
         x4 = xt0 ^ xt4;

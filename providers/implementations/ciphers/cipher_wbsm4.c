@@ -14,7 +14,7 @@
 #include "prov/implementations.h"
 #include "prov/providercommon.h"
 
-// xiaolai
+/* xiaolai */
 static OSSL_FUNC_cipher_freectx_fn wbsm4_xiaolai_freectx;
 static OSSL_FUNC_cipher_dupctx_fn wbsm4_xiaolai_dupctx;
 
@@ -35,8 +35,7 @@ static void *wbsm4_xiaolai_dupctx(void *ctx)
         return NULL;
 
     ret = OPENSSL_malloc(sizeof(*ret));
-    if (ret == NULL)
-    {
+    if (ret == NULL) {
         ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
@@ -46,17 +45,22 @@ static void *wbsm4_xiaolai_dupctx(void *ctx)
 }
 
 /* ossl_wbsm4_xiaolai1225984ecb_functions */
-IMPLEMENT_generic_cipher(wbsm4_xiaolai, WBSM4_XIAOLAI, ecb, ECB, 0, 1225984, 128, 0, block);
+IMPLEMENT_generic_cipher(wbsm4_xiaolai, WBSM4_XIAOLAI, ecb, ECB, 0, 1225984,
+                         128, 0, block);
 /* ossl_wbsm4_xiaolai1225984cbc_functions */
-IMPLEMENT_generic_cipher(wbsm4_xiaolai, WBSM4_XIAOLAI, cbc, CBC, 0, 1225984, 128, 128, block);
+IMPLEMENT_generic_cipher(wbsm4_xiaolai, WBSM4_XIAOLAI, cbc, CBC, 0, 1225984,
+                         128, 128, block);
 /* ossl_wbsm4_xiaolai1225984ctr_functions */
-IMPLEMENT_generic_cipher(wbsm4_xiaolai, WBSM4_XIAOLAI, ctr, CTR, 0, 1225984, 8, 128, stream);
+IMPLEMENT_generic_cipher(wbsm4_xiaolai, WBSM4_XIAOLAI, ctr, CTR, 0, 1225984,
+                         8, 128, stream);
 /* ossl_wbsm4_xiaolai1225984ofb128_functions */
-IMPLEMENT_generic_cipher(wbsm4_xiaolai, WBSM4_XIAOLAI, ofb128, OFB, 0, 1225984, 8, 128, stream);
+IMPLEMENT_generic_cipher(wbsm4_xiaolai, WBSM4_XIAOLAI, ofb128, OFB, 0, 1225984,
+                         8, 128, stream);
 /* ossl_wbsm4_xiaolai1225984cfb128_functions */
-IMPLEMENT_generic_cipher(wbsm4_xiaolai, WBSM4_XIAOLAI, cfb128, CFB, 0, 1225984, 8, 128, stream);
+IMPLEMENT_generic_cipher(wbsm4_xiaolai, WBSM4_XIAOLAI, cfb128, CFB, 0, 1225984,
+                         8, 128, stream);
 
-// baiwu
+/* baiwu */
 static OSSL_FUNC_cipher_freectx_fn wbsm4_baiwu_freectx;
 static OSSL_FUNC_cipher_dupctx_fn wbsm4_baiwu_dupctx;
 
@@ -77,8 +81,7 @@ static void *wbsm4_baiwu_dupctx(void *ctx)
         return NULL;
 
     ret = OPENSSL_malloc(sizeof(*ret));
-    if (ret == NULL)
-    {
+    if (ret == NULL) {
         ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
@@ -88,17 +91,22 @@ static void *wbsm4_baiwu_dupctx(void *ctx)
 }
 
 /* ossl_wbsm4_baiwu272638208ecb_functions */
-IMPLEMENT_generic_cipher(wbsm4_baiwu, WBSM4_BAIWU, ecb, ECB, 0, 272638208, 128, 0, block);
+IMPLEMENT_generic_cipher(wbsm4_baiwu, WBSM4_BAIWU, ecb, ECB, 0, 272638208,
+                         128, 0, block);
 /* ossl_wbsm4_baiwu272638208cbc_functions */
-IMPLEMENT_generic_cipher(wbsm4_baiwu, WBSM4_BAIWU, cbc, CBC, 0, 272638208, 128, 128, block);
+IMPLEMENT_generic_cipher(wbsm4_baiwu, WBSM4_BAIWU, cbc, CBC, 0, 272638208,
+                         128, 128, block);
 /* ossl_wbsm4_baiwu272638208ctr_functions */
-IMPLEMENT_generic_cipher(wbsm4_baiwu, WBSM4_BAIWU, ctr, CTR, 0, 272638208, 8, 128, stream);
+IMPLEMENT_generic_cipher(wbsm4_baiwu, WBSM4_BAIWU, ctr, CTR, 0, 272638208,
+                         8, 128, stream);
 /* ossl_wbsm4_baiwu272638208ofb128_functions */
-IMPLEMENT_generic_cipher(wbsm4_baiwu, WBSM4_BAIWU, ofb128, OFB, 0, 272638208, 8, 128, stream);
+IMPLEMENT_generic_cipher(wbsm4_baiwu, WBSM4_BAIWU, ofb128, OFB, 0, 272638208,
+                         8, 128, stream);
 /* ossl_wbsm4_baiwu272638208cfb128_functions */
-IMPLEMENT_generic_cipher(wbsm4_baiwu, WBSM4_BAIWU, cfb128, CFB, 0, 272638208, 8, 128, stream);
+IMPLEMENT_generic_cipher(wbsm4_baiwu, WBSM4_BAIWU, cfb128, CFB, 0, 272638208,
+                         8, 128, stream);
 
-// wsise
+/* wsise */
 static OSSL_FUNC_cipher_freectx_fn wbsm4_wsise_freectx;
 static OSSL_FUNC_cipher_dupctx_fn wbsm4_wsise_dupctx;
 
@@ -119,8 +127,7 @@ static void *wbsm4_wsise_dupctx(void *ctx)
         return NULL;
 
     ret = OPENSSL_malloc(sizeof(*ret));
-    if (ret == NULL)
-    {
+    if (ret == NULL) {
         ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
@@ -130,12 +137,17 @@ static void *wbsm4_wsise_dupctx(void *ctx)
 }
 
 /* ossl_wbsm4_wsise2274560ecb_functions */
-IMPLEMENT_generic_cipher(wbsm4_wsise, WBSM4_WSISE, ecb, ECB, 0, 2274560, 128, 0, block);
+IMPLEMENT_generic_cipher(wbsm4_wsise, WBSM4_WSISE, ecb, ECB, 0, 2274560,
+                         128, 0, block);
 /* ossl_wbsm4_wsise2274560cbc_functions */
-IMPLEMENT_generic_cipher(wbsm4_wsise, WBSM4_WSISE, cbc, CBC, 0, 2274560, 128, 128, block);
+IMPLEMENT_generic_cipher(wbsm4_wsise, WBSM4_WSISE, cbc, CBC, 0, 2274560,
+                         128, 128, block);
 /* ossl_wbsm4_wsise2274560ctr_functions */
-IMPLEMENT_generic_cipher(wbsm4_wsise, WBSM4_WSISE, ctr, CTR, 0, 2274560, 8, 128, stream);
+IMPLEMENT_generic_cipher(wbsm4_wsise, WBSM4_WSISE, ctr, CTR, 0, 2274560,
+                         8, 128, stream);
 /* ossl_wbsm4_wsise2274560ofb128_functions */
-IMPLEMENT_generic_cipher(wbsm4_wsise, WBSM4_WSISE, ofb128, OFB, 0, 2274560, 8, 128, stream);
+IMPLEMENT_generic_cipher(wbsm4_wsise, WBSM4_WSISE, ofb128, OFB, 0, 2274560,
+                         8, 128, stream);
 /* ossl_wbsm4_wsise2274560cfb128_functions */
-IMPLEMENT_generic_cipher(wbsm4_wsise, WBSM4_WSISE, cfb128, CFB, 0, 2274560, 8, 128, stream);
+IMPLEMENT_generic_cipher(wbsm4_wsise, WBSM4_WSISE, cfb128, CFB, 0, 2274560,
+                         8, 128, stream);

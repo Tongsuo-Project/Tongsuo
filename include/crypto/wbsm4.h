@@ -23,8 +23,7 @@
 void wbsm4_sm4_setkey(uint32_t SK[32], const uint8_t key[16]);
 
 #pragma pack(push, 1)
-typedef struct
-{
+typedef struct {
     Aff32 M[32][3];
     Aff32 C[32];
     Aff32 D[32];
@@ -35,13 +34,14 @@ typedef struct
 #pragma pack(pop)
 
 void wbsm4_xiaolai_gen(const uint8_t *sm4_key, wbsm4_xiaolai_key *wbsm4_key);
-void wbsm4_xiaolai_encrypt(const unsigned char IN[], unsigned char OUT[], const wbsm4_xiaolai_key *wbsm4_key);
+void wbsm4_xiaolai_encrypt(const unsigned char IN[], unsigned char OUT[],
+                           const wbsm4_xiaolai_key *wbsm4_key);
 void wbsm4_xiaolai_set_key(const uint8_t *key, wbsm4_xiaolai_key *wbsm4_key);
-void wbsm4_xiaolai_export_key(const wbsm4_xiaolai_key *wbsm4_key, uint8_t *key);
+void wbsm4_xiaolai_export_key(const wbsm4_xiaolai_key *wbsm4_key,
+                              uint8_t *key);
 
 #pragma pack(push, 1)
-typedef struct
-{
+typedef struct {
     Aff32 SE[4];
     Aff32 FE[4];
     uint32_t TD[32][4][4][256];
@@ -50,13 +50,13 @@ typedef struct
 #pragma pack(pop)
 
 void wbsm4_baiwu_gen(const uint8_t *sm4_key, wbsm4_baiwu_key *wbsm4_key);
-void wbsm4_baiwu_encrypt(const unsigned char IN[], unsigned char OUT[], const wbsm4_baiwu_key *wbsm4_key);
+void wbsm4_baiwu_encrypt(const unsigned char IN[], unsigned char OUT[],
+                         const wbsm4_baiwu_key *wbsm4_key);
 void wbsm4_baiwu_set_key(const uint8_t *key, wbsm4_baiwu_key *wbsm4_key);
 void wbsm4_baiwu_export_key(const wbsm4_baiwu_key *wbsm4_key, uint8_t *key);
 
 #pragma pack(push, 1)
-typedef struct
-{
+typedef struct {
     Aff32 M[32][3];
     Aff32 C[32];
     Aff32 D[32];
@@ -67,8 +67,9 @@ typedef struct
 #pragma pack(pop)
 
 void wbsm4_wsise_gen(const uint8_t *sm4_key, wbsm4_wsise_key *wbsm4_key);
-void wbsm4_wsise_encrypt(const unsigned char IN[], unsigned char OUT[], const wbsm4_wsise_key *wbsm4_key);
+void wbsm4_wsise_encrypt(const unsigned char IN[], unsigned char OUT[],
+                         const wbsm4_wsise_key *wbsm4_key);
 void wbsm4_wsise_set_key(const uint8_t *key, wbsm4_wsise_key *wbsm4_key);
 void wbsm4_wsise_export_key(const wbsm4_wsise_key *wbsm4_key, uint8_t *key);
 
-#endif // _WBSM4_H_
+#endif /* _WBSM4_H_ */
