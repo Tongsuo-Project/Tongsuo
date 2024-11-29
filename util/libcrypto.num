@@ -4668,3 +4668,6 @@ SM3_Init                                6614	1_1_1h	EXIST::FUNCTION:SM3
 SM3_Update                              6615	1_1_1h	EXIST::FUNCTION:SM3
 SM3_Final                               6616	1_1_1h	EXIST::FUNCTION:SM3
 SM3_Transform                           6617	1_1_1h	EXIST::FUNCTION:SM3
+SM4_encrypt                             6618	1_1_1h	EXIST::FUNCTION:EXPORT_SM4,SM4
+SM4_decrypt                             6619	1_1_1h	EXIST::FUNCTION:EXPORT_SM4,SM4
+SM4_set_key                             6620	1_1_1h	EXIST::FUNCTION:EXPORT_SM4,SM4
