@@ -11,7 +11,7 @@
 #include "prov/ciphercommon.h"
 #include "crypto/wbsm4.h"
 
-/* xiaolai */
+#ifndef OPENSSL_NO_WBSM4_XIAOLAI
 typedef struct {
     PROV_CIPHER_CTX base; /* Must be first */
     union {
@@ -25,8 +25,9 @@ const PROV_CIPHER_HW *ossl_prov_cipher_hw_wbsm4_xiaolai_ecb(size_t keybits);
 const PROV_CIPHER_HW *ossl_prov_cipher_hw_wbsm4_xiaolai_ctr(size_t keybits);
 const PROV_CIPHER_HW *ossl_prov_cipher_hw_wbsm4_xiaolai_ofb128(size_t keybits);
 const PROV_CIPHER_HW *ossl_prov_cipher_hw_wbsm4_xiaolai_cfb128(size_t keybits);
+#endif /* OPENSSL_NO_WBSM4_XIAOLAI */
 
-/* baiwu */
+#ifndef OPENSSL_NO_WBSM4_BAIWU
 typedef struct {
     PROV_CIPHER_CTX base; /* Must be first */
     union {
@@ -40,8 +41,9 @@ const PROV_CIPHER_HW *ossl_prov_cipher_hw_wbsm4_baiwu_ecb(size_t keybits);
 const PROV_CIPHER_HW *ossl_prov_cipher_hw_wbsm4_baiwu_ctr(size_t keybits);
 const PROV_CIPHER_HW *ossl_prov_cipher_hw_wbsm4_baiwu_ofb128(size_t keybits);
 const PROV_CIPHER_HW *ossl_prov_cipher_hw_wbsm4_baiwu_cfb128(size_t keybits);
+#endif /* OPENSSL_NO_WBSM4_BAIWU */
 
-/* wsise */
+#ifndef OPENSSL_NO_WBSM4_WSISE
 typedef struct {
     PROV_CIPHER_CTX base; /* Must be first */
     union {
@@ -55,3 +57,4 @@ const PROV_CIPHER_HW *ossl_prov_cipher_hw_wbsm4_wsise_ecb(size_t keybits);
 const PROV_CIPHER_HW *ossl_prov_cipher_hw_wbsm4_wsise_ctr(size_t keybits);
 const PROV_CIPHER_HW *ossl_prov_cipher_hw_wbsm4_wsise_ofb128(size_t keybits);
 const PROV_CIPHER_HW *ossl_prov_cipher_hw_wbsm4_wsise_cfb128(size_t keybits);
+#endif /* OPENSSL_NO_WBSM4_WSISE */

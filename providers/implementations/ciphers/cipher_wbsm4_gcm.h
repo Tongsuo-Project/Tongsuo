@@ -12,7 +12,7 @@
 #include "prov/ciphercommon.h"
 #include "prov/ciphercommon_gcm.h"
 
-/* xiaolai */
+#ifndef OPENSSL_NO_WBSM4_XIAOLAI
 typedef struct prov_wbsm4_xiaolai_gcm_ctx_st {
     PROV_GCM_CTX base; /* must be first entry in struct */
     union {
@@ -22,8 +22,9 @@ typedef struct prov_wbsm4_xiaolai_gcm_ctx_st {
 } PROV_WBSM4_XIAOLAI_GCM_CTX;
 
 const PROV_GCM_HW *ossl_prov_wbsm4_xiaolai_hw_gcm(size_t keybits);
+#endif /* OPENSSL_NO_WBSM4_XIAOLAI */
 
-/* baiwu */
+#ifndef OPENSSL_NO_WBSM4_BAIWU
 typedef struct prov_wbsm4_baiwu_gcm_ctx_st {
     PROV_GCM_CTX base; /* must be first entry in struct */
     union {
@@ -33,8 +34,9 @@ typedef struct prov_wbsm4_baiwu_gcm_ctx_st {
 } PROV_WBSM4_BAIWU_GCM_CTX;
 
 const PROV_GCM_HW *ossl_prov_wbsm4_baiwu_hw_gcm(size_t keybits);
+#endif /* OPENSSL_NO_WBSM4_BAIWU */
 
-/* wsise */
+#ifndef OPENSSL_NO_WBSM4_WSISE
 typedef struct prov_wbsm4_wsise_gcm_ctx_st {
     PROV_GCM_CTX base; /* must be first entry in struct */
     union {
@@ -44,3 +46,4 @@ typedef struct prov_wbsm4_wsise_gcm_ctx_st {
 } PROV_WBSM4_WSISE_GCM_CTX;
 
 const PROV_GCM_HW *ossl_prov_wbsm4_wsise_hw_gcm(size_t keybits);
+#endif /* OPENSSL_NO_WBSM4_WSISE */

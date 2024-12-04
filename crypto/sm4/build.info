@@ -14,13 +14,23 @@ ENDIF
 
 SOURCE[../../libcrypto]= $SM4ASM sm4.c
 
-IF[{- !$disabled{wbsm4} -}]
+IF[{- !$disabled{"wbsm4-xiaolai"} || !$disabled{"wbsm4-baiwu"} ||
+      !$disabled{"wbsm4-wsise"} -}]
 SOURCE[../../libcrypto]=${SOURCE[../../libcrypto]} \
   wb/wbsm4.c \
-  wb/Bai-Wu-wbsm4.c \
-  wb/Xiao-Lai-wbsm4.c \
-  wb/WSISE-wbsm4.c \
   wb/WBMatrix.c
+ENDIF
+IF[{- !$disabled{"wbsm4-xiaolai"} -}]
+SOURCE[../../libcrypto]=${SOURCE[../../libcrypto]} \
+  wb/Xiao-Lai-wbsm4.c
+ENDIF
+IF[{- !$disabled{"wbsm4-baiwu"} -}]
+SOURCE[../../libcrypto]=${SOURCE[../../libcrypto]} \
+  wb/Bai-Wu-wbsm4.c
+ENDIF
+IF[{- !$disabled{"wbsm4-wsise"} -}]
+SOURCE[../../libcrypto]=${SOURCE[../../libcrypto]} \
+  wb/WSISE-wbsm4.c
 ENDIF
 
 

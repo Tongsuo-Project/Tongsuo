@@ -620,7 +620,8 @@ IF[{- !$disabled{tests} -}]
     IF[{- !$disabled{sm4} -}]
       PROGRAMS{noinst}=sm4_internal_test
     ENDIF
-    IF[{- !$disabled{wbsm4} -}]
+    IF[{- !$disabled{"wbsm4-xiaolai"} || !$disabled{"wbsm4-baiwu"} ||
+          !$disabled{"wbsm4-wsise"} -}]
       PROGRAMS{noinst}=wbsm4_internal_test
     ENDIF
     IF[{- !$disabled{zuc} -}]

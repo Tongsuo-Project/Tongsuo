@@ -488,7 +488,9 @@ my @disablables = (
     "sm2_threshold",
     "sm3",
     "sm4",
-    "wbsm4",
+    "wbsm4-xiaolai",
+    "wbsm4-baiwu",
+    "wbsm4-wsise",
     "zuc",
     "sock",
     "srp",
@@ -615,7 +617,9 @@ our %disabled = ( # "what"         => "comment"
                   "atf_slibce"          => "default",
                   "sdf-lib"             => "default",
                   "sdf-lib-dynamic"     => "default",
-                  "wbsm4"               => "default",
+                  "wbsm4-xiaolai"       => "default",
+                  "wbsm4-baiwu"         => "default",
+                  "wbsm4-wsise"         => "default",
                 );
 
 # Note: => pair form used for aesthetics, not to truly make a hash table
@@ -690,7 +694,7 @@ my @disable_cascades = (
     "tests"             => [ "external-tests" ],
     "comp"              => [ "zlib" ],
     "sm3"               => [ "sm2" ],
-    "sm4"               => [ "wbsm4" ],
+    "sm4"               => [ "wbsm4-xiaolai", "wbsm4-baiwu", "wbsm4-wsise" ],
     sub { !$disabled{"unit-test"} } => [ "heartbeats" ],
 
     sub { !$disabled{"msan"} } => [ "asm" ],

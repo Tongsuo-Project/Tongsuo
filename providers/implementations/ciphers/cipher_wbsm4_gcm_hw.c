@@ -12,7 +12,7 @@
 
 #include "cipher_wbsm4_gcm.h"
 
-/* xiaolai */
+#ifndef OPENSSL_NO_WBSM4_XIAOLAI
 static int wbsm4_xiaolai_gcm_initkey(PROV_GCM_CTX *ctx,
                                      const unsigned char *key, size_t keylen)
 {
@@ -68,8 +68,9 @@ const PROV_GCM_HW *ossl_prov_wbsm4_xiaolai_hw_gcm(size_t keybits)
 {
     return &wbsm4_xiaolai_gcm;
 }
+#endif /* OPENSSL_NO_WBSM4_XIAOLAI */
 
-/* baiwu */
+#ifndef OPENSSL_NO_WBSM4_BAIWU
 static int wbsm4_baiwu_gcm_initkey(PROV_GCM_CTX *ctx, const unsigned char *key,
                                    size_t keylen)
 {
@@ -124,8 +125,9 @@ const PROV_GCM_HW *ossl_prov_wbsm4_baiwu_hw_gcm(size_t keybits)
 {
     return &wbsm4_baiwu_gcm;
 }
+#endif /* OPENSSL_NO_WBSM4_BAIWU */
 
-/* wsise */
+#ifndef OPENSSL_NO_WBSM4_WSISE
 static int wbsm4_wsise_gcm_initkey(PROV_GCM_CTX *ctx, const unsigned char *key,
                                    size_t keylen)
 {
@@ -180,3 +182,4 @@ const PROV_GCM_HW *ossl_prov_wbsm4_wsise_hw_gcm(size_t keybits)
 {
     return &wbsm4_wsise_gcm;
 }
+#endif /* OPENSSL_NO_WBSM4_WSISE */

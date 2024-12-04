@@ -14,7 +14,7 @@
 #include "prov/implementations.h"
 #include "prov/providercommon.h"
 
-/* xiaolai */
+#ifndef OPENSSL_NO_WBSM4_XIAOLAI
 static OSSL_FUNC_cipher_freectx_fn wbsm4_xiaolai_freectx;
 static OSSL_FUNC_cipher_dupctx_fn wbsm4_xiaolai_dupctx;
 
@@ -59,8 +59,9 @@ IMPLEMENT_generic_cipher(wbsm4_xiaolai, WBSM4_XIAOLAI, ofb128, OFB, 0, 1225984,
 /* ossl_wbsm4_xiaolai1225984cfb128_functions */
 IMPLEMENT_generic_cipher(wbsm4_xiaolai, WBSM4_XIAOLAI, cfb128, CFB, 0, 1225984,
                          8, 128, stream);
+#endif /* OPENSSL_NO_WBSM4_XIAOLAI */
 
-/* baiwu */
+#ifndef OPENSSL_NO_WBSM4_BAIWU
 static OSSL_FUNC_cipher_freectx_fn wbsm4_baiwu_freectx;
 static OSSL_FUNC_cipher_dupctx_fn wbsm4_baiwu_dupctx;
 
@@ -105,8 +106,9 @@ IMPLEMENT_generic_cipher(wbsm4_baiwu, WBSM4_BAIWU, ofb128, OFB, 0, 272638208,
 /* ossl_wbsm4_baiwu272638208cfb128_functions */
 IMPLEMENT_generic_cipher(wbsm4_baiwu, WBSM4_BAIWU, cfb128, CFB, 0, 272638208,
                          8, 128, stream);
+#endif /* OPENSSL_NO_WBSM4_BAIWU */
 
-/* wsise */
+#ifndef OPENSSL_NO_WBSM4_WSISE
 static OSSL_FUNC_cipher_freectx_fn wbsm4_wsise_freectx;
 static OSSL_FUNC_cipher_dupctx_fn wbsm4_wsise_dupctx;
 
@@ -151,3 +153,4 @@ IMPLEMENT_generic_cipher(wbsm4_wsise, WBSM4_WSISE, ofb128, OFB, 0, 2274560,
 /* ossl_wbsm4_wsise2274560cfb128_functions */
 IMPLEMENT_generic_cipher(wbsm4_wsise, WBSM4_WSISE, cfb128, CFB, 0, 2274560,
                          8, 128, stream);
+#endif /* OPENSSL_NO_WBSM4_WSISE */

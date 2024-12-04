@@ -18,10 +18,13 @@
 #include <openssl/evp.h>
 #include "testutil.h"
 
-#ifndef OPENSSL_NO_WBSM4
+#if !defined(OPENSSL_NO_WBSM4_XIAOLAI) || !defined(OPENSSL_NO_WBSM4_BAIWU) || \
+    !defined(OPENSSL_NO_WBSM4_WSISE)
 #include "crypto/sm4.h"
 #include "crypto/wbsm4.h"
+#endif
 
+#ifndef OPENSSL_NO_WBSM4_XIAOLAI
 static int test_wbsm4_Xiao_Lai(void)
 {
     static const uint8_t k[SM4_BLOCK_SIZE] = {
@@ -122,7 +125,9 @@ static int test_wbsm4_Xiao_Lai(void)
     free(keybuf);
     return 1;
 }
+#endif /* OPENSSL_NO_WBSM4_XIAOLAI */
 
+#ifndef OPENSSL_NO_WBSM4_BAIWU
 static int test_wbsm4_Bai_Wu(void)
 {
     static const uint8_t k[SM4_BLOCK_SIZE] = {
@@ -223,7 +228,9 @@ static int test_wbsm4_Bai_Wu(void)
     free(keybuf);
     return 1;
 }
+#endif /* OPENSSL_NO_WBSM4_BAIWU */
 
+#ifndef OPENSSL_NO_WBSM4_WSISE
 static int test_wbsm4_WSISE(void)
 {
     static const uint8_t k[SM4_BLOCK_SIZE] = {
@@ -324,14 +331,17 @@ static int test_wbsm4_WSISE(void)
     free(keybuf);
     return 1;
 }
-
-#endif
+#endif /* OPENSSL_NO_WBSM4_WSISE */
 
 int setup_tests(void)
 {
-#ifndef OPENSSL_NO_WBSM4
+#ifndef OPENSSL_NO_WBSM4_XIAOLAI
     ADD_TEST(test_wbsm4_Xiao_Lai);
+#endif
+#ifndef OPENSSL_NO_WBSM4_BAIWU
     ADD_TEST(test_wbsm4_Bai_Wu);
+#endif
+#ifndef OPENSSL_NO_WBSM4_WSISE
     ADD_TEST(test_wbsm4_WSISE);
 #endif
     return 1;

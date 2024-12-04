@@ -13,7 +13,7 @@
 #include "internal/deprecated.h"
 
 #include "internal/cryptlib.h"
-#ifndef OPENSSL_NO_WBSM4
+#ifndef OPENSSL_NO_WBSM4_WSISE
 # include <openssl/rand.h>
 # include "crypto/wbsm4.h"
 # include "crypto/evp.h"

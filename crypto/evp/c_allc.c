@@ -73,7 +73,7 @@ void openssl_add_all_ciphers_int(void)
     EVP_add_cipher(EVP_sm4_ccm());
 #endif
 
-#ifndef OPENSSL_NO_WBSM4
+#ifndef OPENSSL_NO_WBSM4_XIAOLAI
     EVP_add_cipher(EVP_wbsm4_xiaolai_ecb());
     EVP_add_cipher(EVP_wbsm4_xiaolai_cbc());
     EVP_add_cipher(EVP_wbsm4_xiaolai_cfb());
@@ -83,7 +83,9 @@ void openssl_add_all_ciphers_int(void)
     EVP_add_cipher_alias(SN_wbsm4_xiaolai_cbc, "wbsm4-xiaolai");
     EVP_add_cipher(EVP_wbsm4_xiaolai_gcm());
     EVP_add_cipher(EVP_wbsm4_xiaolai_ccm());
+#endif
 
+#ifndef OPENSSL_NO_WBSM4_BAIWU
     EVP_add_cipher(EVP_wbsm4_baiwu_ecb());
     EVP_add_cipher(EVP_wbsm4_baiwu_cbc());
     EVP_add_cipher(EVP_wbsm4_baiwu_cfb());
@@ -93,7 +95,9 @@ void openssl_add_all_ciphers_int(void)
     EVP_add_cipher_alias(SN_wbsm4_baiwu_cbc, "wbsm4-baiwu");
     EVP_add_cipher(EVP_wbsm4_baiwu_gcm());
     EVP_add_cipher(EVP_wbsm4_baiwu_ccm());
+#endif
 
+#ifndef OPENSSL_NO_WBSM4_WSISE
     EVP_add_cipher(EVP_wbsm4_wsise_ecb());
     EVP_add_cipher(EVP_wbsm4_wsise_cbc());
     EVP_add_cipher(EVP_wbsm4_wsise_cfb());

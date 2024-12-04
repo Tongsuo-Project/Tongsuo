@@ -14,7 +14,8 @@
 
 #include <openssl/core.h>
 
-# ifdef OPENSSL_NO_WBSM4
+# if defined(OPENSSL_NO_WBSM4_XIAOLAI) && defined(OPENSSL_NO_WBSM4_BAIWU) && \
+     defined(OPENSSL_NO_WBSM4_WSISE)
 #  error WBSM4 is disabled.
 # endif
 
@@ -22,6 +23,7 @@
 
 void wbsm4_sm4_setkey(uint32_t SK[32], const uint8_t key[16]);
 
+#ifndef OPENSSL_NO_WBSM4_XIAOLAI
 #pragma pack(push, 1)
 typedef struct {
     Aff32 M[32][3];
@@ -39,7 +41,9 @@ void wbsm4_xiaolai_encrypt(const unsigned char IN[], unsigned char OUT[],
 void wbsm4_xiaolai_set_key(const uint8_t *key, wbsm4_xiaolai_key *wbsm4_key);
 void wbsm4_xiaolai_export_key(const wbsm4_xiaolai_key *wbsm4_key,
                               uint8_t *key);
+#endif /* OPENSSL_NO_WBSM4_XIAOLAI */
 
+#ifndef OPENSSL_NO_WBSM4_BAIWU
 #pragma pack(push, 1)
 typedef struct {
     Aff32 SE[4];
@@ -54,7 +58,9 @@ void wbsm4_baiwu_encrypt(const unsigned char IN[], unsigned char OUT[],
                          const wbsm4_baiwu_key *wbsm4_key);
 void wbsm4_baiwu_set_key(const uint8_t *key, wbsm4_baiwu_key *wbsm4_key);
 void wbsm4_baiwu_export_key(const wbsm4_baiwu_key *wbsm4_key, uint8_t *key);
+#endif /* OPENSSL_NO_WBSM4_BAIWU */
 
+#ifndef OPENSSL_NO_WBSM4_WSISE
 #pragma pack(push, 1)
 typedef struct {
     Aff32 M[32][3];
@@ -71,5 +77,6 @@ void wbsm4_wsise_encrypt(const unsigned char IN[], unsigned char OUT[],
                          const wbsm4_wsise_key *wbsm4_key);
 void wbsm4_wsise_set_key(const uint8_t *key, wbsm4_wsise_key *wbsm4_key);
 void wbsm4_wsise_export_key(const wbsm4_wsise_key *wbsm4_key, uint8_t *key);
+#endif /* OPENSSL_NO_WBSM4_WSISE */
 
 #endif /* _WBSM4_H_ */

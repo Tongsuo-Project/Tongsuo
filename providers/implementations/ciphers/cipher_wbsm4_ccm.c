@@ -14,7 +14,7 @@
 #include "prov/implementations.h"
 #include "prov/providercommon.h"
 
-/* xiaolai */
+#ifndef OPENSSL_NO_WBSM4_XIAOLAI
 static void *wbsm4_xiaolai_ccm_newctx(void *provctx, size_t keybits)
 {
     PROV_WBSM4_XIAOLAI_CCM_CTX *ctx;
@@ -39,8 +39,9 @@ static void wbsm4_xiaolai_ccm_freectx(void *vctx)
 
 /* ossl_wbsm4_xiaolai1225984ccm_functions */
 IMPLEMENT_aead_cipher(wbsm4_xiaolai, ccm, CCM, AEAD_FLAGS, 1225984, 8, 96);
+#endif /* OPENSSL_NO_WBSM4_XIAOLAI */
 
-/* baiwu */
+#ifndef OPENSSL_NO_WBSM4_BAIWU
 static void *wbsm4_baiwu_ccm_newctx(void *provctx, size_t keybits)
 {
     PROV_WBSM4_BAIWU_CCM_CTX *ctx;
@@ -65,8 +66,9 @@ static void wbsm4_baiwu_ccm_freectx(void *vctx)
 
 /* ossl_wbsm4_baiwu272638208ccm_functions */
 IMPLEMENT_aead_cipher(wbsm4_baiwu, ccm, CCM, AEAD_FLAGS, 272638208, 8, 96);
+#endif /* OPENSSL_NO_WBSM4_BAIWU */
 
-/* wsise */
+#ifndef OPENSSL_NO_WBSM4_WSISE
 static void *wbsm4_wsise_ccm_newctx(void *provctx, size_t keybits)
 {
     PROV_WBSM4_WSISE_CCM_CTX *ctx;
@@ -91,3 +93,4 @@ static void wbsm4_wsise_ccm_freectx(void *vctx)
 
 /* ossl_wbsm4_wsise2274560ccm_functions */
 IMPLEMENT_aead_cipher(wbsm4_wsise, ccm, CCM, AEAD_FLAGS, 2274560, 8, 96);
+#endif /* OPENSSL_NO_WBSM4_WSISE */

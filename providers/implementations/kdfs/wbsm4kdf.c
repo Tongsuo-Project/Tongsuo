@@ -14,7 +14,8 @@
 #include "internal/cryptlib.h"
 #include "prov/providercommon.h"
 
-#ifndef OPENSSL_NO_WBSM4
+#if !defined(OPENSSL_NO_WBSM4_XIAOLAI) || !defined(OPENSSL_NO_WBSM4_BAIWU) || \
+    !defined(OPENSSL_NO_WBSM4_WSISE)
 #include "crypto/wbsm4.h"
 
 static OSSL_FUNC_kdf_newctx_fn kdf_wbsm4_new;
@@ -127,6 +128,7 @@ static int kdf_wbsm4_derive(void *vctx, unsigned char *key, size_t keylen,
         return 0;
     }
 
+#ifndef OPENSSL_NO_WBSM4_XIAOLAI
     if (OPENSSL_strcasecmp((char *)ctx->cipher, "WBSM4-XIAOLAI") == 0) {
         if (keylen != sizeof(wbsm4_xiaolai_key)) {
             OPENSSL_cleanse(sm4key, sm4key_len);
@@ -153,7 +155,10 @@ static int kdf_wbsm4_derive(void *vctx, unsigned char *key, size_t keylen,
         OPENSSL_cleanse(wbsm4key, sizeof(wbsm4_xiaolai_key));
 
         return 1;
-    } else if (OPENSSL_strcasecmp((char *)ctx->cipher, "WBSM4-BAIWU") == 0) {
+    } else 
+#endif /* OPENSSL_NO_WBSM4_XIAOLAI */
+#ifndef OPENSSL_NO_WBSM4_BAIWU
+    if (OPENSSL_strcasecmp((char *)ctx->cipher, "WBSM4-BAIWU") == 0) {
         if (keylen != sizeof(wbsm4_baiwu_key)) {
             OPENSSL_cleanse(sm4key, sm4key_len);
             ERR_raise(ERR_LIB_PROV, PROV_R_BAD_LENGTH);
@@ -179,7 +184,10 @@ static int kdf_wbsm4_derive(void *vctx, unsigned char *key, size_t keylen,
         OPENSSL_cleanse(wbsm4key, sizeof(wbsm4_baiwu_key));
 
         return 1;
-    } else if (OPENSSL_strcasecmp((char *)ctx->cipher, "WBSM4-WSISE") == 0) {
+    } else 
+#endif /* OPENSSL_NO_WBSM4_BAIWU */
+#ifndef OPENSSL_NO_WBSM4_WSISE
+    if (OPENSSL_strcasecmp((char *)ctx->cipher, "WBSM4-WSISE") == 0) {
         if (keylen != sizeof(wbsm4_wsise_key)) {
             OPENSSL_cleanse(sm4key, sm4key_len);
             ERR_raise(ERR_LIB_PROV, PROV_R_BAD_LENGTH);
@@ -205,7 +213,9 @@ static int kdf_wbsm4_derive(void *vctx, unsigned char *key, size_t keylen,
         OPENSSL_cleanse(wbsm4key, sizeof(wbsm4_wsise_key));
 
         return 1;
-    } else {
+    } else
+#endif /* OPENSSL_NO_WBSM4_WSISE */
+    {
         OPENSSL_cleanse(sm4key, sm4key_len);
         ERR_raise(ERR_LIB_PROV, PROV_R_MISSING_CIPHER);
         return 0;
@@ -253,12 +263,18 @@ static int kdf_wbsm4_get_ctx_params(void *vctx, OSSL_PARAM params[])
     if ((p = OSSL_PARAM_locate(params, OSSL_KDF_PARAM_SIZE)) != NULL) {
         if (ctx->cipher == NULL)
             keylen = 0;
+#ifndef OPENSSL_NO_WBSM4_XIAOLAI
         else if (OPENSSL_strcasecmp((char *)ctx->cipher, "WBSM4-XIAOLAI") == 0)
             keylen = sizeof(wbsm4_xiaolai_key);
+#endif
+#ifndef OPENSSL_NO_WBSM4_BAIWU
         else if (OPENSSL_strcasecmp((char *)ctx->cipher, "WBSM4-BAIWU") == 0)
             keylen = sizeof(wbsm4_baiwu_key);
+#endif
+#ifndef OPENSSL_NO_WBSM4_WSISE
         else if (OPENSSL_strcasecmp((char *)ctx->cipher, "WBSM4-WSISE") == 0)
             keylen = sizeof(wbsm4_wsise_key);
+#endif
     }
 
     if (keylen != 0)

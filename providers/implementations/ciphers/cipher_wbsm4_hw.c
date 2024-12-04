@@ -10,7 +10,7 @@
 
 #include "cipher_wbsm4.h"
 
-/* xiaolai */
+#ifndef OPENSSL_NO_WBSM4_XIAOLAI
 static int cipher_hw_wbsm4_xiaolai_initkey(PROV_CIPHER_CTX *ctx,
                                            const unsigned char *key,
                                            size_t keylen)
@@ -51,8 +51,9 @@ PROV_CIPHER_HW_wbsm4_xiaolai_mode(ecb);
 PROV_CIPHER_HW_wbsm4_xiaolai_mode(ofb128);
 PROV_CIPHER_HW_wbsm4_xiaolai_mode(cfb128);
 PROV_CIPHER_HW_wbsm4_xiaolai_mode(ctr);
+#endif /* OPENSSL_NO_WBSM4_XIAOLAI */
 
-/* baiwu */
+#ifndef OPENSSL_NO_WBSM4_BAIWU
 static int cipher_hw_wbsm4_baiwu_initkey(PROV_CIPHER_CTX *ctx,
                                          const unsigned char *key,
                                          size_t keylen)
@@ -93,8 +94,9 @@ PROV_CIPHER_HW_wbsm4_baiwu_mode(ecb);
 PROV_CIPHER_HW_wbsm4_baiwu_mode(ofb128);
 PROV_CIPHER_HW_wbsm4_baiwu_mode(cfb128);
 PROV_CIPHER_HW_wbsm4_baiwu_mode(ctr);
+#endif /* OPENSSL_NO_WBSM4_BAIWU */
 
-/* wsise */
+#ifndef OPENSSL_NO_WBSM4_WSISE
 static int cipher_hw_wbsm4_wsise_initkey(PROV_CIPHER_CTX *ctx,
                                          const unsigned char *key,
                                          size_t keylen)
@@ -138,3 +140,4 @@ PROV_CIPHER_HW_wbsm4_wsise_mode(ecb);
 PROV_CIPHER_HW_wbsm4_wsise_mode(ofb128);
 PROV_CIPHER_HW_wbsm4_wsise_mode(cfb128);
 PROV_CIPHER_HW_wbsm4_wsise_mode(ctr);
+#endif /* OPENSSL_NO_WBSM4_WSISE */

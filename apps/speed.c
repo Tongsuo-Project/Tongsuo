@@ -368,15 +368,17 @@ static const OPT_PAIR doit_choices[] = {
     {"sm4", D_CBC_SM4},
     {"sm4-ecb", D_ECB_SM4},
 #endif
-#ifndef OPENSSL_NO_WBSM4
+#ifndef OPENSSL_NO_WBSM4_XIAOLAI
     {"wbsm4-xiaolai-cbc", D_CBC_WBSM4_XIAOLAI},
     {"wbsm4-xiaolai", D_CBC_WBSM4_XIAOLAI},
     {"wbsm4-xiaolai-ecb", D_ECB_WBSM4_XIAOLAI},
-
+#endif
+#ifndef OPENSSL_NO_WBSM4_BAIWU
     {"wbsm4-baiwu-cbc", D_CBC_WBSM4_BAIWU},
     {"wbsm4-baiwu", D_CBC_WBSM4_BAIWU},
     {"wbsm4-baiwu-ecb", D_ECB_WBSM4_BAIWU},
-
+#endif
+#ifndef OPENSSL_NO_WBSM4_WSISE
     {"wbsm4-wsise-cbc", D_CBC_WBSM4_WSISE},
     {"wbsm4-wsise", D_CBC_WBSM4_WSISE},
     {"wbsm4-wsise-ecb", D_ECB_WBSM4_WSISE},
@@ -3128,7 +3130,7 @@ int speed_main(int argc, char **argv)
         }
     }
 #endif
-#ifndef OPENSSL_NO_WBSM4
+#ifndef OPENSSL_NO_WBSM4_XIAOLAI
     for (k = 0; k < 2; k++) {
         algindex = D_CBC_WBSM4_XIAOLAI + k;
         if (doit[algindex]) {
@@ -3164,6 +3166,8 @@ int speed_main(int argc, char **argv)
                 EVP_CIPHER_CTX_free(loopargs[i].ctx);
         }
     }
+#endif /* OPENSSL_NO_WBSM4_XIAOLAI */
+#ifndef OPENSSL_NO_WBSM4_BAIWU
     for (k = 0; k < 2; k++) {
         algindex = D_CBC_WBSM4_BAIWU + k;
         if (doit[algindex]) {
@@ -3199,6 +3203,8 @@ int speed_main(int argc, char **argv)
                 EVP_CIPHER_CTX_free(loopargs[i].ctx);
         }
     }
+#endif /* OPENSSL_NO_WBSM4_BAIWU */
+#ifndef OPENSSL_NO_WBSM4_WSISE
     for (k = 0; k < 2; k++) {
         algindex = D_CBC_WBSM4_WSISE + k;
         if (doit[algindex]) {
@@ -3234,7 +3240,7 @@ int speed_main(int argc, char **argv)
                 EVP_CIPHER_CTX_free(loopargs[i].ctx);
         }
     }
-#endif
+#endif /* OPENSSL_NO_WBSM4_WSISE */
 
 #ifndef OPENSSL_NO_ZUC
     if (doit[D_EEA3_128_ZUC]) {

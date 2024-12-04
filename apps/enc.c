@@ -44,7 +44,8 @@ typedef enum OPTION_choice {
     OPT_E, OPT_IN, OPT_OUT, OPT_PASS, OPT_ENGINE, OPT_D, OPT_P, OPT_V,
     OPT_NOPAD, OPT_SALT, OPT_NOSALT, OPT_DEBUG, OPT_UPPER_P, OPT_UPPER_A,
     OPT_A, OPT_Z, OPT_BUFSIZE, OPT_K, OPT_KFILE, OPT_UPPER_K, OPT_NONE,
-#ifndef OPENSSL_NO_WBSM4
+#if !defined(OPENSSL_NO_WBSM4_XIAOLAI) || !defined(OPENSSL_NO_WBSM4_BAIWU) || \
+    !defined(OPENSSL_NO_WBSM4_WSISE)
     OPT_KBINARY,
 #endif
     OPT_UPPER_S, OPT_IV, OPT_MD, OPT_ITER, OPT_PBKDF2, OPT_CIPHER,
@@ -70,7 +71,8 @@ const OPTIONS enc_options[] = {
     {"in", OPT_IN, '<', "Input file"},
     {"k", OPT_K, 's', "Passphrase"},
     {"kfile", OPT_KFILE, '<', "Read passphrase from file"},
-#ifndef OPENSSL_NO_WBSM4
+#if !defined(OPENSSL_NO_WBSM4_XIAOLAI) || !defined(OPENSSL_NO_WBSM4_BAIWU) || \
+    !defined(OPENSSL_NO_WBSM4_WSISE)
     {"kbinary", OPT_KBINARY, '<', "Read raw key from file"},
 #endif
 
@@ -138,7 +140,8 @@ int enc_main(int argc, char **argv)
     int do_zlib = 0;
     BIO *bzl = NULL;
 #endif
-#ifndef OPENSSL_NO_WBSM4
+#if !defined(OPENSSL_NO_WBSM4_XIAOLAI) || !defined(OPENSSL_NO_WBSM4_BAIWU) || \
+    !defined(OPENSSL_NO_WBSM4_WSISE)
     unsigned char *rawkey = NULL;
     int rawkeylen = 0;
 #endif
@@ -260,7 +263,8 @@ int enc_main(int argc, char **argv)
             }
             str = buf;
             break;
-#ifndef OPENSSL_NO_WBSM4
+#if !defined(OPENSSL_NO_WBSM4_XIAOLAI) || !defined(OPENSSL_NO_WBSM4_BAIWU) || \
+    !defined(OPENSSL_NO_WBSM4_WSISE)
         case OPT_KBINARY:
             in = bio_open_default(opt_arg(), 'r', FORMAT_BINARY);
             if (in == NULL)
@@ -365,7 +369,8 @@ int enc_main(int argc, char **argv)
         str = pass;
     }
 
-#ifndef OPENSSL_NO_WBSM4
+#if !defined(OPENSSL_NO_WBSM4_XIAOLAI) || !defined(OPENSSL_NO_WBSM4_BAIWU) || \
+    !defined(OPENSSL_NO_WBSM4_WSISE)
     if (rawkey != NULL) {
         if (cipher != NULL && rawkeylen != EVP_CIPHER_key_length(cipher)) {
             BIO_printf(bio_err, "invalid raw key length: %d, need: %d\n",
@@ -595,7 +600,8 @@ int enc_main(int argc, char **argv)
         if (nopad)
             EVP_CIPHER_CTX_set_padding(ctx, 0);
 
-#ifndef OPENSSL_NO_WBSM4
+#if !defined(OPENSSL_NO_WBSM4_XIAOLAI) || !defined(OPENSSL_NO_WBSM4_BAIWU) || \
+    !defined(OPENSSL_NO_WBSM4_WSISE)
         if (rawkey) {
             if (!EVP_CipherInit_ex(ctx, NULL, NULL, rawkey, iv, enc)) {
                 BIO_printf(bio_err, "Error setting cipher %s\n",
@@ -625,7 +631,8 @@ int enc_main(int argc, char **argv)
                     printf("%02X", salt[i]);
                 printf("\n");
             }
-#ifndef OPENSSL_NO_WBSM4
+#if !defined(OPENSSL_NO_WBSM4_XIAOLAI) || !defined(OPENSSL_NO_WBSM4_BAIWU) || \
+    !defined(OPENSSL_NO_WBSM4_WSISE)
             if (rawkey) {
                 printf("key=");
                 for (i = 0; i < EVP_CIPHER_get_key_length(cipher) && i < 32; i++)
@@ -691,7 +698,8 @@ int enc_main(int argc, char **argv)
 #ifdef ZLIB
     BIO_free(bzl);
 #endif
-#ifndef OPENSSL_NO_WBSM4
+#if !defined(OPENSSL_NO_WBSM4_XIAOLAI) || !defined(OPENSSL_NO_WBSM4_BAIWU) || \
+    !defined(OPENSSL_NO_WBSM4_WSISE)
     OPENSSL_free(rawkey);
 #endif
     release_engine(e);
