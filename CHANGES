@@ -4,6 +4,8 @@
 
  Changes between 8.4.0 and 8.5.0 [xx XXX xxxx]
 
+  *) SM4白盒密码算法，支持: wbsm4-xiaolai、wbsm4-baiwu、wbsm4-wsise
+   
   *) SMTC Provider适配蚂蚁密码卡（atf_slibce）
 
   *) 增加SDF框架和部分功能接口
