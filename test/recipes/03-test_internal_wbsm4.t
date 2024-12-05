@@ -15,4 +15,13 @@ use OpenSSL::Test::Utils;
 
 setup("test_internal_wbsm4");
 
-simple_test("test_internal_wbsm4", "wbsm4_internal_test", "wbsm4");
+if (!disabled("wbsm4-xiaolai")) {
+    simple_test("test_internal_wbsm4", "wbsm4_internal_test", "wbsm4-xiaolai");
+} elsif (!disabled("wbsm4-baiwu")) {
+    simple_test("test_internal_wbsm4", "wbsm4_internal_test", "wbsm4-baiwu");
+} elsif (!disabled("wbsm4-wsise")) {
+    simple_test("test_internal_wbsm4", "wbsm4_internal_test", "wbsm4-wsise");
+} else {
+    simple_test("test_internal_wbsm4", "wbsm4_internal_test", "wbsm4-xiaolai",
+                "wbsm4-baiwu", "wbsm4-wsise");
+}
