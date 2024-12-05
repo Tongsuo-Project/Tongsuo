@@ -409,7 +409,8 @@ static struct random_device {
 } random_devices[OSSL_NELEM(random_device_paths)];
 static int keep_random_devices_open = 1;
 
-#   if defined(__linux) && defined(DEVRANDOM_WAIT)
+#   if defined(__linux) && defined(DEVRANDOM_WAIT) \
+       && defined(OPENSSL_RAND_SEED_GETRANDOM)
 static void *shm_addr;
 
 static void cleanup_shm(void)
@@ -487,7 +488,7 @@ static int wait_random_seeded(void)
     }
     return seeded;
 }
-#   else /* defined __linux */
+#   else /* defined __linux && DEVRANDOM_WAIT && OPENSSL_RAND_SEED_GETRANDOM */
 static int wait_random_seeded(void)
 {
     return 1;
@@ -597,6 +598,64 @@ void rand_pool_keep_random_devices_open(int keep)
 }
 
 #  endif    /* defined(OPENSSL_RAND_SEED_DEVRANDOM) */
+
+#  if defined(OPENSSL_RAND_SEED_RTC)
+/*
+ * The following algorithm repeatedly samples the real-time clock (RTC) to
+ * generate a sequence of unpredictable data.  The algorithm relies upon the
+ * uneven execution speed of the code (due to factors such as cache misses,
+ * interrupts, bus activity, and scheduling) and upon the rather large
+ * relative difference between the speed of the clock and the rate at which
+ * it can be read.  If it is ported to an environment where execution speed
+ * is more constant or where the RTC ticks at a much slower rate, or the
+ * clock can be read with fewer instructions, it is likely that the results
+ * would be far more predictable.  This should only be used for legacy
+ * platforms.
+ *
+ * As a precaution, we assume only 2 bits of entropy per byte.
+ */
+static size_t rand_acquire_entropy_from_rtc(RAND_POOL *pool)
+{
+    size_t i, k;
+    size_t bytes_needed;
+    struct timespec ts;
+    unsigned char v;
+#  ifdef OPENSSL_SYS_VOS_HPPA
+    short int code;
+    long duration;
+    extern void s$sleep(long *_duration, short int *_code);
+#  else
+    long long duration;
+#  endif
+
+    bytes_needed = rand_pool_bytes_needed(pool, 4 /*entropy_factor*/);
+
+    for (i = 0; i < bytes_needed; i++) {
+        /*
+         * burn some cpu; hope for interrupts, cache collisions, bus
+         * interference, etc.
+         */
+        for (k = 0; k < 99; k++)
+            ts.tv_nsec = random();
+
+#  ifdef OPENSSL_SYS_VOS_HPPA
+        /* sleep for 1/1024 of a second (976 us).  */
+        duration = 1;
+        s$sleep(&duration, &code);
+#  else
+        /* sleep for 1/65536 of a second (15 us).  */
+        duration = 15;
+        usleep(duration);
+#  endif
+
+        /* Get wall clock time, take 8 bits. */
+        clock_gettime(CLOCK_REALTIME, &ts);
+        v = (unsigned char)(ts.tv_nsec & 0xFF);
+        rand_pool_add(pool, &v, sizeof(v) , 2);
+    }
+    return rand_pool_entropy_available(pool);
+}
+#  endif
 
 /*
  * Try the various seeding methods in turn, exit when successful.
@@ -731,6 +790,12 @@ size_t rand_pool_acquire_entropy(RAND_POOL *pool)
         if (entropy_available > 0)
             return entropy_available;
     }
+#   endif
+
+#   if defined(OPENSSL_RAND_SEED_RTC)
+    entropy_available = rand_acquire_entropy_from_rtc(pool);
+    if (entropy_available > 0)
+        return entropy_available;
 #   endif
 
     return rand_pool_entropy_available(pool);

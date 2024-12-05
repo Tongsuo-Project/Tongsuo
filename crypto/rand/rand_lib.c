@@ -210,6 +210,33 @@ size_t rand_drbg_get_entropy(RAND_DRBG *drbg,
         entropy_available = rand_pool_acquire_entropy(pool);
     }
 
+#ifndef OPENSSL_NO_GM
+    /*
+     * continuous health test
+     * Adaptive Proportion Test (see GM/T 0105-2021 D.3)
+     */
+    const unsigned char *buf = rand_pool_buffer(pool);
+    size_t len = rand_pool_length(pool);
+    int w = 1024 / 8, max = 690, cnt;
+    size_t i, j;
+    unsigned char sample;
+
+    for (i = 0; i < len; i++) {
+        if (i % w == 0) {
+            sample = buf[i] & 0x01;
+            cnt = -1;
+        }
+
+        for (j = 0; j < 8; j++) {
+            if (sample == ((buf[i] >> j) & 0x01)) {
+                cnt++;
+
+                if (cnt >= max)
+                    goto err;
+            }
+        }
+    }
+#endif
     if (entropy_available > 0) {
         ret   = rand_pool_length(pool);
         *pout = rand_pool_detach(pool);

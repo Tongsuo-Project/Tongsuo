@@ -849,3 +849,15 @@ void OPENSSL_fork_child(void)
 {
 }
 #endif
+
+#ifndef OPENSSL_NO_GM
+const char *OPENSSL_get_default_passwd_file(void)
+{
+    return OPENSSLDIR "/passwd.cnf";
+}
+
+const char *OPENSSL_get_default_signature_file(void)
+{
+    return OPENSSLDIR "/signature.bin";
+}
+#endif

@@ -406,7 +406,7 @@ static int ntls_process_ske_rsa(SSL *s, PACKET *pkt)
                                SSL3_RANDOM_SIZE) <= 0
         || EVP_DigestVerifyUpdate(md_ctx, &(s->s3->server_random[0]),
                                   SSL3_RANDOM_SIZE) <= 0
-        || EVP_DigestVerifyUpdate(md_ctx, buf, n) <= 0) {
+        || EVP_DigestVerifyUpdate(md_ctx, buf, n + 3) <= 0) {
         SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, SSL_F_NTLS_PROCESS_SKE_RSA,
                       ERR_R_INTERNAL_ERROR);
         goto end;
