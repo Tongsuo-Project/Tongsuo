@@ -171,6 +171,55 @@ int main(int argc, char *argv[])
         ret = 1;
         goto end;
     }
+
+#ifndef OPENSSL_NO_GM
+    if (!scm_init()) {
+        BIO_printf(bio_err, "Error: init failed\n");
+        ret = 1;
+        goto end;
+    }
+
+    if (
+# ifdef GM_DEBUG
+        getenv("OPENSSL_NO_INTEGRITY") == NULL &&
+# endif
+        !scm_self_test_integrity())
+    {
+        BIO_printf(bio_err, "Error: check integrity failed\n");
+        ret = 1;
+        goto end;
+    }
+
+    if (!scm_self_test_sm3_drbg()
+            || !scm_self_test_random()
+            || !scm_self_test_sm2_sign()
+            || !scm_self_test_sm2_verify()
+            || !scm_self_test_sm2_encrypt()
+            || !scm_self_test_sm2_decrypt()
+            || !scm_self_test_sm3()
+            || !scm_self_test_sm4_encrypt()
+            || !scm_self_test_sm4_decrypt())
+        goto end;
+
+# ifdef GM_DEBUG
+    if (getenv("OPENSSL_NO_AUTH") == NULL) {
+# endif
+        BIO *bio = bio_open_default_quiet(OPENSSL_get_default_passwd_file(), 'r',
+                                        FORMAT_TEXT);
+        if (bio == NULL) {
+            if (!scm_setup_password())
+                goto end;
+        } else
+            BIO_free(bio);
+
+        if (!scm_verify_password()) {
+            fprintf(stderr, "Error: auth failed\n");
+            goto end;
+        }
+# ifdef GM_DEBUG
+    }
+# endif
+#endif
     pname = opt_progname(argv[0]);
 
     /* first check the program name */
@@ -197,7 +246,7 @@ int main(int argc, char *argv[])
         ret = 0;
         /* Read a line, continue reading if line ends with \ */
         for (p = buf, n = sizeof(buf), i = 0, first = 1; n > 0; first = 0) {
-            prompt = first ? "OpenSSL> " : "> ";
+            prompt = first ? "BabaSSL> " : "> ";
             p[0] = '\0';
 #ifndef READLINE
             fputs(prompt, stdout);

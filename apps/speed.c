@@ -3584,7 +3584,7 @@ int speed_main(int argc, char **argv)
  show_res:
 #endif
     if (!mr) {
-        printf("%s\n", OpenSSL_version(OPENSSL_VERSION));
+        printf("%s\n", OpenSSL_version(BABASSL_VERSION));
         printf("%s\n", OpenSSL_version(OPENSSL_BUILT_ON));
         printf("options:");
         printf("%s ", BN_options());

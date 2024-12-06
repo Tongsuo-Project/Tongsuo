@@ -37,3 +37,7 @@ INCLUDE[s390xcpuid.o]=.
 IF[{- $config{target} =~ /^(?:Cygwin|mingw|VC-)/ -}]
   SHARED_SOURCE[../libcrypto]=dllmain.c
 ENDIF
+
+IF[{- !$disabled{gm} -}]
+  SOURCE[../libcrypto]=scm.c
+ENDIF

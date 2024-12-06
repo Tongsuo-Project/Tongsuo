@@ -159,6 +159,7 @@ INSTALLTOP={- # $prefix is used in the OPENSSLDIR perl snippet
 	      #
 	      our $prefix = $config{prefix} || "/usr/local";
               $prefix -}
+OPENSSLHOME=$(INSTALLTOP)
 OPENSSLDIR={- #
 	      # The logic here is that if no --openssldir was given,
 	      # OPENSSLDIR will get the value from $prefix plus "/ssl".
@@ -269,6 +270,8 @@ OPENSSLDIR=$(OPENSSLDIR_dev)$(OPENSSLDIR_dir)
 ENGINESDIR=$(ENGINESDIR_dev)$(ENGINESDIR_dir)
 endif
 
+OPENSSLHOME=$(INSTALLTOP)
+
 # $(libdir) is chosen to be compatible with the GNU coding standards
 libdir={- File::Spec::Win32->file_name_is_absolute($libdir)
           ? $libdir : '$(INSTALLTOP)/$(LIBDIR)' -}
@@ -369,6 +372,7 @@ LIB_CPPFLAGS={- our $lib_cppflags =
                           @{$config{shared_cppflag}});
                 join(' ', $lib_cppflags,
                           (map { '-D'.$_ }
+                               'OPENSSLHOME="\"$(OPENSSLHOME)\""',
                                'OPENSSLDIR="\"$(OPENSSLDIR)\""',
                                'ENGINESDIR="\"$(ENGINESDIR)\""'),
                           '$(CNF_CPPFLAGS)', '$(CPPFLAGS)') -}

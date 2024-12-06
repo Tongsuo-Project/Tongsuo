@@ -4662,3 +4662,6 @@ EC_ELGAMAL_decrypt                      6608	1_1_1h	EXIST::FUNCTION:EC,EC_ELGAMA
 EC_ELGAMAL_CTX_set_decrypt_table        6609	1_1_1h	EXIST::FUNCTION:EC,EC_ELGAMAL
 EC_ELGAMAL_DECRYPT_TABLE_free           6610	1_1_1h	EXIST::FUNCTION:EC,EC_ELGAMAL
 EC_ELGAMAL_DECRYPT_TABLE_new            6611	1_1_1h	EXIST::FUNCTION:EC,EC_ELGAMAL
+OPENSSL_get_default_bin                 6612	1_1_1h	EXIST::FUNCTION:GM
+OPENSSL_get_default_signature_file      6613	1_1_1h	EXIST::FUNCTION:GM
+OPENSSL_get_default_passwd_file         6614	1_1_1h	EXIST::FUNCTION:GM
