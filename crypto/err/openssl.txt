@@ -1,4 +1,4 @@
-# Copyright 1999-2023 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 1999-2024 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the OpenSSL license (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -1602,7 +1602,6 @@ SSL_F_TLS_CONSTRUCT_CTOS_ALPN:466:tls_construct_ctos_alpn
 SSL_F_TLS_CONSTRUCT_CTOS_ALPN_NTLS:721:tls_construct_ctos_alpn_ntls
 SSL_F_TLS_CONSTRUCT_CTOS_CERTIFICATE:355:*
 SSL_F_TLS_CONSTRUCT_CTOS_COOKIE:535:tls_construct_ctos_cookie
-SSL_F_TLS_CONSTRUCT_CTOS_COOKIE_NTLS:722:tls_construct_ctos_cookie_ntls
 SSL_F_TLS_CONSTRUCT_CTOS_DELEGATED_CREDENTIAL:853:\
 	tls_construct_ctos_delegated_credential
 SSL_F_TLS_CONSTRUCT_CTOS_EARLY_DATA:530:tls_construct_ctos_early_data
@@ -1633,7 +1632,6 @@ SSL_F_TLS_CONSTRUCT_CTOS_PSK:501:tls_construct_ctos_psk
 SSL_F_TLS_CONSTRUCT_CTOS_PSK_KEX_MODES:509:tls_construct_ctos_psk_kex_modes
 SSL_F_TLS_CONSTRUCT_CTOS_PSK_KEX_MODES_NTLS:733:\
 	tls_construct_ctos_psk_kex_modes_ntls
-SSL_F_TLS_CONSTRUCT_CTOS_PSK_NTLS:732:tls_construct_ctos_psk_ntls
 SSL_F_TLS_CONSTRUCT_CTOS_QUIC_TRANSPORT_PARAMS:3008:\
 	tls_construct_ctos_quic_transport_params
 SSL_F_TLS_CONSTRUCT_CTOS_QUIC_TRANSPORT_PARAMS_DRAFT:3013:\
@@ -1698,7 +1696,6 @@ SSL_F_TLS_CONSTRUCT_STOC_ALPN:451:tls_construct_stoc_alpn
 SSL_F_TLS_CONSTRUCT_STOC_ALPN_NTLS:753:tls_construct_stoc_alpn_ntls
 SSL_F_TLS_CONSTRUCT_STOC_CERTIFICATE:374:*
 SSL_F_TLS_CONSTRUCT_STOC_COOKIE:613:tls_construct_stoc_cookie
-SSL_F_TLS_CONSTRUCT_STOC_COOKIE_NTLS:754:tls_construct_stoc_cookie_ntls
 SSL_F_TLS_CONSTRUCT_STOC_CRYPTOPRO_BUG:452:tls_construct_stoc_cryptopro_bug
 SSL_F_TLS_CONSTRUCT_STOC_CRYPTOPRO_BUG_NTLS:755:\
 	tls_construct_stoc_cryptopro_bug_ntls
@@ -1726,7 +1723,6 @@ SSL_F_TLS_CONSTRUCT_STOC_NEXT_PROTO_NEG:457:tls_construct_stoc_next_proto_neg
 SSL_F_TLS_CONSTRUCT_STOC_NEXT_PROTO_NEG_NTLS:762:\
 	tls_construct_stoc_next_proto_neg_ntls
 SSL_F_TLS_CONSTRUCT_STOC_PSK:504:tls_construct_stoc_psk
-SSL_F_TLS_CONSTRUCT_STOC_PSK_NTLS:763:tls_construct_stoc_psk_ntls
 SSL_F_TLS_CONSTRUCT_STOC_QUIC_TRANSPORT_PARAMS:3009:\
 	tls_construct_stoc_quic_transport_params
 SSL_F_TLS_CONSTRUCT_STOC_QUIC_TRANSPORT_PARAMS_DRAFT:3014:\
@@ -1769,7 +1765,6 @@ SSL_F_TLS_PARSE_COMPRESS_CERT:875:tls_parse_compress_cert
 SSL_F_TLS_PARSE_CTOS_ALPN:567:tls_parse_ctos_alpn
 SSL_F_TLS_PARSE_CTOS_ALPN_NTLS:774:tls_parse_ctos_alpn_ntls
 SSL_F_TLS_PARSE_CTOS_COOKIE:614:tls_parse_ctos_cookie
-SSL_F_TLS_PARSE_CTOS_COOKIE_NTLS:775:tls_parse_ctos_cookie_ntls
 SSL_F_TLS_PARSE_CTOS_DELEGATED_CREDENTIAL:862:\
 	tls_parse_ctos_delegated_credential
 SSL_F_TLS_PARSE_CTOS_EARLY_DATA:568:tls_parse_ctos_early_data
@@ -1788,7 +1783,6 @@ SSL_F_TLS_PARSE_CTOS_POST_HANDSHAKE_AUTH_NTLS:781:\
 SSL_F_TLS_PARSE_CTOS_PSK:505:tls_parse_ctos_psk
 SSL_F_TLS_PARSE_CTOS_PSK_KEX_MODES:572:tls_parse_ctos_psk_kex_modes
 SSL_F_TLS_PARSE_CTOS_PSK_KEX_MODES_NTLS:783:tls_parse_ctos_psk_kex_modes_ntls
-SSL_F_TLS_PARSE_CTOS_PSK_NTLS:782:tls_parse_ctos_psk_ntls
 SSL_F_TLS_PARSE_CTOS_QUIC_TRANSPORT_PARAMS:3010:\
 	tls_parse_ctos_quic_transport_params
 SSL_F_TLS_PARSE_CTOS_QUIC_TRANSPORT_PARAMS_DRAFT:3015:\
@@ -1815,7 +1809,6 @@ SSL_F_TLS_PARSE_DC_FROM_EXTENSION:864:tls_parse_dc_from_extension
 SSL_F_TLS_PARSE_STOC_ALPN:579:tls_parse_stoc_alpn
 SSL_F_TLS_PARSE_STOC_ALPN_NTLS:793:tls_parse_stoc_alpn_ntls
 SSL_F_TLS_PARSE_STOC_COOKIE:534:tls_parse_stoc_cookie
-SSL_F_TLS_PARSE_STOC_COOKIE_NTLS:794:tls_parse_stoc_cookie_ntls
 SSL_F_TLS_PARSE_STOC_DELEGATED_CREDENTIAL:854:\
 	tls_parse_stoc_delegated_credential
 SSL_F_TLS_PARSE_STOC_EARLY_DATA:538:tls_parse_stoc_early_data
@@ -1830,7 +1823,6 @@ SSL_F_TLS_PARSE_STOC_MAXFRAGMENTLEN_NTLS:798:tls_parse_stoc_maxfragmentlen_ntls
 SSL_F_TLS_PARSE_STOC_NPN:582:tls_parse_stoc_npn
 SSL_F_TLS_PARSE_STOC_NPN_NTLS:799:tls_parse_stoc_npn_ntls
 SSL_F_TLS_PARSE_STOC_PSK:502:tls_parse_stoc_psk
-SSL_F_TLS_PARSE_STOC_PSK_NTLS:800:tls_parse_stoc_psk_ntls
 SSL_F_TLS_PARSE_STOC_QUIC_TRANSPORT_PARAMS:3011:\
 	tls_parse_stoc_quic_transport_params
 SSL_F_TLS_PARSE_STOC_QUIC_TRANSPORT_PARAMS_DRAFT:3016:\

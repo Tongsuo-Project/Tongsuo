@@ -3887,6 +3887,7 @@ typedef struct {
 static int aes_wrap_init_key(EVP_CIPHER_CTX *ctx, const unsigned char *key,
                              const unsigned char *iv, int enc)
 {
+    int len;
     EVP_AES_WRAP_CTX *wctx = EVP_C_DATA(EVP_AES_WRAP_CTX,ctx);
     if (!iv && !key)
         return 1;
@@ -3901,8 +3902,10 @@ static int aes_wrap_init_key(EVP_CIPHER_CTX *ctx, const unsigned char *key,
             wctx->iv = NULL;
     }
     if (iv) {
-        memcpy(EVP_CIPHER_CTX_iv_noconst(ctx), iv, EVP_CIPHER_CTX_iv_length(ctx));
-        wctx->iv = EVP_CIPHER_CTX_iv_noconst(ctx);
+        if ((len = EVP_CIPHER_CTX_iv_length(ctx)) < 0)
+            return 0;
+        memcpy(ctx->iv, iv, len);
+        wctx->iv = ctx->iv;
     }
     return 1;
 }

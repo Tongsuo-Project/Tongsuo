@@ -319,14 +319,7 @@ static const EXTENSION_DEFINITION ext_defs[] = {
 # else
     INVALID_EXTENSION,
 # endif
-    {
-        /* Must be after key_share */
-        TLSEXT_TYPE_cookie,
-        SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS1_3_HELLO_RETRY_REQUEST
-        | SSL_EXT_TLS_IMPLEMENTATION_ONLY | SSL_EXT_TLS1_3_ONLY,
-        NULL, tls_parse_ctos_cookie_ntls, tls_parse_stoc_cookie_ntls,
-        tls_construct_stoc_cookie_ntls, tls_construct_ctos_cookie_ntls, NULL
-    },
+    INVALID_EXTENSION, /* TLSEXT_IDX_cookie */
     {
         /*
          * Special unsolicited ServerHello extension only used when
@@ -366,14 +359,7 @@ static const EXTENSION_DEFINITION ext_defs[] = {
         /* We send this, but don't read it */
         NULL, NULL, NULL, tls_construct_ctos_padding_ntls, NULL
     },
-    {
-        /* Required by the TLSv1.3 spec to always be the last extension */
-        TLSEXT_TYPE_psk,
-        SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS1_3_SERVER_HELLO
-        | SSL_EXT_TLS_IMPLEMENTATION_ONLY | SSL_EXT_TLS1_3_ONLY,
-        NULL, tls_parse_ctos_psk_ntls, tls_parse_stoc_psk_ntls, tls_construct_stoc_psk_ntls,
-        tls_construct_ctos_psk_ntls, NULL
-    }
+    INVALID_EXTENSION /* TLSEXT_IDX_psk */
 };
 
 /* Check whether an extension's context matches the current context */
