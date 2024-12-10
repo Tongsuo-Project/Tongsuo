@@ -1128,15 +1128,6 @@ static int sign(X509 *x, EVP_PKEY *pkey, int days, int clrext,
                 const EVP_MD *digest, CONF *conf, const char *section,
                 int preserve_dates, STACK_OF(OPENSSL_STRING) *sigopts)
 {
-#ifndef OPENSSL_NO_SM2
-    if (EVP_PKEY_is_sm2(pkey)) {
-        /*
-         * sm2 need to set sm2_id before sign, sm2_id should be set to
-         * EVP_PKEY_CTX, so use func do_X509_sign to do sm2 sign
-         */
-        return do_X509_sign(x, pkey, digest, sigopts);
-    }
-#endif
     if (!X509_set_issuer_name(x, X509_get_subject_name(x)))
         goto err;
     if (!preserve_dates && !set_cert_times(x, NULL, NULL, days))
@@ -1155,6 +1146,15 @@ static int sign(X509 *x, EVP_PKEY *pkey, int days, int clrext,
         if (!X509V3_EXT_add_nconf(conf, &ctx, section, x))
             goto err;
     }
+#ifndef OPENSSL_NO_SM2
+    if (EVP_PKEY_is_sm2(pkey)) {
+        /*
+         * sm2 need to set sm2_id before sign, sm2_id should be set to
+         * EVP_PKEY_CTX, so use func do_X509_sign to do sm2 sign
+         */
+        return do_X509_sign(x, pkey, digest, sigopts);
+    }
+#endif
     if (!X509_sign(x, pkey, digest))
         goto err;
     return 1;

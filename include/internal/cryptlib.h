@@ -53,6 +53,8 @@ DEFINE_LHASH_OF(MEM);
 
 # define OPENSSL_CONF             "openssl.cnf"
 
+# define OPENSSL_BIN              OPENSSLHOME "/bin/openssl"
+
 # ifndef OPENSSL_SYS_VMS
 #  define X509_CERT_AREA          OPENSSLDIR
 #  define X509_CERT_DIR           OPENSSLDIR "/certs"
@@ -95,5 +97,24 @@ void *openssl_fopen(const char *filename, const char *mode);
 uint32_t OPENSSL_rdtsc(void);
 size_t OPENSSL_instrument_bus(unsigned int *, size_t);
 size_t OPENSSL_instrument_bus2(unsigned int *, size_t, size_t);
+
+# ifndef OPENSSL_NO_GM
+int scm_init(void);
+int scm_self_test_integrity(void);
+int scm_setup_password(void);
+int scm_verify_password(void);
+int scm_do_passwd(const char *passphrase, int passphrase_len,
+                  const char *salt, int salt_len,
+                  char *result, int *res_len);
+int scm_self_test_sm3_drbg(void);
+int scm_self_test_sm3(void);
+int scm_self_test_sm4_encrypt(void);
+int scm_self_test_sm4_decrypt(void);
+int scm_self_test_sm2_sign(void);
+int scm_self_test_sm2_verify(void);
+int scm_self_test_sm2_encrypt(void);
+int scm_self_test_sm2_decrypt(void);
+int scm_self_test_random(void);
+# endif
 
 #endif

@@ -446,6 +446,11 @@ int CRYPTO_THREAD_cleanup_local(CRYPTO_THREAD_LOCAL *key);
 CRYPTO_THREAD_ID CRYPTO_THREAD_get_current_id(void);
 int CRYPTO_THREAD_compare_id(CRYPTO_THREAD_ID a, CRYPTO_THREAD_ID b);
 
+# ifndef OPENSSL_NO_GM
+const char *OPENSSL_get_default_passwd_file(void);
+const char *OPENSSL_get_default_signature_file(void);
+const char *OPENSSL_get_default_bin(void);
+# endif
 
 # ifdef  __cplusplus
 }

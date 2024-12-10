@@ -4,3 +4,7 @@ SOURCE[../../libcrypto]=\
         rand_win.c rand_unix.c rand_vms.c drbg_lib.c drbg_ctr.c drbg_hash.c
 
 INCLUDE[drbg_ctr.o]=../modes
+
+IF[{- !$disabled{gm} -}]
+  SOURCE[../../libcrypto]=rand_self_test.c
+ENDIF
