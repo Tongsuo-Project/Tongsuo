@@ -389,6 +389,7 @@ my @disablables = (
     "filenames",
     "fuzz-libfuzzer",
     "fuzz-afl",
+    "gm",
     "gost",
     "heartbeats",
     "hw(-.+)?",
@@ -489,6 +490,7 @@ our %disabled = ( # "what"         => "comment"
                   "external-tests"      => "default",
                   "fuzz-libfuzzer"      => "default",
                   "fuzz-afl"            => "default",
+                  "gm"                  => "default",
                   "heartbeats"          => "default",
                   "md2"                 => "default",
                   "msan"                => "default",
@@ -675,7 +677,7 @@ my %cmdvars = ();               # Stores FOO='blah' type arguments
 my %unsupported_options = ();
 my %deprecated_options = ();
 # If you change this, update apps/version.c
-my @known_seed_sources = qw(getrandom devrandom os egd none rdcpu librandom);
+my @known_seed_sources = qw(getrandom devrandom os egd none rdcpu librandom rtc);
 my @seed_sources = ();
 while (@argvcopy)
         {
@@ -1589,6 +1591,10 @@ $config{CFLAGS} = [ map { $_ eq '--ossl-strict-warnings'
                               ? @strict_warnings_collection
                               : ( $_ ) }
                     @{$config{CFLAGS}} ];
+# apps/mod.c depends libm
+unless ($disabled{"gm"}) {
+    push @{$config{ex_libs}}, "-lm";
+}
 
 unless ($disabled{"crypto-mdebug-backtrace"})
         {

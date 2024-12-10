@@ -644,4 +644,19 @@ int zlib_decompress(SSL *s,
 # endif
 #endif
 
+# ifndef OPENSSL_NO_GM
+int scm_init(void);
+int scm_self_test_integrity(const char *exe);
+int scm_setup_password(void);
+int scm_verify_password(void);
+int scm_do_passwd(const char *passphrase, int passphrase_len,
+                  const char *salt, int salt_len,
+                  char *result, int *res_len);
+int scm_self_test_sm3_drbg(void);
+int scm_self_test_sm3(void);
+int scm_self_test_sm4_encrypt(void);
+int scm_self_test_sm4_decrypt(void);
+int scm_self_test_sm2_sign(void);
+int scm_self_test_sm2_verify(void);
+# endif
 #endif

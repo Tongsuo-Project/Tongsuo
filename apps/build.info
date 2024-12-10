@@ -67,6 +67,10 @@ IF[{- !$disabled{apps} -}]
     DEPEND[rsautl.o]=progs.h
     DEPEND[genrsa.o]=progs.h
   ENDIF
+  IF[{- !$disabled{'gm'} -}]
+    SOURCE[openssl]=mod.c
+    DEPEND[mod.o]=progs.h
+  ENDIF
   IF[{- $config{target} =~ /^(?:Cygwin|mingw|VC-)/ -}]
     GENERATE[openssl.rc]=../util/mkrc.pl openssl
     SOURCE[openssl]=openssl.rc

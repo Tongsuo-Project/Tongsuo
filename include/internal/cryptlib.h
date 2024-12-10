@@ -96,4 +96,8 @@ uint32_t OPENSSL_rdtsc(void);
 size_t OPENSSL_instrument_bus(unsigned int *, size_t);
 size_t OPENSSL_instrument_bus2(unsigned int *, size_t, size_t);
 
+# ifndef OPENSSL_NO_GM
+const char *OPENSSL_get_default_passwd_file(void);
+const char *OPENSSL_get_default_signature_file(void);
+# endif
 #endif

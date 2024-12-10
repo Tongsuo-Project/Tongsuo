@@ -1,0 +1,26 @@
+name: GM CI
+on: [pull_request, push]
+jobs:
+  gm-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: config
+        run: |
+          ./config no-shared enable-threads enable-tls1_3 enable-ssl3 enable-ssl3-method enable-weak-ssl-ciphers \
+            no-evp-cipher-api-compat no-req-status no-status no-crypto-mdebug-count no-dynamic-ciphers \
+            no-optimize-chacha no-rsa-multi-prime-key-compat no-session-lookup no-session-reused-type \
+            no-global-session-cache no-verify-sni no-skip-scsv enable-ntls enable-crypto-mdebug-count \
+            enable-crypto-mdebug-backtrace enable-ssl-trace --debug -fPIC --prefix=/opt/babassl enable-gm \
+            --with-rand-seed=getrandom,egd,rtc -DSSL_DEBUG -DGM_DEBUG
+      - name: make
+        run: make -s -j4
+      - name: make test
+        run: make test TESTS='test_rand test_internal_sm2 test_internal_sm3 test_internal_sm4 test_ssl_ntls_api'
+      - name: make install
+        run: make install
+      - name: print GM version
+        run: |
+          export OPENSSL_NO_INTEGRITY=1
+          export OPENSSL_NO_AUTH=1
+          /opt/babassl/bin/openssl version -g
