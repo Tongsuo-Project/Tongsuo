@@ -291,19 +291,25 @@ int DC_sign(DELEGATED_CREDENTIAL *dc, EVP_PKEY *dc_pkey,
         goto end;
     }
 
-    dc_pkey_raw_len = i2d_PUBKEY(dc_pkey, NULL);
-    if (dc_pkey_raw_len <= 0) {
+    ret = i2d_PUBKEY(dc_pkey, NULL);
+    if (ret <= 0) {
         SSLerr(SSL_F_DC_SIGN, ERR_R_INTERNAL_ERROR);
         goto end;
     }
 
-    if ((dc_pkey_raw = OPENSSL_malloc(dc_pkey_raw_len)) == NULL) {
+    if ((dc_pkey_raw = OPENSSL_malloc(ret)) == NULL) {
         SSLerr(SSL_F_DC_SIGN, ERR_R_MALLOC_FAILURE);
         goto end;
     }
 
     dc_pkey_raw_index = dc_pkey_raw;
-    dc_pkey_raw_len = i2d_PUBKEY(dc_pkey, &dc_pkey_raw_index);
+    ret = i2d_PUBKEY(dc_pkey, &dc_pkey_raw_index);
+    if (ret <= 0) {
+        SSLerr(SSL_F_DC_SIGN, ERR_R_INTERNAL_ERROR);
+        goto end;
+    }
+
+    dc_pkey_raw_len = ret;
 
     if (!tls1_lookup_sigalg_by_pkey_and_hash(
             dc_pkey, expect_verify_hash,

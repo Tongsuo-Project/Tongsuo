@@ -27,14 +27,17 @@ const BIO_METHOD *BIO_f_tap(void)
     if (tap == NULL) {
         tap = BIO_meth_new(BIO_TYPE_START | BIO_TYPE_FILTER, "tap");
         if (tap != NULL) {
-            BIO_meth_set_write_ex(tap, tap_write_ex);
-            BIO_meth_set_read_ex(tap, tap_read_ex);
-            BIO_meth_set_puts(tap, tap_puts);
-            BIO_meth_set_gets(tap, tap_gets);
-            BIO_meth_set_ctrl(tap, tap_ctrl);
-            BIO_meth_set_create(tap, tap_new);
-            BIO_meth_set_destroy(tap, tap_free);
-            BIO_meth_set_callback_ctrl(tap, tap_callback_ctrl);
+            if (!BIO_meth_set_write_ex(tap, tap_write_ex)
+                || !BIO_meth_set_read_ex(tap, tap_read_ex)
+                || !BIO_meth_set_puts(tap, tap_puts)
+                || !BIO_meth_set_gets(tap, tap_gets)
+                || !BIO_meth_set_ctrl(tap, tap_ctrl)
+                || !BIO_meth_set_create(tap, tap_new)
+                || !BIO_meth_set_destroy(tap, tap_free)
+                || !BIO_meth_set_callback_ctrl(tap, tap_callback_ctrl)) {
+                BIO_meth_free(tap);
+                tap = NULL;
+            }
         }
     }
     return tap;

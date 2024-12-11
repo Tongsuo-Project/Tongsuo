@@ -384,7 +384,12 @@ static int bio_zlib_read(BIO *b, char *out, int outl)
             COMPerr(COMP_F_BIO_ZLIB_READ, ERR_R_MALLOC_FAILURE);
             return 0;
         }
-        inflateInit(zin);
+        ret = inflateInit(zin);
+        if (ret != Z_OK) {
+            COMPerr(COMP_F_BIO_ZLIB_READ, COMP_R_ZLIB_INFLATE_ERROR);
+            ERR_add_error_data(2, "zlib error:", zError(ret));
+            return 0;
+        }
         zin->next_in = ctx->ibuf;
         zin->avail_in = 0;
     }
@@ -447,7 +452,12 @@ static int bio_zlib_write(BIO *b, const char *in, int inl)
         }
         ctx->optr = ctx->obuf;
         ctx->ocount = 0;
-        deflateInit(zout, ctx->comp_level);
+        ret = deflateInit(zout, ctx->comp_level);
+        if (ret != Z_OK) {
+            COMPerr(COMP_F_BIO_ZLIB_WRITE, COMP_R_ZLIB_DEFLATE_ERROR);
+            ERR_add_error_data(2, "zlib error:", zError(ret));
+            return 0;
+        }
         zout->next_out = ctx->obuf;
         zout->avail_out = ctx->obufsize;
     }
