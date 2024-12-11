@@ -138,7 +138,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: config
-        run: ./config --strict-warnings enable-asan enable-ubsan enable-ssl-trace enable-zlib enable-zlib-dynamic enable-crypto-mdebug enable-crypto-mdebug-backtrace enable-egd enable-ntls enable-delegated-credential enable-cert-compression && perl configdata.pm --dump
+        run: ./config --strict-warnings enable-asan enable-ubsan enable-ssl-trace enable-zlib enable-zlib-dynamic enable-crypto-mdebug enable-crypto-mdebug-backtrace enable-egd enable-ntls enable-delegated-credential enable-cert-compression enable-export-sm4 && perl configdata.pm --dump
       - name: make
         run: make -s -j4
       - name: make test

@@ -19,11 +19,15 @@
 #  error SM4 is disabled.
 # endif
 
-# define SM4_ENCRYPT     1
-# define SM4_DECRYPT     0
+# ifndef OPENSSL_NO_EXPORT_SM4
+#  include <openssl/sm4.h>
+# else
 
-# define SM4_BLOCK_SIZE    16
-# define SM4_KEY_SCHEDULE  32
+#  define SM4_ENCRYPT     1
+#  define SM4_DECRYPT     0
+
+#  define SM4_BLOCK_SIZE    16
+#  define SM4_KEY_SCHEDULE  32
 
 typedef struct SM4_KEY_st {
     uint32_t rk[SM4_KEY_SCHEDULE];
@@ -32,6 +36,9 @@ typedef struct SM4_KEY_st {
 int SM4_set_key(const uint8_t *key, SM4_KEY *ks);
 
 void SM4_encrypt(const uint8_t *in, uint8_t *out, const SM4_KEY *ks);
+
+void SM4_decrypt(const uint8_t *in, uint8_t *out, const SM4_KEY *ks);
+# endif
 
 /*
  * Use sm4 affine transformation to aes-ni
@@ -63,8 +70,6 @@ void SM4_encrypt_affine_ni(const uint8_t *in, uint8_t *out,
 #   endif
 #  endif
 # endif
-
-void SM4_decrypt(const uint8_t *in, uint8_t *out, const SM4_KEY *ks);
 
 void sm4_ctr128_encrypt_blocks (const unsigned char *in, unsigned char *out,size_t blocks, const void *key,
                                 const unsigned char ivec[16]);

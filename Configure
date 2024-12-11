@@ -367,6 +367,7 @@ my @disablables = (
     "crypto-mdebug",
     "crypto-mdebug-backtrace",
     "ct",
+    "export-sm4",
     "ntls",
     "compatible-gm-ver",
     "deprecated",
@@ -509,6 +510,7 @@ our %disabled = ( # "what"         => "comment"
                   "dycert-ocsp"         => "default",
                   "delegated-credential" => "default",
                   "cert-compression"    => "default",
+                  "export-sm4"          => "default",
                 );
 
 # Note: => pair form used for aesthetics, not to truly make a hash table
