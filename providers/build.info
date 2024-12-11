@@ -142,6 +142,7 @@ IF[{- !$disabled{smtc} -}]
 
   DEFINE[$SMTCGOAL]=SMTC_MODULE
   DEFINE[$LIBDEFAULT]=SMTC_MODULE
+  DEFINE[$LIBLEGACY]=SMTC_MODULE
   DEFINE[../libssl]=SMTC_MODULE
 
 {- use File::Spec::Functions;
