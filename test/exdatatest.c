@@ -170,6 +170,9 @@ static char *MYOBJ_gethello2(MYOBJ *obj)
 
 static void MYOBJ_free(MYOBJ *obj)
 {
+    if (obj == NULL)
+        return;
+
     CRYPTO_free_ex_data(CRYPTO_EX_INDEX_APP, obj, &obj->ex_data);
     OPENSSL_free(obj);
 }

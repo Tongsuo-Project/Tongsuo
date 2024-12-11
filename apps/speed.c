@@ -746,9 +746,10 @@ static int HMAC_loop(void *args)
     int count;
 
     for (count = 0; COND(c[D_HMAC][testnum]); count++) {
-        HMAC_Init_ex(hctx, NULL, 0, NULL, NULL);
-        HMAC_Update(hctx, buf, lengths[testnum]);
-        HMAC_Final(hctx, hmac, NULL);
+        if (!HMAC_Init_ex(hctx, NULL, 0, NULL, NULL)
+            || !HMAC_Update(hctx, buf, lengths[testnum])
+            || !HMAC_Final(hctx, hmac, NULL))
+            return -1;
     }
     return count;
 }
@@ -1004,7 +1005,8 @@ static int EVP_Update_loop(void *args)
             rc = EVP_DecryptUpdate(ctx, buf, &outl, buf, lengths[testnum]);
             if (rc != 1) {
                 /* reset iv in case of counter overflow */
-                EVP_CipherInit_ex(ctx, NULL, NULL, NULL, iv, -1);
+                if (!EVP_CipherInit_ex(ctx, NULL, NULL, NULL, iv, -1))
+                    return -1;
             }
         }
     } else {
@@ -1012,7 +1014,8 @@ static int EVP_Update_loop(void *args)
             rc = EVP_EncryptUpdate(ctx, buf, &outl, buf, lengths[testnum]);
             if (rc != 1) {
                 /* reset iv in case of counter overflow */
-                EVP_CipherInit_ex(ctx, NULL, NULL, NULL, iv, -1);
+                if (!EVP_CipherInit_ex(ctx, NULL, NULL, NULL, iv, -1))
+                    return -1;
             }
         }
     }
@@ -1257,7 +1260,8 @@ static int ECDH_EVP_derive_key_loop(void *args)
     size_t *outlen = &(tempargs->outlen[testnum]);
 
     for (count = 0; COND(ecdh_c[testnum][0]); count++)
-        EVP_PKEY_derive(ctx, derived_secret, outlen);
+        if (EVP_PKEY_derive(ctx, derived_secret, outlen) <= 0)
+            return -1;
 
     return count;
 }
