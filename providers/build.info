@@ -144,6 +144,10 @@ IF[{- !$disabled{smtc} -}]
   DEFINE[$LIBDEFAULT]=SMTC_MODULE
   DEFINE[../libssl]=SMTC_MODULE
 
+  IF[{- $disabled{module} -}]
+    DEFINE[$LIBLEGACY]=SMTC_MODULE
+  ENDIF
+
 {- use File::Spec::Functions;
   our $ex_lib = $withargs{atf_slibce_lib} &&
     (file_name_is_absolute($withargs{atf_slibce_lib}) ?
