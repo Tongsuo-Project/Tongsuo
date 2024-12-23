@@ -279,10 +279,11 @@ static int send_record(BIO *rbio, unsigned char type, uint64_t seqnr,
     static unsigned char ver[2] = { 0x01, 0x00 }; /* DTLS1_BAD_VER */
     unsigned char lenbytes[2];
     HMAC_CTX *ctx;
-    EVP_CIPHER_CTX *enc_ctx;
+    EVP_CIPHER_CTX *enc_ctx = NULL;
     unsigned char iv[16];
     unsigned char pad;
     unsigned char *enc;
+    int ret = 0;
 
     seq[0] = (seqnr >> 40) & 0xff;
     seq[1] = (seqnr >> 32) & 0xff;
@@ -299,19 +300,19 @@ static int send_record(BIO *rbio, unsigned char type, uint64_t seqnr,
     /* Copy record to encryption buffer */
     memcpy(enc, msg, len);
 
-    /* Append HMAC to data */
-    ctx = HMAC_CTX_new();
-    HMAC_Init_ex(ctx, mac_key, 20, EVP_sha1(), NULL);
-    HMAC_Update(ctx, epoch, 2);
-    HMAC_Update(ctx, seq, 6);
-    HMAC_Update(ctx, &type, 1);
-    HMAC_Update(ctx, ver, 2); /* Version */
     lenbytes[0] = (unsigned char)(len >> 8);
     lenbytes[1] = (unsigned char)(len);
-    HMAC_Update(ctx, lenbytes, 2); /* Length */
-    HMAC_Update(ctx, enc, len); /* Finally the data itself */
-    HMAC_Final(ctx, enc + len, NULL);
-    HMAC_CTX_free(ctx);
+    /* Append HMAC to data */
+    if (!TEST_ptr(ctx = HMAC_CTX_new())
+            || !TEST_int_gt(HMAC_Init_ex(ctx, mac_key, 20, EVP_sha1(), NULL), 0)
+            || !TEST_int_ge(HMAC_Update(ctx, epoch, 2), 0)
+            || !TEST_int_ge(HMAC_Update(ctx, seq, 6), 0)
+            || !TEST_int_ge(HMAC_Update(ctx, &type, 1), 0)
+            || !TEST_int_ge(HMAC_Update(ctx, ver, 2), 0)
+            || !TEST_int_ge(HMAC_Update(ctx, lenbytes, 2), 0)
+            || !TEST_int_ge(HMAC_Update(ctx, enc, len), 0)
+            || !TEST_int_ge(HMAC_Final(ctx, enc + len, NULL), 0))
+        goto end;
 
     /* Append padding bytes */
     len += SHA_DIGEST_LENGTH;
@@ -320,11 +321,12 @@ static int send_record(BIO *rbio, unsigned char type, uint64_t seqnr,
     } while (len % 16);
 
     /* Generate IV, and encrypt */
-    RAND_bytes(iv, sizeof(iv));
-    enc_ctx = EVP_CIPHER_CTX_new();
-    EVP_CipherInit_ex(enc_ctx, EVP_aes_128_cbc(), NULL, enc_key, iv, 1);
-    EVP_Cipher(enc_ctx, enc, enc, len);
-    EVP_CIPHER_CTX_free(enc_ctx);
+    if (!TEST_int_gt(RAND_bytes(iv, sizeof(iv)), 0)
+            || !TEST_ptr(enc_ctx = EVP_CIPHER_CTX_new())
+            || !TEST_true(EVP_CipherInit_ex(enc_ctx, EVP_aes_128_cbc(), NULL,
+                                            enc_key, iv, 1))
+            || !TEST_int_ge(EVP_Cipher(enc_ctx, enc, enc, len), 0))
+        goto end;
 
     /* Finally write header (from fragmented variables), IV and encrypted record */
     BIO_write(rbio, &type, 1);
@@ -337,9 +339,12 @@ static int send_record(BIO *rbio, unsigned char type, uint64_t seqnr,
 
     BIO_write(rbio, iv, sizeof(iv));
     BIO_write(rbio, enc, len);
-
+    ret = 1;
+end:
+    HMAC_CTX_free(ctx);
+    EVP_CIPHER_CTX_free(enc_ctx);
     OPENSSL_free(enc);
-    return 1;
+    return ret;
 }
 
 static int send_finished(SSL *s, BIO *rbio)

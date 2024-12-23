@@ -618,9 +618,10 @@ int EC_ELGAMAL_encrypt(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r, int32_t pl
             goto err;
     }
 
-    EC_GROUP_get_order(ctx->key->group, ord, bn_ctx);
-    BN_rand_range(rand, ord);
+    if (!EC_GROUP_get_order(ctx->key->group, ord, bn_ctx))
+        goto err;
 
+    BN_rand_range(rand, ord);
     BN_set_word(bn_plain, plaintext);
 
     if (!EC_POINT_mul(ctx->key->group, r->C1, rand, NULL, NULL, bn_ctx))

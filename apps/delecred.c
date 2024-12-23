@@ -96,7 +96,8 @@ opthelp:
                 ee_key_file = opt_arg();
                 break;
             case OPT_SEC:
-                opt_int(opt_arg(), &valid_time);
+                if (!opt_int(opt_arg(), &valid_time))
+                    goto opthelp;
                 break;
             case OPT_EXPECT_VERIFY_MD:
                 expect_verify_hash = opt_arg();
