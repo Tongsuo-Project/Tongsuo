@@ -700,8 +700,8 @@ my @disable_cascades = (
     "fips"              => [ "fips-securitychecks", "acvp-tests" ],
 
     "deprecated-3.0"    => [ "engine", "srp" ],
-    # SMTC does not support ct for now
-    sub { !$disabled{"smtc"}} => [ "ct" ],
+    # SMTC does not support ct, and only supports builtin for now
+    sub { !$disabled{"smtc"}} => [ "ct", "module" ],
     "sdf-lib"           => [ "sdf-lib-dynamic" ],
     );
 
