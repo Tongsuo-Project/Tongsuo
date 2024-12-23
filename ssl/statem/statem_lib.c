@@ -1770,7 +1770,11 @@ int ssl_set_version_bound(int method_version, int version, int *bound)
         return 1;
     }
 
+#ifndef OPENSSL_NO_NTLS
+    valid_tls = version >= NTLS1_1_VERSION && version <= TLS_MAX_VERSION_INTERNAL;
+#else
     valid_tls = version >= SSL3_VERSION && version <= TLS_MAX_VERSION_INTERNAL;
+#endif
     valid_dtls =
         DTLS_VERSION_LE(version, DTLS_MAX_VERSION_INTERNAL) &&
         DTLS_VERSION_GE(version, DTLS1_BAD_VER);
