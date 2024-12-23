@@ -165,15 +165,14 @@ int tls_setup_handshake_ntls(SSL *s)
 
 static int get_cert_verify_tbs_data_ntls(SSL *s, void **hdata, size_t *hdatalen)
 {
-    size_t retlen;
     long retlen_l;
 
-    retlen = retlen_l = BIO_get_mem_data(s->s3.handshake_buffer, hdata);
+    retlen_l = BIO_get_mem_data(s->s3.handshake_buffer, hdata);
     if (retlen_l <= 0) {
         SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
         return 0;
     }
-    *hdatalen = retlen;
+    *hdatalen = retlen_l;
 
     return 1;
 }
