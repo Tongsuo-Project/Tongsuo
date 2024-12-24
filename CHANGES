@@ -6,6 +6,8 @@
 
   *) SM4白盒密码算法，支持: wbsm4-xiaolai、wbsm4-baiwu、wbsm4-wsise
    
+  *) 修复CVE-2024-9143
+
   *) SMTC Provider适配蚂蚁密码卡（atf_slibce）
 
   *) 增加SDF框架和部分功能接口
