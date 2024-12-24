@@ -210,7 +210,8 @@ BP_R1CS_LINEAR_COMBINATION *BP_R1CS_LINEAR_COMBINATION_dup(const BP_R1CS_LINEAR_
         if (item_dup == NULL)
             goto err;
 
-        sk_BP_R1CS_LINEAR_COMBINATION_ITEM_push(ret->items, item_dup);
+        if (sk_BP_R1CS_LINEAR_COMBINATION_ITEM_push(ret->items, item_dup) <= 0)
+            goto err;
     }
 
     ret->type = lc->type;
@@ -427,12 +428,12 @@ int BP_R1CS_LINEAR_COMBINATION_raw_mul(BP_R1CS_LINEAR_COMBINATION **output,
     BN_CTX_free(bn_ctx);
     return 1;
 err:
-    if (output == NULL)
-        output = NULL;
-    if (left == NULL)
-        left = NULL;
-    if (right == NULL)
-        right = NULL;
+    if (output != NULL)
+        *output = NULL;
+    if (left != NULL)
+        *left = NULL;
+    if (right != NULL)
+        *right = NULL;
 
     BP_R1CS_LINEAR_COMBINATION_free(llc);
     BP_R1CS_LINEAR_COMBINATION_free(rlc);

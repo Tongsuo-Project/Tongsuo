@@ -92,18 +92,19 @@ EC_ELGAMAL_CTX *EC_ELGAMAL_CTX_new(EC_KEY *key, const EC_POINT *h, int32_t flag)
     }
 #endif
 
-    EC_KEY_up_ref(key);
+    if (!EC_KEY_up_ref(key))
+        goto err;
     ctx->key = key;
     ctx->flag = flag;
 
     return ctx;
-#ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
 err:
+#ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
     OPENSSL_free(buf);
     BN_CTX_free(bn_ctx);
+#endif
     EC_ELGAMAL_CTX_free(ctx);
     return NULL;
-#endif
 }
 
 EC_ELGAMAL_CTX *EC_ELGAMAL_CTX_dup(EC_ELGAMAL_CTX *ctx)

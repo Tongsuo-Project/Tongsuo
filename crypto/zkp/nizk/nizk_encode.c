@@ -493,7 +493,7 @@ NIZK_PLAINTEXT_KNOWLEDGE_PROOF *NIZK_PLAINTEXT_KNOWLEDGE_PROOF_decode(const unsi
     proof->B = sk_EC_POINT_value(sk_point, 1);
 
     sk_bn = zkp_stack_of_bignum_decode(p, &len, bn_len);
-    if (sk_point == NULL)
+    if (sk_bn == NULL)
         goto err;
     p += len;
 
@@ -892,7 +892,7 @@ NIZK_DLOG_KNOWLEDGE_PROOF *NIZK_DLOG_KNOWLEDGE_PROOF_decode(const unsigned char 
     proof->A = sk_EC_POINT_value(sk_point, 0);
 
     sk_bn = zkp_stack_of_bignum_decode(p, &len, bn_len);
-    if (sk_point == NULL)
+    if (sk_bn == NULL)
         goto err;
     p += len;
 
@@ -1092,7 +1092,7 @@ NIZK_DLOG_EQUALITY_PROOF *NIZK_DLOG_EQUALITY_PROOF_decode(const unsigned char *i
     proof->A2 = sk_EC_POINT_value(sk_point, 1);
 
     sk_bn = zkp_stack_of_bignum_decode(p, &len, bn_len);
-    if (sk_point == NULL)
+    if (sk_bn == NULL)
         goto err;
     p += len;
 
