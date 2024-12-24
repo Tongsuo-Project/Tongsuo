@@ -1035,6 +1035,39 @@ const EVP_CIPHER *EVP_sm4_gcm(void);
 const EVP_CIPHER *EVP_sm4_ccm(void);
 # endif
 
+# ifndef OPENSSL_NO_WBSM4_XIAOLAI
+const EVP_CIPHER *EVP_wbsm4_xiaolai_ecb(void);
+const EVP_CIPHER *EVP_wbsm4_xiaolai_cbc(void);
+const EVP_CIPHER *EVP_wbsm4_xiaolai_cfb128(void);
+#  define EVP_wbsm4_xiaolai_cfb EVP_wbsm4_xiaolai_cfb128
+const EVP_CIPHER *EVP_wbsm4_xiaolai_ofb(void);
+const EVP_CIPHER *EVP_wbsm4_xiaolai_ctr(void);
+const EVP_CIPHER *EVP_wbsm4_xiaolai_gcm(void);
+const EVP_CIPHER *EVP_wbsm4_xiaolai_ccm(void);
+#endif
+
+# ifndef OPENSSL_NO_WBSM4_BAIWU
+const EVP_CIPHER *EVP_wbsm4_baiwu_ecb(void);
+const EVP_CIPHER *EVP_wbsm4_baiwu_cbc(void);
+const EVP_CIPHER *EVP_wbsm4_baiwu_cfb128(void);
+#  define EVP_wbsm4_baiwu_cfb EVP_wbsm4_baiwu_cfb128
+const EVP_CIPHER *EVP_wbsm4_baiwu_ofb(void);
+const EVP_CIPHER *EVP_wbsm4_baiwu_ctr(void);
+const EVP_CIPHER *EVP_wbsm4_baiwu_gcm(void);
+const EVP_CIPHER *EVP_wbsm4_baiwu_ccm(void);
+#endif
+
+# ifndef OPENSSL_NO_WBSM4_WSISE
+const EVP_CIPHER *EVP_wbsm4_wsise_ecb(void);
+const EVP_CIPHER *EVP_wbsm4_wsise_cbc(void);
+const EVP_CIPHER *EVP_wbsm4_wsise_cfb128(void);
+#  define EVP_wbsm4_wsise_cfb EVP_wbsm4_wsise_cfb128
+const EVP_CIPHER *EVP_wbsm4_wsise_ofb(void);
+const EVP_CIPHER *EVP_wbsm4_wsise_ctr(void);
+const EVP_CIPHER *EVP_wbsm4_wsise_gcm(void);
+const EVP_CIPHER *EVP_wbsm4_wsise_ccm(void);
+# endif
+
 # ifndef OPENSSL_NO_ZUC
 const EVP_CIPHER *EVP_eea3(void);
 # endif

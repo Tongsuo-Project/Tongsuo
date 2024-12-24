@@ -12,6 +12,7 @@ $SSKDF_GOAL=../../libdefault.a ../../libfips.a
 $SCRYPT_GOAL=../../libdefault.a
 $SSHKDF_GOAL=../../libdefault.a ../../libfips.a
 $X942KDF_GOAL=../../libdefault.a ../../libfips.a
+$WBSM4KDF_GOAL=../../libdefault.a
 
 SOURCE[$TLS1_PRF_GOAL]=tls1_prf.c
 
@@ -36,3 +37,5 @@ SOURCE[$SCRYPT_GOAL]=scrypt.c
 SOURCE[$SSHKDF_GOAL]=sshkdf.c
 SOURCE[$X942KDF_GOAL]=x942kdf.c
 DEPEND[x942kdf.o]=../../common/include/prov/der_wrap.h
+
+SOURCE[$WBSM4KDF_GOAL]=wbsm4kdf.c
