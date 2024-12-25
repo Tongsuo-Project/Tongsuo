@@ -92,7 +92,8 @@ EC_ELGAMAL_CTX *EC_ELGAMAL_CTX_new(EC_KEY *key, const EC_POINT *h, int32_t flag)
     }
 #endif
 
-    EC_KEY_up_ref(key);
+    if (!EC_KEY_up_ref(key))
+        goto err;
     ctx->key = key;
     ctx->flag = flag;
 

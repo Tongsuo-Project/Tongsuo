@@ -1505,7 +1505,7 @@ int list_main(int argc, char **argv)
     prog = opt_init(argc, argv, list_options);
     while ((o = opt_next()) != OPT_EOF) {
         switch (o) {
-        case OPT_EOF:  /* Never hit, but suppresses warning */
+        default:
         case OPT_ERR:
 opthelp:
             BIO_printf(bio_err, "%s: Use -help for summary.\n", prog);

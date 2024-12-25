@@ -447,7 +447,6 @@ int paillier_main(int argc, char **argv)
     prog = opt_init(argc, argv, paillier_options);
     if ((o = opt_next()) != OPT_EOF) {
         switch (o) {
-        case OPT_EOF:
         case OPT_ERR:
 opthelp1:
             BIO_printf(bio_err, "%s: Use -help for summary.\n", prog);
@@ -492,11 +491,12 @@ opthelp1:
     }
 
     action_sum = keygen + pubgen + key + pub + encrypt + decrypt + add + add_plain + sub + mul;
-    if (action_sum == 0) {
-        BIO_printf(bio_err, "No action parameter specified.\n");
-        goto opthelp1;
-    } else if (action_sum != 1) {
-        BIO_printf(bio_err, "Only one action parameter must be specified.\n");
+    if (action_sum != 1) {
+        if (action_sum == 0)
+            BIO_printf(bio_err, "No action parameter specified.\n");
+        else
+            BIO_printf(bio_err, "Only one action parameter must be specified.\n");
+
         goto opthelp1;
     }
 

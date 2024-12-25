@@ -1414,9 +1414,11 @@ WORK_STATE tls_post_process_server_certificate_ntls(SSL *s, WORK_STATE wst)
         }
     }
 
-    X509_free(s->session->peer);
-    X509_up_ref(x);
-    s->session->peer = x;
+    if (x) {
+        X509_free(s->session->peer);
+        s->session->peer = x;
+        X509_up_ref(x);
+    }
     s->session->verify_result = s->verify_result;
 
     return WORK_FINISHED_CONTINUE;
