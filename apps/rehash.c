@@ -168,7 +168,8 @@ static int add_entry(enum Type type, unsigned int hash, const char *filename,
     if (need_symlink && !ep->need_symlink) {
         ep->need_symlink = 1;
         bp->num_needed++;
-        memcpy(ep->digest, digest, evpmdsize);
+        if (digest)
+            memcpy(ep->digest, digest, evpmdsize);
     }
     return 0;
 }
@@ -488,7 +489,7 @@ int rehash_main(int argc, char **argv)
     prog = opt_init(argc, argv, rehash_options);
     while ((o = opt_next()) != OPT_EOF) {
         switch (o) {
-        case OPT_EOF:
+        default:
         case OPT_ERR:
             BIO_printf(bio_err, "%s: Use -help for summary.\n", prog);
             goto end;

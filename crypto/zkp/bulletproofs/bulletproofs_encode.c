@@ -842,7 +842,7 @@ BP_RANGE_PROOF *BP_RANGE_PROOF_decode(const unsigned char *in, size_t size)
     proof->T2 = sk_EC_POINT_value(sk_point, 3);
 
     sk_bn = zkp_stack_of_bignum_decode(p, &len, bn_len);
-    if (sk_point == NULL)
+    if (sk_bn == NULL)
         goto err;
     p += len;
 
@@ -1114,7 +1114,7 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_decode(const unsigned char *in, size_t size)
 #endif
 
     sk_bn = zkp_stack_of_bignum_decode(p, &len, bn_len);
-    if (sk_point == NULL)
+    if (sk_bn == NULL)
         goto err;
     p += len;
 
