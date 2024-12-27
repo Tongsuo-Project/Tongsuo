@@ -836,7 +836,8 @@ int BP_R1CS_PROOF_verify(BP_R1CS_CTX *ctx, BP_R1CS_PROOF *proof)
 
     v_n = sk_BP_VARIABLE_num(witness->sk_V);
     lg_n = sk_EC_POINT_num(ip_proof->sk_L);
-    if (padded_n != 1 << lg_n) {
+    if (lg_n < 0 || (lg_n >= (int)sizeof(int) * 8)
+        || ((unsigned int)padded_n != 1U << lg_n)) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_INVALID_ARGUMENT);
         goto err;
     }

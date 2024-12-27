@@ -172,6 +172,7 @@ bp_inner_product_proof_t *bp_inner_product_proof_new(bp_inner_product_ctx_t *ctx
 
     if (ctx == NULL || ctx->pp == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
+        return NULL;
     }
 
     n = sk_EC_POINT_num(ctx->pp->sk_G);
