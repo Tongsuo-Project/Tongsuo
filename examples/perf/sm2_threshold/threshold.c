@@ -124,6 +124,7 @@ int main(void)
 
         start = get_time();
 
+        EVP_PKEY_set_alias_type(complete_key1, EVP_PKEY_SM2);
         if ((mctx = EVP_MD_CTX_new()) == NULL
             || (pctx = EVP_PKEY_CTX_new(complete_key1, NULL)) == NULL)
             goto err;
