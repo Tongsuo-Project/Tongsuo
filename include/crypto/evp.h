@@ -137,7 +137,7 @@ extern const EVP_PKEY_METHOD eia3_pkey_meth;
 typedef struct evp_kdf_impl_st EVP_KDF_IMPL;
 typedef struct {
     int type;
-    EVP_KDF_IMPL *(*new) (void);
+    EVP_KDF_IMPL *(*new_impl) (void);
     void (*free) (EVP_KDF_IMPL *impl);
     void (*reset) (EVP_KDF_IMPL *impl);
     int (*ctrl) (EVP_KDF_IMPL *impl, int cmd, va_list args);
