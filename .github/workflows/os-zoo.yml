@@ -21,20 +21,20 @@ jobs:
       matrix:
         tag: [edge, latest]
         cc: [gcc, clang]
-        branch: [8.3-stable, 8.4-stable, master]
     runs-on: ubuntu-latest
     container:
       image: docker.io/library/alpine:${{ matrix.tag }}
     env:
-      # https://www.openwall.com/lists/musl/2022/02/16/14
-      EXTRA_CFLAGS: ${{ matrix.cc == 'clang' && '-Wno-sign-compare' || '' }}
+      # See https://www.openwall.com/lists/musl/2022/02/16/14
+      # for the reason why -Wno-sign-compare is needed with clang
+      # -Wno-stringop-overflow is needed to silence a bogus
+      # warning on new fortify-headers with gcc
+      EXTRA_CFLAGS: ${{ matrix.cc == 'clang' && '-Wno-sign-compare' || matrix.tag == 'edge' && '-Wno-stringop-overflow' || '' }}
       CC: ${{ matrix.cc }}
     steps:
     - name: install packages
       run: apk --no-cache add build-base perl linux-headers ${{ matrix.cc }}
     - uses: actions/checkout@v4
-      with:
-        ref: ${{ matrix.branch }}
     - name: config
       run: |
         ./config --banner=Configured no-shared -Wall -Werror enable-ntls --strict-warnings \
@@ -54,7 +54,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        branch: [8.3-stable, 8.4-stable, master]
         zoo:
           - image: docker.io/library/debian:10
             install: apt-get update && apt-get install -y gcc make perl
@@ -83,8 +82,6 @@ jobs:
     container: ${{ matrix.zoo.image }}
     steps:
     - uses: actions/checkout@v4
-      with:
-        ref: ${{ matrix.branch }}
     - name: install packages
       run: ${{ matrix.zoo.install }}
     - name: config
@@ -104,13 +101,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        branch: [8.3-stable, 8.4-stable, master]
-        os: [macos-12, macos-13, macos-14]
+        os: [macos-13, macos-14, macos-15]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
-      with:
-        ref: ${{ matrix.branch }}
     - name: config
       run: ./config --banner=Configured -Wall -Werror --strict-warnings enable-ntls
     - name: config dump
@@ -128,13 +122,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        branch: [8.3-stable, 8.4-stable, master]
         os: [windows-2019, windows-2022]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
-      with:
-        ref: ${{ matrix.branch }}
     - uses: ilammy/msvc-dev-cmd@v1
     - uses: ilammy/setup-nasm@v1
     - name: prepare the build directory
