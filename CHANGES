@@ -4,6 +4,8 @@
 
  Changes between 8.4.0 and 8.5.0 [xx XXX xxxx]
 
+  *) 重新修复CVE-2022-4304
+
   *) 修复CVE-2024-9143
 
   *) 修复CVE-2024-6119
