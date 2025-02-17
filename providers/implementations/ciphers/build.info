@@ -70,6 +70,13 @@ IF[{- !$disabled{sm4} -}]
       cipher_sm4.c cipher_sm4_hw.c \
       cipher_sm4_gcm.c cipher_sm4_gcm_hw.c \
       cipher_sm4_ccm.c cipher_sm4_ccm_hw.c
+  IF[{- !$disabled{"wbsm4-xiaolai"} || !$disabled{"wbsm4-baiwu"} ||
+        !$disabled{"wbsm4-wsise"} -}]
+    SOURCE[$SM4_GOAL]= ${SOURCE[$SM4_GOAL]}\
+        cipher_wbsm4.c cipher_wbsm4_hw.c \
+        cipher_wbsm4_gcm.c cipher_wbsm4_gcm_hw.c \
+        cipher_wbsm4_ccm.c cipher_wbsm4_ccm_hw.c
+  ENDIF
 ENDIF
 
 IF[{- !$disabled{ocb} -}]

@@ -1416,3 +1416,34 @@ dstu4145le 2 9 : uacurve9 : DSTU curve 9
 joint-iso-itu-t 16 840 1 113894 : oracle-organization : Oracle organization
 # Jdk trustedKeyUsage attribute
 oracle 746875 1 1 : oracle-jdk-trustedkeyusage : Trusted key usage (Oracle)
+
+# Definitions for WBSM4 cipher
+    : WBSM4-XIAOLAI-ECB             : wbsm4-xiaolai-ecb
+    : WBSM4-XIAOLAI-CBC             : wbsm4-xiaolai-cbc
+!Cname wbsm4-xiaolai-ofb128
+    : WBSM4-XIAOLAI-OFB             : wbsm4-xiaolai-ofb
+!Cname wbsm4-xiaolai-cfb128
+    : WBSM4-XIAOLAI-CFB             : wbsm4-xiaolai-cfb
+    : WBSM4-XIAOLAI-CTR             : wbsm4-xiaolai-ctr
+    : WBSM4-XIAOLAI-GCM             : wbsm4-xiaolai-gcm
+    : WBSM4-XIAOLAI-CCM             : wbsm4-xiaolai-ccm
+
+    : WBSM4-BAIWU-ECB             : wbsm4-baiwu-ecb
+    : WBSM4-BAIWU-CBC             : wbsm4-baiwu-cbc
+!Cname wbsm4-baiwu-ofb128
+    : WBSM4-BAIWU-OFB             : wbsm4-baiwu-ofb
+!Cname wbsm4-baiwu-cfb128
+    : WBSM4-BAIWU-CFB             : wbsm4-baiwu-cfb
+    : WBSM4-BAIWU-CTR             : wbsm4-baiwu-ctr
+    : WBSM4-BAIWU-GCM             : wbsm4-baiwu-gcm
+    : WBSM4-BAIWU-CCM             : wbsm4-baiwu-ccm
+
+    : WBSM4-WSISE-ECB             : wbsm4-wsise-ecb
+    : WBSM4-WSISE-CBC             : wbsm4-wsise-cbc
+!Cname wbsm4-wsise-ofb128
+    : WBSM4-WSISE-OFB             : wbsm4-wsise-ofb
+!Cname wbsm4-wsise-cfb128
+    : WBSM4-WSISE-CFB             : wbsm4-wsise-cfb
+    : WBSM4-WSISE-CTR             : wbsm4-wsise-ctr
+    : WBSM4-WSISE-GCM             : wbsm4-wsise-gcm
+    : WBSM4-WSISE-CCM             : wbsm4-wsise-ccm
