@@ -250,6 +250,7 @@ const OSSL_DISPATCH ossl_##name##_functions[] = {                              \
     { OSSL_FUNC_DIGEST_SETTABLE_CTX_PARAMS,                                    \
      (void (*)(void))shake_settable_ctx_params },                              \
     PROV_DISPATCH_FUNC_DIGEST_CONSTRUCT_END
+}
 
 static void keccak_freectx(void *vctx)
 {
