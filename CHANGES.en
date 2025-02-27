@@ -9,6 +9,8 @@
 
   *) Alternative fix for CVE-2022-4304
 
+  *) Fix CVE-2024-9143
+
   *) Fix CVE-2024-5535
 
   *) Fix CVE-2024-4741
