@@ -126,6 +126,7 @@ my $usage="Usage: Configure [no-<cipher> ...] [enable-<cipher> ...] [-Dxxx] [-lx
 # it grew impossible to resolve this without sizeable additional
 # code, so we just tell compiler to be pedantic about everything
 # but 'long long' type.
+# -Wno-use-after-free false positives with gcc 12
 
 my @gcc_devteam_warn = qw(
     -DDEBUG_UNUSED
@@ -143,6 +144,7 @@ my @gcc_devteam_warn = qw(
     -Werror
     -Wmissing-prototypes
     -Wstrict-prototypes
+    -Wno-use-after-free
 );
 
 # These are used in addition to $gcc_devteam_warn when the compiler is clang.
