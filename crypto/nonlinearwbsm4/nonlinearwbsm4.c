@@ -2,7 +2,7 @@
 #include <string.h> 
 #include "crypto/sm4.h"
 
-uint8_t  SBOX[256] = {
+static uint8_t  SBOX[256] = {
     0xd6, 0x90, 0xe9, 0xfe, 0xcc, 0xe1, 0x3d, 0xb7,
     0x16, 0xb6, 0x14, 0xc2, 0x28, 0xfb, 0x2c, 0x05,
     0x2b, 0x67, 0x9a, 0x76, 0x2a, 0xbe, 0x04, 0xc3,
@@ -49,51 +49,51 @@ uint8_t  SBOX[256] = {
 (ct)[2] = (uint8_t)((st) >>  8);\
 (ct)[3] = (uint8_t)(st)
 
-Nonlinear8 Pij[36][4];
-Nonlinear8 Pij_inv[36][4];
+static Nonlinear8 Pij[36][4];
+static Nonlinear8 Pij_inv[36][4];
 
-Nonlinear32 Ei[32];
-Nonlinear32 Ei_inv[32];
-Nonlinear8 Eij[32][4];
-Nonlinear8 Eij_inv[32][4];
-Nonlinear32 Fi[32];
-Nonlinear32 Fi_inv[32];
-Nonlinear8 Fij[32][4];
-Nonlinear8 Fij_inv[32][4];
+static Nonlinear32 Ei[32];
+static Nonlinear32 Ei_inv[32];
+static Nonlinear8 Eij[32][4];
+static Nonlinear8 Eij_inv[32][4];
+static Nonlinear32 Fi[32];
+static Nonlinear32 Fi_inv[32];
+static Nonlinear8 Fij[32][4];
+static Nonlinear8 Fij_inv[32][4];
 
-Aff32 Gi[32];
-Aff32 Gi_inv[32];
-Aff8 Gij[32][4];
-Aff8 Gij_inv[32][4];
-Aff8 Aij_inv[32][4];
-Aff8 Aij[32][4];
-Aff32 Ai[32];
-Aff32 Ai_inv[32];
+static Aff32 Gi[32];
+static Aff32 Gi_inv[32];
+static Aff8 Gij[32][4];
+static Aff8 Gij_inv[32][4];
+static Aff8 Aij_inv[32][4];
+static Aff8 Aij[32][4];
+static Aff32 Ai[32];
+static Aff32 Ai_inv[32];
 
-Nonlinear32 Qi[32];
-Nonlinear8 Qij[32][4];
-Nonlinear8 Qij_inv[32][4];
+static Nonlinear32 Qi[32];
+static Nonlinear8 Qij[32][4];
+static Nonlinear8 Qij_inv[32][4];
 
-Aff32 Hi[32];
-Aff8 Hij[32][4];
-Aff8 Hij_inv[32][4];
+static Aff32 Hi[32];
+static Aff8 Hij[32][4];
+static Aff8 Hij_inv[32][4];
 
-Nonlinear32 Wi[32];
-Nonlinear8 Wij[32][4];
-Nonlinear8 Wij_inv[32][4];
+static Nonlinear32 Wi[32];
+static Nonlinear8 Wij[32][4];
+static Nonlinear8 Wij_inv[32][4];
 
-Nonlinear32 Ci[32];
-Nonlinear8 Cij[32][4];
-Nonlinear8 Cij_inv[32][4];
+static Nonlinear32 Ci[32];
+static Nonlinear8 Cij[32][4];
+static Nonlinear8 Cij_inv[32][4];
 
-Nonlinear32 Di[32];
-Nonlinear8 Dij[32][4];
-Nonlinear8 Dij_inv[32][4];
+static Nonlinear32 Di[32];
+static Nonlinear8 Dij[32][4];
+static Nonlinear8 Dij_inv[32][4];
 
-Aff8 Bij[32][4];
-Aff8 Bij_inv[32][4];
-Aff32 Bi[32];
-Aff32 Bi_inv[32];
+static Aff8 Bij[32][4];
+static Aff8 Bij_inv[32][4];
+static Aff32 Bi[32];
+static Aff32 Bi_inv[32];
 
 static void wbsm4_gen_init(WB_SM4_Tables* tables);
 static void wbsm4_gen_part1(WB_SM4_Tables* tables);
@@ -102,14 +102,22 @@ static void wbsm4_gen_part3(WB_SM4_Tables* tables);
 static void wbsm4_gen_part4_1(WB_SM4_Tables* tables);
 static void wbsm4_gen_part4_2(WB_SM4_Tables* tables);
 static void wbsm4_gen_part4_3(WB_SM4_Tables* tables);
+static void swap(uint8_t* a, uint8_t* b);
+static void generate_S_box_and_inverse(uint8_t* mapping);
+static void genNonlinearPair(Nonlinear8* nl, Nonlinear8* nl_inv);
+static void nonlinearCom8to32(Nonlinear8 n1, Nonlinear8 n2, Nonlinear8 n3, Nonlinear8 n4, Nonlinear32* res);
+static uint8_t nonlinearU8(Nonlinear8* n8, uint8_t arr);
+static uint32_t nonlinearU32(const Nonlinear32* n32, uint32_t arr);
+// static void printstate(unsigned char* in);
+
 // 交换函数，用于打乱 S 盒
-void swap(uint8_t* a, uint8_t* b) {
+static void swap(uint8_t* a, uint8_t* b) {
     uint8_t temp = *a;
     *a = *b;
     *b = temp;
 }
 // 生成 S 盒
-void generate_S_box_and_inverse(uint8_t* mapping) {
+static void generate_S_box_and_inverse(uint8_t* mapping) {
     // 初始化 S 盒为单位置换
     for (int i = 0; i < 256; i++) {
         mapping[i] = i;
@@ -128,13 +136,13 @@ void generate_S_box_and_inverse(uint8_t* mapping) {
 }
 
 // 生成非线性双射对
-void genNonlinearPair(Nonlinear8* nl, Nonlinear8* nl_inv) {
+static void genNonlinearPair(Nonlinear8* nl, Nonlinear8* nl_inv) {
     generate_S_box_and_inverse(nl->mapping);
     for (int i = 0; i < 256; i++) {
         nl_inv->mapping[nl->mapping[i]] = i;
     }
 }
-void nonlinearCom8to32(Nonlinear8 n1, Nonlinear8 n2, Nonlinear8 n3, Nonlinear8 n4, Nonlinear32* res) {
+static void nonlinearCom8to32(Nonlinear8 n1, Nonlinear8 n2, Nonlinear8 n3, Nonlinear8 n4, Nonlinear32* res) {
     for (int i = 0; i < 256; i++) {
         res->n8_1.mapping[i] = n1.mapping[i];
         res->n8_2.mapping[i] = n2.mapping[i];
@@ -142,11 +150,11 @@ void nonlinearCom8to32(Nonlinear8 n1, Nonlinear8 n2, Nonlinear8 n3, Nonlinear8 n
         res->n8_4.mapping[i] = n4.mapping[i];
     }
 }
-uint8_t nonlinearU8(Nonlinear8* n8, uint8_t arr) {
+static uint8_t nonlinearU8(Nonlinear8* n8, uint8_t arr) {
     return n8->mapping[arr];
 }
 // 非线性变换
-uint32_t nonlinearU32(const Nonlinear32* n32, uint32_t arr) {
+static uint32_t nonlinearU32(const Nonlinear32* n32, uint32_t arr) {
     // 将 32 位数 arr 拆分成 4 个 8 位部分
     uint8_t byte1 = (arr >> 24) & 0xFF;  // 获取最高字节
     uint8_t byte2 = (arr >> 16) & 0xFF;  // 获取第二字节
@@ -161,7 +169,7 @@ uint32_t nonlinearU32(const Nonlinear32* n32, uint32_t arr) {
     return (new_byte1 << 24) | (new_byte2 << 16) | (new_byte3 << 8) | new_byte4;
 }
 
-M32 L_matrix = {
+static M32 L_matrix = {
     .M[0] = 0xA0202080,
     .M[1] = 0x50101040,
     .M[2] = 0x28080820,
@@ -195,15 +203,15 @@ M32 L_matrix = {
     .M[30] = 0x80808202,
     .M[31] = 0x40404101
 };
-void printstate(unsigned char* in)
-{
-    int i;
-    for (i = 0; i < 16; i++)
-    {
-        printf("%.2X", in[i]);
-    }
-    printf("\n");
-}    //十六进制转换，测试函数
+// static void printstate(unsigned char* in)
+// {
+//     int i;
+//     for (i = 0; i < 16; i++)
+//     {
+//         printf("%.2X", in[i]);
+//     }
+//     printf("\n");
+// }    //十六进制转换，测试函数
 
 static void wbsm4_gen_init(WB_SM4_Tables* tables) {
 
@@ -337,9 +345,6 @@ static void wbsm4_gen_part3(WB_SM4_Tables* tables) {
             }
         }
     }
-    //save_array_8bit("./tables/part3_table1.bin", (uint8_t*)part3_table1, 32 * 4 * 256);
-    //save_array_8bit("./tables/part3_table1_dec.bin", (uint8_t*)part3_table1_dec, 32 * 4 * 256);
-    //save_array_8bit("./tables/part3_table2.bin", (uint8_t*)part3_table2, 32 * 4 * 256);
 }
 //共32轮，每轮有4张输入16bit，输出8bit的查找表
 static void wbsm4_gen_part4_1(WB_SM4_Tables* tables) {

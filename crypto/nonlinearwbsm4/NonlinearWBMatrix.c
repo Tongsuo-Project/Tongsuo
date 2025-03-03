@@ -1,6 +1,6 @@
 #include "crypto/NonlinearWBMatrix.h"
-unsigned int m_index;
-unsigned int m_intermediateOffset;
+static unsigned int m_index;
+static unsigned int m_intermediateOffset;
 
 unsigned int permuteQPR(unsigned int x)
 {
@@ -18,13 +18,13 @@ void InitRandom(unsigned int seedBase)
     m_intermediateOffset = permuteQPR(permuteQPR(seedOffset) + 0x46790905);
 }
 
-unsigned int cus_random()
+unsigned int cus_random(void)
 {
     return permuteQPR((permuteQPR(m_index++) + m_intermediateOffset) ^ 0x5bf03635);
 }
-unsigned int randseed;
+static unsigned int randseed;
 //8bit internal xor table
-int xor [] = { 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0,
+static int xor [] = { 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0,
                1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0,
                1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0,
                1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0,
@@ -39,7 +39,7 @@ int xor [] = { 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0,
                1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0 };
 
 //8bit Hamming weight table
-int HW[] = { 0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2,
+static int HW[] = { 0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2,
              3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 1, 2, 2, 3, 2, 3, 3, 4, 2,
              3, 3, 4, 3, 4, 4, 5, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4,
              5, 5, 6, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 2,
@@ -53,29 +53,15 @@ int HW[] = { 0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2,
              6, 6, 7, 3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 4,
              5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8 };
 
-uint8_t idM4[4] = { 0x08, 0x04, 0x02, 0x01 };
-/*
-00001000
-00000100
-00000010
-00000001
-*/
+static uint8_t idM4[4] = { 0x08, 0x04, 0x02, 0x01 };
+
 //8×8的单位矩阵
-uint8_t idM8[8] = { 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
-/*
-10000000
-01000000
-00100000
-00010000
-00001000
-00000100
-00000010
-00000001
-*/
+static uint8_t idM8[8] = { 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
+
 //16×16的单位矩阵
-uint16_t idM16[16] = { 0x8000, 0x4000, 0x2000, 0x1000, 0x800, 0x400, 0x200, 0x100, 0x80, 0x40, 0x20, 0x10, 0x8, 0x4, 0x2, 0x1 };
-uint32_t idM32[32] = { 0x80000000, 0x40000000, 0x20000000, 0x10000000, 0x8000000, 0x4000000, 0x2000000, 0x1000000, 0x800000, 0x400000, 0x200000, 0x100000, 0x80000, 0x40000, 0x20000, 0x10000, 0x8000, 0x4000, 0x2000, 0x1000, 0x800, 0x400, 0x200, 0x100, 0x80, 0x40, 0x20, 0x10, 0x8, 0x4, 0x2, 0x1 };
-uint64_t idM64[64] = { 0x8000000000000000, 0x4000000000000000, 0x2000000000000000, 0x1000000000000000, 0x800000000000000, 0x400000000000000, 0x200000000000000, 0x100000000000000, 0x80000000000000, 0x40000000000000, 0x20000000000000, 0x10000000000000, 0x8000000000000, 0x4000000000000, 0x2000000000000, 0x1000000000000, 0x800000000000, 0x400000000000, 0x200000000000, 0x100000000000, 0x80000000000, 0x40000000000, 0x20000000000, 0x10000000000, 0x8000000000, 0x4000000000, 0x2000000000, 0x1000000000, 0x800000000, 0x400000000, 0x200000000, 0x100000000, \
+static uint16_t idM16[16] = { 0x8000, 0x4000, 0x2000, 0x1000, 0x800, 0x400, 0x200, 0x100, 0x80, 0x40, 0x20, 0x10, 0x8, 0x4, 0x2, 0x1 };
+static uint32_t idM32[32] = { 0x80000000, 0x40000000, 0x20000000, 0x10000000, 0x8000000, 0x4000000, 0x2000000, 0x1000000, 0x800000, 0x400000, 0x200000, 0x100000, 0x80000, 0x40000, 0x20000, 0x10000, 0x8000, 0x4000, 0x2000, 0x1000, 0x800, 0x400, 0x200, 0x100, 0x80, 0x40, 0x20, 0x10, 0x8, 0x4, 0x2, 0x1 };
+static uint64_t idM64[64] = { 0x8000000000000000, 0x4000000000000000, 0x2000000000000000, 0x1000000000000000, 0x800000000000000, 0x400000000000000, 0x200000000000000, 0x100000000000000, 0x80000000000000, 0x40000000000000, 0x20000000000000, 0x10000000000000, 0x8000000000000, 0x4000000000000, 0x2000000000000, 0x1000000000000, 0x800000000000, 0x400000000000, 0x200000000000, 0x100000000000, 0x80000000000, 0x40000000000, 0x20000000000, 0x10000000000, 0x8000000000, 0x4000000000, 0x2000000000, 0x1000000000, 0x800000000, 0x400000000, 0x200000000, 0x100000000, \
                         0x80000000, 0x40000000, 0x20000000, 0x10000000, 0x8000000, 0x4000000, 0x2000000, 0x1000000, 0x800000, 0x400000, 0x200000, 0x100000, 0x80000, 0x40000, 0x20000, 0x10000, 0x8000, 0x4000, 0x2000, 0x1000, 0x800, 0x400, 0x200, 0x100, 0x80, 0x40, 0x20, 0x10, 0x8, 0x4, 0x2, 0x1 };
 
 void SetRandSeed(unsigned int seed)
@@ -1787,7 +1773,7 @@ void MatMulVecM128(M128 Mat, V128 Vec, V128* ans)//matrix * vector -> vector 128
 void genMatpairM4(M4* Mat, M4* Mat_inv)//generate 4*4 invertible matrix and its inverse matrix
 {
     int i, j, t, k;
-    int p, q;
+    int p;
     M4 tempMat;
     M4 resultMat;
     uint8_t temp;
@@ -1944,7 +1930,7 @@ void genMatpairM4(M4* Mat, M4* Mat_inv)//generate 4*4 invertible matrix and its 
 void genMatpairM8(M8* Mat, M8* Mat_inv)//generate 8*8 invertible matrix and its inverse matrix
 {
     int i, j, t, k;
-    int p, q;
+    int p;
     M8 tempMat;
     M8 resultMat;
     uint8_t temp;
@@ -2101,7 +2087,7 @@ void genMatpairM8(M8* Mat, M8* Mat_inv)//generate 8*8 invertible matrix and its 
 void genMatpairM16(M16* Mat, M16* Mat_inv)//generate 16*16 invertible matrix and its inverse matrix
 {
     int i, j, t, k;
-    int p, q;
+    int p;
     M16 tempMat;
     M16 resultMat;
     uint16_t temp;
@@ -2258,7 +2244,7 @@ void genMatpairM16(M16* Mat, M16* Mat_inv)//generate 16*16 invertible matrix and
 void genMatpairM32(M32* Mat, M32* Mat_inv)//generate 32*32 invertible matrix and its inverse matrix
 {
     int i, j, t, k;
-    int p, q;
+    int p;
     M32 tempMat;
     M32 resultMat;
     uint32_t temp;
@@ -2415,7 +2401,7 @@ void genMatpairM32(M32* Mat, M32* Mat_inv)//generate 32*32 invertible matrix and
 void genMatpairM64(M64* Mat, M64* Mat_inv)//generate 64*64 invertible matrix and its inverse matrix
 {
     int i, j, t, k;
-    int p, q;
+    int p;
     M64 tempMat;
     M64 resultMat;
     uint64_t temp;
@@ -2572,7 +2558,7 @@ void genMatpairM64(M64* Mat, M64* Mat_inv)//generate 64*64 invertible matrix and
 void genMatpairM128(M128* Mat, M128* Mat_inv)//generate 128*128 invertible matrix and its inverse matrix
 {
     int i, j, t, k;
-    int p, q;
+    int p;
     M128 tempMat;
     M128 resultMat;
     uint64_t temp;
