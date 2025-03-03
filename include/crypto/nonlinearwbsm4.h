@@ -40,4 +40,4 @@ void Nonlinearwbsm4_encrypt(const unsigned char IN[16], unsigned char OUT[16], c
 // 白盒加密核心接口
 void Nonlinearwbsm4_decrypt(const unsigned char IN[16], unsigned char OUT[16], const WB_SM4_Tables* tables);
 //释放内存
-void Nonlinearwbsm4_free_tables(WB_SM4_Tables* tables); //
+void Nonlinearwbsm4_free_tables(WB_SM4_Tables* tables); 

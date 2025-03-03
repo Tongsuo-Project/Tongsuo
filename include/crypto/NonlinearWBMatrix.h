@@ -7,7 +7,7 @@
 #include <stdio.h>
 unsigned int permuteQPR(unsigned int x);
 void InitRandom(unsigned int seedBase);
-unsigned int cus_random();
+unsigned int cus_random(void);
 typedef struct Nonlinear8 {
     uint8_t mapping[256];
 } Nonlinear8;
