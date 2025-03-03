@@ -284,11 +284,13 @@ int X509_STORE_copy(X509_STORE *dest, const X509_STORE *src)
         for (i = 0; i < num; i++) {
             obj = sk_X509_OBJECT_value(src->objs, i);
             if (obj->type == X509_LU_X509) {
-                X509_STORE_add_cert(dest, obj->data.x509);
+                if (!X509_STORE_add_cert(dest, obj->data.x509))
+                    return 0;
             } else if (obj->type == X509_LU_CRL) {
-                X509_STORE_add_crl(dest, obj->data.crl);
+                if (!X509_STORE_add_crl(dest, obj->data.crl))
+                    return 0;
             } else {
-                /* abort(); */
+                return 0;
             }
         }
     }

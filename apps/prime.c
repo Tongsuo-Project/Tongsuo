@@ -50,7 +50,7 @@ int prime_main(int argc, char **argv)
     prog = opt_init(argc, argv, prime_options);
     while ((o = opt_next()) != OPT_EOF) {
         switch (o) {
-        case OPT_EOF:
+        default:
         case OPT_ERR:
 opthelp:
             BIO_printf(bio_err, "%s: Use -help for summary.\n", prog);

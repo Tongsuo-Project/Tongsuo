@@ -172,6 +172,7 @@ bp_inner_product_proof_t *bp_inner_product_proof_new(bp_inner_product_ctx_t *ctx
 
     if (ctx == NULL || ctx->pp == NULL) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_PASSED_NULL_PARAMETER);
+        return NULL;
     }
 
     n = sk_EC_POINT_num(ctx->pp->sk_G);
@@ -531,7 +532,7 @@ int bp_inner_product_proof_verify(bp_inner_product_ctx_t *ctx,
     proof_num = sk_EC_POINT_num(proof->sk_L);
     n = 2 * proof_num  + 2 * pp_num + 1;
 
-    if (!(vec_x = OPENSSL_zalloc(proof_num * sizeof(*vec_x)))
+    if (proof_num < 0 || !(vec_x = OPENSSL_zalloc(proof_num * sizeof(*vec_x)))
         || !(vec_x_inv = OPENSSL_zalloc(proof_num * sizeof(*vec_x_inv)))) {
         ERR_raise(ERR_LIB_ZKP_BP, ERR_R_MALLOC_FAILURE);
         goto end;
