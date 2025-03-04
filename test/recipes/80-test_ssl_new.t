@@ -124,6 +124,12 @@ my %skip = (
                          || disabled("sm3") || disabled("sm4"),
 );
 
+if (!disabled("delegated-credential")) {
+    run(perltest(["run_tests.pl", "test_dc_sign"],
+        interpreter_args => [ "-I", srctop_dir("util", "perl")],
+        stdout => devnull()));
+}
+
 foreach my $conf (@conf_files) {
     subtest "Test configuration $conf" => sub {
         test_conf($conf,
@@ -163,12 +169,6 @@ sub test_conf {
       # Test 3. Run the test.
       skip "No tests available; skipping tests", 1 if $skip;
       skip "Stale sources; skipping tests", 1 if !$run_test;
-
-      if ($conf eq "38-delegated-credential.conf") {
-          run(perltest(["run_tests.pl", "test_dc_sign"],
-                       interpreter_args => [ "-I", srctop_dir("util", "perl")],
-                       stdout => devnull()));
-      }
 
       ok(run(test(["ssl_test", $tmp_file])), "running ssl_test $conf");
     }
