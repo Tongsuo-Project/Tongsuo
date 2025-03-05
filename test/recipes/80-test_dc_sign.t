@@ -23,6 +23,12 @@ plan skip_all => "dc_sign is not supported by this OpenSSL build"
 plan tests => 22;
 
 my $CERTS_D = getcwd();
+
+if (defined($ENV{TEST_RUNS_DIR})) {
+    $CERTS_D = $ENV{TEST_RUNS_DIR};
+    chdir($CERTS_D) or die "chdir $CERTS_D: $!\n";
+}
+
 my $DC_D = catdir($CERTS_D, "dc");
 my $CA_D = catdir($CERTS_D, "ca");
 my $SUBCA_D = catdir($CERTS_D, "subca");

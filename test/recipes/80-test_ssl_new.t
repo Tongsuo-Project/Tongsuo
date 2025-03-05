@@ -27,7 +27,7 @@ use lib bldtop_dir('.');
 my $no_fips = disabled('fips') || ($ENV{NO_FIPS} // 0);
 
 $ENV{TEST_CERTS_DIR} = srctop_dir("test", "certs");
-$ENV{TEST_RUNS_DIR} = catdir(result_dir(), "..", "test_dc_sign");
+$ENV{TEST_RUNS_DIR} = catdir(result_dir(), "..", "test_ssl_new");
 
 my @conf_srcs =  glob(srctop_file("test", "ssl-tests", "*.cnf.in"));
 my @conf_files = map { basename($_, ".in") } @conf_srcs;
@@ -120,6 +120,12 @@ my %skip = (
   "38-delegated-credential.cnf" => disabled("delegated-credential"),
 );
 
+if (!disabled("delegated-credential")) {
+    run(perltest(["run_tests.pl", "test_dc_sign"],
+        interpreter_args => [ "-I", srctop_dir("util", "perl")],
+        stdout => devnull()));
+}
+
 foreach my $conf (@conf_files) {
     subtest "Test configuration $conf" => sub {
         plan tests => 6 + ($no_fips ? 0 : 3);
@@ -166,12 +172,6 @@ sub test_conf {
       # Test 3. Run the test.
       skip "No tests available; skipping tests", 1 if $skip;
       skip "Stale sources; skipping tests", 1 if !$run_test;
-
-      if ($conf eq "38-delegated-credential.cnf") {
-          run(perltest(["run_tests.pl", "test_dc_sign"],
-              interpreter_args => [ "-I", srctop_dir("util", "perl")],
-              stdout => devnull()));
-      }
 
       if ($provider eq "fips") {
           ok(run(test(["ssl_test", $output_file, $provider,
