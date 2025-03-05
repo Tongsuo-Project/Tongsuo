@@ -5,6 +5,7 @@ use File::Path 2.00 qw/rmtree/;
 use OpenSSL::Test qw/:DEFAULT data_file/;
 use OpenSSL::Test::Utils;
 use File::Spec::Functions qw/catfile catdir/;
+use Cwd qw/getcwd/;
 
 setup("test_dc_sign");
 
@@ -16,9 +17,16 @@ plan skip_all => "sign dc use ecc certs but no-ec"
 
 plan tests => 22;
 
-my $DCDIR = catdir(".", "dc");
-my $CADIR = catdir(".", "ca");
-my $SUBCADIR = catdir(".", "subca");
+my $CERTS_D = getcwd();
+
+if (defined($ENV{TEST_RUNS_DIR})) {
+    $CERTS_D = $ENV{TEST_RUNS_DIR};
+    chdir($CERTS_D) or die "chdir $CERTS_D: $!\n";
+}
+
+my $DCDIR = catdir($CERTS_D, "dc");
+my $CADIR = catdir($CERTS_D, "ca");
+my $SUBCADIR = catdir($CERTS_D, "subca");
 
 rmtree(${DCDIR}, { safe => 0 });
 rmtree(${CADIR}, { safe => 0 });
