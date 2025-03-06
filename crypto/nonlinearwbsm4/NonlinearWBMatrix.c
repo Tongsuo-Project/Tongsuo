@@ -25,33 +25,33 @@ unsigned int cus_random(void)
 static unsigned int randseed;
 //8bit internal xor table
 static int xor [] = { 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0,
-               1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0,
-               1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0,
-               1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0,
-               1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1,
-               0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0,
-               1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1,
-               0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0,
-               1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0,
-               1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1,
-               0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1,
-               0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0,
-               1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0 };
+                      1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0,
+                      1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0,
+                      1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0,
+                      1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1,
+                      0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0,
+                      1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1,
+                      0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0,
+                      1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0,
+                      1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1,
+                      0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1,
+                      0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0,
+                      1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0 };
 
 //8bit Hamming weight table
 static int HW[] = { 0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2,
-             3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 1, 2, 2, 3, 2, 3, 3, 4, 2,
-             3, 3, 4, 3, 4, 4, 5, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4,
-             5, 5, 6, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 2,
-             3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 2, 3, 3, 4, 3,
-             4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 3, 4, 4, 5, 4, 5, 5, 6, 4,
-             5, 5, 6, 5, 6, 6, 7, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3,
-             4, 4, 5, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 2,
-             3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 3, 4, 4, 5, 4,
-             5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 2, 3, 3, 4, 3, 4, 4, 5, 3,
-             4, 4, 5, 4, 5, 5, 6, 3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5,
-             6, 6, 7, 3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 4,
-             5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8 };
+                    3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 1, 2, 2, 3, 2, 3, 3, 4, 2,
+                    3, 3, 4, 3, 4, 4, 5, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4,
+                    5, 5, 6, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 2,
+                    3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 2, 3, 3, 4, 3,
+                    4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 3, 4, 4, 5, 4, 5, 5, 6, 4,
+                    5, 5, 6, 5, 6, 6, 7, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3,
+                    4, 4, 5, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 2,
+                    3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 3, 4, 4, 5, 4,
+                    5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 2, 3, 3, 4, 3, 4, 4, 5, 3,
+                    4, 4, 5, 4, 5, 5, 6, 3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5,
+                    6, 6, 7, 3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 4,
+                    5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8 };
 
 static uint8_t idM4[4] = { 0x08, 0x04, 0x02, 0x01 };
 
@@ -64,10 +64,7 @@ static uint32_t idM32[32] = { 0x80000000, 0x40000000, 0x20000000, 0x10000000, 0x
 static uint64_t idM64[64] = { 0x8000000000000000, 0x4000000000000000, 0x2000000000000000, 0x1000000000000000, 0x800000000000000, 0x400000000000000, 0x200000000000000, 0x100000000000000, 0x80000000000000, 0x40000000000000, 0x20000000000000, 0x10000000000000, 0x8000000000000, 0x4000000000000, 0x2000000000000, 0x1000000000000, 0x800000000000, 0x400000000000, 0x200000000000, 0x100000000000, 0x80000000000, 0x40000000000, 0x20000000000, 0x10000000000, 0x8000000000, 0x4000000000, 0x2000000000, 0x1000000000, 0x800000000, 0x400000000, 0x200000000, 0x100000000, \
                         0x80000000, 0x40000000, 0x20000000, 0x10000000, 0x8000000, 0x4000000, 0x2000000, 0x1000000, 0x800000, 0x400000, 0x200000, 0x100000, 0x80000, 0x40000, 0x20000, 0x10000, 0x8000, 0x4000, 0x2000, 0x1000, 0x800, 0x400, 0x200, 0x100, 0x80, 0x40, 0x20, 0x10, 0x8, 0x4, 0x2, 0x1 };
 
-void SetRandSeed(unsigned int seed)
-{
-    randseed = seed;
-}
+
 //初始化一个4x4的矩阵，将矩阵的所有元素设为0
 void initM4(M4* Mat)//initial Matrix 4*4
 {
@@ -307,80 +304,6 @@ void randV128(V128* Vec)//randomize Vector 128*1
     *(v + 1) = cus_random();
     *v = cus_random();
 }
-void printM4(M4 Mat)//printf Matrix 4*4
-{
-    int i;
-    for (i = 0; i < 4; i++)
-    {
-        printf("0x%x\n", Mat.M[i]);
-    }
-}
-void printM8(M8 Mat)//printf Matrix 8*8
-{
-    int i;
-    for (i = 0; i < 8; i++)
-    {
-        printf("0x%x\n", Mat.M[i]);
-    }
-}
-void printM16(M16 Mat)//printf Matrix 16*16
-{
-    int i;
-    for (i = 0; i < 16; i++)
-    {
-        printf("0x%x\n", Mat.M[i]);
-    }
-}
-void printM32(M32 Mat)//printf Matrix 32*32
-{
-    int i;
-    for (i = 0; i < 32; i++)
-    {
-        printf("0x%x\n", Mat.M[i]);
-    }
-}
-void printM64(M64 Mat)//printf Matrix 64*64
-{
-    int i;
-    for (i = 0; i < 64; i++)
-    {
-        printf("0x%lx\n", Mat.M[i]);
-    }
-}
-void printM128(M128 Mat)//printf Matrix 128*128
-{
-    int i;
-    for (i = 0; i < 128; i++)
-    {
-        printf("0x%lx ", Mat.M[i][0]);
-        printf("0x%lx\n", Mat.M[i][1]);
-    }
-}
-void printV4(V4 Vec)//printf Vector 4*1
-{
-    printf("0x%x\n", Vec.V);
-}
-void printV8(V8 Vec)//printf Vector 8*1
-{
-    printf("0x%x\n", Vec.V);
-}
-void printV16(V16 Vec)//printf Vector 16*1
-{
-    printf("0x%x\n", Vec.V);
-}
-void printV32(V32 Vec)//printf Vector 32*1
-{
-    printf("0x%x\n", Vec.V);
-}
-void printV64(V64 Vec)//printf Vector 64*1
-{
-    printf("0x%lx\n", Vec.V);
-}
-void printV128(V128 Vec)//printf Vector 128*1
-{
-    printf("0x%lx ", Vec.V[0]);
-    printf("0x%lx\n", Vec.V[1]);
-}
 void copyM4(M4 Mat1, M4* Mat2)
 {
     int i;
@@ -429,132 +352,6 @@ void copyM128(M128 Mat1, M128* Mat2)
         (*Mat2).M[i][0] = Mat1.M[i][0];
         (*Mat2).M[i][1] = Mat1.M[i][1];
     }
-}
-int isequalM4(M4 Mat1, M4 Mat2)
-{
-    int i;
-    int flag = 1;
-    for (i = 0; i < 4; i++)
-    {
-        if (Mat1.M[i] != Mat2.M[i])
-        {
-            flag = 0;
-            break;
-        }
-    }
-    return flag;
-}
-int isequalM8(M8 Mat1, M8 Mat2)
-{
-    int i;
-    int flag = 1;
-    for (i = 0; i < 8; i++)
-    {
-        if (Mat1.M[i] != Mat2.M[i])
-        {
-            flag = 0;
-            break;
-        }
-    }
-    return flag;
-}
-int isequalM16(M16 Mat1, M16 Mat2)
-{
-    int i;
-    int flag = 1;
-    for (i = 0; i < 16; i++)
-    {
-        if (Mat1.M[i] != Mat2.M[i])
-        {
-            flag = 0;
-            break;
-        }
-    }
-    return flag;
-}
-int isequalM32(M32 Mat1, M32 Mat2)
-{
-    int i;
-    int flag = 1;
-    for (i = 0; i < 32; i++)
-    {
-        if (Mat1.M[i] != Mat2.M[i])
-        {
-            flag = 0;
-            break;
-        }
-    }
-    return flag;
-}
-int isequalM64(M64 Mat1, M64 Mat2)
-{
-    int i;
-    int flag = 1;
-    for (i = 0; i < 64; i++)
-    {
-        if (Mat1.M[i] != Mat2.M[i])
-        {
-            flag = 0;
-            break;
-        }
-    }
-    return flag;
-}
-int isequalM128(M128 Mat1, M128 Mat2)
-{
-    int i;
-    int flag = 1;
-    for (i = 0; i < 128; i++)
-    {
-        if (Mat1.M[i][0] != Mat2.M[i][0])
-        {
-            flag = 0;
-            break;
-        }
-        if (Mat1.M[i][1] != Mat2.M[i][1])
-        {
-            flag = 0;
-            break;
-        }
-    }
-    return flag;
-}
-int isequalV4(V4 Vec1, V4 Vec2)
-{
-    int flag = 1;
-    if (Vec1.V != Vec2.V) flag = 0;
-    return flag;
-}
-int isequalV8(V8 Vec1, V8 Vec2)
-{
-    int flag = 1;
-    if (Vec1.V != Vec2.V) flag = 0;
-    return flag;
-}
-int isequalV16(V16 Vec1, V16 Vec2)
-{
-    int flag = 1;
-    if (Vec1.V != Vec2.V) flag = 0;
-    return flag;
-}
-int isequalV32(V32 Vec1, V32 Vec2)
-{
-    int flag = 1;
-    if (Vec1.V != Vec2.V) flag = 0;
-    return flag;
-}
-int isequalV64(V64 Vec1, V64 Vec2)
-{
-    int flag = 1;
-    if (Vec1.V != Vec2.V) flag = 0;
-    return flag;
-}
-int isequalV128(V128 Vec1, V128 Vec2)
-{
-    int flag = 1;
-    if (Vec1.V[0] != Vec2.V[0]) flag = 0;
-    if (Vec1.V[1] != Vec2.V[1]) flag = 0;
-    return flag;
 }
 //读取矩阵中特定位置的位值（0或1）(i,j)
 int readbitM4(M4 Mat, int i, int j)//read one bit in a matrix, i in n rows, j in n columns, i,j: 0-3
@@ -626,42 +423,7 @@ void flipbitM128(M128* Mat, int i, int j)//flip (i, j) bit in a matrix
         (*Mat).M[i][1] ^= idM64[j - 64];
     }
 }
-//设置 4x4 矩阵中指定行 i 和列 j 的位为给定的值 bit（0 或 1）
-void setbitM4(M4* Mat, int i, int j, int bit)//set (i, j) bit in a matrix, bit = 0/1
-{
-    if (readbitM4(*Mat, i, j) == bit) {
-        return;
-    }
-    else
-    {
-        flipbitM4(Mat, i, j);
-    }
-}
-void setbitM8(M8* Mat, int i, int j, int bit)//set (i, j) bit in a matrix, bit = 0/1
-{
-    if (readbitM8(*Mat, i, j) == bit) return;
-    else flipbitM8(Mat, i, j);
-}
-void setbitM16(M16* Mat, int i, int j, int bit)//set (i, j) bit in a matrix, bit = 0/1
-{
-    if (readbitM16(*Mat, i, j) == bit) return;
-    else flipbitM16(Mat, i, j);
-}
-void setbitM32(M32* Mat, int i, int j, int bit)//set (i, j) bit in a matrix, bit = 0/1
-{
-    if (readbitM32(*Mat, i, j) == bit) return;
-    else flipbitM32(Mat, i, j);
-}
-void setbitM64(M64* Mat, int i, int j, int bit)//set (i, j) bit in a matrix, bit = 0/1
-{
-    if (readbitM64(*Mat, i, j) == bit) return;
-    else flipbitM64(Mat, i, j);
-}
-void setbitM128(M128* Mat, int i, int j, int bit)//set (i, j) bit in a matrix, bit = 0/1
-{
-    if (readbitM128(*Mat, i, j) == bit) return;
-    else flipbitM128(Mat, i, j);
-}
+
 //检查一个 4x4 的矩阵是否可逆。该函数采用的是高斯消元法的一种变形，适用于二进制矩阵（即每个元素的值仅为 0 或 1）。
 int isinvertM4(M4 Mat)//Invertible Matrix?
 {
@@ -1493,136 +1255,6 @@ int HWU64(uint64_t n)// uint64_t HW
 int HWU128(uint64_t n[])// uint128_t HW
 {
     return HWU64(n[0]) + HWU64(n[1]);
-}
-void printU8(uint8_t n)//printf uint8_t
-{
-    printf("0x%x\n", n);
-}
-void printU16(uint16_t n)//printf uint16_t
-{
-    printf("0x%x\n", n);
-}
-void printU32(uint32_t n)//printf uint32_t
-{
-    printf("0x%x\n", n);
-}
-void printU64(uint64_t n)//printf uint64_t
-{
-    printf("0x%lx\n", n);
-}
-void printU128(uint64_t n[])//printf uint128_t
-{
-    printf("0x%lx ", n[0]);
-    printf("0x%lx\n", n[1]);
-}
-void printbitM4(M4 Mat)//printf Matrix 4*4 in the form of bits
-{
-    int i, j;
-    uint8_t temp;
-    for (i = 0; i < 4; i++)
-    {
-        temp = Mat.M[i];
-        for (j = 0; j < 4; j++)
-        {
-            if (temp & 0x08) printf("%d ", 1);
-            else printf("%d ", 0);
-            temp = temp << 1;
-        }
-        printf("\n");
-    }
-    printf("\n");
-}
-void printbitM8(M8 Mat)//printf Matrix 8*8 in the form of bits
-{
-    int i, j;
-    uint8_t temp;
-    for (i = 0; i < 8; i++)
-    {
-        temp = Mat.M[i];
-        for (j = 0; j < 8; j++)
-        {
-            if (temp & 0x80) printf("%d ", 1);
-            else printf("%d ", 0);
-            temp = temp << 1;
-        }
-        printf("\n");
-    }
-    printf("\n");
-}
-void printbitM16(M16 Mat)//printf Matrix 16*16 in the form of bits
-{
-    int i, j;
-    uint16_t temp;
-    for (i = 0; i < 16; i++)
-    {
-        temp = Mat.M[i];
-        for (j = 0; j < 16; j++)
-        {
-            if (temp & 0x8000) printf("%d ", 1);
-            else printf("%d ", 0);
-            temp = temp << 1;
-        }
-        printf("\n");
-    }
-    printf("\n");
-}
-void printbitM32(M32 Mat)//printf Matrix 32*32 in the form of bits
-{
-    int i, j;
-    uint32_t temp;
-    for (i = 0; i < 32; i++)
-    {
-        temp = Mat.M[i];
-        for (j = 0; j < 32; j++)
-        {
-            if (temp & 0x80000000) printf("%d ", 1);
-            else printf("%d ", 0);
-            temp = temp << 1;
-        }
-        printf("\n");
-    }
-    printf("\n");
-}
-void printbitM64(M64 Mat)//printf Matrix 64*64 in the form of bits
-{
-    int i, j;
-    uint64_t temp;
-    for (i = 0; i < 64; i++)
-    {
-        temp = Mat.M[i];
-        for (j = 0; j < 64; j++)
-        {
-            if (temp & 0x8000000000000000) printf("%d ", 1);
-            else printf("%d ", 0);
-            temp = temp << 1;
-        }
-        printf("\n");
-    }
-    printf("\n");
-}
-void printbitM128(M128 Mat)//printf Matrix 128*128 in the form of bits
-{
-    int i, j;
-    uint64_t temp;
-    for (i = 0; i < 128; i++)
-    {
-        temp = Mat.M[i][0];
-        for (j = 0; j < 64; j++)
-        {
-            if (temp & 0x8000000000000000) printf("%d ", 1);
-            else printf("%d ", 0);
-            temp = temp << 1;
-        }
-        temp = Mat.M[i][1];
-        for (j = 0; j < 64; j++)
-        {
-            if (temp & 0x8000000000000000) printf("%d ", 1);
-            else printf("%d ", 0);
-            temp = temp << 1;
-        }
-        printf("\n");
-    }
-    printf("\n");
 }
 void VecAddVecV4(V4 Vec1, V4 Vec2, V4* Vec)
 {
