@@ -79,7 +79,7 @@ EVP_KDF_CTX *EVP_KDF_CTX_new_id(int id)
         return NULL;
     }
 
-    if (kmeth->new != NULL && (ret->impl = kmeth->new()) == NULL) {
+    if (kmeth->new_impl != NULL && (ret->impl = kmeth->new_impl()) == NULL) {
         EVP_KDF_CTX_free(ret);
         return NULL;
     }
