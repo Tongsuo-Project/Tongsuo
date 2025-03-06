@@ -1,8 +1,8 @@
 #include <string.h>
 #include <openssl/opensslconf.h>
 #include "testutil.h"
+#if !defined(OPENSSL_NO_SM4) && !defined(OPENSSL_NO_NONLINEARWBSM4)
 #include "crypto/nonlinearwbsm4.h" 
-#ifndef OPENSSL_NO_SM4
 static int test_nonlinearwbsm4(void)
 {
     /* 测试密钥 */
@@ -29,10 +29,9 @@ static int test_nonlinearwbsm4(void)
     int ret = 0;
 
     /* 分配白盒表内存 */
-    tables = malloc(sizeof(WB_SM4_Tables));
+    tables = calloc(1, sizeof(WB_SM4_Tables));
     if (!TEST_ptr(tables))
         goto err;
-    memset(tables, 0, sizeof(WB_SM4_Tables));
 
     /* 生成白盒密码表 */
     Nonlinearwbsm4_generate_tables(k, tables);
@@ -56,7 +55,7 @@ err:
 
 int setup_tests(void)
 {
-#ifndef OPENSSL_NO_NONLINEARWBSM4
+#if !defined(OPENSSL_NO_SM4) && !defined(OPENSSL_NO_NONLINEARWBSM4)
     ADD_TEST(test_nonlinearwbsm4);
 #endif
     return 1;

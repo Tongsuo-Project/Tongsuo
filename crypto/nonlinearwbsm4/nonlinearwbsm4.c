@@ -108,15 +108,14 @@ static void genNonlinearPair(Nonlinear8* nl, Nonlinear8* nl_inv);
 static void nonlinearCom8to32(Nonlinear8 n1, Nonlinear8 n2, Nonlinear8 n3, Nonlinear8 n4, Nonlinear32* res);
 static uint8_t nonlinearU8(Nonlinear8* n8, uint8_t arr);
 static uint32_t nonlinearU32(const Nonlinear32* n32, uint32_t arr);
-// static void printstate(unsigned char* in);
 
-// 交换函数，用于打乱 S 盒
+/*交换函数，用于打乱 S 盒 */
 static void swap(uint8_t* a, uint8_t* b) {
     uint8_t temp = *a;
     *a = *b;
     *b = temp;
 }
-// 生成 S 盒
+/* 生成 S 盒  */
 static void generate_S_box_and_inverse(uint8_t* mapping) {
     // 初始化 S 盒为单位置换
     for (int i = 0; i < 256; i++) {
@@ -203,15 +202,15 @@ static M32 L_matrix = {
     .M[30] = 0x80808202,
     .M[31] = 0x40404101
 };
-// static void printstate(unsigned char* in)
-// {
-//     int i;
-//     for (i = 0; i < 16; i++)
-//     {
-//         printf("%.2X", in[i]);
-//     }
-//     printf("\n");
-// }    //十六进制转换，测试函数
+/* static void printstate(unsigned char* in)
+ {
+     int i;
+     for (i = 0; i < 16; i++)
+     {
+         printf("%.2X", in[i]);
+    }
+    printf("\n");
+ }    //十六进制转换，测试函数*/
 
 static void wbsm4_gen_init(WB_SM4_Tables* tables) {
 
