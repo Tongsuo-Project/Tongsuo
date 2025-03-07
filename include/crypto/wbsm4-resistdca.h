@@ -88,7 +88,7 @@ static const unsigned long CK[32] =
 
 unsigned int permuteQPR(unsigned int x);
 void InitRandom(unsigned int seedBase);
-unsigned int cus_random();
+unsigned int cus_random(void);
 void Gen_BytePer(uint8_t *permu, uint8_t *inver);
 
 static unsigned char sm4Sbox(unsigned char inch);
