@@ -43,6 +43,9 @@ typedef struct
 
 }WBLUT;
 
+extern unsigned int m_index;
+extern unsigned int m_intermediateOffset;
+extern unsigned int randseed;
 
 typedef struct
 {
