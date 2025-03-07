@@ -57,6 +57,8 @@
   "C_Cpp_Runner.useLinkTimeOptimization": false,
   "C_Cpp_Runner.msvcSecureNoWarnings": false,
   "files.associations": {
-    "nonlinearwbmatrix.h": "c"
+    "nonlinearwbmatrix.h": "c",
+    "opensslconf.h": "c",
+    "nonlinearwbsm4.h": "c"
   }
 }

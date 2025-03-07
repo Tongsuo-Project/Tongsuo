@@ -1,8 +1,11 @@
 #include <stdint.h> 
 #ifndef NONLINEARWBSM4_NONLINEARWBSM4_H
 #define NONLINEARWBSM4_NONLINEARWBSM4_H
-#if !defined(OPENSSL_NO_SM4) && !defined(OPENSSL_NO_NONLINEARWBSM4)
+# ifdef OPENSSL_NO_NONLINEARWBSM4
+#  error NONLINEARWBSM4 is disabled.
+# endif
 #include "NonlinearWBMatrix.h"
+
 /* 定义查找表数据结构 */
 typedef struct {
     /* Part1 Tables*/
@@ -38,5 +41,4 @@ void Nonlinearwbsm4_encrypt(const unsigned char IN[16], unsigned char OUT[16], c
 void Nonlinearwbsm4_decrypt(const unsigned char IN[16], unsigned char OUT[16], const WB_SM4_Tables* tables);
 /*释放内存*/
 void Nonlinearwbsm4_free_tables(WB_SM4_Tables* tables); 
-#endif
 #endif 
