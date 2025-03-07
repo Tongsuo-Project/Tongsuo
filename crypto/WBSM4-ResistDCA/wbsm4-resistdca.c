@@ -151,7 +151,7 @@ void InitRandom(unsigned int seedBase)
     m_intermediateOffset = permuteQPR(permuteQPR(seedOffset) + 0x46790905);
 }
 
-unsigned int cus_random()
+unsigned int cus_random(void)
 {
     return permuteQPR((permuteQPR(m_index++) + m_intermediateOffset) ^ 0x5bf03635);
 }
