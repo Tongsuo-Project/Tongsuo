@@ -91,14 +91,14 @@ void InitRandom(unsigned int seedBase);
 unsigned int cus_random(void);
 void Gen_BytePer(uint8_t *permu, uint8_t *inver);
 
-static unsigned char sm4Sbox(unsigned char inch);
-static unsigned long sm4CalciRK(unsigned long ka);
-static void sm4_setkey( unsigned long SK[32], unsigned char key[16] );
+unsigned char sm4Sbox(unsigned char inch);
+unsigned long sm4CalciRK(unsigned long ka);
+void sm4_setkey( unsigned long SK[32], unsigned char key[16] );
 void sm4_setkey_enc( sm4_context *ctx, unsigned char key[16] );
 
-static unsigned long sm4Lt(unsigned long ka);
-static unsigned long sm4F(unsigned long x0, unsigned long x1, unsigned long x2, unsigned long x3, unsigned long rk);
-static void sm4_one_round( unsigned long sk[32],
+unsigned long sm4Lt(unsigned long ka);
+unsigned long sm4F(unsigned long x0, unsigned long x1, unsigned long x2, unsigned long x3, unsigned long rk);
+void sm4_one_round( unsigned long sk[32],
     unsigned char input[16],
     unsigned char output[16] );
 
