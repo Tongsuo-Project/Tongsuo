@@ -1,4 +1,4 @@
-#include "wbsm4.h"
+#include "crypto/wbsm4-resistdca.h"
 
 M32 L_matrix = {
     .M[0] = 0xA0202080, 
