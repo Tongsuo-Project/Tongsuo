@@ -1,5 +1,6 @@
 #include "crypto/nonlinearwbsm4.h"
 #include <string.h> 
+#if !defined(OPENSSL_NO_SM4)
 #include "crypto/sm4.h"
 
 static uint8_t  SBOX[256] = {
@@ -117,12 +118,12 @@ static void swap(uint8_t* a, uint8_t* b) {
 }
 /* 生成 S 盒  */
 static void generate_S_box_and_inverse(uint8_t* mapping) {
-    // 初始化 S 盒为单位置换
+    /*初始化 S 盒为单位置换*/
     for (int i = 0; i < 256; i++) {
         mapping[i] = i;
     }
 
-    // 使用 srand 初始化随机数生成器，仅初始化一次
+     /*使用 srand 初始化随机数生成器，仅初始化一次*/
     static int initialized = 0;
     if (!initialized) {
         srand((unsigned int)time(NULL));
@@ -134,7 +135,7 @@ static void generate_S_box_and_inverse(uint8_t* mapping) {
     }
 }
 
-// 生成非线性双射对
+ /*生成非线性双射对*/
 static void genNonlinearPair(Nonlinear8* nl, Nonlinear8* nl_inv) {
     generate_S_box_and_inverse(nl->mapping);
     for (int i = 0; i < 256; i++) {
@@ -152,55 +153,55 @@ static void nonlinearCom8to32(Nonlinear8 n1, Nonlinear8 n2, Nonlinear8 n3, Nonli
 static uint8_t nonlinearU8(Nonlinear8* n8, uint8_t arr) {
     return n8->mapping[arr];
 }
-// 非线性变换
+ /*非线性变换*/
 static uint32_t nonlinearU32(const Nonlinear32* n32, uint32_t arr) {
-    // 将 32 位数 arr 拆分成 4 个 8 位部分
-    uint8_t byte1 = (arr >> 24) & 0xFF;  // 获取最高字节
-    uint8_t byte2 = (arr >> 16) & 0xFF;  // 获取第二字节
-    uint8_t byte3 = (arr >> 8) & 0xFF;   // 获取第三字节
-    uint8_t byte4 = arr & 0xFF;          // 获取最低字节
-    // 使用 Nonlinear32 中的映射计算每个字节的新值
-    uint8_t new_byte1 = n32->n8_1.mapping[byte1];  // 使用 n8_1.mapping 进行 8 位映射
-    uint8_t new_byte2 = n32->n8_2.mapping[byte2];  // 使用 n8_2.mapping 进行 8 位映射
-    uint8_t new_byte3 = n32->n8_3.mapping[byte3];  // 使用 n8_3.mapping 进行 8 位映射
-    uint8_t new_byte4 = n32->n8_4.mapping[byte4];  // 使用 n8_4.mapping 进行 8 位映射
-    // 重新拼接 4 个字节，形成一个新的 32 位数
+
+    uint8_t byte1 = (arr >> 24) & 0xFF;  
+    uint8_t byte2 = (arr >> 16) & 0xFF;  
+    uint8_t byte3 = (arr >> 8) & 0xFF;   
+    uint8_t byte4 = arr & 0xFF;          
+    /*使用 Nonlinear32 中的映射计算每个字节的新值*/
+    uint8_t new_byte1 = n32->n8_1.mapping[byte1];   /*使用 n8_1.mapping 进行 8 位映射*/
+    uint8_t new_byte2 = n32->n8_2.mapping[byte2];   /*使用 n8_2.mapping 进行 8 位映射*/
+    uint8_t new_byte3 = n32->n8_3.mapping[byte3];  /* 使用 n8_3.mapping 进行 8 位映射*/
+    uint8_t new_byte4 = n32->n8_4.mapping[byte4];  /* 使用 n8_4.mapping 进行 8 位映射*/
+     /*重新拼接 4 个字节，形成一个新的 32 位数*/
     return (new_byte1 << 24) | (new_byte2 << 16) | (new_byte3 << 8) | new_byte4;
 }
 
 static M32 L_matrix = {
-    .M[0] = 0xA0202080,
-    .M[1] = 0x50101040,
-    .M[2] = 0x28080820,
-    .M[3] = 0x14040410,
-    .M[4] = 0xA020208,
-    .M[5] = 0x5010104,
-    .M[6] = 0x2808082,
-    .M[7] = 0x1404041,
-    .M[8] = 0x80A02020,
-    .M[9] = 0x40501010,
-    .M[10] = 0x20280808,
-    .M[11] = 0x10140404,
-    .M[12] = 0x80A0202,
-    .M[13] = 0x4050101,
-    .M[14] = 0x82028080,
-    .M[15] = 0x41014040,
-    .M[16] = 0x2080A020,
-    .M[17] = 0x10405010,
-    .M[18] = 0x8202808,
-    .M[19] = 0x4101404,
-    .M[20] = 0x2080A02,
-    .M[21] = 0x1040501,
-    .M[22] = 0x80820280,
-    .M[23] = 0x40410140,
-    .M[24] = 0x202080A0,
-    .M[25] = 0x10104050,
-    .M[26] = 0x8082028,
-    .M[27] = 0x4041014,
-    .M[28] = 0x202080A,
-    .M[29] = 0x1010405,
-    .M[30] = 0x80808202,
-    .M[31] = 0x40404101
+    0xA0202080,
+    0x50101040,
+    0x28080820,
+    0x14040410,
+    0xA020208,
+    0x5010104,
+    0x2808082,
+    0x1404041,
+    0x80A02020,
+    0x40501010,
+    0x20280808,
+    0x10140404,
+    0x80A0202,
+    0x4050101,
+    0x82028080,
+    0x41014040,
+    0x2080A020,
+    0x10405010,
+    0x8202808,
+    0x4101404,
+    0x2080A02,
+    0x1040501,
+    0x80820280,
+    0x40410140,
+    0x202080A0,
+    0x10104050,
+    0x8082028,
+    0x4041014,
+    0x202080A,
+    0x1010405,
+    0x80808202,
+    0x40404101
 };
 /* static void printstate(unsigned char* in)
  {
@@ -214,7 +215,6 @@ static M32 L_matrix = {
 
 static void wbsm4_gen_init(WB_SM4_Tables* tables) {
 
-    //生成36轮Pij和Pij_inv
     for (int i = 0; i < 36; i++)
     {
         for (int j = 0; j < 4; j++) {
@@ -226,61 +226,37 @@ static void wbsm4_gen_init(WB_SM4_Tables* tables) {
 
     for (int i = 0; i < 32; i++) {
         for (int j = 0; j < 4; j++) {
-            //生成32个Ei，每个Ei由4个8×8的Eij组成
             genNonlinearPair(&Eij[i][j], &Eij_inv[i][j]);
-            //生成32个Fi，每个Fi由4个8×8的Fij组成
             genNonlinearPair(&Fij[i][j], &Fij_inv[i][j]);
-            //生成32个Gi，每个Gi由4个8×8的Gij组成
             genaffinepairM8(&Gij[i][j], &Gij_inv[i][j]);
-            //生成32个Ai，每个Ai由4个8×8的Aij组成,且Ai的Vec为0
             Aij[i][j].Mat = Gij[i][j].Mat;
             Aij[i][j].Vec.V = 0;
-            //生成32个Ai_inv，每个Ai_inv由4个8×8的Aij_inv组成,且Ai_inv的Vec为0
             Aij_inv[i][j].Mat = Gij_inv[i][j].Mat;
             Aij_inv[i][j].Vec.V = 0;
-            //生成32个Qi，每个Qi由4个8×8的Qij组成 
             genNonlinearPair(&Qij[i][j], &Qij_inv[i][j]);
-            //生成32个Hi，每个Hi由4个8×8的Hij组成
             genaffinepairM8(&Hij[i][j], &Hij_inv[i][j]);
-            //生成32个Bi_inv，每个Bi_inv由4个8×8的Bij_inv组成,且Bi_inv的Vec为0
             Bij_inv[i][j].Mat = Hij_inv[i][j].Mat;
             Bij_inv[i][j].Vec.V = 0;
             Bij[i][j].Mat = Hij[i][j].Mat;
             Bij[i][j].Vec.V = 0;
-            //生成32个Wi，每个Wi由4个8×8的Wij组成
             genNonlinearPair(&Wij[i][j], &Wij_inv[i][j]);
-            //生成32个Ci，每个Ci由4个8×8的Cij组成
             genNonlinearPair(&Cij[i][j], &Cij_inv[i][j]);
-            //生成32个Di，每个Di由4个8×8的Dij组成
             genNonlinearPair(&Dij[i][j], &Dij_inv[i][j]);
         }
-        //将4个8×8的Eij_inv复合成一个32×32的Ei_inv
         nonlinearCom8to32(Eij_inv[i][0], Eij_inv[i][1], Eij_inv[i][2], Eij_inv[i][3], &Ei_inv[i]);
-        //将4个8×8的Eij复合成一个32×32的Ei
         nonlinearCom8to32(Eij[i][0], Eij[i][1], Eij[i][2], Eij[i][3], &Ei[i]);
-        //将4个8×8的Fij_inv复合成一个32×32的Fi_inv
         nonlinearCom8to32(Fij_inv[i][0], Fij_inv[i][1], Fij_inv[i][2], Fij_inv[i][3], &Fi_inv[i]);
-        //将4个8×8的Fij复合成一个32×32的Fi
         nonlinearCom8to32(Fij[i][0], Fij[i][1], Fij[i][2], Fij[i][3], &Fi[i]);
         affinecomM8to32(Gij_inv[i][0], Gij_inv[i][1], Gij_inv[i][2], Gij_inv[i][3], &Gi_inv[i]);
         affinecomM8to32(Gij[i][0], Gij[i][1], Gij[i][2], Gij[i][3], &Gi[i]);
-        //将4个8×8的Qij复合成一个32×32的Qi
         nonlinearCom8to32(Qij[i][0], Qij[i][1], Qij[i][2], Qij[i][3], &Qi[i]);
-        //将4个8×8的Hij复合成一个32×32的Hi
         affinecomM8to32(Hij[i][0], Hij[i][1], Hij[i][2], Hij[i][3], &Hi[i]);
-        //将4个8×8的Wij复合成一个32×32的Wi
         nonlinearCom8to32(Wij[i][0], Wij[i][1], Wij[i][2], Wij[i][3], &Wi[i]);
-        //将4个8×8的Cij复合成一个32×32的Ci
         nonlinearCom8to32(Cij[i][0], Cij[i][1], Cij[i][2], Cij[i][3], &Ci[i]);
-        //将4个8×8的Dij复合成一个32×32的Di
         nonlinearCom8to32(Dij[i][0], Dij[i][1], Dij[i][2], Dij[i][3], &Di[i]);
-        //将4个8×8的Aij复合成一个32×32的Ai
         affinecomM8to32(Aij[i][0], Aij[i][1], Aij[i][2], Aij[i][3], &Ai[i]);
-        //将4个8×8的Aij_inv复合成一个32×32的Ai_inv
         affinecomM8to32(Aij_inv[i][0], Aij_inv[i][1], Aij_inv[i][2], Aij_inv[i][3], &Ai_inv[i]);
-        //将4个8×8的Bij复合成一个32×32的Bi
         affinecomM8to32(Bij[i][0], Bij[i][1], Bij[i][2], Bij[i][3], &Bi[i]);
-        //将4个8×8的Bij_inv复合成一个32×32的Bi_inv
         affinecomM8to32(Bij_inv[i][0], Bij_inv[i][1], Bij_inv[i][2], Bij_inv[i][3], &Bi_inv[i]);
 
     }
@@ -290,8 +266,8 @@ static void wbsm4_gen_part4_3(WB_SM4_Tables* tables) {
     for (int i = 0; i < 32; i++) {
         for (int x = 0; x < 65536; x++) {
             for (int j = 0; j < 4; j++) {
-                uint8_t x1 = (x >> 8) & 0xff;//高8位
-                uint8_t x2 = x & 0xff;//低8位
+                uint8_t x1 = (x >> 8) & 0xff;
+                uint8_t x2 = x & 0xff;
                 uint8_t temp = nonlinearU8(&Cij_inv[i][j], x1) ^ nonlinearU8(&Dij_inv[i][j], x2);
                 tables->part4_3_table[i][j][x] = nonlinearU8(&Pij[i + 4][j], temp);
             }
@@ -300,8 +276,8 @@ static void wbsm4_gen_part4_3(WB_SM4_Tables* tables) {
     for (int i = 0; i < 32; i++) {
         for (int x = 0; x < 65536; x++) {
             for (int j = 0; j < 4; j++) {
-                uint8_t x1 = (x >> 8) & 0xff;//高8位
-                uint8_t x2 = x & 0xff;//低8位
+                uint8_t x1 = (x >> 8) & 0xff;
+                uint8_t x2 = x & 0xff;
                 uint8_t temp = nonlinearU8(&Cij_inv[i][j], x1) ^ nonlinearU8(&Dij_inv[i][j], x2);
                 tables->part4_3_table_dec[i][j][x] = nonlinearU8(&Pij[i][j], temp);
             }
@@ -320,7 +296,6 @@ static void wbsm4_gen_part3(WB_SM4_Tables* tables) {
             }
         }
     }
-    //生成i+4表     part3_table1_dec[i][j][x]
     for (int i = 0; i < 32; i++) {
         for (int x = 0; x < 256; x++) {
             for (int j = 0; j < 4; j++) {
@@ -345,13 +320,13 @@ static void wbsm4_gen_part3(WB_SM4_Tables* tables) {
         }
     }
 }
-//共32轮，每轮有4张输入16bit，输出8bit的查找表
+/*共32轮，每轮有4张输入16bit，输出8bit的查找表*/
 static void wbsm4_gen_part4_1(WB_SM4_Tables* tables) {
     for (int i = 0; i < 32; i++) {
         for (int x = 0; x < 65536; x++) {
             for (int j = 0; j < 4; j++) {
-                uint8_t x1 = (x >> 8) & 0xff;//高8位
-                uint8_t x2 = x & 0xff;//低8位
+                uint8_t x1 = (x >> 8) & 0xff;
+                uint8_t x2 = x & 0xff;
                 uint8_t temp = nonlinearU8(&Eij[i][j], x1) ^ nonlinearU8(&Fij[i][j], x2);
                 uint8_t Gij_val = affineU8(Gij[i][j], temp);
                 uint8_t Eij_invComGij_val = nonlinearU8(&Eij_inv[i][j], Gij_val);
@@ -362,15 +337,15 @@ static void wbsm4_gen_part4_1(WB_SM4_Tables* tables) {
 
     }
 }
-//共32轮，每轮有4个输入8bit，输出8bit的查找表
+/*共32轮，每轮有4个输入8bit，输出8bit的查找表*/
 static void wbsm4_gen_part1(WB_SM4_Tables* tables) {
     for (int i = 0; i < 32; i++) {
         for (int x = 0; x < 256; x++) {
             for (int j = 0; j < 4; j++) {
-                //Eij_invComPij_inv为Eij_inv与Pij_inv的复合
+                /*Eij_invComPij_inv为Eij_inv与Pij_inv的复合*/
                 uint8_t Pij_inv_val_1 = nonlinearU8(&Pij_inv[i + 1][j], x);
                 uint8_t Eij_invComPij_inv_val = nonlinearU8(&Eij_inv[i][j], Pij_inv_val_1);
-                //Fij_invComPij_inv为Fij_inv与Pij_inv的复合
+                /*Fij_invComPij_inv为Fij_inv与Pij_inv的复合*/
                 uint8_t Pij_inv_val_2 = nonlinearU8(&Pij_inv[i + 2][j], x);
                 uint8_t Fij_invComPij_inv_val = nonlinearU8(&Fij_inv[i][j], Pij_inv_val_2);
 
@@ -391,8 +366,8 @@ static void wbsm4_gen_part4_2(WB_SM4_Tables* tables) {
     for (int i = 0; i < 32; i++) {
         for (int x = 0; x < 65536; x++) {
             for (int j = 0; j < 4; j++) {
-                uint8_t x1 = (x >> 8) & 0xff;//高8位
-                uint8_t x2 = x & 0xff;//低8位
+                uint8_t x1 = (x >> 8) & 0xff;
+                uint8_t x2 = x & 0xff;
                 uint8_t temp = nonlinearU8(&Qij_inv[i][j], x1) ^ nonlinearU8(&Wij_inv[i][j], x2);
                 uint8_t Hi_val = affineU8(Hij[i][j], temp);
                 uint8_t QiComHi_val = nonlinearU8(&Qij[i][j], Hi_val);
@@ -445,54 +420,45 @@ void Nonlinearwbsm4_encrypt(const unsigned char IN[16], unsigned char OUT[16], c
     uint8_t xt0_1, xt0_2, xt0_3, xt0_4, xt1_1, xt1_2, xt1_3, xt1_4;
     uint8_t xt2_1, xt2_2, xt2_3, xt2_4, xt3_1, xt3_2, xt3_3, xt3_4;
     uint8_t xt4_1, xt4_2, xt4_3, xt4_4, x4_1, x4_2, x4_3, x4_4;
-
-    // 输入外部编码
     x0 = GET32(IN);
     x1 = GET32(IN + 4);
     x2 = GET32(IN + 8);
     x3 = GET32(IN + 12);
 
-    x0 = nonlinearU32(&tables->P[0], x0);  // P0
-    x1 = nonlinearU32(&tables->P[1], x1);  // P1
-    x2 = nonlinearU32(&tables->P[2], x2);  // P2
-    x3 = nonlinearU32(&tables->P[3], x3);  // P3
+    x0 = nonlinearU32(&tables->P[0], x0);  
+    x1 = nonlinearU32(&tables->P[1], x1);  
+    x2 = nonlinearU32(&tables->P[2], x2);  
+    x3 = nonlinearU32(&tables->P[3], x3);  
 
-    // 执行核心加密
     for (i = 0; i < 32; i++)
     {
-        //part1
         xt1 = (tables->part1_table1[i][0][(x1 >> 24) & 0xff] << 24) ^ (tables->part1_table1[i][1][(x1 >> 16) & 0xff] << 16) ^ (tables->part1_table1[i][2][(x1 >> 8) & 0xff] << 8) ^ tables->part1_table1[i][3][x1 & 0xff];
         xt2 = (tables->part1_table2[i][0][(x2 >> 24) & 0xff] << 24) ^ (tables->part1_table2[i][1][(x2 >> 16) & 0xff] << 16) ^ (tables->part1_table2[i][2][(x2 >> 8) & 0xff] << 8) ^ tables->part1_table2[i][3][x2 & 0xff];
         xt3 = (tables->part1_table3[i][0][(x3 >> 24) & 0xff] << 24) ^ (tables->part1_table3[i][1][(x3 >> 16) & 0xff] << 16) ^ (tables->part1_table3[i][2][(x3 >> 8) & 0xff] << 8) ^ tables->part1_table3[i][3][x3 & 0xff];
-        //part4-1
-        xt1_1 = (xt1 >> 24) & 0xff;//xt1的前8bit
-        xt1_2 = (xt1 >> 16) & 0xff;//xt1的第2个8bit
-        xt1_3 = (xt1 >> 8) & 0xff;//xt1的第3个8bit
-        xt1_4 = xt1 & 0xff;//xt1的第4个8bit
+        xt1_1 = (xt1 >> 24) & 0xff;
+        xt1_2 = (xt1 >> 16) & 0xff;
+        xt1_3 = (xt1 >> 8) & 0xff;
+        xt1_4 = xt1 & 0xff;
 
-        xt2_1 = (xt2 >> 24) & 0xff;//xt2的前8bit
-        xt2_2 = (xt2 >> 16) & 0xff;//xt2的第2个8bit
-        xt2_3 = (xt2 >> 8) & 0xff;//xt2的第3个8bit
-        xt2_4 = xt2 & 0xff;//xt2的第4个8bit
+        xt2_1 = (xt2 >> 24) & 0xff;
+        xt2_2 = (xt2 >> 16) & 0xff;
+        xt2_3 = (xt2 >> 8) & 0xff;
+        xt2_4 = xt2 & 0xff;
 
-        xt3_1 = (xt3 >> 24) & 0xff;//xt3的前8bit
-        xt3_2 = (xt3 >> 16) & 0xff;//xt3的第2个8bit
-        xt3_3 = (xt3 >> 8) & 0xff;//xt3的第3个8bit
-        xt3_4 = xt3 & 0xff;//xt3的第4个8bit
+        xt3_1 = (xt3 >> 24) & 0xff;
+        xt3_2 = (xt3 >> 16) & 0xff;
+        xt3_3 = (xt3 >> 8) & 0xff;
+        xt3_4 = xt3 & 0xff;
 
         uint32_t temp_part4_1 = (tables->part4_1_table[i][0][(xt1_1 << 8) ^ xt2_1] << 24) ^ (tables->part4_1_table[i][1][(xt1_2 << 8) ^ xt2_2] << 16) ^ (tables->part4_1_table[i][2][(xt1_3 << 8) ^ xt2_3] << 8) ^ tables->part4_1_table[i][3][(xt1_4 << 8) ^ xt2_4];
         x4 = (tables->part4_1_table[i][0][(((temp_part4_1 >> 24) & 0xff) << 8) ^ xt3_1] << 24) ^ (tables->part4_1_table[i][1][(((temp_part4_1 >> 16) & 0xff) << 8) ^ xt3_2] << 16) ^ (tables->part4_1_table[i][2][(((temp_part4_1 >> 8) & 0xff) << 8) ^ xt3_3] << 8) ^ tables->part4_1_table[i][3][((temp_part4_1 & 0xff) << 8) ^ xt3_4];
 
 
-        //part2
-        x4_1 = (x4 >> 24) & 0xff;//x4的前8bit
-        x4_2 = (x4 >> 16) & 0xff;//x4的第2个8bit
-        x4_3 = (x4 >> 8) & 0xff;//x4的第3个8bit
-        x4_4 = x4 & 0xff;//x4的第4个8bit
-//        uint8_t part2_table_temp_1 = tables->part2_table_temp[i][0][x4_1];
-//        uint8_t part2_table_temp_2 = tables->part2_table_temp[i][1][x4_2];
-//        uint8_t part2_table_temp_3 = tables->part2_table_temp[i][2][x4_3];
-//        uint8_t part2_table_temp_4 = tables->part2_table_temp[i][3][x4_4];
+        x4_1 = (x4 >> 24) & 0xff;
+        x4_2 = (x4 >> 16) & 0xff;
+        x4_3 = (x4 >> 8) & 0xff;
+        x4_4 = x4 & 0xff;
+
         uint32_t part2_temp = (tables->part2_table_temp[i][0][x4_1] << 24) ^ (tables->part2_table_temp[i][1][x4_2] << 16) ^ (tables->part2_table_temp[i][2][x4_3] << 8) ^ (tables->part2_table_temp[i][3][x4_4]);
         part2_temp = MatMulNumM32(L_matrix, part2_temp);
 
@@ -508,15 +474,14 @@ void Nonlinearwbsm4_encrypt(const unsigned char IN[16], unsigned char OUT[16], c
         res_part2_3 = tables->part2_table[i][2][part2_temp_3];
         res_part2_4 = tables->part2_table[i][3][part2_temp_4];
 
-        //part4-2
         uint8_t res_part2_1_1, res_part2_1_2, res_part2_1_3, res_part2_1_4;
         uint8_t res_part2_2_1, res_part2_2_2, res_part2_2_3, res_part2_2_4;
         uint8_t res_part2_3_1, res_part2_3_2, res_part2_3_3, res_part2_3_4;
         uint8_t res_part2_4_1, res_part2_4_2, res_part2_4_3, res_part2_4_4;
 
-        uint32_t temp_part4_2_1, temp_part4_2_2;//part4-2的两个中间结果
-        //res_part2_1按照8bit分割
-        res_part2_1_1 = (res_part2_1 >> 24) & 0xff;//res_part2_1的前8bit
+        uint32_t temp_part4_2_1, temp_part4_2_2;
+
+        res_part2_1_1 = (res_part2_1 >> 24) & 0xff;
         res_part2_1_2 = (res_part2_1 >> 16) & 0xff;
         res_part2_1_3 = (res_part2_1 >> 8) & 0xff;
         res_part2_1_4 = res_part2_1 & 0xff;
@@ -543,23 +508,21 @@ void Nonlinearwbsm4_encrypt(const unsigned char IN[16], unsigned char OUT[16], c
 
         xt0 = (tables->part3_table1[i][0][(x0 >> 24) & 0xff] << 24) ^ (tables->part3_table1[i][1][(x0 >> 16) & 0xff] << 16) ^ (tables->part3_table1[i][2][(x0 >> 8) & 0xff] << 8) ^ tables->part3_table1[i][3][x0 & 0xff];
         xt4 = (tables->part3_table2[i][0][(x4 >> 24) & 0xff] << 24) ^ (tables->part3_table2[i][1][(x4 >> 16) & 0xff] << 16) ^ (tables->part3_table2[i][2][(x4 >> 8) & 0xff] << 8) ^ tables->part3_table2[i][3][x4 & 0xff];
-        //part4-3
-        xt0_1 = (xt0 >> 24) & 0xff;//xt0的前8bit
-        xt0_2 = (xt0 >> 16) & 0xff;//xt0的第2个8bit
-        xt0_3 = (xt0 >> 8) & 0xff;//xt0的第3个8bit
-        xt0_4 = xt0 & 0xff;//xt0的第4个8bit
+        xt0_1 = (xt0 >> 24) & 0xff;
+        xt0_2 = (xt0 >> 16) & 0xff;
+        xt0_3 = (xt0 >> 8) & 0xff;
+        xt0_4 = xt0 & 0xff;
 
-        xt4_1 = (xt4 >> 24) & 0xff;//xt4的前8bit
-        xt4_2 = (xt4 >> 16) & 0xff;//xt4的第2个8bit
-        xt4_3 = (xt4 >> 8) & 0xff;//xt4的第3个8bit
-        xt4_4 = xt4 & 0xff;//xt4的第4个8bit
+        xt4_1 = (xt4 >> 24) & 0xff;
+        xt4_2 = (xt4 >> 16) & 0xff;
+        xt4_3 = (xt4 >> 8) & 0xff;
+        xt4_4 = xt4 & 0xff;
         x4 = (tables->part4_3_table[i][0][(xt0_1 << 8) ^ xt4_1] << 24) ^ (tables->part4_3_table[i][1][(xt0_2 << 8) ^ xt4_2] << 16) ^ (tables->part4_3_table[i][2][(xt0_3 << 8) ^ xt4_3] << 8) ^ tables->part4_3_table[i][3][(xt0_4 << 8) ^ xt4_4];
         x0 = x1;
         x1 = x2;
         x2 = x3;
         x3 = x4;
     }
-    // 输出外部解码
     uint32_t out0 = nonlinearU32(&tables->P_inv[35], x3);
     uint32_t out1 = nonlinearU32(&tables->P_inv[34], x2);
     uint32_t out2 = nonlinearU32(&tables->P_inv[33], x1);
@@ -577,29 +540,25 @@ void Nonlinearwbsm4_decrypt(const unsigned char IN[16], unsigned char OUT[16], c
     uint8_t xt2_1, xt2_2, xt2_3, xt2_4, xt3_1, xt3_2, xt3_3, xt3_4;
     uint8_t xt4_1, xt4_2, xt4_3, xt4_4, x4_1, x4_2, x4_3, x4_4;
 
-    // 输入外部编码
     x0 = GET32(IN);
     x1 = GET32(IN + 4);
     x2 = GET32(IN + 8);
     x3 = GET32(IN + 12);
 
-    x0 = nonlinearU32(&tables->P[35], x0);  // P0
-    x1 = nonlinearU32(&tables->P[34], x1);  // P1
-    x2 = nonlinearU32(&tables->P[33], x2);  // P2
-    x3 = nonlinearU32(&tables->P[32], x3);  // P3
+    x0 = nonlinearU32(&tables->P[35], x0);  
+    x1 = nonlinearU32(&tables->P[34], x1);  
+    x2 = nonlinearU32(&tables->P[33], x2);  
+    x3 = nonlinearU32(&tables->P[32], x3); 
 
-    // 执行核心解密
     for (i = 31; i >= 0; i--)
     {
-        //part1
         xt1 = (tables->part1_table3[i][0][(x1 >> 24) & 0xff] << 24) ^ (tables->part1_table3[i][1][(x1 >> 16) & 0xff] << 16) ^ (tables->part1_table3[i][2][(x1 >> 8) & 0xff] << 8) ^ tables->part1_table3[i][3][x1 & 0xff];
         xt2 = (tables->part1_table2[i][0][(x2 >> 24) & 0xff] << 24) ^ (tables->part1_table2[i][1][(x2 >> 16) & 0xff] << 16) ^ (tables->part1_table2[i][2][(x2 >> 8) & 0xff] << 8) ^ tables->part1_table2[i][3][x2 & 0xff];
         xt3 = (tables->part1_table1[i][0][(x3 >> 24) & 0xff] << 24) ^ (tables->part1_table1[i][1][(x3 >> 16) & 0xff] << 16) ^ (tables->part1_table1[i][2][(x3 >> 8) & 0xff] << 8) ^ tables->part1_table1[i][3][x3 & 0xff];
-        //part4-1
-        xt1_1 = (xt1 >> 24) & 0xff;//xt1的前8bit
-        xt1_2 = (xt1 >> 16) & 0xff;//xt1的第2个8bit
-        xt1_3 = (xt1 >> 8) & 0xff;//xt1的第3个8bit
-        xt1_4 = xt1 & 0xff;//xt1的第4个8bit
+        xt1_1 = (xt1 >> 24) & 0xff;
+        xt1_2 = (xt1 >> 16) & 0xff;
+        xt1_3 = (xt1 >> 8) & 0xff;
+        xt1_4 = xt1 & 0xff;
 
         xt2_1 = (xt2 >> 24) & 0xff;//xt2的前8bit
         xt2_2 = (xt2 >> 16) & 0xff;//xt2的第2个8bit
@@ -619,10 +578,7 @@ void Nonlinearwbsm4_decrypt(const unsigned char IN[16], unsigned char OUT[16], c
         x4_2 = (x4 >> 16) & 0xff;//x4的第2个8bit
         x4_3 = (x4 >> 8) & 0xff;//x4的第3个8bit
         x4_4 = x4 & 0xff;//x4的第4个8bit
-//        uint8_t part2_table_temp_1 = tables->part2_table_temp[i][0][x4_1];
-//        uint8_t part2_table_temp_2 = tables->part2_table_temp[i][1][x4_2];
-//        uint8_t part2_table_temp_3 = tables->part2_table_temp[i][2][x4_3];
-//        uint8_t part2_table_temp_4 = tables->part2_table_temp[i][3][x4_4];
+
         uint32_t part2_temp = (tables->part2_table_temp[i][0][x4_1] << 24) ^ (tables->part2_table_temp[i][1][x4_2] << 16) ^ (tables->part2_table_temp[i][2][x4_3] << 8) ^ (tables->part2_table_temp[i][3][x4_4]);
         part2_temp = MatMulNumM32(L_matrix, part2_temp);
 
@@ -638,7 +594,6 @@ void Nonlinearwbsm4_decrypt(const unsigned char IN[16], unsigned char OUT[16], c
         res_part2_3 = tables->part2_table[i][2][part2_temp_3];
         res_part2_4 = tables->part2_table[i][3][part2_temp_4];
 
-        //part4-2
         uint8_t res_part2_1_1, res_part2_1_2, res_part2_1_3, res_part2_1_4;
         uint8_t res_part2_2_1, res_part2_2_2, res_part2_2_3, res_part2_2_4;
         uint8_t res_part2_3_1, res_part2_3_2, res_part2_3_3, res_part2_3_4;
@@ -783,3 +738,4 @@ void Nonlinearwbsm4_free_tables(WB_SM4_Tables* tables) {
     // 清空结构体指针
     memset(tables, 0, sizeof(WB_SM4_Tables));
 }
+#endif

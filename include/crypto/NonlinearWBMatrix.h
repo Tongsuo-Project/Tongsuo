@@ -1,6 +1,3 @@
-//
-// Created by fuyu on 2025-03-01.
-//
 #include "stdint.h"
 #include <time.h>
 #include <stdlib.h>
@@ -11,15 +8,13 @@ unsigned int cus_random(void);
 typedef struct Nonlinear8 {
     uint8_t mapping[256];
 } Nonlinear8;
-// 32 位非线性双射结构体，由 4 个 Nonlinear8 组成
 typedef struct Nonlinear32 {
-    Nonlinear8 n8_1;  // 第一个 8-bit 映射
-    Nonlinear8 n8_2;  // 第二个 8-bit 映射
-    Nonlinear8 n8_3;  // 第三个 8-bit 映射
-    Nonlinear8 n8_4;  // 第四个 8-bit 映射
+    Nonlinear8 n8_1;  
+    Nonlinear8 n8_2;  
+    Nonlinear8 n8_3;  
+    Nonlinear8 n8_4;  
 } Nonlinear32;
 
-//4bits
 typedef struct M4
 {
     uint8_t M[4];
@@ -36,7 +31,6 @@ typedef struct Aff4
     V4 Vec;
 }Aff4;
 
-//8bits
 typedef struct M8
 {
     uint8_t M[8];
@@ -52,7 +46,7 @@ typedef struct Aff8
     M8 Mat;
     V8 Vec;
 }Aff8;
-//16bits
+
 typedef struct M16
 {
     uint16_t M[16];
@@ -68,7 +62,7 @@ typedef struct Aff16
     M16 Mat;
     V16 Vec;
 }Aff16;
-//32bits
+
 typedef struct M32
 {
     uint32_t M[32];
@@ -84,7 +78,7 @@ typedef struct Aff32
     M32 Mat;
     V32 Vec;
 }Aff32;
-//64bits
+
 typedef struct M64
 {
     uint64_t M[64];
@@ -100,7 +94,6 @@ typedef struct Aff64
     M64 Mat;
     V64 Vec;
 }Aff64;
-//128bits
 typedef struct M128
 {
     uint64_t M[128][2];
