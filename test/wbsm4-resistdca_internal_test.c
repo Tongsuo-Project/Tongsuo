@@ -27,7 +27,7 @@ static int test_wbsm4_standard(void)
     };
 
 
-    int i;
+    
     
     uint8_t block[SM4_BLOCK_SIZE];
     uint8_t key[SM4_BLOCK_SIZE];
