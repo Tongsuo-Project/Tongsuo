@@ -133,7 +133,7 @@ uint32_t MatMulNumM32(M32 Mat, uint32_t n);
 
 
 void Gen_Mat_LBpair(M32* LB,M32* LB_inv);
-
+void Gen_LB(M32* LB);
 
 void wbsm4_gen(uint8_t *key,unsigned char *whitebox,size_t* whitebox_len);
 
