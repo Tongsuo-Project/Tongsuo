@@ -89,6 +89,7 @@ static const unsigned long CK[32] =
 	0x10171e25, 0x2c333a41, 0x484f565d, 0x646b7279
 };
 
+
 unsigned int permuteQPR(unsigned int x);
 void InitRandom(unsigned int seedBase);
 unsigned int cus_random(void);
