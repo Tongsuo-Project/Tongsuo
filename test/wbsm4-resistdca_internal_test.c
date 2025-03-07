@@ -31,10 +31,7 @@ static int test_wbsm4_standard(void)
     
     uint8_t block[SM4_BLOCK_SIZE];
     uint8_t key[SM4_BLOCK_SIZE];
-    for(i=0;i<SM4_BLOCK_SIZE;i++){
-        key[i] = k[i];
-    }
-
+    memcpy(key, k, SM4_BLOCK_SIZE);
     unsigned char *wb = NULL;
     size_t whitebox_len = 0;
 
