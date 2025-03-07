@@ -3,7 +3,7 @@
 #include <openssl/rand.h>
 #include "testutil.h"
 #include "crypto/sm4.h"
-#include "crypto/New-WBSM4/wbsm4.h"
+#include "crypto/wbsm4-resistdca.h"
 
 static int test_wbsm4_standard(void)
 {
