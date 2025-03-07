@@ -1870,6 +1870,7 @@ void wbsm4_decrypt(uint8_t input[16], uint8_t output[16],unsigned char *whitebox
     for(i=0;i<16;i++){
         output[i] = (wb->Ex_OUT_D)[i][output[i]];
     }
+	
     //free(wb);
 
 }
