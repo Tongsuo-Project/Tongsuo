@@ -49,8 +49,8 @@ extern unsigned int randseed;
 
 typedef struct
 {
-	int mode;                   /*!<  encrypt/decrypt   */
-	unsigned long sk[32];       /*!<  SM4 subkeys       */
+	int mode;                   
+	unsigned long sk[32];      
 }sm4_context;
 
 static const unsigned char SboxTable[16][16] =
