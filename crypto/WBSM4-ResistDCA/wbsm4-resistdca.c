@@ -826,14 +826,14 @@ int isinvertM32(M32 Mat)//Invertible Matrix?
 
 
 
-static unsigned char sm4Sbox(unsigned char inch)
+unsigned char sm4Sbox(unsigned char inch)
 {
 	unsigned char *pTable = (unsigned char *)SboxTable;
 	unsigned char retVal = (unsigned char)(pTable[inch]);
 	return retVal;
 }
 
-static unsigned long sm4CalciRK(unsigned long ka)
+unsigned long sm4CalciRK(unsigned long ka)
 {
 	unsigned long bb = 0;
 	unsigned long rk = 0;
@@ -849,7 +849,7 @@ static unsigned long sm4CalciRK(unsigned long ka)
 	return rk;
 }
 
-static void sm4_setkey( unsigned long SK[32], unsigned char key[16] )
+void sm4_setkey( unsigned long SK[32], unsigned char key[16] )
 {
 	unsigned long MK[4];
 	unsigned long k[36];
@@ -877,7 +877,7 @@ void sm4_setkey_enc( sm4_context *ctx, unsigned char key[16] )
 	sm4_setkey( ctx->sk, key );
 }
 
-static unsigned long sm4Lt(unsigned long ka)
+unsigned long sm4Lt(unsigned long ka)
 {
 	unsigned long bb = 0;
 	unsigned long c = 0;
@@ -893,12 +893,12 @@ static unsigned long sm4Lt(unsigned long ka)
 	return c;
 }
 
-static unsigned long sm4F(unsigned long x0, unsigned long x1, unsigned long x2, unsigned long x3, unsigned long rk)
+unsigned long sm4F(unsigned long x0, unsigned long x1, unsigned long x2, unsigned long x3, unsigned long rk)
 {
 	return (x0 ^ sm4Lt(x1 ^ x2 ^ x3 ^ rk));
 }
 
-static void sm4_one_round( unsigned long sk[32],
+void sm4_one_round( unsigned long sk[32],
     unsigned char input[16],
     unsigned char output[16] )
 {
