@@ -2,11 +2,13 @@
 #include <string.h> 
 
 /*====sm4轮密钥生成==== */
-# define ossl_inline inline
+# define ossl_inline
 # define SM4_KEY_SCHEDULE  32
 typedef struct SM4_KEY_st {
     uint32_t rk[SM4_KEY_SCHEDULE];
 } SM4_KEY;
+static ossl_inline uint32_t load_u32_be1(const uint8_t *b, uint32_t n);
+static ossl_inline uint32_t rotl1(uint32_t a, uint8_t n);
 static int ossl_sm4_set_key1(const uint8_t *key, SM4_KEY *ks);
 static const uint8_t SM4_S[256] = {
         0xD6, 0x90, 0xE9, 0xFE, 0xCC, 0xE1, 0x3D, 0xB7, 0x16, 0xB6, 0x14, 0xC2,
@@ -34,10 +36,10 @@ static const uint8_t SM4_S[256] = {
 };
 static ossl_inline uint32_t load_u32_be1(const uint8_t *b, uint32_t n)
 {
-    return ((uint32_t)b[4 * n] << 24) |
-           ((uint32_t)b[4 * n + 1] << 16) |
-           ((uint32_t)b[4 * n + 2] << 8) |
-           ((uint32_t)b[4 * n + 3]);
+    return ((uint32_t)(b[4 * n] & 0xFF) << 24) |
+           ((uint32_t)(b[4 * n + 1] & 0xFF) << 16) |
+           ((uint32_t)(b[4 * n + 2] & 0xFF) << 8) |
+           (uint32_t)(b[4 * n + 3] & 0xFF);
 }
 static ossl_inline uint32_t rotl1(uint32_t a, uint8_t n)
 {
@@ -77,10 +79,10 @@ static int ossl_sm4_set_key1(const uint8_t *key, SM4_KEY *ks)
         uint32_t X = K[(i + 1) % 4] ^ K[(i + 2) % 4] ^ K[(i + 3) % 4] ^ CK[i];
         uint32_t t = 0;
 
-        t |= ((uint32_t)SM4_S[(uint8_t)(X >> 24)]) << 24;
-        t |= ((uint32_t)SM4_S[(uint8_t)(X >> 16)]) << 16;
-        t |= ((uint32_t)SM4_S[(uint8_t)(X >> 8)]) << 8;
-        t |= SM4_S[(uint8_t)X];
+        t |= ((uint32_t)(SM4_S[(uint8_t)(X >> 24)] & 0xFF) << 24);
+        t |= ((uint32_t)(SM4_S[(uint8_t)(X >> 16)] & 0xFF) << 16);
+        t |= ((uint32_t)(SM4_S[(uint8_t)(X >> 8)] & 0xFF) << 8);
+        t |= (uint32_t)(SM4_S[(uint8_t)X] & 0xFF);
 
         t = t ^ rotl1(t, 13) ^ rotl1(t, 23);
         K[i % 4] ^= t;
@@ -204,19 +206,22 @@ static void swap(uint8_t* a, uint8_t* b) {
 }
 /* 生成 S 盒  */
 static void generate_S_box_and_inverse(uint8_t* mapping) {
-    /*初始化 S 盒为单位置换*/
-    for (int i = 0; i < 256; i++) {
+    int i, j; 
+    static int initialized = 0; /* 声明必须放在代码块开头 */
+
+    /* 初始化 S 盒为单位置换 */
+    for (i = 0; i < 256; i++) {
         mapping[i] = i;
     }
 
-     /*使用 srand 初始化随机数生成器，仅初始化一次*/
-    static int initialized = 0;
+    /* 使用 srand 初始化随机数生成器，仅初始化一次 */
     if (!initialized) {
         srand((unsigned int)time(NULL));
         initialized = 1;
     }
-    for (int i = 255; i > 0; i--) {
-        int j = rand() % (i + 1);
+
+    for (i = 255; i > 0; i--) {
+        j = rand() % (i + 1);
         swap(&mapping[i], &mapping[j]);
     }
 }
@@ -260,7 +265,10 @@ static uint8_t nonlinearU8(Nonlinear8* n8, uint8_t arr) {
     new_byte4 = n32->n8_4.mapping[byte4];  /* 使用 n8_4.mapping 进行 8 位映射 */
 
     /* 重新拼接 4 个字节，形成一个新的 32 位数 */
-    return (new_byte1 << 24) | (new_byte2 << 16) | (new_byte3 << 8) | new_byte4;
+    return ( (uint32_t)new_byte1 << 24 ) |
+           ( (uint32_t)new_byte2 << 16 ) |
+           ( (uint32_t)new_byte3 << 8 )  |
+           (uint32_t)new_byte4;
 }
 
 static M32 L_matrix = {
