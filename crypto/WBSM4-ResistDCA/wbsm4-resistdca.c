@@ -1,5 +1,4 @@
-#include "wbsm4-resistdca.h"
-// #include "crypto/wbsm4-resistdca.h"
+#include "crypto/wbsm4-resistdca.h"
 
 static M32 L_matrix = {
     {
