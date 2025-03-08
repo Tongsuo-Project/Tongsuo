@@ -59,6 +59,8 @@
   "files.associations": {
     "nonlinearwbmatrix.h": "c",
     "opensslconf.h": "c",
-    "nonlinearwbsm4.h": "c"
+    "nonlinearwbsm4.h": "c",
+    "symhacks.h": "c",
+    "stdint.h": "c"
   }
 }

@@ -1,4 +1,5 @@
 #include <stdint.h> 
+#include "symbol_prefix.h"
 #ifndef NONLINEARWBSM4_NONLINEARWBSM4_H
 #define NONLINEARWBSM4_NONLINEARWBSM4_H
 # ifdef OPENSSL_NO_NONLINEARWBSM4
