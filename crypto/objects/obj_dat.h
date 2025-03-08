@@ -933,7 +933,7 @@ static const unsigned char so[6628] = {
     0x60,0x86,0x48,0x01,0x86,0xF9,0x66,0xAD,0xCA,0x7B,0x01,0x01,  /* [ 6615] OBJ_oracle_jdk_trustedkeyusage */
 };
 
-#define NUM_NID 1260
+#define NUM_NID 1267
 static const ASN1_OBJECT nid_objs[NUM_NID] = {
     {"UNDEF", "undefined", NID_undef},
     {"rsadsi", "RSA Data Security, Inc.", NID_rsadsi, 6, &so[0]},
@@ -2195,9 +2195,16 @@ static const ASN1_OBJECT nid_objs[NUM_NID] = {
     {"hmacWithSM3", "hmacWithSM3", NID_hmacWithSM3, 10, &so[6598]},
     {"oracle-organization", "Oracle organization", NID_oracle, 7, &so[6608]},
     {"oracle-jdk-trustedkeyusage", "Trusted key usage (Oracle)", NID_oracle_jdk_trustedkeyusage, 12, &so[6615]},
+    {"WBSM4-XIAO-STKEY-ECB", "wbsm4-xiao-stkey-ecb", NID_wbsm4_xiao_stkey_ecb},
+    {"WBSM4-XIAO-STKEY-CBC", "wbsm4-xiao-stkey-cbc", NID_wbsm4_xiao_stkey_cbc},
+    {"WBSM4-XIAO-STKEY-OFB", "wbsm4-xiao-stkey-ofb", NID_wbsm4_xiao_stkey_ofb128},
+    {"WBSM4-XIAO-STKEY-CFB", "wbsm4-xiao-stkey-cfb", NID_wbsm4_xiao_stkey_cfb128},
+    {"WBSM4-XIAO-STKEY-CTR", "wbsm4-xiao-stkey-ctr", NID_wbsm4_xiao_stkey_ctr},
+    {"WBSM4-XIAO-STKEY-GCM", "wbsm4-xiao-stkey-gcm", NID_wbsm4_xiao_stkey_gcm},
+    {"WBSM4-XIAO-STKEY-CCM", "wbsm4-xiao-stkey-ccm", NID_wbsm4_xiao_stkey_ccm},
 };
 
-#define NUM_SN 1010
+#define NUM_SN 1017
 static const unsigned int sn_objs[NUM_SN] = {
      364,    /* "AD_DVCS" */
      419,    /* "AES-128-CBC" */
@@ -2393,6 +2400,13 @@ static const unsigned int sn_objs[NUM_SN] = {
     1021,    /* "TLS1-PRF" */
      458,    /* "UID" */
        0,    /* "UNDEF" */
+    1261,    /* "WBSM4-XIAO-STKEY-CBC" */
+    1266,    /* "WBSM4-XIAO-STKEY-CCM" */
+    1263,    /* "WBSM4-XIAO-STKEY-CFB" */
+    1264,    /* "WBSM4-XIAO-STKEY-CTR" */
+    1260,    /* "WBSM4-XIAO-STKEY-ECB" */
+    1265,    /* "WBSM4-XIAO-STKEY-GCM" */
+    1262,    /* "WBSM4-XIAO-STKEY-OFB" */
     1034,    /* "X25519" */
     1035,    /* "X448" */
       11,    /* "X500" */
@@ -3211,7 +3225,7 @@ static const unsigned int sn_objs[NUM_SN] = {
     1093,    /* "x509ExtAdmission" */
 };
 
-#define NUM_LN 1010
+#define NUM_LN 1017
 static const unsigned int ln_objs[NUM_LN] = {
      363,    /* "AD Time Stamping" */
      405,    /* "ANSI X9.62" */
@@ -4213,6 +4227,13 @@ static const unsigned int ln_objs[NUM_LN] = {
      740,    /* "wap-wsg-idm-ecid-wtls7" */
      741,    /* "wap-wsg-idm-ecid-wtls8" */
      742,    /* "wap-wsg-idm-ecid-wtls9" */
+    1261,    /* "wbsm4-xiao-stkey-cbc" */
+    1266,    /* "wbsm4-xiao-stkey-ccm" */
+    1263,    /* "wbsm4-xiao-stkey-cfb" */
+    1264,    /* "wbsm4-xiao-stkey-ctr" */
+    1260,    /* "wbsm4-xiao-stkey-ecb" */
+    1265,    /* "wbsm4-xiao-stkey-gcm" */
+    1262,    /* "wbsm4-xiao-stkey-ofb" */
      868,    /* "x121Address" */
      503,    /* "x500UniqueIdentifier" */
      158,    /* "x509Certificate" */

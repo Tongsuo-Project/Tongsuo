@@ -72,6 +72,11 @@ IF[{- !$disabled{sm4} -}]
       cipher_sm4_ccm.c cipher_sm4_ccm_hw.c
 ENDIF
 
+IF[{- !$disabled{wbsm4-wbsm4_xiao_stkey} || !$disabled{wbsm4-wbsm4_jin_stkey} || !$disabled{wbsm4-wbsm4_xiao_dykey} -}]
+  SOURCE[$SM4_GOAL]= ${SOURCE[$SM4_GOAL]}\
+      cipher_wbsm4.c cipher_wbsm4_hw.c
+ENDIF
+
 IF[{- !$disabled{ocb} -}]
   SOURCE[$AES_GOAL]=\
        cipher_aes_ocb.c cipher_aes_ocb_hw.c

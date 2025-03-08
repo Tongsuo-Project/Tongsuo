@@ -73,6 +73,18 @@ void openssl_add_all_ciphers_int(void)
     EVP_add_cipher(EVP_sm4_ccm());
 #endif
 
+#ifndef OPENSSL_NO_WBSM4_XIAO_STKEY
+    EVP_add_cipher(EVP_wbsm4_xiao_stkey_ecb());
+    EVP_add_cipher(EVP_wbsm4_xiao_stkey_cbc());
+    EVP_add_cipher(EVP_wbsm4_xiao_stkey_cfb());
+    EVP_add_cipher(EVP_wbsm4_xiao_stkey_ofb());
+    EVP_add_cipher(EVP_wbsm4_xiao_stkey_ctr());
+    EVP_add_cipher_alias(SN_wbsm4_xiao_stkey_cbc, "WBSM4-XIAO-STKEY");
+    EVP_add_cipher_alias(SN_wbsm4_xiao_stkey_cbc, "wbsm4-xiao-stkey");
+    EVP_add_cipher(EVP_wbsm4_xiao_stkey_gcm());
+    EVP_add_cipher(EVP_wbsm4_xiao_stkey_ccm());
+#endif
+
 #ifndef OPENSSL_NO_RC5
     EVP_add_cipher(EVP_rc5_32_12_16_ecb());
     EVP_add_cipher(EVP_rc5_32_12_16_cfb());

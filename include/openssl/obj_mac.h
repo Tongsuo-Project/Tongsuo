@@ -4411,4 +4411,32 @@
 #define NID_oracle_jdk_trustedkeyusage          1259
 #define OBJ_oracle_jdk_trustedkeyusage          OBJ_oracle,746875L,1L,1L
 
+#define SN_wbsm4_xiao_stkey_ecb         "WBSM4-XIAO-STKEY-ECB"
+#define LN_wbsm4_xiao_stkey_ecb         "wbsm4-xiao-stkey-ecb"
+#define NID_wbsm4_xiao_stkey_ecb                1260
+
+#define SN_wbsm4_xiao_stkey_cbc         "WBSM4-XIAO-STKEY-CBC"
+#define LN_wbsm4_xiao_stkey_cbc         "wbsm4-xiao-stkey-cbc"
+#define NID_wbsm4_xiao_stkey_cbc                1261
+
+#define SN_wbsm4_xiao_stkey_ofb128              "WBSM4-XIAO-STKEY-OFB"
+#define LN_wbsm4_xiao_stkey_ofb128              "wbsm4-xiao-stkey-ofb"
+#define NID_wbsm4_xiao_stkey_ofb128             1262
+
+#define SN_wbsm4_xiao_stkey_cfb128              "WBSM4-XIAO-STKEY-CFB"
+#define LN_wbsm4_xiao_stkey_cfb128              "wbsm4-xiao-stkey-cfb"
+#define NID_wbsm4_xiao_stkey_cfb128             1263
+
+#define SN_wbsm4_xiao_stkey_ctr         "WBSM4-XIAO-STKEY-CTR"
+#define LN_wbsm4_xiao_stkey_ctr         "wbsm4-xiao-stkey-ctr"
+#define NID_wbsm4_xiao_stkey_ctr                1264
+
+#define SN_wbsm4_xiao_stkey_gcm         "WBSM4-XIAO-STKEY-GCM"
+#define LN_wbsm4_xiao_stkey_gcm         "wbsm4-xiao-stkey-gcm"
+#define NID_wbsm4_xiao_stkey_gcm                1265
+
+#define SN_wbsm4_xiao_stkey_ccm         "WBSM4-XIAO-STKEY-CCM"
+#define LN_wbsm4_xiao_stkey_ccm         "wbsm4-xiao-stkey-ccm"
+#define NID_wbsm4_xiao_stkey_ccm                1266
+
 #endif /* OPENSSL_OBJ_MAC_H */

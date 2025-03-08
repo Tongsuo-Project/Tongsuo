@@ -12,8 +12,24 @@ IF[{- !$disabled{asm} -}]
   ENDIF
 ENDIF
 
-SOURCE[../../libcrypto]= $SM4ASM sm4.c
-
+SOURCE[../../libcrypto]= $SM4ASM sm4.c 
+IF[{- !$disabled{wbsm4-wbsm4_xiao_stkey} || !$disabled{wbsm4-wbsm4_jin_stkey} || !$disabled{wbsm4-wbsm4_xiao_dykey} -}]
+SOURCE[../../libcrypto]= ${SOURCE[../../libcrypto]} \
+  wb/wbsm4.c \
+  wb/WBMatrix/WBMatrix.c
+ENDIF
+IF[{- !$disabled{wbsm4-wbsm4_xiao_stkey} -}]
+SOURCE[../../libcrypto]= ${SOURCE[../../libcrypto]} \
+  wb/wbsm4_xiao_stkey.c 
+ENDIF
+IF[{- !$disabled{wbsm4-wbsm4_jin_stkey} -}]
+SOURCE[../../libcrypto]= ${SOURCE[../../libcrypto]} \
+  wb/wbsm4_xiao_dykey.c 
+ENDIF
+IF[{- !$disabled{wbsm4-wbsm4_xiao_dykey} -}]
+SOURCE[../../libcrypto]= ${SOURCE[../../libcrypto]} \
+  wb/wbsm4_jin_stkey.c 
+ENDIF
 
 # Implementations are now spread across several libraries, so the defines
 # need to be applied to all affected libraries and modules.

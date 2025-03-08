@@ -1027,3 +1027,10 @@ delegation_usage		1256
 hmacWithSM3		1257
 oracle		1258
 oracle_jdk_trustedkeyusage		1259
+wbsm4_xiao_stkey_ecb		1260
+wbsm4_xiao_stkey_cbc		1261
+wbsm4_xiao_stkey_ofb128		1262
+wbsm4_xiao_stkey_cfb128		1263
+wbsm4_xiao_stkey_ctr		1264
+wbsm4_xiao_stkey_gcm		1265
+wbsm4_xiao_stkey_ccm		1266
