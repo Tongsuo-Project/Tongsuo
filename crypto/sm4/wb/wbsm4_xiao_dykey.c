@@ -11,7 +11,6 @@ void wbsm4_xiao_dykey_gen(const uint8_t *key, wbsm4_xiao_dykey_context *ctx, wbs
     Aff8 Eaij_inv[32][4];
     Aff8 Ekij[32][4];
     Aff8 Ekij_inv[32][4];
-    Aff32 Eki_inv[32];
     Aff32 Q[32];
     Aff32 Q_inv[32];
     Biject32 R[32];
@@ -44,11 +43,11 @@ void wbsm4_xiao_dykey_gen(const uint8_t *key, wbsm4_xiao_dykey_context *ctx, wbs
             genaffinepairM8(&Ekij[i][j], &Ekij_inv[i][j]);
         }
 
-        affinecomM8to32(Ekij_inv[i][0], Ekij_inv[i][1], Ekij_inv[i][2], Ekij_inv[i][3], &Eki_inv[i]);
+        affinecomM8to32(Ekij_inv[i][0], Ekij_inv[i][1], Ekij_inv[i][2], Ekij_inv[i][3], &ctxrk->Ek[i]);
 
         // non-linear R and whitebox round key
         gen_Bijection32pair(&R[i], &R_inv[i]);
-        uint32_t tmp_rk = affineU32(Eki_inv[i], sm4_rk[i]);
+        uint32_t tmp_rk = affineU32(ctxrk->Ek[i], sm4_rk[i]);
         ctx->wbrk[i] = BijectionU32(&R[i], tmp_rk);
 
         // combine 4 E8 to 1 E32
@@ -70,7 +69,6 @@ void wbsm4_xiao_dykey_gen(const uint8_t *key, wbsm4_xiao_dykey_context *ctx, wbs
         ctx->D[i].Vec.V ^= P[i + 4].Vec.V ^ temp_u32;
 
         //encoding for whitebox round key
-        ctxrk->Ek[i] = Eki_inv[i];
         ctxrk->R[i] = R[i];
     }
     

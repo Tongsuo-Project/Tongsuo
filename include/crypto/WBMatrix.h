@@ -4,8 +4,7 @@
  * Last Update: 2020/08/24
  * Version: 3.2.0
 ***/
-#include "WBMatrix/structure.h"
-#include "WBMatrix/random.h"
+#include "WBstructure.h"
 #include <time.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -14,6 +13,10 @@
 extern "C"
 {
 #endif
+
+unsigned int permuteQPR(unsigned int x);
+void InitRandom(unsigned int seedBase);
+unsigned int cus_random();
 
 void SetRandSeed(unsigned int seed);//Set random seed
 /*

@@ -1,8 +1,7 @@
 #ifndef WBCRYPTO_WBSM4_H
 #define WBCRYPTO_WBSM4_H
 
-#include "WBMatrix/WBMatrix.h"
-#include "sm4.h"
+#include "WBMatrix.h"
 #include "stdint.h"
 
 #define WBSM4_ENCRYPT_MODE 1
@@ -29,12 +28,12 @@ typedef struct {
 
 typedef struct {
     int mode;
-    uint8_t ***P1;      // P1[32][8][256];
-    uint8_t ***P2;      // P2[32][8][256];
-    uint8_t ***Q1;      // Q1[32][8][256];
-    uint8_t ***Q2;      // Q2[32][8][256];
-    uint8_t ***Q3;      // Q3[32][8][256];
-    uint8_t ***Q4;      // Q4[32][8][256];
+    uint8_t P1[32][8][256];
+    uint8_t P2[32][8][256];
+    uint8_t Q1[32][8][256];
+    uint8_t Q2[32][8][256];
+    uint8_t Q3[32][8][256];
+    uint8_t Q4[32][8][256];
 
     Biject32 SE[4];
     Biject32 FE[4];

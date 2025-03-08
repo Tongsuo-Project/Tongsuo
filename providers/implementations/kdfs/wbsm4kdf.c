@@ -11,8 +11,7 @@
 #include <openssl/params.h>
 #include <openssl/err.h>
 
-#if !defined(OPENSSL_NO_WBSM4_XIAO_STKEY) || !defined(OPENSSL_NO_WBSM4_JIN_STKEY) || \
-    !defined(OPENSSL_NO_WBSM4_XIAO_DYKEY)
+#if !defined(OPENSSL_NO_WBSM4_XIAO_STKEY)
 #include "crypto/wbsm4.h"
 /*
 * KDF 上下文：存储原始密钥、白盒类型，以及各自的上下文

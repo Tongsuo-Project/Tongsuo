@@ -303,8 +303,7 @@ static const OSSL_ALGORITHM deflt_keyexch[] = {
     { PROV_NAMES_HKDF, "provider=default", ossl_kdf_hkdf_keyexch_functions },
     { PROV_NAMES_SCRYPT, "provider=default",
       ossl_kdf_scrypt_keyexch_functions },
-#if !defined(OPENSSL_NO_WBSM4_XIAO_STKEY) || !defined(OPENSSL_NO_WBSM4_XIAO_DYKEY) \
-|| !defined(OPENSSL_NO_WBSM4_JIN_STKEY)
+#if !defined(OPENSSL_NO_WBSM4_XIAO_STKEY)
     { PROV_NAMES_WBSM4KDF, "provider=default", wbsm4kdf_functions },
 #endif
     { NULL, NULL, NULL }
