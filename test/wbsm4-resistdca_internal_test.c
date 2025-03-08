@@ -29,11 +29,10 @@ static int test_wbsm4_standard(void)
 
     uint8_t block[16];
     uint8_t key[16];
-    memcpy(key, k, 16);
-    
+
     unsigned char *wb = NULL;
     size_t whitebox_len = 0;
-
+    memcpy(key, k, 16);
     wbsm4_gen(key,wb,&whitebox_len);
     wb = OPENSSL_malloc(whitebox_len);
     wbsm4_gen(key,wb,&whitebox_len);
