@@ -150,7 +150,7 @@ void wbsm4_jin_stkey_gen(const uint8_t *key, wbsm4_jin_stkey_context *ctx) {
 void wbsm4_jin_stkey_encrypt(const unsigned char *in, unsigned char *out, wbsm4_jin_stkey_context *ctx) {
     int i;
     uint32_t x0, x1, x2, x3, x4;
-    uint32_t xt0, xt1, xt2, xt3, xt4;
+    uint32_t xt1, xt2, xt3, xt4;
 
     x0 = GET32(in);
     x1 = GET32(in + 4);

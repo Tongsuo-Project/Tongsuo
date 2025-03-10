@@ -1,3 +1,4 @@
+#include <internal/endian.h>
 #include "crypto/wbsm4.h"
 
 const uint8_t SM4_SBOX[256]={
@@ -149,5 +150,53 @@ void wbsm4_setkey_dec(uint32_t rk[32], const unsigned char key[16]) {
         uint32_t tmp = rk[i];
         rk[i] = rk[31 - i];
         rk[31 - i] = tmp;
+    }
+}
+
+void wbsm4_set_key(const uint8_t *key, void *ctx, size_t len_ctx)
+{
+    DECLARE_IS_ENDIAN;
+
+    memcpy(ctx, key, len_ctx);
+    if (IS_LITTLE_ENDIAN)
+        return;
+
+    uint8_t *p = (uint8_t *)ctx;
+    uint8_t *end = p + sizeof(wbsm4_xiao_dykey_context);
+    while (p < end) {
+        uint8_t t;
+        t = p[0];
+        p[0] = p[3];
+        p[3] = t;
+
+        t = p[1];
+        p[1] = p[2];
+        p[2] = t;
+
+        p += 4;
+    }
+}
+
+void wbsm4_export_key(const void *ctx, uint8_t *key, size_t len_ctx)
+{
+    DECLARE_IS_ENDIAN;
+
+    memcpy(key, ctx, len_ctx);
+    if (IS_LITTLE_ENDIAN)
+        return;
+
+    uint8_t *p = (uint8_t *)key;
+    uint8_t *end = p + len_ctx;
+    while (p < end) {
+        uint8_t t;
+        t = p[0];
+        p[0] = p[3];
+        p[3] = t;
+
+        t = p[1];
+        p[1] = p[2];
+        p[2] = t;
+
+        p += 4;
     }
 }

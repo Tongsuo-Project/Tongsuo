@@ -2,7 +2,8 @@
 #define WBCRYPTO_WBSM4_H
 
 #include "WBMatrix.h"
-#include "stdint.h"
+#include <stdint.h>
+#include <string.h>
 
 #define WBSM4_ENCRYPT_MODE 1
 #define WBSM4_DECRYPT_MODE 0
@@ -71,6 +72,9 @@ typedef struct {
     Biject32 R[32];
 } wbsm4_xiao_dykey_ctxrk;
 
+void wbsm4_export_key(const void *ctx, uint8_t *key, size_t len_ctx);
+void wbsm4_set_key(const uint8_t *key, void *ctx, size_t len_ctx);
+
 void wbsm4_setkey_enc(uint32_t rk[32], const unsigned char key[16]);
 void wbsm4_setkey_dec(uint32_t rk[32], const unsigned char key[16]);
 
@@ -84,13 +88,14 @@ uint32_t BijectXor32(uint8_t lut[8][256], uint32_t x, uint32_t y);
 // execute on trusted environment only
 void wbsm4_xiao_stkey_gen(const uint8_t *key, wbsm4_xiao_stkey_context *ctx);
 // execute on whitebox environment
-void wbsm4_xiao_stkey_set_key(const uint8_t *key, wbsm4_xiao_stkey_context *ctx);
-void wbsm4_xiao_stkey_encrypt(const unsigned char *in, unsigned char *out, wbsm4_xiao_stkey_context *ctx);
-void wbsm4_xiao_stkey_decrypt(const unsigned char *in, unsigned char *out, wbsm4_xiao_stkey_context *ctx);
+void wbsm4_xiao_stkey_encrypt(const unsigned char *in, unsigned char *out, const wbsm4_xiao_stkey_context *ctx);
+void wbsm4_xiao_stkey_decrypt(const unsigned char *in, unsigned char *out, const wbsm4_xiao_stkey_context *ctx);
 #endif
 
 #ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
 // execute on trusted environment only
+void wbsm4_xiao_dykey_set_key(const uint8_t *key, wbsm4_xiao_dykey_context *ctx);
+void wbsm4_xiao_dykey_export_key(const wbsm4_xiao_dykey_context *wbsm4_key, uint8_t *key);
 void wbsm4_xiao_dykey_gen(const uint8_t *key, wbsm4_xiao_dykey_context *ctx, wbsm4_xiao_dykey_ctxrk *ctxrk);
 void wbsm4_xiao_dykey_key2wbrk(uint8_t *key, wbsm4_xiao_dykey_ctxrk *ctxrk, uint32_t wbrk[32]);
 // execute on whitebox environment

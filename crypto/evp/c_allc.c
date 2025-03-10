@@ -85,6 +85,30 @@ void openssl_add_all_ciphers_int(void)
     EVP_add_cipher(EVP_wbsm4_xiao_stkey_ccm());
 #endif
 
+#ifndef OPENSSL_NO_WBSM4_JIN_STKEY
+    EVP_add_cipher(EVP_wbsm4_jin_stkey_ecb());
+    EVP_add_cipher(EVP_wbsm4_jin_stkey_cbc());
+    EVP_add_cipher(EVP_wbsm4_jin_stkey_cfb());
+    EVP_add_cipher(EVP_wbsm4_jin_stkey_ofb());
+    EVP_add_cipher(EVP_wbsm4_jin_stkey_ctr());
+    EVP_add_cipher_alias(SN_wbsm4_jin_stkey_cbc, "WBSM4-JIN-STKEY");
+    EVP_add_cipher_alias(SN_wbsm4_jin_stkey_cbc, "wbsm4-jin-stkey");
+    EVP_add_cipher(EVP_wbsm4_jin_stkey_gcm());
+    EVP_add_cipher(EVP_wbsm4_jin_stkey_ccm());
+#endif
+
+#ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
+    EVP_add_cipher(EVP_wbsm4_xiao_dykey_ecb());
+    EVP_add_cipher(EVP_wbsm4_xiao_dykey_cbc());
+    EVP_add_cipher(EVP_wbsm4_xiao_dykey_cfb());
+    EVP_add_cipher(EVP_wbsm4_xiao_dykey_ofb());
+    EVP_add_cipher(EVP_wbsm4_xiao_dykey_ctr());
+    EVP_add_cipher_alias(SN_wbsm4_xiao_dykey_cbc, "WBSM4-XIAO-DYKEY");
+    EVP_add_cipher_alias(SN_wbsm4_xiao_dykey_cbc, "wbsm4-xiao-dykey");
+    EVP_add_cipher(EVP_wbsm4_xiao_dykey_gcm());
+    EVP_add_cipher(EVP_wbsm4_xiao_dykey_ccm());
+#endif
+
 #ifndef OPENSSL_NO_RC5
     EVP_add_cipher(EVP_rc5_32_12_16_ecb());
     EVP_add_cipher(EVP_rc5_32_12_16_cfb());

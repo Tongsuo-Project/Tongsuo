@@ -1,5 +1,4 @@
-#include "WBMatrix/WBMatrix.h"
-#include "WBMatrix/random.h"
+#include "crypto/WBMatrix.h"
 
 unsigned int m_index;
 unsigned int m_intermediateOffset;

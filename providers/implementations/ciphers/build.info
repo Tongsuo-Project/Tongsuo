@@ -74,7 +74,9 @@ ENDIF
 
 IF[{- !$disabled{wbsm4-wbsm4_xiao_stkey} || !$disabled{wbsm4-wbsm4_jin_stkey} || !$disabled{wbsm4-wbsm4_xiao_dykey} -}]
   SOURCE[$SM4_GOAL]= ${SOURCE[$SM4_GOAL]}\
-      cipher_wbsm4.c cipher_wbsm4_hw.c
+      cipher_wbsm4.c cipher_wbsm4_hw.c \
+      cipher_wbsm4_gcm.c cipher_wbsm4_gcm_hw.c \
+      cipher_wbsm4_ccm.c cipher_wbsm4_ccm_hw.c 
 ENDIF
 
 IF[{- !$disabled{ocb} -}]

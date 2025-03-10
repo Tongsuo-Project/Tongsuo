@@ -11,17 +11,34 @@
 #include <openssl/params.h>
 #include <openssl/err.h>
 
-#if !defined(OPENSSL_NO_WBSM4_XIAO_STKEY)
+#if !defined(OPENSSL_NO_WBSM4_XIAO_STKEY) || !defined(OPENSSL_NO_WBSM4_JIN_STKEY) \
+|| !defined(OPENSSL_NO_WBSM4_XIAO_DYKEY)
+#include "crypto/sm4.h"
 #include "crypto/wbsm4.h"
-/*
-* KDF 上下文：存储原始密钥、白盒类型，以及各自的上下文
-*/
+
 typedef struct {
-unsigned char rawkey[16];  /* SM4 128-bit key */
-wbsm4_xiao_stkey_context stctx;
+    void *provctx;
+    unsigned char rawkey[SM4_BLOCK_SIZE];
+    unsigned char *cipher;
+    size_t len_wbsm4_type;
+    int mode;
+    union {
+#ifndef OPENSSL_NO_WBSM4_XIAO_STKEY
+        wbsm4_xiao_stkey_context ks_xiao_stkey;
+#endif
+#ifndef OPENSSL_NO_WBSM4_JIN_STKEY
+        wbsm4_jin_stkey_context ks_jin_stkey;
+#endif
+#ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
+        wbsm4_xiao_dykey_context ks_xiao_dykey;
+#endif
+    } wbctx;
+#ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
+    int update_key;
+    wbsm4_xiao_dykey_ctxrk ctxrk;
+#endif
 } WBSM4_KDF_CTX;
 
-/* ---------- KDF接口函数声明 ---------- */
 static void *wbsm4kdf_new(void *provctx);
 static void wbsm4kdf_free(void *vctx);
 static void wbsm4kdf_reset(void *vctx);
@@ -33,7 +50,7 @@ static int wbsm4kdf_set_ctx_params(void *vctx, const OSSL_PARAM params[]);
 static const OSSL_PARAM *wbsm4kdf_gettable_ctx_params(void *provctx);
 static int wbsm4kdf_get_ctx_params(void *vctx, OSSL_PARAM params[]);
 
-/* ---------- OSSL_DISPATCH 映射表 ---------- */
+/* ---------- OSSL_DISPATCH table ---------- */
 const OSSL_DISPATCH wbsm4kdf_functions[] = {
     { OSSL_FUNC_KDF_NEWCTX,              (void (*)(void))wbsm4kdf_new },
     { OSSL_FUNC_KDF_FREECTX,             (void (*)(void))wbsm4kdf_free },
@@ -46,28 +63,22 @@ const OSSL_DISPATCH wbsm4kdf_functions[] = {
     { 0, NULL }
 };
 
-/*
-* 向外暴露的算法描述 (供 provider_init 中使用)
-*/
-const OSSL_ALGORITHM wbsm4kdf_algorithm[] = {
-    { "WBSM4KDF", "provider=tongsuo", wbsm4kdf_functions },
-    { NULL, NULL, NULL }
-};
-
-/* ---------- 函数实现 ---------- */
-
-/* 1) 构造上下文 */
+/* ---------- functions ---------- */
 static void *wbsm4kdf_new(void *provctx)
 {
     WBSM4_KDF_CTX *ctx = OPENSSL_zalloc(sizeof(*ctx));
-    if (ctx == NULL)
+    if (ctx == NULL) {
+        ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
         return NULL;
-    memset(ctx->rawkey, 0, sizeof(ctx->rawkey));
-    ctx->stctx.mode = WBSM4_ENCRYPT_MODE;
+    }
+    ctx->provctx = provctx;
+    OPENSSL_cleanse(&ctx->wbctx, sizeof(ctx->wbctx));
+#ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
+    OPENSSL_cleanse(&ctx->ctxrk, sizeof(ctx->ctxrk));
+#endif
     return ctx;
 }
 
-/* 2) 释放上下文 */
 static void wbsm4kdf_free(void *vctx)
 {
     WBSM4_KDF_CTX *ctx = (WBSM4_KDF_CTX *)vctx;
@@ -76,14 +87,17 @@ static void wbsm4kdf_free(void *vctx)
     }
 }
 
-/* 3) 重置上下文 */
 static void wbsm4kdf_reset(void *vctx)
 {
     WBSM4_KDF_CTX *ctx = (WBSM4_KDF_CTX *)vctx;
     if (ctx != NULL) {
-        memset(ctx->rawkey, 0, sizeof(ctx->rawkey));
-    //  memset(ctx->stctx, 0, sizeof(ctx->stctx));
-        ctx->stctx.mode = WBSM4_ENCRYPT_MODE;
+        void *provctx = ctx->provctx;
+        OPENSSL_cleanse(&ctx->rawkey, sizeof(ctx->rawkey));
+        OPENSSL_cleanse(&ctx->wbctx, sizeof(ctx->wbctx));
+#ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
+        OPENSSL_cleanse(&ctx->ctxrk, sizeof(ctx->ctxrk));
+#endif
+        ctx->provctx = provctx;
     }
 }
 
@@ -94,32 +108,103 @@ static int wbsm4kdf_derive(void *vctx,
 {
     WBSM4_KDF_CTX *ctx = (WBSM4_KDF_CTX *)vctx;
 
-    /* 若传入了额外 params，则先解析 */
     if (!wbsm4kdf_set_ctx_params(ctx, params))
         return 0;
+    if (ctx->cipher == NULL) return 0;
 
-    wbsm4_xiao_stkey_gen(ctx->rawkey, &ctx->stctx);
-    if (keylen < sizeof(ctx->stctx)) {
+#ifndef OPENSSL_NO_WBSM4_XIAO_STKEY
+    if (OPENSSL_strcasecmp((char *)ctx->cipher, "WBSM4-XIAO-STKEY") == 0) {
+        if (keylen != sizeof(wbsm4_xiao_stkey_context)) {
+            OPENSSL_cleanse(&ctx->rawkey, sizeof(ctx->rawkey));
+            return 0;
+        }
+
+        if (key == NULL) {
+            return 0;
+        }
+        ctx->wbctx.ks_xiao_stkey.mode = ctx->mode;
+        wbsm4_xiao_stkey_gen(ctx->rawkey, &ctx->wbctx.ks_xiao_stkey);
+        wbsm4_export_key(&ctx->wbctx.ks_xiao_stkey, key, sizeof(wbsm4_xiao_stkey_context));
+        OPENSSL_cleanse(&ctx->rawkey, sizeof(ctx->rawkey));
+
+        return 1;
+    } else
+#endif
+#ifndef OPENSSL_NO_WBSM4_JIN_STKEY
+    if (OPENSSL_strcasecmp((char *)ctx->cipher, "WBSM4-JIN-STKEY") == 0) {
+        if (keylen != sizeof(wbsm4_jin_stkey_context)) {
+            OPENSSL_cleanse(&ctx->rawkey, sizeof(ctx->rawkey));
+            return 0;
+        }
+
+        if (key == NULL) {
+            return 0;
+        }
+        ctx->wbctx.ks_jin_stkey.mode = ctx->mode;
+        wbsm4_jin_stkey_gen(ctx->rawkey, &ctx->wbctx.ks_jin_stkey);
+        wbsm4_export_key(&ctx->wbctx.ks_jin_stkey, key, sizeof(wbsm4_jin_stkey_context));
+        OPENSSL_cleanse(&ctx->rawkey, sizeof(ctx->rawkey));
+
+        return 1;
+    } else
+#endif
+#ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
+    if (OPENSSL_strcasecmp((char *)ctx->cipher, "WBSM4-XIAO-DYKEY") == 0) {
+        if (ctx->update_key) {
+            if (keylen != 32 * sizeof(uint32_t)) {
+                OPENSSL_cleanse(&ctx->rawkey, sizeof(ctx->rawkey));
+                return 0;
+            }
+            if (key == NULL) {
+                return 0;
+            }
+
+            uint32_t wbrk[32];
+            wbsm4_xiao_dykey_key2wbrk(ctx->rawkey, &ctx->ctxrk, wbrk);
+            wbsm4_export_key((void *)wbrk, key, 32 * sizeof(uint32_t));
+            OPENSSL_cleanse(&ctx->rawkey, sizeof(ctx->rawkey));
+
+            return 1;
+        }
+
+        if (keylen != sizeof(wbsm4_xiao_dykey_context)) {
+            OPENSSL_cleanse(&ctx->rawkey, sizeof(ctx->rawkey));
+            return 0;
+        }
+
+        if (key == NULL) {
+            return 0;
+        }
+        ctx->wbctx.ks_xiao_dykey.mode = ctx->mode;
+        wbsm4_xiao_dykey_gen(ctx->rawkey, &ctx->wbctx.ks_xiao_dykey, &ctx->ctxrk);
+        wbsm4_export_key(&ctx->wbctx.ks_xiao_dykey, key, sizeof(wbsm4_xiao_dykey_context));
+        OPENSSL_cleanse(&ctx->rawkey, sizeof(ctx->rawkey));
+
+        return 1;
+    } else
+#endif
+    {
+        OPENSSL_cleanse(&ctx->rawkey, sizeof(ctx->rawkey));
         return 0;
     }
-    memcpy(key, &ctx->stctx, sizeof(ctx->stctx));
 
-    return 1; /* 派生成功 */
+    return 1;
 }
 
-/* 5) 告知可设置哪些参数 */
 static const OSSL_PARAM *wbsm4kdf_settable_ctx_params(void *provctx)
 {
     static const OSSL_PARAM known_settable_ctx_params[] = {
-        OSSL_PARAM_octet_string("wbsm4_key", NULL, 0),   /* 设置原始SM4密钥(16字节) */
-        OSSL_PARAM_utf8_string("wbsm4_type", NULL, 0),   /* "dykey" or "stkey" */
-        OSSL_PARAM_utf8_string("mode", NULL, 0),         /* "encrypt" or "decrypt" */
+        OSSL_PARAM_octet_string(OSSL_KDF_PARAM_KEY, NULL, 0),
+        OSSL_PARAM_utf8_string(OSSL_KDF_PARAM_CIPHER, NULL, 0),
+        OSSL_PARAM_int(OSSL_KDF_PARAM_MODE, NULL),
+#ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
+        OSSL_PARAM_int(OSSL_KDF_PARAM_WBSM4_UPDATE_KEY, NULL),
+#endif
         OSSL_PARAM_END
     };
     return known_settable_ctx_params;
 }
 
-/* 6) 设置参数 */
 static int wbsm4kdf_set_ctx_params(void *vctx, const OSSL_PARAM params[])
 {
     WBSM4_KDF_CTX *ctx = (WBSM4_KDF_CTX *)vctx;
@@ -128,41 +213,75 @@ static int wbsm4kdf_set_ctx_params(void *vctx, const OSSL_PARAM params[])
     if (params == NULL)
         return 1;
 
-    for (p = params; p->key != NULL; p++) {
-        if (strcmp(p->key, "wbsm4_key") == 0) {
-            /* 原始SM4密钥 */
-            if (p->data_type != OSSL_PARAM_OCTET_STRING) return 0;
-            if (p->data_size != 16) return 0;
-            memcpy(ctx->rawkey, p->data, 16);
-        } else if (strcmp(p->key, "mode") == 0) {
-            /* 加解密模式 */
-            if (p->data_type != OSSL_PARAM_UTF8_STRING) return 0;
-            if (strcmp((const char *)p->data, "decrypt") == 0) {
-                ctx->stctx.mode = WBSM4_DECRYPT_MODE;
-            } else {
-                ctx->stctx.mode = WBSM4_ENCRYPT_MODE;
-            }
-        }
+    p = OSSL_PARAM_locate(params, OSSL_KDF_PARAM_KEY);
+    if (p != NULL) {
+        if (p->data_type != OSSL_PARAM_OCTET_STRING) return 0;
+        if (p->data_size != SM4_BLOCK_SIZE) return 0;
+        if (p->data == NULL) return 0;
+        memcpy(ctx->rawkey, p->data, SM4_BLOCK_SIZE);
     }
+
+    p = OSSL_PARAM_locate(params, OSSL_KDF_PARAM_CIPHER);
+    if (p != NULL) {
+        if (p->data_type != OSSL_PARAM_UTF8_STRING) return 0;
+        if (p->data == NULL) return 0;
+        ctx->cipher = p->data;
+    }
+
+    p = OSSL_PARAM_locate(params, OSSL_KDF_PARAM_MODE);
+    if (p != NULL) {
+        if (p->data_type != OSSL_PARAM_INTEGER) return 0;
+        ctx->mode = *(int*)(p->data);
+    }
+
+#ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
+    p = OSSL_PARAM_locate(params, OSSL_KDF_PARAM_WBSM4_UPDATE_KEY);
+    if (p != NULL) {
+        if (p->data_type != OSSL_PARAM_INTEGER) return 0;
+        ctx->update_key = *(int*)(p->data);
+    }
+#endif
+
     return 1;
 }
 
- /* 7) 告知可获取哪些参数（可选） */
  static const OSSL_PARAM *wbsm4kdf_gettable_ctx_params(void *provctx)
 {
     static const OSSL_PARAM known_gettable_ctx_params[] = {
+        OSSL_PARAM_size_t(OSSL_KDF_PARAM_SIZE, NULL),
         OSSL_PARAM_END
     };
     return known_gettable_ctx_params;
 }
 
-/* 8) 获取参数（可选实现） */
 static int wbsm4kdf_get_ctx_params(void *vctx, OSSL_PARAM params[])
 {
-    /* 如果需要返回当前 type、mode 等，可在此实现 */
-    (void)vctx;
-    (void)params;
-    return 1;
+    WBSM4_KDF_CTX *ctx = (WBSM4_KDF_CTX *)vctx;
+    OSSL_PARAM *p;
+    size_t keylen = 0;
+
+    p = OSSL_PARAM_locate(params, OSSL_KDF_PARAM_SIZE);
+    if (p != NULL) {
+        if (ctx->cipher == NULL)
+            keylen = 0;
+#ifndef OPENSSL_NO_WBSM4_XIAO_STKEY
+        else if (OPENSSL_strcasecmp((char *)ctx->cipher, "WBSM4-XIAO-STKEY") == 0)
+            keylen = sizeof(wbsm4_xiao_stkey_context);
+#endif
+#ifndef OPENSSL_NO_WBSM4_JIN_STKEY
+        else if (OPENSSL_strcasecmp((char *)ctx->cipher, "WBSM4-JIN-STKEY") == 0)
+            keylen = sizeof(wbsm4_jin_stkey_context);
+#endif
+#ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
+        else if (OPENSSL_strcasecmp((char *)ctx->cipher, "WBSM4-XIAO-DYKEY") == 0)
+            keylen = sizeof(wbsm4_xiao_dykey_context);
+#endif
+    }
+
+    if (keylen != 0)
+        return OSSL_PARAM_set_size_t(p, keylen);
+
+    return 0;
 }
 
 #endif

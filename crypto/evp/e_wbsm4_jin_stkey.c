@@ -13,7 +13,7 @@
 #include "internal/deprecated.h"
 
 #include "internal/cryptlib.h"
-#ifndef OPENSSL_NO_WBSM4_XIAO_STKEY
+#ifndef OPENSSL_NO_WBSM4_JIN_STKEY
 # include <openssl/rand.h>
 # include "crypto/wbsm4.h"
 # include "crypto/evp.h"
@@ -23,24 +23,24 @@
 typedef struct {
     union {
         OSSL_UNION_ALIGN;
-        wbsm4_xiao_stkey_context ks;
+        wbsm4_jin_stkey_context ks;
     } ks;
     block128_f block;
-} EVP_WBSM4_XIAO_STKEY_KEY;
+} EVP_WBSM4_JIN_STKEY_KEY;
 
 # define BLOCK_CIPHER_generic(nid,blocksize,ivlen,nmode,mode,MODE,flags) \
-static const EVP_CIPHER wbsm4_xiao_stkey_##mode = {                         \
-        nid##_##nmode,blocksize,sizeof(wbsm4_xiao_stkey_context),ivlen,         \
+static const EVP_CIPHER wbsm4_jin_stkey_##mode = {                         \
+        nid##_##nmode,blocksize,sizeof(wbsm4_jin_stkey_context),ivlen,         \
         flags|EVP_CIPH_##MODE##_MODE,                                    \
         EVP_ORIG_GLOBAL,                                                 \
-        wbsm4_xiao_stkey_init_key,                                          \
-        wbsm4_xiao_stkey_##mode##_cipher,                                   \
+        wbsm4_jin_stkey_init_key,                                          \
+        wbsm4_jin_stkey_##mode##_cipher,                                   \
         NULL,                                                            \
-        sizeof(EVP_WBSM4_XIAO_STKEY_KEY),                                   \
+        sizeof(EVP_WBSM4_JIN_STKEY_KEY),                                   \
         NULL,NULL,NULL,NULL                                              \
 };                                                                       \
-const EVP_CIPHER *EVP_wbsm4_xiao_stkey_##mode(void)                         \
-{ return &wbsm4_xiao_stkey_##mode; }
+const EVP_CIPHER *EVP_wbsm4_jin_stkey_##mode(void)                         \
+{ return &wbsm4_jin_stkey_##mode; }
 
 #define DEFINE_BLOCK_CIPHERS(nid,flags)                        \
         BLOCK_CIPHER_generic(nid,16,16,cbc,cbc,CBC,            \
@@ -53,28 +53,28 @@ const EVP_CIPHER *EVP_wbsm4_xiao_stkey_##mode(void)                         \
                             flags|EVP_CIPH_FLAG_DEFAULT_ASN1) \
         BLOCK_CIPHER_generic(nid,1,16,ctr,ctr,CTR,flags)
 
-static int wbsm4_xiao_stkey_init_key(EVP_CIPHER_CTX *ctx, const unsigned char *key,
+static int wbsm4_jin_stkey_init_key(EVP_CIPHER_CTX *ctx, const unsigned char *key,
                         const unsigned char *iv, int enc)
 {
     int mode = EVP_CIPHER_CTX_get_mode(ctx);
-    EVP_WBSM4_XIAO_STKEY_KEY *dat = EVP_C_DATA(EVP_WBSM4_XIAO_STKEY_KEY,ctx);
+    EVP_WBSM4_JIN_STKEY_KEY *dat = EVP_C_DATA(EVP_WBSM4_JIN_STKEY_KEY,ctx);
     if ((mode == EVP_CIPH_ECB_MODE || mode == EVP_CIPH_CBC_MODE)
     && !enc) {
-        dat->block = (block128_f) wbsm4_xiao_stkey_decrypt;
-        wbsm4_set_key(key, &dat->ks.ks, sizeof(wbsm4_xiao_stkey_context));
+        dat->block = (block128_f) wbsm4_jin_stkey_decrypt;
+        wbsm4_set_key(key, &dat->ks.ks, sizeof(wbsm4_jin_stkey_context));
     }
     else {
-        dat->block = (block128_f) wbsm4_xiao_stkey_encrypt;
-        wbsm4_set_key(key, &dat->ks.ks, sizeof(wbsm4_xiao_stkey_context));
+        dat->block = (block128_f) wbsm4_jin_stkey_encrypt;
+        wbsm4_set_key(key, &dat->ks.ks, sizeof(wbsm4_jin_stkey_context));
     }
     
     return 1;
 }
 
-static int wbsm4_xiao_stkey_cbc_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
+static int wbsm4_jin_stkey_cbc_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
                         const unsigned char *in, size_t len)
 {
-    EVP_WBSM4_XIAO_STKEY_KEY *dat = EVP_C_DATA(EVP_WBSM4_XIAO_STKEY_KEY,ctx);
+    EVP_WBSM4_JIN_STKEY_KEY *dat = EVP_C_DATA(EVP_WBSM4_JIN_STKEY_KEY,ctx);
 
     if (EVP_CIPHER_CTX_is_encrypting(ctx))
         CRYPTO_cbc128_encrypt(in, out, len, &dat->ks, ctx->iv,
@@ -86,10 +86,10 @@ static int wbsm4_xiao_stkey_cbc_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
     return 1;
 }
 
-static int wbsm4_xiao_stkey_cfb_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
+static int wbsm4_jin_stkey_cfb_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
                         const unsigned char *in, size_t len)
 {
-    EVP_WBSM4_XIAO_STKEY_KEY *dat = EVP_C_DATA(EVP_WBSM4_XIAO_STKEY_KEY,ctx);
+    EVP_WBSM4_JIN_STKEY_KEY *dat = EVP_C_DATA(EVP_WBSM4_JIN_STKEY_KEY,ctx);
     int num = EVP_CIPHER_CTX_get_num(ctx);
 
     CRYPTO_cfb128_encrypt(in, out, len, &dat->ks,
@@ -99,12 +99,12 @@ static int wbsm4_xiao_stkey_cfb_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
     return 1;
 }
 
-static int wbsm4_xiao_stkey_ecb_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
+static int wbsm4_jin_stkey_ecb_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
                         const unsigned char *in, size_t len)
 {
     size_t bl = EVP_CIPHER_CTX_get_block_size(ctx);
     size_t i;
-    EVP_WBSM4_XIAO_STKEY_KEY *dat = EVP_C_DATA(EVP_WBSM4_XIAO_STKEY_KEY,ctx);
+    EVP_WBSM4_JIN_STKEY_KEY *dat = EVP_C_DATA(EVP_WBSM4_JIN_STKEY_KEY,ctx);
 
     if (len < bl)
         return 1;
@@ -115,10 +115,10 @@ static int wbsm4_xiao_stkey_ecb_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
     return 1;
 }
 
-static int wbsm4_xiao_stkey_ofb_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
+static int wbsm4_jin_stkey_ofb_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
                         const unsigned char *in, size_t len)
 {
-    EVP_WBSM4_XIAO_STKEY_KEY *dat = EVP_C_DATA(EVP_WBSM4_XIAO_STKEY_KEY,ctx);
+    EVP_WBSM4_JIN_STKEY_KEY *dat = EVP_C_DATA(EVP_WBSM4_JIN_STKEY_KEY,ctx);
     int num = EVP_CIPHER_CTX_get_num(ctx);
 
     CRYPTO_ofb128_encrypt(in, out, len, &dat->ks,
@@ -127,12 +127,12 @@ static int wbsm4_xiao_stkey_ofb_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
     return 1;
 }
 
-static int wbsm4_xiao_stkey_ctr_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
+static int wbsm4_jin_stkey_ctr_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
                         const unsigned char *in, size_t len)
 {
     int n = EVP_CIPHER_CTX_get_num(ctx);
     unsigned int num;
-    EVP_WBSM4_XIAO_STKEY_KEY *dat = EVP_C_DATA(EVP_WBSM4_XIAO_STKEY_KEY,ctx);
+    EVP_WBSM4_JIN_STKEY_KEY *dat = EVP_C_DATA(EVP_WBSM4_JIN_STKEY_KEY,ctx);
 
     if (n < 0)
         return 0;
@@ -146,24 +146,24 @@ static int wbsm4_xiao_stkey_ctr_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
     return 1;
 }
 
-DEFINE_BLOCK_CIPHERS(NID_wbsm4_xiao_stkey, 0)
+DEFINE_BLOCK_CIPHERS(NID_wbsm4_jin_stkey, 0)
 
 # define BLOCK_CIPHER_custom(nid,blocksize,ivlen,mode,MODE,flags) \
-static const EVP_CIPHER wbsm4_xiao_stkey_##mode = {                  \
-        nid##_##mode,blocksize, sizeof(wbsm4_xiao_stkey_context), ivlen, \
+static const EVP_CIPHER wbsm4_jin_stkey_##mode = {                  \
+        nid##_##mode,blocksize, sizeof(wbsm4_jin_stkey_context), ivlen, \
         flags|EVP_CIPH_##MODE##_MODE,                             \
         EVP_ORIG_GLOBAL,                                          \
-        wbsm4_xiao_stkey_##mode##_init,                              \
-        wbsm4_xiao_stkey_##mode##_cipher,                            \
-        wbsm4_xiao_stkey_##mode##_cleanup,                           \
-        sizeof(EVP_WBSM4_XIAO_STKEY_##MODE##_CTX),                             \
-        NULL,NULL,wbsm4_xiao_stkey_##mode##_ctrl,NULL                \
+        wbsm4_jin_stkey_##mode##_init,                              \
+        wbsm4_jin_stkey_##mode##_cipher,                            \
+        wbsm4_jin_stkey_##mode##_cleanup,                           \
+        sizeof(EVP_WBSM4_JIN_STKEY_##MODE##_CTX),                             \
+        NULL,NULL,wbsm4_jin_stkey_##mode##_ctrl,NULL                \
 };                                                                \
-const EVP_CIPHER *EVP_wbsm4_xiao_stkey_##mode(void)                  \
-{ return &wbsm4_xiao_stkey_##mode; }
+const EVP_CIPHER *EVP_wbsm4_jin_stkey_##mode(void)                  \
+{ return &wbsm4_jin_stkey_##mode; }
 
 typedef struct {
-    wbsm4_xiao_stkey_context ks;       /* WBSM4 key schedule to use */
+    wbsm4_jin_stkey_context ks;       /* WBSM4 key schedule to use */
     int key_set;                /* Set if key initialized */
     int iv_set;                 /* Set if an iv is set */
     GCM128_CONTEXT gcm;
@@ -173,10 +173,10 @@ typedef struct {
     int iv_gen;                 /* It is OK to generate IVs */
     int tls_aad_len;            /* TLS AAD length */
     ctr128_f ctr;
-} EVP_WBSM4_XIAO_STKEY_GCM_CTX;
+} EVP_WBSM4_JIN_STKEY_GCM_CTX;
 
 typedef struct {
-    wbsm4_xiao_stkey_context ks;       /* WBSM4 key schedule to use */
+    wbsm4_jin_stkey_context ks;       /* WBSM4 key schedule to use */
     int key_set;                /* Set if key initialized */
     int iv_set;                 /* Set if an iv is set */
     int tag_set;                /* Set if tag is valid */
@@ -185,23 +185,23 @@ typedef struct {
     int tls_aad_len;            /* TLS AAD length */
     CCM128_CONTEXT ccm;
     ccm128_f str;
-} EVP_WBSM4_XIAO_STKEY_CCM_CTX;
+} EVP_WBSM4_JIN_STKEY_CCM_CTX;
 
-static int wbsm4_xiao_stkey_gcm_ctrl(EVP_CIPHER_CTX *c, int type, int arg,
+static int wbsm4_jin_stkey_gcm_ctrl(EVP_CIPHER_CTX *c, int type, int arg,
                                 void *ptr);
-static int wbsm4_xiao_stkey_gcm_init(EVP_CIPHER_CTX *ctx, const unsigned char *key,
+static int wbsm4_jin_stkey_gcm_init(EVP_CIPHER_CTX *ctx, const unsigned char *key,
                         const unsigned char *iv, int enc);
-static int wbsm4_xiao_stkey_gcm_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
+static int wbsm4_jin_stkey_gcm_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
                         const unsigned char *in, size_t len);
-static int wbsm4_xiao_stkey_gcm_cleanup(EVP_CIPHER_CTX *c);
+static int wbsm4_jin_stkey_gcm_cleanup(EVP_CIPHER_CTX *c);
 
-static int wbsm4_xiao_stkey_ccm_ctrl(EVP_CIPHER_CTX *c, int type, int arg,
+static int wbsm4_jin_stkey_ccm_ctrl(EVP_CIPHER_CTX *c, int type, int arg,
                                 void *ptr);
-static int wbsm4_xiao_stkey_ccm_init(EVP_CIPHER_CTX *ctx, const unsigned char *key,
+static int wbsm4_jin_stkey_ccm_init(EVP_CIPHER_CTX *ctx, const unsigned char *key,
                         const unsigned char *iv, int enc);
-static int wbsm4_xiao_stkey_ccm_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
+static int wbsm4_jin_stkey_ccm_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
                         const unsigned char *in, size_t len);
-static int wbsm4_xiao_stkey_ccm_cleanup(EVP_CIPHER_CTX *c);
+static int wbsm4_jin_stkey_ccm_cleanup(EVP_CIPHER_CTX *c);
 
 /* increment counter (64-bit int) by 1 */
 static void ctr64_inc(unsigned char *counter)
@@ -219,10 +219,10 @@ static void ctr64_inc(unsigned char *counter)
     } while (n);
 }
 
-static int wbsm4_xiao_stkey_gcm_ctrl(EVP_CIPHER_CTX *c, int type, int arg,
+static int wbsm4_jin_stkey_gcm_ctrl(EVP_CIPHER_CTX *c, int type, int arg,
                                 void *ptr)
 {
-    EVP_WBSM4_XIAO_STKEY_GCM_CTX *gctx = EVP_C_DATA(EVP_WBSM4_XIAO_STKEY_GCM_CTX,c);
+    EVP_WBSM4_JIN_STKEY_GCM_CTX *gctx = EVP_C_DATA(EVP_WBSM4_JIN_STKEY_GCM_CTX,c);
 
     switch (type) {
     case EVP_CTRL_INIT:
@@ -335,7 +335,7 @@ static int wbsm4_xiao_stkey_gcm_ctrl(EVP_CIPHER_CTX *c, int type, int arg,
     case EVP_CTRL_COPY:
         {
             EVP_CIPHER_CTX *out = ptr;
-            EVP_WBSM4_XIAO_STKEY_GCM_CTX *gctx_out = EVP_C_DATA(EVP_WBSM4_XIAO_STKEY_GCM_CTX,out);
+            EVP_WBSM4_JIN_STKEY_GCM_CTX *gctx_out = EVP_C_DATA(EVP_WBSM4_JIN_STKEY_GCM_CTX,out);
 
             if (gctx->gcm.key) {
                 if (gctx->gcm.key != &gctx->ks)
@@ -361,18 +361,18 @@ static int wbsm4_xiao_stkey_gcm_ctrl(EVP_CIPHER_CTX *c, int type, int arg,
     return 1;
 }
 
-static int wbsm4_xiao_stkey_gcm_init(EVP_CIPHER_CTX *ctx, const unsigned char *key,
+static int wbsm4_jin_stkey_gcm_init(EVP_CIPHER_CTX *ctx, const unsigned char *key,
                         const unsigned char *iv, int enc)
 {
-    EVP_WBSM4_XIAO_STKEY_GCM_CTX *gctx = EVP_C_DATA(EVP_WBSM4_XIAO_STKEY_GCM_CTX,ctx);
+    EVP_WBSM4_JIN_STKEY_GCM_CTX *gctx = EVP_C_DATA(EVP_WBSM4_JIN_STKEY_GCM_CTX,ctx);
 
     if (iv == NULL && key == NULL)
         return 1;
     if (key) {
         do {
-            wbsm4_set_key(key, &gctx->ks, sizeof(wbsm4_xiao_stkey_context));
+            wbsm4_set_key(key, &gctx->ks, sizeof(wbsm4_jin_stkey_context));
             CRYPTO_gcm128_init(&gctx->gcm, &gctx->ks,
-                            (block128_f)wbsm4_xiao_stkey_encrypt);
+                            (block128_f)wbsm4_jin_stkey_encrypt);
             gctx->ctr = NULL;
         } while (0);
 
@@ -405,10 +405,10 @@ static int wbsm4_xiao_stkey_gcm_init(EVP_CIPHER_CTX *ctx, const unsigned char *k
 * and verify tag.
 */
 
-static int wbsm4_xiao_stkey_gcm_tls_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
+static int wbsm4_jin_stkey_gcm_tls_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
                             const unsigned char *in, size_t len)
 {
-    EVP_WBSM4_XIAO_STKEY_GCM_CTX *gctx = EVP_C_DATA(EVP_WBSM4_XIAO_STKEY_GCM_CTX,ctx);
+    EVP_WBSM4_JIN_STKEY_GCM_CTX *gctx = EVP_C_DATA(EVP_WBSM4_JIN_STKEY_GCM_CTX,ctx);
     int rv = -1;
     /* Encrypt/decrypt must be performed in place */
     if (out != in
@@ -479,17 +479,17 @@ err:
     return rv;
 }
 
-static int wbsm4_xiao_stkey_gcm_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
+static int wbsm4_jin_stkey_gcm_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
                         const unsigned char *in, size_t len)
 {
-    EVP_WBSM4_XIAO_STKEY_GCM_CTX *gctx = EVP_C_DATA(EVP_WBSM4_XIAO_STKEY_GCM_CTX,ctx);
+    EVP_WBSM4_JIN_STKEY_GCM_CTX *gctx = EVP_C_DATA(EVP_WBSM4_JIN_STKEY_GCM_CTX,ctx);
 
     /* If not set up, return error */
     if (!gctx->key_set)
         return -1;
 
     if (gctx->tls_aad_len >= 0)
-        return wbsm4_xiao_stkey_gcm_tls_cipher(ctx, out, in, len);
+        return wbsm4_jin_stkey_gcm_tls_cipher(ctx, out, in, len);
 
     if (!gctx->iv_set)
         return -1;
@@ -535,9 +535,9 @@ static int wbsm4_xiao_stkey_gcm_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
     }
 }
 
-static int wbsm4_xiao_stkey_gcm_cleanup(EVP_CIPHER_CTX *c)
+static int wbsm4_jin_stkey_gcm_cleanup(EVP_CIPHER_CTX *c)
 {
-    EVP_WBSM4_XIAO_STKEY_GCM_CTX *gctx = EVP_C_DATA(EVP_WBSM4_XIAO_STKEY_GCM_CTX, c);
+    EVP_WBSM4_JIN_STKEY_GCM_CTX *gctx = EVP_C_DATA(EVP_WBSM4_JIN_STKEY_GCM_CTX, c);
     const unsigned char *iv;
 
     if (gctx == NULL)
@@ -551,10 +551,10 @@ static int wbsm4_xiao_stkey_gcm_cleanup(EVP_CIPHER_CTX *c)
     return 1;
 }
 
-static int wbsm4_xiao_stkey_ccm_ctrl(EVP_CIPHER_CTX *c, int type, int arg,
+static int wbsm4_jin_stkey_ccm_ctrl(EVP_CIPHER_CTX *c, int type, int arg,
                                 void *ptr)
 {
-    EVP_WBSM4_XIAO_STKEY_CCM_CTX *cctx = EVP_C_DATA(EVP_WBSM4_XIAO_STKEY_CCM_CTX,c);
+    EVP_WBSM4_JIN_STKEY_CCM_CTX *cctx = EVP_C_DATA(EVP_WBSM4_JIN_STKEY_CCM_CTX,c);
 
     switch (type) {
     case EVP_CTRL_INIT:
@@ -638,7 +638,7 @@ static int wbsm4_xiao_stkey_ccm_ctrl(EVP_CIPHER_CTX *c, int type, int arg,
     case EVP_CTRL_COPY:
         {
             EVP_CIPHER_CTX *out = ptr;
-            EVP_WBSM4_XIAO_STKEY_CCM_CTX *cctx_out = EVP_C_DATA(EVP_WBSM4_XIAO_STKEY_CCM_CTX,out);
+            EVP_WBSM4_JIN_STKEY_CCM_CTX *cctx_out = EVP_C_DATA(EVP_WBSM4_JIN_STKEY_CCM_CTX,out);
 
             if (cctx->ccm.key) {
                 if (cctx->ccm.key != &cctx->ks)
@@ -654,18 +654,18 @@ static int wbsm4_xiao_stkey_ccm_ctrl(EVP_CIPHER_CTX *c, int type, int arg,
     }
 }
 
-static int wbsm4_xiao_stkey_ccm_init(EVP_CIPHER_CTX *ctx, const unsigned char *key,
+static int wbsm4_jin_stkey_ccm_init(EVP_CIPHER_CTX *ctx, const unsigned char *key,
                         const unsigned char *iv, int enc)
 {
-    EVP_WBSM4_XIAO_STKEY_CCM_CTX *cctx = EVP_C_DATA(EVP_WBSM4_XIAO_STKEY_CCM_CTX,ctx);
+    EVP_WBSM4_JIN_STKEY_CCM_CTX *cctx = EVP_C_DATA(EVP_WBSM4_JIN_STKEY_CCM_CTX,ctx);
 
     if (iv == NULL && key == NULL)
         return 1;
     if (key != NULL)
         do {
-            wbsm4_set_key(key, &cctx->ks, sizeof(wbsm4_xiao_stkey_context));
+            wbsm4_set_key(key, &cctx->ks, sizeof(wbsm4_jin_stkey_context));
             CRYPTO_ccm128_init(&cctx->ccm, cctx->M, cctx->L,
-                            &cctx->ks, (block128_f)wbsm4_xiao_stkey_encrypt);
+                            &cctx->ks, (block128_f)wbsm4_jin_stkey_encrypt);
             cctx->str = NULL;
             cctx->key_set = 1;
         } while (0);
@@ -676,10 +676,10 @@ static int wbsm4_xiao_stkey_ccm_init(EVP_CIPHER_CTX *ctx, const unsigned char *k
     return 1;
 }
 
-static int wbsm4_xiao_stkey_ccm_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
+static int wbsm4_jin_stkey_ccm_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
                         const unsigned char *in, size_t len)
 {
-    EVP_WBSM4_XIAO_STKEY_CCM_CTX *cctx = EVP_C_DATA(EVP_WBSM4_XIAO_STKEY_CCM_CTX,ctx);
+    EVP_WBSM4_JIN_STKEY_CCM_CTX *cctx = EVP_C_DATA(EVP_WBSM4_JIN_STKEY_CCM_CTX,ctx);
     CCM128_CONTEXT *ccm = &cctx->ccm;
 
     /* If not set up, return error */
@@ -750,7 +750,7 @@ static int wbsm4_xiao_stkey_ccm_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
 
 }
 
-static int wbsm4_xiao_stkey_ccm_cleanup(EVP_CIPHER_CTX *c)
+static int wbsm4_jin_stkey_ccm_cleanup(EVP_CIPHER_CTX *c)
 {
     return 1;
 }
@@ -760,8 +760,8 @@ static int wbsm4_xiao_stkey_ccm_cleanup(EVP_CIPHER_CTX *c)
                         | EVP_CIPH_ALWAYS_CALL_INIT | EVP_CIPH_CTRL_INIT   \
                         | EVP_CIPH_CUSTOM_COPY | EVP_CIPH_CUSTOM_IV_LENGTH)
 
-BLOCK_CIPHER_custom(NID_wbsm4_xiao_stkey, 1, 12, gcm, GCM,
+BLOCK_CIPHER_custom(NID_wbsm4_jin_stkey, 1, 12, gcm, GCM,
                     EVP_CIPH_FLAG_AEAD_CIPHER | CUSTOM_FLAGS)
-BLOCK_CIPHER_custom(NID_wbsm4_xiao_stkey, 1, 12, ccm, CCM,
+BLOCK_CIPHER_custom(NID_wbsm4_jin_stkey, 1, 12, ccm, CCM,
                     EVP_CIPH_FLAG_AEAD_CIPHER | CUSTOM_FLAGS)
 #endif

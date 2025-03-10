@@ -98,14 +98,32 @@ extern const OSSL_DISPATCH ossl_sm4128gcm_functions[];
 extern const OSSL_DISPATCH ossl_sm4128ccm_functions[];
 #endif /* OPENSSL_NO_SM4 */
 #ifndef OPENSSL_NO_WBSM4_XIAO_STKEY
-extern const OSSL_DISPATCH ossl_wbsm4_xiaolai1225984ecb_functions[];
-extern const OSSL_DISPATCH ossl_wbsm4_xiaolai1225984cbc_functions[];
-extern const OSSL_DISPATCH ossl_wbsm4_xiaolai1225984ctr_functions[];
-extern const OSSL_DISPATCH ossl_wbsm4_xiaolai1225984ofb128_functions[];
-extern const OSSL_DISPATCH ossl_wbsm4_xiaolai1225984cfb128_functions[];
-// extern const OSSL_DISPATCH ossl_wbsm4_xiaolai1225984gcm_functions[];
-// extern const OSSL_DISPATCH ossl_wbsm4_xiaolai1225984ccm_functions[];
- #endif /* OPENSSL_NO_SM4_XIAO_STKEY */
+extern const OSSL_DISPATCH ossl_wbsm4_xiao_stkey128ecb_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_xiao_stkey128cbc_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_xiao_stkey128ctr_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_xiao_stkey128ofb128_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_xiao_stkey128cfb128_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_xiao_stkey128gcm_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_xiao_stkey128ccm_functions[];
+#endif /* OPENSSL_NO_SM4_XIAO_STKEY */
+#ifndef OPENSSL_NO_WBSM4_JIN_STKEY
+extern const OSSL_DISPATCH ossl_wbsm4_jin_stkey128ecb_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_jin_stkey128cbc_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_jin_stkey128ctr_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_jin_stkey128ofb128_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_jin_stkey128cfb128_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_jin_stkey128gcm_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_jin_stkey128ccm_functions[];
+#endif /* OPENSSL_NO_SM4_JIN_STKEY */
+#ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
+extern const OSSL_DISPATCH ossl_wbsm4_xiao_dykey128ecb_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_xiao_dykey128cbc_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_xiao_dykey128ctr_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_xiao_dykey128ofb128_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_xiao_dykey128cfb128_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_xiao_dykey128gcm_functions[];
+extern const OSSL_DISPATCH ossl_wbsm4_xiao_dykey128ccm_functions[];
+#endif /* OPENSSL_NO_SM4_XIAO_DYKEY */
 #ifndef OPENSSL_NO_RC5
 extern const OSSL_DISPATCH ossl_rc5128ecb_functions[];
 extern const OSSL_DISPATCH ossl_rc5128cbc_functions[];
@@ -216,7 +234,8 @@ extern const OSSL_DISPATCH ossl_cmac_legacy_keymgmt_functions[];
 #ifndef OPENSSL_NO_SM2
 extern const OSSL_DISPATCH ossl_sm2_keymgmt_functions[];
 #endif
-#ifndef OPENSSL_NO_WBSM4_XIAO_STKEY
+#if !defined(OPENSSL_NO_WBSM4_XIAO_STKEY) || !defined(OPENSSL_NO_WBSM4_JIN_STKEY) \
+|| !defined(OPENSSL_NO_WBSM4_XIAO_DYKEY)
 extern const OSSL_DISPATCH wbsm4kdf_functions[];
 #endif
 

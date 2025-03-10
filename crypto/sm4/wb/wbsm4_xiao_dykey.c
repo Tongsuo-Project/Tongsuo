@@ -75,7 +75,7 @@ void wbsm4_xiao_dykey_gen(const uint8_t *key, wbsm4_xiao_dykey_context *ctx, wbs
     for (i = 0; i < 32; i++)
     {
         // calculate xor table
-        uint8_t after_in1, after_in2, after_out, idx;
+        uint8_t after_in1, after_in2, after_out;
         for (j = 0; j < 4; j++) {
             for (x = 0; x < 256; x++) {
                 for (y = 0; y < 256; y++) {

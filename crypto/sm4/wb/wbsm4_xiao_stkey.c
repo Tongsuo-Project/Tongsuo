@@ -1,29 +1,4 @@
-#include <internal/endian.h>
 #include "crypto/wbsm4.h"
-
-void wbsm4_xiao_stkey_set_key(const uint8_t *key, wbsm4_xiao_stkey_context *ctx)
-{
-    DECLARE_IS_ENDIAN;
-
-    *ctx = *(wbsm4_xiao_stkey_context *)key;
-    if (IS_LITTLE_ENDIAN)
-        return;
-
-    uint8_t *p = (uint8_t *)ctx;
-    uint8_t *end = p + sizeof(wbsm4_xiao_stkey_context);
-    while (p < end) {
-        uint8_t t;
-        t = p[0];
-        p[0] = p[3];
-        p[3] = t;
-
-        t = p[1];
-        p[1] = p[2];
-        p[2] = t;
-
-        p += 4;
-    }
-}
 
 void wbsm4_xiao_stkey_gen(const uint8_t *key, wbsm4_xiao_stkey_context *ctx)
 {
@@ -121,7 +96,7 @@ void wbsm4_xiao_stkey_gen(const uint8_t *key, wbsm4_xiao_stkey_context *ctx)
 }
 
 
-void wbsm4_xiao_stkey_encrypt(const unsigned char *in, unsigned char *out, wbsm4_xiao_stkey_context *ctx) {
+void wbsm4_xiao_stkey_encrypt(const unsigned char *in, unsigned char *out, const wbsm4_xiao_stkey_context *ctx) {
     int i;
     uint32_t x0, x1, x2, x3, x4;
     uint32_t xt0, xt1, xt2, xt3, xt4;
@@ -164,6 +139,6 @@ void wbsm4_xiao_stkey_encrypt(const unsigned char *in, unsigned char *out, wbsm4
     PUT32(x0, out + 12);
 }
 
-void wbsm4_xiao_stkey_decrypt(const unsigned char *in, unsigned char *out, wbsm4_xiao_stkey_context *ctx) {
+void wbsm4_xiao_stkey_decrypt(const unsigned char *in, unsigned char *out, const wbsm4_xiao_stkey_context *ctx) {
     wbsm4_xiao_stkey_encrypt(in, out, ctx);
 }
