@@ -4,6 +4,8 @@
 
  Changes between 8.4.0 and 8.5.0 [xx XXX xxxx]
 
+  *) 增加WBSM4，支持国密SM4算法的白盒实现
+
   *) 修复CVE-2024-9143
 
   *) SMTC Provider适配蚂蚁密码卡（atf_slibce）
