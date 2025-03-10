@@ -528,17 +528,18 @@ static void wbsm4_gen_part2(const SM4_KEY* sm4_key, WB_SM4_Tables* tables) {
         }
 
         for (x = 0; x < 256; x++) {
-            temp_32_0 = x << (24 - 0 * 8);
+            /* 将 x 显式转换为 uint32_t 后再左移 */
+            temp_32_0 = (uint32_t)x << 24;  
             tables->part2_table[i][0][x] = nonlinearU32(&Qi[i], temp_32_0);
 
-            temp_32_1 = x << (24 - 1 * 8);
+            temp_32_1 = (uint32_t)x << 16;  
             tables->part2_table[i][1][x] = nonlinearU32(&Wi[i], temp_32_1);
 
-            temp_32_2 = x << (24 - 2 * 8);
+            temp_32_2 = (uint32_t)x << 8;  
             Hi_val_1 = affineU32(Hi[i], temp_32_2);
             tables->part2_table[i][2][x] = nonlinearU32(&Wi[i], Hi_val_1);
 
-            temp_32_3 = x << (24 - 3 * 8);
+            temp_32_3 = (uint32_t)x;   
             Hi_val_2 = affineU32(Hi[i], temp_32_3);
             HiComHi_val = affineU32(Hi[i], Hi_val_2);
             tables->part2_table[i][3][x] = nonlinearU32(&Wi[i], HiComHi_val);
