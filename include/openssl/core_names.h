@@ -216,7 +216,7 @@ extern "C" {
 #define OSSL_KDF_PARAM_X942_SUPP_PUBINFO    "supp-pubinfo"
 #define OSSL_KDF_PARAM_X942_SUPP_PRIVINFO   "supp-privinfo"
 #define OSSL_KDF_PARAM_X942_USE_KEYBITS     "use-keybits"
-#define OSSL_KDF_PARAM_WBSM4_UPDATE_KEY     "update-key"
+#define OSSL_KDF_PARAM_WBSM4_UPDATE_KEY     "update-key" /* octet_string */
 
 /* Known KDF names */
 #define OSSL_KDF_NAME_HKDF           "HKDF"

@@ -1,72 +1,15 @@
+/*
+* Copyright 2025 The Tongsuo Project Authors. All Rights Reserved.
+*
+* Licensed under the Apache License 2.0 (the "License").  You may not use
+* this file except in compliance with the License.  You can obtain a copy
+* in the file LICENSE in the source distribution or at
+* https://github.com/Tongsuo-Project/Tongsuo/blob/master/LICENSE.txt
+*/
 #include "crypto/wbsm4.h"
 
-void gen_Bijection4pair(uint8_t *table, uint8_t *inverse_table) {
-    for (int i = 0; i < 16; i++) {
-        table[i] = (uint8_t)i;
-    }
-
-    uint32_t tmp;
-    // 打乱，生成双射表
-    for (int i = 0; i < 16; i++) {
-        tmp = cus_random();
-        int r = (i + tmp % 16) % 16;
-        uint8_t tmp = table[i];
-        table[i] = table[r];
-        table[r] = tmp;
-    }
-
-    // 生成双射的逆
-    for (int i = 0; i < 16; i++) {
-        inverse_table[table[i]] = (uint8_t)i;
-    }
-}
-
-void gen_Bijection32pair(Biject32 *bij, Biject32 *bij_inv) {
-    for (int i = 0; i < 8; i++) {
-        gen_Bijection4pair(bij->lut[i], bij_inv->lut[i]);  // 生成正向和逆向双射表
-    }
-}
-
-uint32_t BijectionU32(const Biject32* bij, uint32_t x) {
-    uint32_t result = 0;
-    uint8_t transformed;
-    for (int i = 0; i < 8; i++) {
-        transformed = bij->lut[i][(x >> (28 - i * 4)) & 0x0F];  // 通过查找表变换
-        result |= transformed << (28 - i * 4);  // 拼接结果
-    }
-    return result;
-}
-
-// uint_8 lut[8][256] 第一维是8个4bit的输入，第二维是x和y结合的索引、其中x是高4位，y是低4位
-void gen_BijectXor32_table(Biject32 *in1, Biject32 *in2, Biject32* out, uint8_t lut[8][256]) {
-    int x, y, j;
-    uint8_t after_in1, after_in2, after_out, idx;
-    for (j = 0; j < 8; j++) {
-        for (x = 0; x < 16; x++) {
-            for (y = 0; y < 16; y++) {
-                after_in1 = in1->lut[j][x & 0x0f];
-                after_in2 = in2->lut[j][y & 0x0f];
-                after_in1 ^= after_in2;
-                after_out = out->lut[j][after_in1];
-                idx = ((x & 0x0f) << 4) | (y & 0x0f);
-                lut[j][idx] = after_out;
-            }
-        }
-    }
-}
-
-// 对输入x和y查表
-uint32_t BijectXor32(uint8_t lut[8][256], uint32_t x, uint32_t y) {
-    int j;
-    uint32_t result = 0;
-    for (j = 0; j < 8; j++) {
-        uint8_t idx = (((x >> (28 - 4 * j) ) & 0x0f) << 4) | ((y >> (28 - 4 * j)) & 0x0f);
-        result |= (lut[j][idx] & 0x0f) << (28 - 4 * j);
-    }
-    return result;
-}
-
-void wbsm4_jin_stkey_gen(const uint8_t *key, wbsm4_jin_stkey_context *ctx) {
+void wbsm4_jin_stkey_gen(const uint8_t *key, wbsm4_jin_stkey_context *ctx)
+{
     int i, j, x;
     Biject32 P[36];
     Biject32 P_inv[36];
@@ -119,8 +62,10 @@ void wbsm4_jin_stkey_gen(const uint8_t *key, wbsm4_jin_stkey_context *ctx) {
 
     for (i = 0; i < 32; i++)
     {
-        for (x = 0; x < 256; x++) {
-            for (j = 0; j < 4; j++) {
+        for (x = 0; x < 256; x++)
+        {
+            for (j = 0; j < 4; j++)
+            {
                 uint8_t high_result = E_inv[i].lut[j * 2][(x >> 4) & 0x0f];
                 uint8_t low_result = E_inv[i].lut[j * 2 + 1][x & 0x0f];
                 uint8_t temp_u8 = (high_result << 4) | low_result;
@@ -147,7 +92,8 @@ void wbsm4_jin_stkey_gen(const uint8_t *key, wbsm4_jin_stkey_context *ctx) {
 }
 
 
-void wbsm4_jin_stkey_encrypt(const unsigned char *in, unsigned char *out, wbsm4_jin_stkey_context *ctx) {
+void wbsm4_jin_stkey_encrypt(const unsigned char *in, unsigned char *out, wbsm4_jin_stkey_context *ctx)
+{
     int i;
     uint32_t x0, x1, x2, x3, x4;
     uint32_t xt1, xt2, xt3, xt4;
@@ -194,6 +140,7 @@ void wbsm4_jin_stkey_encrypt(const unsigned char *in, unsigned char *out, wbsm4_
     PUT32(x0, out + 12);
 }
 
-void wbsm4_jin_stkey_decrypt(const unsigned char *in, unsigned char *out, wbsm4_jin_stkey_context *ctx) {
+void wbsm4_jin_stkey_decrypt(const unsigned char *in, unsigned char *out, wbsm4_jin_stkey_context *ctx)
+{
     wbsm4_jin_stkey_encrypt(in, out, ctx);
 }

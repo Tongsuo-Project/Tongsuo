@@ -96,7 +96,8 @@ void wbsm4_xiao_stkey_gen(const uint8_t *key, wbsm4_xiao_stkey_context *ctx)
 }
 
 
-void wbsm4_xiao_stkey_encrypt(const unsigned char *in, unsigned char *out, const wbsm4_xiao_stkey_context *ctx) {
+void wbsm4_xiao_stkey_encrypt(const unsigned char *in, unsigned char *out, const wbsm4_xiao_stkey_context *ctx)
+{
     int i;
     uint32_t x0, x1, x2, x3, x4;
     uint32_t xt0, xt1, xt2, xt3, xt4;
@@ -139,6 +140,7 @@ void wbsm4_xiao_stkey_encrypt(const unsigned char *in, unsigned char *out, const
     PUT32(x0, out + 12);
 }
 
-void wbsm4_xiao_stkey_decrypt(const unsigned char *in, unsigned char *out, const wbsm4_xiao_stkey_context *ctx) {
+void wbsm4_xiao_stkey_decrypt(const unsigned char *in, unsigned char *out, const wbsm4_xiao_stkey_context *ctx)
+{
     wbsm4_xiao_stkey_encrypt(in, out, ctx);
 }

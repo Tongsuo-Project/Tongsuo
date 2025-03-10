@@ -1,3 +1,13 @@
+/*
+ * Copyright 2025 The Tongsuo Project Authors. All Rights Reserved.
+ * Copyright 2021 The OpenSSL Project Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
+ * this file except in compliance with the License.  You can obtain a copy
+ * in the file LICENSE in the source distribution or at
+ * https://www.openssl.org/source/license.html
+ */
+
 /* Dispatch functions for cast cipher modes ecb, cbc, ofb, cfb */
 
 #include "cipher_wbsm4.h"
@@ -85,6 +95,7 @@ IMPLEMENT_generic_cipher(wbsm4_jin_stkey, WBSM4_JIN_STKEY, cfb128, CFB, 0, 128, 
 #ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
 static OSSL_FUNC_cipher_freectx_fn wbsm4_xiao_dykey_freectx;
 static OSSL_FUNC_cipher_dupctx_fn wbsm4_xiao_dykey_dupctx;
+static OSSL_FUNC_cipher_set_ctx_params_fn wbsm4_xiao_dykey_set_ctx_params;
 
 static void wbsm4_xiao_dykey_freectx(void *vctx)
 {
@@ -113,8 +124,31 @@ static void *wbsm4_xiao_dykey_dupctx(void *ctx)
     return ret;
 }
 
+CIPHER_DEFAULT_SETTABLE_CTX_PARAMS_START(wbsm4_xiao_dykey)
+    OSSL_PARAM_octet_string(OSSL_KDF_PARAM_WBSM4_UPDATE_KEY, NULL, 0),
+CIPHER_DEFAULT_SETTABLE_CTX_PARAMS_END(wbsm4_xiao_dykey)
+
+static int wbsm4_xiao_dykey_set_ctx_params(void *vctx, const OSSL_PARAM params[])
+{
+    PROV_WBSM4_XIAO_DYKEY_CTX *ctx = (PROV_WBSM4_XIAO_DYKEY_CTX *)vctx;
+    OSSL_PARAM *p;
+
+    // if (!ossl_cipher_generic_get_ctx_params(vctx, params))
+    //     return 0;
+
+    p = OSSL_PARAM_locate(params, OSSL_KDF_PARAM_KEY);
+    if (p && p->data_type == OSSL_PARAM_OCTET_STRING) {
+        uint32_t wbrk[32];
+        wbsm4_set_key(p->data, (void *)wbrk, p->data_size);
+        wbsm4_xiao_dykey_update_wbrk(&ctx->ks.ks, wbrk);
+        return 1;
+    }
+    return 1;
+}
+
+
 /* ossl_wbsm4_xiao_dykey128ecb_functions */
-IMPLEMENT_generic_cipher(wbsm4_xiao_dykey, WBSM4_XIAO_DYKEY, ecb, ECB, 0, 128, 128, 0, block);
+IMPLEMENT_generic_cipher_custom(wbsm4_xiao_dykey, WBSM4_XIAO_DYKEY, ecb, ECB, 0, 128, 128, 0, block);
 IMPLEMENT_generic_cipher(wbsm4_xiao_dykey, WBSM4_XIAO_DYKEY, cbc, CBC, 0, 128, 128, 128, block);
 IMPLEMENT_generic_cipher(wbsm4_xiao_dykey, WBSM4_XIAO_DYKEY, ctr, CTR, 0, 128, 8, 128, stream);
 IMPLEMENT_generic_cipher(wbsm4_xiao_dykey, WBSM4_XIAO_DYKEY, ofb128, OFB, 0, 128, 8, 128, stream);

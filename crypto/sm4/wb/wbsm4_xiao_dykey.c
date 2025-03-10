@@ -1,6 +1,17 @@
+/*
+* Copyright 2025 The Tongsuo Project Authors. All Rights Reserved.
+* Copyright 2024 Nexus-TYF. All Rights Reserved.
+* Ported from Nexus-TYF/Xiao-Lai-White-box-SM4.
+*
+* Licensed under the Apache License 2.0 (the "License").  You may not use
+* this file except in compliance with the License.  You can obtain a copy
+* in the file LICENSE in the source distribution or at
+* https://github.com/Tongsuo-Project/Tongsuo/blob/master/LICENSE.txt
+*/
 #include "crypto/wbsm4.h"
 
-void wbsm4_xiao_dykey_gen(const uint8_t *key, wbsm4_xiao_dykey_context *ctx, wbsm4_xiao_dykey_ctxrk *ctxrk) {
+void wbsm4_xiao_dykey_gen(const uint8_t *key, wbsm4_xiao_dykey_context *ctx, wbsm4_xiao_dykey_ctxrk *ctxrk)
+{
     int i, j, x, y;
     Aff32 P[36];
     Aff32 P_inv[36];
@@ -76,9 +87,12 @@ void wbsm4_xiao_dykey_gen(const uint8_t *key, wbsm4_xiao_dykey_context *ctx, wbs
     {
         // calculate xor table
         uint8_t after_in1, after_in2, after_out;
-        for (j = 0; j < 4; j++) {
-            for (x = 0; x < 256; x++) {
-                for (y = 0; y < 256; y++) {
+        for (j = 0; j < 4; j++)
+        {
+            for (x = 0; x < 256; x++)
+            {
+                for (y = 0; y < 256; y++)
+                {
                     uint8_t high_result = R_inv[i].lut[j * 2][(y >> 4) & 0x0f];
                     uint8_t low_result = R_inv[i].lut[j * 2 + 1][y & 0x0f];
                     after_in1 = (high_result << 4) | low_result;
@@ -158,7 +172,8 @@ void wbsm4_xiao_dykey_update_wbrk(wbsm4_xiao_dykey_context *ctx, uint32_t wbrk[3
     }
 }
 
-void wbsm4_xiao_dykey_encrypt(const unsigned char *in, unsigned char *out, wbsm4_xiao_dykey_context *ctx) {
+void wbsm4_xiao_dykey_encrypt(const unsigned char *in, unsigned char *out, wbsm4_xiao_dykey_context *ctx)
+{
     int i, j;
     uint32_t x0, x1, x2, x3, x4;
     uint32_t xt0, xt1, xt2, xt3, xt4;
@@ -180,7 +195,8 @@ void wbsm4_xiao_dykey_encrypt(const unsigned char *in, unsigned char *out, wbsm4
         xt3 = affineU32(ctx->M[i][2], x3);
         xt1 = xt1 ^ xt2 ^ xt3;
         x4 = 0;
-        for (j = 0; j < 4; j++) {
+        for (j = 0; j < 4; j++)
+        {
             x4 |= (ctx->Xor32Table[i][j][(xt1 >> (24 - 8 * j) ) & 0xff][ctx->wbrk[i] >> (24 - 8 * j) & 0xff]) << (24 - 8 * j);
         }
         x4 = ctx->Table[i][0][(x4 >> 24) & 0xff] ^ ctx->Table[i][1][(x4 >> 16) & 0xff] ^ ctx->Table[i][2][(x4 >> 8) & 0xff] ^ ctx->Table[i][3][x4 & 0xff];
@@ -205,6 +221,7 @@ void wbsm4_xiao_dykey_encrypt(const unsigned char *in, unsigned char *out, wbsm4
     PUT32(x0, out + 12);
 }
 
-void wbsm4_xiao_dykey_decrypt(const unsigned char *in, unsigned char *out, wbsm4_xiao_dykey_context *ctx) {
+void wbsm4_xiao_dykey_decrypt(const unsigned char *in, unsigned char *out, wbsm4_xiao_dykey_context *ctx)
+{
     wbsm4_xiao_dykey_encrypt(in, out, ctx);
 }

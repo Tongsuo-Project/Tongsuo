@@ -434,7 +434,7 @@ OSSL_DEPRECATEDIN_3_0 int
 /* TLSTREE key diversification */
 #define          EVP_CTRL_TLSTREE                        0x2A
 /* WBSM4 key update */
-#define         EVP_CTRL_WBSM4_UPDATE_KEY                0x2B
+#define          EVP_CTRL_WBSM4_UPDATE_KEY               0x2B
 
 /* Padding modes */
 #define EVP_PADDING_PKCS7       1

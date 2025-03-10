@@ -1,4 +1,5 @@
 /*
+ * Copyright 2025 The Tongsuo Project Authors. All Rights Reserved.
  * Copyright 2021 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
@@ -6,7 +7,6 @@
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
  */
-
 #include <crypto/sm4.h>
 #include <crypto/wbsm4.h>
 #include "prov/ciphercommon.h"

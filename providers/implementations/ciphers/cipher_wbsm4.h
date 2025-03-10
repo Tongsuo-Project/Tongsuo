@@ -29,7 +29,7 @@ const PROV_CIPHER_HW *ossl_prov_cipher_hw_wbsm4_xiao_stkey_ofb128(size_t keybits
 const PROV_CIPHER_HW *ossl_prov_cipher_hw_wbsm4_xiao_stkey_cfb128(size_t keybits);
 #endif
 
-#ifndef OPENSSL_NO_WBSM4_XIAO_STKEY
+#ifndef OPENSSL_NO_WBSM4_JIN_STKEY
 typedef struct
 {
     PROV_CIPHER_CTX base; /* Must be first */

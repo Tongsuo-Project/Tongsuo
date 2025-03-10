@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Tongsuo Project Authors. All Rights Reserved.
+ * Copyright 2025 The Tongsuo Project Authors. All Rights Reserved.
  * Copyright 2017-2021 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright 2017 Ribose Inc. All Rights Reserved.
  *
@@ -450,7 +450,7 @@ static int test_EVP_wbsm4_jin_stkey(void)
 
 #endif
 
-#ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
+// #ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
 static int test_wbsm4_xiao_dykey(void)
 {
     static uint8_t k[SM4_BLOCK_SIZE] = {
@@ -688,14 +688,73 @@ static int test_EVP_wbsm4_xiao_dykey(void)
         return 0;
     }
 
+    // update key
+    k[0] = 0xff;
+    int update_key = 1;
+    params[0] = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_KEY, k, SM4_BLOCK_SIZE);
+    params[1] = OSSL_PARAM_construct_int(OSSL_KDF_PARAM_WBSM4_UPDATE_KEY, &update_key);
+    params[2] = OSSL_PARAM_construct_end();
+    uint8_t *wbrk_buf = (uint8_t *)OPENSSL_malloc(32 * sizeof(uint32_t));
+    if (!TEST_ptr_ne(wbrk_buf, NULL)) {
+        EVP_CIPHER_CTX_free(cipher_ctx);
+        OPENSSL_free(wbsm4ctx);
+        EVP_KDF_free(kdf);
+        EVP_KDF_CTX_free(kctx);
+        return 0;
+    }
+
+    ret = EVP_KDF_derive(kctx, wbrk_buf, 32 * sizeof(uint32_t), params);
+    if (!TEST_int_eq(ret, 1)) {
+        OPENSSL_free(wbrk_buf);
+        EVP_CIPHER_CTX_free(cipher_ctx);
+        OPENSSL_free(wbsm4ctx);
+        EVP_KDF_free(kdf);
+        EVP_KDF_CTX_free(kctx);
+        return 0;
+    }
+
+    params[0] = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_KEY, wbrk_buf, 32 * sizeof(uint32_t));
+    params[1] = OSSL_PARAM_construct_end();
+    ret = EVP_CIPHER_CTX_set_params(cipher_ctx, params); 
+    // ret = EVP_CIPHER_CTX_ctrl(cipher_ctx, EVP_CTRL_WBSM4_UPDATE_KEY, 32 * sizeof(uint32_t), wbrk_buf);
+    if (!TEST_int_eq(ret, 1)) {
+        OPENSSL_free(wbrk_buf);
+        EVP_CIPHER_CTX_free(cipher_ctx);
+        OPENSSL_free(wbsm4ctx);
+        EVP_KDF_free(kdf);
+        EVP_KDF_CTX_free(kctx);
+        return 0;
+    }
+
+    memcpy(block, input, SM4_BLOCK_SIZE);
+    outl = SM4_BLOCK_SIZE;
+    ret = EVP_EncryptUpdate(cipher_ctx, block, &outl, block, SM4_BLOCK_SIZE);
+    if (!TEST_int_eq(ret, 1) && !TEST_int_eq(outl, 16)) {
+        EVP_CIPHER_CTX_free(cipher_ctx);
+        OPENSSL_free(wbrk_buf);
+        OPENSSL_free(wbsm4ctx);
+        EVP_KDF_free(kdf);
+        EVP_KDF_CTX_free(kctx);
+        return 0;
+    }
+    if (!TEST_mem_eq(block, SM4_BLOCK_SIZE, expected_new_key, SM4_BLOCK_SIZE)) {
+        EVP_CIPHER_CTX_free(cipher_ctx);
+        OPENSSL_free(wbrk_buf);
+        OPENSSL_free(wbsm4ctx);
+        EVP_KDF_free(kdf);
+        EVP_KDF_CTX_free(kctx);
+        return 0;
+    }
+
     EVP_CIPHER_CTX_free(cipher_ctx);
+    OPENSSL_free(wbrk_buf);
     OPENSSL_free(wbsm4ctx);
     EVP_KDF_free(kdf);
     EVP_KDF_CTX_free(kctx);
     return 1;
 }
 
-#endif
+// #endif
 
 int setup_tests(void)
 {
