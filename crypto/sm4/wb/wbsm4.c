@@ -221,13 +221,12 @@ void gen_Bijection4pair(uint8_t *table, uint8_t *inverse_table)
         table[i] = (uint8_t)i;
     }
 
-    uint32_t tmp;
+    uint8_t buff_table_entry;
     for (int i = 0; i < 16; i++) {
-        tmp = cus_random();
-        int r = (i + tmp % 16) % 16;
-        uint8_t tmp = table[i];
+        int r = (i + cus_random() % 16) % 16;
+        buff_table_entry = table[i];
         table[i] = table[r];
-        table[r] = tmp;
+        table[r] = buff_table_entry;
     }
 
     // 生成双射的逆

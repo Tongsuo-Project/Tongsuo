@@ -9,9 +9,10 @@
 * https://github.com/Tongsuo-Project/Tongsuo/blob/master/LICENSE.txt
 */
 #include "crypto/WBMatrix.h"
+#include <inttypes.h>
 
-unsigned int m_index;
-unsigned int m_intermediateOffset;
+static unsigned int m_index;
+static unsigned int m_intermediateOffset;
 
 unsigned int permuteQPR(unsigned int x)
 {
@@ -29,15 +30,15 @@ void InitRandom(unsigned int seedBase)
     m_intermediateOffset = permuteQPR(permuteQPR(seedOffset) + 0x46790905);
 }
 
-unsigned int cus_random()
+unsigned int cus_random(void)
 {
     return permuteQPR((permuteQPR(m_index++) + m_intermediateOffset) ^ 0x5bf03635);
 }
 
-unsigned int randseed;
+static unsigned int randseed;
 
 //8bit internal xor table
-int xor[] = {0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 
+static int xor[] = {0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 
 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 
 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 
 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 
@@ -52,7 +53,7 @@ int xor[] = {0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0,
 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0};
 
 //8bit Hamming weight table
-int HW[] = {0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2, 
+static int HW[] = {0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2, 
 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 1, 2, 2, 3, 2, 3, 3, 4, 2, 
 3, 3, 4, 3, 4, 4, 5, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 
 5, 5, 6, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 2, 
@@ -66,11 +67,11 @@ int HW[] = {0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2,
 6, 6, 7, 3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 4, 
 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8};
 
-uint8_t idM4[4] = {0x08, 0x04, 0x02, 0x01};
-uint8_t idM8[8] = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
-uint16_t idM16[16] = {0x8000, 0x4000, 0x2000, 0x1000, 0x800, 0x400, 0x200, 0x100, 0x80, 0x40, 0x20, 0x10, 0x8, 0x4, 0x2, 0x1};
-uint32_t idM32[32] = {0x80000000, 0x40000000, 0x20000000, 0x10000000, 0x8000000, 0x4000000, 0x2000000, 0x1000000, 0x800000, 0x400000, 0x200000, 0x100000, 0x80000, 0x40000, 0x20000, 0x10000, 0x8000, 0x4000, 0x2000, 0x1000, 0x800, 0x400, 0x200, 0x100, 0x80, 0x40, 0x20, 0x10, 0x8, 0x4, 0x2, 0x1};
-uint64_t idM64[64] = {0x8000000000000000, 0x4000000000000000, 0x2000000000000000, 0x1000000000000000, 0x800000000000000, 0x400000000000000, 0x200000000000000, 0x100000000000000, 0x80000000000000, 0x40000000000000, 0x20000000000000, 0x10000000000000, 0x8000000000000, 0x4000000000000, 0x2000000000000, 0x1000000000000, 0x800000000000, 0x400000000000, 0x200000000000, 0x100000000000, 0x80000000000, 0x40000000000, 0x20000000000, 0x10000000000, 0x8000000000, 0x4000000000, 0x2000000000, 0x1000000000, 0x800000000, 0x400000000, 0x200000000, 0x100000000, \
+static uint8_t idM4[4] = {0x08, 0x04, 0x02, 0x01};
+static uint8_t idM8[8] = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
+static uint16_t idM16[16] = {0x8000, 0x4000, 0x2000, 0x1000, 0x800, 0x400, 0x200, 0x100, 0x80, 0x40, 0x20, 0x10, 0x8, 0x4, 0x2, 0x1};
+static uint32_t idM32[32] = {0x80000000, 0x40000000, 0x20000000, 0x10000000, 0x8000000, 0x4000000, 0x2000000, 0x1000000, 0x800000, 0x400000, 0x200000, 0x100000, 0x80000, 0x40000, 0x20000, 0x10000, 0x8000, 0x4000, 0x2000, 0x1000, 0x800, 0x400, 0x200, 0x100, 0x80, 0x40, 0x20, 0x10, 0x8, 0x4, 0x2, 0x1};
+static uint64_t idM64[64] = {0x8000000000000000, 0x4000000000000000, 0x2000000000000000, 0x1000000000000000, 0x800000000000000, 0x400000000000000, 0x200000000000000, 0x100000000000000, 0x80000000000000, 0x40000000000000, 0x20000000000000, 0x10000000000000, 0x8000000000000, 0x4000000000000, 0x2000000000000, 0x1000000000000, 0x800000000000, 0x400000000000, 0x200000000000, 0x100000000000, 0x80000000000, 0x40000000000, 0x20000000000, 0x10000000000, 0x8000000000, 0x4000000000, 0x2000000000, 0x1000000000, 0x800000000, 0x400000000, 0x200000000, 0x100000000, \
                         0x80000000, 0x40000000, 0x20000000, 0x10000000, 0x8000000, 0x4000000, 0x2000000, 0x1000000, 0x800000, 0x400000, 0x200000, 0x100000, 0x80000, 0x40000, 0x20000, 0x10000, 0x8000, 0x4000, 0x2000, 0x1000, 0x800, 0x400, 0x200, 0x100, 0x80, 0x40, 0x20, 0x10, 0x8, 0x4, 0x2, 0x1};
 
 void SetRandSeed(unsigned int seed)
@@ -319,7 +320,7 @@ void printM4(M4 Mat)//printf Matrix 4*4
     int i;
     for(i = 0; i < 4; i++)
     {
-        printf("0x%x\n", Mat.M[i]);
+        printf("0x%" PRIx8 "\n", Mat.M[i]);
     }
 }
 void printM8(M8 Mat)//printf Matrix 8*8
@@ -327,7 +328,7 @@ void printM8(M8 Mat)//printf Matrix 8*8
     int i;
     for(i = 0; i < 8; i++)
     {
-        printf("0x%x\n", Mat.M[i]);
+        printf("0x%" PRIx8 "\n", Mat.M[i]);
     }
 }
 void printM16(M16 Mat)//printf Matrix 16*16
@@ -335,7 +336,7 @@ void printM16(M16 Mat)//printf Matrix 16*16
     int i;
     for(i = 0; i < 16; i++)
     {
-        printf("0x%x\n", Mat.M[i]);
+        printf("0x%" PRIx16 "\n", Mat.M[i]);
     }
 }
 void printM32(M32 Mat)//printf Matrix 32*32
@@ -343,7 +344,7 @@ void printM32(M32 Mat)//printf Matrix 32*32
     int i;
     for(i = 0; i < 32; i++)
     {
-        printf("0x%x\n", Mat.M[i]);
+        printf("0x%" PRIx32 "\n", Mat.M[i]);
     }
 }
 void printM64(M64 Mat)//printf Matrix 64*64
@@ -351,7 +352,7 @@ void printM64(M64 Mat)//printf Matrix 64*64
     int i;
     for(i = 0; i < 64; i++)
     {
-        printf("0x%llx\n", Mat.M[i]);
+        printf("0x%" PRIx64 "\n", Mat.M[i]);
     }
 }
 void printM128(M128 Mat)//printf Matrix 128*128
@@ -359,34 +360,34 @@ void printM128(M128 Mat)//printf Matrix 128*128
     int i;
     for(i = 0; i < 128; i++)
     {
-        printf("0x%llx ", Mat.M[i][0]);
-        printf("0x%llx\n", Mat.M[i][1]);
+        printf("0x%" PRIx64 " ", Mat.M[i][0]);
+        printf("0x%" PRIx64 "\n", Mat.M[i][1]);
     }
 }
 void printV4(V4 Vec)//printf Vector 4*1
 {
-    printf("0x%x\n", Vec.V);
+    printf("0x%" PRIx8 "\n", Vec.V);
 }
 void printV8(V8 Vec)//printf Vector 8*1
 {
-    printf("0x%x\n", Vec.V);
+    printf("0x%" PRIx8 "\n", Vec.V);
 }
 void printV16(V16 Vec)//printf Vector 16*1
 {
-    printf("0x%x\n", Vec.V);
+    printf("0x%" PRIx16 "\n", Vec.V);
 }
 void printV32(V32 Vec)//printf Vector 32*1
 {
-    printf("0x%x\n", Vec.V);
+    printf("0x%" PRIx32 "\n", Vec.V);
 }
 void printV64(V64 Vec)//printf Vector 64*1
 {
-    printf("0x%llx\n", Vec.V);
+    printf("0x%" PRIx64 "\n", Vec.V);
 }
 void printV128(V128 Vec)//printf Vector 128*1
 {
-    printf("0x%llx ", Vec.V[0]);
-    printf("0x%llx\n", Vec.V[1]);
+    printf("0x%" PRIx64 " ", Vec.V[0]);
+    printf("0x%" PRIx64 "\n", Vec.V[1]);
 }
 void copyM4(M4 Mat1, M4 *Mat2)
 {
@@ -1492,24 +1493,24 @@ int HWU128(uint64_t n[])// uint128_t HW
 }
 void printU8(uint8_t n)//printf uint8_t
 {
-    printf("0x%x\n", n);
+    printf("0x%" PRIx8 "\n", n);
 }
 void printU16(uint16_t n)//printf uint16_t
 {
-    printf("0x%x\n", n);
+    printf("0x%" PRIx16 "\n", n);
 }
 void printU32(uint32_t n)//printf uint32_t
 {
-    printf("0x%x\n", n);
+    printf("0x%" PRIx32 "\n", n);
 }
 void printU64(uint64_t n)//printf uint64_t
 {
-    printf("0x%x\n", n);
+    printf("0x%" PRIx64 "\n", n);
 }
 void printU128(uint64_t n[])//printf uint128_t
 {
-    printf("0x%x ", n[0]);
-    printf("0x%x\n", n[1]);
+    printf("0x%" PRIx64 " ", n[0]);
+    printf("0x%" PRIx64 "\n", n[1]);
 }
 void printbitM4(M4 Mat)//printf Matrix 4*4 in the form of bits 
 {
@@ -1761,7 +1762,7 @@ void MatMulVecM128(M128 Mat, V128 Vec, V128 *ans)//matrix * vector -> vector 128
 void genMatpairM4(M4 *Mat, M4 *Mat_inv)//generate 4*4 invertible matrix and its inverse matrix
 {
     int i, j, t, k;
-    int p, q;
+    int p;
     M4 tempMat;
     M4 resultMat;
     uint8_t temp;
@@ -1918,7 +1919,7 @@ void genMatpairM4(M4 *Mat, M4 *Mat_inv)//generate 4*4 invertible matrix and its 
 void genMatpairM8(M8 *Mat, M8 *Mat_inv)//generate 8*8 invertible matrix and its inverse matrix
 {
     int i, j, t, k;
-    int p, q;
+    int p;
     M8 tempMat;
     M8 resultMat;
     uint8_t temp;
@@ -2075,7 +2076,7 @@ void genMatpairM8(M8 *Mat, M8 *Mat_inv)//generate 8*8 invertible matrix and its 
 void genMatpairM16(M16 *Mat, M16 *Mat_inv)//generate 16*16 invertible matrix and its inverse matrix
 {
     int i, j, t, k;
-    int p, q;
+    int p;
     M16 tempMat;
     M16 resultMat;
     uint16_t temp;
@@ -2232,7 +2233,7 @@ void genMatpairM16(M16 *Mat, M16 *Mat_inv)//generate 16*16 invertible matrix and
 void genMatpairM32(M32 *Mat, M32 *Mat_inv)//generate 32*32 invertible matrix and its inverse matrix
 {
     int i, j, t, k;
-    int p, q;
+    int p;
     M32 tempMat;
     M32 resultMat;
     uint32_t temp;
@@ -2389,7 +2390,7 @@ void genMatpairM32(M32 *Mat, M32 *Mat_inv)//generate 32*32 invertible matrix and
 void genMatpairM64(M64 *Mat, M64 *Mat_inv)//generate 64*64 invertible matrix and its inverse matrix
 {
     int i, j, t, k;
-    int p, q;
+    int p;
     M64 tempMat;
     M64 resultMat;
     uint64_t temp;
@@ -2546,7 +2547,7 @@ void genMatpairM64(M64 *Mat, M64 *Mat_inv)//generate 64*64 invertible matrix and
 void genMatpairM128(M128 *Mat, M128 *Mat_inv)//generate 128*128 invertible matrix and its inverse matrix
 {
     int i, j, t, k;
-    int p, q;
+    int p;
     M128 tempMat;
     M128 resultMat;
     uint64_t temp;

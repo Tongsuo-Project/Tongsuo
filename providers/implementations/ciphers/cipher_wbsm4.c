@@ -136,7 +136,7 @@ static int wbsm4_xiao_dykey_set_ctx_params(void *vctx, const OSSL_PARAM params[]
     // if (!ossl_cipher_generic_get_ctx_params(vctx, params))
     //     return 0;
 
-    p = OSSL_PARAM_locate(params, OSSL_KDF_PARAM_KEY);
+    p = OSSL_PARAM_locate_const(params, OSSL_KDF_PARAM_KEY);
     if (p && p->data_type == OSSL_PARAM_OCTET_STRING) {
         uint32_t wbrk[32];
         wbsm4_set_key(p->data, (void *)wbrk, p->data_size);

@@ -222,7 +222,7 @@ static int wbsm4kdf_set_ctx_params(void *vctx, const OSSL_PARAM params[])
     if (params == NULL)
         return 1;
 
-    p = OSSL_PARAM_locate(params, OSSL_KDF_PARAM_KEY);
+    p = OSSL_PARAM_locate_const(params, OSSL_KDF_PARAM_KEY);
     if (p != NULL) {
         if (p->data_type != OSSL_PARAM_OCTET_STRING) return 0;
         if (p->data_size != SM4_BLOCK_SIZE) return 0;
@@ -230,21 +230,21 @@ static int wbsm4kdf_set_ctx_params(void *vctx, const OSSL_PARAM params[])
         memcpy(ctx->rawkey, p->data, SM4_BLOCK_SIZE);
     }
 
-    p = OSSL_PARAM_locate(params, OSSL_KDF_PARAM_CIPHER);
+    p = OSSL_PARAM_locate_const(params, OSSL_KDF_PARAM_CIPHER);
     if (p != NULL) {
         if (p->data_type != OSSL_PARAM_UTF8_STRING) return 0;
         if (p->data == NULL) return 0;
         ctx->cipher = p->data;
     }
 
-    p = OSSL_PARAM_locate(params, OSSL_KDF_PARAM_MODE);
+    p = OSSL_PARAM_locate_const(params, OSSL_KDF_PARAM_MODE);
     if (p != NULL) {
         if (p->data_type != OSSL_PARAM_INTEGER) return 0;
         ctx->mode = *(int*)(p->data);
     }
 
 #ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
-    p = OSSL_PARAM_locate(params, OSSL_KDF_PARAM_WBSM4_UPDATE_KEY);
+    p = OSSL_PARAM_locate_const(params, OSSL_KDF_PARAM_WBSM4_UPDATE_KEY);
     if (p != NULL) {
         if (p->data_type != OSSL_PARAM_INTEGER) return 0;
         ctx->update_key = *(int*)(p->data);

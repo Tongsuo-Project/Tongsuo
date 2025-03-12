@@ -112,7 +112,7 @@ static int test_wbsm4_xiao_stkey(void)
 
 static int test_EVP_wbsm4_xiao_stkey(void)
 {
-    static const uint8_t k[SM4_BLOCK_SIZE] = {
+    static uint8_t k[SM4_BLOCK_SIZE] = {
         0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
         0xfe, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10
     };
@@ -450,7 +450,7 @@ static int test_EVP_wbsm4_jin_stkey(void)
 
 #endif
 
-// #ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
+#ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
 static int test_wbsm4_xiao_dykey(void)
 {
     static uint8_t k[SM4_BLOCK_SIZE] = {
@@ -754,7 +754,7 @@ static int test_EVP_wbsm4_xiao_dykey(void)
     return 1;
 }
 
-// #endif
+#endif
 
 int setup_tests(void)
 {
@@ -770,4 +770,5 @@ int setup_tests(void)
     ADD_TEST(test_wbsm4_xiao_dykey);
     ADD_TEST(test_EVP_wbsm4_xiao_dykey);
 #endif
+    return 1;
 }
