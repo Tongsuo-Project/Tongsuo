@@ -21,8 +21,8 @@
 extern const uint8_t SM4_SBOX[256];
 extern const M32 SM4_L_matrix;
 
-#define GET32(pc)  (\
-((uint32_t)(pc)[0] << 24) ^\
+#define GET32(pc)  \
+(((uint32_t)(pc)[0] << 24) ^\
 ((uint32_t)(pc)[1] << 16) ^\
 ((uint32_t)(pc)[2] <<  8) ^\
 ((uint32_t)(pc)[3]))
@@ -35,7 +35,7 @@ extern const M32 SM4_L_matrix;
 
 #if !defined(OPENSSL_NO_WBSM4_XIAO_STKEY) || !defined(OPENSSL_NO_WBSM4_XIAO_DYKEY) || !defined(OPENSSL_NO_WBSM4_JIN_STKEY)
 typedef struct {
-    uint8_t lut[8][16];      // 8 个 16 维的 4-bit 双射表
+    uint8_t lut[8][16];      /*  8 个 16 维的 4-bit 双射表 */
 } Biject32;
 
 void wbsm4_export_key(const void *ctx, uint8_t *key, size_t len_ctx);
@@ -62,9 +62,9 @@ typedef struct {
     uint32_t Table[32][4][256];
 } wbsm4_xiao_stkey_context;
 
-// execute on trusted environment only
+/*  execute on trusted environment only */
 void wbsm4_xiao_stkey_gen(const uint8_t *key, wbsm4_xiao_stkey_context *ctx);
-// execute on whitebox environment
+/*  execute on whitebox environment */
 void wbsm4_xiao_stkey_encrypt(const unsigned char *in, unsigned char *out, const wbsm4_xiao_stkey_context *ctx);
 void wbsm4_xiao_stkey_decrypt(const unsigned char *in, unsigned char *out, const wbsm4_xiao_stkey_context *ctx);
 #endif
@@ -89,10 +89,10 @@ typedef struct {
     Biject32 R[32];
 } wbsm4_xiao_dykey_ctxrk;
 
-// execute on trusted environment only
+/*  execute on trusted environment only */
 void wbsm4_xiao_dykey_gen(const uint8_t *key, wbsm4_xiao_dykey_context *ctx, wbsm4_xiao_dykey_ctxrk *ctxrk);
 void wbsm4_xiao_dykey_key2wbrk(uint8_t *key, wbsm4_xiao_dykey_ctxrk *ctxrk, uint32_t wbrk[32]);
-// execute on whitebox environment
+/*  execute on whitebox environment */
 void wbsm4_xiao_dykey_update_wbrk(wbsm4_xiao_dykey_context *ctx, uint32_t wbrk[32]);
 void wbsm4_xiao_dykey_encrypt(const unsigned char *in, unsigned char *out, wbsm4_xiao_dykey_context *ctx);
 void wbsm4_xiao_dykey_decrypt(const unsigned char *in, unsigned char *out, wbsm4_xiao_dykey_context *ctx);
@@ -115,11 +115,11 @@ typedef struct {
 
 } wbsm4_jin_stkey_context;
 
-// execute on trusted environment only
+/*  execute on trusted environment only */
 void wbsm4_jin_stkey_gen(const uint8_t *key, wbsm4_jin_stkey_context *ctx);
-// execute on whitebox environment
+/*  execute on whitebox environment */
 void wbsm4_jin_stkey_encrypt(const unsigned char *in, unsigned char *out, wbsm4_jin_stkey_context *ctx);
 void wbsm4_jin_stkey_decrypt(const unsigned char *in, unsigned char *out, wbsm4_jin_stkey_context *ctx);
 #endif
 
-#endif //WBCRYPTO_WBSM4_H
+#endif /* WBCRYPTO_WBSM4_H */

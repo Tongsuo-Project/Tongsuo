@@ -8,7 +8,6 @@
  * https://www.openssl.org/source/license.html
  */
 
-#include <crypto/sm4.h>
 #include <crypto/wbsm4.h>
 #include "prov/ciphercommon.h"
 #include "prov/ciphercommon_ccm.h"

@@ -11,6 +11,9 @@
 void wbsm4_jin_stkey_gen(const uint8_t *key, wbsm4_jin_stkey_context *ctx)
 {
     int i, j, x;
+    uint8_t high_result, low_result, temp_u8;
+    uint32_t temp_u32;
+
     Biject32 P[36];
     Biject32 P_inv[36];
     Biject32 Ea[32];
@@ -34,22 +37,22 @@ void wbsm4_jin_stkey_gen(const uint8_t *key, wbsm4_jin_stkey_context *ctx)
 
     for (i = 0; i < 36; i++) 
     {
-        //non-linear P
+        /* non-linear P */
         gen_Bijection32pair(&P[i], &P_inv[i]);
     }
 
     for (i = 0; i < 32; i++) 
     {
-        //non-linear Ea
+        /* non-linear Ea */
         gen_Bijection32pair(&Ea[i], &Ea_inv[i]);
         gen_BijectXor32_table(&P_inv[i + 1], &P_inv[i + 2], &Ea[i], ctx->P1[i]);
 
-        // non-linear E
+        /*  non-linear E */
         gen_Bijection32pair(&E[i], &E_inv[i]);
         gen_BijectXor32_table(&Ea_inv[i], &P_inv[i + 3], &E[i], ctx->P2[i]);
 
 
-        //non-linear Q
+        /* non-linear Q */
         for (j = 0; j < 7; j++) 
         {
             gen_Bijection32pair(&Q[i][j], &Q_inv[i][j]);
@@ -66,18 +69,18 @@ void wbsm4_jin_stkey_gen(const uint8_t *key, wbsm4_jin_stkey_context *ctx)
         {
             for (j = 0; j < 4; j++)
             {
-                uint8_t high_result = E_inv[i].lut[j * 2][(x >> 4) & 0x0f];
-                uint8_t low_result = E_inv[i].lut[j * 2 + 1][x & 0x0f];
-                uint8_t temp_u8 = (high_result << 4) | low_result;
+                high_result = E_inv[i].lut[j * 2][(x >> 4) & 0x0f];
+                low_result = E_inv[i].lut[j * 2 + 1][x & 0x0f];
+                temp_u8 = (high_result << 4) | low_result;
                 temp_u8 = SM4_SBOX[temp_u8 ^ ((sm4_rk[i] >> (24 - j * 8)) & 0xff)];
-                uint32_t temp_u32 = temp_u8 << (24 - j * 8);
+                temp_u32 = temp_u8 << (24 - j * 8);
                 temp_u32 = MatMulNumM32(SM4_L_matrix, temp_u32);
                 ctx->T[i][j][x] = BijectionU32(&Q[i][j], temp_u32);
             }
         }
     }
 
-    //external encoding
+    /* external encoding */
     for (i = 0; i < 4; i++) 
     {
         for(x = 0; x < 16; x++)

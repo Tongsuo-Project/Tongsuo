@@ -17,7 +17,6 @@
 #include "internal/deprecated.h"
 
 #include "cipher_wbsm4_gcm.h"
-#include "crypto/sm4_platform.h"
 
 #ifndef OPENSSL_NO_WBSM4_XIAO_STKEY
 static int wbsm4_xiao_stkey_gcm_initkey(PROV_GCM_CTX *ctx, const unsigned char *key,

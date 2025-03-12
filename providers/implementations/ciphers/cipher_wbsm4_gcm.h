@@ -7,7 +7,7 @@
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
  */
-#include <crypto/sm4.h>
+
 #include <crypto/wbsm4.h>
 #include "prov/ciphercommon.h"
 #include "prov/ciphercommon_gcm.h"

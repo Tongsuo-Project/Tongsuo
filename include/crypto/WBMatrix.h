@@ -28,7 +28,10 @@ unsigned int permuteQPR(unsigned int x);
 void InitRandom(unsigned int seedBase);
 unsigned int cus_random(void);
 
-void SetRandSeed(unsigned int seed);//Set random seed
+
+/* Set random seed */
+void SetRandSeed(unsigned int seed);
+
 /*
 * 4bit Matrix operation
 */

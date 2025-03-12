@@ -111,7 +111,7 @@ static const uint32_t SM4_CK[32] = {
     (b)[(i) + 2] = (unsigned char)((n) >> 8);      \
     (b)[(i) + 3] = (unsigned char)((n));           \
 }
-//循环左移
+
 #define ROTL(x, n) (((x) << (n)) | ((x) >> (32 - (n))))
 
 static unsigned char wbsm4Sbox(unsigned char inch)
@@ -119,7 +119,7 @@ static unsigned char wbsm4Sbox(unsigned char inch)
     return ((unsigned char *)SM4_SBOX)[inch];
 }
 
-//T
+/* T function */
 static uint32_t wbsm4CalciRK(uint32_t ka)
 {
     uint32_t bb;
@@ -133,7 +133,7 @@ static uint32_t wbsm4CalciRK(uint32_t ka)
     return bb ^ ROTL(bb, 13) ^ ROTL(bb, 23);
 }
 
-//加密的轮密钥生成
+/* key expansion for encrypt */
 void wbsm4_setkey_enc(uint32_t rk[32], const unsigned char key[16])
 {
     uint32_t MK[4];
@@ -156,7 +156,7 @@ void wbsm4_setkey_enc(uint32_t rk[32], const unsigned char key[16])
     }
 }
 
-//解密的轮密钥生成
+/* key expansion for decrypt */
 void wbsm4_setkey_dec(uint32_t rk[32], const unsigned char key[16])
 {
     int i;
@@ -170,14 +170,16 @@ void wbsm4_setkey_dec(uint32_t rk[32], const unsigned char key[16])
 
 void wbsm4_set_key(const uint8_t *key, void *ctx, size_t len_ctx)
 {
+    uint8_t *p, *end;
+
     DECLARE_IS_ENDIAN;
 
     memcpy(ctx, key, len_ctx);
     if (IS_LITTLE_ENDIAN)
         return;
 
-    uint8_t *p = (uint8_t *)ctx;
-    uint8_t *end = p + sizeof(wbsm4_xiao_dykey_context);
+    p = (uint8_t *)ctx;
+    end = p + sizeof(wbsm4_xiao_dykey_context);
     while (p < end) {
         uint8_t t;
         t = p[0];
@@ -194,14 +196,16 @@ void wbsm4_set_key(const uint8_t *key, void *ctx, size_t len_ctx)
 
 void wbsm4_export_key(const void *ctx, uint8_t *key, size_t len_ctx)
 {
+    uint8_t *p, *end;
+
     DECLARE_IS_ENDIAN;
 
     memcpy(key, ctx, len_ctx);
     if (IS_LITTLE_ENDIAN)
         return;
 
-    uint8_t *p = (uint8_t *)key;
-    uint8_t *end = p + len_ctx;
+    p = (uint8_t *)key;
+    end = p + len_ctx;
     while (p < end) {
         uint8_t t;
         t = p[0];
@@ -217,29 +221,31 @@ void wbsm4_export_key(const void *ctx, uint8_t *key, size_t len_ctx)
 }
 void gen_Bijection4pair(uint8_t *table, uint8_t *inverse_table)
 {
-    for (int i = 0; i < 16; i++) {
+    uint8_t buff_table_entry;
+    int i, r;
+    for (i = 0; i < 16; i++) {
         table[i] = (uint8_t)i;
     }
 
-    uint8_t buff_table_entry;
-    for (int i = 0; i < 16; i++) {
-        int r = (i + cus_random() % 16) % 16;
+    for (i = 0; i < 16; i++) {
+        r = (i + cus_random() % 16) % 16;
         buff_table_entry = table[i];
         table[i] = table[r];
         table[r] = buff_table_entry;
     }
 
-    // 生成双射的逆
-    for (int i = 0; i < 16; i++) {
+    /*  generate inverse mapping of bijection */
+    for (i = 0; i < 16; i++) {
         inverse_table[table[i]] = (uint8_t)i;
     }
 }
 
 void gen_Bijection32pair(Biject32 *bij, Biject32 *bij_inv)
 {
-    for (int i = 0; i < 8; i++)
+    int i;
+    for (i = 0; i < 8; i++)
     {
-        gen_Bijection4pair(bij->lut[i], bij_inv->lut[i]);  // 生成正向和逆向双射表
+        gen_Bijection4pair(bij->lut[i], bij_inv->lut[i]);  /*  generate bijection and its inverse mapping */
     }
 }
 
@@ -247,14 +253,18 @@ uint32_t BijectionU32(const Biject32* bij, uint32_t x)
 {
     uint32_t result = 0;
     uint8_t transformed;
-    for (int i = 0; i < 8; i++) {
-        transformed = bij->lut[i][(x >> (28 - i * 4)) & 0x0F];  // lut
+    int i;
+    for (i = 0; i < 8; i++) {
+        transformed = bij->lut[i][(x >> (28 - i * 4)) & 0x0F];
         result |= transformed << (28 - i * 4);
     }
     return result;
 }
 
-// uint_8 lut[8][256] 第一维是8个4bit的输入，第二维是x和y结合的索引、其中x是高4位，y是低4位
+/*  uint_8 lut[8][256]: 
+8 represents 8 parallel lookup tables；
+256（2^8）is a combined index of x(high 4 bits) and y(low 4 bits)
+*/
 void gen_BijectXor32_table(Biject32 *in1, Biject32 *in2, Biject32* out, uint8_t lut[8][256])
 {
     int x, y, j;
@@ -276,7 +286,7 @@ void gen_BijectXor32_table(Biject32 *in1, Biject32 *in2, Biject32* out, uint8_t 
     }
 }
 
-// 对输入x和y查表
+/* lookup the 32bits-Xor table with Bijection transformation*/
 uint32_t BijectXor32(uint8_t lut[8][256], uint32_t x, uint32_t y)
 {
     int j;

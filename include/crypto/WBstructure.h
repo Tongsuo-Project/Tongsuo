@@ -13,7 +13,7 @@
 
 #include <stdint.h>
 
-//4bits
+/* 4bits */
 typedef struct M4
 {
     uint8_t M[4];
@@ -30,7 +30,7 @@ typedef struct Aff4
     V4 Vec;
 }Aff4;
 
-//8bits
+/* 8bits */
 typedef struct M8
 {
     uint8_t M[8];
@@ -46,7 +46,7 @@ typedef struct Aff8
     M8 Mat;
     V8 Vec;
 }Aff8;
-//16bits
+/* 16bits */
 typedef struct M16
 {
     uint16_t M[16];
@@ -62,7 +62,7 @@ typedef struct Aff16
     M16 Mat;
     V16 Vec;
 }Aff16;
-//32bits
+/* 32bits */
 typedef struct M32
 {
     uint32_t M[32];
@@ -78,7 +78,7 @@ typedef struct Aff32
     M32 Mat;
     V32 Vec;
 }Aff32;
-//64bits
+/* 64bits */
 typedef struct M64
 {
     uint64_t M[64];
@@ -94,7 +94,7 @@ typedef struct Aff64
     M64 Mat;
     V64 Vec;
 }Aff64;
-//128bits
+/* 128bits */
 typedef struct M128
 {
     uint64_t M[128][2];

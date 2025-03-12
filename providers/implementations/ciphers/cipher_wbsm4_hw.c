@@ -10,7 +10,6 @@
 
 #include "cipher_wbsm4.h"
 
-// xiao_stkey
 #ifndef OPENSSL_NO_WBSM4_XIAO_STKEY
 static int cipher_hw_wbsm4_xiao_stkey_initkey(PROV_CIPHER_CTX *ctx,
                                             const unsigned char *key, size_t keylen)

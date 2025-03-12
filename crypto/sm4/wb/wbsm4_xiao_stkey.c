@@ -1,8 +1,21 @@
+/*
+* Copyright 2025 The Tongsuo Project Authors. All Rights Reserved.
+* Copyright 2024 Nexus-TYF. All Rights Reserved.
+* Ported from Nexus-TYF/Xiao-Lai-White-box-SM4.
+*
+* Licensed under the Apache License 2.0 (the "License").  You may not use
+* this file except in compliance with the License.  You can obtain a copy
+* in the file LICENSE in the source distribution or at
+* https://github.com/Tongsuo-Project/Tongsuo/blob/master/LICENSE.txt
+*/
 #include "crypto/wbsm4.h"
 
 void wbsm4_xiao_stkey_gen(const uint8_t *key, wbsm4_xiao_stkey_context *ctx)
 {
     int i, j, x;
+    uint8_t temp_u8;
+    uint32_t temp_u32;
+
     Aff32 P[36];
     Aff32 P_inv[36];
     Aff8 Eij[32][4];
@@ -10,6 +23,10 @@ void wbsm4_xiao_stkey_gen(const uint8_t *key, wbsm4_xiao_stkey_context *ctx)
     Aff32 Ei_inv[32];
     Aff32 Q[32];
     Aff32 Q_inv[32];
+
+    M32 QL;
+
+    uint32_t Q_constant[3] = {0};
 
     uint32_t sm4_rk[32];
     if (ctx->mode == WBSM4_ENCRYPT_MODE)
@@ -24,44 +41,42 @@ void wbsm4_xiao_stkey_gen(const uint8_t *key, wbsm4_xiao_stkey_context *ctx)
 
     for (i = 0; i < 36; i++) 
     {
-        //affine P
+        /* affine P */
         genaffinepairM32(&P[i], &P_inv[i]);
     }
 
     for (i = 0; i < 32; i++) 
     {
-        //affine E
+        /* affine E */
         for (j = 0; j < 4; j++) 
         {
             genaffinepairM8(&Eij[i][j], &Eij_inv[i][j]);
         }
 
-        // combine 4 E8 to 1 E32
+        /*  combine 4 E8 to 1 E32 */
         affinecomM8to32(Eij_inv[i][0], Eij_inv[i][1], Eij_inv[i][2], Eij_inv[i][3], &Ei_inv[i]);
 
-        //affine M
+        /* affine M */
         affinemixM32(Ei_inv[i], P_inv[i + 1], &ctx->M[i][0]);
         affinemixM32(Ei_inv[i], P_inv[i + 2], &ctx->M[i][1]);
         affinemixM32(Ei_inv[i], P_inv[i + 3], &ctx->M[i][2]);
 
-        //affine Q
+        /* affine Q */
         genaffinepairM32(&Q[i], &Q_inv[i]);
 
-        //affine C D, C for Xi0, D for T(Xi1+Xi2+Xi3+rk)
+        /* affine C D, C for Xi0, D for T(Xi1+Xi2+Xi3+rk) */
         affinemixM32(P[i + 4], P_inv[i], &ctx->C[i]);
         affinemixM32(P[i + 4], Q_inv[i], &ctx->D[i]);
-        uint32_t temp_u32 = cus_random();
+        temp_u32 = cus_random();
         ctx->C[i].Vec.V ^= temp_u32;
         ctx->D[i].Vec.V ^= P[i + 4].Vec.V ^ temp_u32;
     }
     
     for (i = 0; i < 32; i++)
     {
-        //combine QL
-        M32 QL;
+        /* combine QL */
         MatMulMatM32(Q[i].Mat, SM4_L_matrix, &QL);
 
-        uint32_t Q_constant[3] = {0};
         for(j = 0; j < 3; j++)
         {
             Q_constant[j] = cus_random();
@@ -71,10 +86,10 @@ void wbsm4_xiao_stkey_gen(const uint8_t *key, wbsm4_xiao_stkey_context *ctx)
         {
             for (j = 0; j < 4; j++) 
             {
-                uint8_t temp_u8 = affineU8(Eij[i][j], x);
+                temp_u8 = affineU8(Eij[i][j], x);
                 temp_u8 = SM4_SBOX[temp_u8 ^ ((sm4_rk[i] >> (24 - j * 8)) & 0xff)];
-                uint32_t temp_32 = temp_u8 << (24 - j * 8);
-                ctx->Table[i][j][x] = MatMulNumM32(QL, temp_32);
+                temp_u32 = temp_u8 << (24 - j * 8);
+                ctx->Table[i][j][x] = MatMulNumM32(QL, temp_u32);
             }
             for(j = 0; j < 3; j++)
             {
@@ -84,7 +99,7 @@ void wbsm4_xiao_stkey_gen(const uint8_t *key, wbsm4_xiao_stkey_context *ctx)
         }
     }
 
-    //external encoding
+    /* external encoding */
     for (i = 0; i < 4; i++) 
     {
         ctx->SE[i].Mat = P[i].Mat;

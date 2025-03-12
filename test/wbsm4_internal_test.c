@@ -21,7 +21,7 @@
 #include <openssl/core_names.h>
 #include "testutil.h"
 
-#if !defined(OPENSSL_NO_WBSM4_XIAO_STKEY) || !defined(OPENSSL_WBSM4_JIN_STKEY) \
+#if !defined(OPENSSL_NO_WBSM4_XIAO_STKEY) || !defined(OPENSSL_NO_WBSM4_JIN_STKEY) \
 || !defined(OPENSSL_NO_WBSM4_XIAO_DYKEY)
 #include "crypto/sm4.h"
 #include "crypto/wbsm4.h"
