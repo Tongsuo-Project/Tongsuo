@@ -1446,14 +1446,10 @@ void wbsm4_gen(uint8_t *key,unsigned char *whitebox,size_t* whitebox_len){
         return;   
     }
     
-    wb = (WBLUT*)malloc(sizeof(WBLUT));
     wb = (WBLUT*)whitebox;
     
-    
-
     sm4_setkey_enc(&ctx, key);
-    printf("Key Initialition Done.\n");
-
+    
     InitRandom(((unsigned int)time(NULL)));
     
     for(i=0;i<16;i++){
@@ -1484,8 +1480,7 @@ void wbsm4_gen(uint8_t *key,unsigned char *whitebox,size_t* whitebox_len){
     for(i=0;i<16;i++){
         Gen_BytePer(IN_EX_E[i],Ex_IN_D[i]);
     }
-    printf("Nonlinear Byte Encodings Generation Done.\n");
-
+    
     for(i=0;i<4;i++){
         for(x = 0;x<256;x++){
             wb->Ex_OUT_D[i*4][x] = IN[31-i][0][x];
@@ -1502,9 +1497,6 @@ void wbsm4_gen(uint8_t *key,unsigned char *whitebox,size_t* whitebox_len){
         }
     }
 
-    printf("External Encodings Generation Done.\n");
-
-    
     for(i=0;i<16;i++){
         for(x=0;x<256;x++){
             
@@ -1573,10 +1565,7 @@ void wbsm4_gen(uint8_t *key,unsigned char *whitebox,size_t* whitebox_len){
             }
         }
     }
-
-    printf("Input Lookup Tables Generation Done.\n");
-
-     
+    
      for(i=0;i<8;i++){
         for(x=0;x<256;x++){
             for(y=0;y<256;y++){
@@ -1616,9 +1605,6 @@ void wbsm4_gen(uint8_t *key,unsigned char *whitebox,size_t* whitebox_len){
 
         }
     }
-
-    printf("XOR Lookup Tables Generation Done.\n");
-
     
     for(i=0;i<32;i++){
         for(j=0;j<4;j++){
@@ -1630,13 +1616,8 @@ void wbsm4_gen(uint8_t *key,unsigned char *whitebox,size_t* whitebox_len){
         }
     }
 
-    printf("Output Lookup Tables Generation Done.\n");
-    
     Gen_LB(&LB);
     invsM32(LB,&LB_inv);
-    
-    printf("Confusion Matrix Generation Done.\n");
-
     
     for(i=0;i<32;i++){
         for(j=0;j<4;j++){
@@ -1658,9 +1639,6 @@ void wbsm4_gen(uint8_t *key,unsigned char *whitebox,size_t* whitebox_len){
         } 
     }
 
-    printf("T-tables & De-T-tables Generation Done.\n");
-
-    
     for(i=0;i<4;i++){
         for(x=0;x<256;x++){
             tmp8 = NB_D_inv[i][x];
@@ -1671,9 +1649,6 @@ void wbsm4_gen(uint8_t *key,unsigned char *whitebox,size_t* whitebox_len){
             wb->Table_LB_inv[i][x] = ((uint32_t)NB_E[4*i][(uint8_t)((tmp32>>24)&msk)] << 24) | ((uint32_t)NB_E[4*i+1][(uint8_t)((tmp32>>16)&msk)] << 16) | ((uint32_t)NB_E[4*i+2][(uint8_t)((tmp32>>8)&msk)] << 8) | ((uint32_t)NB_E[4*i+3][(uint8_t)((tmp32)&msk)]);
         }
     }
-
-    printf("LB_inv-tables Generation Done.\n");
-    printf("WBSM4 Generation Done!\n");
 
 }
 
@@ -1691,7 +1666,6 @@ void wbsm4_encrypt(uint8_t input[16], uint8_t output[16],unsigned char *whitebox
     uint32_t msk = 0xff;
     
     WBLUT* wb = NULL;
-    wb = (WBLUT*)malloc(sizeof(WBLUT));
     wb = (WBLUT*)whitebox;
 
     for(i=0;i<16;i++){
@@ -1787,7 +1761,6 @@ void wbsm4_decrypt(uint8_t input[16], uint8_t output[16],unsigned char *whitebox
     uint32_t msk = 0xff;
     
     WBLUT* wb = NULL;
-    wb = (WBLUT*)malloc(sizeof(WBLUT));
     wb = (WBLUT*)whitebox;
 
     for(i=0;i<16;i++){
