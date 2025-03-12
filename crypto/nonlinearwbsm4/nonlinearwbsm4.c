@@ -554,7 +554,7 @@ void Nonlinearwbsm4_encrypt(const unsigned char IN[16], unsigned char OUT[16], c
     uint8_t xt0_1, xt0_2, xt0_3, xt0_4, xt1_1, xt1_2, xt1_3, xt1_4;
     uint8_t xt2_1, xt2_2, xt2_3, xt2_4, xt3_1, xt3_2, xt3_3, xt3_4;
     uint8_t xt4_1, xt4_2, xt4_3, xt4_4, x4_1, x4_2, x4_3, x4_4;
-    uint32_t temp_part4_1, part2_temp; /* 移动声明到开头 */
+    uint32_t temp_part4_1, part2_temp;
     uint8_t part2_temp_1, part2_temp_2, part2_temp_3, part2_temp_4;
     uint32_t res_part2_1, res_part2_2, res_part2_3, res_part2_4;
     uint8_t res_part2_1_1, res_part2_1_2, res_part2_1_3, res_part2_1_4;
@@ -562,7 +562,7 @@ void Nonlinearwbsm4_encrypt(const unsigned char IN[16], unsigned char OUT[16], c
     uint8_t res_part2_3_1, res_part2_3_2, res_part2_3_3, res_part2_3_4;
     uint8_t res_part2_4_1, res_part2_4_2, res_part2_4_3, res_part2_4_4;
     uint32_t temp_part4_2_1, temp_part4_2_2;
-    uint32_t out0,out1,out2,out3;
+    uint32_t out0, out1, out2, out3;
 
     /* 输入外部编码 */
     x0 = GET32(IN);
@@ -576,42 +576,56 @@ void Nonlinearwbsm4_encrypt(const unsigned char IN[16], unsigned char OUT[16], c
     x3 = nonlinearU32(&tables->P[3], x3);  /* P3 */
 
     /* 执行核心加密 */
-    for (i = 0; i < 32; i++)
-    {
+    for (i = 0; i < 32; i++) {
         /* part1 */
-        xt1 = (tables->part1_table1[i][0][(x1 >> 24) & 0xff] << 24) ^ (tables->part1_table1[i][1][(x1 >> 16) & 0xff] << 16) ^ (tables->part1_table1[i][2][(x1 >> 8) & 0xff] << 8) ^ tables->part1_table1[i][3][x1 & 0xff];
-        xt2 = (tables->part1_table2[i][0][(x2 >> 24) & 0xff] << 24) ^ (tables->part1_table2[i][1][(x2 >> 16) & 0xff] << 16) ^ (tables->part1_table2[i][2][(x2 >> 8) & 0xff] << 8) ^ tables->part1_table2[i][3][x2 & 0xff];
-        xt3 = (tables->part1_table3[i][0][(x3 >> 24) & 0xff] << 24) ^ (tables->part1_table3[i][1][(x3 >> 16) & 0xff] << 16) ^ (tables->part1_table3[i][2][(x3 >> 8) & 0xff] << 8) ^ tables->part1_table3[i][3][x3 & 0xff];
+        xt1 = ((uint32_t)tables->part1_table1[i][0][(x1 >> 24) & 0xff] << 24) ^
+              ((uint32_t)tables->part1_table1[i][1][(x1 >> 16) & 0xff] << 16) ^
+              ((uint32_t)tables->part1_table1[i][2][(x1 >> 8) & 0xff] << 8) ^
+              (uint32_t)tables->part1_table1[i][3][x1 & 0xff];
+        xt2 = ((uint32_t)tables->part1_table2[i][0][(x2 >> 24) & 0xff] << 24) ^
+              ((uint32_t)tables->part1_table2[i][1][(x2 >> 16) & 0xff] << 16) ^
+              ((uint32_t)tables->part1_table2[i][2][(x2 >> 8) & 0xff] << 8) ^
+              (uint32_t)tables->part1_table2[i][3][x2 & 0xff];
+        xt3 = ((uint32_t)tables->part1_table3[i][0][(x3 >> 24) & 0xff] << 24) ^
+              ((uint32_t)tables->part1_table3[i][1][(x3 >> 16) & 0xff] << 16) ^
+              ((uint32_t)tables->part1_table3[i][2][(x3 >> 8) & 0xff] << 8) ^
+              (uint32_t)tables->part1_table3[i][3][x3 & 0xff];
+
         /* part4-1 */
-        xt1_1 = (xt1 >> 24) & 0xff;/* xt1的前8bit */
-        xt1_2 = (xt1 >> 16) & 0xff;/* xt1的第2个8bit */
-        xt1_3 = (xt1 >> 8) & 0xff;/* xt1的第3个8bit */
-        xt1_4 = xt1 & 0xff;/* xt1的第4个8bit */
+        xt1_1 = (xt1 >> 24) & 0xff;
+        xt1_2 = (xt1 >> 16) & 0xff;
+        xt1_3 = (xt1 >> 8) & 0xff;
+        xt1_4 = xt1 & 0xff;
 
-        xt2_1 = (xt2 >> 24) & 0xff;/* xt2的前8bit */
-        xt2_2 = (xt2 >> 16) & 0xff;/* xt2的第2个8bit */
-        xt2_3 = (xt2 >> 8) & 0xff;/* xt2的第3个8bit */
-        xt2_4 = xt2 & 0xff;/* xt2的第4个8bit */
+        xt2_1 = (xt2 >> 24) & 0xff;
+        xt2_2 = (xt2 >> 16) & 0xff;
+        xt2_3 = (xt2 >> 8) & 0xff;
+        xt2_4 = xt2 & 0xff;
 
-        xt3_1 = (xt3 >> 24) & 0xff;/* xt3的前8bit */
-        xt3_2 = (xt3 >> 16) & 0xff;/* xt3的第2个8bit */
-        xt3_3 = (xt3 >> 8) & 0xff;/* xt3的第3个8bit */
-        xt3_4 = xt3 & 0xff;/* xt3的第4个8bit */
+        xt3_1 = (xt3 >> 24) & 0xff;
+        xt3_2 = (xt3 >> 16) & 0xff;
+        xt3_3 = (xt3 >> 8) & 0xff;
+        xt3_4 = xt3 & 0xff;
 
-        temp_part4_1 = (tables->part4_1_table[i][0][(xt1_1 << 8) ^ xt2_1] << 24) ^ (tables->part4_1_table[i][1][(xt1_2 << 8) ^ xt2_2] << 16) ^ (tables->part4_1_table[i][2][(xt1_3 << 8) ^ xt2_3] << 8) ^ tables->part4_1_table[i][3][(xt1_4 << 8) ^ xt2_4];
-        x4 = (tables->part4_1_table[i][0][(((temp_part4_1 >> 24) & 0xff) << 8) ^ xt3_1] << 24) ^ (tables->part4_1_table[i][1][(((temp_part4_1 >> 16) & 0xff) << 8) ^ xt3_2] << 16) ^ (tables->part4_1_table[i][2][(((temp_part4_1 >> 8) & 0xff) << 8) ^ xt3_3] << 8) ^ tables->part4_1_table[i][3][((temp_part4_1 & 0xff) << 8) ^ xt3_4];
-
+        temp_part4_1 = ((uint32_t)tables->part4_1_table[i][0][(xt1_1 << 8) ^ xt2_1] << 24) ^
+                       ((uint32_t)tables->part4_1_table[i][1][(xt1_2 << 8) ^ xt2_2] << 16) ^
+                       ((uint32_t)tables->part4_1_table[i][2][(xt1_3 << 8) ^ xt2_3] << 8) ^
+                       (uint32_t)tables->part4_1_table[i][3][(xt1_4 << 8) ^ xt2_4];
+        x4 = ((uint32_t)tables->part4_1_table[i][0][(((temp_part4_1 >> 24) & 0xff) << 8) ^ xt3_1] << 24) ^
+             ((uint32_t)tables->part4_1_table[i][1][(((temp_part4_1 >> 16) & 0xff) << 8) ^ xt3_2] << 16) ^
+             ((uint32_t)tables->part4_1_table[i][2][(((temp_part4_1 >> 8) & 0xff) << 8) ^ xt3_3] << 8) ^
+             (uint32_t)tables->part4_1_table[i][3][((temp_part4_1 & 0xff) << 8) ^ xt3_4];
 
         /* part2 */
-        x4_1 = (x4 >> 24) & 0xff;/* x4的前8bit */
-        x4_2 = (x4 >> 16) & 0xff;/* x4的第2个8bit */
-        x4_3 = (x4 >> 8) & 0xff;/* x4的第3个8bit */
-        x4_4 = x4 & 0xff;/* x4的第4个8bit */
-/* uint8_t part2_table_temp_1 = tables->part2_table_temp[i][0][x4_1]; */
-/* uint8_t part2_table_temp_2 = tables->part2_table_temp[i][1][x4_2]; */
-/* uint8_t part2_table_temp_3 = tables->part2_table_temp[i][2][x4_3]; */
-/* uint8_t part2_table_temp_4 = tables->part2_table_temp[i][3][x4_4]; */
-        part2_temp = (tables->part2_table_temp[i][0][x4_1] << 24) ^ (tables->part2_table_temp[i][1][x4_2] << 16) ^ (tables->part2_table_temp[i][2][x4_3] << 8) ^ (tables->part2_table_temp[i][3][x4_4]);
+        x4_1 = (x4 >> 24) & 0xff;
+        x4_2 = (x4 >> 16) & 0xff;
+        x4_3 = (x4 >> 8) & 0xff;
+        x4_4 = x4 & 0xff;
+
+        part2_temp = ((uint32_t)tables->part2_table_temp[i][0][x4_1] << 24) ^
+                     ((uint32_t)tables->part2_table_temp[i][1][x4_2] << 16) ^
+                     ((uint32_t)tables->part2_table_temp[i][2][x4_3] << 8) ^
+                     (uint32_t)tables->part2_table_temp[i][3][x4_4];
         part2_temp = MatMulNumM32(L_matrix, part2_temp);
 
         part2_temp_1 = (part2_temp >> 24) & 0xff;
@@ -624,10 +638,7 @@ void Nonlinearwbsm4_encrypt(const unsigned char IN[16], unsigned char OUT[16], c
         res_part2_3 = tables->part2_table[i][2][part2_temp_3];
         res_part2_4 = tables->part2_table[i][3][part2_temp_4];
 
-
-
-        /* res_part2_1按照8bit分割 */
-        res_part2_1_1 = (res_part2_1 >> 24) & 0xff;/* res_part2_1的前8bit */
+        res_part2_1_1 = (res_part2_1 >> 24) & 0xff;
         res_part2_1_2 = (res_part2_1 >> 16) & 0xff;
         res_part2_1_3 = (res_part2_1 >> 8) & 0xff;
         res_part2_1_4 = res_part2_1 & 0xff;
@@ -647,34 +658,57 @@ void Nonlinearwbsm4_encrypt(const unsigned char IN[16], unsigned char OUT[16], c
         res_part2_4_3 = (res_part2_4 >> 8) & 0xff;
         res_part2_4_4 = res_part2_4 & 0xff;
 
-        temp_part4_2_1 = (tables->part4_2_table[i][0][(res_part2_1_1 << 8) ^ res_part2_2_1] << 24) ^ (tables->part4_2_table[i][1][(res_part2_1_2 << 8) ^ res_part2_2_2] << 16) ^ (tables->part4_2_table[i][2][(res_part2_1_3 << 8) ^ res_part2_2_3] << 8) ^ (tables->part4_2_table[i][3][(res_part2_1_4 << 8) ^ res_part2_2_4]);
-        temp_part4_2_2 = (tables->part4_2_table[i][0][(((temp_part4_2_1 >> 24) & 0xff) << 8) ^ res_part2_3_1] << 24) ^ (tables->part4_2_table[i][1][(((temp_part4_2_1 >> 16) & 0xff) << 8) ^ res_part2_3_2] << 16) ^ (tables->part4_2_table[i][2][(((temp_part4_2_1 >> 8) & 0xff) << 8) ^ res_part2_3_3] << 8) ^ (tables->part4_2_table[i][3][((temp_part4_2_1 & 0xff) << 8) ^ res_part2_3_4]);
-        x4 = (tables->part4_2_table[i][0][(((temp_part4_2_2 >> 24) & 0xff) << 8) ^ res_part2_4_1] << 24) ^ (tables->part4_2_table[i][1][(((temp_part4_2_2 >> 16) & 0xff) << 8) ^ res_part2_4_2] << 16) ^ (tables->part4_2_table[i][2][(((temp_part4_2_2 >> 8) & 0xff) << 8) ^ res_part2_4_3] << 8) ^ (tables->part4_2_table[i][3][((temp_part4_2_2 & 0xff) << 8) ^ res_part2_4_4]);
+        temp_part4_2_1 = ((uint32_t)tables->part4_2_table[i][0][(res_part2_1_1 << 8) ^ res_part2_2_1] << 24) ^
+                         ((uint32_t)tables->part4_2_table[i][1][(res_part2_1_2 << 8) ^ res_part2_2_2] << 16) ^
+                         ((uint32_t)tables->part4_2_table[i][2][(res_part2_1_3 << 8) ^ res_part2_2_3] << 8) ^
+                         (uint32_t)tables->part4_2_table[i][3][(res_part2_1_4 << 8) ^ res_part2_2_4];
+        temp_part4_2_2 = ((uint32_t)tables->part4_2_table[i][0][(((temp_part4_2_1 >> 24) & 0xff) << 8) ^ res_part2_3_1] << 24) ^
+                         ((uint32_t)tables->part4_2_table[i][1][(((temp_part4_2_1 >> 16) & 0xff) << 8) ^ res_part2_3_2] << 16) ^
+                         ((uint32_t)tables->part4_2_table[i][2][(((temp_part4_2_1 >> 8) & 0xff) << 8) ^ res_part2_3_3] << 8) ^
+                         (uint32_t)tables->part4_2_table[i][3][((temp_part4_2_1 & 0xff) << 8) ^ res_part2_3_4];
+        x4 = ((uint32_t)tables->part4_2_table[i][0][(((temp_part4_2_2 >> 24) & 0xff) << 8) ^ res_part2_4_1] << 24) ^
+             ((uint32_t)tables->part4_2_table[i][1][(((temp_part4_2_2 >> 16) & 0xff) << 8) ^ res_part2_4_2] << 16) ^
+             ((uint32_t)tables->part4_2_table[i][2][(((temp_part4_2_2 >> 8) & 0xff) << 8) ^ res_part2_4_3] << 8) ^
+             (uint32_t)tables->part4_2_table[i][3][((temp_part4_2_2 & 0xff) << 8) ^ res_part2_4_4];
 
+        /* part3 */
+        xt0 = ((uint32_t)tables->part3_table1[i][0][(x0 >> 24) & 0xff] << 24) ^
+              ((uint32_t)tables->part3_table1[i][1][(x0 >> 16) & 0xff] << 16) ^
+              ((uint32_t)tables->part3_table1[i][2][(x0 >> 8) & 0xff] << 8) ^
+              (uint32_t)tables->part3_table1[i][3][x0 & 0xff];
+        xt4 = ((uint32_t)tables->part3_table2[i][0][(x4 >> 24) & 0xff] << 24) ^
+              ((uint32_t)tables->part3_table2[i][1][(x4 >> 16) & 0xff] << 16) ^
+              ((uint32_t)tables->part3_table2[i][2][(x4 >> 8) & 0xff] << 8) ^
+              (uint32_t)tables->part3_table2[i][3][x4 & 0xff];
 
-        xt0 = (tables->part3_table1[i][0][(x0 >> 24) & 0xff] << 24) ^ (tables->part3_table1[i][1][(x0 >> 16) & 0xff] << 16) ^ (tables->part3_table1[i][2][(x0 >> 8) & 0xff] << 8) ^ tables->part3_table1[i][3][x0 & 0xff];
-        xt4 = (tables->part3_table2[i][0][(x4 >> 24) & 0xff] << 24) ^ (tables->part3_table2[i][1][(x4 >> 16) & 0xff] << 16) ^ (tables->part3_table2[i][2][(x4 >> 8) & 0xff] << 8) ^ tables->part3_table2[i][3][x4 & 0xff];
         /* part4-3 */
-        xt0_1 = (xt0 >> 24) & 0xff;/* xt0的前8bit */
-        xt0_2 = (xt0 >> 16) & 0xff;/* xt0的第2个8bit */
-        xt0_3 = (xt0 >> 8) & 0xff;/* xt0的第3个8bit */
-        xt0_4 = xt0 & 0xff;/* xt0的第4个8bit */
+        xt0_1 = (xt0 >> 24) & 0xff;
+        xt0_2 = (xt0 >> 16) & 0xff;
+        xt0_3 = (xt0 >> 8) & 0xff;
+        xt0_4 = xt0 & 0xff;
 
-        xt4_1 = (xt4 >> 24) & 0xff;/* xt4的前8bit */
-        xt4_2 = (xt4 >> 16) & 0xff;/* xt4的第2个8bit */
-        xt4_3 = (xt4 >> 8) & 0xff;/* xt4的第3个8bit */
-        xt4_4 = xt4 & 0xff;/* xt4的第4个8bit */
-        x4 = (tables->part4_3_table[i][0][(xt0_1 << 8) ^ xt4_1] << 24) ^ (tables->part4_3_table[i][1][(xt0_2 << 8) ^ xt4_2] << 16) ^ (tables->part4_3_table[i][2][(xt0_3 << 8) ^ xt4_3] << 8) ^ tables->part4_3_table[i][3][(xt0_4 << 8) ^ xt4_4];
+        xt4_1 = (xt4 >> 24) & 0xff;
+        xt4_2 = (xt4 >> 16) & 0xff;
+        xt4_3 = (xt4 >> 8) & 0xff;
+        xt4_4 = xt4 & 0xff;
+
+        x4 = ((uint32_t)tables->part4_3_table[i][0][(xt0_1 << 8) ^ xt4_1] << 24) ^
+             ((uint32_t)tables->part4_3_table[i][1][(xt0_2 << 8) ^ xt4_2] << 16) ^
+             ((uint32_t)tables->part4_3_table[i][2][(xt0_3 << 8) ^ xt4_3] << 8) ^
+             (uint32_t)tables->part4_3_table[i][3][(xt0_4 << 8) ^ xt4_4];
+
         x0 = x1;
         x1 = x2;
         x2 = x3;
         x3 = x4;
     }
+
     /* 输出外部解码 */
     out0 = nonlinearU32(&tables->P_inv[35], x3);
     out1 = nonlinearU32(&tables->P_inv[34], x2);
     out2 = nonlinearU32(&tables->P_inv[33], x1);
     out3 = nonlinearU32(&tables->P_inv[32], x0);
+
     PUT32(out0, OUT);
     PUT32(out1, OUT + 4);
     PUT32(out2, OUT + 8);
@@ -695,7 +729,8 @@ void Nonlinearwbsm4_decrypt(const unsigned char IN[16], unsigned char OUT[16], c
     uint8_t res_part2_3_1, res_part2_3_2, res_part2_3_3, res_part2_3_4;
     uint8_t res_part2_4_1, res_part2_4_2, res_part2_4_3, res_part2_4_4;
     uint32_t temp_part4_2_1, temp_part4_2_2;
-    uint32_t out0,out1,out2,out3;
+    uint32_t out0, out1, out2, out3;
+
     /* 输入外部编码 */
     x0 = GET32(IN);
     x1 = GET32(IN + 4);
@@ -708,38 +743,56 @@ void Nonlinearwbsm4_decrypt(const unsigned char IN[16], unsigned char OUT[16], c
     x3 = nonlinearU32(&tables->P[32], x3);  /* P3 */
 
     /* 执行核心解密 */
-    for (i = 31; i >= 0; i--)
-    {
+    for (i = 31; i >= 0; i--) {
         /* part1 */
-        xt1 = (tables->part1_table3[i][0][(x1 >> 24) & 0xff] << 24) ^ (tables->part1_table3[i][1][(x1 >> 16) & 0xff] << 16) ^ (tables->part1_table3[i][2][(x1 >> 8) & 0xff] << 8) ^ tables->part1_table3[i][3][x1 & 0xff];
-        xt2 = (tables->part1_table2[i][0][(x2 >> 24) & 0xff] << 24) ^ (tables->part1_table2[i][1][(x2 >> 16) & 0xff] << 16) ^ (tables->part1_table2[i][2][(x2 >> 8) & 0xff] << 8) ^ tables->part1_table2[i][3][x2 & 0xff];
-        xt3 = (tables->part1_table1[i][0][(x3 >> 24) & 0xff] << 24) ^ (tables->part1_table1[i][1][(x3 >> 16) & 0xff] << 16) ^ (tables->part1_table1[i][2][(x3 >> 8) & 0xff] << 8) ^ tables->part1_table1[i][3][x3 & 0xff];
+        xt1 = ((uint32_t)tables->part1_table3[i][0][(x1 >> 24) & 0xff] << 24) ^
+              ((uint32_t)tables->part1_table3[i][1][(x1 >> 16) & 0xff] << 16) ^
+              ((uint32_t)tables->part1_table3[i][2][(x1 >> 8) & 0xff] << 8) ^
+              (uint32_t)tables->part1_table3[i][3][x1 & 0xff];
+        xt2 = ((uint32_t)tables->part1_table2[i][0][(x2 >> 24) & 0xff] << 24) ^
+              ((uint32_t)tables->part1_table2[i][1][(x2 >> 16) & 0xff] << 16) ^
+              ((uint32_t)tables->part1_table2[i][2][(x2 >> 8) & 0xff] << 8) ^
+              (uint32_t)tables->part1_table2[i][3][x2 & 0xff];
+        xt3 = ((uint32_t)tables->part1_table1[i][0][(x3 >> 24) & 0xff] << 24) ^
+              ((uint32_t)tables->part1_table1[i][1][(x3 >> 16) & 0xff] << 16) ^
+              ((uint32_t)tables->part1_table1[i][2][(x3 >> 8) & 0xff] << 8) ^
+              (uint32_t)tables->part1_table1[i][3][x3 & 0xff];
+
         /* part4-1 */
-        xt1_1 = (xt1 >> 24) & 0xff;/* xt1的前8bit */
-        xt1_2 = (xt1 >> 16) & 0xff;/* xt1的第2个8bit */
-        xt1_3 = (xt1 >> 8) & 0xff;/* xt1的第3个8bit */
-        xt1_4 = xt1 & 0xff;/* xt1的第4个8bit */
+        xt1_1 = (xt1 >> 24) & 0xff;
+        xt1_2 = (xt1 >> 16) & 0xff;
+        xt1_3 = (xt1 >> 8) & 0xff;
+        xt1_4 = xt1 & 0xff;
 
-        xt2_1 = (xt2 >> 24) & 0xff;/* xt2的前8bit */
-        xt2_2 = (xt2 >> 16) & 0xff;/* xt2的第2个8bit */
-        xt2_3 = (xt2 >> 8) & 0xff;/* xt2的第3个8bit */
-        xt2_4 = xt2 & 0xff;/* xt2的第4个8bit */
+        xt2_1 = (xt2 >> 24) & 0xff;
+        xt2_2 = (xt2 >> 16) & 0xff;
+        xt2_3 = (xt2 >> 8) & 0xff;
+        xt2_4 = xt2 & 0xff;
 
-        xt3_1 = (xt3 >> 24) & 0xff;/* xt3的前8bit */
-        xt3_2 = (xt3 >> 16) & 0xff;/* xt3的第2个8bit */
-        xt3_3 = (xt3 >> 8) & 0xff;/* xt3的第3个8bit */
-        xt3_4 = xt3 & 0xff;/* xt3的第4个8bit */
+        xt3_1 = (xt3 >> 24) & 0xff;
+        xt3_2 = (xt3 >> 16) & 0xff;
+        xt3_3 = (xt3 >> 8) & 0xff;
+        xt3_4 = xt3 & 0xff;
 
-        temp_part4_1 = (tables->part4_1_table[i][0][(xt3_1 << 8) ^ xt2_1] << 24) ^ (tables->part4_1_table[i][1][(xt3_2 << 8) ^ xt2_2] << 16) ^ (tables->part4_1_table[i][2][(xt3_3 << 8) ^ xt2_3] << 8) ^ tables->part4_1_table[i][3][(xt3_4 << 8) ^ xt2_4];
-        x4 = (tables->part4_1_table[i][0][(((temp_part4_1 >> 24) & 0xff) << 8) ^ xt1_1] << 24) ^ (tables->part4_1_table[i][1][(((temp_part4_1 >> 16) & 0xff) << 8) ^ xt1_2] << 16) ^ (tables->part4_1_table[i][2][(((temp_part4_1 >> 8) & 0xff) << 8) ^ xt1_3] << 8) ^ tables->part4_1_table[i][3][((temp_part4_1 & 0xff) << 8) ^ xt1_4];
+        temp_part4_1 = ((uint32_t)tables->part4_1_table[i][0][(xt3_1 << 8) ^ xt2_1] << 24) ^
+                       ((uint32_t)tables->part4_1_table[i][1][(xt3_2 << 8) ^ xt2_2] << 16) ^
+                       ((uint32_t)tables->part4_1_table[i][2][(xt3_3 << 8) ^ xt2_3] << 8) ^
+                       (uint32_t)tables->part4_1_table[i][3][(xt3_4 << 8) ^ xt2_4];
+        x4 = ((uint32_t)tables->part4_1_table[i][0][(((temp_part4_1 >> 24) & 0xff) << 8) ^ xt1_1] << 24) ^
+             ((uint32_t)tables->part4_1_table[i][1][(((temp_part4_1 >> 16) & 0xff) << 8) ^ xt1_2] << 16) ^
+             ((uint32_t)tables->part4_1_table[i][2][(((temp_part4_1 >> 8) & 0xff) << 8) ^ xt1_3] << 8) ^
+             (uint32_t)tables->part4_1_table[i][3][((temp_part4_1 & 0xff) << 8) ^ xt1_4];
 
         /* part2 */
-        x4_1 = (x4 >> 24) & 0xff;/* x4的前8bit */
-        x4_2 = (x4 >> 16) & 0xff;/* x4的第2个8bit */
-        x4_3 = (x4 >> 8) & 0xff;/* x4的第3个8bit */
-        x4_4 = x4 & 0xff;/* x4的第4个8bit */
+        x4_1 = (x4 >> 24) & 0xff;
+        x4_2 = (x4 >> 16) & 0xff;
+        x4_3 = (x4 >> 8) & 0xff;
+        x4_4 = x4 & 0xff;
 
-        part2_temp = (tables->part2_table_temp[i][0][x4_1] << 24) ^ (tables->part2_table_temp[i][1][x4_2] << 16) ^ (tables->part2_table_temp[i][2][x4_3] << 8) ^ (tables->part2_table_temp[i][3][x4_4]);
+        part2_temp = ((uint32_t)tables->part2_table_temp[i][0][x4_1] << 24) ^
+                     ((uint32_t)tables->part2_table_temp[i][1][x4_2] << 16) ^
+                     ((uint32_t)tables->part2_table_temp[i][2][x4_3] << 8) ^
+                     (uint32_t)tables->part2_table_temp[i][3][x4_4];
         part2_temp = MatMulNumM32(L_matrix, part2_temp);
 
         part2_temp_1 = (part2_temp >> 24) & 0xff;
@@ -753,10 +806,7 @@ void Nonlinearwbsm4_decrypt(const unsigned char IN[16], unsigned char OUT[16], c
         res_part2_4 = tables->part2_table[i][3][part2_temp_4];
 
         /* part4-2 */
-
-
-        /* res_part2_1按照8bit分割 */
-        res_part2_1_1 = (res_part2_1 >> 24) & 0xff;/* res_part2_1的前8bit */
+        res_part2_1_1 = (res_part2_1 >> 24) & 0xff;
         res_part2_1_2 = (res_part2_1 >> 16) & 0xff;
         res_part2_1_3 = (res_part2_1 >> 8) & 0xff;
         res_part2_1_4 = res_part2_1 & 0xff;
@@ -776,29 +826,51 @@ void Nonlinearwbsm4_decrypt(const unsigned char IN[16], unsigned char OUT[16], c
         res_part2_4_3 = (res_part2_4 >> 8) & 0xff;
         res_part2_4_4 = res_part2_4 & 0xff;
 
-        temp_part4_2_1 = (tables->part4_2_table[i][0][(res_part2_1_1 << 8) ^ res_part2_2_1] << 24) ^ (tables->part4_2_table[i][1][(res_part2_1_2 << 8) ^ res_part2_2_2] << 16) ^ (tables->part4_2_table[i][2][(res_part2_1_3 << 8) ^ res_part2_2_3] << 8) ^ (tables->part4_2_table[i][3][(res_part2_1_4 << 8) ^ res_part2_2_4]);
-        temp_part4_2_2 = (tables->part4_2_table[i][0][(((temp_part4_2_1 >> 24) & 0xff) << 8) ^ res_part2_3_1] << 24) ^ (tables->part4_2_table[i][1][(((temp_part4_2_1 >> 16) & 0xff) << 8) ^ res_part2_3_2] << 16) ^ (tables->part4_2_table[i][2][(((temp_part4_2_1 >> 8) & 0xff) << 8) ^ res_part2_3_3] << 8) ^ (tables->part4_2_table[i][3][((temp_part4_2_1 & 0xff) << 8) ^ res_part2_3_4]);
-        x4 = (tables->part4_2_table[i][0][(((temp_part4_2_2 >> 24) & 0xff) << 8) ^ res_part2_4_1] << 24) ^ (tables->part4_2_table[i][1][(((temp_part4_2_2 >> 16) & 0xff) << 8) ^ res_part2_4_2] << 16) ^ (tables->part4_2_table[i][2][(((temp_part4_2_2 >> 8) & 0xff) << 8) ^ res_part2_4_3] << 8) ^ (tables->part4_2_table[i][3][((temp_part4_2_2 & 0xff) << 8) ^ res_part2_4_4]);
+        temp_part4_2_1 = ((uint32_t)tables->part4_2_table[i][0][(res_part2_1_1 << 8) ^ res_part2_2_1] << 24) ^
+                         ((uint32_t)tables->part4_2_table[i][1][(res_part2_1_2 << 8) ^ res_part2_2_2] << 16) ^
+                         ((uint32_t)tables->part4_2_table[i][2][(res_part2_1_3 << 8) ^ res_part2_2_3] << 8) ^
+                         (uint32_t)tables->part4_2_table[i][3][(res_part2_1_4 << 8) ^ res_part2_2_4];
+        temp_part4_2_2 = ((uint32_t)tables->part4_2_table[i][0][(((temp_part4_2_1 >> 24) & 0xff) << 8) ^ res_part2_3_1] << 24) ^
+                         ((uint32_t)tables->part4_2_table[i][1][(((temp_part4_2_1 >> 16) & 0xff) << 8) ^ res_part2_3_2] << 16) ^
+                         ((uint32_t)tables->part4_2_table[i][2][(((temp_part4_2_1 >> 8) & 0xff) << 8) ^ res_part2_3_3] << 8) ^
+                         (uint32_t)tables->part4_2_table[i][3][((temp_part4_2_1 & 0xff) << 8) ^ res_part2_3_4];
+        x4 = ((uint32_t)tables->part4_2_table[i][0][(((temp_part4_2_2 >> 24) & 0xff) << 8) ^ res_part2_4_1] << 24) ^
+             ((uint32_t)tables->part4_2_table[i][1][(((temp_part4_2_2 >> 16) & 0xff) << 8) ^ res_part2_4_2] << 16) ^
+             ((uint32_t)tables->part4_2_table[i][2][(((temp_part4_2_2 >> 8) & 0xff) << 8) ^ res_part2_4_3] << 8) ^
+             (uint32_t)tables->part4_2_table[i][3][((temp_part4_2_2 & 0xff) << 8) ^ res_part2_4_4];
 
+        /* part3 */
+        xt0 = ((uint32_t)tables->part3_table1_dec[i][0][(x0 >> 24) & 0xff] << 24) ^
+              ((uint32_t)tables->part3_table1_dec[i][1][(x0 >> 16) & 0xff] << 16) ^
+              ((uint32_t)tables->part3_table1_dec[i][2][(x0 >> 8) & 0xff] << 8) ^
+              (uint32_t)tables->part3_table1_dec[i][3][x0 & 0xff];
+        xt4 = ((uint32_t)tables->part3_table2[i][0][(x4 >> 24) & 0xff] << 24) ^
+              ((uint32_t)tables->part3_table2[i][1][(x4 >> 16) & 0xff] << 16) ^
+              ((uint32_t)tables->part3_table2[i][2][(x4 >> 8) & 0xff] << 8) ^
+              (uint32_t)tables->part3_table2[i][3][x4 & 0xff];
 
-        xt0 = (tables->part3_table1_dec[i][0][(x0 >> 24) & 0xff] << 24) ^ (tables->part3_table1_dec[i][1][(x0 >> 16) & 0xff] << 16) ^ (tables->part3_table1_dec[i][2][(x0 >> 8) & 0xff] << 8) ^ tables->part3_table1_dec[i][3][x0 & 0xff];
-        xt4 = (tables->part3_table2[i][0][(x4 >> 24) & 0xff] << 24) ^ (tables->part3_table2[i][1][(x4 >> 16) & 0xff] << 16) ^ (tables->part3_table2[i][2][(x4 >> 8) & 0xff] << 8) ^ tables->part3_table2[i][3][x4 & 0xff];
         /* part4-3 */
-        xt0_1 = (xt0 >> 24) & 0xff;/* xt0的前8bit */
-        xt0_2 = (xt0 >> 16) & 0xff;/* xt0的第2个8bit */
-        xt0_3 = (xt0 >> 8) & 0xff;/* xt0的第3个8bit */
-        xt0_4 = xt0 & 0xff;/* xt0的第4个8bit */
+        xt0_1 = (xt0 >> 24) & 0xff;
+        xt0_2 = (xt0 >> 16) & 0xff;
+        xt0_3 = (xt0 >> 8) & 0xff;
+        xt0_4 = xt0 & 0xff;
 
-        xt4_1 = (xt4 >> 24) & 0xff;/* xt4的前8bit */
-        xt4_2 = (xt4 >> 16) & 0xff;/* xt4的第2个8bit */
-        xt4_3 = (xt4 >> 8) & 0xff;/* xt4的第3个8bit */
-        xt4_4 = xt4 & 0xff;/* xt4的第4个8bit */
-        x4 = (tables->part4_3_table_dec[i][0][(xt0_1 << 8) ^ xt4_1] << 24) ^ (tables->part4_3_table_dec[i][1][(xt0_2 << 8) ^ xt4_2] << 16) ^ (tables->part4_3_table_dec[i][2][(xt0_3 << 8) ^ xt4_3] << 8) ^ tables->part4_3_table_dec[i][3][(xt0_4 << 8) ^ xt4_4];
+        xt4_1 = (xt4 >> 24) & 0xff;
+        xt4_2 = (xt4 >> 16) & 0xff;
+        xt4_3 = (xt4 >> 8) & 0xff;
+        xt4_4 = xt4 & 0xff;
+
+        x4 = ((uint32_t)tables->part4_3_table_dec[i][0][(xt0_1 << 8) ^ xt4_1] << 24) ^
+             ((uint32_t)tables->part4_3_table_dec[i][1][(xt0_2 << 8) ^ xt4_2] << 16) ^
+             ((uint32_t)tables->part4_3_table_dec[i][2][(xt0_3 << 8) ^ xt4_3] << 8) ^
+             (uint32_t)tables->part4_3_table_dec[i][3][(xt0_4 << 8) ^ xt4_4];
+
         x0 = x1;
         x1 = x2;
         x2 = x3;
         x3 = x4;
     }
+
     /* 输出外部解码（解密方向） */
     out0 = nonlinearU32(&tables->P_inv[0], x3);
     out1 = nonlinearU32(&tables->P_inv[1], x2);
@@ -810,6 +882,7 @@ void Nonlinearwbsm4_decrypt(const unsigned char IN[16], unsigned char OUT[16], c
     PUT32(out2, OUT + 8);
     PUT32(out3, OUT + 12);
 }
+
 
 void Nonlinearwbsm4_generate_tables(const uint8_t key[16], WB_SM4_Tables* tables) {
 /*    sm4_context ctx;
