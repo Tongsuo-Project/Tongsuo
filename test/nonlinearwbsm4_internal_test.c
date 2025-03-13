@@ -1,8 +1,10 @@
 #include <string.h>
 #include <openssl/opensslconf.h>
+#include <openssl/symbol_prefix.h>
+#include <openssl/crypto.h>
 #include "testutil.h"
-#ifndef OPENSSL_NO_NONLINEARWBSM4
 #include "crypto/nonlinearwbsm4.h" 
+#ifndef OPENSSL_NO_NONLINEARWBSM4
 static int test_nonlinearwbsm4(void)
 {
     /* 测试密钥 */

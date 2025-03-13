@@ -61,6 +61,10 @@
     "opensslconf.h": "c",
     "nonlinearwbsm4.h": "c",
     "symhacks.h": "c",
-    "stdint.h": "c"
+    "stdint.h": "c",
+    "testutil.h": "c",
+    "*.inc": "c",
+    "typeinfo": "c",
+    "macros.h": "c"
   }
 }
