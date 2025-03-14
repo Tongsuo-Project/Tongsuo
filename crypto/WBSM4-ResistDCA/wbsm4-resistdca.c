@@ -1616,8 +1616,7 @@ void wbsm4_gen(uint8_t *key,unsigned char *whitebox,size_t* whitebox_len){
         }
     }
 
-    Gen_LB(&LB);
-    invsM32(LB,&LB_inv);
+    Gen_Mat_LBpair(&LB,&LB_inv);
     
     for(i=0;i<32;i++){
         for(j=0;j<4;j++){
