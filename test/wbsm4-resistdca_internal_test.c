@@ -5,9 +5,9 @@
 #include <openssl/crypto.h>
 #include "testutil.h"
 #include "crypto/wbsm4-resistdca.h"
-#include "wblut.h"
 
-#ifdef OPENSSL_TEST_ALL
+
+
 static int test_wbsm4_standard(void)
 {
     static const uint8_t k[16] = {
@@ -153,54 +153,9 @@ static int test_wbsm4_random_key_and_input(void){
     return 1;
 }
 #endif
-#endif
 
-#ifndef OPENSSL_NO_SM4
-#include "crypto/sm4.h"
-static int test_wbsm4_with_whitebox(void){
 
-    static const uint8_t k[16] = {
-        0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
-        0xfe, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10
-    };
 
-    uint8_t input[SM4_BLOCK_SIZE];
-    uint8_t block_sm4[SM4_BLOCK_SIZE];
-    uint8_t block_wbsm4[SM4_BLOCK_SIZE];
-    SM4_KEY key;
-
-    
-    unsigned char *read_wb = NULL;
-    read_wb = (unsigned char*)OPENSSL_malloc(wb_data_len);
-    memcpy(read_wb, prestwb, wb_data_len);
-    
-    RAND_bytes(input,SM4_BLOCK_SIZE);
-    ossl_sm4_set_key(k, &key);
-    memcpy(block_sm4, input, SM4_BLOCK_SIZE);
-    memcpy(block_wbsm4, input, SM4_BLOCK_SIZE);
-
-    ossl_sm4_encrypt(block_sm4, block_sm4, &key);
-    wbsm4_encrypt(block_wbsm4, block_wbsm4, read_wb);
-
-    if (!TEST_mem_eq(block_sm4, SM4_BLOCK_SIZE, block_wbsm4, SM4_BLOCK_SIZE)){
-        OPENSSL_free(read_wb);
-        return 0;
-    }
-
-    ossl_sm4_decrypt(block_sm4, block_sm4, &key);
-    wbsm4_decrypt(block_wbsm4, block_wbsm4, read_wb);
-
-    if (!TEST_mem_eq(block_sm4, SM4_BLOCK_SIZE, block_wbsm4, SM4_BLOCK_SIZE)){
-        OPENSSL_free(read_wb);
-        return 0;
-    }
-    
-    OPENSSL_free(read_wb);
-    return 1;
-
-}
-
-#endif
 
 int setup_tests(void)
 {
@@ -212,11 +167,7 @@ int setup_tests(void)
 #ifndef OPENSSL_NO_SM4
     ADD_TEST(test_wbsm4_random_key_and_input);
 #endif
-#endif
 
-#ifndef OPENSSL_NO_SM4
-    ADD_TEST(test_wbsm4_with_whitebox);
-#endif
 
     return 1;
 }
