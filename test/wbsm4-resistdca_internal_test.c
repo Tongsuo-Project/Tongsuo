@@ -92,7 +92,7 @@ static int test_wbsm4_random_gen_tables(void){
     wbsm4_gen(key,wb2,&whitebox_len2);
     
 
-    if (!TEST_mem_eq(wb1, whitebox_len1, wb2, whitebox_len2)
+    if (!TEST_size_t_eq(whitebox_len1, whitebox_len2)
     ||memcmp(wb1,wb2,whitebox_len1)==0){
         OPENSSL_free(wb1);
         OPENSSL_free(wb2);
