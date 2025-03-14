@@ -160,7 +160,7 @@ static int test_wbsm4_random_key_and_input(void){
 int setup_tests(void)
 {
 
-#ifdef OPENSSL_TEST_ALL
+
     ADD_TEST(test_wbsm4_standard);
     ADD_TEST(test_wbsm4_random_gen_tables);
 
