@@ -159,6 +159,8 @@ static void print_result(int alg, int run_no, int count, double time_used);
 static int do_multi(int multi, int size_num);
 #endif
 
+static int testmoderesult = 0;
+
 static const int lengths_list[] = {
     16, 64, 256, 1024, 8 * 1024, 16 * 1024
 };
@@ -695,6 +697,15 @@ static double sdf_results[SDF_NUM];
 #define COND(unused_cond) (run && count < INT_MAX)
 #define COUNT(d) (count)
 
+#define TAG_LEN 16
+#define AEAD_IVLEN 12 /* 12 bytes iv length works for all AEAD modes */
+
+static unsigned int mode_op; /* AE Mode of operation */
+static unsigned int aead = 0; /* AEAD flag */
+static unsigned char aead_iv[AEAD_IVLEN]; /* For AEAD modes */
+static unsigned char aad[EVP_AEAD_TLS1_AAD_LEN] = { 0xcc };
+static int aead_ivlen = sizeof(aead_iv);
+
 typedef struct {
     void *hSessionHandle;
     void *hKeyHandle;
@@ -710,6 +721,7 @@ typedef struct loopargs_st {
     unsigned char *buf_malloc;
     unsigned char *buf2_malloc;
     unsigned char *key;
+    unsigned char tag[TAG_LEN];
     size_t buflen;
     size_t sigsize;
     EVP_PKEY_CTX *rsa_sign_ctx[RSA_NUM];
@@ -786,6 +798,12 @@ static char *evp_cmac_name = NULL;
 int sm2_threshold_keygen(EVP_PKEY **key1, EVP_PKEY **key2, EVP_PKEY **pubkey,
                          EVP_PKEY **temp_key);
 #endif
+
+static void dofail(void)
+{
+    ERR_print_errors(bio_err);
+    testmoderesult = 1;
+}
 
 static int have_md(const char *name)
 {
@@ -988,7 +1006,7 @@ static EVP_CIPHER_CTX *init_evp_cipher_ctx(const char *ciphername,
         goto end;
     }
 
-    if (!EVP_CIPHER_CTX_set_key_length(ctx, keylen)) {
+    if (EVP_CIPHER_CTX_set_key_length(ctx, keylen) <= 0) {
         EVP_CIPHER_CTX_free(ctx);
         ctx = NULL;
         goto end;
@@ -1053,74 +1071,161 @@ static int EVP_Update_loop(void *args)
 }
 
 /*
+ * To make AEAD benchmarking more relevant perform TLS-like operations,
+ * 13-byte AAD followed by payload. But don't use TLS-formatted AAD, as
+ * payload length is not actually limited by 16KB...
  * CCM does not support streaming. For the purpose of performance measurement,
  * each message is encrypted using the same (key,iv)-pair. Do not use this
  * code in your application.
  */
-static int EVP_Update_loop_ccm(void *args)
+static int EVP_Update_loop_aead_enc(void *args)
 {
     loopargs_t *tempargs = *(loopargs_t **) args;
     unsigned char *buf = tempargs->buf;
+    unsigned char *key = tempargs->key;
     EVP_CIPHER_CTX *ctx = tempargs->ctx;
-    int outl, count;
-    unsigned char tag[12];
+    int outl, count, realcount = 0;
 
-    if (decrypt) {
-        for (count = 0; COND(c[D_EVP][testnum]); count++) {
-            (void)EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_TAG, sizeof(tag),
-                                      tag);
-            /* reset iv */
-            (void)EVP_DecryptInit_ex(ctx, NULL, NULL, NULL, iv);
-            /* counter is reset on every update */
-            (void)EVP_DecryptUpdate(ctx, buf, &outl, buf, lengths[testnum]);
+    for (count = 0; COND(c[D_EVP][testnum]); count++) {
+        /* Set length of iv (Doesn't apply to SIV mode) */
+        if (mode_op != EVP_CIPH_SIV_MODE) {
+            if (!EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_IVLEN,
+                                     sizeof(aead_iv), NULL)) {
+                BIO_printf(bio_err, "\nFailed to set iv length\n");
+                dofail();
+                exit(1);
+            }
         }
-    } else {
-        for (count = 0; COND(c[D_EVP][testnum]); count++) {
-            /* restore iv length field */
-            (void)EVP_EncryptUpdate(ctx, NULL, &outl, NULL, lengths[testnum]);
-            /* counter is reset on every update */
-            (void)EVP_EncryptUpdate(ctx, buf, &outl, buf, lengths[testnum]);
+	/* Set tag_len (Not for GCM/SIV at encryption stage) */
+        if (mode_op != EVP_CIPH_GCM_MODE
+            && mode_op != EVP_CIPH_SIV_MODE
+            && mode_op != EVP_CIPH_GCM_SIV_MODE) {
+            if (!EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_TAG,
+                                     TAG_LEN, NULL)) {
+                BIO_printf(bio_err, "\nFailed to set tag length\n");
+                dofail();
+                exit(1);
+            }
         }
+        if (!EVP_CipherInit_ex(ctx, NULL, NULL, key, aead_iv, -1)) {
+            BIO_printf(bio_err, "\nFailed to set key and iv\n");
+            dofail();
+            exit(1);
+        }
+        /* Set total length of input. Only required for CCM */
+        if (mode_op == EVP_CIPH_CCM_MODE) {
+            if (!EVP_EncryptUpdate(ctx, NULL, &outl,
+                                   NULL, lengths[testnum])) {
+                BIO_printf(bio_err, "\nCouldn't set input text length\n");
+                dofail();
+                exit(1);
+            }
+        }
+	if (aead) {
+            if (!EVP_EncryptUpdate(ctx, NULL, &outl, aad, sizeof(aad))) {
+                BIO_printf(bio_err, "\nCouldn't insert AAD when encrypting\n");
+                dofail();
+                exit(1);
+            }
+        }
+        if (!EVP_EncryptUpdate(ctx, buf, &outl, buf, lengths[testnum])) {
+            BIO_printf(bio_err, "\nFailed to encrypt the data\n");
+            dofail();
+            exit(1);
+        }
+        if (EVP_EncryptFinal_ex(ctx, buf, &outl))
+            realcount++;
     }
-    if (decrypt)
-        (void)EVP_DecryptFinal_ex(ctx, buf, &outl);
-    else
-        (void)EVP_EncryptFinal_ex(ctx, buf, &outl);
-    return count;
+
+    return realcount;
 }
 
 /*
  * To make AEAD benchmarking more relevant perform TLS-like operations,
  * 13-byte AAD followed by payload. But don't use TLS-formatted AAD, as
  * payload length is not actually limited by 16KB...
+ * CCM does not support streaming. For the purpose of performance measurement,
+ * each message is decrypted using the same (key,iv)-pair. Do not use this
+ * code in your application.
+ * For decryption, we will use buf2 to preserve the input text in buf.
  */
-static int EVP_Update_loop_aead(void *args)
+static int EVP_Update_loop_aead_dec(void *args)
 {
     loopargs_t *tempargs = *(loopargs_t **) args;
     unsigned char *buf = tempargs->buf;
+    unsigned char *outbuf = tempargs->buf2;
+    unsigned char *key = tempargs->key;
+    unsigned char tag[TAG_LEN];
     EVP_CIPHER_CTX *ctx = tempargs->ctx;
-    int outl, count;
-    unsigned char aad[13] = { 0xcc };
-    unsigned char faketag[16] = { 0xcc };
+    int outl, count, realcount = 0;
 
-    if (decrypt) {
-        for (count = 0; COND(c[D_EVP][testnum]); count++) {
-            (void)EVP_DecryptInit_ex(ctx, NULL, NULL, NULL, iv);
-            (void)EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_TAG,
-                                      sizeof(faketag), faketag);
-            (void)EVP_DecryptUpdate(ctx, NULL, &outl, aad, sizeof(aad));
-            (void)EVP_DecryptUpdate(ctx, buf, &outl, buf, lengths[testnum]);
-            (void)EVP_DecryptFinal_ex(ctx, buf + outl, &outl);
+    for (count = 0; COND(c[D_EVP][testnum]); count++) {
+        /* Set the length of iv (Doesn't apply to SIV mode) */
+        if (mode_op != EVP_CIPH_SIV_MODE) {
+            if (!EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_IVLEN,
+                                     sizeof(aead_iv), NULL)) {
+                BIO_printf(bio_err, "\nFailed to set iv length\n");
+                dofail();
+                exit(1);
+            }
         }
-    } else {
-        for (count = 0; COND(c[D_EVP][testnum]); count++) {
-            (void)EVP_EncryptInit_ex(ctx, NULL, NULL, NULL, iv);
-            (void)EVP_EncryptUpdate(ctx, NULL, &outl, aad, sizeof(aad));
-            (void)EVP_EncryptUpdate(ctx, buf, &outl, buf, lengths[testnum]);
-            (void)EVP_EncryptFinal_ex(ctx, buf + outl, &outl);
+
+        if (mode_op != EVP_CIPH_SIV_MODE
+            && mode_op != EVP_CIPH_GCM_MODE
+            && mode_op != EVP_CIPH_GCM_SIV_MODE) {
+            if (!EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_TAG,
+                                     TAG_LEN, NULL)) {
+                BIO_printf(bio_err, "\nFailed to set tag length\n");
+                dofail();
+                exit(1);
+            }
         }
+	if (!EVP_CipherInit_ex(ctx, NULL, NULL, key, aead_iv, -1)) {
+            BIO_printf(bio_err, "\nFailed to set key and iv\n");
+            dofail();
+            exit(1);
+        }
+        /* Set iv before decryption (Doesn't apply to SIV mode) */
+        if (mode_op != EVP_CIPH_SIV_MODE) {
+            if (!EVP_DecryptInit_ex(ctx, NULL, NULL, NULL, aead_iv)) {
+                BIO_printf(bio_err, "\nFailed to set iv\n");
+                dofail();
+                exit(1);
+            }
+        }
+        memcpy(tag, tempargs->tag, TAG_LEN);
+
+        if (!EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_TAG,
+                                 TAG_LEN, tag)) {
+            BIO_printf(bio_err, "\nFailed to set tag\n");
+            dofail();
+            exit(1);
+        }
+        /* Set the total length of cipher text. Only required for CCM */
+        if (mode_op == EVP_CIPH_CCM_MODE) {
+            if (!EVP_DecryptUpdate(ctx, NULL, &outl,
+                                   NULL, lengths[testnum])) {
+                BIO_printf(bio_err, "\nCouldn't set cipher text length\n");
+                dofail();
+                exit(1);
+            }
+        }
+        if (aead) {
+            if (!EVP_DecryptUpdate(ctx, NULL, &outl, aad, sizeof(aad))) {
+                BIO_printf(bio_err, "\nCouldn't insert AAD when decrypting\n");
+                dofail();
+                exit(1);
+            }
+        }
+        if (!EVP_DecryptUpdate(ctx, outbuf, &outl, buf, lengths[testnum])) {
+            BIO_printf(bio_err, "\nFailed to decrypt the data\n");
+            dofail();
+            exit(1);
+        }
+        if (EVP_DecryptFinal_ex(ctx, outbuf, &outl))
+            realcount++;
     }
-    return count;
+    return realcount;
 }
 
 static long rsa_c[RSA_NUM][2];  /* # RSA iteration test */
@@ -2059,12 +2164,12 @@ int speed_main(int argc, char **argv)
     OPTION_CHOICE o;
     int async_init = 0, multiblock = 0, pr_header = 0;
     uint8_t doit[ALGOR_NUM] = { 0 };
-    int ret = 1, misalign = 0, lengths_single = 0, aead = 0, keygen = 0;
+    int ret = 1, misalign = 0, lengths_single = 0, keygen = 0;
     int sdf = 0;
     long count = 0;
     unsigned int size_num = SIZE_NUM;
     unsigned int i, k, loopargs_len = 0, async_jobs = 0;
-    int keylen;
+    int keylen = 0;
     int buflen;
     BIGNUM *bn = NULL;
     EVP_PKEY_CTX *genctx = NULL;
@@ -3365,12 +3470,21 @@ int speed_main(int argc, char **argv)
         }
     }
 
+    /*-
+     * There are three scenarios for D_EVP:
+     * 1- Using authenticated encryption (AE) e.g. CCM, GCM, OCB etc.
+     * 2- Using AE + associated data (AD) i.e. AEAD using CCM, GCM, OCB etc.
+     * 3- Not using AE or AD e.g. ECB, CBC, CFB etc.
+     */
+
     if (doit[D_EVP]) {
         if (evp_cipher != NULL) {
-            int (*loopfunc) (void *) = EVP_Update_loop;
+	    int (*loopfunc) (void *);
+            int outlen = 0;
+            unsigned int ae_mode = 0;
 
-            if (multiblock && (EVP_CIPHER_get_flags(evp_cipher) &
-                               EVP_CIPH_FLAG_TLS1_1_MULTIBLOCK)) {
+            if (multiblock && (EVP_CIPHER_get_flags(evp_cipher)
+                               & EVP_CIPH_FLAG_TLS1_1_MULTIBLOCK)) {
                 multiblock_speed(evp_cipher, lengths_single, &seconds);
                 ret = 0;
                 goto end;
@@ -3378,15 +3492,26 @@ int speed_main(int argc, char **argv)
 
             names[D_EVP] = EVP_CIPHER_get0_name(evp_cipher);
 
-            if (EVP_CIPHER_get_mode(evp_cipher) == EVP_CIPH_CCM_MODE) {
-                loopfunc = EVP_Update_loop_ccm;
-            } else if (aead && (EVP_CIPHER_get_flags(evp_cipher) &
-                                EVP_CIPH_FLAG_AEAD_CIPHER)) {
-                loopfunc = EVP_Update_loop_aead;
+	    mode_op = EVP_CIPHER_get_mode(evp_cipher);
+	    if (aead) {
                 if (lengths == lengths_list) {
                     lengths = aead_lengths_list;
                     size_num = OSSL_NELEM(aead_lengths_list);
                 }
+            }
+
+	    if (mode_op == EVP_CIPH_GCM_MODE
+                || mode_op == EVP_CIPH_CCM_MODE
+                || mode_op == EVP_CIPH_OCB_MODE
+                || mode_op == EVP_CIPH_SIV_MODE
+                || mode_op == EVP_CIPH_GCM_SIV_MODE) {
+                ae_mode = 1;
+                if (decrypt)
+                    loopfunc = EVP_Update_loop_aead_dec;
+                else
+                    loopfunc = EVP_Update_loop_aead_enc;
+            } else {
+                loopfunc = EVP_Update_loop;
             }
 
             for (testnum = 0; testnum < size_num; testnum++) {
@@ -3399,37 +3524,143 @@ int speed_main(int argc, char **argv)
                         BIO_printf(bio_err, "\nEVP_CIPHER_CTX_new failure\n");
                         exit(1);
                     }
+
+		    /*
+                     * For AE modes, we must first encrypt the data to get
+                     * a valid tag that enables us to decrypt. If we don't
+                     * encrypt first, we won't have a valid tag that enables
+                     * authenticity and hence decryption will fail.
+                     */
+
                     if (!EVP_CipherInit_ex(loopargs[k].ctx, evp_cipher, NULL,
-                                           NULL, iv, decrypt ? 0 : 1)) {
-                        BIO_printf(bio_err, "\nEVP_CipherInit_ex failure\n");
-                        ERR_print_errors(bio_err);
+                                           NULL, NULL, ae_mode ? 1 : !decrypt)) {
+                        BIO_printf(bio_err, "\nCouldn't init the context\n");
+                        dofail();
                         exit(1);
                     }
 
+		    /* Padding isn't needed */
                     EVP_CIPHER_CTX_set_padding(loopargs[k].ctx, 0);
 
                     keylen = EVP_CIPHER_CTX_get_key_length(loopargs[k].ctx);
                     loopargs[k].key = app_malloc(keylen, "evp_cipher key");
                     EVP_CIPHER_CTX_rand_key(loopargs[k].ctx, loopargs[k].key);
-                    if (!EVP_CipherInit_ex(loopargs[k].ctx, NULL, NULL,
-                                           loopargs[k].key, NULL, -1)) {
-                        BIO_printf(bio_err, "\nEVP_CipherInit_ex failure\n");
-                        ERR_print_errors(bio_err);
-                        exit(1);
+		    if (!ae_mode) {
+                        if (!EVP_CipherInit_ex(loopargs[k].ctx, NULL, NULL,
+                                               loopargs[k].key, NULL, -1)) {
+                            BIO_printf(bio_err, "\nFailed to set the key\n");
+                            dofail();
+                            exit(1);
+                        }
+                    } else if (mode_op == EVP_CIPH_SIV_MODE
+                               || mode_op == EVP_CIPH_GCM_SIV_MODE) {
+                        EVP_CIPHER_CTX_ctrl(loopargs[k].ctx,
+                                            EVP_CTRL_SET_SPEED, 1, NULL);
                     }
-                    OPENSSL_clear_free(loopargs[k].key, keylen);
+                    if (ae_mode && decrypt) {
+                        /* Set length of iv (Doesn't apply to SIV mode) */
+                        if (mode_op != EVP_CIPH_SIV_MODE) {
+                            if (!EVP_CIPHER_CTX_ctrl(loopargs[k].ctx,
+                                                     EVP_CTRL_AEAD_SET_IVLEN,
+                                                     aead_ivlen, NULL)) {
+                                BIO_printf(bio_err, "\nFailed to set iv length\n");
+                                dofail();
+                                exit(1);
+                            }
+                        }
+                        /* Set tag_len (Not for GCM/SIV at encryption stage) */
+                        if (mode_op != EVP_CIPH_GCM_MODE
+                            && mode_op != EVP_CIPH_SIV_MODE
+                            && mode_op != EVP_CIPH_GCM_SIV_MODE) {
+                            if (!EVP_CIPHER_CTX_ctrl(loopargs[k].ctx,
+                                                     EVP_CTRL_AEAD_SET_TAG,
+                                                     TAG_LEN, NULL)) {
+                                BIO_printf(bio_err,
+                                           "\nFailed to set tag length\n");
+                                dofail();
+                                exit(1);
+                            }
+                        }
+			if (!EVP_CipherInit_ex(loopargs[k].ctx, NULL, NULL,
+                                               loopargs[k].key, aead_iv, -1)) {
+                            BIO_printf(bio_err, "\nFailed to set the key\n");
+                            dofail();
+                            exit(1);
+                        }
+                        /* Set total length of input. Only required for CCM */
+                        if (mode_op == EVP_CIPH_CCM_MODE) {
+                            if (!EVP_EncryptUpdate(loopargs[k].ctx, NULL,
+                                                   &outlen, NULL,
+                                                   lengths[testnum])) {
+                                BIO_printf(bio_err,
+                                           "\nCouldn't set input text length\n");
+                                dofail();
+                                exit(1);
+                            }
+                        }
+                        if (aead) {
+                            if (!EVP_EncryptUpdate(loopargs[k].ctx, NULL,
+                                                   &outlen, aad, sizeof(aad))) {
+                                BIO_printf(bio_err,
+                                           "\nCouldn't insert AAD when encrypting\n");
+                                dofail();
+                                exit(1);
+                            }
+                        }
+			if (!EVP_EncryptUpdate(loopargs[k].ctx, loopargs[k].buf,
+                                               &outlen, loopargs[k].buf,
+                                               lengths[testnum])) {
+                            BIO_printf(bio_err,
+                                       "\nFailed to to encrypt the data\n");
+                            dofail();
+                            exit(1);
+                        }
 
-                    /* SIV mode only allows for a single Update operation */
-                    if (EVP_CIPHER_get_mode(evp_cipher) == EVP_CIPH_SIV_MODE)
-                        (void)EVP_CIPHER_CTX_ctrl(loopargs[k].ctx,
-                                                  EVP_CTRL_SET_SPEED, 1, NULL);
+                        if (!EVP_EncryptFinal_ex(loopargs[k].ctx,
+                                                 loopargs[k].buf, &outlen)) {
+                            BIO_printf(bio_err,
+                                       "\nFailed finalize the encryption\n");
+                            dofail();
+                            exit(1);
+                        }
+			if (!EVP_CIPHER_CTX_ctrl(loopargs[k].ctx, EVP_CTRL_AEAD_GET_TAG,
+						TAG_LEN, &loopargs[k].tag)) {
+                            BIO_printf(bio_err, "\nFailed to get the tag\n");
+                            dofail();
+                            exit(1);
+                        }
+			EVP_CIPHER_CTX_free(loopargs[k].ctx);
+                        loopargs[k].ctx = EVP_CIPHER_CTX_new();
+                        if (loopargs[k].ctx == NULL) {
+                            BIO_printf(bio_err,
+                                       "\nEVP_CIPHER_CTX_new failure\n");
+                            exit(1);
+                        }
+                        if (!EVP_CipherInit_ex(loopargs[k].ctx, evp_cipher,
+                                               NULL, NULL, NULL, 0)) {
+                            BIO_printf(bio_err,
+                                       "\nFailed initializing the context\n");
+                            dofail();
+                            exit(1);
+                        }
+
+                        EVP_CIPHER_CTX_set_padding(loopargs[k].ctx, 0);
+
+                        /* GCM-SIV/SIV only allows for a single Update operation */
+                        if (mode_op == EVP_CIPH_SIV_MODE
+                            || mode_op == EVP_CIPH_GCM_SIV_MODE)
+                            EVP_CIPHER_CTX_ctrl(loopargs[k].ctx,
+                                                EVP_CTRL_SET_SPEED, 1, NULL);
+                    }
                 }
 
                 Time_F(START);
                 count = run_benchmark(async_jobs, loopfunc, loopargs);
                 d = Time_F(STOP);
-                for (k = 0; k < loopargs_len; k++)
+                for (k = 0; k < loopargs_len; k++) {
+		    OPENSSL_clear_free(loopargs[k].key, keylen);
                     EVP_CIPHER_CTX_free(loopargs[k].ctx);
+		}
                 print_result(D_EVP, testnum, count, d);
             }
         } else if (evp_md_name != NULL) {
@@ -5992,7 +6223,6 @@ static void multiblock_speed(const EVP_CIPHER *evp_cipher, int lengths_single,
         print_message(alg_name, 0, mblengths[j], seconds->sym);
         Time_F(START);
         for (count = 0; run && count < INT_MAX; count++) {
-            unsigned char aad[EVP_AEAD_TLS1_AAD_LEN];
             EVP_CTRL_TLS1_1_MULTIBLOCK_PARAM mb_param;
             size_t len = mblengths[j];
             int packlen;
