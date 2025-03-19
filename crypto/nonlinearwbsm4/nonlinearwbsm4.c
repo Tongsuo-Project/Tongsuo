@@ -1,3 +1,13 @@
+/*
+ * Copyright 2017-2022 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2017 Ribose Inc. All Rights Reserved.
+ * Ported from Ribose contributions from Botan.
+ *
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
+ * this file except in compliance with the License.  You can obtain a copy
+ * in the file LICENSE in the source distribution or at
+ * https://www.openssl.org/source/license.html
+ */
 #include "crypto/nonlinearwbsm4.h"
 #include <string.h> 
 
@@ -885,42 +895,61 @@ void Nonlinearwbsm4_decrypt(const unsigned char IN[16], unsigned char OUT[16], c
 
 
 void Nonlinearwbsm4_generate_tables(const uint8_t key[16], WB_SM4_Tables* tables) {
-/*    sm4_context ctx;
-  sm4_setkey_enc(&ctx, (unsigned char*)key);*/
     SM4_KEY sm4_key;
     ossl_sm4_set_key1(key, &sm4_key);
+    size_t total_size = 0;
 
-    tables->part1_table1 = malloc(32 * sizeof(*tables->part1_table1));
-    tables->part1_table2 = malloc(32 * sizeof(*tables->part1_table2));
-    tables->part1_table3 = malloc(32 * sizeof(*tables->part1_table3));
-
-    tables->part2_table = malloc(32 * sizeof(*tables->part2_table));
-    tables->part2_table_temp = malloc(32 * sizeof(*tables->part2_table_temp));
-
-    tables->part3_table1 = malloc(32 * sizeof(*tables->part3_table1));
-    tables->part3_table1_dec = malloc(32 * sizeof(*tables->part3_table1_dec));
-    tables->part3_table2 = malloc(32 * sizeof(*tables->part3_table2));
-
-    tables->part4_1_table = malloc(32 * sizeof(*tables->part4_1_table));
-    tables->part4_2_table = malloc(32 * sizeof(*tables->part4_2_table));
-    tables->part4_3_table = malloc(32 * sizeof(*tables->part4_3_table));
-    tables->part4_3_table_dec = malloc(32 * sizeof(*tables->part4_3_table_dec));
-
-    tables->P = malloc(36 * sizeof(*tables->P));
-    tables->P_inv = malloc(36 * sizeof(*tables->P_inv));
-    if (!tables->part1_table1 || !tables->part1_table2 || !tables->part1_table3 ||
-        !tables->part2_table || !tables->part2_table_temp ||
-        !tables->part3_table1 || !tables->part3_table1_dec || !tables->part3_table2 ||
-        !tables->part4_1_table || !tables->part4_2_table ||
-        !tables->part4_3_table || !tables->part4_3_table_dec ||
-        !tables->P || !tables->P_inv)
-    {
-        Nonlinearwbsm4_free_tables(tables);
+    total_size += 3 * 32 * sizeof(uint8_t[4][256]); 
+    total_size += 32 * sizeof(uint32_t[4][256]) + 32 * sizeof(uint8_t[4][256]);
+    total_size += 3 * 32 * sizeof(uint8_t[4][256]); 
+    total_size += 4 * 32 * sizeof(uint8_t[4][65536]); 
+    total_size += 36 * sizeof(Nonlinear32) * 2;
+    /*一次性分配内存*/
+    tables->memory_block = malloc(total_size);
+    if (!tables->memory_block) {
         memset(tables, 0, sizeof(WB_SM4_Tables));
         return; 
     }
-    wbsm4_gen_init(tables);
+    uint8_t* current = (uint8_t*)tables->memory_block;
 
+    /* Part1 Tables*/
+    tables->part1_table1 = (uint8_t(*)[4][256])current;
+    current += 32 * sizeof(*tables->part1_table1);
+    tables->part1_table2 = (uint8_t(*)[4][256])current;
+    current += 32 * sizeof(*tables->part1_table2);
+    tables->part1_table3 = (uint8_t(*)[4][256])current;
+    current += 32 * sizeof(*tables->part1_table3);
+
+    /* Part2 Tables*/
+    tables->part2_table = (uint32_t(*)[4][256])current;
+    current += 32 * sizeof(*tables->part2_table);
+    tables->part2_table_temp = (uint8_t(*)[4][256])current;
+    current += 32 * sizeof(*tables->part2_table_temp);
+
+    /* Part3 Tables*/
+    tables->part3_table1 = (uint8_t(*)[4][256])current;
+    current += 32 * sizeof(*tables->part3_table1);
+    tables->part3_table1_dec = (uint8_t(*)[4][256])current;
+    current += 32 * sizeof(*tables->part3_table1_dec);
+    tables->part3_table2 = (uint8_t(*)[4][256])current;
+    current += 32 * sizeof(*tables->part3_table2);
+
+    /* Part4 Tables*/
+    tables->part4_1_table = (uint8_t(*)[4][65536])current;
+    current += 32 * sizeof(*tables->part4_1_table);
+    tables->part4_2_table = (uint8_t(*)[4][65536])current;
+    current += 32 * sizeof(*tables->part4_2_table);
+    tables->part4_3_table = (uint8_t(*)[4][65536])current;
+    current += 32 * sizeof(*tables->part4_3_table);
+    tables->part4_3_table_dec = (uint8_t(*)[4][65536])current;
+    current += 32 * sizeof(*tables->part4_3_table_dec);
+
+    /*P盒  */
+    tables->P = (Nonlinear32*)current;
+    current += 36 * sizeof(*tables->P);
+    tables->P_inv = (Nonlinear32*)current;
+    current += 36 * sizeof(*tables->P_inv);
+    wbsm4_gen_init(tables);
     wbsm4_gen_part1(tables);
     wbsm4_gen_part2(&sm4_key, tables);
     wbsm4_gen_part3(tables);
@@ -929,26 +958,7 @@ void Nonlinearwbsm4_generate_tables(const uint8_t key[16], WB_SM4_Tables* tables
     wbsm4_gen_part4_3(tables);
 }
 void Nonlinearwbsm4_free_tables(WB_SM4_Tables* tables) {
-    if (!tables) return;
 
-    free(tables->part1_table1);
-    free(tables->part1_table2);
-    free(tables->part1_table3);
-
-    free(tables->part2_table);
-    free(tables->part2_table_temp);
-
-    free(tables->part3_table1);
-    free(tables->part3_table1_dec);
-    free(tables->part3_table2);
-
-    free(tables->part4_1_table);
-    free(tables->part4_2_table);
-    free(tables->part4_3_table);
-    free(tables->part4_3_table_dec);
-
-    free(tables->P);
-    free(tables->P_inv);
-
+    free(tables->memory_block);
     memset(tables, 0, sizeof(WB_SM4_Tables));
 }

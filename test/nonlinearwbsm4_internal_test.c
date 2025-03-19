@@ -1,7 +1,16 @@
+/*
+ * Copyright 2022 The Tongsuo Project Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
+ * this file except in compliance with the License.  You can obtain a copy
+ * in the file LICENSE in the source distribution or at
+ * https://github.com/Tongsuo-Project/Tongsuo/blob/master/LICENSE.txt
+ */
 #include <string.h>
 #include <openssl/opensslconf.h>
 #include <openssl/symbol_prefix.h>
 #include <openssl/crypto.h>
+#include <openssl/rand.h>
 #include "testutil.h"
 #include "crypto/nonlinearwbsm4.h" 
 #ifndef OPENSSL_NO_NONLINEARWBSM4
@@ -54,12 +63,100 @@ err:
     free(tables);
     return ret;
 }
-#endif
+static int test_nonlinearwbsm4_random_gen_tables(void)
+{
+    uint8_t key[16];
+    WB_SM4_Tables *tables1 = NULL;
+    WB_SM4_Tables *tables2 = NULL;
+    int ret = 0;
 
+    /* 生成随机密钥 */
+    if (!TEST_true(RAND_bytes(key, sizeof(key))))
+        goto err;
+
+    tables1 = calloc(1, sizeof(WB_SM4_Tables));
+    tables2 = calloc(1, sizeof(WB_SM4_Tables));
+    if (!TEST_ptr(tables1) || !TEST_ptr(tables2))
+        goto err;
+
+    /* 生成两次白盒表 */
+    Nonlinearwbsm4_generate_tables(key, tables1);
+    Nonlinearwbsm4_generate_tables(key, tables2);
+
+    /* 比较两个表结构体内容是否不同 */
+    if (!TEST_mem_ne(tables1, sizeof(WB_SM4_Tables), tables2, sizeof(WB_SM4_Tables)))
+        goto err;
+
+    ret = 1;
+err:
+    Nonlinearwbsm4_free_tables(tables1);
+    Nonlinearwbsm4_free_tables(tables2);
+    free(tables1);
+    free(tables2);
+    return ret;
+}
+
+#ifndef OPENSSL_NO_SM4
+#include "crypto/sm4.h"
+static int test_nonlinearwbsm4_random_key_and_input(void)
+{
+    uint8_t key[SM4_BLOCK_SIZE];
+    uint8_t input[SM4_BLOCK_SIZE];
+    uint8_t encrypted_std[SM4_BLOCK_SIZE], encrypted_wb[SM4_BLOCK_SIZE];
+    uint8_t decrypted_std[SM4_BLOCK_SIZE], decrypted_wb[SM4_BLOCK_SIZE];
+    WB_SM4_Tables *tables = NULL;
+    SM4_KEY sm4_key;
+    int ret = 0;
+
+    /* 生成随机密钥和明文 */
+    if (!TEST_true(RAND_bytes(key, sizeof(key))))
+        goto err;
+    if (!TEST_true(RAND_bytes(input, sizeof(input))))
+        goto err;
+
+    /* 初始化白盒表 */
+    tables = calloc(1, sizeof(WB_SM4_Tables));
+    if (!TEST_ptr(tables))
+        goto err;
+    Nonlinearwbsm4_generate_tables(key, tables);
+
+    /* 初始化标准SM4密钥 */
+    ossl_sm4_set_key(key, &sm4_key);
+
+    /* 标准SM4加密 */
+    ossl_sm4_encrypt(input, encrypted_std, &sm4_key);
+    /* 白盒加密 */
+    Nonlinearwbsm4_encrypt(input, encrypted_wb, tables);
+    if (!TEST_mem_eq(encrypted_std, sizeof(encrypted_std), encrypted_wb, sizeof(encrypted_wb)))
+        goto err;
+
+    /* 标准SM4解密 */
+    ossl_sm4_decrypt(encrypted_std, decrypted_std, &sm4_key);
+    if (!TEST_mem_eq(decrypted_std, sizeof(decrypted_std), input, sizeof(input)))
+        goto err;
+
+    /* 白盒解密 */
+    Nonlinearwbsm4_decrypt(encrypted_wb, decrypted_wb, tables);
+    if (!TEST_mem_eq(decrypted_wb, sizeof(decrypted_wb), input, sizeof(input)))
+        goto err;
+
+    ret = 1;
+err:
+    Nonlinearwbsm4_free_tables(tables);
+    free(tables);
+    return ret;
+}
+#endif
+#endif
 int setup_tests(void)
 {
 #ifndef OPENSSL_NO_NONLINEARWBSM4
     ADD_TEST(test_nonlinearwbsm4);
+    ADD_TEST(test_nonlinearwbsm4_random_gen_tables);
+    #ifndef OPENSSL_NO_SM4
+    ADD_TEST(test_nonlinearwbsm4_random_key_and_input);
 #endif
+#endif
+
     return 1;
 }
