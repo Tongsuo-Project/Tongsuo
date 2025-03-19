@@ -186,12 +186,12 @@ unsigned int cus_random(void)
 }
 
 void Gen_BytePer(uint8_t *permu, uint8_t *inver){
-	
 	int i, j;
 	uint8_t temp;
+	
     InitRandom(((unsigned int)time(NULL)));
-	for (i = 0; i < 256; i++)
-	{
+	
+	for (i = 0; i < 256; i++){
 		permu[i] = i;
 	}
     while (permu[0]==0)
