@@ -182,7 +182,7 @@ void InitRandom(unsigned int seedBase)
 */
 unsigned int cus_random(void)
 {
-    return permuteQPR((permuteQPR(m_index++) + m_intermediateOffset) ^ 0x5bf03635);
+	return permuteQPR((permuteQPR(m_index++) + m_intermediateOffset) ^ 0x5bf03635);
 }
 
 void Gen_BytePer(uint8_t *permu, uint8_t *inver){
