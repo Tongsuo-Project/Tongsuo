@@ -27,19 +27,19 @@ typedef struct
 
 typedef struct
 {   
-    uint32_t Table_T[32][4][256];
+	uint32_t Table_T[32][4][256];
 	uint32_t De_Table_T[32][4][256];
-    uint8_t Table_IXOR_1[8][256][256];
-    uint8_t Table_IXOR_2[4][256][256];
-    uint32_t Table_LB_inv[4][256];
-    uint8_t Table_IIXOR_1[8][256][256];
-    uint8_t Table_IIXOR_2[4][256][256];
-    uint8_t Table_IIIXOR_1[4][256][256];
-    uint8_t Table_IIIXOR_2[32][4][256][256];
-    uint8_t Table_OUT[32][4][256][256];
-    uint8_t Ex_IN_E[16][256];
-    uint8_t Ex_OUT_D[16][256];
-    uint8_t Table_Input[32][16][256];
+	uint8_t Table_IXOR_1[8][256][256];
+	uint8_t Table_IXOR_2[4][256][256];
+	uint32_t Table_LB_inv[4][256];
+	uint8_t Table_IIXOR_1[8][256][256];
+	uint8_t Table_IIXOR_2[4][256][256];
+	uint8_t Table_IIIXOR_1[4][256][256];
+	uint8_t Table_IIIXOR_2[32][4][256][256];
+	uint8_t Table_OUT[32][4][256][256];
+	uint8_t Ex_IN_E[16][256];
+	uint8_t Ex_OUT_D[16][256];
+	uint8_t Table_Input[32][16][256];
 
 }WBLUT;
 
