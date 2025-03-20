@@ -51,7 +51,7 @@ int ERR_load_BN_strings(void);
 # define BN_F_BN_LSHIFT                                   145
 # define BN_F_BN_MOD_EXP2_MONT                            118
 # define BN_F_BN_MOD_EXP_MONT                             109
-# define BN_F_BN_MOD_EXP_MONT_CONSTTIME                   124
+# define BN_F_BN_MOD_EXP_MONT_FIXED_TOP                   124
 # define BN_F_BN_MOD_EXP_MONT_WORD                        117
 # define BN_F_BN_MOD_EXP_RECP                             125
 # define BN_F_BN_MOD_EXP_SIMPLE                           126

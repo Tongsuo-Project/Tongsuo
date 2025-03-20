@@ -51,7 +51,7 @@ static const ERR_STRING_DATA BN_str_functs[] = {
     {ERR_PACK(ERR_LIB_BN, BN_F_BN_LSHIFT, 0), "BN_lshift"},
     {ERR_PACK(ERR_LIB_BN, BN_F_BN_MOD_EXP2_MONT, 0), "BN_mod_exp2_mont"},
     {ERR_PACK(ERR_LIB_BN, BN_F_BN_MOD_EXP_MONT, 0), "BN_mod_exp_mont"},
-    {ERR_PACK(ERR_LIB_BN, BN_F_BN_MOD_EXP_MONT_CONSTTIME, 0),
+    {ERR_PACK(ERR_LIB_BN, BN_F_BN_MOD_EXP_MONT_FIXED_TOP, 0),
      "BN_mod_exp_mont_consttime"},
     {ERR_PACK(ERR_LIB_BN, BN_F_BN_MOD_EXP_MONT_WORD, 0),
      "BN_mod_exp_mont_word"},
