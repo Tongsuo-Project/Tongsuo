@@ -215,7 +215,7 @@ BN_F_BN_GF2M_MOD_SQRT:137:BN_GF2m_mod_sqrt
 BN_F_BN_LSHIFT:145:BN_lshift
 BN_F_BN_MOD_EXP2_MONT:118:BN_mod_exp2_mont
 BN_F_BN_MOD_EXP_MONT:109:BN_mod_exp_mont
-BN_F_BN_MOD_EXP_MONT_CONSTTIME:124:BN_mod_exp_mont_consttime
+BN_F_BN_MOD_EXP_MONT_FIXED_TOP:124:bn_mod_exp_mont_fixed_top
 BN_F_BN_MOD_EXP_MONT_WORD:117:BN_mod_exp_mont_word
 BN_F_BN_MOD_EXP_RECP:125:BN_mod_exp_recp
 BN_F_BN_MOD_EXP_SIMPLE:126:BN_mod_exp_simple
