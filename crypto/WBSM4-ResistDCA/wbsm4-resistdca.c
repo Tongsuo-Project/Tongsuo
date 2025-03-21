@@ -1674,7 +1674,7 @@ void wbsm4_crypt(uint8_t input[16], uint8_t output[16], unsigned char *whitebox,
     uint8_t tmp8_1[16];
     uint8_t tmp8_2[4];
     uint8_t tmp8_3[8];
-    uint32_t tmp32[4];
+    uint32_t tmp32[4] = {0};
 
     uint32_t msk = 0xff;
     
