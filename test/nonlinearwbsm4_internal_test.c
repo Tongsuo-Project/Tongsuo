@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 The Tongsuo Project Authors. All Rights Reserved.
+ * Copyright 2025 The Tongsuo Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -40,7 +40,7 @@ static int test_nonlinearwbsm4(void)
     int ret = 0;
 
     /* 分配白盒表内存 */
-    tables = calloc(1, sizeof(WB_SM4_Tables));
+    tables = OPENSSL_zalloc(sizeof(WB_SM4_Tables)); 
     if (!TEST_ptr(tables))
         goto err;
 
@@ -60,7 +60,7 @@ static int test_nonlinearwbsm4(void)
     ret = 1;
 err:
     Nonlinearwbsm4_free_tables(tables);
-    free(tables);
+    OPENSSL_free(tables);
     return ret;
 }
 static int test_nonlinearwbsm4_random_gen_tables(void)
@@ -74,8 +74,8 @@ static int test_nonlinearwbsm4_random_gen_tables(void)
     if (!TEST_true(RAND_bytes(key, sizeof(key))))
         goto err;
 
-    tables1 = calloc(1, sizeof(WB_SM4_Tables));
-    tables2 = calloc(1, sizeof(WB_SM4_Tables));
+    tables1 = OPENSSL_zalloc(sizeof(WB_SM4_Tables));
+    tables2 = OPENSSL_zalloc(sizeof(WB_SM4_Tables));
     if (!TEST_ptr(tables1) || !TEST_ptr(tables2))
         goto err;
 
@@ -91,8 +91,8 @@ static int test_nonlinearwbsm4_random_gen_tables(void)
 err:
     Nonlinearwbsm4_free_tables(tables1);
     Nonlinearwbsm4_free_tables(tables2);
-    free(tables1);
-    free(tables2);
+    OPENSSL_free(tables1);
+    OPENSSL_free(tables2);
     return ret;
 }
 
@@ -115,7 +115,7 @@ static int test_nonlinearwbsm4_random_key_and_input(void)
         goto err;
 
     /* 初始化白盒表 */
-    tables = calloc(1, sizeof(WB_SM4_Tables));
+    tables = OPENSSL_zalloc(sizeof(WB_SM4_Tables));
     if (!TEST_ptr(tables))
         goto err;
     Nonlinearwbsm4_generate_tables(key, tables);
@@ -143,7 +143,7 @@ static int test_nonlinearwbsm4_random_key_and_input(void)
     ret = 1;
 err:
     Nonlinearwbsm4_free_tables(tables);
-    free(tables);
+    OPENSSL_free(tables);
     return ret;
 }
 #endif

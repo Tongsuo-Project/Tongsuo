@@ -1,16 +1,14 @@
 /*
- * Copyright 2017-2022 The OpenSSL Project Authors. All Rights Reserved.
- * Copyright 2017 Ribose Inc. All Rights Reserved.
- * Ported from Ribose contributions from Botan.
+ * Copyright 2025 The Tongsuo Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
- * https://www.openssl.org/source/license.html
+ * https://github.com/Tongsuo-Project/Tongsuo/blob/master/LICENSE.txt
  */
 #include "crypto/nonlinearwbsm4.h"
 #include <string.h> 
-
+#include <openssl/crypto.h>
 /*====sm4轮密钥生成==== */
 # define ossl_inline
 # define SM4_KEY_SCHEDULE  32
@@ -19,6 +17,7 @@ typedef struct SM4_KEY_st {
 } SM4_KEY;
 static ossl_inline uint32_t load_u32_be1(const uint8_t *b, uint32_t n);
 static ossl_inline uint32_t rotl1(uint32_t a, uint8_t n);
+/*ossl_sm4_set_key1函数代码来源于sm4.c，用于sm4的轮密钥生成，防止sm4模块关闭无法使用白盒sm4模块*/
 static int ossl_sm4_set_key1(const uint8_t *key, SM4_KEY *ks);
 static const uint8_t SM4_S[256] = {
         0xD6, 0x90, 0xE9, 0xFE, 0xCC, 0xE1, 0x3D, 0xB7, 0x16, 0xB6, 0x14, 0xC2,
@@ -317,15 +316,6 @@ static M32 L_matrix = {
     0x40404101
     }
 };
-/* static void printstate(unsigned char* in)
- {
-     int i;
-     for (i = 0; i < 16; i++)
-     {
-         printf("%.2X", in[i]);
-    }
-    printf("\n");
- }    */
 
 static void wbsm4_gen_init(WB_SM4_Tables* tables) {
     int i, j; 
@@ -896,21 +886,21 @@ void Nonlinearwbsm4_decrypt(const unsigned char IN[16], unsigned char OUT[16], c
 
 void Nonlinearwbsm4_generate_tables(const uint8_t key[16], WB_SM4_Tables* tables) {
     SM4_KEY sm4_key;
-    ossl_sm4_set_key1(key, &sm4_key);
     size_t total_size = 0;
-
+    uint8_t* current = NULL; 
+    ossl_sm4_set_key1(key, &sm4_key);
     total_size += 3 * 32 * sizeof(uint8_t[4][256]); 
     total_size += 32 * sizeof(uint32_t[4][256]) + 32 * sizeof(uint8_t[4][256]);
     total_size += 3 * 32 * sizeof(uint8_t[4][256]); 
     total_size += 4 * 32 * sizeof(uint8_t[4][65536]); 
     total_size += 36 * sizeof(Nonlinear32) * 2;
     /*一次性分配内存*/
-    tables->memory_block = malloc(total_size);
+    tables->memory_block = OPENSSL_malloc(total_size);
     if (!tables->memory_block) {
         memset(tables, 0, sizeof(WB_SM4_Tables));
         return; 
     }
-    uint8_t* current = (uint8_t*)tables->memory_block;
+    current = (uint8_t*)tables->memory_block;
 
     /* Part1 Tables*/
     tables->part1_table1 = (uint8_t(*)[4][256])current;
@@ -959,6 +949,6 @@ void Nonlinearwbsm4_generate_tables(const uint8_t key[16], WB_SM4_Tables* tables
 }
 void Nonlinearwbsm4_free_tables(WB_SM4_Tables* tables) {
 
-    free(tables->memory_block);
+    OPENSSL_free(tables->memory_block);
     memset(tables, 0, sizeof(WB_SM4_Tables));
 }
