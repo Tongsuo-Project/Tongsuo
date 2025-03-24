@@ -10,13 +10,12 @@
 #include <string.h> 
 #include <openssl/crypto.h>
 /*====sm4轮密钥生成==== */
-# define ossl_inline
 # define SM4_KEY_SCHEDULE  32
 typedef struct SM4_KEY_st {
     uint32_t rk[SM4_KEY_SCHEDULE];
 } SM4_KEY;
-static ossl_inline uint32_t load_u32_be1(const uint8_t *b, uint32_t n);
-static ossl_inline uint32_t rotl1(uint32_t a, uint8_t n);
+static uint32_t load_u32_be1(const uint8_t *b, uint32_t n);
+static uint32_t rotl1(uint32_t a, uint8_t n);
 /*ossl_sm4_set_key1函数代码来源于sm4.c，用于sm4的轮密钥生成，防止sm4模块关闭无法使用白盒sm4模块*/
 static int ossl_sm4_set_key1(const uint8_t *key, SM4_KEY *ks);
 static const uint8_t SM4_S[256] = {
@@ -43,14 +42,14 @@ static const uint8_t SM4_S[256] = {
         0x18, 0xF0, 0x7D, 0xEC, 0x3A, 0xDC, 0x4D, 0x20, 0x79, 0xEE, 0x5F, 0x3E,
         0xD7, 0xCB, 0x39, 0x48
 };
-static ossl_inline uint32_t load_u32_be1(const uint8_t *b, uint32_t n)
+static uint32_t load_u32_be1(const uint8_t *b, uint32_t n)
 {
     return ((uint32_t)(b[4 * n] & 0xFF) << 24) |
            ((uint32_t)(b[4 * n + 1] & 0xFF) << 16) |
            ((uint32_t)(b[4 * n + 2] & 0xFF) << 8) |
            (uint32_t)(b[4 * n + 3] & 0xFF);
 }
-static ossl_inline uint32_t rotl1(uint32_t a, uint8_t n)
+static uint32_t rotl1(uint32_t a, uint8_t n)
 {
     return (a << n) | (a >> (32 - n));
 }
