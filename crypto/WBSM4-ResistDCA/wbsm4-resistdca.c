@@ -7,8 +7,7 @@
  * https://github.com/Tongsuo-Project/Tongsuo/blob/master/LICENSE.txt
  */
 
-#include "wbsm4-resistdca.h"
-// #include "crypto/wbsm4-resistdca.h"
+#include "crypto/wbsm4-resistdca.h"
 
 static M32 L_matrix = {
     {
@@ -187,26 +186,26 @@ unsigned int cus_random(void)
 }
 
 void Gen_BytePer(uint8_t *permu, uint8_t *inver){
-    int i, j;
+	int i, j;
 	uint8_t temp;
-    InitRandom(((unsigned int)time(NULL)));
+	InitRandom(((unsigned int)time(NULL)));
 	for (i = 0; i < 256; i++){
 		permu[i] = i;
 	}
-    while (permu[0]==0)
-    {
-        for (i = 0; i < 255; i++)
-        {
-            j = cus_random()%(256 - i);
-            temp = permu[i];
-            permu[i] = permu[i+j];
-            permu[i + j] = temp;
-        }
-        for (i = 0; i < 256; i++)
-        {
-            inver[permu[i]] = i;
-        }  
-    }
+	while (permu[0]==0)
+	{
+		for (i = 0; i < 255; i++)
+		{
+		    j = cus_random()%(256 - i);
+		    temp = permu[i];
+		    permu[i] = permu[i+j];
+		    permu[i + j] = temp;
+		}
+		for (i = 0; i < 256; i++)
+		{
+		    inver[permu[i]] = i;
+		}  
+	}
     
 }
 
