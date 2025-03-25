@@ -59,7 +59,6 @@ static int test_nonlinearwbsm4(void)
 
     ret = 1;
 err:
-    Nonlinearwbsm4_free_tables(tables);
     OPENSSL_free(tables);
     return ret;
 }
@@ -89,8 +88,6 @@ static int test_nonlinearwbsm4_random_gen_tables(void)
 
     ret = 1;
 err:
-    Nonlinearwbsm4_free_tables(tables1);
-    Nonlinearwbsm4_free_tables(tables2);
     OPENSSL_free(tables1);
     OPENSSL_free(tables2);
     return ret;
@@ -142,7 +139,6 @@ static int test_nonlinearwbsm4_random_key_and_input(void)
 
     ret = 1;
 err:
-    Nonlinearwbsm4_free_tables(tables);
     OPENSSL_free(tables);
     return ret;
 }
