@@ -190,6 +190,9 @@ extern const OSSL_DISPATCH ossl_kdf_x963_kdf_functions[];
 extern const OSSL_DISPATCH ossl_kdf_kbkdf_functions[];
 extern const OSSL_DISPATCH ossl_kdf_x942_kdf_functions[];
 extern const OSSL_DISPATCH ossl_kdf_krb5kdf_functions[];
+#ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
+extern const OSSL_DISPATCH ossl_kdf_wbsm4kdf_functions[];
+#endif
 
 /* RNGs */
 extern const OSSL_DISPATCH ossl_test_rng_functions[];
@@ -215,9 +218,6 @@ extern const OSSL_DISPATCH ossl_mac_legacy_keymgmt_functions[];
 extern const OSSL_DISPATCH ossl_cmac_legacy_keymgmt_functions[];
 #ifndef OPENSSL_NO_SM2
 extern const OSSL_DISPATCH ossl_sm2_keymgmt_functions[];
-#endif
-#ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
-extern const OSSL_DISPATCH wbsm4kdf_functions[];
 #endif
 
 /* Key Exchange */

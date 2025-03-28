@@ -72,7 +72,7 @@ IF[{- !$disabled{sm4} -}]
       cipher_sm4_ccm.c cipher_sm4_ccm_hw.c
 ENDIF
 
-IF[{- !$disabled{wbsm4-wbsm4_xiao_dykey} -}]
+IF[{- !$disabled{wbsm4-wbsm4-xiao-dykey} -}]
   SOURCE[$SM4_GOAL]= ${SOURCE[$SM4_GOAL]}\
       cipher_wbsm4.c cipher_wbsm4_hw.c \
       cipher_wbsm4_gcm.c cipher_wbsm4_gcm_hw.c \

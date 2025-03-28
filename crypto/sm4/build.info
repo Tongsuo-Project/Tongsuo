@@ -14,7 +14,7 @@ ENDIF
 
 SOURCE[../../libcrypto]= $SM4ASM sm4.c
 
-IF[{- !$disabled{wbsm4-wbsm4_xiao_dykey} -}]
+IF[{- !$disabled{wbsm4-xiao-dykey} -}]
 SOURCE[../../libcrypto]= ${SOURCE[../../libcrypto]} \
   wb/wbsm4.c wb/WBMatrix.c wb/wbsm4_xiao_dykey.c
 ENDIF

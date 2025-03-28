@@ -285,7 +285,7 @@ static const OSSL_ALGORITHM deflt_kdfs[] = {
 #endif
     { PROV_NAMES_KRB5KDF, "provider=default", ossl_kdf_krb5kdf_functions },
 #ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
-    { PROV_NAMES_WBSM4KDF, "provider=default", wbsm4kdf_functions },
+    { PROV_NAMES_WBSM4KDF, "provider=default", ossl_kdf_wbsm4kdf_functions },
 #endif
     { NULL, NULL, NULL }
 };

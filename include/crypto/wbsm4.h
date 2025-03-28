@@ -33,7 +33,6 @@ extern const M32 SM4_L_matrix;
 (ct)[2] = (uint8_t)((st) >>  8);\
 (ct)[3] = (uint8_t)(st)
 
-#ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
 typedef struct {
     uint8_t lut[8][16];      /*  8 个 16 维的 4-bit 双射表 */
 } Biject32;
@@ -70,6 +69,5 @@ void wbsm4_xiao_dykey_key2wbrk(uint8_t *key, wbsm4_xiao_dykey_ctxrk *ctxrk, uint
 void wbsm4_xiao_dykey_update_wbrk(wbsm4_xiao_dykey_context *ctx, uint32_t wbrk[32]);
 void wbsm4_xiao_dykey_encrypt(const unsigned char *in, unsigned char *out, wbsm4_xiao_dykey_context *ctx);
 void wbsm4_xiao_dykey_decrypt(const unsigned char *in, unsigned char *out, wbsm4_xiao_dykey_context *ctx);
-#endif
 
 #endif /* WBCRYPTO_WBSM4_H */

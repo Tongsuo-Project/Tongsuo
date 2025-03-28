@@ -22,6 +22,7 @@
 #include <openssl/kdf.h>
 #include <openssl/proverr.h>
 #include "prov/providercommon.h"
+#include "prov/implementations.h"
 
 #ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
 #include "crypto/sm4.h"
@@ -208,7 +209,7 @@ static int wbsm4kdf_get_ctx_params(void *vctx, OSSL_PARAM params[])
 }
 
 /* ---------- OSSL_DISPATCH table ---------- */
-const OSSL_DISPATCH wbsm4kdf_functions[] = {
+const OSSL_DISPATCH ossl_kdf_wbsm4kdf_functions[] = {
     { OSSL_FUNC_KDF_NEWCTX,              (void (*)(void))wbsm4kdf_new },
     { OSSL_FUNC_KDF_FREECTX,             (void (*)(void))wbsm4kdf_free },
     { OSSL_FUNC_KDF_RESET,               (void (*)(void))wbsm4kdf_reset },

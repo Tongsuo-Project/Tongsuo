@@ -44,9 +44,9 @@ IMPLEMENT_CIPHER_HW_COPYCTX(cipher_hw_wbsm4_xiao_dykey_copyctx, PROV_WBSM4_XIAO_
         return &wbsm4_xiao_dykey_##mode;                                              \
     }
 
-PROV_CIPHER_HW_wbsm4_xiao_dykey_mode(cbc);
-PROV_CIPHER_HW_wbsm4_xiao_dykey_mode(ecb);
-PROV_CIPHER_HW_wbsm4_xiao_dykey_mode(ofb128);
-PROV_CIPHER_HW_wbsm4_xiao_dykey_mode(cfb128);
-PROV_CIPHER_HW_wbsm4_xiao_dykey_mode(ctr);
+PROV_CIPHER_HW_wbsm4_xiao_dykey_mode(cbc)
+PROV_CIPHER_HW_wbsm4_xiao_dykey_mode(ecb)
+PROV_CIPHER_HW_wbsm4_xiao_dykey_mode(ofb128)
+PROV_CIPHER_HW_wbsm4_xiao_dykey_mode(cfb128)
+PROV_CIPHER_HW_wbsm4_xiao_dykey_mode(ctr)
 #endif
