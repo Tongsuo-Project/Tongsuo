@@ -933,7 +933,7 @@ static const unsigned char so[6628] = {
     0x60,0x86,0x48,0x01,0x86,0xF9,0x66,0xAD,0xCA,0x7B,0x01,0x01,  /* [ 6615] OBJ_oracle_jdk_trustedkeyusage */
 };
 
-#define NUM_NID 1281
+#define NUM_NID 1267
 static const ASN1_OBJECT nid_objs[NUM_NID] = {
     {"UNDEF", "undefined", NID_undef},
     {"rsadsi", "RSA Data Security, Inc.", NID_rsadsi, 6, &so[0]},
@@ -2195,20 +2195,6 @@ static const ASN1_OBJECT nid_objs[NUM_NID] = {
     {"hmacWithSM3", "hmacWithSM3", NID_hmacWithSM3, 10, &so[6598]},
     {"oracle-organization", "Oracle organization", NID_oracle, 7, &so[6608]},
     {"oracle-jdk-trustedkeyusage", "Trusted key usage (Oracle)", NID_oracle_jdk_trustedkeyusage, 12, &so[6615]},
-    {"WBSM4-XIAO-STKEY-ECB", "wbsm4-xiao-stkey-ecb", NID_wbsm4_xiao_stkey_ecb},
-    {"WBSM4-XIAO-STKEY-CBC", "wbsm4-xiao-stkey-cbc", NID_wbsm4_xiao_stkey_cbc},
-    {"WBSM4-XIAO-STKEY-OFB", "wbsm4-xiao-stkey-ofb", NID_wbsm4_xiao_stkey_ofb128},
-    {"WBSM4-XIAO-STKEY-CFB", "wbsm4-xiao-stkey-cfb", NID_wbsm4_xiao_stkey_cfb128},
-    {"WBSM4-XIAO-STKEY-CTR", "wbsm4-xiao-stkey-ctr", NID_wbsm4_xiao_stkey_ctr},
-    {"WBSM4-XIAO-STKEY-GCM", "wbsm4-xiao-stkey-gcm", NID_wbsm4_xiao_stkey_gcm},
-    {"WBSM4-XIAO-STKEY-CCM", "wbsm4-xiao-stkey-ccm", NID_wbsm4_xiao_stkey_ccm},
-    {"WBSM4-JIN-STKEY-ECB", "wbsm4-jin-stkey-ecb", NID_wbsm4_jin_stkey_ecb},
-    {"WBSM4-JIN-STKEY-CBC", "wbsm4-jin-stkey-cbc", NID_wbsm4_jin_stkey_cbc},
-    {"WBSM4-JIN-STKEY-OFB", "wbsm4-jin-stkey-ofb", NID_wbsm4_jin_stkey_ofb128},
-    {"WBSM4-JIN-STKEY-CFB", "wbsm4-jin-stkey-cfb", NID_wbsm4_jin_stkey_cfb128},
-    {"WBSM4-JIN-STKEY-CTR", "wbsm4-jin-stkey-ctr", NID_wbsm4_jin_stkey_ctr},
-    {"WBSM4-JIN-STKEY-GCM", "wbsm4-jin-stkey-gcm", NID_wbsm4_jin_stkey_gcm},
-    {"WBSM4-JIN-STKEY-CCM", "wbsm4-jin-stkey-ccm", NID_wbsm4_jin_stkey_ccm},
     {"WBSM4-XIAO-DYKEY-ECB", "wbsm4-xiao-dykey-ecb", NID_wbsm4_xiao_dykey_ecb},
     {"WBSM4-XIAO-DYKEY-CBC", "wbsm4-xiao-dykey-cbc", NID_wbsm4_xiao_dykey_cbc},
     {"WBSM4-XIAO-DYKEY-OFB", "wbsm4-xiao-dykey-ofb", NID_wbsm4_xiao_dykey_ofb128},
@@ -2218,7 +2204,7 @@ static const ASN1_OBJECT nid_objs[NUM_NID] = {
     {"WBSM4-XIAO-DYKEY-CCM", "wbsm4-xiao-dykey-ccm", NID_wbsm4_xiao_dykey_ccm},
 };
 
-#define NUM_SN 1031
+#define NUM_SN 1017
 static const unsigned int sn_objs[NUM_SN] = {
      364,    /* "AD_DVCS" */
      419,    /* "AES-128-CBC" */
@@ -2414,27 +2400,13 @@ static const unsigned int sn_objs[NUM_SN] = {
     1021,    /* "TLS1-PRF" */
      458,    /* "UID" */
        0,    /* "UNDEF" */
-    1268,    /* "WBSM4-JIN-STKEY-CBC" */
-    1273,    /* "WBSM4-JIN-STKEY-CCM" */
-    1270,    /* "WBSM4-JIN-STKEY-CFB" */
-    1271,    /* "WBSM4-JIN-STKEY-CTR" */
-    1267,    /* "WBSM4-JIN-STKEY-ECB" */
-    1272,    /* "WBSM4-JIN-STKEY-GCM" */
-    1269,    /* "WBSM4-JIN-STKEY-OFB" */
-    1275,    /* "WBSM4-XIAO-DYKEY-CBC" */
-    1280,    /* "WBSM4-XIAO-DYKEY-CCM" */
-    1277,    /* "WBSM4-XIAO-DYKEY-CFB" */
-    1278,    /* "WBSM4-XIAO-DYKEY-CTR" */
-    1274,    /* "WBSM4-XIAO-DYKEY-ECB" */
-    1279,    /* "WBSM4-XIAO-DYKEY-GCM" */
-    1276,    /* "WBSM4-XIAO-DYKEY-OFB" */
-    1261,    /* "WBSM4-XIAO-STKEY-CBC" */
-    1266,    /* "WBSM4-XIAO-STKEY-CCM" */
-    1263,    /* "WBSM4-XIAO-STKEY-CFB" */
-    1264,    /* "WBSM4-XIAO-STKEY-CTR" */
-    1260,    /* "WBSM4-XIAO-STKEY-ECB" */
-    1265,    /* "WBSM4-XIAO-STKEY-GCM" */
-    1262,    /* "WBSM4-XIAO-STKEY-OFB" */
+    1261,    /* "WBSM4-XIAO-DYKEY-CBC" */
+    1266,    /* "WBSM4-XIAO-DYKEY-CCM" */
+    1263,    /* "WBSM4-XIAO-DYKEY-CFB" */
+    1264,    /* "WBSM4-XIAO-DYKEY-CTR" */
+    1260,    /* "WBSM4-XIAO-DYKEY-ECB" */
+    1265,    /* "WBSM4-XIAO-DYKEY-GCM" */
+    1262,    /* "WBSM4-XIAO-DYKEY-OFB" */
     1034,    /* "X25519" */
     1035,    /* "X448" */
       11,    /* "X500" */
@@ -3253,7 +3225,7 @@ static const unsigned int sn_objs[NUM_SN] = {
     1093,    /* "x509ExtAdmission" */
 };
 
-#define NUM_LN 1031
+#define NUM_LN 1017
 static const unsigned int ln_objs[NUM_LN] = {
      363,    /* "AD Time Stamping" */
      405,    /* "ANSI X9.62" */
@@ -4255,27 +4227,13 @@ static const unsigned int ln_objs[NUM_LN] = {
      740,    /* "wap-wsg-idm-ecid-wtls7" */
      741,    /* "wap-wsg-idm-ecid-wtls8" */
      742,    /* "wap-wsg-idm-ecid-wtls9" */
-    1268,    /* "wbsm4-jin-stkey-cbc" */
-    1273,    /* "wbsm4-jin-stkey-ccm" */
-    1270,    /* "wbsm4-jin-stkey-cfb" */
-    1271,    /* "wbsm4-jin-stkey-ctr" */
-    1267,    /* "wbsm4-jin-stkey-ecb" */
-    1272,    /* "wbsm4-jin-stkey-gcm" */
-    1269,    /* "wbsm4-jin-stkey-ofb" */
-    1275,    /* "wbsm4-xiao-dykey-cbc" */
-    1280,    /* "wbsm4-xiao-dykey-ccm" */
-    1277,    /* "wbsm4-xiao-dykey-cfb" */
-    1278,    /* "wbsm4-xiao-dykey-ctr" */
-    1274,    /* "wbsm4-xiao-dykey-ecb" */
-    1279,    /* "wbsm4-xiao-dykey-gcm" */
-    1276,    /* "wbsm4-xiao-dykey-ofb" */
-    1261,    /* "wbsm4-xiao-stkey-cbc" */
-    1266,    /* "wbsm4-xiao-stkey-ccm" */
-    1263,    /* "wbsm4-xiao-stkey-cfb" */
-    1264,    /* "wbsm4-xiao-stkey-ctr" */
-    1260,    /* "wbsm4-xiao-stkey-ecb" */
-    1265,    /* "wbsm4-xiao-stkey-gcm" */
-    1262,    /* "wbsm4-xiao-stkey-ofb" */
+    1261,    /* "wbsm4-xiao-dykey-cbc" */
+    1266,    /* "wbsm4-xiao-dykey-ccm" */
+    1263,    /* "wbsm4-xiao-dykey-cfb" */
+    1264,    /* "wbsm4-xiao-dykey-ctr" */
+    1260,    /* "wbsm4-xiao-dykey-ecb" */
+    1265,    /* "wbsm4-xiao-dykey-gcm" */
+    1262,    /* "wbsm4-xiao-dykey-ofb" */
      868,    /* "x121Address" */
      503,    /* "x500UniqueIdentifier" */
      158,    /* "x509Certificate" */

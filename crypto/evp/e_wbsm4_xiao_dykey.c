@@ -373,6 +373,13 @@ static int wbsm4_xiao_dykey_gcm_ctrl(EVP_CIPHER_CTX *c, int type, int arg,
     case EVP_CTRL_AEAD_SET_MAC_KEY:
         /* no-op */
         return 1;
+    case EVP_CTRL_WBSM4_UPDATE_KEY:
+        if (ptr == NULL || arg <= 0)
+            return 0;
+        uint32_t wbrk[32];
+        wbsm4_set_key(ptr, (void *)wbrk, arg);
+        wbsm4_xiao_dykey_update_wbrk(&gctx->ks, wbrk);
+        return 1;
     default:
         return -1;
     }
@@ -665,7 +672,13 @@ static int wbsm4_xiao_dykey_ccm_ctrl(EVP_CIPHER_CTX *c, int type, int arg,
             }
             return 1;
         }
-
+    case EVP_CTRL_WBSM4_UPDATE_KEY:
+        if (ptr == NULL || arg <= 0)
+            return 0;
+        uint32_t wbrk[32];
+        wbsm4_set_key(ptr, (void *)wbrk, arg);
+        wbsm4_xiao_dykey_update_wbrk(&cctx->ks, wbrk);
+        return 1;
     default:
         return -1;
 

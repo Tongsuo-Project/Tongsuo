@@ -1418,26 +1418,6 @@ joint-iso-itu-t 16 840 1 113894 : oracle-organization : Oracle organization
 oracle 746875 1 1 : oracle-jdk-trustedkeyusage : Trusted key usage (Oracle)
 
 # Definitions for WBSM4 cipher
-    : WBSM4-XIAO-STKEY-ECB             : wbsm4-xiao-stkey-ecb
-    : WBSM4-XIAO-STKEY-CBC             : wbsm4-xiao-stkey-cbc
-!Cname wbsm4-xiao-stkey-ofb128
-    : WBSM4-XIAO-STKEY-OFB             : wbsm4-xiao-stkey-ofb
-!Cname wbsm4-xiao-stkey-cfb128
-    : WBSM4-XIAO-STKEY-CFB             : wbsm4-xiao-stkey-cfb
-    : WBSM4-XIAO-STKEY-CTR             : wbsm4-xiao-stkey-ctr
-    : WBSM4-XIAO-STKEY-GCM             : wbsm4-xiao-stkey-gcm
-    : WBSM4-XIAO-STKEY-CCM             : wbsm4-xiao-stkey-ccm
-
-    : WBSM4-JIN-STKEY-ECB             : wbsm4-jin-stkey-ecb
-    : WBSM4-JIN-STKEY-CBC             : wbsm4-jin-stkey-cbc
-!Cname wbsm4-jin-stkey-ofb128
-    : WBSM4-JIN-STKEY-OFB             : wbsm4-jin-stkey-ofb
-!Cname wbsm4-jin-stkey-cfb128
-    : WBSM4-JIN-STKEY-CFB             : wbsm4-jin-stkey-cfb
-    : WBSM4-JIN-STKEY-CTR             : wbsm4-jin-stkey-ctr
-    : WBSM4-JIN-STKEY-GCM             : wbsm4-jin-stkey-gcm
-    : WBSM4-JIN-STKEY-CCM             : wbsm4-jin-stkey-ccm
-
     : WBSM4-XIAO-DYKEY-ECB             : wbsm4-xiao-dykey-ecb
     : WBSM4-XIAO-DYKEY-CBC             : wbsm4-xiao-dykey-cbc
 !Cname wbsm4-xiao-dykey-ofb128

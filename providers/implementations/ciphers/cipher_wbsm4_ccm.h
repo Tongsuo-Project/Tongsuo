@@ -12,30 +12,6 @@
 #include "prov/ciphercommon.h"
 #include "prov/ciphercommon_ccm.h"
 
-#ifndef OPENSSL_NO_WBSM4_XIAO_STKEY
-typedef struct prov_wbsm4_xiao_stkey_ccm_ctx_st {
-    PROV_CCM_CTX base;          /* must be first entry in struct */
-    union {
-        OSSL_UNION_ALIGN;
-        wbsm4_xiao_stkey_context ks;
-    } ks;                       /* SM4 key schedule to use */
-} PROV_WBSM4_XIAO_STKEY_CCM_CTX;
-
-const PROV_CCM_HW *ossl_prov_wbsm4_xiao_stkey_hw_ccm(size_t keybits);
-#endif
-
-#ifndef OPENSSL_NO_WBSM4_JIN_STKEY
-typedef struct prov_wbsm4_jin_stkey_ccm_ctx_st {
-    PROV_CCM_CTX base;          /* must be first entry in struct */
-    union {
-        OSSL_UNION_ALIGN;
-        wbsm4_jin_stkey_context ks;
-    } ks;                       /* SM4 key schedule to use */
-} PROV_WBSM4_JIN_STKEY_CCM_CTX;
-
-const PROV_CCM_HW *ossl_prov_wbsm4_jin_stkey_hw_ccm(size_t keybits);
-#endif
-
 #ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
 typedef struct prov_wbsm4_xiao_dykey_ccm_ctx_st {
     PROV_CCM_CTX base;          /* must be first entry in struct */

@@ -156,7 +156,7 @@ const OSSL_DISPATCH ossl_##alg##kbits##lcmode##_functions[] = {                \
     { 0, NULL }                                                                \
 };
 
-# define IMPLEMENT_generic_cipher_func_custom(alg, UCALG, lcmode, UCMODE, flags, kbits,\
+# define IMPLEMENT_generic_cipher_func_wbsm4(alg, UCALG, lcmode, UCMODE, flags, kbits,\
     blkbits, ivbits, typ)                    \
 const OSSL_DISPATCH ossl_##alg##kbits##lcmode##_functions[] = {                \
 { OSSL_FUNC_CIPHER_NEWCTX,                                                 \
@@ -173,7 +173,7 @@ const OSSL_DISPATCH ossl_##alg##kbits##lcmode##_functions[] = {                \
 { OSSL_FUNC_CIPHER_GET_CTX_PARAMS,                                         \
 (void (*)(void))ossl_cipher_generic_get_ctx_params },                    \
 { OSSL_FUNC_CIPHER_SET_CTX_PARAMS,                                         \
-(void (*)(void))alg##_set_ctx_params },                    \
+(void (*)(void))ossl_##alg##_set_ctx_params },                    \
 { OSSL_FUNC_CIPHER_GETTABLE_PARAMS,                                        \
 (void (*)(void))ossl_cipher_generic_gettable_params },                   \
 { OSSL_FUNC_CIPHER_GETTABLE_CTX_PARAMS,                                    \
@@ -240,11 +240,11 @@ IMPLEMENT_generic_cipher_genfn(alg, UCALG, lcmode, UCMODE, flags, kbits,       \
 IMPLEMENT_generic_cipher_func(alg, UCALG, lcmode, UCMODE, flags, kbits,        \
                               blkbits, ivbits, typ)
 
-# define IMPLEMENT_generic_cipher_custom(alg, UCALG, lcmode, UCMODE, flags, kbits,     \
+# define IMPLEMENT_generic_cipher_wbsm4(alg, UCALG, lcmode, UCMODE, flags, kbits,     \
                                 blkbits, ivbits, typ)                         \
 IMPLEMENT_generic_cipher_genfn(alg, UCALG, lcmode, UCMODE, flags, kbits,       \
                               blkbits, ivbits, typ)                           \
-IMPLEMENT_generic_cipher_func_custom(alg, UCALG, lcmode, UCMODE, flags, kbits,        \
+IMPLEMENT_generic_cipher_func_wbsm4(alg, UCALG, lcmode, UCMODE, flags, kbits,        \
                              blkbits, ivbits, typ)
 
 # define IMPLEMENT_var_keylen_cipher(alg, UCALG, lcmode, UCMODE, flags, kbits,  \

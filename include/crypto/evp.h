@@ -944,28 +944,6 @@ int evp_signature_get_number(const EVP_SIGNATURE *signature);
 #endif /* OSSL_CRYPTO_EVP_H */
 
 /* wbsm4 */
-# ifndef OPENSSL_NO_WBSM4_XIAO_STKEY
-const EVP_CIPHER *EVP_wbsm4_xiao_stkey_ecb(void);
-const EVP_CIPHER *EVP_wbsm4_xiao_stkey_cbc(void);
-const EVP_CIPHER *EVP_wbsm4_xiao_stkey_cfb128(void);
-# define EVP_wbsm4_xiao_stkey_cfb EVP_wbsm4_xiao_stkey_cfb128
-const EVP_CIPHER *EVP_wbsm4_xiao_stkey_ofb(void);
-const EVP_CIPHER *EVP_wbsm4_xiao_stkey_ctr(void);
-const EVP_CIPHER *EVP_wbsm4_xiao_stkey_gcm(void);
-const EVP_CIPHER *EVP_wbsm4_xiao_stkey_ccm(void);
-# endif
-
-# ifndef OPENSSL_NO_WBSM4_JIN_STKEY
-const EVP_CIPHER *EVP_wbsm4_jin_stkey_ecb(void);
-const EVP_CIPHER *EVP_wbsm4_jin_stkey_cbc(void);
-const EVP_CIPHER *EVP_wbsm4_jin_stkey_cfb128(void);
-# define EVP_wbsm4_jin_stkey_cfb EVP_wbsm4_jin_stkey_cfb128
-const EVP_CIPHER *EVP_wbsm4_jin_stkey_ofb(void);
-const EVP_CIPHER *EVP_wbsm4_jin_stkey_ctr(void);
-const EVP_CIPHER *EVP_wbsm4_jin_stkey_gcm(void);
-const EVP_CIPHER *EVP_wbsm4_jin_stkey_ccm(void);
-# endif
-
 # ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
 const EVP_CIPHER *EVP_wbsm4_xiao_dykey_ecb(void);
 const EVP_CIPHER *EVP_wbsm4_xiao_dykey_cbc(void);

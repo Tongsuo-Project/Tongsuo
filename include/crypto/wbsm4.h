@@ -33,7 +33,7 @@ extern const M32 SM4_L_matrix;
 (ct)[2] = (uint8_t)((st) >>  8);\
 (ct)[3] = (uint8_t)(st)
 
-#if !defined(OPENSSL_NO_WBSM4_XIAO_STKEY) || !defined(OPENSSL_NO_WBSM4_XIAO_DYKEY) || !defined(OPENSSL_NO_WBSM4_JIN_STKEY)
+#ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
 typedef struct {
     uint8_t lut[8][16];      /*  8 个 16 维的 4-bit 双射表 */
 } Biject32;
@@ -41,46 +41,20 @@ typedef struct {
 void wbsm4_export_key(const void *ctx, uint8_t *key, size_t len_ctx);
 void wbsm4_set_key(const uint8_t *key, void *ctx, size_t len_ctx);
 
-void wbsm4_setkey_enc(uint32_t rk[32], const unsigned char key[16]);
-void wbsm4_setkey_dec(uint32_t rk[32], const unsigned char key[16]);
-
-void gen_Bijection4pair(uint8_t *table, uint8_t *inverse_table);
 void gen_Bijection32pair(Biject32 *bij, Biject32 *bij_inv);
 uint32_t BijectionU32(const Biject32* bij, uint32_t x);
-void gen_BijectXor32_table(Biject32 *in1, Biject32 *in2, Biject32* out, uint8_t lut[8][256]);
-uint32_t BijectXor32(uint8_t lut[8][256], uint32_t x, uint32_t y);
-#endif
 
-#ifndef OPENSSL_NO_WBSM4_XIAO_STKEY
-typedef struct {
-    int mode;
-    Aff32 M[32][3];
-    Aff32 C[32];
-    Aff32 D[32];
-    Aff32 SE[4];
-    Aff32 FE[4];
-    uint32_t Table[32][4][256];
-} wbsm4_xiao_stkey_context;
-
-/*  execute on trusted environment only */
-void wbsm4_xiao_stkey_gen(const uint8_t *key, wbsm4_xiao_stkey_context *ctx);
-/*  execute on whitebox environment */
-void wbsm4_xiao_stkey_encrypt(const unsigned char *in, unsigned char *out, const wbsm4_xiao_stkey_context *ctx);
-void wbsm4_xiao_stkey_decrypt(const unsigned char *in, unsigned char *out, const wbsm4_xiao_stkey_context *ctx);
-#endif
-
-#ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
 typedef struct {
     int mode;
 
     uint32_t wbrk[32];
-    uint8_t Xor32Table[32][4][256][256];
     Aff32 M[32][3];
     Aff32 C[32];
     Aff32 D[32];
     Aff32 SE[4];
     Aff32 FE[4];
     uint32_t Table[32][4][256];
+    uint8_t Xor32Table[32][4][256][256];
 } wbsm4_xiao_dykey_context;
 
 typedef struct {
@@ -96,30 +70,6 @@ void wbsm4_xiao_dykey_key2wbrk(uint8_t *key, wbsm4_xiao_dykey_ctxrk *ctxrk, uint
 void wbsm4_xiao_dykey_update_wbrk(wbsm4_xiao_dykey_context *ctx, uint32_t wbrk[32]);
 void wbsm4_xiao_dykey_encrypt(const unsigned char *in, unsigned char *out, wbsm4_xiao_dykey_context *ctx);
 void wbsm4_xiao_dykey_decrypt(const unsigned char *in, unsigned char *out, wbsm4_xiao_dykey_context *ctx);
-#endif
-
-#ifndef OPENSSL_NO_WBSM4_JIN_STKEY
-typedef struct {
-    int mode;
-    uint8_t P1[32][8][256];
-    uint8_t P2[32][8][256];
-    uint8_t Q1[32][8][256];
-    uint8_t Q2[32][8][256];
-    uint8_t Q3[32][8][256];
-    uint8_t Q4[32][8][256];
-
-    Biject32 SE[4];
-    Biject32 FE[4];
-
-    uint32_t T[32][4][256];
-
-} wbsm4_jin_stkey_context;
-
-/*  execute on trusted environment only */
-void wbsm4_jin_stkey_gen(const uint8_t *key, wbsm4_jin_stkey_context *ctx);
-/*  execute on whitebox environment */
-void wbsm4_jin_stkey_encrypt(const unsigned char *in, unsigned char *out, wbsm4_jin_stkey_context *ctx);
-void wbsm4_jin_stkey_decrypt(const unsigned char *in, unsigned char *out, wbsm4_jin_stkey_context *ctx);
 #endif
 
 #endif /* WBCRYPTO_WBSM4_H */

@@ -82,92 +82,6 @@ const M32 SM4_L_matrix = {
     0x40404101}
 };
 
-static const uint32_t SM4_FK[4] = {
-    0xA3B1BAC6, 0x56AA3350, 0x677D9197, 0xB27022DC
-};
-
-static const uint32_t SM4_CK[32] = {
-    0x00070E15, 0x1C232A31, 0x383F464D, 0x545B6269,
-    0x70777E85, 0x8C939AA1, 0xA8AFB6BD, 0xC4CBD2D9,
-    0xE0E7EEF5, 0xFC030A11, 0x181F262D, 0x343B4249,
-    0x50575E65, 0x6C737A81, 0x888F969D, 0xA4ABB2B9,
-    0xC0C7CED5, 0xDCE3EAF1, 0xF8FF060D, 0x141B2229,
-    0x30373E45, 0x4C535A61, 0x686F767D, 0x848B9299,
-    0xA0A7AEB5, 0xBCC3CAD1, 0xD8DFE6ED, 0xF4FB0209,
-    0x10171E25, 0x2C333A41, 0x484F565D, 0x646B7279
-};
-#define GET_ULONG_BE(n, b, i)                     \
-{                                                 \
-    (n) = ((uint32_t)(b)[(i)] << 24) |             \
-          ((uint32_t)(b)[(i) + 1] << 16) |         \
-          ((uint32_t)(b)[(i) + 2] << 8)  |         \
-          ((uint32_t)(b)[(i) + 3]);                \
-}
-
-#define PUT_ULONG_BE(n, b, i)                     \
-{                                                 \
-    (b)[(i)]     = (unsigned char)((n) >> 24);     \
-    (b)[(i) + 1] = (unsigned char)((n) >> 16);     \
-    (b)[(i) + 2] = (unsigned char)((n) >> 8);      \
-    (b)[(i) + 3] = (unsigned char)((n));           \
-}
-
-#define ROTL(x, n) (((x) << (n)) | ((x) >> (32 - (n))))
-
-static unsigned char wbsm4Sbox(unsigned char inch)
-{
-    return ((unsigned char *)SM4_SBOX)[inch];
-}
-
-/* T function */
-static uint32_t wbsm4CalciRK(uint32_t ka)
-{
-    uint32_t bb;
-    unsigned char a[4], b[4];
-    PUT_ULONG_BE(ka, a, 0);
-    b[0] = wbsm4Sbox(a[0]);
-    b[1] = wbsm4Sbox(a[1]);
-    b[2] = wbsm4Sbox(a[2]);
-    b[3] = wbsm4Sbox(a[3]);
-    GET_ULONG_BE(bb, b, 0);
-    return bb ^ ROTL(bb, 13) ^ ROTL(bb, 23);
-}
-
-/* key expansion for encrypt */
-void wbsm4_setkey_enc(uint32_t rk[32], const unsigned char key[16])
-{
-    uint32_t MK[4];
-    uint32_t k[36];
-    int i;
-    
-    GET_ULONG_BE(MK[0], key, 0);
-    GET_ULONG_BE(MK[1], key, 4);
-    GET_ULONG_BE(MK[2], key, 8);
-    GET_ULONG_BE(MK[3], key, 12);
-    
-    k[0] = MK[0] ^ SM4_FK[0];
-    k[1] = MK[1] ^ SM4_FK[1];
-    k[2] = MK[2] ^ SM4_FK[2];
-    k[3] = MK[3] ^ SM4_FK[3];
-    
-    for (i = 0; i < 32; i++) {
-        k[i + 4] = k[i] ^ wbsm4CalciRK(k[i + 1] ^ k[i + 2] ^ k[i + 3] ^ SM4_CK[i]);
-        rk[i] = k[i + 4];
-    }
-}
-
-/* key expansion for decrypt */
-void wbsm4_setkey_dec(uint32_t rk[32], const unsigned char key[16])
-{
-    int i;
-    wbsm4_setkey_enc(rk, key);
-    for (i = 0; i < 16; i++) {
-        uint32_t tmp = rk[i];
-        rk[i] = rk[31 - i];
-        rk[31 - i] = tmp;
-    }
-}
-
 void wbsm4_set_key(const uint8_t *key, void *ctx, size_t len_ctx)
 {
     uint8_t *p, *end;
@@ -179,7 +93,12 @@ void wbsm4_set_key(const uint8_t *key, void *ctx, size_t len_ctx)
         return;
 
     p = (uint8_t *)ctx;
-    end = p + sizeof(wbsm4_xiao_dykey_context);
+    if (len_ctx == sizeof(wbsm4_xiao_dykey_context)) {
+        end = (uint8_t*)(((wbsm4_xiao_dykey_context*)ctx)->Xor32Table);
+    }
+    else {
+        end = (uint8_t*)(((wbsm4_xiao_dykey_ctxrk*)ctx)->R);
+    }
     while (p < end) {
         uint8_t t;
         t = p[0];
@@ -205,7 +124,13 @@ void wbsm4_export_key(const void *ctx, uint8_t *key, size_t len_ctx)
         return;
 
     p = (uint8_t *)key;
-    end = p + len_ctx;
+    if (len_ctx == sizeof(wbsm4_xiao_dykey_context)) {
+        end = (uint8_t*)(((wbsm4_xiao_dykey_context*)ctx)->Xor32Table);
+    }
+    else {
+        end = (uint8_t*)(((wbsm4_xiao_dykey_ctxrk*)ctx)->R);
+    }
+    end = p + (end - (uint8_t *)ctx);
     while (p < end) {
         uint8_t t;
         t = p[0];
@@ -219,7 +144,8 @@ void wbsm4_export_key(const void *ctx, uint8_t *key, size_t len_ctx)
         p += 4;
     }
 }
-void gen_Bijection4pair(uint8_t *table, uint8_t *inverse_table)
+
+static void gen_Bijection4pair(uint8_t *table, uint8_t *inverse_table)
 {
     uint8_t buff_table_entry;
     int i, r;
@@ -257,44 +183,6 @@ uint32_t BijectionU32(const Biject32* bij, uint32_t x)
     for (i = 0; i < 8; i++) {
         transformed = bij->lut[i][(x >> (28 - i * 4)) & 0x0F];
         result |= transformed << (28 - i * 4);
-    }
-    return result;
-}
-
-/*  uint_8 lut[8][256]: 
-8 represents 8 parallel lookup tables；
-256（2^8）is a combined index of x(high 4 bits) and y(low 4 bits)
-*/
-void gen_BijectXor32_table(Biject32 *in1, Biject32 *in2, Biject32* out, uint8_t lut[8][256])
-{
-    int x, y, j;
-    uint8_t after_in1, after_in2, after_out, idx;
-    for (j = 0; j < 8; j++)
-    {
-        for (x = 0; x < 16; x++)
-        {
-            for (y = 0; y < 16; y++)
-            {
-                after_in1 = in1->lut[j][x & 0x0f];
-                after_in2 = in2->lut[j][y & 0x0f];
-                after_in1 ^= after_in2;
-                after_out = out->lut[j][after_in1];
-                idx = ((x & 0x0f) << 4) | (y & 0x0f);
-                lut[j][idx] = after_out;
-            }
-        }
-    }
-}
-
-/* lookup the 32bits-Xor table with Bijection transformation*/
-uint32_t BijectXor32(uint8_t lut[8][256], uint32_t x, uint32_t y)
-{
-    int j;
-    uint32_t result = 0;
-    for (j = 0; j < 8; j++)
-    {
-        uint8_t idx = (((x >> (28 - 4 * j) ) & 0x0f) << 4) | ((y >> (28 - 4 * j)) & 0x0f);
-        result |= (lut[j][idx] & 0x0f) << (28 - 4 * j);
     }
     return result;
 }

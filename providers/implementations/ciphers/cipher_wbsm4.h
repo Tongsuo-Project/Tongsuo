@@ -11,42 +11,6 @@
 #include "prov/ciphercommon.h"
 #include "crypto/wbsm4.h"
 
-#ifndef OPENSSL_NO_WBSM4_XIAO_STKEY
-typedef struct
-{
-    PROV_CIPHER_CTX base; /* Must be first */
-    union
-    {
-        OSSL_UNION_ALIGN;
-        wbsm4_xiao_stkey_context ks;
-    } ks;
-} PROV_WBSM4_XIAO_STKEY_CTX;
-
-const PROV_CIPHER_HW *ossl_prov_cipher_hw_wbsm4_xiao_stkey_cbc(size_t keybits);
-const PROV_CIPHER_HW *ossl_prov_cipher_hw_wbsm4_xiao_stkey_ecb(size_t keybits);
-const PROV_CIPHER_HW *ossl_prov_cipher_hw_wbsm4_xiao_stkey_ctr(size_t keybits);
-const PROV_CIPHER_HW *ossl_prov_cipher_hw_wbsm4_xiao_stkey_ofb128(size_t keybits);
-const PROV_CIPHER_HW *ossl_prov_cipher_hw_wbsm4_xiao_stkey_cfb128(size_t keybits);
-#endif
-
-#ifndef OPENSSL_NO_WBSM4_JIN_STKEY
-typedef struct
-{
-    PROV_CIPHER_CTX base; /* Must be first */
-    union
-    {
-        OSSL_UNION_ALIGN;
-        wbsm4_jin_stkey_context ks;
-    } ks;
-} PROV_WBSM4_JIN_STKEY_CTX;
-
-const PROV_CIPHER_HW *ossl_prov_cipher_hw_wbsm4_jin_stkey_cbc(size_t keybits);
-const PROV_CIPHER_HW *ossl_prov_cipher_hw_wbsm4_jin_stkey_ecb(size_t keybits);
-const PROV_CIPHER_HW *ossl_prov_cipher_hw_wbsm4_jin_stkey_ctr(size_t keybits);
-const PROV_CIPHER_HW *ossl_prov_cipher_hw_wbsm4_jin_stkey_ofb128(size_t keybits);
-const PROV_CIPHER_HW *ossl_prov_cipher_hw_wbsm4_jin_stkey_cfb128(size_t keybits);
-#endif
-
 #ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
 typedef struct
 {

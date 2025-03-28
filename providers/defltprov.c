@@ -226,24 +226,6 @@ static const OSSL_ALGORITHM_CAPABLE deflt_ciphers[] = {
     ALG(PROV_NAMES_SM4_GCM, ossl_sm4128gcm_functions),
     ALG(PROV_NAMES_SM4_CCM, ossl_sm4128ccm_functions),
 #endif /* OPENSSL_NO_SM4 */
-#ifndef OPENSSL_NO_WBSM4_XIAO_STKEY
-    ALG(PROV_NAMES_WBSM4_XIAO_STKEY_ECB, ossl_wbsm4_xiao_stkey128ecb_functions),
-    ALG(PROV_NAMES_WBSM4_XIAO_STKEY_CBC, ossl_wbsm4_xiao_stkey128cbc_functions),
-    ALG(PROV_NAMES_WBSM4_XIAO_STKEY_CTR, ossl_wbsm4_xiao_stkey128ctr_functions),
-    ALG(PROV_NAMES_WBSM4_XIAO_STKEY_OFB, ossl_wbsm4_xiao_stkey128ofb128_functions),
-    ALG(PROV_NAMES_WBSM4_XIAO_STKEY_CFB, ossl_wbsm4_xiao_stkey128cfb128_functions),
-    ALG(PROV_NAMES_WBSM4_XIAO_STKEY_GCM, ossl_wbsm4_xiao_stkey128gcm_functions),
-    ALG(PROV_NAMES_WBSM4_XIAO_STKEY_CCM, ossl_wbsm4_xiao_stkey128ccm_functions),
-#endif /* OPENSSL_NO_SM4_XIAO_STKEY */
-#ifndef OPENSSL_NO_WBSM4_JIN_STKEY
-    ALG(PROV_NAMES_WBSM4_JIN_STKEY_ECB, ossl_wbsm4_jin_stkey128ecb_functions),
-    ALG(PROV_NAMES_WBSM4_JIN_STKEY_CBC, ossl_wbsm4_jin_stkey128cbc_functions),
-    ALG(PROV_NAMES_WBSM4_JIN_STKEY_CTR, ossl_wbsm4_jin_stkey128ctr_functions),
-    ALG(PROV_NAMES_WBSM4_JIN_STKEY_OFB, ossl_wbsm4_jin_stkey128ofb128_functions),
-    ALG(PROV_NAMES_WBSM4_JIN_STKEY_CFB, ossl_wbsm4_jin_stkey128cfb128_functions),
-    ALG(PROV_NAMES_WBSM4_JIN_STKEY_GCM, ossl_wbsm4_jin_stkey128gcm_functions),
-    ALG(PROV_NAMES_WBSM4_JIN_STKEY_CCM, ossl_wbsm4_jin_stkey128ccm_functions),
-#endif /* OPENSSL_NO_SM4_JIN_STKEY */
 #ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
     ALG(PROV_NAMES_WBSM4_XIAO_DYKEY_ECB, ossl_wbsm4_xiao_dykey128ecb_functions),
     ALG(PROV_NAMES_WBSM4_XIAO_DYKEY_CBC, ossl_wbsm4_xiao_dykey128cbc_functions),
@@ -302,8 +284,7 @@ static const OSSL_ALGORITHM deflt_kdfs[] = {
     { PROV_NAMES_SCRYPT, "provider=default", ossl_kdf_scrypt_functions },
 #endif
     { PROV_NAMES_KRB5KDF, "provider=default", ossl_kdf_krb5kdf_functions },
-#if !defined(OPENSSL_NO_WBSM4_XIAO_STKEY) || !defined(OPENSSL_NO_WBSM4_JIN_STKEY) \
-|| !defined(OPENSSL_NO_WBSM4_XIAO_DYKEY)
+#ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
     { PROV_NAMES_WBSM4KDF, "provider=default", wbsm4kdf_functions },
 #endif
     { NULL, NULL, NULL }

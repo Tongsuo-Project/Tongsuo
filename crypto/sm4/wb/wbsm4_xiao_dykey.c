@@ -8,6 +8,7 @@
 * in the file LICENSE in the source distribution or at
 * https://github.com/Tongsuo-Project/Tongsuo/blob/master/LICENSE.txt
 */
+#include "crypto/sm4.h"
 #include "crypto/wbsm4.h"
 
 void wbsm4_xiao_dykey_gen(const uint8_t *key, wbsm4_xiao_dykey_context *ctx, wbsm4_xiao_dykey_ctxrk *ctxrk)
@@ -34,15 +35,18 @@ void wbsm4_xiao_dykey_gen(const uint8_t *key, wbsm4_xiao_dykey_context *ctx, wbs
 
     uint32_t Q_constant[3] = {0};
 
-    uint32_t sm4_rk[32];
-    if (ctx->mode == WBSM4_ENCRYPT_MODE)
+    SM4_KEY sm4_rk;
+    uint32_t tmp_rk;
+    ossl_sm4_set_key(key, &sm4_rk);
+    if (ctx->mode == WBSM4_DECRYPT_MODE)
     {
-        wbsm4_setkey_enc(sm4_rk, key);
+        for (i = 0; i < 16; i++) {
+            tmp_rk = sm4_rk.rk[i];
+            sm4_rk.rk[i] = sm4_rk.rk[31 - i];
+            sm4_rk.rk[31 - i] = tmp_rk;
+        }
     }
-    else
-    {
-        wbsm4_setkey_dec(sm4_rk, key);
-    }
+
     InitRandom(((unsigned int)time(NULL)));
 
     for (i = 0; i < 36; i++) 
@@ -65,7 +69,7 @@ void wbsm4_xiao_dykey_gen(const uint8_t *key, wbsm4_xiao_dykey_context *ctx, wbs
 
         /*  non-linear R and whitebox round key */
         gen_Bijection32pair(&R[i], &R_inv[i]);
-        temp_u32 = affineU32(ctxrk->Ek[i], sm4_rk[i]);
+        temp_u32 = affineU32(ctxrk->Ek[i], sm4_rk.rk[i]);
         ctx->wbrk[i] = BijectionU32(&R[i], temp_u32);
 
         /*  combine 4 E8 to 1 E32 */
@@ -153,19 +157,21 @@ void wbsm4_xiao_dykey_gen(const uint8_t *key, wbsm4_xiao_dykey_context *ctx, wbs
 void wbsm4_xiao_dykey_key2wbrk(uint8_t *key, wbsm4_xiao_dykey_ctxrk *ctxrk, uint32_t wbrk[32])
 {
     int i;
+    SM4_KEY sm4_rk;
     uint32_t tmp_rk;
-    uint32_t sm4_rk[32];
-    if (ctxrk->mode == WBSM4_ENCRYPT_MODE)
+    ossl_sm4_set_key(key, &sm4_rk);
+    if (ctxrk->mode == WBSM4_DECRYPT_MODE)
     {
-        wbsm4_setkey_enc(sm4_rk, key);
+        for (i = 0; i < 16; i++) {
+            tmp_rk = sm4_rk.rk[i];
+            sm4_rk.rk[i] = sm4_rk.rk[31 - i];
+            sm4_rk.rk[31 - i] = tmp_rk;
+        }
     }
-    else
-    {
-        wbsm4_setkey_dec(sm4_rk, key);
-    }
+
     for (i = 0; i < 32; i++)
     {
-        tmp_rk = affineU32(ctxrk->Ek[i], sm4_rk[i]);
+        tmp_rk = affineU32(ctxrk->Ek[i], sm4_rk.rk[i]);
         wbrk[i] = BijectionU32(&ctxrk->R[i], tmp_rk);
     }
 }
