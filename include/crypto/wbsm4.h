@@ -14,6 +14,8 @@
 #include "WBMatrix.h"
 #include <stdint.h>
 #include <string.h>
+#include <openssl/opensslconf.h>
+#include <openssl/e_os2.h>
 
 #define WBSM4_ENCRYPT_MODE 1
 #define WBSM4_DECRYPT_MODE 0
