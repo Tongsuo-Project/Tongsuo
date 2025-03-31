@@ -16,15 +16,15 @@ unsigned int cus_random_1(void);
 typedef struct Nonlinear8 {
     uint8_t mapping[256];
 } Nonlinear8;
-// 32 位非线性双射结构体，由 4 个 Nonlinear8 组成
+/* 32 位非线性双射结构体，由 4 个 Nonlinear8 组成  */
 typedef struct Nonlinear32 {
-    Nonlinear8 n8_1;  // 第一个 8-bit 映射
-    Nonlinear8 n8_2;  // 第二个 8-bit 映射
-    Nonlinear8 n8_3;  // 第三个 8-bit 映射
-    Nonlinear8 n8_4;  // 第四个 8-bit 映射
+    Nonlinear8 n8_1;  /* 第一个 8-bit 映射*/
+    Nonlinear8 n8_2;  /* 第二个 8-bit 映射*/
+    Nonlinear8 n8_3;  /*第三个 8-bit 映射*/
+    Nonlinear8 n8_4;  /*第四个 8-bit 映射*/
 } Nonlinear32;
 
-//8bits
+/*8bits   */
 typedef struct M8
 {
     uint8_t M[8];
