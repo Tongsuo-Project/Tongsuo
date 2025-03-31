@@ -100,38 +100,38 @@ static int ossl_sm4_set_key1(const uint8_t *key, SM4_KEY *ks)
 }
 
 static uint8_t  SBOX[256] = {
-    0xd6, 0x90, 0xe9, 0xfe, 0xcc, 0xe1, 0x3d, 0xb7,
-    0x16, 0xb6, 0x14, 0xc2, 0x28, 0xfb, 0x2c, 0x05,
-    0x2b, 0x67, 0x9a, 0x76, 0x2a, 0xbe, 0x04, 0xc3,
-    0xaa, 0x44, 0x13, 0x26, 0x49, 0x86, 0x06, 0x99,
-    0x9c, 0x42, 0x50, 0xf4, 0x91, 0xef, 0x98, 0x7a,
-    0x33, 0x54, 0x0b, 0x43, 0xed, 0xcf, 0xac, 0x62,
-    0xe4, 0xb3, 0x1c, 0xa9, 0xc9, 0x08, 0xe8, 0x95,
-    0x80, 0xdf, 0x94, 0xfa, 0x75, 0x8f, 0x3f, 0xa6,
-    0x47, 0x07, 0xa7, 0xfc, 0xf3, 0x73, 0x17, 0xba,
-    0x83, 0x59, 0x3c, 0x19, 0xe6, 0x85, 0x4f, 0xa8,
-    0x68, 0x6b, 0x81, 0xb2, 0x71, 0x64, 0xda, 0x8b,
-    0xf8, 0xeb, 0x0f, 0x4b, 0x70, 0x56, 0x9d, 0x35,
-    0x1e, 0x24, 0x0e, 0x5e, 0x63, 0x58, 0xd1, 0xa2,
-    0x25, 0x22, 0x7c, 0x3b, 0x01, 0x21, 0x78, 0x87,
-    0xd4, 0x00, 0x46, 0x57, 0x9f, 0xd3, 0x27, 0x52,
-    0x4c, 0x36, 0x02, 0xe7, 0xa0, 0xc4, 0xc8, 0x9e,
-    0xea, 0xbf, 0x8a, 0xd2, 0x40, 0xc7, 0x38, 0xb5,
-    0xa3, 0xf7, 0xf2, 0xce, 0xf9, 0x61, 0x15, 0xa1,
-    0xe0, 0xae, 0x5d, 0xa4, 0x9b, 0x34, 0x1a, 0x55,
-    0xad, 0x93, 0x32, 0x30, 0xf5, 0x8c, 0xb1, 0xe3,
-    0x1d, 0xf6, 0xe2, 0x2e, 0x82, 0x66, 0xca, 0x60,
-    0xc0, 0x29, 0x23, 0xab, 0x0d, 0x53, 0x4e, 0x6f,
-    0xd5, 0xdb, 0x37, 0x45, 0xde, 0xfd, 0x8e, 0x2f,
-    0x03, 0xff, 0x6a, 0x72, 0x6d, 0x6c, 0x5b, 0x51,
-    0x8d, 0x1b, 0xaf, 0x92, 0xbb, 0xdd, 0xbc, 0x7f,
-    0x11, 0xd9, 0x5c, 0x41, 0x1f, 0x10, 0x5a, 0xd8,
-    0x0a, 0xc1, 0x31, 0x88, 0xa5, 0xcd, 0x7b, 0xbd,
-    0x2d, 0x74, 0xd0, 0x12, 0xb8, 0xe5, 0xb4, 0xb0,
-    0x89, 0x69, 0x97, 0x4a, 0x0c, 0x96, 0x77, 0x7e,
-    0x65, 0xb9, 0xf1, 0x09, 0xc5, 0x6e, 0xc6, 0x84,
-    0x18, 0xf0, 0x7d, 0xec, 0x3a, 0xdc, 0x4d, 0x20,
-    0x79, 0xee, 0x5f, 0x3e, 0xd7, 0xcb, 0x39, 0x48,
+        0xd6, 0x90, 0xe9, 0xfe, 0xcc, 0xe1, 0x3d, 0xb7,
+        0x16, 0xb6, 0x14, 0xc2, 0x28, 0xfb, 0x2c, 0x05,
+        0x2b, 0x67, 0x9a, 0x76, 0x2a, 0xbe, 0x04, 0xc3,
+        0xaa, 0x44, 0x13, 0x26, 0x49, 0x86, 0x06, 0x99,
+        0x9c, 0x42, 0x50, 0xf4, 0x91, 0xef, 0x98, 0x7a,
+        0x33, 0x54, 0x0b, 0x43, 0xed, 0xcf, 0xac, 0x62,
+        0xe4, 0xb3, 0x1c, 0xa9, 0xc9, 0x08, 0xe8, 0x95,
+        0x80, 0xdf, 0x94, 0xfa, 0x75, 0x8f, 0x3f, 0xa6,
+        0x47, 0x07, 0xa7, 0xfc, 0xf3, 0x73, 0x17, 0xba,
+        0x83, 0x59, 0x3c, 0x19, 0xe6, 0x85, 0x4f, 0xa8,
+        0x68, 0x6b, 0x81, 0xb2, 0x71, 0x64, 0xda, 0x8b,
+        0xf8, 0xeb, 0x0f, 0x4b, 0x70, 0x56, 0x9d, 0x35,
+        0x1e, 0x24, 0x0e, 0x5e, 0x63, 0x58, 0xd1, 0xa2,
+        0x25, 0x22, 0x7c, 0x3b, 0x01, 0x21, 0x78, 0x87,
+        0xd4, 0x00, 0x46, 0x57, 0x9f, 0xd3, 0x27, 0x52,
+        0x4c, 0x36, 0x02, 0xe7, 0xa0, 0xc4, 0xc8, 0x9e,
+        0xea, 0xbf, 0x8a, 0xd2, 0x40, 0xc7, 0x38, 0xb5,
+        0xa3, 0xf7, 0xf2, 0xce, 0xf9, 0x61, 0x15, 0xa1,
+        0xe0, 0xae, 0x5d, 0xa4, 0x9b, 0x34, 0x1a, 0x55,
+        0xad, 0x93, 0x32, 0x30, 0xf5, 0x8c, 0xb1, 0xe3,
+        0x1d, 0xf6, 0xe2, 0x2e, 0x82, 0x66, 0xca, 0x60,
+        0xc0, 0x29, 0x23, 0xab, 0x0d, 0x53, 0x4e, 0x6f,
+        0xd5, 0xdb, 0x37, 0x45, 0xde, 0xfd, 0x8e, 0x2f,
+        0x03, 0xff, 0x6a, 0x72, 0x6d, 0x6c, 0x5b, 0x51,
+        0x8d, 0x1b, 0xaf, 0x92, 0xbb, 0xdd, 0xbc, 0x7f,
+        0x11, 0xd9, 0x5c, 0x41, 0x1f, 0x10, 0x5a, 0xd8,
+        0x0a, 0xc1, 0x31, 0x88, 0xa5, 0xcd, 0x7b, 0xbd,
+        0x2d, 0x74, 0xd0, 0x12, 0xb8, 0xe5, 0xb4, 0xb0,
+        0x89, 0x69, 0x97, 0x4a, 0x0c, 0x96, 0x77, 0x7e,
+        0x65, 0xb9, 0xf1, 0x09, 0xc5, 0x6e, 0xc6, 0x84,
+        0x18, 0xf0, 0x7d, 0xec, 0x3a, 0xdc, 0x4d, 0x20,
+        0x79, 0xee, 0x5f, 0x3e, 0xd7, 0xcb, 0x39, 0x48,
 };
 
 #define GET32(pc)  (\
@@ -214,7 +214,7 @@ static void swap(uint8_t* a, uint8_t* b) {
 }
 /* 生成 S 盒  */
 static void generate_S_box_and_inverse(uint8_t* mapping) {
-    int i, j; 
+    int i, j;
     static int initialized = 0; /* 声明必须放在代码块开头 */
 
     /* 初始化 S 盒为单位置换 */
@@ -234,8 +234,8 @@ static void generate_S_box_and_inverse(uint8_t* mapping) {
     }
 }
 
- /*生成非线性双射对*/
- static void genNonlinearPair(Nonlinear8* nl, Nonlinear8* nl_inv) {
+/*生成非线性双射对*/
+static void genNonlinearPair(Nonlinear8* nl, Nonlinear8* nl_inv) {
     int i;
     generate_S_box_and_inverse(nl->mapping);
     for (i = 0; i < 256; i++) {
@@ -255,8 +255,8 @@ static void nonlinearCom8to32(Nonlinear8 n1, Nonlinear8 n2, Nonlinear8 n3, Nonli
 static uint8_t nonlinearU8(Nonlinear8* n8, uint8_t arr) {
     return n8->mapping[arr];
 }
- /*非线性变换*/
- static uint32_t nonlinearU32(const Nonlinear32* n32, uint32_t arr) {
+/*非线性变换*/
+static uint32_t nonlinearU32(const Nonlinear32* n32, uint32_t arr) {
     uint8_t byte1, byte2, byte3, byte4; /* 提前声明所有变量 */
     uint8_t new_byte1, new_byte2, new_byte3, new_byte4;
 
@@ -280,44 +280,44 @@ static uint8_t nonlinearU8(Nonlinear8* n8, uint8_t arr) {
 }
 
 static M32 L_matrix = {
-    {
-    0xA0202080,
-    0x50101040,
-    0x28080820,
-     0x14040410,
-    0xA020208,
-    0x5010104,
-    0x2808082,
-    0x1404041,
-    0x80A02020,
-    0x40501010,
-    0x20280808,
-    0x10140404,
-    0x80A0202,
-    0x4050101,
-    0x82028080,
-    0x41014040,
-    0x2080A020,
-    0x10405010,
-    0x8202808,
-    0x4101404,
-    0x2080A02,
-    0x1040501,
-    0x80820280,
-    0x40410140,
-    0x202080A0,
-    0x10104050,
-    0x8082028,
-    0x4041014,
-    0x202080A,
-    0x1010405,
-    0x80808202,
-    0x40404101
-    }
+        {
+                0xA0202080,
+                0x50101040,
+                0x28080820,
+                0x14040410,
+                0xA020208,
+                0x5010104,
+                0x2808082,
+                0x1404041,
+                0x80A02020,
+                0x40501010,
+                0x20280808,
+                0x10140404,
+                0x80A0202,
+                0x4050101,
+                0x82028080,
+                0x41014040,
+                0x2080A020,
+                0x10405010,
+                0x8202808,
+                0x4101404,
+                0x2080A02,
+                0x1040501,
+                0x80820280,
+                0x40410140,
+                0x202080A0,
+                0x10104050,
+                0x8082028,
+                0x4041014,
+                0x202080A,
+                0x1010405,
+                0x80808202,
+                0x40404101
+        }
 };
 
 static void wbsm4_gen_init(WB_SM4_Tables* tables) {
-    int i, j; 
+    int i, j;
     /* 生成36轮Pij和Pij_inv */
     for (i = 0; i < 36; i++) {
         for (j = 0; j < 4; j++) {
@@ -334,7 +334,7 @@ static void wbsm4_gen_init(WB_SM4_Tables* tables) {
             /* 生成32个Fi，每个Fi由4个8×8的Fij组成 */
             genNonlinearPair(&Fij[i][j], &Fij_inv[i][j]);
             /* 生成32个Gi，每个Gi由4个8×8的Gij组成 */
-            genaffinepairM8(&Gij[i][j], &Gij_inv[i][j]);
+            genaffinepairM8_1(&Gij[i][j], &Gij_inv[i][j]);
             /* 生成32个Ai，每个Ai由4个8×8的Aij组成,且Ai的Vec为0 */
             Aij[i][j].Mat = Gij[i][j].Mat;
             Aij[i][j].Vec.V = 0;
@@ -344,7 +344,7 @@ static void wbsm4_gen_init(WB_SM4_Tables* tables) {
             /* 生成32个Qi，每个Qi由4个8×8的Qij组成 */
             genNonlinearPair(&Qij[i][j], &Qij_inv[i][j]);
             /* 生成32个Hi，每个Hi由4个8×8的Hij组成 */
-            genaffinepairM8(&Hij[i][j], &Hij_inv[i][j]);
+            genaffinepairM8_1(&Hij[i][j], &Hij_inv[i][j]);
             /* 生成32个Bi_inv，每个Bi_inv由4个8×8的Bij_inv组成,且Bi_inv的Vec为0 */
             Bij_inv[i][j].Mat = Hij_inv[i][j].Mat;
             Bij_inv[i][j].Vec.V = 0;
@@ -365,12 +365,12 @@ static void wbsm4_gen_init(WB_SM4_Tables* tables) {
         nonlinearCom8to32(Fij_inv[i][0], Fij_inv[i][1], Fij_inv[i][2], Fij_inv[i][3], &Fi_inv[i]);
         /* 将4个8×8的Fij复合成一个32×32的Fi */
         nonlinearCom8to32(Fij[i][0], Fij[i][1], Fij[i][2], Fij[i][3], &Fi[i]);
-        affinecomM8to32(Gij_inv[i][0], Gij_inv[i][1], Gij_inv[i][2], Gij_inv[i][3], &Gi_inv[i]);
-        affinecomM8to32(Gij[i][0], Gij[i][1], Gij[i][2], Gij[i][3], &Gi[i]);
+        affinecomM8to32_1(Gij_inv[i][0], Gij_inv[i][1], Gij_inv[i][2], Gij_inv[i][3], &Gi_inv[i]);
+        affinecomM8to32_1(Gij[i][0], Gij[i][1], Gij[i][2], Gij[i][3], &Gi[i]);
         /* 将4个8×8的Qij复合成一个32×32的Qi */
         nonlinearCom8to32(Qij[i][0], Qij[i][1], Qij[i][2], Qij[i][3], &Qi[i]);
         /* 将4个8×8的Hij复合成一个32×32的Hi */
-        affinecomM8to32(Hij[i][0], Hij[i][1], Hij[i][2], Hij[i][3], &Hi[i]);
+        affinecomM8to32_1(Hij[i][0], Hij[i][1], Hij[i][2], Hij[i][3], &Hi[i]);
         /* 将4个8×8的Wij复合成一个32×32的Wi */
         nonlinearCom8to32(Wij[i][0], Wij[i][1], Wij[i][2], Wij[i][3], &Wi[i]);
         /* 将4个8×8的Cij复合成一个32×32的Ci */
@@ -378,17 +378,17 @@ static void wbsm4_gen_init(WB_SM4_Tables* tables) {
         /* 将4个8×8的Dij复合成一个32×32的Di */
         nonlinearCom8to32(Dij[i][0], Dij[i][1], Dij[i][2], Dij[i][3], &Di[i]);
         /* 将4个8×8的Aij复合成一个32×32的Ai */
-        affinecomM8to32(Aij[i][0], Aij[i][1], Aij[i][2], Aij[i][3], &Ai[i]);
+        affinecomM8to32_1(Aij[i][0], Aij[i][1], Aij[i][2], Aij[i][3], &Ai[i]);
         /* 将4个8×8的Aij_inv复合成一个32×32的Ai_inv */
-        affinecomM8to32(Aij_inv[i][0], Aij_inv[i][1], Aij_inv[i][2], Aij_inv[i][3], &Ai_inv[i]);
+        affinecomM8to32_1(Aij_inv[i][0], Aij_inv[i][1], Aij_inv[i][2], Aij_inv[i][3], &Ai_inv[i]);
         /* 将4个8×8的Bij复合成一个32×32的Bi */
-        affinecomM8to32(Bij[i][0], Bij[i][1], Bij[i][2], Bij[i][3], &Bi[i]);
+        affinecomM8to32_1(Bij[i][0], Bij[i][1], Bij[i][2], Bij[i][3], &Bi[i]);
         /* 将4个8×8的Bij_inv复合成一个32×32的Bi_inv */
-        affinecomM8to32(Bij_inv[i][0], Bij_inv[i][1], Bij_inv[i][2], Bij_inv[i][3], &Bi_inv[i]);
+        affinecomM8to32_1(Bij_inv[i][0], Bij_inv[i][1], Bij_inv[i][2], Bij_inv[i][3], &Bi_inv[i]);
     }
 }
 static void wbsm4_gen_part4_3(WB_SM4_Tables* tables) {
-    int i, x, j; 
+    int i, x, j;
     uint8_t x1, x2, temp; /* 提前声明局部变量 */
 
     for (i = 0; i < 32; i++) {
@@ -414,7 +414,7 @@ static void wbsm4_gen_part4_3(WB_SM4_Tables* tables) {
     }
 }
 static void wbsm4_gen_part3(WB_SM4_Tables* tables) {
-    int i, x, j; 
+    int i, x, j;
     uint8_t Pij_inv_val, CijComPij_inv_val, Qij_inv_val, Hij_invComQij_inv_val, Bij_invComHij_invComQij_inv_val, Hij_invComBij_val;
 
     for (i = 0; i < 32; i++) {
@@ -442,16 +442,16 @@ static void wbsm4_gen_part3(WB_SM4_Tables* tables) {
         for (x = 0; x < 256; x++) {
             for (j = 0; j < 4; j++) {
                 Qij_inv_val = nonlinearU8(&Qij_inv[i][j], x);
-                Hij_invComQij_inv_val = affineU8(Hij_inv[i][j], Qij_inv_val);
-                Bij_invComHij_invComQij_inv_val = affineU8(Bij_inv[i][j], Hij_invComQij_inv_val);
-                Hij_invComBij_val = affineU8(Hij_inv[i][j], Bij_invComHij_invComQij_inv_val);
+                Hij_invComQij_inv_val = affineU8_1(Hij_inv[i][j], Qij_inv_val);
+                Bij_invComHij_invComQij_inv_val = affineU8_1(Bij_inv[i][j], Hij_invComQij_inv_val);
+                Hij_invComBij_val = affineU8_1(Hij_inv[i][j], Bij_invComHij_invComQij_inv_val);
                 tables->part3_table2[i][j][x] = nonlinearU8(&Dij[i][j], Hij_invComBij_val);
             }
         }
     }
 }/* 共32轮，每轮有4张输入16bit，输出8bit的查找表 */
 static void wbsm4_gen_part4_1(WB_SM4_Tables* tables) {
-    int i, x, j; 
+    int i, x, j;
     uint8_t x1, x2, temp, Gij_val, Eij_invComGij_val;
 
     for (i = 0; i < 32; i++) {
@@ -460,7 +460,7 @@ static void wbsm4_gen_part4_1(WB_SM4_Tables* tables) {
                 x1 = (x >> 8) & 0xff; /* 高8位 */
                 x2 = x & 0xff;       /* 低8位 */
                 temp = nonlinearU8(&Eij[i][j], x1) ^ nonlinearU8(&Fij[i][j], x2);
-                Gij_val = affineU8(Gij[i][j], temp);
+                Gij_val = affineU8_1(Gij[i][j], temp);
                 Eij_invComGij_val = nonlinearU8(&Eij_inv[i][j], Gij_val);
                 tables->part4_1_table[i][j][x] = Eij_invComGij_val;
             }
@@ -468,7 +468,7 @@ static void wbsm4_gen_part4_1(WB_SM4_Tables* tables) {
     }
 }/* 共32轮，每轮有4个输入8bit，输出8bit的查找表 */
 static void wbsm4_gen_part1(WB_SM4_Tables* tables) {
-    int i, x, j; 
+    int i, x, j;
     uint8_t Pij_inv_val_1, Eij_invComPij_inv_val, Pij_inv_val_2, Fij_invComPij_inv_val, Pij_inv_val_3, GijComPij_inv_val, Fij_invComGijComPij_inv_val;
 
     for (i = 0; i < 32; i++) {
@@ -483,7 +483,7 @@ static void wbsm4_gen_part1(WB_SM4_Tables* tables) {
                 Fij_invComPij_inv_val = nonlinearU8(&Fij_inv[i][j], Pij_inv_val_2);
 
                 Pij_inv_val_3 = nonlinearU8(&Pij_inv[i + 3][j], x);
-                GijComPij_inv_val = affineU8(Gij[i][j], Pij_inv_val_3);
+                GijComPij_inv_val = affineU8_1(Gij[i][j], Pij_inv_val_3);
                 Fij_invComGijComPij_inv_val = nonlinearU8(&Fij_inv[i][j], GijComPij_inv_val);
 
                 tables->part1_table1[i][j][x] = Eij_invComPij_inv_val;
@@ -494,7 +494,7 @@ static void wbsm4_gen_part1(WB_SM4_Tables* tables) {
     }
 }
 static void wbsm4_gen_part4_2(WB_SM4_Tables* tables) {
-    int i, x, j; 
+    int i, x, j;
     uint8_t x1, x2, temp, Hi_val, QiComHi_val; /* 提前声明局部变量 */
 
     for (i = 0; i < 32; i++) {
@@ -503,16 +503,15 @@ static void wbsm4_gen_part4_2(WB_SM4_Tables* tables) {
                 x1 = (x >> 8) & 0xff; /* 高8位 */
                 x2 = x & 0xff;        /* 低8位 */
                 temp = nonlinearU8(&Qij_inv[i][j], x1) ^ nonlinearU8(&Wij_inv[i][j], x2);
-                Hi_val = affineU8(Hij[i][j], temp);
+                Hi_val = affineU8_1(Hij[i][j], temp);
                 QiComHi_val = nonlinearU8(&Qij[i][j], Hi_val);
                 tables->part4_2_table[i][j][x] = QiComHi_val;
             }
         }
     }
 }
-
 static void wbsm4_gen_part2(const SM4_KEY* sm4_key, WB_SM4_Tables* tables) {
-    int i, x, j; 
+    int i, x, j;
     uint8_t Eij_val, Gij_invComEij_val, Aij_invComGij_invComEij_val; /* 提前声明局部变量 */
     uint32_t temp_32_0, temp_32_1, temp_32_2, temp_32_3, Hi_val_1, Hi_val_2, HiComHi_val;
 
@@ -520,31 +519,32 @@ static void wbsm4_gen_part2(const SM4_KEY* sm4_key, WB_SM4_Tables* tables) {
         for (x = 0; x < 256; x++) {
             for (j = 0; j < 4; j++) {
                 Eij_val = nonlinearU8(&Eij[i][j], x);
-                Gij_invComEij_val = affineU8(Gij_inv[i][j], Eij_val);
-                Aij_invComGij_invComEij_val = affineU8(Aij_inv[i][j], Gij_invComEij_val);
+                Gij_invComEij_val = affineU8_1(Gij_inv[i][j], Eij_val);
+                Aij_invComGij_invComEij_val = affineU8_1(Aij_inv[i][j], Gij_invComEij_val);
                 tables->part2_table_temp[i][j][x] = SBOX[Aij_invComGij_invComEij_val ^ ((sm4_key->rk[i] >> (24 - j * 8)) & 0xff)];
             }
         }
 
         for (x = 0; x < 256; x++) {
             /* 将 x 显式转换为 uint32_t 后再左移 */
-            temp_32_0 = (uint32_t)x << 24;  
+            temp_32_0 = (uint32_t)x << 24;
             tables->part2_table[i][0][x] = nonlinearU32(&Qi[i], temp_32_0);
 
-            temp_32_1 = (uint32_t)x << 16;  
+            temp_32_1 = (uint32_t)x << 16;
             tables->part2_table[i][1][x] = nonlinearU32(&Wi[i], temp_32_1);
 
-            temp_32_2 = (uint32_t)x << 8;  
-            Hi_val_1 = affineU32(Hi[i], temp_32_2);
+            temp_32_2 = (uint32_t)x << 8;
+            Hi_val_1 = affineU32_1(Hi[i], temp_32_2);
             tables->part2_table[i][2][x] = nonlinearU32(&Wi[i], Hi_val_1);
 
-            temp_32_3 = (uint32_t)x;   
-            Hi_val_2 = affineU32(Hi[i], temp_32_3);
-            HiComHi_val = affineU32(Hi[i], Hi_val_2);
+            temp_32_3 = (uint32_t)x;
+            Hi_val_2 = affineU32_1(Hi[i], temp_32_3);
+            HiComHi_val = affineU32_1(Hi[i], Hi_val_2);
             tables->part2_table[i][3][x] = nonlinearU32(&Wi[i], HiComHi_val);
         }
     }
 }
+
 static void Nonlinearwbsm4_crypt(const unsigned char IN[16], unsigned char OUT[16], const WB_SM4_Tables* tables, int enc) {
     int i;
     uint32_t x0, x1, x2, x3, x4;
@@ -659,7 +659,7 @@ static void Nonlinearwbsm4_crypt(const unsigned char IN[16], unsigned char OUT[1
                      ((uint32_t)tables->part2_table_temp[round][1][x4_2] << 16) ^
                      ((uint32_t)tables->part2_table_temp[round][2][x4_3] << 8) ^
                      (uint32_t)tables->part2_table_temp[round][3][x4_4];
-        part2_temp = MatMulNumM32(L_matrix, part2_temp);
+        part2_temp = MatMulNumM32_1(L_matrix, part2_temp);
 
         part2_temp_1 = (part2_temp >> 24) & 0xff;
         part2_temp_2 = (part2_temp >> 16) & 0xff;
@@ -788,4 +788,3 @@ void Nonlinearwbsm4_encrypt(const unsigned char IN[16], unsigned char OUT[16], c
 void Nonlinearwbsm4_decrypt(const unsigned char IN[16], unsigned char OUT[16], const WB_SM4_Tables* tables) {
     Nonlinearwbsm4_crypt(IN, OUT, tables,0);
 }
-
