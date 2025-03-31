@@ -44,8 +44,6 @@ typedef struct {
 
 /*白盒查找表生成 */
 void Nonlinearwbsm4_generate_tables(const uint8_t key[16], WB_SM4_Tables* tables);
-/* 白盒加密核心接口 */
-void Nonlinearwbsm4_encrypt(const unsigned char IN[16], unsigned char OUT[16], const WB_SM4_Tables* tables);
-/* 白盒加密核心接口*/
-void Nonlinearwbsm4_decrypt(const unsigned char IN[16], unsigned char OUT[16], const WB_SM4_Tables* tables);
+/* 白盒加解密核心接口 1为加密 0为解密 */
+void Nonlinearwbsm4_crypt(const unsigned char IN[16], unsigned char OUT[16], const WB_SM4_Tables* tables, int enc)
 #endif 
