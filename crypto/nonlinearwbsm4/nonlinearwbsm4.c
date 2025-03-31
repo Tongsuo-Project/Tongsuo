@@ -205,7 +205,7 @@ static void genNonlinearPair(Nonlinear8* nl, Nonlinear8* nl_inv);
 static void nonlinearCom8to32(Nonlinear8 n1, Nonlinear8 n2, Nonlinear8 n3, Nonlinear8 n4, Nonlinear32* res);
 static uint8_t nonlinearU8(Nonlinear8* n8, uint8_t arr);
 static uint32_t nonlinearU32(const Nonlinear32* n32, uint32_t arr);
-
+static void Nonlinearwbsm4_crypt(const unsigned char IN[16], unsigned char OUT[16], const WB_SM4_Tables* tables, int enc);
 /*交换函数，用于打乱 S 盒 */
 static void swap(uint8_t* a, uint8_t* b) {
     uint8_t temp = *a;
@@ -545,7 +545,7 @@ static void wbsm4_gen_part2(const SM4_KEY* sm4_key, WB_SM4_Tables* tables) {
         }
     }
 }
-void Nonlinearwbsm4_crypt(const unsigned char IN[16], unsigned char OUT[16], const WB_SM4_Tables* tables, int enc) {
+static void Nonlinearwbsm4_crypt(const unsigned char IN[16], unsigned char OUT[16], const WB_SM4_Tables* tables, int enc) {
     int i;
     uint32_t x0, x1, x2, x3, x4;
     uint32_t xt0, xt1, xt2, xt3, xt4;
@@ -782,5 +782,10 @@ void Nonlinearwbsm4_generate_tables(const uint8_t key[16], WB_SM4_Tables* tables
     wbsm4_gen_part4_2(tables);
     wbsm4_gen_part4_3(tables);
 }
-
+void Nonlinearwbsm4_encrypt(const unsigned char IN[16], unsigned char OUT[16], const WB_SM4_Tables* tables) {
+    Nonlinearwbsm4_crypt(IN, OUT, tables,1);
+}
+void Nonlinearwbsm4_decrypt(const unsigned char IN[16], unsigned char OUT[16], const WB_SM4_Tables* tables) {
+    Nonlinearwbsm4_crypt(IN, OUT, tables,0);
+}
 

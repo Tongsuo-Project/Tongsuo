@@ -623,12 +623,8 @@ IF[{- !$disabled{tests} -}]
     IF[{- !$disabled{wbsm4} -}]
       PROGRAMS{noinst}=wbsm4-resistdca_internal_test
     ENDIF
-
     IF[{- !$disabled{nonlinearwbsm4} -}]
       PROGRAMS{noinst}=nonlinearwbsm4_internal_test
-    ENDIF
-    IF[{- !$disabled{wbsm4} -}]
-      PROGRAMS{noinst}=wbsm4-resistdca_internal_test
     ENDIF
     IF[{- !$disabled{zuc} -}]
       PROGRAMS{noinst}=zuc_internal_test
@@ -777,10 +773,6 @@ IF[{- !$disabled{tests} -}]
     SOURCE[sm4_internal_test]=sm4_internal_test.c
     INCLUDE[sm4_internal_test]=.. ../include ../apps/include
     DEPEND[sm4_internal_test]=../libcrypto.a libtestutil.a
-
-    SOURCE[wbsm4-resistdca_internal_test]=wbsm4-resistdca_internal_test.c
-    INCLUDE[wbsm4-resistdca_internal_test]=.. ../include ../apps/include
-    DEPEND[wbsm4-resistdca_internal_test]=../libcrypto.a libtestutil.a
     
     SOURCE[nonlinearwbsm4_internal_test]=nonlinearwbsm4_internal_test.c
     INCLUDE[nonlinearwbsm4_internal_test]=.. ../include ../apps/include

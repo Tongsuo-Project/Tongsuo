@@ -48,12 +48,12 @@ static int test_nonlinearwbsm4(void)
     Nonlinearwbsm4_generate_tables(k, tables);
 
     /* 执行白盒加密 */
-    Nonlinearwbsm4_crypt(input, encrypted, tables, 1);
+    Nonlinearwbsm4_encrypt(input, encrypted, tables);
     if (!TEST_mem_eq(encrypted, sizeof(encrypted), expected, sizeof(expected)))
         goto err;
 
     /* 执行白盒解密 */
-    Nonlinearwbsm4_crypt(encrypted, decrypted, tables, 0);
+    Nonlinearwbsm4_decrypt(encrypted, decrypted, tables);
     if (!TEST_mem_eq(decrypted, sizeof(decrypted), input, sizeof(input)))
         goto err;
 
@@ -123,7 +123,7 @@ static int test_nonlinearwbsm4_random_key_and_input(void)
     /* 标准SM4加密 */
     ossl_sm4_encrypt(input, encrypted_std, &sm4_key);
     /* 白盒加密 */
-    Nonlinearwbsm4_crypt(input, encrypted_wb, tables, 1);
+    Nonlinearwbsm4_encrypt(input, encrypted_wb, tables);
     if (!TEST_mem_eq(encrypted_std, sizeof(encrypted_std), encrypted_wb, sizeof(encrypted_wb)))
         goto err;
 
@@ -133,7 +133,7 @@ static int test_nonlinearwbsm4_random_key_and_input(void)
         goto err;
 
     /* 白盒解密 */
-    Nonlinearwbsm4_crypt(encrypted_wb, decrypted_wb, tables, 0);
+    Nonlinearwbsm4_decrypt(encrypted_wb, decrypted_wb, tables);
     if (!TEST_mem_eq(decrypted_wb, sizeof(decrypted_wb), input, sizeof(input)))
         goto err;
 
