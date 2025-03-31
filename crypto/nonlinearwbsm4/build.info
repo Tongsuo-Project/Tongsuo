@@ -1,0 +1,5 @@
+# 定义目标库为 libcrypto
+LIBS=../../libcrypto
+
+# 将 nonlinearwbsm4.c 和 NonlinearWBMatrix.c 添加到 libcrypto 的源文件列表中
+SOURCE[../../libcrypto]=nonlinearwbsm4.c NonlinearWBMatrix.c
