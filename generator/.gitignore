@@ -1,0 +1,17 @@
+build/opcodes.bin
+build/code.bin
+build/code.c
+build/submit.c
+build/submit
+build/*
+traces/*
+circuits/*
+maskverif*
+*.bin
+*.gz
+*.so
+*.o
+plain
+cipher
+tools/runcircuit
+daredevil.config
