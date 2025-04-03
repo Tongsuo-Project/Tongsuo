@@ -42,7 +42,6 @@ typedef struct {
     unsigned char *rawkey;
     size_t rawkey_len;
     int mode;
-    int update_key;
     wbsm4_xiao_dykey_context wbctx;
     wbsm4_xiao_dykey_ctxrk ctxrk;
 } WBSM4_KDF_CTX;
