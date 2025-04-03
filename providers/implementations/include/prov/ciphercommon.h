@@ -156,6 +156,33 @@ const OSSL_DISPATCH ossl_##alg##kbits##lcmode##_functions[] = {                \
     { 0, NULL }                                                                \
 };
 
+# define IMPLEMENT_generic_cipher_func_wbsm4(alg, UCALG, lcmode, UCMODE, flags, kbits,\
+    blkbits, ivbits, typ)                    \
+const OSSL_DISPATCH ossl_##alg##kbits##lcmode##_functions[] = {                \
+{ OSSL_FUNC_CIPHER_NEWCTX,                                                 \
+(void (*)(void)) alg##_##kbits##_##lcmode##_newctx },                    \
+{ OSSL_FUNC_CIPHER_FREECTX, (void (*)(void)) alg##_freectx },              \
+{ OSSL_FUNC_CIPHER_DUPCTX, (void (*)(void)) alg##_dupctx },                \
+{ OSSL_FUNC_CIPHER_ENCRYPT_INIT, (void (*)(void))ossl_cipher_generic_einit },   \
+{ OSSL_FUNC_CIPHER_DECRYPT_INIT, (void (*)(void))ossl_cipher_generic_dinit },   \
+{ OSSL_FUNC_CIPHER_UPDATE, (void (*)(void))ossl_cipher_generic_##typ##_update },\
+{ OSSL_FUNC_CIPHER_FINAL, (void (*)(void))ossl_cipher_generic_##typ##_final },  \
+{ OSSL_FUNC_CIPHER_CIPHER, (void (*)(void))ossl_cipher_generic_cipher },        \
+{ OSSL_FUNC_CIPHER_GET_PARAMS,                                             \
+(void (*)(void)) alg##_##kbits##_##lcmode##_get_params },                \
+{ OSSL_FUNC_CIPHER_GET_CTX_PARAMS,                                         \
+(void (*)(void))ossl_cipher_generic_get_ctx_params },                    \
+{ OSSL_FUNC_CIPHER_SET_CTX_PARAMS,                                         \
+(void (*)(void))ossl_##alg##_set_ctx_params },                    \
+{ OSSL_FUNC_CIPHER_GETTABLE_PARAMS,                                        \
+(void (*)(void))ossl_cipher_generic_gettable_params },                   \
+{ OSSL_FUNC_CIPHER_GETTABLE_CTX_PARAMS,                                    \
+(void (*)(void))ossl_cipher_generic_gettable_ctx_params },               \
+{ OSSL_FUNC_CIPHER_SETTABLE_CTX_PARAMS,                                    \
+(void (*)(void))ossl_cipher_generic_settable_ctx_params },                \
+{ 0, NULL }                                                                \
+};
+
 # define IMPLEMENT_var_keylen_cipher_func(alg, UCALG, lcmode, UCMODE, flags,    \
                                          kbits, blkbits, ivbits, typ)          \
 const OSSL_DISPATCH ossl_##alg##kbits##lcmode##_functions[] = {                \
@@ -212,6 +239,13 @@ IMPLEMENT_generic_cipher_genfn(alg, UCALG, lcmode, UCMODE, flags, kbits,       \
                                blkbits, ivbits, typ)                           \
 IMPLEMENT_generic_cipher_func(alg, UCALG, lcmode, UCMODE, flags, kbits,        \
                               blkbits, ivbits, typ)
+
+# define IMPLEMENT_generic_cipher_wbsm4(alg, UCALG, lcmode, UCMODE, flags, kbits,     \
+                                blkbits, ivbits, typ)                         \
+IMPLEMENT_generic_cipher_genfn(alg, UCALG, lcmode, UCMODE, flags, kbits,       \
+                              blkbits, ivbits, typ)                           \
+IMPLEMENT_generic_cipher_func_wbsm4(alg, UCALG, lcmode, UCMODE, flags, kbits,        \
+                             blkbits, ivbits, typ)
 
 # define IMPLEMENT_var_keylen_cipher(alg, UCALG, lcmode, UCMODE, flags, kbits,  \
                                     blkbits, ivbits, typ)                      \

@@ -70,6 +70,10 @@ int EVP_KDF_names_do_all(const EVP_KDF *kdf,
 #define EVP_KDF_SSHKDF_TYPE_INTEGRITY_KEY_CLI_TO_SRV  69
 #define EVP_KDF_SSHKDF_TYPE_INTEGRITY_KEY_SRV_TO_CLI  70
 
+# define EVP_KDF_WBSM4KDF_MODE_DECRYPT  0
+# define EVP_KDF_WBSM4KDF_MODE_ENCRYPT  1
+# define EVP_KDF_WBSM4KDF_MODE_UPDATE_KEY  2
+
 /**** The legacy PKEY-based KDF API follows. ****/
 
 # define EVP_PKEY_CTRL_TLS_MD                   (EVP_PKEY_ALG_CTRL)
