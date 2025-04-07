@@ -154,7 +154,7 @@ static void gen_Bijection4pair(uint8_t *table, uint8_t *inverse_table)
     }
 
     for (i = 0; i < 16; i++) {
-        r = (i + cus_random() % 16) % 16;
+        r = (i + wb_xiao_dy_cus_random() % 16) % 16;
         buff_table_entry = table[i];
         table[i] = table[r];
         table[r] = buff_table_entry;

@@ -283,6 +283,7 @@ static int test_wbsm4_random_encrypt(void)
     RAND_bytes(iv, sizeof(iv));
     RAND_bytes(plaintext, sizeof(plaintext));
 
+    static int ret = 0;
     static int result = 0;
     int outl;
     int mode = EVP_KDF_WBSM4KDF_MODE_ENCRYPT;
@@ -298,7 +299,10 @@ static int test_wbsm4_random_encrypt(void)
     /* sm4 */
     const EVP_CIPHER *cipher_sm4 = EVP_get_cipherbyname("SM4-CBC");
     cctx_sm4 = EVP_CIPHER_CTX_new();
-    EVP_EncryptInit(cctx_sm4, cipher_sm4, k, iv);
+    ret = EVP_EncryptInit(cctx_sm4, cipher_sm4, k, iv);
+    if (!TEST_int_eq(ret, 1)) {
+        goto end;
+    }
     EVP_EncryptUpdate(cctx_sm4, ciphertext_sm4, &outl, plaintext, BUF_SIZE);
     ciphertext_len_sm4 = outl;
     EVP_EncryptFinal(cctx_sm4, ciphertext_sm4 + outl, &outl);
@@ -317,7 +321,10 @@ static int test_wbsm4_random_encrypt(void)
 
     const EVP_CIPHER *cipher_wbsm4 = EVP_get_cipherbyname("WBSM4-XIAO-DYKEY-CBC");
     cctx_wbsm4 = EVP_CIPHER_CTX_new();
-    EVP_EncryptInit(cctx_wbsm4, cipher_wbsm4, (unsigned char *)wbsm4ctx, iv);
+    ret = EVP_EncryptInit(cctx_wbsm4, cipher_wbsm4, (unsigned char *)wbsm4ctx, iv);
+    if (!TEST_int_eq(ret, 1)) {
+        goto end;
+    }
     EVP_EncryptUpdate(cctx_wbsm4, ciphertext_wbsm4, &outl, plaintext, BUF_SIZE);
     ciphertext_len_wbsm4 = outl;
     EVP_EncryptFinal(cctx_wbsm4, ciphertext_wbsm4 + outl, &outl);

@@ -14,7 +14,7 @@
 static unsigned int m_index;
 static unsigned int m_intermediateOffset;
 
-unsigned int permuteQPR(unsigned int x)
+static unsigned int permuteQPR(unsigned int x)
 {
     static const unsigned int prime = 4294967291u;
     unsigned int residue;
@@ -24,14 +24,14 @@ unsigned int permuteQPR(unsigned int x)
     return (x <= prime / 2) ? residue : prime - residue;
 }
 
-void InitRandom(unsigned int seedBase)
+void wb_xiao_dy_InitRandom(unsigned int seedBase)
 {
     unsigned int seedOffset = seedBase+1;
     m_index = permuteQPR(permuteQPR(seedBase) + 0x682f0161);
     m_intermediateOffset = permuteQPR(permuteQPR(seedOffset) + 0x46790905);
 }
 
-unsigned int cus_random(void)
+unsigned int wb_xiao_dy_cus_random(void)
 {
     return permuteQPR((permuteQPR(m_index++) + m_intermediateOffset) ^ 0x5bf03635);
 }
@@ -75,12 +75,12 @@ static uint32_t idM32[32] = {0x80000000, 0x40000000, 0x20000000, 0x10000000, 0x8
 static uint64_t idM64[64] = {0x8000000000000000, 0x4000000000000000, 0x2000000000000000, 0x1000000000000000, 0x800000000000000, 0x400000000000000, 0x200000000000000, 0x100000000000000, 0x80000000000000, 0x40000000000000, 0x20000000000000, 0x10000000000000, 0x8000000000000, 0x4000000000000, 0x2000000000000, 0x1000000000000, 0x800000000000, 0x400000000000, 0x200000000000, 0x100000000000, 0x80000000000, 0x40000000000, 0x20000000000, 0x10000000000, 0x8000000000, 0x4000000000, 0x2000000000, 0x1000000000, 0x800000000, 0x400000000, 0x200000000, 0x100000000, \
                         0x80000000, 0x40000000, 0x20000000, 0x10000000, 0x8000000, 0x4000000, 0x2000000, 0x1000000, 0x800000, 0x400000, 0x200000, 0x100000, 0x80000, 0x40000, 0x20000, 0x10000, 0x8000, 0x4000, 0x2000, 0x1000, 0x800, 0x400, 0x200, 0x100, 0x80, 0x40, 0x20, 0x10, 0x8, 0x4, 0x2, 0x1};
 
-void SetRandSeed(unsigned int seed)
+void wb_xiao_dy_SetRandSeed(unsigned int seed)
 {
     randseed = seed;
 }
 
-void initM4(M4 *Mat)/* initial Matrix 4*4 */
+void wb_xiao_dy_initM4(M4 *Mat)/* initial Matrix 4*4 */
 {
     int i;
     for(i = 0; i < 4; i++)
@@ -88,7 +88,7 @@ void initM4(M4 *Mat)/* initial Matrix 4*4 */
         (*Mat).M[i] = 0;
     }
 }
-void initM8(M8 *Mat)/* initial Matrix 8*8 */
+void wb_xiao_dy_initM8(M8 *Mat)/* initial Matrix 8*8 */
 {
     int i;
     for(i = 0; i < 8; i++)
@@ -96,7 +96,7 @@ void initM8(M8 *Mat)/* initial Matrix 8*8 */
         (*Mat).M[i] = 0;
     }
 }
-void initM16(M16 *Mat)/* initial Matrix 16*16 */
+void wb_xiao_dy_initM16(M16 *Mat)/* initial Matrix 16*16 */
 {
     int i;
     for(i = 0; i < 16; i++)
@@ -104,7 +104,7 @@ void initM16(M16 *Mat)/* initial Matrix 16*16 */
         (*Mat).M[i] = 0;
     }
 }
-void initM32(M32 *Mat)/* initial Matrix 32*32 */
+void wb_xiao_dy_initM32(M32 *Mat)/* initial Matrix 32*32 */
 {
     int i;
     for(i = 0; i < 32; i++)
@@ -112,7 +112,7 @@ void initM32(M32 *Mat)/* initial Matrix 32*32 */
         (*Mat).M[i] = 0;
     }
 }
-void initM64(M64 *Mat)/* initial Matrix 64*64 */
+void wb_xiao_dy_initM64(M64 *Mat)/* initial Matrix 64*64 */
 {
     int i;
     for(i = 0; i < 64; i++)
@@ -120,7 +120,7 @@ void initM64(M64 *Mat)/* initial Matrix 64*64 */
         (*Mat).M[i] = 0;
     }
 }
-void initM128(M128 *Mat)/* initial Matrix 128*128 */
+void wb_xiao_dy_initM128(M128 *Mat)/* initial Matrix 128*128 */
 {
     int i;
     for(i = 0; i < 128; i++)
@@ -129,95 +129,95 @@ void initM128(M128 *Mat)/* initial Matrix 128*128 */
         (*Mat).M[i][1] = 0;
     }
 }
-void initV4(V4 *Vec)/* initial Vector 4*1 */
+void wb_xiao_dy_initV4(V4 *Vec)/* initial Vector 4*1 */
 {
     (*Vec).V = 0;
 }
-void initV8(V8 *Vec)/* initial Vector 8*1 */
+void wb_xiao_dy_initV8(V8 *Vec)/* initial Vector 8*1 */
 {
     (*Vec).V = 0;
 }
-void initV16(V16 *Vec)/* initial Vector 16*1 */
+void wb_xiao_dy_initV16(V16 *Vec)/* initial Vector 16*1 */
 {
     (*Vec).V = 0;
 }
-void initV32(V32 *Vec)/* initial Vector 32*1 */
+void wb_xiao_dy_initV32(V32 *Vec)/* initial Vector 32*1 */
 {
     (*Vec).V = 0;
 }
-void initV64(V64 *Vec)/* initial Vector 64*1 */
+void wb_xiao_dy_initV64(V64 *Vec)/* initial Vector 64*1 */
 {
     (*Vec).V = 0;
 }
-void initV128(V128 *Vec)/* initial Vector 128*1 */
+void wb_xiao_dy_initV128(V128 *Vec)/* initial Vector 128*1 */
 {
     (*Vec).V[0] = 0;
     (*Vec).V[1] = 0;
 }
-void randM4(M4 *Mat)/* randomize Matrix 4*4  */
+void wb_xiao_dy_randM4(M4 *Mat)/* randomize Matrix 4*4  */
 {
     int i;
-    InitRandom((randseed++) ^ ((unsigned int)time(NULL)));
+    wb_xiao_dy_InitRandom((randseed++) ^ ((unsigned int)time(NULL)));
     for(i = 0; i < 4; i++)
     {
-        (*Mat).M[i] = cus_random() & 0x0f;
+        (*Mat).M[i] = wb_xiao_dy_cus_random() & 0x0f;
     }
 }
-void randM8(M8 *Mat)/* randomize Matrix 8*8  */
+void wb_xiao_dy_randM8(M8 *Mat)/* randomize Matrix 8*8  */
 {
     int i;
-    InitRandom((randseed++) ^ ((unsigned int)time(NULL)));
+    wb_xiao_dy_InitRandom((randseed++) ^ ((unsigned int)time(NULL)));
     for(i = 0; i < 8; i++)
     {
-        (*Mat).M[i] = cus_random();
+        (*Mat).M[i] = wb_xiao_dy_cus_random();
     }
 }
-void randM16(M16 *Mat)/* randomize Matrix 16*16  */
+void wb_xiao_dy_randM16(M16 *Mat)/* randomize Matrix 16*16  */
 {
     int i;
-    InitRandom((randseed++) ^ ((unsigned int)time(NULL)));
+    wb_xiao_dy_InitRandom((randseed++) ^ ((unsigned int)time(NULL)));
     for(i = 0; i < 16; i++)
     {
-        (*Mat).M[i] = cus_random();
+        (*Mat).M[i] = wb_xiao_dy_cus_random();
     }
 }
-void randM32(M32 *Mat)/* randomize Matrix 32*32  */
+void wb_xiao_dy_randM32(M32 *Mat)/* randomize Matrix 32*32  */
 {
     int i;
-    InitRandom((randseed++) ^ ((unsigned int)time(NULL)));
+    wb_xiao_dy_InitRandom((randseed++) ^ ((unsigned int)time(NULL)));
     for(i = 0; i < 32; i++)
     {
-        (*Mat).M[i] = cus_random();
+        (*Mat).M[i] = wb_xiao_dy_cus_random();
     }
 }
-void randM64(M64 *Mat)/* randomize Matrix 64*64  */
+void wb_xiao_dy_randM64(M64 *Mat)/* randomize Matrix 64*64  */
 {
     int i;
     uint32_t *m;
-    InitRandom((randseed++) ^ ((unsigned int)time(NULL)));
+    wb_xiao_dy_InitRandom((randseed++) ^ ((unsigned int)time(NULL)));
     for(i = 0; i < 64; i++)
     {
         m = (uint32_t*)&((*Mat).M[i]);
-        *(m+1) = cus_random();
-        *m = cus_random();
+        *(m+1) = wb_xiao_dy_cus_random();
+        *m = wb_xiao_dy_cus_random();
     }
 }
-void randM128(M128 *Mat)/* randomize Matrix 128*128  */
+void wb_xiao_dy_randM128(M128 *Mat)/* randomize Matrix 128*128  */
 {
     int i;
     uint32_t *m;
-    InitRandom((randseed++) ^ ((unsigned int)time(NULL)));
+    wb_xiao_dy_InitRandom((randseed++) ^ ((unsigned int)time(NULL)));
     for(i = 0; i < 128; i++)
     {
         m = (uint32_t*)&((*Mat).M[i][0]);
-        *(m+1) = cus_random();
-        *m = cus_random();
+        *(m+1) = wb_xiao_dy_cus_random();
+        *m = wb_xiao_dy_cus_random();
         m = (uint32_t*)&((*Mat).M[i][1]);
-        *(m+1) = cus_random();
-        *m = cus_random();
+        *(m+1) = wb_xiao_dy_cus_random();
+        *m = wb_xiao_dy_cus_random();
     }
 }
-void identityM4(M4 *Mat)/* identity matrix 4*4 */
+void wb_xiao_dy_identityM4(M4 *Mat)/* identity matrix 4*4 */
 {
     int i;
     for(i = 0; i < 4; i++)
@@ -225,7 +225,7 @@ void identityM4(M4 *Mat)/* identity matrix 4*4 */
         (*Mat).M[i] = idM4[i];
     }
 }
-void identityM8(M8 *Mat)/* identity matrix 8*8 */
+void wb_xiao_dy_identityM8(M8 *Mat)/* identity matrix 8*8 */
 {
     int i;
     for(i = 0; i < 8; i++)
@@ -233,7 +233,7 @@ void identityM8(M8 *Mat)/* identity matrix 8*8 */
         (*Mat).M[i] = idM8[i];
     }
 }
-void identityM16(M16 *Mat)/* identity matrix 16*16 */
+void wb_xiao_dy_identityM16(M16 *Mat)/* identity matrix 16*16 */
 {
     int i;
     for(i = 0; i < 16; i++)
@@ -241,7 +241,7 @@ void identityM16(M16 *Mat)/* identity matrix 16*16 */
         (*Mat).M[i] = idM16[i];
     }
 }
-void identityM32(M32 *Mat)/* identity matrix 32*32 */
+void wb_xiao_dy_identityM32(M32 *Mat)/* identity matrix 32*32 */
 {
     int i;
     for(i = 0; i < 32; i++)
@@ -249,7 +249,7 @@ void identityM32(M32 *Mat)/* identity matrix 32*32 */
         (*Mat).M[i] = idM32[i];
     }
 }
-void identityM64(M64 *Mat)/* identity matrix 64*64 */
+void wb_xiao_dy_identityM64(M64 *Mat)/* identity matrix 64*64 */
 {
     int i;
     for(i = 0; i < 64; i++)
@@ -257,7 +257,7 @@ void identityM64(M64 *Mat)/* identity matrix 64*64 */
         (*Mat).M[i] = idM64[i];
     }
 }
-void identityM128(M128 *Mat)/* identity matrix 128*128 */
+void wb_xiao_dy_identityM128(M128 *Mat)/* identity matrix 128*128 */
 {
     int i;
     for(i = 0; i < 64; i++)
@@ -271,52 +271,52 @@ void identityM128(M128 *Mat)/* identity matrix 128*128 */
         (*Mat).M[i][1] = idM64[i-64];
     }
 }
-void randV4(V4 *Vec)/* randomize Vector 4*1 */
+void wb_xiao_dy_randV4(V4 *Vec)/* randomize Vector 4*1 */
 {
-    InitRandom((randseed++)^(unsigned int)time(NULL));
-    (*Vec).V = cus_random() & 0x0f;
+    wb_xiao_dy_InitRandom((randseed++)^(unsigned int)time(NULL));
+    (*Vec).V = wb_xiao_dy_cus_random() & 0x0f;
 }
-void randV8(V8 *Vec)/* randomize Vector 8*1 */
+void wb_xiao_dy_randV8(V8 *Vec)/* randomize Vector 8*1 */
 {
-    InitRandom((randseed++)^(unsigned int)time(NULL));
-    (*Vec).V = cus_random();
+    wb_xiao_dy_InitRandom((randseed++)^(unsigned int)time(NULL));
+    (*Vec).V = wb_xiao_dy_cus_random();
 }
-void randV16(V16 *Vec)/* randomize Vector 16*1 */
+void wb_xiao_dy_randV16(V16 *Vec)/* randomize Vector 16*1 */
 {
-    InitRandom((randseed++)^(unsigned int)time(NULL));
-    (*Vec).V = cus_random();
+    wb_xiao_dy_InitRandom((randseed++)^(unsigned int)time(NULL));
+    (*Vec).V = wb_xiao_dy_cus_random();
 }
-void randV32(V32 *Vec)/* randomize Vector 32*1 */
-{
-    uint16_t *v = (uint16_t*)&((*Vec).V);
-    InitRandom((randseed++)^(unsigned int)time(NULL));
-    *(v+1) = cus_random();
-    *v = cus_random();
-}
-void randV64(V64 *Vec)/* randomize Vector 64*1 */
+void wb_xiao_dy_randV32(V32 *Vec)/* randomize Vector 32*1 */
 {
     uint16_t *v = (uint16_t*)&((*Vec).V);
-    InitRandom((randseed++)^(unsigned int)time(NULL));
-    *(v+3) = cus_random();
-    *(v+2) = cus_random();
-    *(v+1) = cus_random();
-    *v = cus_random();
+    wb_xiao_dy_InitRandom((randseed++)^(unsigned int)time(NULL));
+    *(v+1) = wb_xiao_dy_cus_random();
+    *v = wb_xiao_dy_cus_random();
 }
-void randV128(V128 *Vec)/* randomize Vector 128*1 */
+void wb_xiao_dy_randV64(V64 *Vec)/* randomize Vector 64*1 */
+{
+    uint16_t *v = (uint16_t*)&((*Vec).V);
+    wb_xiao_dy_InitRandom((randseed++)^(unsigned int)time(NULL));
+    *(v+3) = wb_xiao_dy_cus_random();
+    *(v+2) = wb_xiao_dy_cus_random();
+    *(v+1) = wb_xiao_dy_cus_random();
+    *v = wb_xiao_dy_cus_random();
+}
+void wb_xiao_dy_randV128(V128 *Vec)/* randomize Vector 128*1 */
 {
     uint16_t *v = (uint16_t*)&((*Vec).V[0]);
-    InitRandom((randseed++)^(unsigned int)time(NULL));
-    *(v+3) = cus_random();
-    *(v+2) = cus_random();
-    *(v+1) = cus_random();
-    *v = cus_random();
+    wb_xiao_dy_InitRandom((randseed++)^(unsigned int)time(NULL));
+    *(v+3) = wb_xiao_dy_cus_random();
+    *(v+2) = wb_xiao_dy_cus_random();
+    *(v+1) = wb_xiao_dy_cus_random();
+    *v = wb_xiao_dy_cus_random();
     v = (uint16_t*)&((*Vec).V[1]);
-    *(v+3) = cus_random();
-    *(v+2) = cus_random();
-    *(v+1) = cus_random();
-    *v = cus_random();
+    *(v+3) = wb_xiao_dy_cus_random();
+    *(v+2) = wb_xiao_dy_cus_random();
+    *(v+1) = wb_xiao_dy_cus_random();
+    *v = wb_xiao_dy_cus_random();
 }
-void printM4(M4 Mat)/* printf Matrix 4*4 */
+void wb_xiao_dy_printM4(M4 Mat)/* printf Matrix 4*4 */
 {
     int i;
     for(i = 0; i < 4; i++)
@@ -324,7 +324,7 @@ void printM4(M4 Mat)/* printf Matrix 4*4 */
         printf("0x%" PRIx8 "\n", Mat.M[i]);
     }
 }
-void printM8(M8 Mat)/* printf Matrix 8*8 */
+void wb_xiao_dy_printM8(M8 Mat)/* printf Matrix 8*8 */
 {
     int i;
     for(i = 0; i < 8; i++)
@@ -332,7 +332,7 @@ void printM8(M8 Mat)/* printf Matrix 8*8 */
         printf("0x%" PRIx8 "\n", Mat.M[i]);
     }
 }
-void printM16(M16 Mat)/* printf Matrix 16*16 */
+void wb_xiao_dy_printM16(M16 Mat)/* printf Matrix 16*16 */
 {
     int i;
     for(i = 0; i < 16; i++)
@@ -340,7 +340,7 @@ void printM16(M16 Mat)/* printf Matrix 16*16 */
         printf("0x%" PRIx16 "\n", Mat.M[i]);
     }
 }
-void printM32(M32 Mat)/* printf Matrix 32*32 */
+void wb_xiao_dy_printM32(M32 Mat)/* printf Matrix 32*32 */
 {
     int i;
     for(i = 0; i < 32; i++)
@@ -348,7 +348,7 @@ void printM32(M32 Mat)/* printf Matrix 32*32 */
         printf("0x%" PRIx32 "\n", Mat.M[i]);
     }
 }
-void printM64(M64 Mat)/* printf Matrix 64*64 */
+void wb_xiao_dy_printM64(M64 Mat)/* printf Matrix 64*64 */
 {
     int i;
     for(i = 0; i < 64; i++)
@@ -356,7 +356,7 @@ void printM64(M64 Mat)/* printf Matrix 64*64 */
         printf("0x%" PRIx64 "\n", Mat.M[i]);
     }
 }
-void printM128(M128 Mat)/* printf Matrix 128*128 */
+void wb_xiao_dy_printM128(M128 Mat)/* printf Matrix 128*128 */
 {
     int i;
     for(i = 0; i < 128; i++)
@@ -365,32 +365,32 @@ void printM128(M128 Mat)/* printf Matrix 128*128 */
         printf("0x%" PRIx64 "\n", Mat.M[i][1]);
     }
 }
-void printV4(V4 Vec)/* printf Vector 4*1 */
+void wb_xiao_dy_printV4(V4 Vec)/* printf Vector 4*1 */
 {
     printf("0x%" PRIx8 "\n", Vec.V);
 }
-void printV8(V8 Vec)/* printf Vector 8*1 */
+void wb_xiao_dy_printV8(V8 Vec)/* printf Vector 8*1 */
 {
     printf("0x%" PRIx8 "\n", Vec.V);
 }
-void printV16(V16 Vec)/* printf Vector 16*1 */
+void wb_xiao_dy_printV16(V16 Vec)/* printf Vector 16*1 */
 {
     printf("0x%" PRIx16 "\n", Vec.V);
 }
-void printV32(V32 Vec)/* printf Vector 32*1 */
+void wb_xiao_dy_printV32(V32 Vec)/* printf Vector 32*1 */
 {
     printf("0x%" PRIx32 "\n", Vec.V);
 }
-void printV64(V64 Vec)/* printf Vector 64*1 */
+void wb_xiao_dy_printV64(V64 Vec)/* printf Vector 64*1 */
 {
     printf("0x%" PRIx64 "\n", Vec.V);
 }
-void printV128(V128 Vec)/* printf Vector 128*1 */
+void wb_xiao_dy_printV128(V128 Vec)/* printf Vector 128*1 */
 {
     printf("0x%" PRIx64 " ", Vec.V[0]);
     printf("0x%" PRIx64 "\n", Vec.V[1]);
 }
-void copyM4(M4 Mat1, M4 *Mat2)
+void wb_xiao_dy_copyM4(M4 Mat1, M4 *Mat2)
 {
     int i;
     for(i = 0; i < 4; i++)
@@ -398,7 +398,7 @@ void copyM4(M4 Mat1, M4 *Mat2)
         (*Mat2).M[i] = Mat1.M[i];
     }
 }
-void copyM8(M8 Mat1, M8 *Mat2)
+void wb_xiao_dy_copyM8(M8 Mat1, M8 *Mat2)
 {
     int i;
     for(i = 0; i < 8; i++)
@@ -406,7 +406,7 @@ void copyM8(M8 Mat1, M8 *Mat2)
         (*Mat2).M[i] = Mat1.M[i];
     }
 }
-void copyM16(M16 Mat1, M16 *Mat2)
+void wb_xiao_dy_copyM16(M16 Mat1, M16 *Mat2)
 {
     int i;
     for(i = 0; i < 16; i++)
@@ -414,7 +414,7 @@ void copyM16(M16 Mat1, M16 *Mat2)
         (*Mat2).M[i] = Mat1.M[i];
     }
 }
-void copyM32(M32 Mat1, M32 *Mat2)
+void wb_xiao_dy_copyM32(M32 Mat1, M32 *Mat2)
 {
     int i;
     for(i = 0; i < 32; i++)
@@ -422,7 +422,7 @@ void copyM32(M32 Mat1, M32 *Mat2)
         (*Mat2).M[i] = Mat1.M[i];
     }
 }
-void copyM64(M64 Mat1, M64 *Mat2)
+void wb_xiao_dy_copyM64(M64 Mat1, M64 *Mat2)
 {
     int i;
     for(i = 0; i < 64; i++)
@@ -430,7 +430,7 @@ void copyM64(M64 Mat1, M64 *Mat2)
         (*Mat2).M[i] = Mat1.M[i];
     }
 }
-void copyM128(M128 Mat1, M128 *Mat2)
+void wb_xiao_dy_copyM128(M128 Mat1, M128 *Mat2)
 {
     int i;
     for(i = 0; i < 128; i++)
@@ -439,7 +439,7 @@ void copyM128(M128 Mat1, M128 *Mat2)
         (*Mat2).M[i][1] = Mat1.M[i][1];
     }
 }
-int isequalM4(M4 Mat1, M4 Mat2)
+int wb_xiao_dy_isequalM4(M4 Mat1, M4 Mat2)
 {
     int i;
     int flag = 1;
@@ -453,7 +453,7 @@ int isequalM4(M4 Mat1, M4 Mat2)
     }
     return flag;
 }
-int isequalM8(M8 Mat1, M8 Mat2)
+int wb_xiao_dy_isequalM8(M8 Mat1, M8 Mat2)
 {
     int i;
     int flag = 1;
@@ -467,7 +467,7 @@ int isequalM8(M8 Mat1, M8 Mat2)
     }
     return flag;
 }
-int isequalM16(M16 Mat1, M16 Mat2)
+int wb_xiao_dy_isequalM16(M16 Mat1, M16 Mat2)
 {
     int i;
     int flag = 1;
@@ -481,7 +481,7 @@ int isequalM16(M16 Mat1, M16 Mat2)
     }
     return flag;
 }
-int isequalM32(M32 Mat1, M32 Mat2)
+int wb_xiao_dy_isequalM32(M32 Mat1, M32 Mat2)
 {
     int i;
     int flag = 1;
@@ -495,7 +495,7 @@ int isequalM32(M32 Mat1, M32 Mat2)
     }
     return flag;
 }
-int isequalM64(M64 Mat1, M64 Mat2)
+int wb_xiao_dy_isequalM64(M64 Mat1, M64 Mat2)
 {
     int i;
     int flag = 1;
@@ -509,7 +509,7 @@ int isequalM64(M64 Mat1, M64 Mat2)
     }
     return flag;
 }
-int isequalM128(M128 Mat1, M128 Mat2)
+int wb_xiao_dy_isequalM128(M128 Mat1, M128 Mat2)
 {
     int i;
     int flag = 1;
@@ -528,69 +528,69 @@ int isequalM128(M128 Mat1, M128 Mat2)
     }
     return flag;
 }
-int isequalV4(V4 Vec1, V4 Vec2)
+int wb_xiao_dy_isequalV4(V4 Vec1, V4 Vec2)
 {
     int flag = 1;
     if(Vec1.V != Vec2.V) flag = 0;
     return flag;
 }
-int isequalV8(V8 Vec1, V8 Vec2)
+int wb_xiao_dy_isequalV8(V8 Vec1, V8 Vec2)
 {
     int flag = 1;
     if(Vec1.V != Vec2.V) flag = 0;
     return flag;
 }
-int isequalV16(V16 Vec1, V16 Vec2)
+int wb_xiao_dy_isequalV16(V16 Vec1, V16 Vec2)
 {
     int flag = 1;
     if(Vec1.V != Vec2.V) flag = 0;
     return flag;
 }
-int isequalV32(V32 Vec1, V32 Vec2)
+int wb_xiao_dy_isequalV32(V32 Vec1, V32 Vec2)
 {
     int flag = 1;
     if(Vec1.V != Vec2.V) flag = 0;
     return flag;
 }
-int isequalV64(V64 Vec1, V64 Vec2)
+int wb_xiao_dy_isequalV64(V64 Vec1, V64 Vec2)
 {
     int flag = 1;
     if(Vec1.V != Vec2.V) flag = 0;
     return flag;
 }
-int isequalV128(V128 Vec1, V128 Vec2)
+int wb_xiao_dy_isequalV128(V128 Vec1, V128 Vec2)
 {
     int flag = 1;
     if(Vec1.V[0] != Vec2.V[0]) flag = 0;
     if(Vec1.V[1] != Vec2.V[1]) flag = 0;
     return flag;
 }
-int readbitM4(M4 Mat, int i, int j)/* read one bit in a matrix, i in n rows, j in n columns, i,j: 0-3 */
+int wb_xiao_dy_readbitM4(M4 Mat, int i, int j)/* read one bit in a matrix, i in n rows, j in n columns, i,j: 0-3 */
 {
     if((Mat.M[i] & idM4[j]) == idM4[j]) return 1;
     else return 0;
 }
-int readbitM8(M8 Mat, int i, int j)/* read one bit in a matrix, i in n rows, j in n columns, i,j: 0-7 */
+int wb_xiao_dy_readbitM8(M8 Mat, int i, int j)/* read one bit in a matrix, i in n rows, j in n columns, i,j: 0-7 */
 {
     if((Mat.M[i] & idM8[j]) == idM8[j]) return 1;
     else return 0;
 }
-int readbitM16(M16 Mat, int i, int j)/* read one bit in a matrix, i in n rows, j in n columns, i,j: 0-15 */
+int wb_xiao_dy_readbitM16(M16 Mat, int i, int j)/* read one bit in a matrix, i in n rows, j in n columns, i,j: 0-15 */
 {
     if((Mat.M[i] & idM16[j]) == idM16[j]) return 1;
     else return 0;
 }
-int readbitM32(M32 Mat, int i, int j)/* read one bit in a matrix, i in n rows, j in n columns, i,j: 0-31 */
+int wb_xiao_dy_readbitM32(M32 Mat, int i, int j)/* read one bit in a matrix, i in n rows, j in n columns, i,j: 0-31 */
 {
     if((Mat.M[i] & idM32[j]) == idM32[j]) return 1;
     else return 0;
 }
-int readbitM64(M64 Mat, int i, int j)/* read one bit in a matrix, i in n rows, j in n columns, i,j: 0-63 */
+int wb_xiao_dy_readbitM64(M64 Mat, int i, int j)/* read one bit in a matrix, i in n rows, j in n columns, i,j: 0-63 */
 {
     if((Mat.M[i] & idM64[j]) == idM64[j]) return 1;
     else return 0;
 }
-int readbitM128(M128 Mat, int i, int j)/* read one bit in a matrix, i in n rows, j in n columns, i,j: 0-127 */
+int wb_xiao_dy_readbitM128(M128 Mat, int i, int j)/* read one bit in a matrix, i in n rows, j in n columns, i,j: 0-127 */
 {
     if(j < 64)
     {
@@ -603,27 +603,27 @@ int readbitM128(M128 Mat, int i, int j)/* read one bit in a matrix, i in n rows,
         else return 0;
     }
 }
-void flipbitM4(M4 *Mat, int i, int j)/* flip (i, j) bit in a matrix */
+void wb_xiao_dy_flipbitM4(M4 *Mat, int i, int j)/* flip (i, j) bit in a matrix */
 {
     (*Mat).M[i] ^= idM4[j];
 }
-void flipbitM8(M8 *Mat, int i, int j)/* flip (i, j) bit in a matrix */
+void wb_xiao_dy_flipbitM8(M8 *Mat, int i, int j)/* flip (i, j) bit in a matrix */
 {
     (*Mat).M[i] ^= idM8[j];
 }
-void flipbitM16(M16 *Mat, int i, int j)/* flip (i, j) bit in a matrix */
+void wb_xiao_dy_flipbitM16(M16 *Mat, int i, int j)/* flip (i, j) bit in a matrix */
 {
     (*Mat).M[i] ^= idM16[j];
 }
-void flipbitM32(M32 *Mat, int i, int j)/* flip (i, j) bit in a matrix */
+void wb_xiao_dy_flipbitM32(M32 *Mat, int i, int j)/* flip (i, j) bit in a matrix */
 {
     (*Mat).M[i] ^= idM32[j];
 }
-void flipbitM64(M64 *Mat, int i, int j)/* flip (i, j) bit in a matrix */
+void wb_xiao_dy_flipbitM64(M64 *Mat, int i, int j)/* flip (i, j) bit in a matrix */
 {
     (*Mat).M[i] ^= idM64[j];
 }
-void flipbitM128(M128 *Mat, int i, int j)/* flip (i, j) bit in a matrix */
+void wb_xiao_dy_flipbitM128(M128 *Mat, int i, int j)/* flip (i, j) bit in a matrix */
 {
     if(j <64)
     {
@@ -634,37 +634,37 @@ void flipbitM128(M128 *Mat, int i, int j)/* flip (i, j) bit in a matrix */
         (*Mat).M[i][1] ^= idM64[j - 64];
     }
 }
-void setbitM4(M4 *Mat, int i, int j, int bit)/* set (i, j) bit in a matrix, bit = 0/1 */
+void wb_xiao_dy_setbitM4(M4 *Mat, int i, int j, int bit)/* set (i, j) bit in a matrix, bit = 0/1 */
 {
-    if(readbitM4(*Mat, i, j) == bit) return;
-    else flipbitM4(Mat, i, j);
+    if(wb_xiao_dy_readbitM4(*Mat, i, j) == bit) return;
+    else wb_xiao_dy_flipbitM4(Mat, i, j);
 }
-void setbitM8(M8 *Mat, int i, int j, int bit)/* set (i, j) bit in a matrix, bit = 0/1 */
+void wb_xiao_dy_setbitM8(M8 *Mat, int i, int j, int bit)/* set (i, j) bit in a matrix, bit = 0/1 */
 {
-    if(readbitM8(*Mat, i, j) == bit) return;
-    else flipbitM8(Mat, i, j);
+    if(wb_xiao_dy_readbitM8(*Mat, i, j) == bit) return;
+    else wb_xiao_dy_flipbitM8(Mat, i, j);
 }
-void setbitM16(M16 *Mat, int i, int j, int bit)/* set (i, j) bit in a matrix, bit = 0/1 */
+void wb_xiao_dy_setbitM16(M16 *Mat, int i, int j, int bit)/* set (i, j) bit in a matrix, bit = 0/1 */
 {
-    if(readbitM16(*Mat, i, j) == bit) return;
-    else flipbitM16(Mat, i, j);
+    if(wb_xiao_dy_readbitM16(*Mat, i, j) == bit) return;
+    else wb_xiao_dy_flipbitM16(Mat, i, j);
 }
-void setbitM32(M32 *Mat, int i, int j, int bit)/* set (i, j) bit in a matrix, bit = 0/1 */
+void wb_xiao_dy_setbitM32(M32 *Mat, int i, int j, int bit)/* set (i, j) bit in a matrix, bit = 0/1 */
 {
-    if(readbitM32(*Mat, i, j) == bit) return;
-    else flipbitM32(Mat, i, j);
+    if(wb_xiao_dy_readbitM32(*Mat, i, j) == bit) return;
+    else wb_xiao_dy_flipbitM32(Mat, i, j);
 }
-void setbitM64(M64 *Mat, int i, int j, int bit)/* set (i, j) bit in a matrix, bit = 0/1 */
+void wb_xiao_dy_setbitM64(M64 *Mat, int i, int j, int bit)/* set (i, j) bit in a matrix, bit = 0/1 */
 {
-    if(readbitM64(*Mat, i, j) == bit) return;
-    else flipbitM64(Mat, i, j);
+    if(wb_xiao_dy_readbitM64(*Mat, i, j) == bit) return;
+    else wb_xiao_dy_flipbitM64(Mat, i, j);
 }
-void setbitM128(M128 *Mat, int i, int j, int bit)/* set (i, j) bit in a matrix, bit = 0/1 */
+void wb_xiao_dy_setbitM128(M128 *Mat, int i, int j, int bit)/* set (i, j) bit in a matrix, bit = 0/1 */
 {
-    if(readbitM128(*Mat, i, j) == bit) return;
-    else flipbitM128(Mat, i, j);
+    if(wb_xiao_dy_readbitM128(*Mat, i, j) == bit) return;
+    else wb_xiao_dy_flipbitM128(Mat, i, j);
 }
-int isinvertM4(M4 Mat)/* Invertible Matrix? */
+int wb_xiao_dy_isinvertM4(M4 Mat)/* Invertible Matrix? */
 {
     int i, j, k;
     uint8_t temp;
@@ -708,7 +708,7 @@ int isinvertM4(M4 Mat)/* Invertible Matrix? */
     if(Mat.M[3] == idM4[3]) return 1;
     else return 0;
 }
-int isinvertM8(M8 Mat)/* Invertible Matrix? */
+int wb_xiao_dy_isinvertM8(M8 Mat)/* Invertible Matrix? */
 {
     int i, j, k;
     uint8_t temp;
@@ -752,7 +752,7 @@ int isinvertM8(M8 Mat)/* Invertible Matrix? */
     if(Mat.M[7] == idM8[7]) return 1;
     else return 0;
 }
-int isinvertM16(M16 Mat)/* Invertible Matrix? */
+int wb_xiao_dy_isinvertM16(M16 Mat)/* Invertible Matrix? */
 {
     int i, j, k;
     uint16_t temp;
@@ -796,7 +796,7 @@ int isinvertM16(M16 Mat)/* Invertible Matrix? */
     if(Mat.M[15] == idM16[15]) return 1;
     else return 0;
 }
-int isinvertM32(M32 Mat)/* Invertible Matrix? */
+int wb_xiao_dy_isinvertM32(M32 Mat)/* Invertible Matrix? */
 {
     int i, j, k;
     uint32_t temp;
@@ -840,7 +840,7 @@ int isinvertM32(M32 Mat)/* Invertible Matrix? */
     if(Mat.M[31] == idM32[31]) return 1;
     else return 0;
 }
-int isinvertM64(M64 Mat)/* Invertible Matrix? */
+int wb_xiao_dy_isinvertM64(M64 Mat)/* Invertible Matrix? */
 {
     int i, j, k;
     uint64_t temp;
@@ -884,7 +884,7 @@ int isinvertM64(M64 Mat)/* Invertible Matrix? */
     if(Mat.M[63] == idM64[63]) return 1;
     else return 0;
 }
-int isinvertM128(M128 Mat)/* Invertible Matrix? */
+int wb_xiao_dy_isinvertM128(M128 Mat)/* Invertible Matrix? */
 {
     int i, j, k;
     uint64_t temp[2];
@@ -970,11 +970,11 @@ int isinvertM128(M128 Mat)/* Invertible Matrix? */
     if(Mat.M[127][1] == idM64[63]) return 1;
     else return 0;
 }
-void invsM4(M4 Mat, M4 *Mat_inv)/* compute the 4*4 inverse matrix */
+void wb_xiao_dy_invsM4(M4 Mat, M4 *Mat_inv)/* compute the 4*4 inverse matrix */
 {
     int i, j, k;
     uint8_t temp;
-    identityM4(Mat_inv);
+    wb_xiao_dy_identityM4(Mat_inv);
     for(i = 0; i < 4; i++)
     {
         if((Mat.M[i] & idM4[i]) == idM4[i])
@@ -1026,11 +1026,11 @@ void invsM4(M4 Mat, M4 *Mat_inv)/* compute the 4*4 inverse matrix */
         }
     }
 }
-void invsM8(M8 Mat, M8 *Mat_inv)/* compute the 8*8 inverse matrix */
+void wb_xiao_dy_invsM8(M8 Mat, M8 *Mat_inv)/* compute the 8*8 inverse matrix */
 {
     int i, j, k;
     uint8_t temp;
-    identityM8(Mat_inv);
+    wb_xiao_dy_identityM8(Mat_inv);
     for(i = 0; i < 8; i++)
     {
         if((Mat.M[i] & idM8[i]) == idM8[i])
@@ -1082,11 +1082,11 @@ void invsM8(M8 Mat, M8 *Mat_inv)/* compute the 8*8 inverse matrix */
         }
     }
 }
-void invsM16(M16 Mat, M16 *Mat_inv)/* compute the 16*16 inverse matrix */
+void wb_xiao_dy_invsM16(M16 Mat, M16 *Mat_inv)/* compute the 16*16 inverse matrix */
 {
     int i, j, k;
     uint16_t temp;
-    identityM16(Mat_inv);
+    wb_xiao_dy_identityM16(Mat_inv);
     for(i = 0; i < 16; i++)
     {
         if((Mat.M[i] & idM16[i]) == idM16[i])
@@ -1138,11 +1138,11 @@ void invsM16(M16 Mat, M16 *Mat_inv)/* compute the 16*16 inverse matrix */
         }
     }
 }
-void invsM32(M32 Mat, M32 *Mat_inv)/* compute the 32*32 inverse matrix */
+void wb_xiao_dy_invsM32(M32 Mat, M32 *Mat_inv)/* compute the 32*32 inverse matrix */
 {
     int i, j, k;
     uint32_t temp;
-    identityM32(Mat_inv);
+    wb_xiao_dy_identityM32(Mat_inv);
     for(i = 0; i < 32; i++)
     {
         if((Mat.M[i] & idM32[i]) == idM32[i])
@@ -1194,11 +1194,11 @@ void invsM32(M32 Mat, M32 *Mat_inv)/* compute the 32*32 inverse matrix */
         }
     }
 }
-void invsM64(M64 Mat, M64 *Mat_inv)/* compute the 64*64 inverse matrix */
+void wb_xiao_dy_invsM64(M64 Mat, M64 *Mat_inv)/* compute the 64*64 inverse matrix */
 {
     int i, j, k;
     uint64_t temp;
-    identityM64(Mat_inv);
+    wb_xiao_dy_identityM64(Mat_inv);
     for(i = 0; i < 64; i++)
     {
         if((Mat.M[i] & idM64[i]) == idM64[i])
@@ -1250,11 +1250,11 @@ void invsM64(M64 Mat, M64 *Mat_inv)/* compute the 64*64 inverse matrix */
         }
     }
 }
-void invsM128(M128 Mat, M128 *Mat_inv)/* compute the 128*128 inverse matrix */
+void wb_xiao_dy_invsM128(M128 Mat, M128 *Mat_inv)/* compute the 128*128 inverse matrix */
 {
     int i, j, k;
     uint64_t temp[2];
-    identityM128(Mat_inv);
+    wb_xiao_dy_identityM128(Mat_inv);
     for(i = 0; i < 64; i++)
     {
         if((Mat.M[i][0] & idM64[i]) == idM64[i])
@@ -1380,140 +1380,140 @@ void invsM128(M128 Mat, M128 *Mat_inv)/* compute the 128*128 inverse matrix */
         }
     }
 }
-uint8_t affineU4(Aff4 aff, uint8_t arr)/* 4bits affine transformation */
+uint8_t wb_xiao_dy_affineU4(Aff4 aff, uint8_t arr)/* 4bits affine transformation */
 {
     V4 mul_vec, ans_vec;
     mul_vec.V = arr;
-    MatMulVecM4(aff.Mat, mul_vec, &ans_vec);/* mul */
+    wb_xiao_dy_MatMulVecM4(aff.Mat, mul_vec, &ans_vec);/* mul */
     return ans_vec.V ^ aff.Vec.V;/* add */
 }
-uint8_t affineU8(Aff8 aff, uint8_t arr)/* 8bits affine transformation */
+uint8_t wb_xiao_dy_affineU8(Aff8 aff, uint8_t arr)/* 8bits affine transformation */
 {
     V8 mul_vec, ans_vec;
     mul_vec.V = arr;
-    MatMulVecM8(aff.Mat, mul_vec, &ans_vec);/* mul */
+    wb_xiao_dy_MatMulVecM8(aff.Mat, mul_vec, &ans_vec);/* mul */
     return ans_vec.V ^ aff.Vec.V;/* add */
 }
-uint16_t affineU16(Aff16 aff, uint16_t arr)/* 16bits affine transformation */
+uint16_t wb_xiao_dy_affineU16(Aff16 aff, uint16_t arr)/* 16bits affine transformation */
 {
     V16 mul_vec, ans_vec;
     mul_vec.V = arr;
-    MatMulVecM16(aff.Mat, mul_vec, &ans_vec);/* mul */
+    wb_xiao_dy_MatMulVecM16(aff.Mat, mul_vec, &ans_vec);/* mul */
     return ans_vec.V ^ aff.Vec.V;/* add */
 }
-uint32_t affineU32(Aff32 aff, uint32_t arr)/* 32bits affine transformation */
+uint32_t wb_xiao_dy_affineU32(Aff32 aff, uint32_t arr)/* 32bits affine transformation */
 {
     V32 mul_vec, ans_vec;
     mul_vec.V = arr;
-    MatMulVecM32(aff.Mat, mul_vec, &ans_vec);/* mul */
+    wb_xiao_dy_MatMulVecM32(aff.Mat, mul_vec, &ans_vec);/* mul */
     return ans_vec.V ^ aff.Vec.V;/* add */
 }
-uint64_t affineU64(Aff64 aff, uint64_t arr)/* 64bits affine transformation */
+uint64_t wb_xiao_dy_affineU64(Aff64 aff, uint64_t arr)/* 64bits affine transformation */
 {
     V64 mul_vec, ans_vec;
     mul_vec.V = arr;
-    MatMulVecM64(aff.Mat, mul_vec, &ans_vec);/* mul */
+    wb_xiao_dy_MatMulVecM64(aff.Mat, mul_vec, &ans_vec);/* mul */
     return ans_vec.V ^ aff.Vec.V;/* add */
 }
-void affineU128(Aff128 aff, uint64_t arr[], uint64_t ans[])/* 128bits affine transformation */
+void wb_xiao_dy_affineU128(Aff128 aff, uint64_t arr[], uint64_t ans[])/* 128bits affine transformation */
 {
     V128 mul_vec, ans_vec;
     mul_vec.V[0] = arr[0];
     mul_vec.V[1] = arr[1];
-    MatMulVecM128(aff.Mat, mul_vec, &ans_vec);/* mul */
+    wb_xiao_dy_MatMulVecM128(aff.Mat, mul_vec, &ans_vec);/* mul */
     ans[0] = ans_vec.V[0] ^ aff.Vec.V[0];/* add */
     ans[1] = ans_vec.V[1] ^ aff.Vec.V[1];
 }
-int xorU4(uint8_t n)/*  4bits internal xor */
+int wb_xiao_dy_xorU4(uint8_t n)/*  4bits internal xor */
 {
     if(xor[n]) return 1;
     else return 0;
 }
-int xorU8(uint8_t n)/*  uint8_t internal xor */
+int wb_xiao_dy_xorU8(uint8_t n)/*  uint8_t internal xor */
 {
     if(xor[n]) return 1;
     else return 0;
 }
-int xorU16(uint16_t n)/*  uint16_t internal xor */
+int wb_xiao_dy_xorU16(uint16_t n)/*  uint16_t internal xor */
 {
     uint8_t temp = 0;
     uint8_t* u = (uint8_t*)&n;
     temp = (*u) ^ (*(u+1));
-    if(xorU8(temp)) return 1;
+    if(wb_xiao_dy_xorU8(temp)) return 1;
     else return 0;
 }
-int xorU32(uint32_t n)/*  uint32_t internal xor */
+int wb_xiao_dy_xorU32(uint32_t n)/*  uint32_t internal xor */
 {
     uint16_t temp = 0;
     uint16_t* u = (uint16_t*)&n;
     temp = (*u) ^ (*(u+1));
-    if(xorU16(temp)) return 1;
+    if(wb_xiao_dy_xorU16(temp)) return 1;
     else return 0;
 }
-int xorU64(uint64_t n)/*  uint64_t internal xor */
+int wb_xiao_dy_xorU64(uint64_t n)/*  uint64_t internal xor */
 {
     uint32_t temp = 0;
     uint32_t* u = (uint32_t*)&n;
     temp = (*u) ^ (*(u+1));
-    if(xorU32(temp)) return 1;
+    if(wb_xiao_dy_xorU32(temp)) return 1;
     else return 0;
 }
-int xorU128(uint64_t n[])/*  uint128_t internal xor */
+int wb_xiao_dy_xorU128(uint64_t n[])/*  uint128_t internal xor */
 {
     uint64_t temp = 0;
     temp = n[0] ^ n[1];
-    if(xorU64(temp)) return 1;
+    if(wb_xiao_dy_xorU64(temp)) return 1;
     else return 0;
 }
-int HWU4(uint8_t n)/*  4bits HW */
+int wb_xiao_dy_HWU4(uint8_t n)/*  4bits HW */
 {
     return HW[n];
 }
-int HWU8(uint8_t n)/*  uint8_t HW */
+int wb_xiao_dy_HWU8(uint8_t n)/*  uint8_t HW */
 {
     return HW[n];
 }
-int HWU16(uint16_t n)/*  uint16_t HW */
+int wb_xiao_dy_HWU16(uint16_t n)/*  uint16_t HW */
 {
     uint8_t* u = (uint8_t*)&n;
-    return HWU8(*u) + HWU8(*(u+1));
+    return wb_xiao_dy_HWU8(*u) + wb_xiao_dy_HWU8(*(u+1));
 }
-int HWU32(uint32_t n)/*  uint32_t HW */
+int wb_xiao_dy_HWU32(uint32_t n)/*  uint32_t HW */
 {
     uint16_t* u = (uint16_t*)&n;
-    return HWU16(*u) + HWU16(*(u+1));
+    return wb_xiao_dy_HWU16(*u) + wb_xiao_dy_HWU16(*(u+1));
 }
-int HWU64(uint64_t n)/*  uint64_t HW */
+int wb_xiao_dy_HWU64(uint64_t n)/*  uint64_t HW */
 {
     uint32_t* u = (uint32_t*)&n;
-    return HWU32(*u) + HWU32(*(u+1));
+    return wb_xiao_dy_HWU32(*u) + wb_xiao_dy_HWU32(*(u+1));
 }
-int HWU128(uint64_t n[])/*  uint128_t HW */
+int wb_xiao_dy_HWU128(uint64_t n[])/*  uint128_t HW */
 {
-    return HWU64(n[0]) + HWU64(n[1]);
+    return wb_xiao_dy_HWU64(n[0]) + wb_xiao_dy_HWU64(n[1]);
 }
-void printU8(uint8_t n)/* printf uint8_t */
+void wb_xiao_dy_printU8(uint8_t n)/* printf uint8_t */
 {
     printf("0x%" PRIx8 "\n", n);
 }
-void printU16(uint16_t n)/* printf uint16_t */
+void wb_xiao_dy_printU16(uint16_t n)/* printf uint16_t */
 {
     printf("0x%" PRIx16 "\n", n);
 }
-void printU32(uint32_t n)/* printf uint32_t */
+void wb_xiao_dy_printU32(uint32_t n)/* printf uint32_t */
 {
     printf("0x%" PRIx32 "\n", n);
 }
-void printU64(uint64_t n)/* printf uint64_t */
+void wb_xiao_dy_printU64(uint64_t n)/* printf uint64_t */
 {
     printf("0x%" PRIx64 "\n", n);
 }
-void printU128(uint64_t n[])/* printf uint128_t */
+void wb_xiao_dy_printU128(uint64_t n[])/* printf uint128_t */
 {
     printf("0x%" PRIx64 " ", n[0]);
     printf("0x%" PRIx64 "\n", n[1]);
 }
-void printbitM4(M4 Mat)/* printf Matrix 4*4 in the form of bits  */
+void wb_xiao_dy_printbitM4(M4 Mat)/* printf Matrix 4*4 in the form of bits  */
 {
     int i, j;
     uint8_t temp;
@@ -1530,7 +1530,7 @@ void printbitM4(M4 Mat)/* printf Matrix 4*4 in the form of bits  */
     }
     printf("\n");
 }
-void printbitM8(M8 Mat)/* printf Matrix 8*8 in the form of bits  */
+void wb_xiao_dy_printbitM8(M8 Mat)/* printf Matrix 8*8 in the form of bits  */
 {
     int i, j;
     uint8_t temp;
@@ -1547,7 +1547,7 @@ void printbitM8(M8 Mat)/* printf Matrix 8*8 in the form of bits  */
     }
     printf("\n");
 }
-void printbitM16(M16 Mat)/* printf Matrix 16*16 in the form of bits  */
+void wb_xiao_dy_printbitM16(M16 Mat)/* printf Matrix 16*16 in the form of bits  */
 {
     int i, j;
     uint16_t temp;
@@ -1564,7 +1564,7 @@ void printbitM16(M16 Mat)/* printf Matrix 16*16 in the form of bits  */
     }
     printf("\n");
 }
-void printbitM32(M32 Mat)/* printf Matrix 32*32 in the form of bits  */
+void wb_xiao_dy_printbitM32(M32 Mat)/* printf Matrix 32*32 in the form of bits  */
 {
     int i, j;
     uint32_t temp;
@@ -1581,7 +1581,7 @@ void printbitM32(M32 Mat)/* printf Matrix 32*32 in the form of bits  */
     }
     printf("\n");
 }
-void printbitM64(M64 Mat)/* printf Matrix 64*64 in the form of bits  */
+void wb_xiao_dy_printbitM64(M64 Mat)/* printf Matrix 64*64 in the form of bits  */
 {
     int i, j;
     uint64_t temp;
@@ -1598,7 +1598,7 @@ void printbitM64(M64 Mat)/* printf Matrix 64*64 in the form of bits  */
     }
     printf("\n");
 }
-void printbitM128(M128 Mat)/* printf Matrix 128*128 in the form of bits  */
+void wb_xiao_dy_printbitM128(M128 Mat)/* printf Matrix 128*128 in the form of bits  */
 {
     int i, j;
     uint64_t temp;
@@ -1622,145 +1622,145 @@ void printbitM128(M128 Mat)/* printf Matrix 128*128 in the form of bits  */
     }
     printf("\n");
 }
-void VecAddVecV4(V4 Vec1, V4 Vec2, V4 *Vec)
+void wb_xiao_dy_VecAddVecV4(V4 Vec1, V4 Vec2, V4 *Vec)
 {
     (*Vec).V = Vec1.V ^ Vec2.V;
 }
-void VecAddVecV8(V8 Vec1, V8 Vec2, V8 *Vec)
+void wb_xiao_dy_VecAddVecV8(V8 Vec1, V8 Vec2, V8 *Vec)
 {
     (*Vec).V = Vec1.V ^ Vec2.V;
 }
-void VecAddVecV16(V16 Vec1, V16 Vec2, V16 *Vec)
+void wb_xiao_dy_VecAddVecV16(V16 Vec1, V16 Vec2, V16 *Vec)
 {
     (*Vec).V = Vec1.V ^ Vec2.V;
 }
-void VecAddVecV32(V32 Vec1, V32 Vec2, V32 *Vec)
+void wb_xiao_dy_VecAddVecV32(V32 Vec1, V32 Vec2, V32 *Vec)
 {
     (*Vec).V = Vec1.V ^ Vec2.V;
 }
-void VecAddVecV64(V64 Vec1, V64 Vec2, V64 *Vec)
+void wb_xiao_dy_VecAddVecV64(V64 Vec1, V64 Vec2, V64 *Vec)
 {
     (*Vec).V = Vec1.V ^ Vec2.V;
 }
-void VecAddVecV128(V128 Vec1, V128 Vec2, V128 *Vec)
+void wb_xiao_dy_VecAddVecV128(V128 Vec1, V128 Vec2, V128 *Vec)
 {
     (*Vec).V[0] = Vec1.V[0] ^ Vec2.V[0];
     (*Vec).V[1] = Vec1.V[1] ^ Vec2.V[1];
 }
-uint8_t MatMulNumM4(M4 Mat, uint8_t n)/* matrix * number -> number 4bits */
+uint8_t wb_xiao_dy_MatMulNumM4(M4 Mat, uint8_t n)/* matrix * number -> number 4bits */
 {
     int i;
     uint8_t temp = 0;
     for(i = 0; i < 4; i++)
     {
-        if(xorU4(Mat.M[i] & n & 0x0f)) temp ^= idM4[i];
+        if(wb_xiao_dy_xorU4(Mat.M[i] & n & 0x0f)) temp ^= idM4[i];
     }
     return temp;
 }
-uint8_t MatMulNumM8(M8 Mat, uint8_t n)/* matrix * number -> number 8bits */
+uint8_t wb_xiao_dy_MatMulNumM8(M8 Mat, uint8_t n)/* matrix * number -> number 8bits */
 {
     int i;
     uint8_t temp = 0;
     for(i = 0; i < 8; i++)
     {
-        if(xorU8(Mat.M[i] & n)) temp ^= idM8[i];
+        if(wb_xiao_dy_xorU8(Mat.M[i] & n)) temp ^= idM8[i];
     }
     return temp;
 }
-uint16_t MatMulNumM16(M16 Mat, uint16_t n)/* matrix * number -> number 16bits */
+uint16_t wb_xiao_dy_MatMulNumM16(M16 Mat, uint16_t n)/* matrix * number -> number 16bits */
 {
     int i;
     uint16_t temp = 0;
     for(i = 0; i < 16; i++)
     {
-        if(xorU16(Mat.M[i] & n)) temp ^= idM16[i];
+        if(wb_xiao_dy_xorU16(Mat.M[i] & n)) temp ^= idM16[i];
     }
     return temp;
 }
-uint32_t MatMulNumM32(M32 Mat, uint32_t n)/* matrix * number -> number 32bits */
+uint32_t wb_xiao_dy_MatMulNumM32(M32 Mat, uint32_t n)/* matrix * number -> number 32bits */
 {
     int i;
     uint32_t temp = 0;
     for(i = 0; i < 32; i++)
     {
-        if(xorU32(Mat.M[i] & n)) temp ^= idM32[i];
+        if(wb_xiao_dy_xorU32(Mat.M[i] & n)) temp ^= idM32[i];
     }
     return temp;
 }
-uint64_t MatMulNumM64(M64 Mat, uint64_t n)/* matrix * number -> number 64bits */
+uint64_t wb_xiao_dy_MatMulNumM64(M64 Mat, uint64_t n)/* matrix * number -> number 64bits */
 {
     int i;
     uint64_t temp = 0;
     for(i = 0; i < 64; i++)
     {
-        if(xorU64(Mat.M[i] & n)) temp ^= idM64[i];
+        if(wb_xiao_dy_xorU64(Mat.M[i] & n)) temp ^= idM64[i];
     }
     return temp;
 }
-void MatMulVecM4(M4 Mat, V4 Vec, V4 *ans)/* matrix * vector -> vector 4*1 */
+void wb_xiao_dy_MatMulVecM4(M4 Mat, V4 Vec, V4 *ans)/* matrix * vector -> vector 4*1 */
 {
     int i;
-    initV4(ans);
+    wb_xiao_dy_initV4(ans);
     for(i = 0; i < 4; i++)
     {
-        if(xorU4(Mat.M[i] & Vec.V & 0x0f)) (*ans).V ^= idM4[i];
+        if(wb_xiao_dy_xorU4(Mat.M[i] & Vec.V & 0x0f)) (*ans).V ^= idM4[i];
     }
 }
-void MatMulVecM8(M8 Mat, V8 Vec, V8 *ans)/* matrix * vector -> vector 8*1 */
+void wb_xiao_dy_MatMulVecM8(M8 Mat, V8 Vec, V8 *ans)/* matrix * vector -> vector 8*1 */
 {
     int i;
-    initV8(ans);
+    wb_xiao_dy_initV8(ans);
     for(i = 0; i < 8; i++)
     {
-        if(xorU8(Mat.M[i] & Vec.V)) (*ans).V ^= idM8[i];
+        if(wb_xiao_dy_xorU8(Mat.M[i] & Vec.V)) (*ans).V ^= idM8[i];
     }
 }
-void MatMulVecM16(M16 Mat, V16 Vec, V16 *ans)/* matrix * vector -> vector 16*1 */
+void wb_xiao_dy_MatMulVecM16(M16 Mat, V16 Vec, V16 *ans)/* matrix * vector -> vector 16*1 */
 {
     int i;
-    initV16(ans);
+    wb_xiao_dy_initV16(ans);
     for(i = 0; i < 16; i++)
     {
-        if(xorU16(Mat.M[i] & Vec.V)) (*ans).V ^= idM16[i];
+        if(wb_xiao_dy_xorU16(Mat.M[i] & Vec.V)) (*ans).V ^= idM16[i];
     }
 }
-void MatMulVecM32(M32 Mat, V32 Vec, V32 *ans)/* matrix * vector -> vector 32*1 */
+void wb_xiao_dy_MatMulVecM32(M32 Mat, V32 Vec, V32 *ans)/* matrix * vector -> vector 32*1 */
 {
     int i;
-    initV32(ans);
+    wb_xiao_dy_initV32(ans);
     for(i = 0; i < 32; i++)
     {
-        if(xorU32(Mat.M[i] & Vec.V)) (*ans).V ^= idM32[i];
+        if(wb_xiao_dy_xorU32(Mat.M[i] & Vec.V)) (*ans).V ^= idM32[i];
     }
 }
-void MatMulVecM64(M64 Mat, V64 Vec, V64 *ans)/* matrix * vector -> vector 64*1 */
+void wb_xiao_dy_MatMulVecM64(M64 Mat, V64 Vec, V64 *ans)/* matrix * vector -> vector 64*1 */
 {
     int i;
-    initV64(ans);
+    wb_xiao_dy_initV64(ans);
     for(i = 0; i < 64; i++)
     {
-        if(xorU64(Mat.M[i] & Vec.V)) (*ans).V ^= idM64[i];
+        if(wb_xiao_dy_xorU64(Mat.M[i] & Vec.V)) (*ans).V ^= idM64[i];
     }
 }
-void MatMulVecM128(M128 Mat, V128 Vec, V128 *ans)/* matrix * vector -> vector 128*1 */
+void wb_xiao_dy_MatMulVecM128(M128 Mat, V128 Vec, V128 *ans)/* matrix * vector -> vector 128*1 */
 {
     int i;
     uint64_t temp[2]; 
-    initV128(ans);
+    wb_xiao_dy_initV128(ans);
     for(i = 0; i < 64; i++)
     {
         temp[0] = Mat.M[i][0] & Vec.V[0];
         temp[1] = Mat.M[i][1] & Vec.V[1];
-        if(xorU128(temp)) (*ans).V[0] ^= idM64[i];
+        if(wb_xiao_dy_xorU128(temp)) (*ans).V[0] ^= idM64[i];
     }
     for(i = 64; i < 128; i++)
     {
         temp[0] = Mat.M[i][0] & Vec.V[0];
         temp[1] = Mat.M[i][1] & Vec.V[1];
-        if(xorU128(temp)) (*ans).V[1] ^= idM64[i-64];
+        if(wb_xiao_dy_xorU128(temp)) (*ans).V[1] ^= idM64[i-64];
     }
 }
-void genMatpairM4(M4 *Mat, M4 *Mat_inv)/* generate 4*4 invertible matrix and its inverse matrix */
+void wb_xiao_dy_genMatpairM4(M4 *Mat, M4 *Mat_inv)/* generate 4*4 invertible matrix and its inverse matrix */
 {
     int i, j, t, k;
     int p;
@@ -1771,11 +1771,11 @@ void genMatpairM4(M4 *Mat, M4 *Mat_inv)/* generate 4*4 invertible matrix and its
     int flag = 0;
     int times = 0;
     int invertible = 1;
-    InitRandom((randseed++) ^ ((unsigned int)time(NULL))); 
-    identityM4(Mat);
-    identityM4(Mat_inv);  
-    randM4(&tempMat);
-    copyM4(tempMat, &resultMat);
+    wb_xiao_dy_InitRandom((randseed++) ^ ((unsigned int)time(NULL))); 
+    wb_xiao_dy_identityM4(Mat);
+    wb_xiao_dy_identityM4(Mat_inv);  
+    wb_xiao_dy_randM4(&tempMat);
+    wb_xiao_dy_copyM4(tempMat, &resultMat);
     for(i = 0; i < 4; i++)/* diagonal = 1? */
     {
         if((tempMat.M[i] & idM4[i]) == idM4[i])
@@ -1824,7 +1824,7 @@ void genMatpairM4(M4 *Mat, M4 *Mat_inv)/* generate 4*4 invertible matrix and its
                 invertible = 0;
                 if (i < 3)
                 {
-                    p = i + 1 + cus_random()%(3 - i);/* swap */
+                    p = i + 1 + wb_xiao_dy_cus_random()%(3 - i);/* swap */
                     temp = tempMat.M[p];
                     tempMat.M[p] = tempMat.M[i];
                     tempMat.M[i] = temp;
@@ -1837,7 +1837,7 @@ void genMatpairM4(M4 *Mat, M4 *Mat_inv)/* generate 4*4 invertible matrix and its
                     times++;
                     for(t = i + 1; t < 4; t++)
                     {
-                        if(cus_random()%2)
+                        if(wb_xiao_dy_cus_random()%2)
                         {
                             tempMat.M[t] ^= tempMat.M[i];
                             (*Mat_inv).M[t] ^= (*Mat_inv).M[i];
@@ -1914,10 +1914,10 @@ void genMatpairM4(M4 *Mat, M4 *Mat_inv)/* generate 4*4 invertible matrix and its
                 }
             }
         }
-        copyM4(resultMat, Mat);
+        wb_xiao_dy_copyM4(resultMat, Mat);
     }
 }
-void genMatpairM8(M8 *Mat, M8 *Mat_inv)/* generate 8*8 invertible matrix and its inverse matrix */
+void wb_xiao_dy_genMatpairM8(M8 *Mat, M8 *Mat_inv)/* generate 8*8 invertible matrix and its inverse matrix */
 {
     int i, j, t, k;
     int p;
@@ -1928,11 +1928,11 @@ void genMatpairM8(M8 *Mat, M8 *Mat_inv)/* generate 8*8 invertible matrix and its
     int flag = 0;
     int times = 0;
     int invertible = 1;
-    InitRandom((randseed++) ^ ((unsigned int)time(NULL)));
-    identityM8(Mat);
-    identityM8(Mat_inv);
-    randM8(&tempMat);
-    copyM8(tempMat, &resultMat);
+    wb_xiao_dy_InitRandom((randseed++) ^ ((unsigned int)time(NULL)));
+    wb_xiao_dy_identityM8(Mat);
+    wb_xiao_dy_identityM8(Mat_inv);
+    wb_xiao_dy_randM8(&tempMat);
+    wb_xiao_dy_copyM8(tempMat, &resultMat);
     for(i = 0; i < 8; i++)/* diagonal = 1? */
     {
         if((tempMat.M[i] & idM8[i]) == idM8[i])
@@ -1981,7 +1981,7 @@ void genMatpairM8(M8 *Mat, M8 *Mat_inv)/* generate 8*8 invertible matrix and its
                 invertible = 0;
                 if (i < 7)
                 {
-                    p = i + 1 + cus_random()%(7 - i);/* swap */
+                    p = i + 1 + wb_xiao_dy_cus_random()%(7 - i);/* swap */
                     temp = tempMat.M[p];
                     tempMat.M[p] = tempMat.M[i];
                     tempMat.M[i] = temp;
@@ -1994,7 +1994,7 @@ void genMatpairM8(M8 *Mat, M8 *Mat_inv)/* generate 8*8 invertible matrix and its
                     times++;
                     for(t = i + 1; t < 8; t++)
                     {
-                        if(cus_random()%2)
+                        if(wb_xiao_dy_cus_random()%2)
                         {
                             tempMat.M[t] ^= tempMat.M[i];
                             (*Mat_inv).M[t] ^= (*Mat_inv).M[i];
@@ -2071,10 +2071,10 @@ void genMatpairM8(M8 *Mat, M8 *Mat_inv)/* generate 8*8 invertible matrix and its
                 }
             }
         }
-        copyM8(resultMat, Mat);
+        wb_xiao_dy_copyM8(resultMat, Mat);
     }
 }
-void genMatpairM16(M16 *Mat, M16 *Mat_inv)/* generate 16*16 invertible matrix and its inverse matrix */
+void wb_xiao_dy_genMatpairM16(M16 *Mat, M16 *Mat_inv)/* generate 16*16 invertible matrix and its inverse matrix */
 {
     int i, j, t, k;
     int p;
@@ -2085,11 +2085,11 @@ void genMatpairM16(M16 *Mat, M16 *Mat_inv)/* generate 16*16 invertible matrix an
     int flag = 0;
     int times = 0;
     int invertible = 1;
-    InitRandom((randseed++) ^ ((unsigned int)time(NULL)));
-    identityM16(Mat);
-    identityM16(Mat_inv);   
-    randM16(&tempMat);
-    copyM16(tempMat, &resultMat);   
+    wb_xiao_dy_InitRandom((randseed++) ^ ((unsigned int)time(NULL)));
+    wb_xiao_dy_identityM16(Mat);
+    wb_xiao_dy_identityM16(Mat_inv);   
+    wb_xiao_dy_randM16(&tempMat);
+    wb_xiao_dy_copyM16(tempMat, &resultMat);   
     for(i = 0; i < 16; i++)/* diagonal = 1? */
     {
         if((tempMat.M[i] & idM16[i]) == idM16[i])
@@ -2138,7 +2138,7 @@ void genMatpairM16(M16 *Mat, M16 *Mat_inv)/* generate 16*16 invertible matrix an
                 invertible = 0;
                 if (i < 15)
                 {
-                    p = i + 1 + cus_random()%(15 - i);/* swap */
+                    p = i + 1 + wb_xiao_dy_cus_random()%(15 - i);/* swap */
                     temp = tempMat.M[p];
                     tempMat.M[p] = tempMat.M[i];
                     tempMat.M[i] = temp;
@@ -2151,7 +2151,7 @@ void genMatpairM16(M16 *Mat, M16 *Mat_inv)/* generate 16*16 invertible matrix an
                     times++;
                     for(t = i + 1; t < 16; t++)
                     {
-                        if(cus_random()%2)
+                        if(wb_xiao_dy_cus_random()%2)
                         {
                             tempMat.M[t] ^= tempMat.M[i];
                             (*Mat_inv).M[t] ^= (*Mat_inv).M[i];
@@ -2228,10 +2228,10 @@ void genMatpairM16(M16 *Mat, M16 *Mat_inv)/* generate 16*16 invertible matrix an
                 }
             }
         }
-        copyM16(resultMat, Mat);
+        wb_xiao_dy_copyM16(resultMat, Mat);
     }
 }
-void genMatpairM32(M32 *Mat, M32 *Mat_inv)/* generate 32*32 invertible matrix and its inverse matrix */
+void wb_xiao_dy_genMatpairM32(M32 *Mat, M32 *Mat_inv)/* generate 32*32 invertible matrix and its inverse matrix */
 {
     int i, j, t, k;
     int p;
@@ -2242,11 +2242,11 @@ void genMatpairM32(M32 *Mat, M32 *Mat_inv)/* generate 32*32 invertible matrix an
     int flag = 0;
     int times = 0;
     int invertible = 1;
-    InitRandom((randseed++) ^ ((unsigned int)time(NULL)));
-    identityM32(Mat);
-    identityM32(Mat_inv);
-    randM32(&tempMat);
-    copyM32(tempMat, &resultMat);
+    wb_xiao_dy_InitRandom((randseed++) ^ ((unsigned int)time(NULL)));
+    wb_xiao_dy_identityM32(Mat);
+    wb_xiao_dy_identityM32(Mat_inv);
+    wb_xiao_dy_randM32(&tempMat);
+    wb_xiao_dy_copyM32(tempMat, &resultMat);
     for(i = 0; i < 32; i++)/* diagonal = 1? */
     {
         if((tempMat.M[i] & idM32[i]) == idM32[i])
@@ -2295,7 +2295,7 @@ void genMatpairM32(M32 *Mat, M32 *Mat_inv)/* generate 32*32 invertible matrix an
                 invertible = 0;
                 if (i < 31)
                 {
-                    p = i + 1 + cus_random()%(31 - i);/* swap */
+                    p = i + 1 + wb_xiao_dy_cus_random()%(31 - i);/* swap */
                     temp = tempMat.M[p];
                     tempMat.M[p] = tempMat.M[i];
                     tempMat.M[i] = temp;
@@ -2308,7 +2308,7 @@ void genMatpairM32(M32 *Mat, M32 *Mat_inv)/* generate 32*32 invertible matrix an
                     times++;
                     for(t = i + 1; t < 32; t++)
                     {
-                        if(cus_random()%2)
+                        if(wb_xiao_dy_cus_random()%2)
                         {
                             tempMat.M[t] ^= tempMat.M[i];
                             (*Mat_inv).M[t] ^= (*Mat_inv).M[i];
@@ -2385,10 +2385,10 @@ void genMatpairM32(M32 *Mat, M32 *Mat_inv)/* generate 32*32 invertible matrix an
                 }
             }
         }
-        copyM32(resultMat, Mat);
+        wb_xiao_dy_copyM32(resultMat, Mat);
     }
 }
-void genMatpairM64(M64 *Mat, M64 *Mat_inv)/* generate 64*64 invertible matrix and its inverse matrix */
+void wb_xiao_dy_genMatpairM64(M64 *Mat, M64 *Mat_inv)/* generate 64*64 invertible matrix and its inverse matrix */
 {
     int i, j, t, k;
     int p;
@@ -2399,11 +2399,11 @@ void genMatpairM64(M64 *Mat, M64 *Mat_inv)/* generate 64*64 invertible matrix an
     int flag = 0;
     int times = 0;
     int invertible = 1;
-    InitRandom((randseed++) ^ ((unsigned int)time(NULL)));
-    identityM64(Mat);
-    identityM64(Mat_inv);
-    randM64(&tempMat);
-    copyM64(tempMat, &resultMat);
+    wb_xiao_dy_InitRandom((randseed++) ^ ((unsigned int)time(NULL)));
+    wb_xiao_dy_identityM64(Mat);
+    wb_xiao_dy_identityM64(Mat_inv);
+    wb_xiao_dy_randM64(&tempMat);
+    wb_xiao_dy_copyM64(tempMat, &resultMat);
     for(i = 0; i < 64; i++)/* diagonal = 1? */
     {
         if((tempMat.M[i] & idM64[i]) == idM64[i])
@@ -2452,7 +2452,7 @@ void genMatpairM64(M64 *Mat, M64 *Mat_inv)/* generate 64*64 invertible matrix an
                 invertible = 0;
                 if (i < 63)
                 {
-                    p = i + 1 + cus_random()%(63 - i);/* swap */
+                    p = i + 1 + wb_xiao_dy_cus_random()%(63 - i);/* swap */
                     temp = tempMat.M[p];
                     tempMat.M[p] = tempMat.M[i];
                     tempMat.M[i] = temp;
@@ -2465,7 +2465,7 @@ void genMatpairM64(M64 *Mat, M64 *Mat_inv)/* generate 64*64 invertible matrix an
                     times++;
                     for(t = i + 1; t < 64; t++)
                     {
-                        if(cus_random()%2)
+                        if(wb_xiao_dy_cus_random()%2)
                         {
                             tempMat.M[t] ^= tempMat.M[i];
                             (*Mat_inv).M[t] ^= (*Mat_inv).M[i];
@@ -2542,10 +2542,10 @@ void genMatpairM64(M64 *Mat, M64 *Mat_inv)/* generate 64*64 invertible matrix an
                 }
             }
         }
-        copyM64(resultMat, Mat);
+        wb_xiao_dy_copyM64(resultMat, Mat);
     }
 }
-void genMatpairM128(M128 *Mat, M128 *Mat_inv)/* generate 128*128 invertible matrix and its inverse matrix */
+void wb_xiao_dy_genMatpairM128(M128 *Mat, M128 *Mat_inv)/* generate 128*128 invertible matrix and its inverse matrix */
 {
     int i, j, t, k;
     int p;
@@ -2556,11 +2556,11 @@ void genMatpairM128(M128 *Mat, M128 *Mat_inv)/* generate 128*128 invertible matr
     int flag = 0;
     int times = 0;
     int invertible = 1;
-    InitRandom((randseed++) ^ ((unsigned int)time(NULL)));
-    identityM128(Mat);
-    identityM128(Mat_inv);
-    randM128(&tempMat);
-    copyM128(tempMat, &resultMat); 
+    wb_xiao_dy_InitRandom((randseed++) ^ ((unsigned int)time(NULL)));
+    wb_xiao_dy_identityM128(Mat);
+    wb_xiao_dy_identityM128(Mat_inv);
+    wb_xiao_dy_randM128(&tempMat);
+    wb_xiao_dy_copyM128(tempMat, &resultMat); 
     for(i = 0; i < 64; i++)/* diagonal = 1? */
     {
         if((tempMat.M[i][0] & idM64[i]) == idM64[i])
@@ -2617,7 +2617,7 @@ void genMatpairM128(M128 *Mat, M128 *Mat_inv)/* generate 128*128 invertible matr
             if(flag) /* can not find 1 which means not invertible */
             {
                 invertible = 0;
-                p = i + 1 + cus_random()%(127 - i);/* swap */
+                p = i + 1 + wb_xiao_dy_cus_random()%(127 - i);/* swap */
                 
                 temp = tempMat.M[p][0];
                 tempMat.M[p][0] = tempMat.M[i][0];
@@ -2642,7 +2642,7 @@ void genMatpairM128(M128 *Mat, M128 *Mat_inv)/* generate 128*128 invertible matr
 
                 for(t = i + 1; t < 128; t++)
                 {
-                    if(cus_random()%2)
+                    if(wb_xiao_dy_cus_random()%2)
                     {
                         tempMat.M[t][0] ^= tempMat.M[i][0];
                         tempMat.M[t][1] ^= tempMat.M[i][1];
@@ -2730,7 +2730,7 @@ void genMatpairM128(M128 *Mat, M128 *Mat_inv)/* generate 128*128 invertible matr
                 invertible = 0;
                 if(i < 127)
                 {
-                    p = i + 1 + cus_random()%(127 - i);/* swap */
+                    p = i + 1 + wb_xiao_dy_cus_random()%(127 - i);/* swap */
 
                     temp = tempMat.M[p][1];
                     tempMat.M[p][1] = tempMat.M[i][1];
@@ -2751,7 +2751,7 @@ void genMatpairM128(M128 *Mat, M128 *Mat_inv)/* generate 128*128 invertible matr
 
                     for(t = i + 1; t < 128; t++)
                     {
-                        if(cus_random()%2)
+                        if(wb_xiao_dy_cus_random()%2)
                         {
                             tempMat.M[t][1] ^= tempMat.M[i][1];
 
@@ -2871,51 +2871,51 @@ void genMatpairM128(M128 *Mat, M128 *Mat_inv)/* generate 128*128 invertible matr
                 }
             }
         }
-        copyM128(resultMat, Mat);
+        wb_xiao_dy_copyM128(resultMat, Mat);
     }
 }
-void genaffinepairM4(Aff4 *aff, Aff4 *aff_inv)/* generate a pair of affine */
+void wb_xiao_dy_genaffinepairM4(Aff4 *aff, Aff4 *aff_inv)/* generate a pair of affine */
 {
-    genMatpairM4(&(aff->Mat), &(aff_inv->Mat));
-    randV4(&(aff->Vec));
-    MatMulVecM4((*aff_inv).Mat, (*aff).Vec, &(aff_inv->Vec));
+    wb_xiao_dy_genMatpairM4(&(aff->Mat), &(aff_inv->Mat));
+    wb_xiao_dy_randV4(&(aff->Vec));
+    wb_xiao_dy_MatMulVecM4((*aff_inv).Mat, (*aff).Vec, &(aff_inv->Vec));
 }
-void genaffinepairM8(Aff8 *aff, Aff8 *aff_inv)/* generate a pair of affine */
+void wb_xiao_dy_genaffinepairM8(Aff8 *aff, Aff8 *aff_inv)/* generate a pair of affine */
 {
-    genMatpairM8(&(aff->Mat), &(aff_inv->Mat));
-    randV8(&(aff->Vec));
-    MatMulVecM8((*aff_inv).Mat, (*aff).Vec, &(aff_inv->Vec));
+    wb_xiao_dy_genMatpairM8(&(aff->Mat), &(aff_inv->Mat));
+    wb_xiao_dy_randV8(&(aff->Vec));
+    wb_xiao_dy_MatMulVecM8((*aff_inv).Mat, (*aff).Vec, &(aff_inv->Vec));
 }
-void genaffinepairM16(Aff16 *aff, Aff16 *aff_inv)/* generate a pair of affine */
+void wb_xiao_dy_genaffinepairM16(Aff16 *aff, Aff16 *aff_inv)/* generate a pair of affine */
 {
-    genMatpairM16(&(aff->Mat), &(aff_inv->Mat));
-    randV16(&(aff->Vec));
-    MatMulVecM16((*aff_inv).Mat, (*aff).Vec, &(aff_inv->Vec));
+    wb_xiao_dy_genMatpairM16(&(aff->Mat), &(aff_inv->Mat));
+    wb_xiao_dy_randV16(&(aff->Vec));
+    wb_xiao_dy_MatMulVecM16((*aff_inv).Mat, (*aff).Vec, &(aff_inv->Vec));
 }
-void genaffinepairM32(Aff32 *aff, Aff32 *aff_inv)/* generate a pair of affine */
+void wb_xiao_dy_genaffinepairM32(Aff32 *aff, Aff32 *aff_inv)/* generate a pair of affine */
 {
-    genMatpairM32(&(aff->Mat), &(aff_inv->Mat));
-    randV32(&(aff->Vec));
-    MatMulVecM32((*aff_inv).Mat, (*aff).Vec, &(aff_inv->Vec));
+    wb_xiao_dy_genMatpairM32(&(aff->Mat), &(aff_inv->Mat));
+    wb_xiao_dy_randV32(&(aff->Vec));
+    wb_xiao_dy_MatMulVecM32((*aff_inv).Mat, (*aff).Vec, &(aff_inv->Vec));
 }
-void genaffinepairM64(Aff64 *aff, Aff64 *aff_inv)/* generate a pair of affine */
+void wb_xiao_dy_genaffinepairM64(Aff64 *aff, Aff64 *aff_inv)/* generate a pair of affine */
 {
-    genMatpairM64(&(aff->Mat), &(aff_inv->Mat));
-    randV64(&(aff->Vec));
-    MatMulVecM64((*aff_inv).Mat, (*aff).Vec, &(aff_inv->Vec));
+    wb_xiao_dy_genMatpairM64(&(aff->Mat), &(aff_inv->Mat));
+    wb_xiao_dy_randV64(&(aff->Vec));
+    wb_xiao_dy_MatMulVecM64((*aff_inv).Mat, (*aff).Vec, &(aff_inv->Vec));
 }
-void genaffinepairM128(Aff128 *aff, Aff128 *aff_inv)/* generate a pair of affine */
+void wb_xiao_dy_genaffinepairM128(Aff128 *aff, Aff128 *aff_inv)/* generate a pair of affine */
 {
-    genMatpairM128(&(aff->Mat), &(aff_inv->Mat));
-    randV128(&(aff->Vec));
-    MatMulVecM128((*aff_inv).Mat, (*aff).Vec, &(aff_inv->Vec));
+    wb_xiao_dy_genMatpairM128(&(aff->Mat), &(aff_inv->Mat));
+    wb_xiao_dy_randV128(&(aff->Vec));
+    wb_xiao_dy_MatMulVecM128((*aff_inv).Mat, (*aff).Vec, &(aff_inv->Vec));
 }
-void MatrixcomM8to32(M8 m1, M8 m2, M8 m3, M8 m4, M32 *mat)/* diagonal matrix concatenation, four 8*8 -> 32*32 */
+void wb_xiao_dy_MatrixcomM8to32(M8 m1, M8 m2, M8 m3, M8 m4, M32 *mat)/* diagonal matrix concatenation, four 8*8 -> 32*32 */
 {
     int i;
     int j = 0;
     uint8_t* m;
-    initM32(mat);
+    wb_xiao_dy_initM32(mat);
     for(i = 0; i < 8; i++)
     {
         m = (uint8_t*)&(*mat).M[j];
@@ -2941,7 +2941,7 @@ void MatrixcomM8to32(M8 m1, M8 m2, M8 m3, M8 m4, M32 *mat)/* diagonal matrix con
         j++;
     }
 }
-void VectorcomV8to32(V8 v1, V8 v2, V8 v3, V8 v4, V32 *vec)/* 4 vectors concatenation */
+void wb_xiao_dy_VectorcomV8to32(V8 v1, V8 v2, V8 v3, V8 v4, V32 *vec)/* 4 vectors concatenation */
 {
     uint8_t* v;
     v = (uint8_t*)&(*vec).V;
@@ -2950,17 +2950,17 @@ void VectorcomV8to32(V8 v1, V8 v2, V8 v3, V8 v4, V32 *vec)/* 4 vectors concatena
     *(v+1) = v3.V;
     *v = v4.V;
 }
-void affinecomM8to32(Aff8 aff1, Aff8 aff2, Aff8 aff3, Aff8 aff4, Aff32 *aff)/* diagonal affine concatenation, four 8*8 -> 32*32 */
+void wb_xiao_dy_affinecomM8to32(Aff8 aff1, Aff8 aff2, Aff8 aff3, Aff8 aff4, Aff32 *aff)/* diagonal affine concatenation, four 8*8 -> 32*32 */
 {
-    MatrixcomM8to32(aff1.Mat, aff2.Mat, aff3.Mat, aff4.Mat, &(aff->Mat));
-    VectorcomV8to32(aff1.Vec, aff2.Vec, aff3.Vec, aff4.Vec, &(aff->Vec));
+    wb_xiao_dy_MatrixcomM8to32(aff1.Mat, aff2.Mat, aff3.Mat, aff4.Mat, &(aff->Mat));
+    wb_xiao_dy_VectorcomV8to32(aff1.Vec, aff2.Vec, aff3.Vec, aff4.Vec, &(aff->Vec));
 }
-void MatrixcomM16to64(M16 m1, M16 m2, M16 m3, M16 m4, M64 *mat)/* diagonal matrix concatenation, four 16*16 -> 64*64 */
+void wb_xiao_dy_MatrixcomM16to64(M16 m1, M16 m2, M16 m3, M16 m4, M64 *mat)/* diagonal matrix concatenation, four 16*16 -> 64*64 */
 {
     int i;
     int j = 0;
     uint16_t* m;
-    initM64(mat);
+    wb_xiao_dy_initM64(mat);
     for(i = 0; i < 16; i++)
     {
         m = (uint16_t*)&(*mat).M[j];
@@ -2986,7 +2986,7 @@ void MatrixcomM16to64(M16 m1, M16 m2, M16 m3, M16 m4, M64 *mat)/* diagonal matri
         j++;
     }
 }
-void VectorcomV16to64(V16 v1, V16 v2, V16 v3, V16 v4, V64 *vec)/* 4 vectors concatenation */
+void wb_xiao_dy_VectorcomV16to64(V16 v1, V16 v2, V16 v3, V16 v4, V64 *vec)/* 4 vectors concatenation */
 {
     uint16_t* v;
     v = (uint16_t*)&(*vec).V;
@@ -2995,17 +2995,17 @@ void VectorcomV16to64(V16 v1, V16 v2, V16 v3, V16 v4, V64 *vec)/* 4 vectors conc
     *(v+1) = v3.V;
     *v = v4.V;
 }
-void affinecomM16to64(Aff16 aff1, Aff16 aff2, Aff16 aff3, Aff16 aff4, Aff64 *aff)/* diagonal affine concatenation,four 16*16 -> 64*64 */
+void wb_xiao_dy_affinecomM16to64(Aff16 aff1, Aff16 aff2, Aff16 aff3, Aff16 aff4, Aff64 *aff)/* diagonal affine concatenation,four 16*16 -> 64*64 */
 {
-    MatrixcomM16to64(aff1.Mat, aff2.Mat, aff3.Mat, aff4.Mat, &(aff->Mat));
-    VectorcomV16to64(aff1.Vec, aff2.Vec, aff3.Vec, aff4.Vec, &(aff->Vec));
+    wb_xiao_dy_MatrixcomM16to64(aff1.Mat, aff2.Mat, aff3.Mat, aff4.Mat, &(aff->Mat));
+    wb_xiao_dy_VectorcomV16to64(aff1.Vec, aff2.Vec, aff3.Vec, aff4.Vec, &(aff->Vec));
 }
-void MatrixcomM8to64(M8 m1, M8 m2, M8 m3, M8 m4, M8 m5, M8 m6, M8 m7, M8 m8, M64 *mat)/* diagonal matrix concatenation,four 8*8 -> 64*64 */
+void wb_xiao_dy_MatrixcomM8to64(M8 m1, M8 m2, M8 m3, M8 m4, M8 m5, M8 m6, M8 m7, M8 m8, M64 *mat)/* diagonal matrix concatenation,four 8*8 -> 64*64 */
 {
     int i;
     int j = 0;
     uint8_t* m;
-    initM64(mat);
+    wb_xiao_dy_initM64(mat);
     for(i = 0; i < 8; i++)
     {
         m = (uint8_t*)&(*mat).M[j];
@@ -3055,7 +3055,7 @@ void MatrixcomM8to64(M8 m1, M8 m2, M8 m3, M8 m4, M8 m5, M8 m6, M8 m7, M8 m8, M64
         j++;
     }
 }
-void VectorcomV8to64(V8 v1, V8 v2, V8 v3, V8 v4, V8 v5, V8 v6, V8 v7, V8 v8, V64 *vec)/* 8 vectors concatenation */
+void wb_xiao_dy_VectorcomV8to64(V8 v1, V8 v2, V8 v3, V8 v4, V8 v5, V8 v6, V8 v7, V8 v8, V64 *vec)/* 8 vectors concatenation */
 {
     uint8_t* v;
     v = (uint8_t*)&(*vec).V;
@@ -3068,17 +3068,17 @@ void VectorcomV8to64(V8 v1, V8 v2, V8 v3, V8 v4, V8 v5, V8 v6, V8 v7, V8 v8, V64
     *(v+1) = v7.V;
     *v = v8.V;
 }
-void affinecomM8to64(Aff8 aff1, Aff8 aff2, Aff8 aff3, Aff8 aff4, Aff8 aff5, Aff8 aff6, Aff8 aff7, Aff8 aff8, Aff64 *aff)/* diagonal affine concatenation, four 8*8 -> 64*64 */
+void wb_xiao_dy_affinecomM8to64(Aff8 aff1, Aff8 aff2, Aff8 aff3, Aff8 aff4, Aff8 aff5, Aff8 aff6, Aff8 aff7, Aff8 aff8, Aff64 *aff)/* diagonal affine concatenation, four 8*8 -> 64*64 */
 {
-    MatrixcomM8to64(aff1.Mat, aff2.Mat, aff3.Mat, aff4.Mat, aff5.Mat, aff6.Mat, aff7.Mat, aff8.Mat, &(aff->Mat));
-    VectorcomV8to64(aff1.Vec, aff2.Vec, aff3.Vec, aff4.Vec, aff5.Vec, aff6.Vec, aff7.Vec, aff8.Vec, &(aff->Vec));
+    wb_xiao_dy_MatrixcomM8to64(aff1.Mat, aff2.Mat, aff3.Mat, aff4.Mat, aff5.Mat, aff6.Mat, aff7.Mat, aff8.Mat, &(aff->Mat));
+    wb_xiao_dy_VectorcomV8to64(aff1.Vec, aff2.Vec, aff3.Vec, aff4.Vec, aff5.Vec, aff6.Vec, aff7.Vec, aff8.Vec, &(aff->Vec));
 }
-void MatrixcomM32to128(M32 m1, M32 m2, M32 m3, M32 m4, M128 *mat)/* diagonal matrix concatenation, four 32*32 -> 128*128 */
+void wb_xiao_dy_MatrixcomM32to128(M32 m1, M32 m2, M32 m3, M32 m4, M128 *mat)/* diagonal matrix concatenation, four 32*32 -> 128*128 */
 {
     int i;
     int j = 0;
     uint32_t* m;
-    initM128(mat);
+    wb_xiao_dy_initM128(mat);
     for(i = 0; i < 32; i++)
     {
         m = (uint32_t*)&(*mat).M[j][0];
@@ -3104,7 +3104,7 @@ void MatrixcomM32to128(M32 m1, M32 m2, M32 m3, M32 m4, M128 *mat)/* diagonal mat
         j++;
     }
 }
-void VectorcomV32to128(V32 v1, V32 v2, V32 v3, V32 v4, V128 *vec)/* 4 vectors concatenation */
+void wb_xiao_dy_VectorcomV32to128(V32 v1, V32 v2, V32 v3, V32 v4, V128 *vec)/* 4 vectors concatenation */
 {
     uint32_t* v;
     v = (uint32_t*)&(*vec).V[0];
@@ -3114,17 +3114,17 @@ void VectorcomV32to128(V32 v1, V32 v2, V32 v3, V32 v4, V128 *vec)/* 4 vectors co
     *(v+1) = v3.V;
     *v = v4.V;
 }
-void affinecomM32to128(Aff32 aff1, Aff32 aff2, Aff32 aff3, Aff32 aff4, Aff128 *aff)/* diagonal affine concatenation, four 32*32 -> 128*128 */
+void wb_xiao_dy_affinecomM32to128(Aff32 aff1, Aff32 aff2, Aff32 aff3, Aff32 aff4, Aff128 *aff)/* diagonal affine concatenation, four 32*32 -> 128*128 */
 {
-    MatrixcomM32to128(aff1.Mat, aff2.Mat, aff3.Mat, aff4.Mat, &(aff->Mat));
-    VectorcomV32to128(aff1.Vec, aff2.Vec, aff3.Vec, aff4.Vec, &(aff->Vec));
+    wb_xiao_dy_MatrixcomM32to128(aff1.Mat, aff2.Mat, aff3.Mat, aff4.Mat, &(aff->Mat));
+    wb_xiao_dy_VectorcomV32to128(aff1.Vec, aff2.Vec, aff3.Vec, aff4.Vec, &(aff->Vec));
 }
-void MatrixcomM8to128(M8 m1, M8 m2, M8 m3, M8 m4, M8 m5, M8 m6, M8 m7, M8 m8, M8 m9, M8 m10, M8 m11, M8 m12, M8 m13, M8 m14, M8 m15, M8 m16, M128 *mat)/* diagonal matrix concatenation, 16 8*8 -> 128*128 */
+void wb_xiao_dy_MatrixcomM8to128(M8 m1, M8 m2, M8 m3, M8 m4, M8 m5, M8 m6, M8 m7, M8 m8, M8 m9, M8 m10, M8 m11, M8 m12, M8 m13, M8 m14, M8 m15, M8 m16, M128 *mat)/* diagonal matrix concatenation, 16 8*8 -> 128*128 */
 {
     int i;
     int j = 0;
     uint8_t* m;
-    initM128(mat);
+    wb_xiao_dy_initM128(mat);
     for(i = 0; i < 8; i++)
     {
         m = (uint8_t*)&(*mat).M[j][0];
@@ -3222,7 +3222,7 @@ void MatrixcomM8to128(M8 m1, M8 m2, M8 m3, M8 m4, M8 m5, M8 m6, M8 m7, M8 m8, M8
         j++;
     }
 }
-void VectorcomV8to128(V8 v1, V8 v2, V8 v3, V8 v4, V8 v5, V8 v6, V8 v7, V8 v8, V8 v9, V8 v10, V8 v11, V8 v12, V8 v13, V8 v14, V8 v15, V8 v16, V128 *vec)/* 16 vectors concatenation */
+void wb_xiao_dy_VectorcomV8to128(V8 v1, V8 v2, V8 v3, V8 v4, V8 v5, V8 v6, V8 v7, V8 v8, V8 v9, V8 v10, V8 v11, V8 v12, V8 v13, V8 v14, V8 v15, V8 v16, V128 *vec)/* 16 vectors concatenation */
 {
     uint8_t* v;
     v = (uint8_t*)&(*vec).V[0];
@@ -3244,17 +3244,17 @@ void VectorcomV8to128(V8 v1, V8 v2, V8 v3, V8 v4, V8 v5, V8 v6, V8 v7, V8 v8, V8
     *(v+1) = v15.V;
     *v = v16.V;
 }
-void affinecomM8to128(Aff8 aff1, Aff8 aff2, Aff8 aff3, Aff8 aff4, Aff8 aff5, Aff8 aff6, Aff8 aff7, Aff8 aff8, Aff8 aff9, Aff8 aff10, Aff8 aff11, Aff8 aff12, Aff8 aff13, Aff8 aff14, Aff8 aff15, Aff8 aff16, Aff128 *aff)/* diagonal affine concatenation, 16 8*8 -> 128*128 */
+void wb_xiao_dy_affinecomM8to128(Aff8 aff1, Aff8 aff2, Aff8 aff3, Aff8 aff4, Aff8 aff5, Aff8 aff6, Aff8 aff7, Aff8 aff8, Aff8 aff9, Aff8 aff10, Aff8 aff11, Aff8 aff12, Aff8 aff13, Aff8 aff14, Aff8 aff15, Aff8 aff16, Aff128 *aff)/* diagonal affine concatenation, 16 8*8 -> 128*128 */
 {
-    MatrixcomM8to128(aff1.Mat, aff2.Mat, aff3.Mat, aff4.Mat, aff5.Mat, aff6.Mat, aff7.Mat, aff8.Mat, aff9.Mat, aff10.Mat, aff11.Mat, aff12.Mat, aff13.Mat, aff14.Mat, aff15.Mat, aff16.Mat, &(aff->Mat));
-    VectorcomV8to128(aff1.Vec, aff2.Vec, aff3.Vec, aff4.Vec, aff5.Vec, aff6.Vec, aff7.Vec, aff8.Vec, aff9.Vec, aff10.Vec, aff11.Vec, aff12.Vec, aff13.Vec, aff14.Vec, aff15.Vec, aff16.Vec, &(aff->Vec));
+    wb_xiao_dy_MatrixcomM8to128(aff1.Mat, aff2.Mat, aff3.Mat, aff4.Mat, aff5.Mat, aff6.Mat, aff7.Mat, aff8.Mat, aff9.Mat, aff10.Mat, aff11.Mat, aff12.Mat, aff13.Mat, aff14.Mat, aff15.Mat, aff16.Mat, &(aff->Mat));
+    wb_xiao_dy_VectorcomV8to128(aff1.Vec, aff2.Vec, aff3.Vec, aff4.Vec, aff5.Vec, aff6.Vec, aff7.Vec, aff8.Vec, aff9.Vec, aff10.Vec, aff11.Vec, aff12.Vec, aff13.Vec, aff14.Vec, aff15.Vec, aff16.Vec, &(aff->Vec));
 }
-void MatrixcomM16to128(M16 m1, M16 m2, M16 m3, M16 m4, M16 m5, M16 m6, M16 m7, M16 m8, M128 *mat)/* diagonal matrix concatenation, 8 16*16 -> 128*128 */
+void wb_xiao_dy_MatrixcomM16to128(M16 m1, M16 m2, M16 m3, M16 m4, M16 m5, M16 m6, M16 m7, M16 m8, M128 *mat)/* diagonal matrix concatenation, 8 16*16 -> 128*128 */
 {
     int i;
     int j = 0;
     uint16_t* m;
-    initM128(mat);
+    wb_xiao_dy_initM128(mat);
     for(i = 0; i < 16; i++)
     {
         m = (uint16_t*)&(*mat).M[j][0];
@@ -3304,7 +3304,7 @@ void MatrixcomM16to128(M16 m1, M16 m2, M16 m3, M16 m4, M16 m5, M16 m6, M16 m7, M
         j++;
     }
 }
-void VectorcomV16to128(V16 v1, V16 v2, V16 v3, V16 v4, V16 v5, V16 v6, V16 v7, V16 v8, V128 *vec)/* 8 vectors concatenation */
+void wb_xiao_dy_VectorcomV16to128(V16 v1, V16 v2, V16 v3, V16 v4, V16 v5, V16 v6, V16 v7, V16 v8, V128 *vec)/* 8 vectors concatenation */
 {
     uint16_t* v;
     v = (uint16_t*)&(*vec).V[0];
@@ -3318,15 +3318,15 @@ void VectorcomV16to128(V16 v1, V16 v2, V16 v3, V16 v4, V16 v5, V16 v6, V16 v7, V
     *(v+1) = v7.V;
     *v = v8.V;
 }
-void affinecomM16to128(Aff16 aff1, Aff16 aff2, Aff16 aff3, Aff16 aff4, Aff16 aff5, Aff16 aff6, Aff16 aff7, Aff16 aff8, Aff128 *aff)/* diagonal affine concatenation, 8 16*16 -> 128*128 */
+void wb_xiao_dy_affinecomM16to128(Aff16 aff1, Aff16 aff2, Aff16 aff3, Aff16 aff4, Aff16 aff5, Aff16 aff6, Aff16 aff7, Aff16 aff8, Aff128 *aff)/* diagonal affine concatenation, 8 16*16 -> 128*128 */
 {
-    MatrixcomM16to128(aff1.Mat, aff2.Mat, aff3.Mat, aff4.Mat, aff5.Mat, aff6.Mat, aff7.Mat, aff8.Mat, &(aff->Mat));
-    VectorcomV16to128(aff1.Vec, aff2.Vec, aff3.Vec, aff4.Vec, aff5.Vec, aff6.Vec, aff7.Vec, aff8.Vec, &(aff->Vec));
+    wb_xiao_dy_MatrixcomM16to128(aff1.Mat, aff2.Mat, aff3.Mat, aff4.Mat, aff5.Mat, aff6.Mat, aff7.Mat, aff8.Mat, &(aff->Mat));
+    wb_xiao_dy_VectorcomV16to128(aff1.Vec, aff2.Vec, aff3.Vec, aff4.Vec, aff5.Vec, aff6.Vec, aff7.Vec, aff8.Vec, &(aff->Vec));
 }
-void MattransM4(M4 Mat, M4 *Mat_trans)/* matrix tansposition M4 */
+void wb_xiao_dy_MattransM4(M4 Mat, M4 *Mat_trans)/* matrix tansposition M4 */
 {
     int i, j;
-    initM4(Mat_trans);
+    wb_xiao_dy_initM4(Mat_trans);
     for(i = 0; i < 4; i++)
     {
         for(j = 0; j < 4; j++)
@@ -3335,10 +3335,10 @@ void MattransM4(M4 Mat, M4 *Mat_trans)/* matrix tansposition M4 */
         }
     }
 }
-void MattransM8(M8 Mat, M8 *Mat_trans)/* matrix tansposition M8 */
+void wb_xiao_dy_MattransM8(M8 Mat, M8 *Mat_trans)/* matrix tansposition M8 */
 {
     int i, j;
-    initM8(Mat_trans);
+    wb_xiao_dy_initM8(Mat_trans);
     for(i = 0; i < 8; i++)
     {
         for(j = 0; j < 8; j++)
@@ -3347,10 +3347,10 @@ void MattransM8(M8 Mat, M8 *Mat_trans)/* matrix tansposition M8 */
         }
     }
 }
-void MattransM16(M16 Mat, M16 *Mat_trans)/* matrix tansposition M16 */
+void wb_xiao_dy_MattransM16(M16 Mat, M16 *Mat_trans)/* matrix tansposition M16 */
 {
     int i, j;
-    initM16(Mat_trans);
+    wb_xiao_dy_initM16(Mat_trans);
     for(i = 0; i < 16; i++)
     {
         for(j = 0; j < 16; j++)
@@ -3359,10 +3359,10 @@ void MattransM16(M16 Mat, M16 *Mat_trans)/* matrix tansposition M16 */
         }
     }
 }
-void MattransM32(M32 Mat, M32 *Mat_trans)/* matrix tansposition M32 */
+void wb_xiao_dy_MattransM32(M32 Mat, M32 *Mat_trans)/* matrix tansposition M32 */
 {
     int i, j;
-    initM32(Mat_trans);
+    wb_xiao_dy_initM32(Mat_trans);
     for(i = 0; i < 32; i++)
     {
         for(j = 0; j < 32; j++)
@@ -3371,10 +3371,10 @@ void MattransM32(M32 Mat, M32 *Mat_trans)/* matrix tansposition M32 */
         }
     }
 }
-void MattransM64(M64 Mat, M64 *Mat_trans)/* matrix tansposition M64 */
+void wb_xiao_dy_MattransM64(M64 Mat, M64 *Mat_trans)/* matrix tansposition M64 */
 {
     int i, j;
-    initM64(Mat_trans);
+    wb_xiao_dy_initM64(Mat_trans);
     for(i = 0; i < 64; i++)
     {
         for(j = 0; j < 64; j++)
@@ -3383,10 +3383,10 @@ void MattransM64(M64 Mat, M64 *Mat_trans)/* matrix tansposition M64 */
         }
     }
 }
-void MattransM128(M128 Mat, M128 *Mat_trans)/* matrix tansposition M128 */
+void wb_xiao_dy_MattransM128(M128 Mat, M128 *Mat_trans)/* matrix tansposition M128 */
 {
     int i, j;
-    initM128(Mat_trans);
+    wb_xiao_dy_initM128(Mat_trans);
     for(i = 0; i < 64; i++)
     {
         for(j = 0; j < 64; j++)
@@ -3404,7 +3404,7 @@ void MattransM128(M128 Mat, M128 *Mat_trans)/* matrix tansposition M128 */
         }
     }
 }
-void MatAddMatM4(M4 Mat1, M4 Mat2, M4 *Mat)
+void wb_xiao_dy_MatAddMatM4(M4 Mat1, M4 Mat2, M4 *Mat)
 {
     int i;
     for(i = 0; i < 4; i++)
@@ -3412,7 +3412,7 @@ void MatAddMatM4(M4 Mat1, M4 Mat2, M4 *Mat)
         (*Mat).M[i] = Mat1.M[i] ^ Mat2.M[i];
     }
 }
-void MatAddMatM8(M8 Mat1, M8 Mat2, M8 *Mat)
+void wb_xiao_dy_MatAddMatM8(M8 Mat1, M8 Mat2, M8 *Mat)
 {
     int i;
     for(i = 0; i < 8; i++)
@@ -3420,7 +3420,7 @@ void MatAddMatM8(M8 Mat1, M8 Mat2, M8 *Mat)
         (*Mat).M[i] = Mat1.M[i] ^ Mat2.M[i];
     }
 }
-void MatAddMatM16(M16 Mat1, M16 Mat2, M16 *Mat)
+void wb_xiao_dy_MatAddMatM16(M16 Mat1, M16 Mat2, M16 *Mat)
 {
     int i;
     for(i = 0; i < 16; i++)
@@ -3428,7 +3428,7 @@ void MatAddMatM16(M16 Mat1, M16 Mat2, M16 *Mat)
         (*Mat).M[i] = Mat1.M[i] ^ Mat2.M[i];
     }
 }
-void MatAddMatM32(M32 Mat1, M32 Mat2, M32 *Mat)
+void wb_xiao_dy_MatAddMatM32(M32 Mat1, M32 Mat2, M32 *Mat)
 {
     int i;
     for(i = 0; i < 32; i++)
@@ -3436,7 +3436,7 @@ void MatAddMatM32(M32 Mat1, M32 Mat2, M32 *Mat)
         (*Mat).M[i] = Mat1.M[i] ^ Mat2.M[i];
     }
 }
-void MatAddMatM64(M64 Mat1, M64 Mat2, M64 *Mat)
+void wb_xiao_dy_MatAddMatM64(M64 Mat1, M64 Mat2, M64 *Mat)
 {
     int i;
     for(i = 0; i < 64; i++)
@@ -3444,7 +3444,7 @@ void MatAddMatM64(M64 Mat1, M64 Mat2, M64 *Mat)
         (*Mat).M[i] = Mat1.M[i] ^ Mat2.M[i];
     }
 }
-void MatAddMatM128(M128 Mat1, M128 Mat2, M128 *Mat)
+void wb_xiao_dy_MatAddMatM128(M128 Mat1, M128 Mat2, M128 *Mat)
 {
     int i;
     for(i = 0; i < 128; i++)
@@ -3453,133 +3453,133 @@ void MatAddMatM128(M128 Mat1, M128 Mat2, M128 *Mat)
         (*Mat).M[i][1] = Mat1.M[i][1] ^ Mat2.M[i][1];
     }
 }
-void MatMulMatM4(M4 Mat1, M4 Mat2, M4 *Mat)/* matrix multiplication 4*4 mul 4*4 -> 4*4 */
+void wb_xiao_dy_MatMulMatM4(M4 Mat1, M4 Mat2, M4 *Mat)/* matrix multiplication 4*4 mul 4*4 -> 4*4 */
 {
     int i, j;
     M4 Mat2_trans;
-    initM4(Mat);
-    MattransM4(Mat2, &Mat2_trans);
+    wb_xiao_dy_initM4(Mat);
+    wb_xiao_dy_MattransM4(Mat2, &Mat2_trans);
     for(i = 0; i < 4; i++)
     {
         for(j = 0; j < 4; j++)
         {
-            if(xorU4(Mat1.M[i] & Mat2_trans.M[j] & 0x0f)) (*Mat).M[i] ^= idM4[j];
+            if(wb_xiao_dy_xorU4(Mat1.M[i] & Mat2_trans.M[j] & 0x0f)) (*Mat).M[i] ^= idM4[j];
         }       
     }
 }
-void MatMulMatM8(M8 Mat1, M8 Mat2, M8 *Mat)/* matrix multiplication 8*8 mul 8*8 -> 8*8 */
+void wb_xiao_dy_MatMulMatM8(M8 Mat1, M8 Mat2, M8 *Mat)/* matrix multiplication 8*8 mul 8*8 -> 8*8 */
 {
     int i, j;
     M8 Mat2_trans;
-    initM8(Mat);
-    MattransM8(Mat2, &Mat2_trans);
+    wb_xiao_dy_initM8(Mat);
+    wb_xiao_dy_MattransM8(Mat2, &Mat2_trans);
     for(i = 0; i < 8; i++)
     {
         for(j = 0; j < 8; j++)
         {
-            if(xorU8(Mat1.M[i] & Mat2_trans.M[j])) (*Mat).M[i] ^= idM8[j];
+            if(wb_xiao_dy_xorU8(Mat1.M[i] & Mat2_trans.M[j])) (*Mat).M[i] ^= idM8[j];
         }       
     }
 }
-void MatMulMatM16(M16 Mat1, M16 Mat2, M16 *Mat)/* matrix multiplication 16*16 mul 16*16 -> 16*16 */
+void wb_xiao_dy_MatMulMatM16(M16 Mat1, M16 Mat2, M16 *Mat)/* matrix multiplication 16*16 mul 16*16 -> 16*16 */
 {
     int i, j;
     M16 Mat2_trans;
-    initM16(Mat);
-    MattransM16(Mat2, &Mat2_trans);
+    wb_xiao_dy_initM16(Mat);
+    wb_xiao_dy_MattransM16(Mat2, &Mat2_trans);
     for(i = 0; i < 16; i++)
     {
         for(j = 0; j < 16; j++)
         {
-            if(xorU16(Mat1.M[i] & Mat2_trans.M[j])) (*Mat).M[i] ^= idM16[j];
+            if(wb_xiao_dy_xorU16(Mat1.M[i] & Mat2_trans.M[j])) (*Mat).M[i] ^= idM16[j];
         }       
     }
 }
-void MatMulMatM32(M32 Mat1, M32 Mat2, M32 *Mat)/* matrix multiplication 32*32 mul 32*32 -> 32*32 */
+void wb_xiao_dy_MatMulMatM32(M32 Mat1, M32 Mat2, M32 *Mat)/* matrix multiplication 32*32 mul 32*32 -> 32*32 */
 {
     int i, j;
     M32 Mat2_trans;
-    initM32(Mat);
-    MattransM32(Mat2, &Mat2_trans);
+    wb_xiao_dy_initM32(Mat);
+    wb_xiao_dy_MattransM32(Mat2, &Mat2_trans);
     for(i = 0; i < 32; i++)
     {
         for(j = 0; j < 32; j++)
         {
-            if(xorU32(Mat1.M[i] & Mat2_trans.M[j])) (*Mat).M[i] ^= idM32[j];
+            if(wb_xiao_dy_xorU32(Mat1.M[i] & Mat2_trans.M[j])) (*Mat).M[i] ^= idM32[j];
         }       
     } 
 }
-void MatMulMatM64(M64 Mat1, M64 Mat2, M64 *Mat)/* matrix multiplication 64*64 mul 64*64 -> 64*64 */
+void wb_xiao_dy_MatMulMatM64(M64 Mat1, M64 Mat2, M64 *Mat)/* matrix multiplication 64*64 mul 64*64 -> 64*64 */
 {
     int i, j;
     M64 Mat2_trans;
-    initM64(Mat);
-    MattransM64(Mat2, &Mat2_trans);
+    wb_xiao_dy_initM64(Mat);
+    wb_xiao_dy_MattransM64(Mat2, &Mat2_trans);
     for(i = 0; i < 64; i++)
     {
         for(j = 0; j < 64; j++)
         {
-            if(xorU64(Mat1.M[i] & Mat2_trans.M[j])) (*Mat).M[i] ^= idM64[j];
+            if(wb_xiao_dy_xorU64(Mat1.M[i] & Mat2_trans.M[j])) (*Mat).M[i] ^= idM64[j];
         }       
     } 
 }
-void MatMulMatM128(M128 Mat1, M128 Mat2, M128 *Mat)/* matrix multiplication 128*128 mul 128*128 -> 128*128 */
+void wb_xiao_dy_MatMulMatM128(M128 Mat1, M128 Mat2, M128 *Mat)/* matrix multiplication 128*128 mul 128*128 -> 128*128 */
 {
     int i, j;
     M128 Mat2_trans;
     uint64_t temp[2];
-    initM128(Mat);
-    MattransM128(Mat2, &Mat2_trans);
+    wb_xiao_dy_initM128(Mat);
+    wb_xiao_dy_MattransM128(Mat2, &Mat2_trans);
     for(i = 0; i < 128; i++)
     {
         for(j = 0; j < 64; j++)
         {
             temp[0] = Mat1.M[i][0] & Mat2_trans.M[j][0];
             temp[1] = Mat1.M[i][1] & Mat2_trans.M[j][1];
-            if(xorU128(temp)) (*Mat).M[i][0] ^= idM64[j];
+            if(wb_xiao_dy_xorU128(temp)) (*Mat).M[i][0] ^= idM64[j];
         }
         for(j = 64; j < 128; j++)
         {
             temp[0] = Mat1.M[i][0] & Mat2_trans.M[j][0];
             temp[1] = Mat1.M[i][1] & Mat2_trans.M[j][1];
-            if(xorU128(temp)) (*Mat).M[i][1] ^= idM64[j-64];
+            if(wb_xiao_dy_xorU128(temp)) (*Mat).M[i][1] ^= idM64[j-64];
         }
     } 
 }
-void affinemixM4(Aff4 aff, Aff4 preaff_inv, Aff4 *mixaff)/* mixed transformation of (previous affine inversion) and this round affine */
+void wb_xiao_dy_affinemixM4(Aff4 aff, Aff4 preaff_inv, Aff4 *mixaff)/* mixed transformation of (previous affine inversion) and this round affine */
 {
-    MatMulMatM4(aff.Mat, preaff_inv.Mat, &(mixaff->Mat));
-    MatMulVecM4(aff.Mat, preaff_inv.Vec, &(mixaff->Vec));
+    wb_xiao_dy_MatMulMatM4(aff.Mat, preaff_inv.Mat, &(mixaff->Mat));
+    wb_xiao_dy_MatMulVecM4(aff.Mat, preaff_inv.Vec, &(mixaff->Vec));
     (*mixaff).Vec.V ^= aff.Vec.V;
 }
-void affinemixM8(Aff8 aff, Aff8 preaff_inv, Aff8 *mixaff)/* mixed transformation of (previous affine inversion) and this round affine */
+void wb_xiao_dy_affinemixM8(Aff8 aff, Aff8 preaff_inv, Aff8 *mixaff)/* mixed transformation of (previous affine inversion) and this round affine */
 {
-    MatMulMatM8(aff.Mat, preaff_inv.Mat, &(mixaff->Mat));
-    MatMulVecM8(aff.Mat, preaff_inv.Vec, &(mixaff->Vec));
+    wb_xiao_dy_MatMulMatM8(aff.Mat, preaff_inv.Mat, &(mixaff->Mat));
+    wb_xiao_dy_MatMulVecM8(aff.Mat, preaff_inv.Vec, &(mixaff->Vec));
     (*mixaff).Vec.V ^= aff.Vec.V;
 }
-void affinemixM16(Aff16 aff, Aff16 preaff_inv, Aff16 *mixaff)/* mixed transformation of (previous affine inversion) and this round affine */
+void wb_xiao_dy_affinemixM16(Aff16 aff, Aff16 preaff_inv, Aff16 *mixaff)/* mixed transformation of (previous affine inversion) and this round affine */
 {
-    MatMulMatM16(aff.Mat, preaff_inv.Mat, &(mixaff->Mat));
-    MatMulVecM16(aff.Mat, preaff_inv.Vec, &(mixaff->Vec));
+    wb_xiao_dy_MatMulMatM16(aff.Mat, preaff_inv.Mat, &(mixaff->Mat));
+    wb_xiao_dy_MatMulVecM16(aff.Mat, preaff_inv.Vec, &(mixaff->Vec));
     (*mixaff).Vec.V ^= aff.Vec.V;
 }
-void affinemixM32(Aff32 aff, Aff32 preaff_inv, Aff32 *mixaff)/* mixed transformation of (previous affine inversion) and this round affine */
+void wb_xiao_dy_affinemixM32(Aff32 aff, Aff32 preaff_inv, Aff32 *mixaff)/* mixed transformation of (previous affine inversion) and this round affine */
 {
-    MatMulMatM32(aff.Mat, preaff_inv.Mat, &(mixaff->Mat));
-    MatMulVecM32(aff.Mat, preaff_inv.Vec, &(mixaff->Vec));
+    wb_xiao_dy_MatMulMatM32(aff.Mat, preaff_inv.Mat, &(mixaff->Mat));
+    wb_xiao_dy_MatMulVecM32(aff.Mat, preaff_inv.Vec, &(mixaff->Vec));
     (*mixaff).Vec.V ^= aff.Vec.V;
 }
-void affinemixM64(Aff64 aff, Aff64 preaff_inv, Aff64 *mixaff)/* mixed transformation of (previous affine inversion) and this round affine */
+void wb_xiao_dy_affinemixM64(Aff64 aff, Aff64 preaff_inv, Aff64 *mixaff)/* mixed transformation of (previous affine inversion) and this round affine */
 {
-    MatMulMatM64(aff.Mat, preaff_inv.Mat, &(mixaff->Mat));
-    MatMulVecM64(aff.Mat, preaff_inv.Vec, &(mixaff->Vec));
+    wb_xiao_dy_MatMulMatM64(aff.Mat, preaff_inv.Mat, &(mixaff->Mat));
+    wb_xiao_dy_MatMulVecM64(aff.Mat, preaff_inv.Vec, &(mixaff->Vec));
     (*mixaff).Vec.V ^= aff.Vec.V;
 }
-void affinemixM128(Aff128 aff, Aff128 preaff_inv, Aff128 *mixaff)/* mixed transformation of (previous affine inversion) and this round affine */
+void wb_xiao_dy_affinemixM128(Aff128 aff, Aff128 preaff_inv, Aff128 *mixaff)/* mixed transformation of (previous affine inversion) and this round affine */
 {
-    MatMulMatM128(aff.Mat, preaff_inv.Mat, &(mixaff->Mat));
-    MatMulVecM128(aff.Mat, preaff_inv.Vec, &(mixaff->Vec));
+    wb_xiao_dy_MatMulMatM128(aff.Mat, preaff_inv.Mat, &(mixaff->Mat));
+    wb_xiao_dy_MatMulVecM128(aff.Mat, preaff_inv.Vec, &(mixaff->Vec));
     (*mixaff).Vec.V[0] ^= aff.Vec.V[0];
     (*mixaff).Vec.V[1] ^= aff.Vec.V[1];
 }
