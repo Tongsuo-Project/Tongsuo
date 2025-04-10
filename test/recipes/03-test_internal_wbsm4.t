@@ -1,5 +1,4 @@
 #! /usr/bin/env perl
-
 # Copyright 2025 The Tongsuo Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use

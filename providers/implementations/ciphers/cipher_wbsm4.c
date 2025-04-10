@@ -47,7 +47,7 @@ static void *wbsm4_xiao_dykey_dupctx(void *ctx)
 const OSSL_PARAM * wbsm4_xiao_dykey_settable_ctx_params(ossl_unused void *cctx, ossl_unused void *provctx);
 
 CIPHER_DEFAULT_SETTABLE_CTX_PARAMS_START(wbsm4_xiao_dykey)
-    OSSL_PARAM_octet_string(OSSL_KDF_PARAM_WBSM4_UPDATE_KEY, NULL, 0),
+    OSSL_PARAM_octet_string(OSSL_CIPHER_PARAM_WBSM4_WBRK, NULL, 0),
 CIPHER_DEFAULT_SETTABLE_CTX_PARAMS_END(wbsm4_xiao_dykey)
 
 static int ossl_wbsm4_xiao_dykey_set_ctx_params(void *vctx, const OSSL_PARAM params[])
@@ -55,7 +55,7 @@ static int ossl_wbsm4_xiao_dykey_set_ctx_params(void *vctx, const OSSL_PARAM par
     PROV_WBSM4_XIAO_DYKEY_CTX *ctx = (PROV_WBSM4_XIAO_DYKEY_CTX *)vctx;
     const OSSL_PARAM *p;
 
-    p = OSSL_PARAM_locate_const(params, OSSL_KDF_PARAM_KEY);
+    p = OSSL_PARAM_locate_const(params, OSSL_CIPHER_PARAM_WBSM4_WBRK);
     if (p && p->data_type == OSSL_PARAM_OCTET_STRING) {
         uint32_t wbrk[32];
         wbsm4_set_key(p->data, (void *)wbrk, p->data_size);

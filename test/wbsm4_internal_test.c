@@ -57,8 +57,6 @@ static int test_wbsm4_xiao_dykey(void)
     static int result = 0;
     wbsm4_xiao_dykey_context *ctx = NULL;
     wbsm4_xiao_dykey_ctxrk *ctxrk = NULL;
-    wbsm4_xiao_dykey_context *ctx_decrypt = NULL;
-    wbsm4_xiao_dykey_ctxrk *ctxrk_decrypt = NULL;
 
     ctx = (wbsm4_xiao_dykey_context *)malloc(sizeof(wbsm4_xiao_dykey_context));
     if (ctx == NULL)
@@ -68,29 +66,16 @@ static int test_wbsm4_xiao_dykey(void)
         goto end;
     }
     memset(ctx, 0, sizeof(wbsm4_xiao_dykey_context));
-    ctx->mode = WBSM4_ENCRYPT_MODE;
 
     wbsm4_xiao_dykey_gen(k, ctx, ctxrk);
+
     memcpy(block, input, SM4_BLOCK_SIZE);
     wbsm4_xiao_dykey_encrypt(block, block, ctx);
     if (!TEST_mem_eq(block, SM4_BLOCK_SIZE, expected, SM4_BLOCK_SIZE)) {
         goto end;
     }
 
-    // decrypt
-    ctx_decrypt = (wbsm4_xiao_dykey_context *)malloc(sizeof(wbsm4_xiao_dykey_context));
-    if (ctx_decrypt == NULL) {
-        goto end;
-    }
-    ctx_decrypt->mode = WBSM4_DECRYPT_MODE;
-    ctxrk_decrypt = (wbsm4_xiao_dykey_ctxrk *)malloc(sizeof(wbsm4_xiao_dykey_ctxrk));
-    if (ctxrk_decrypt == NULL) {
-        goto end;
-    }
-
-    wbsm4_xiao_dykey_gen(k, ctx_decrypt, ctxrk_decrypt);
-
-    wbsm4_xiao_dykey_decrypt(block, block, ctx_decrypt);
+    wbsm4_xiao_dykey_decrypt(block, block, ctx);
     if (!TEST_mem_eq(block, SM4_BLOCK_SIZE, input, SM4_BLOCK_SIZE)) {
         goto end;
     }
@@ -108,11 +93,7 @@ static int test_wbsm4_xiao_dykey(void)
         goto end;
     }
 
-    wbsm4_xiao_dykey_key2wbrk(k, ctxrk_decrypt, wbrk);
-
-    wbsm4_xiao_dykey_update_wbrk(ctx_decrypt, wbrk);
-
-    wbsm4_xiao_dykey_decrypt(block, block, ctx_decrypt);
+    wbsm4_xiao_dykey_decrypt(block, block, ctx);
     if (!TEST_mem_eq(block, SM4_BLOCK_SIZE, input, SM4_BLOCK_SIZE)) {
         goto end;
     }
@@ -122,8 +103,6 @@ static int test_wbsm4_xiao_dykey(void)
 end:
     if (ctx) free(ctx);
     if (ctxrk) free(ctxrk);
-    if (ctx_decrypt) free(ctx_decrypt);
-    if (ctxrk_decrypt) free(ctxrk_decrypt);
     return result;
 }
 
@@ -157,7 +136,7 @@ static int test_EVP_wbsm4_xiao_dykey(void)
     static int result = 0;
     int outl = SM4_BLOCK_SIZE;
     unsigned char block[SM4_BLOCK_SIZE];
-    int mode = EVP_KDF_WBSM4KDF_MODE_ENCRYPT;
+    int mode = EVP_KDF_WBSM4KDF_MODE_GEN_TABLE;
 
     EVP_KDF *kdf = NULL;
     EVP_KDF_CTX *kctx = NULL;
@@ -237,7 +216,7 @@ static int test_EVP_wbsm4_xiao_dykey(void)
         goto end;
     }
 
-    params[0] = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_KEY, wbrk_buf, SM4_KEY_SCHEDULE * sizeof(uint32_t));
+    params[0] = OSSL_PARAM_construct_octet_string(OSSL_CIPHER_PARAM_WBSM4_WBRK, wbrk_buf, SM4_KEY_SCHEDULE * sizeof(uint32_t));
     params[1] = OSSL_PARAM_construct_end();
     ret = EVP_CIPHER_CTX_set_params(cipher_ctx, params); 
     if (!TEST_int_eq(ret, 1)) {
@@ -286,7 +265,7 @@ static int test_wbsm4_random_encrypt(void)
     static int ret = 0;
     static int result = 0;
     int outl;
-    int mode = EVP_KDF_WBSM4KDF_MODE_ENCRYPT;
+    int mode = EVP_KDF_WBSM4KDF_MODE_GEN_TABLE;
 
     int ciphertext_len_sm4 = 0;
     int ciphertext_len_wbsm4 = 0;
@@ -331,9 +310,6 @@ static int test_wbsm4_random_encrypt(void)
     ciphertext_len_wbsm4 += outl;
 
     /* comparison */
-    if (!TEST_int_eq(ciphertext_len_sm4, ciphertext_len_wbsm4)) {
-        goto end;
-    }
     if (!TEST_mem_eq(ciphertext_sm4, ciphertext_len_sm4, ciphertext_wbsm4, ciphertext_len_wbsm4)) {
         goto end;
     }
@@ -361,7 +337,7 @@ static int test_wbsm4_context(void)
 
     static int ret = 0;
     static int result = 0;
-    int mode = EVP_KDF_WBSM4KDF_MODE_ENCRYPT;
+    int mode = EVP_KDF_WBSM4KDF_MODE_GEN_TABLE;
 
     EVP_KDF *kdf = NULL;
     EVP_KDF_CTX *kctx = NULL;

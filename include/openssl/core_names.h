@@ -114,6 +114,9 @@ extern "C" {
 #define OSSL_CIPHER_PARAM_TLS1_MULTIBLOCK_ENC_LEN                              \
     "tls1multi_enclen"     /* size_t */
 
+/* wbsm4-xiao-dykey whitebox roundkey */
+#define OSSL_CIPHER_PARAM_WBSM4_WBRK           "sm4-wbrk"     /* octet string */
+
 /* OSSL_CIPHER_PARAM_CTS_MODE Values */
 #define OSSL_CIPHER_CTS_MODE_CS1 "CS1"
 #define OSSL_CIPHER_CTS_MODE_CS2 "CS2"
@@ -216,7 +219,6 @@ extern "C" {
 #define OSSL_KDF_PARAM_X942_SUPP_PUBINFO    "supp-pubinfo"
 #define OSSL_KDF_PARAM_X942_SUPP_PRIVINFO   "supp-privinfo"
 #define OSSL_KDF_PARAM_X942_USE_KEYBITS     "use-keybits"
-#define OSSL_KDF_PARAM_WBSM4_UPDATE_KEY     "update-key" /* octet_string */
 
 /* Known KDF names */
 #define OSSL_KDF_NAME_HKDF           "HKDF"

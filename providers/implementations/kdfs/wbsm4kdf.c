@@ -118,19 +118,15 @@ static int wbsm4kdf_derive(void *vctx,
 
         return 1;
     }
-    else if (ctx->mode == EVP_KDF_WBSM4KDF_MODE_ENCRYPT || ctx->mode == EVP_KDF_WBSM4KDF_MODE_DECRYPT) {
+    else if (ctx->mode == EVP_KDF_WBSM4KDF_MODE_GEN_TABLE) {
         if (keylen != sizeof(wbsm4_xiao_dykey_context)) {
             OPENSSL_cleanse(&ctx->rawkey, ctx->rawkey_len);
             ERR_raise(ERR_LIB_PROV, PROV_R_INVALID_KEY_LENGTH);
             return 0;
         }
 
-        if (ctx->mode == EVP_KDF_WBSM4KDF_MODE_ENCRYPT)
-            ctx->wbctx.mode = WBSM4_ENCRYPT_MODE;
-        else
-            ctx->wbctx.mode = WBSM4_DECRYPT_MODE;
         wbsm4_xiao_dykey_gen(ctx->rawkey, &ctx->wbctx, &ctx->ctxrk);
-        wbsm4_export_key(&ctx->wbctx, key, sizeof(wbsm4_xiao_dykey_context));
+        wbsm4_export_key(&ctx->wbctx, key, keylen);
         OPENSSL_cleanse(&ctx->rawkey, ctx->rawkey_len);
     
         return 1;
@@ -145,7 +141,6 @@ static const OSSL_PARAM *wbsm4kdf_settable_ctx_params(ossl_unused void *ctx, oss
     static const OSSL_PARAM known_settable_ctx_params[] = {
         OSSL_PARAM_octet_string(OSSL_KDF_PARAM_KEY, NULL, 0),
         OSSL_PARAM_int(OSSL_KDF_PARAM_MODE, NULL),
-        OSSL_PARAM_int(OSSL_KDF_PARAM_WBSM4_UPDATE_KEY, NULL),
         OSSL_PARAM_END
     };
     return known_settable_ctx_params;
@@ -172,8 +167,7 @@ static int wbsm4kdf_set_ctx_params(void *vctx, const OSSL_PARAM params[])
     if ((p = OSSL_PARAM_locate_const(params, OSSL_KDF_PARAM_MODE)) != NULL) {
         if (p->data_type != OSSL_PARAM_INTEGER) return 0;
         if (OSSL_PARAM_get_int(p, &n)) {
-            if (n != EVP_KDF_WBSM4KDF_MODE_DECRYPT
-                && n != EVP_KDF_WBSM4KDF_MODE_ENCRYPT
+            if (n != EVP_KDF_WBSM4KDF_MODE_GEN_TABLE
                 && n != EVP_KDF_WBSM4KDF_MODE_UPDATE_KEY) {
                 ERR_raise(ERR_LIB_PROV, PROV_R_INVALID_MODE);
                 return 0;

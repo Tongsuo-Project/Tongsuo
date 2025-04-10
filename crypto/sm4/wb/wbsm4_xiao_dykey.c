@@ -36,16 +36,7 @@ void wbsm4_xiao_dykey_gen(const uint8_t *key, wbsm4_xiao_dykey_context *ctx, wbs
     uint32_t Q_constant[3] = {0};
 
     SM4_KEY sm4_rk;
-    uint32_t tmp_rk;
     ossl_sm4_set_key(key, &sm4_rk);
-    if (ctx->mode == WBSM4_DECRYPT_MODE)
-    {
-        for (i = 0; i < 16; i++) {
-            tmp_rk = sm4_rk.rk[i];
-            sm4_rk.rk[i] = sm4_rk.rk[31 - i];
-            sm4_rk.rk[31 - i] = tmp_rk;
-        }
-    }
 
     wb_xiao_dy_InitRandom(((unsigned int)time(NULL)));
 
@@ -89,6 +80,13 @@ void wbsm4_xiao_dykey_gen(const uint8_t *key, wbsm4_xiao_dykey_context *ctx, wbs
         temp_u32 = wb_xiao_dy_cus_random();
         ctx->C[i].Vec.V ^= temp_u32;
         ctx->D[i].Vec.V ^= P[i + 4].Vec.V ^ temp_u32;
+
+        /* affine C D for decrypt, C for Xi4, D for T(Xi3+Xi2+Xi1+rk)*/
+        wb_xiao_dy_affinemixM32(P[i], P_inv[i + 4], &ctx->C_dec[i]);
+        wb_xiao_dy_affinemixM32(P[i], Q_inv[i], &ctx->D_dec[i]);
+        temp_u32 = wb_xiao_dy_cus_random();
+        ctx->C_dec[i].Vec.V ^= temp_u32;
+        ctx->D_dec[i].Vec.V ^= P[i].Vec.V ^ temp_u32;
 
         /* encoding for whitebox round key */
         ctxrk->R[i] = R[i];
@@ -149,9 +147,13 @@ void wbsm4_xiao_dykey_gen(const uint8_t *key, wbsm4_xiao_dykey_context *ctx, wbs
 
         ctx->FE[i].Mat = P_inv[35 - i].Mat;
         ctx->FE[i].Vec = P_inv[35 - i].Vec;
-    }
 
-    ctxrk->mode = ctx->mode;    
+        ctx->SE_dec[i].Mat = P_inv[i].Mat;
+        ctx->SE_dec[i].Vec = P_inv[i].Vec;
+
+        ctx->FE_dec[i].Mat = P[35 - i].Mat;
+        ctx->FE_dec[i].Vec = P[35 - i].Vec;
+    }
 }
 
 void wbsm4_xiao_dykey_key2wbrk(uint8_t *key, wbsm4_xiao_dykey_ctxrk *ctxrk, uint32_t wbrk[32])
@@ -160,14 +162,6 @@ void wbsm4_xiao_dykey_key2wbrk(uint8_t *key, wbsm4_xiao_dykey_ctxrk *ctxrk, uint
     SM4_KEY sm4_rk;
     uint32_t tmp_rk;
     ossl_sm4_set_key(key, &sm4_rk);
-    if (ctxrk->mode == WBSM4_DECRYPT_MODE)
-    {
-        for (i = 0; i < 16; i++) {
-            tmp_rk = sm4_rk.rk[i];
-            sm4_rk.rk[i] = sm4_rk.rk[31 - i];
-            sm4_rk.rk[31 - i] = tmp_rk;
-        }
-    }
 
     for (i = 0; i < 32; i++)
     {
@@ -236,5 +230,49 @@ void wbsm4_xiao_dykey_encrypt(const unsigned char *in, unsigned char *out, wbsm4
 
 void wbsm4_xiao_dykey_decrypt(const unsigned char *in, unsigned char *out, wbsm4_xiao_dykey_context *ctx)
 {
-    wbsm4_xiao_dykey_encrypt(in, out, ctx);
+    int i, j;
+    uint32_t x0, x1, x2, x3, x4;
+    uint32_t xt0, xt1, xt2, xt3, xt4;
+
+    x0 = GET32(in);
+    x1 = GET32(in + 4);
+    x2 = GET32(in + 8);
+    x3 = GET32(in + 12);
+
+    x0 = wb_xiao_dy_affineU32(ctx->FE_dec[0], x0);
+    x1 = wb_xiao_dy_affineU32(ctx->FE_dec[1], x1);
+    x2 = wb_xiao_dy_affineU32(ctx->FE_dec[2], x2);
+    x3 = wb_xiao_dy_affineU32(ctx->FE_dec[3], x3);
+
+    for(i = 31; i >= 0; i--)
+    {
+        xt1 = wb_xiao_dy_affineU32(ctx->M[i][2], x1);
+        xt2 = wb_xiao_dy_affineU32(ctx->M[i][1], x2);
+        xt3 = wb_xiao_dy_affineU32(ctx->M[i][0], x3);
+        xt1 = xt1 ^ xt2 ^ xt3;
+        x4 = 0;
+        for (j = 0; j < 4; j++)
+        {
+            x4 |= (ctx->Xor32Table[i][j][(xt1 >> (24 - 8 * j) ) & 0xff][ctx->wbrk[i] >> (24 - 8 * j) & 0xff]) << (24 - 8 * j);
+        }
+        x4 = ctx->Table[i][0][(x4 >> 24) & 0xff] ^ ctx->Table[i][1][(x4 >> 16) & 0xff] ^ ctx->Table[i][2][(x4 >> 8) & 0xff] ^ ctx->Table[i][3][x4 & 0xff];
+        xt0 = wb_xiao_dy_affineU32(ctx->C_dec[i], x0);
+        xt4 = wb_xiao_dy_affineU32(ctx->D_dec[i], x4);
+        x4 = xt0 ^ xt4;
+
+        x0 = x1;
+        x1 = x2;
+        x2 = x3;
+        x3 = x4;
+    }
+
+    x0 = wb_xiao_dy_affineU32(ctx->SE_dec[3], x0);
+    x1 = wb_xiao_dy_affineU32(ctx->SE_dec[2], x1);
+    x2 = wb_xiao_dy_affineU32(ctx->SE_dec[1], x2);
+    x3 = wb_xiao_dy_affineU32(ctx->SE_dec[0], x3);
+
+    PUT32(x3, out);
+    PUT32(x2, out + 4);
+    PUT32(x1, out + 8);
+    PUT32(x0, out + 12);
 }

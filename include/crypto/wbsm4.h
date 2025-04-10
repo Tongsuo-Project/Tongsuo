@@ -46,20 +46,21 @@ void gen_Bijection32pair(Biject32 *bij, Biject32 *bij_inv);
 uint32_t BijectionU32(const Biject32* bij, uint32_t x);
 
 typedef struct {
-    int mode;
-
     uint32_t wbrk[32];
     Aff32 M[32][3];
     Aff32 C[32];
     Aff32 D[32];
     Aff32 SE[4];
     Aff32 FE[4];
+    Aff32 C_dec[32];
+    Aff32 D_dec[32];
+    Aff32 SE_dec[4];
+    Aff32 FE_dec[4];
     uint32_t Table[32][4][256];
     uint8_t Xor32Table[32][4][256][256];
 } wbsm4_xiao_dykey_context;
 
 typedef struct {
-    int mode;
     Aff32 Ek[32];
     Biject32 R[32];
 } wbsm4_xiao_dykey_ctxrk;
