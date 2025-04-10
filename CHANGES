@@ -4,6 +4,8 @@
 
  Changes between 8.4.0 and 8.5.0 [xx XXX xxxx]
 
+  *) 修复CVE-2024-13176
+
   *) SM4白盒密码算法，支持: wbsm4-xiaolai、wbsm4-baiwu、wbsm4-wsise
    
   *) 重新修复CVE-2022-4304
