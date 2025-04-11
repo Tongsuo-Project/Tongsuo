@@ -1416,3 +1416,14 @@ dstu4145le 2 9 : uacurve9 : DSTU curve 9
 joint-iso-itu-t 16 840 1 113894 : oracle-organization : Oracle organization
 # Jdk trustedKeyUsage attribute
 oracle 746875 1 1 : oracle-jdk-trustedkeyusage : Trusted key usage (Oracle)
+
+# Definitions for WBSM4 cipher
+    : WBSM4-XIAO-DYKEY-ECB             : wbsm4-xiao-dykey-ecb
+    : WBSM4-XIAO-DYKEY-CBC             : wbsm4-xiao-dykey-cbc
+!Cname wbsm4-xiao-dykey-ofb128
+    : WBSM4-XIAO-DYKEY-OFB             : wbsm4-xiao-dykey-ofb
+!Cname wbsm4-xiao-dykey-cfb128
+    : WBSM4-XIAO-DYKEY-CFB             : wbsm4-xiao-dykey-cfb
+    : WBSM4-XIAO-DYKEY-CTR             : wbsm4-xiao-dykey-ctr
+    : WBSM4-XIAO-DYKEY-GCM             : wbsm4-xiao-dykey-gcm
+    : WBSM4-XIAO-DYKEY-CCM             : wbsm4-xiao-dykey-ccm
