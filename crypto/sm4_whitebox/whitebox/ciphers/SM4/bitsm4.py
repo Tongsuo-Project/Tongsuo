@@ -287,3 +287,37 @@ def BitSM4(ptx, key, if_enc):
             # ctx[32*j+k]=buf[j+1][k]
     
     return ctx
+
+
+def randSM4(ptx):
+    buf = [[None for _ in range(32)] for _ in range(36)]
+    temp = [None for _ in range(32)]
+    ctx = [None for _ in range(128)]
+    for j in range(4):
+        for k in range(32):
+            buf[j][k] = ptx[32*j+k]
+    global idM32
+    # 32轮
+    for i in range(4):
+        # 4道32bit数据操作
+        for j in range(32):
+            # buf[4+i][j] = buf[i+1][j] ^ buf[i+2][j] ^ buf[i+3][j] ^ BS_RK_512[i][j]
+            buf[i+4][j] = buf[i+1][j] ^ buf[i+2][j]
+            buf[i+4][j] = buf[i+4][j] ^ buf[i+3][j]
+        # S盒
+        sm4_SubBytes(buf[i+4])
+        # 线性变换L 循环左移
+        for j in range(32):
+            temp[j] = buf[4+i][j] ^ buf[4+i][(j+2)%32]
+            temp[j] = temp[j] ^ buf[4+i][(j+10)%32]
+            temp[j] = temp[j] ^ buf[4+i][(j+18)%32]
+            temp[j] = temp[j] ^ buf[4+i][(j+24)%32]
+        for j in range(32):
+            buf[4+i][j] = temp[j] ^ buf[i][j]
+    # 反序
+    for j in range(4):
+        for k in range(32):
+            ctx[32*j+k]=buf[7-j][k]
+            # ctx[32*j+k]=buf[j+1][k]
+    
+    return ctx

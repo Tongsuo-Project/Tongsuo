@@ -13,12 +13,12 @@ if_dummy = 1
 slot = 2**1
 slice_cnt = 8
 
-from whitebox.ciphers.AES import BitAES
-from whitebox.ciphers.SM4 import BitSM4
+# from whitebox.ciphers.AES import BitAES
+from whitebox.ciphers.SM4 import BitSM4, randSM4
 pt = Bit.inputs("pt", 128)
 from whitebox.prng import LFSR, Pool
 prng = LFSR(taps=[0, 2, 5, 18, 39, 100, 127],
-            state=BitAES(pt, pt[::-1], rounds=2)[0])
+            state=randSM4(pt))
 rand = Pool(n=128, prng=prng).step
 
 # dummy
@@ -66,11 +66,5 @@ whibox_generate( slice_cnt, ct, "build/code.c", "Ok, world!")
 
 # b) compile circuit to file
 from whitebox.serialize import RawSerializer
-RawSerializer().serialize_to_file(ct, "circuits/aes10.bin")
-
-# c) compute reference AES to verify correctness
-from whitebox.ciphers.AES.aes import encrypt
-pt = os.urandom(64)
-ct = "".join(encrypt(pt[i:i+16], KEY, nr=NR) for i in xrange(0, len(pt), 16))
-open("build/cipher", "w").write(ct)
+RawSerializer().serialize_to_file(ct, "circuits/sm4.bin")
 
