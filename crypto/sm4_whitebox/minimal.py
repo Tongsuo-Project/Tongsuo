@@ -8,7 +8,7 @@ from whitebox.utils import str2bin, bin2str
 NR = 10
 # KEY = "MySecretKey!2019"
 KEY = "samplekey1234567"
-if_enc = 0
+if_enc = 1
 if_dummy = 1
 slot = 2**1
 slice_cnt = 8
