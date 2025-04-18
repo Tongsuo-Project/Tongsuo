@@ -457,12 +457,6 @@ jobs:
         uses: actions/setup-python@v5 
         with:
           python-version: 'pypy-3.10'
-      
-      - name: Install dependencies
-        run: |
-          pip install os
-          pip install sys
-          pip install math
  
       - name: Set up GCC 
         run: |
