@@ -458,10 +458,10 @@ jobs:
         with:
           python-version: 'pypy-3.10'
  
-      - name: Set up GCC 
+      - name: Set up gcc 
         run: |
           sudo apt-get update 
-          sudo apt-get install -y GCC
+          sudo apt-get install -y gcc
       
       - name: Add execute permissions
         run: |
