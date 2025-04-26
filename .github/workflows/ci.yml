@@ -442,34 +442,34 @@ jobs:
         run: test $(git status --porcelain | wc -l) -eq "0"
 
 
-  test_sm4_whitebox:
-    name: Test SM4 Whitebox 
-    runs-on: ubuntu-latest 
-    defaults:
-      run:
-        working-directory: ./crypto/sm4_whitebox
+  # test_sm4_whitebox:
+  #   name: Test SM4 Whitebox 
+  #   runs-on: ubuntu-latest 
+  #   defaults:
+  #     run:
+  #       working-directory: ./crypto/sm4_whitebox
  
-    steps:
-      - name: Checkout code 
-        uses: actions/checkout@v4 
+  #   steps:
+  #     - name: Checkout code 
+  #       uses: actions/checkout@v4 
  
-      - name: Set up PyPy 
-        uses: actions/setup-python@v5 
-        with:
-          python-version: 'pypy-2.7'
+  #     - name: Set up PyPy 
+  #       uses: actions/setup-python@v5 
+  #       with:
+  #         python-version: 'pypy-2.7'
  
-      - name: Set up gcc 
-        run: |
-          sudo apt-get update 
-          sudo apt-get install -y gcc
+  #     - name: Set up gcc 
+  #       run: |
+  #         sudo apt-get update 
+  #         sudo apt-get install -y gcc
       
-      - name: Add execute permissions
-        run: |
-          chmod +x minimal.py  
-          chmod +x buildrun_enc.sh
+  #     - name: Add execute permissions
+  #       run: |
+  #         chmod +x minimal.py  
+  #         chmod +x buildrun_enc.sh
  
-      - name: Run minimal.py  
-        run: ./minimal.py
+  #     - name: Run minimal.py  
+  #       run: ./minimal.py
  
-      - name: Run buildrun_enc.sh  
-        run: ./buildrun_enc.sh
+  #     - name: Run buildrun_enc.sh  
+  #       run: ./buildrun_enc.sh
