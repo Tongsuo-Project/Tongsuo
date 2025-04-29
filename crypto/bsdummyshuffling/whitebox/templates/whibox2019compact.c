@@ -3,11 +3,7 @@
 #include <unistd.h>
 #include <assert.h>
 #include <time.h>
-typedef unsigned long long W;
-typedef unsigned short A;
-typedef unsigned char B;
 
-enum OP {XOR, AND, OR, NOT};
 
 A input_addr[] = {$input_addr};
 A output_addr[] = {$output_addr};
@@ -16,7 +12,7 @@ int slice = $SLICE_CNT;
 B opcodes[] = $opcodes_encoded;
 W ram[$ram_size];
 
-void AES_128_encrypt(B *ct, B *pt) {
+void SM4_128(B *out, B *in) {
     for(int i = 0; i < 128; i++) {
         ram[input_addr[i]] = 0;
     }
@@ -73,15 +69,4 @@ void AES_128_encrypt(B *ct, B *pt) {
             ct[(i+j*128)/8] ^= ((ram[output_addr[i]]>>j)&1ULL) << (7 - i % 8);
         }
     }
-}
-
-
-int main() {
-    B plaintext[16*64];
-    B ciphertext[16*64];
-    while (fread(plaintext, 1, 16*slice, stdin) == 16*slice) {
-        AES_128_encrypt(ciphertext, plaintext);
-        fwrite(ciphertext, 1, 16*slice, stdout);
-    }
-    return 0;
 }

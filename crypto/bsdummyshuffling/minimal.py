@@ -12,20 +12,18 @@ import os, sys, math
 from whitebox.tree.node import OptBitNode as Bit
 from whitebox.utils import str2bin, bin2str
 
-NR = 10
 # KEY = "MySecretKey!2019"
 KEY = "samplekey1234567"
 if_enc = 1
 if_dummy = 1
 slot = 2**1
-slice_cnt = 8
+slice_cnt = 1
 
-# from whitebox.ciphers.AES import BitAES
+
 from whitebox.ciphers.SM4 import BitSM4, randSM4
 pt = Bit.inputs("pt", 128)
 from whitebox.prng import LFSR, Pool
-prng = LFSR(taps=[0, 2, 5, 18, 39, 100, 127],
-            state=randSM4(pt))
+prng = LFSR(taps=[0, 2, 5, 18, 39, 100, 127], state=randSM4(pt))
 rand = Pool(n=128, prng=prng).step
 
 # dummy
@@ -57,9 +55,6 @@ if(if_dummy):
     print "dummy shuffle with %d slots" % slot
     ct = dummy(pt, KEY, if_enc)
 else:
-    # ybits, k10 = AES(xbits, kbits, nr=NR)
-    # print(type(str2bin(KEY)), len(str2bin(KEY)))
-    # print(type(pt),type(pt[0]),type(KEY))
     ct = BitSM4(pt, KEY, if_enc)
 
 from whitebox.masking import MINQ, DOM, mask_circuit
@@ -67,11 +62,6 @@ from whitebox.masking import MINQ, DOM, mask_circuit
 # ct = mask_circuit(ct, MINQ(rand=rand))
 ct = mask_circuit(ct, DOM(rand=rand, nshares=2))
 
-# a) generate WhibOx submission
+# a) generate Whibox submission
 from whitebox.whibox import whibox_generate
-whibox_generate( slice_cnt, ct, "build/code.c", "Ok, world!")
-
-# b) compile circuit to file
-from whitebox.serialize import RawSerializer
-RawSerializer().serialize_to_file(ct, "circuits/sm4.bin")
-
+whibox_generate( slice_cnt, ct, "bsdummyshuffling.c", "Ok, world!")
