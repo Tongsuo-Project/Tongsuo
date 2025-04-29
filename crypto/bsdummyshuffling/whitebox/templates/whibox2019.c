@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <assert.h>
 #include <time.h>
+#include "crypto/nonlinearwbsm4.h"
 
 
 A input_addr[] = {$input_addr};
