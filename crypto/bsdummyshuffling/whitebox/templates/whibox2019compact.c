@@ -3,8 +3,7 @@
 #include <unistd.h>
 #include <assert.h>
 #include <time.h>
-#include "crypto/nonlinearwbsm4.h"
-
+#include "crypto/bsdummyshuffling.h"
 
 A input_addr[] = {$input_addr};
 A output_addr[] = {$output_addr};
