@@ -778,6 +778,10 @@ IF[{- !$disabled{tests} -}]
     INCLUDE[nonlinearwbsm4_internal_test]=.. ../include ../apps/include
     DEPEND[nonlinearwbsm4_internal_test]=../libcrypto.a libtestutil.a
 
+    SOURCE[bsdummyshuffling_test]=bsdummyshuffling_test.c
+    INCLUDE[bsdummyshuffling_test]=.. ../include ../apps/include
+    DEPEND[bsdummyshuffling_test]=../libcrypto.a libtestutil.a
+
     SOURCE[wbsm4-resistdca_internal_test]=wbsm4-resistdca_internal_test.c
     INCLUDE[wbsm4-resistdca_internal_test]=.. ../include ../apps/include
     DEPEND[wbsm4-resistdca_internal_test]=../libcrypto.a libtestutil.a
