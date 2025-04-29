@@ -626,6 +626,9 @@ IF[{- !$disabled{tests} -}]
     IF[{- !$disabled{nonlinearwbsm4} -}]
       PROGRAMS{noinst}=nonlinearwbsm4_internal_test
     ENDIF
+    IF[{- !$disabled{bsdummyshuffling} -}]
+      PROGRAMS{noinst}=bsdummyshuffling_test
+    ENDIF
     IF[{- !$disabled{zuc} -}]
       PROGRAMS{noinst}=zuc_internal_test
     ENDIF
