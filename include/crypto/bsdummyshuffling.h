@@ -6,9 +6,4 @@ typedef unsigned char B;
 
 enum OP {XOR, AND, OR, NOT};
 
-void SM4_128(B *out, B *in)
-{
-    for(int i = 0; i < 16; i++) {
-        out[i] = 0;
-    }
-}
+void SM4_128(B *out, B *in);
