@@ -18,7 +18,7 @@ void SM4_128(B *out, B *in) {
     }
     for(int j = 0; j < slice; j++){
         for(int i = 0; i < 128; i++) {
-            ram[input_addr[i]] ^= ((pt[(i+j*128)/8] >> (7 - i % 8)) & 1ULL) << j;
+            ram[input_addr[i]] ^= ((in[(i+j*128)/8] >> (7 - i % 8)) & 1ULL) << j;
         }
     }
 
@@ -62,11 +62,11 @@ void SM4_128(B *out, B *in) {
 
 
     for(int i = 0; i < 16*slice; i++) {
-        ct[i] = 0;
+        out[i] = 0;
     }
     for(int j = 0; j < slice; j++){
         for(int i = 0; i < 128; i++) {
-            ct[(i+j*128)/8] ^= ((ram[output_addr[i]]>>j)&1ULL) << (7 - i % 8);
+            out[(i+j*128)/8] ^= ((ram[output_addr[i]]>>j)&1ULL) << (7 - i % 8);
         }
     }
 }
