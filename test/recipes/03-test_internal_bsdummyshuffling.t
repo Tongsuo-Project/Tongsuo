@@ -13,4 +13,4 @@ use OpenSSL::Test::Utils;
 
 setup("test_internal_bsdummyshuffling");
 
-simple_test("test_internal_bsdummyshuffling", "bsdummyshuffling_test");
+simple_test("test_internal_bsdummyshuffling", "bsdummyshuffling_test", "bsdummyshuffling");
