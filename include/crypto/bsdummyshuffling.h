@@ -7,3 +7,8 @@ typedef unsigned char B;
 enum OP {XOR, AND, OR, NOT};
 
 void SM4_128(B *out, B *in);
+
+
+void SM4_128(B *out, B *in){
+    return;
+}
