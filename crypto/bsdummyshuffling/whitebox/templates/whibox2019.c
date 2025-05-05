@@ -12,20 +12,22 @@ void SM4_128(B *out, B *in) {
     int j;
     #define pop() p+=sizeof(A)
     B *p = opcodes;
+    A a, b;
+    B op;
+    A dst;
 
     for(i = 0; i < 128; i++) {
         ram[input_addr[i]] = 0;
     }
     for(j = 0; j < slice; j++){
-        for(int i = 0; i < 128; i++) {
+        for(i = 0; i < 128; i++) {
             ram[input_addr[i]] ^= ((in[(i+j*128)/8] >> (7 - i % 8)) & 1ULL) << j;
         }
     }
 
     for(i = 0; i < $num_opcodes; i++) {
-        B op = *p++;
-        A dst = *((A *)p); pop();
-        A a, b;
+        op = *p++;
+        dst = *((A *)p); pop();
         switch (op) {
         case XOR:
             a = *((A *)p); pop();
@@ -58,7 +60,7 @@ void SM4_128(B *out, B *in) {
         out[i] = 0;
     }
     for(j = 0; j < slice; j++){
-        for(int i = 0; i < 128; i++) {
+        for(i = 0; i < 128; i++) {
             out[(i+j*128)/8] ^= ((ram[output_addr[i]]>>j)&1ULL) << (7 - i % 8);
         }
     }
