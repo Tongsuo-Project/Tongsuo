@@ -45,7 +45,7 @@ def encode_bytes(s):
         elif c == "\r": packed.append(r"\r")
         elif c == "\"": packed.append(r"\"")
         elif c == "\\": packed.append(r"\\")
-        elif c == "\x1b": packed.append(r"\e")
+        elif c == "\x1b": packed.append(r"\x1b")
         elif c == "?": packed.append(r"\?")
         elif c in "1234567890": packed.append(r"\%03o" % ord(c))
         else: packed.append(c)
