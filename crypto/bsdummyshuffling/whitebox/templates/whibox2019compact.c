@@ -1,10 +1,10 @@
 #include "crypto/bsdummyshuffling.h"
 
-A input_addr[] = {$input_addr};
-A output_addr[] = {$output_addr};
-int slice = $SLICE_CNT;
-B opcodes[] = $opcodes_encoded;
-W ram[$ram_size];
+static A input_addr[] = {$input_addr};
+static A output_addr[] = {$output_addr};
+static int slice = $SLICE_CNT;
+static B opcodes[] = $opcodes_encoded;
+static W ram[$ram_size];
 
 void SM4_128(B *out, B *in) {
     int i;
