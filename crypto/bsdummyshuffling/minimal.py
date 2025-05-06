@@ -1,4 +1,4 @@
-#!/usr/bin/env pypy
+#!/usr/bin/env python2
 #-*- coding:utf-8 -*-
 
 # This program is based on the original work by Alex Biryukov and Aleksei Udovenko.
