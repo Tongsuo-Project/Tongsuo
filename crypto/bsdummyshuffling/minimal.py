@@ -7,7 +7,6 @@
 #
 # You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 
-
 import os, sys, math
 from whitebox.tree.node import OptBitNode as Bit
 from whitebox.utils import str2bin, bin2str
@@ -64,4 +63,5 @@ ct = mask_circuit(ct, DOM(rand=rand, nshares=2))
 
 # a) generate Whibox submission
 from whitebox.whibox import whibox_generate
-whibox_generate( slice_cnt, ct, "bsdummyshuffling.c", "Ok, world!")
+file_path = os.path.join(os.getcwd(),  "bsdummyshuffling.c")
+whibox_generate( slice_cnt, ct, file_path, "Ok, world!")

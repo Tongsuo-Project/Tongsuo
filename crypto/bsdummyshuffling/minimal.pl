@@ -1,8 +1,8 @@
-#!/usr/bin/env perl 
+#!/usr/bin/env perl
 use strict;
 use warnings;
 
-my $result = `pypy minimal.py`;  # 捕获标准错误 
+my $result = qx(./minimal.py);
 if ($? != 0) {
-    die "minimal.py  failed: $result";
+    die "minimal.py failed with exit code: $? and output: $result";
 }
