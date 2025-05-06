@@ -7,4 +7,4 @@ DEPEND[bs.c]=minimal.py  minimal.pl
 GENERATE[bs.c]=minimal.pl
 
 # 将白盒加密程序添加到 libcrypto 的源文件列表中
-SOURCE[../../libcrypto]=
+SOURCE[../../libcrypto]=bsdummyshuffling.c
