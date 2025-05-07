@@ -2,7 +2,10 @@
 use strict;
 use warnings;
 
-my $result = qx(python crypto/bsdummyshuffling/minimal.py);
+
+use FindBin qw($RealBin);
+my $python_script = "$RealBin/minimal.py"; 
+my $result = qx(python "$python_script");
 if ($? != 0) {
     die "minimal.py failed with exit code: $? and output: $result";
 }
