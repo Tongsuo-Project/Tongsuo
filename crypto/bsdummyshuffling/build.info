@@ -1,10 +1,10 @@
 # 定义目标库为 libcrypto
 LIBS=../../libcrypto
 
-DEPEND[bsdummyshuffling.c]=minimal.py  minimal.pl
+DEPEND[crypto/bsdummyshuffling/bsdummyshuffling.c]=minimal.py  minimal.pl
 
 # 生成白盒加密程序
-GENERATE[bsdummyshuffling.c]=minimal.pl
+GENERATE[crypto/bsdummyshuffling/bsdummyshuffling.c]=minimal.pl
 
 # 将白盒加密程序添加到 libcrypto 的源文件列表中
-SOURCE[../../libcrypto]=bsdummyshuffling.c
+SOURCE[../../libcrypto]=crypto/bsdummyshuffling/bsdummyshuffling.c
