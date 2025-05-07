@@ -38,7 +38,8 @@ def encode_bytes(s):
     is very compact (can be improved by avoiding null bytes)
     idea by Vlad Roskov
     """
-    packed = []
-    for c in s:
-        packed.append(r"\%03o" % c)
-    return "".join(packed)
+    # packed = []
+    # for c in s:
+    #     packed.append(r"\%03o" % c)
+    # return "".join(packed)
+    return ", ".join(f"0x{b:02x}" for b in s)
