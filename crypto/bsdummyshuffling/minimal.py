@@ -64,8 +64,7 @@ ct = mask_circuit(ct, DOM(rand=rand, nshares=2))
 # a) generate Whibox submission
 from whitebox.whibox import whibox_generate
 import os 
- 
-# 获取当前 Python 文件的绝对路径所在目录
+
 script_dir = os.path.dirname(os.path.abspath(__file__)) 
 file_path = os.path.join(script_dir, "bsdummyshuffling.c")
 whibox_generate( slice_cnt, ct, file_path, "Ok, world!")

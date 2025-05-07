@@ -1,6 +1,4 @@
 #-*- coding:utf-8 -*-
-from whitebox.containers import Vector, Rect
-from whitebox.tree.node import OptBitNode as Bit
 
 sm4_fk = [0xa3b1bac6, 0x56aa3350, 0x677d9197, 0xb27022dc]
 sm4_ck = [

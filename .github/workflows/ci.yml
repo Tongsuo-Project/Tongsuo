@@ -339,7 +339,7 @@ jobs:
         RUST:
           - 1.51.0
         PYTHON:
-          - 2.7
+          - 3.9
     steps:
     - uses: actions/checkout@v2
       with:
@@ -440,4 +440,3 @@ jobs:
         run: make clean
       - name: check dirty
         run: test $(git status --porcelain | wc -l) -eq "0"
-        
