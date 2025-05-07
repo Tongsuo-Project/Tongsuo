@@ -18,7 +18,7 @@ class Multiset(object):
         del self.data[obj]
 
     def items(self):
-        return self.data.items()
+        return list(self.data.items())
 
     def __len__(self):
         return len(self.data)
@@ -29,7 +29,7 @@ class Multiset(object):
     def __iter__(self):
         return self.data.__iter__()
 
-    def __nonzero__(self):
+    def __bool__(self):
         return bool(self.data)
 
 class ComputationOrder(object):
@@ -45,7 +45,7 @@ class ComputationOrder(object):
 
     def walk_by(self, visitor):
         methods = {}
-        for k, v in type(self).__dict__.items():
+        for k, v in list(type(self).__dict__.items()):
             if k.startswith("ACTION_"):
                 method = getattr(visitor, "action_" + v, None)
                 if method:
@@ -70,10 +70,10 @@ class Orderer(object):
 
     def log(self, *args):
         if not self.quiet:
-            print "::",
+            print("::", end=' ')
             for arg in args:
-                print arg,
-            print
+                print(arg, end=' ')
+            print()
 
     def compile(self):
         self.log("circuit walk")

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #-*- coding:utf-8 -*-
 
 # This program is based on the original work by Alex Biryukov and Aleksei Udovenko.
@@ -51,7 +51,7 @@ def dummy(x, k, if_enc):
     return ybits
 
 if(if_dummy):
-    print "dummy shuffle with %d slots" % slot
+    print("dummy shuffle with %d slots" % slot)
     ct = dummy(pt, KEY, if_enc)
 else:
     ct = BitSM4(pt, KEY, if_enc)

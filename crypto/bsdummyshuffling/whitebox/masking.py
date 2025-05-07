@@ -2,6 +2,7 @@
 
 from whitebox.orderer import Orderer, circuit_inputs
 from operator import xor
+from functools import reduce
 
 class MaskingScheme(object):
     NOT = OR = XOR = AND = ZERO = ONE = NotImplemented
@@ -27,7 +28,7 @@ class MaskingScheme(object):
 
 class DOM(MaskingScheme):
     def encode(self, s):
-        x = [self.rand() for _ in xrange(self.nshares-1)]
+        x = [self.rand() for _ in range(self.nshares-1)]
         x.append(reduce(xor, x) ^ s)
         return tuple(x)
 
@@ -41,8 +42,8 @@ class DOM(MaskingScheme):
     def AND(self, x, y):
         assert len(x) == len(y) == self.nshares
         matrix = [[xx & yy for yy in y] for xx in x]
-        for i in xrange(1, self.nshares):
-            for j in xrange(i + 1, self.nshares):
+        for i in range(1, self.nshares):
+            for j in range(i + 1, self.nshares):
                 r = self.rand()
                 matrix[i][j] ^= r
                 matrix[j][i] ^= r
@@ -142,7 +143,7 @@ def mask_circuit(ybits, scheme, encode=True, decode=True):
     else:
         xbits_shares = [Bit.inputs(xbit.name(), tostr=False) for xbit in xbits]
 
-    shares = dict(zip(xbits, xbits_shares)) # bit -> shares of bit
+    shares = dict(list(zip(xbits, xbits_shares))) # bit -> shares of bit
 
     for action, bit in Orderer(ybits, quiet=True).compile().code:
         if action != "compute":

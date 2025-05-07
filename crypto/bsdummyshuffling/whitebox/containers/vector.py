@@ -1,6 +1,7 @@
 #-*- coding:utf-8 -*-
 
 import operator
+from functools import reduce
 
 class Vector(list):
     ZERO = 0
@@ -16,7 +17,7 @@ class Vector(list):
     def split(self, n=2):
         assert len(self) % n == 0
         w = len(self) // n
-        return Vector(self.make(self[i:i+w]) for i in xrange(0, len(self), w))
+        return Vector(self.make(self[i:i+w]) for i in range(0, len(self), w))
 
     def concat(self, *lst):
         v = list(self)
@@ -34,12 +35,12 @@ class Vector(list):
     def shl(self, n=1):
         assert n >= 0
         n = min(n, len(self))
-        return self.make(list(self[n:]) + [self._zero() for i in xrange(n)])
+        return self.make(list(self[n:]) + [self._zero() for i in range(n)])
 
     def shr(self, n=1):
         assert n >= 0
         n = min(n, len(self))
-        return self.make([self._zero() for i in xrange(n)] + list(self[:-n]))
+        return self.make([self._zero() for i in range(n)] + list(self[:-n]))
 
     def _zero(self):
         """method because sometimes need different instances"""

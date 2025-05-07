@@ -26,7 +26,7 @@ class Template(object):
                     return ",".join(map(str, res))
                 return str(repl[key])
             if self.show_warnings:
-                print >>sys.stderr, "WARNING: Template has unset variable %s" % m.group(0)
+                print("WARNING: Template has unset variable %s" % m.group(0), file=sys.stderr)
             return m.group(0)
         return re.sub(r"\$(\w+)\b", rep, self.code)
 
@@ -40,13 +40,5 @@ def encode_bytes(s):
     """
     packed = []
     for c in s:
-        if c == "\x00": packed.append(r"\0")
-        elif c == "\n": packed.append(r"\n")
-        elif c == "\r": packed.append(r"\r")
-        elif c == "\"": packed.append(r"\"")
-        elif c == "\\": packed.append(r"\\")
-        elif c == "\x1b": packed.append(r"\x1b")
-        elif c == "?": packed.append(r"\?")
-        elif c in "1234567890": packed.append(r"\%03o" % ord(c))
-        else: packed.append(c)
+        packed.append(r"\%03o" % c)
     return "".join(packed)

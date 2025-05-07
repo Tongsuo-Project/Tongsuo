@@ -1,7 +1,7 @@
 #-*- coding:utf-8 -*-
 
 def str2bin(s):
-    return map(int, "".join(bin(ord(c))[2:].zfill(8) for c in s))
+    return list(map(int, "".join(bin(ord(c))[2:].zfill(8) for c in s)))
 
 def bin2str(b):
     assert len(b) % 8 == 0

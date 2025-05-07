@@ -15,15 +15,15 @@ def whibox_generate(slice_cnt, ct, filename, comment=""):
         header, opcodes = RS.serialize(ct)
         template = "whibox2019compact.c"
         kw = dict(op_bits=RS.op_bits)
-        print >>sys.stderr, "Compact serialization succeeded!"
+        print("Compact serialization succeeded!", file=sys.stderr)
     except ValueError:
-        print >>sys.stderr, "Compact serialize failed (too much ram usage), falling back to basic one."
+        print("Compact serialize failed (too much ram usage), falling back to basic one.", file=sys.stderr)
         RS = RawSerializer()
         header, opcodes = RS.serialize(ct)
         template = "whibox2019.c"
         kw = dict()
 
-    opcodes_data = "".join(opcodes)
+    opcodes_data = b''.join(opcodes)
 
     code = Template(template).subs(
         input_addr=RS.input_addr,
@@ -37,6 +37,6 @@ def whibox_generate(slice_cnt, ct, filename, comment=""):
     )
     with open(filename, "w") as f:
         f.write(code)
-    print >>sys.stderr, "Source code %.2f MB, opcodes: %.2f MB" % (len(code) / 2.0**20, len(opcodes_data) / 2.0**20)
-    print >>sys.stderr, "RAM: %d bits (bytes)" % RS.ram_size
+    print("Source code %.2f MB, opcodes: %.2f MB" % (len(code) / 2.0**20, len(opcodes_data) / 2.0**20), file=sys.stderr)
+    print("RAM: %d bits (bytes)" % RS.ram_size, file=sys.stderr)
     return RS, code

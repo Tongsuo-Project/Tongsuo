@@ -52,7 +52,7 @@ class Node(object):
                 else:
                     args.append("#%r" % (sub.id))
             else:
-                args.append(`sub`)
+                args.append(repr(sub))
         return "<%s#%d = %s(%s)>" % (cls, self.id, op, ",".join(map(str, args)))
 
     def __hash__(self):
@@ -72,7 +72,7 @@ class Node(object):
 
     @classmethod
     def inputs(cls, name, n, tostr=False):
-        return tuple(cls.input(name+str(i) if tostr else (name, i)) for i in xrange(n))
+        return tuple(cls.input(name+str(i) if tostr else (name, i)) for i in range(n))
 
     def name(self):
         assert self.is_input()

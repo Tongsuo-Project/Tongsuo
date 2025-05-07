@@ -1,7 +1,7 @@
 #-*- coding:utf-8 -*-
 
-from op import BitOP
-from bitnode import BitNode
+from .op import BitOP
+from .bitnode import BitNode
 
 class OptBitNode(BitNode):
     OP = BitOP()
@@ -27,7 +27,7 @@ class OptBitNode(BitNode):
     # BINARY
     def make_binary(op):
         def f(a, b):
-            if isinstance(b, (int, long)): b = a.const(b)
+            if isinstance(b, int): b = a.const(b)
             a0, b0 = a, b
 
             # ensure b is constant if at least one is constant
@@ -77,16 +77,16 @@ if __name__ == '__main__':
     Bit = OptBitNode
     x = Bit.inputs("x", 8, tostr=True)
     y = ~(x[0] ^ x[1] & x[2]) ^ 1
-    print "expr", y
-    print "flattened:"
+    print("expr", y)
+    print("flattened:")
     for v in y.flatten():
-        print "   ", v
+        print("   ", v)
 
     def updict(d):
         # return {("x", k): v for k, v in d.items()}
-        return {("x%d" % k): v for k, v in d.items()}
+        return {("x%d" % k): v for k, v in list(d.items())}
 
     y = ~(x[0] ^ x[1] & x[2])
-    print "1 =?", y.eval(updict({0: 1, 1: 1, 2: 1}))
+    print("1 =?", y.eval(updict({0: 1, 1: 1, 2: 1})))
     y = (x[0] ^ x[1] & x[2])
-    print "0 =?", y.eval(updict({0: 1, 1: 1, 2: 1}))
+    print("0 =?", y.eval(updict({0: 1, 1: 1, 2: 1})))

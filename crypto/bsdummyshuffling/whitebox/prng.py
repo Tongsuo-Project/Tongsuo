@@ -27,12 +27,13 @@ class LFSR(PRNG):
 
 
 from random import choice
+from functools import reduce
 
 class Pool(PRNG):
     def __init__(self, prng, n=1000):
         self.prng = prng
         self.n = int(n)
-        self.set_state([prng.step() for _ in xrange(n)])
+        self.set_state([prng.step() for _ in range(n)])
 
     def step(self):
         return choice(self.state)

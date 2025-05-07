@@ -49,7 +49,7 @@ class OP(object):
 
     def dump(self, file=sys.stderr):
         for opnum, name in sorted(self.name.items()):
-            print >>file, "%2d: %s" % (opnum, name)
+            print("%2d: %s" % (opnum, name), file=file)
 
 class BitOP(OP):
     OPS = (

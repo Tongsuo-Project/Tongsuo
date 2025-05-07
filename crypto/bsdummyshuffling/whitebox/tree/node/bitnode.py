@@ -1,14 +1,14 @@
 #-*- coding:utf-8 -*-
 
-from op import BitOP
-from node import Node
+from .op import BitOP
+from .node import Node
 
 class BitNode(Node):
     OP = BitOP()
 
     def make_binary(op):
         def f(a, b):
-            if isinstance(b, (int, long)): b = a.const(b)
+            if isinstance(b, int): b = a.const(b)
             return a.__class__(op, a, b)
         return f
 

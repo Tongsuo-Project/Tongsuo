@@ -14,7 +14,7 @@ class Rect(object):
         self.w, self.h = w, h
 
         self.lst = []
-        for i in xrange(0, len(vec), w):
+        for i in range(0, len(vec), w):
             self.lst.append(list(vec[i:i+w]))
 
     @classmethod
@@ -37,34 +37,34 @@ class Rect(object):
         return Vector(self.lst[i])
 
     def col(self, i):
-        return Vector(self.lst[y][i] for y in xrange(self.h))
+        return Vector(self.lst[y][i] for y in range(self.h))
 
     def diag(self, x):
         assert self.w == self.h
-        return Vector(self.lst[i][(x+i) % self.w] for i in xrange(self.h))
+        return Vector(self.lst[i][(x+i) % self.w] for i in range(self.h))
 
     def set_row(self, y, vec):
-        for x in xrange(self.w):
+        for x in range(self.w):
             self.lst[y][x] = vec[x]
         return self
 
     def set_col(self, x, vec):
-        for y in xrange(self.h):
+        for y in range(self.h):
             self.lst[y][x] = vec[y]
         return self
 
     def set_diag(self, x, vec):
         assert self.w == self.h
-        for i in xrange(self.h):
+        for i in range(self.h):
             self.lst[i][(x+i) % self.w] = vec[i]
         return self
 
     def apply(self, f, with_coord=False):
-        for y in xrange(self.h):
+        for y in range(self.h):
             if with_coord:
                 self.lst[y] = [f(y, x, v) for x, v in enumerate(self.lst[y])]
             else:
-                self.lst[y] = map(f, self.lst[y])
+                self.lst[y] = list(map(f, self.lst[y]))
         return self
 
     def apply_row(self, x, func):
@@ -93,7 +93,7 @@ class Rect(object):
         )
 
     def transpose(self):
-        rect = [[self.lst[y][x] for y in xrange(self.h)] for x in xrange(self.w)]
+        rect = [[self.lst[y][x] for y in range(self.h)] for x in range(self.w)]
         return Rect.from_rect(rect=rect)
 
     def __repr__(self):
