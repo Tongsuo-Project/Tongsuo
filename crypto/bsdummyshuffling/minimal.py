@@ -63,5 +63,6 @@ ct = mask_circuit(ct, DOM(rand=rand, nshares=2))
 
 # a) generate Whibox submission
 from whitebox.whibox import whibox_generate
-file_path = os.path.join(os.getcwd(),  "bsdummyshuffling.c")
+# file_path = os.path.join(os.getcwd(),  "bsdummyshuffling.c")
+file_path = "crypto/bsdummyshuffling/bsdummyshuffling.c"
 whibox_generate( slice_cnt, ct, file_path, "Ok, world!")
