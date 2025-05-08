@@ -620,6 +620,9 @@ IF[{- !$disabled{tests} -}]
     IF[{- !$disabled{sm4} -}]
       PROGRAMS{noinst}=sm4_internal_test
     ENDIF
+    IF[{- !$disabled{wbsm4-xiao-dykey} -}]
+      PROGRAMS{noinst}=wbsm4_internal_test
+    ENDIF
     IF[{- !$disabled{wbsm4} -}]
       PROGRAMS{noinst}=wbsm4-resistdca_internal_test
     ENDIF

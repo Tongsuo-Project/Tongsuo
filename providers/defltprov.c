@@ -226,6 +226,15 @@ static const OSSL_ALGORITHM_CAPABLE deflt_ciphers[] = {
     ALG(PROV_NAMES_SM4_GCM, ossl_sm4128gcm_functions),
     ALG(PROV_NAMES_SM4_CCM, ossl_sm4128ccm_functions),
 #endif /* OPENSSL_NO_SM4 */
+#ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
+    ALG(PROV_NAMES_WBSM4_XIAO_DYKEY_ECB, ossl_wbsm4_xiao_dykey128ecb_functions),
+    ALG(PROV_NAMES_WBSM4_XIAO_DYKEY_CBC, ossl_wbsm4_xiao_dykey128cbc_functions),
+    ALG(PROV_NAMES_WBSM4_XIAO_DYKEY_CTR, ossl_wbsm4_xiao_dykey128ctr_functions),
+    ALG(PROV_NAMES_WBSM4_XIAO_DYKEY_OFB, ossl_wbsm4_xiao_dykey128ofb128_functions),
+    ALG(PROV_NAMES_WBSM4_XIAO_DYKEY_CFB, ossl_wbsm4_xiao_dykey128cfb128_functions),
+    ALG(PROV_NAMES_WBSM4_XIAO_DYKEY_GCM, ossl_wbsm4_xiao_dykey128gcm_functions),
+    ALG(PROV_NAMES_WBSM4_XIAO_DYKEY_CCM, ossl_wbsm4_xiao_dykey128ccm_functions),
+#endif /* OPENSSL_NO_SM4_XIAO_DYKEY */
 #ifndef OPENSSL_NO_CHACHA
     ALG(PROV_NAMES_ChaCha20, ossl_chacha20_functions),
 # ifndef OPENSSL_NO_POLY1305
@@ -275,6 +284,9 @@ static const OSSL_ALGORITHM deflt_kdfs[] = {
     { PROV_NAMES_SCRYPT, "provider=default", ossl_kdf_scrypt_functions },
 #endif
     { PROV_NAMES_KRB5KDF, "provider=default", ossl_kdf_krb5kdf_functions },
+#ifndef OPENSSL_NO_WBSM4_XIAO_DYKEY
+    { PROV_NAMES_WBSM4KDF, "provider=default", ossl_kdf_wbsm4kdf_functions },
+#endif
     { NULL, NULL, NULL }
 };
 
