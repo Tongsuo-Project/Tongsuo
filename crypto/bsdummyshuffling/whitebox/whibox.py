@@ -39,5 +39,5 @@ def whibox_generate(slice_cnt, ct, filename, comment=""):
         f.write(code)
     print("Source code %.2f MB, opcodes: %.2f MB" % (len(code) / 2.0**20, len(opcodes_data) / 2.0**20), file=sys.stderr)
     print("RAM: %d bits (bytes)" % RS.ram_size, file=sys.stderr)
-    print("write in %s" %filename)
+    print("write in %s" %filename, file=sys.stderr)
     return RS, code
