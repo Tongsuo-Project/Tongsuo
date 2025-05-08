@@ -13,14 +13,14 @@ if ($? != 0) {
 
 
 my $file = "$RealBin/bsdummyshuffling.c";
-if (-z $file) {
-    print STDERR "'$file' empty\n";
-} else {
-    print STDERR "'$file' !empty\n";
-}
+# if (-z $file) {
+#     print STDERR "'$file' empty\n";
+# } else {
+#     print STDERR "'$file' !empty\n";
+# }
 
 $output and open STDOUT,">$output";
 open(my $fh, '<', $file) or die "Could not open file '$file' $!";
 while (my $line = <$fh>) {
-    print $line;  # 输出每一行
+    print $line;
 }
