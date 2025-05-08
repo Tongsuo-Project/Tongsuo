@@ -9,3 +9,4 @@ my $result = qx(python "$python_script");
 if ($? != 0) {
     die "minimal.py failed with exit code: $? and output: $result";
 }
+
