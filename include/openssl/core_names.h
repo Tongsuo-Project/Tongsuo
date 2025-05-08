@@ -114,6 +114,9 @@ extern "C" {
 #define OSSL_CIPHER_PARAM_TLS1_MULTIBLOCK_ENC_LEN                              \
     "tls1multi_enclen"     /* size_t */
 
+/* wbsm4-xiao-dykey whitebox roundkey */
+#define OSSL_CIPHER_PARAM_WBSM4_WBRK           "sm4-wbrk"     /* octet string */
+
 /* OSSL_CIPHER_PARAM_CTS_MODE Values */
 #define OSSL_CIPHER_CTS_MODE_CS1 "CS1"
 #define OSSL_CIPHER_CTS_MODE_CS2 "CS2"
