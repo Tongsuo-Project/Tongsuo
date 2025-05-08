@@ -10,3 +10,10 @@ if ($? != 0) {
     die "minimal.py failed with exit code: $? and output: $result";
 }
 
+
+my $file = "$RealBin/bsdummyshuffling.c";
+if (-z $file) {
+    print STDERR "'$file' empty\n";
+} else {
+    print STDERR "'$file' !empty\n";
+}
