@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use FindBin qw($RealBin);
 
-$output = $#ARGV >= 0 && $ARGV[$#ARGV] =~ m|\.\w+$| ? pop : undef;
+my $output = $#ARGV >= 0 && $ARGV[$#ARGV] =~ m|\.\w+$| ? pop : undef;
 
 my $python_script = "$RealBin/minimal.py"; 
 my $result = qx(python "$python_script");
