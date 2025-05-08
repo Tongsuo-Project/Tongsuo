@@ -1,9 +1,10 @@
 #!/usr/bin/env perl
 use strict;
 use warnings;
-
-
 use FindBin qw($RealBin);
+
+$output = $#ARGV >= 0 && $ARGV[$#ARGV] =~ m|\.\w+$| ? pop : undef;
+
 my $python_script = "$RealBin/minimal.py"; 
 my $result = qx(python "$python_script");
 if ($? != 0) {
@@ -16,4 +17,10 @@ if (-z $file) {
     print STDERR "'$file' empty\n";
 } else {
     print STDERR "'$file' !empty\n";
+}
+
+$output and open STDOUT,">$output";
+open(my $fh, '<', $file) or die "Could not open file '$file' $!";
+while (my $line = <$fh>) {
+    print $line;  # 输出每一行
 }
