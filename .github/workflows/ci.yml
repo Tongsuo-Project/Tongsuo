@@ -247,11 +247,6 @@ jobs:
       run: ./config --banner=Configured --symbol-prefix=BABA_ --strict-warnings no-ec enable-ssl-trace enable-zlib enable-zlib-dynamic enable-crypto-mdebug enable-crypto-mdebug-backtrace enable-egd enable-ktls enable-fips enable-ntls enable-optimize-chacha-choose enable-status enable-crypto-mdebug-count enable-cert-compression enable-delegated-credential && perl configdata.pm --dump
     - name: make
       run: make -s -j4
-    - name: verify symbol prefixes 
-      run: |
-        echo "Checking symbols in libcrypto.a..."
-        nm -g crypto/libcrypto.a | grep WBSM4_bsdummyshuffling || true 
-        echo "----------------------------------"
     - name: make test
       run: make test
     - name: make clean
