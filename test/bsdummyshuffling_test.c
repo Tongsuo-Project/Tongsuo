@@ -10,7 +10,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <openssl/rand.h>
-#include <openssl/opensslconf.h>
 #include <openssl/evp.h>
 #include <openssl/kdf.h>
 #include <openssl/core_dispatch.h>
