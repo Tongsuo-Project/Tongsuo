@@ -5,12 +5,12 @@ static int slice = $SLICE_CNT;
 static A input_addr_enc[] = {$input_addr_enc};
 static A output_addr_enc[] = {$output_addr_enc};
 static B opcodes_enc[] = $opcodes_encoded_enc;
-W ram_enc[$ram_size_enc];
+static W ram_enc[$ram_size_enc];
 
 static A input_addr_dec[] = {$input_addr_dec};
 static A output_addr_dec[] = {$output_addr_dec};
 static B opcodes_dec[] = $opcodes_decoded_dec;
-W ram_dec[$ram_size_dec];
+static W ram_dec[$ram_size_dec];
 
 
 void WBSM4_bsdummyshuffling_enc(B *in, B *out) {
