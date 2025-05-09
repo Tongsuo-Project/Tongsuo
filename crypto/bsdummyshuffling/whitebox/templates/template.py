@@ -26,7 +26,7 @@ class Template(object):
                     return ",".join(map(str, res))
                 return str(repl[key])
             if self.show_warnings:
-                print("WARNING: Template has unset variable %s" % m.group(0), file=sys.stderr)
+                print("WARNING: Template has unset variable %s" % m.group(0))
             return m.group(0)
         return re.sub(r"\$(\w+)\b", rep, self.code)
 
@@ -38,8 +38,4 @@ def encode_bytes(s):
     is very compact (can be improved by avoiding null bytes)
     idea by Vlad Roskov
     """
-    # packed = []
-    # for c in s:
-    #     packed.append(r"\%03o" % c)
-    # return "".join(packed)
     return ", ".join(f"0x{b:02x}" for b in s)

@@ -16,9 +16,9 @@ def whibox_generate(if_enc, slice_cnt, ct, filename):
             header, opcodes = RS.serialize(ct)
             template = "whibox2019compact.c"
             kw = dict(op_bits=RS.op_bits)
-            print("Compact serialization succeeded!", file=sys.stderr)
+            print("Compact serialization succeeded!")
         except ValueError:
-            print("Compact serialize failed (too much ram usage), falling back to basic one.", file=sys.stderr)
+            print("Compact serialize failed (too much ram usage), falling back to basic one.")
             RS = RawSerializer()
             header, opcodes = RS.serialize(ct)
             template = "whibox2019.c"
@@ -31,19 +31,30 @@ def whibox_generate(if_enc, slice_cnt, ct, filename):
             output_addr_dec=RS.output_addr,
             SLICE_CNT=slice_cnt,
             opcodes_decoded_dec='{%s}' %  encode_bytes(opcodes_data),
-            ram_size=RS.ram_size,
-            num_opcodes=len(opcodes),
+            ram_size_dec=RS.ram_size,
+            num_opcodes_dec=len(opcodes),
             **kw
         )
     else:
-        RS = RawSerializer()
-        header, opcodes = RS.serialize(ct)
+        try:
+            RS = CompactRawSerializer()
+            header, opcodes = RS.serialize(ct)
+            kw = dict(op_bits=RS.op_bits)
+            print("Compact serialization succeeded!")
+        except ValueError:
+            print("Compact serialize failed (too much ram usage), falling back to basic one.")
+            RS = RawSerializer()
+            header, opcodes = RS.serialize(ct)
+            kw = dict()
+        
         template = os.path.join("..", "..", "bsdummyshuffling.c")
         opcodes_data = b''.join(opcodes)
         code = Template(template).subs(
             input_addr_enc=RS.input_addr,
             output_addr_enc=RS.output_addr,
             opcodes_encoded_enc='{%s}' %  encode_bytes(opcodes_data),
+            ram_size_enc=RS.ram_size,
+            num_opcodes_enc=len(opcodes),
         )
 
     with open(filename, "w") as f:
