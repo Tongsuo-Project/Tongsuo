@@ -39,6 +39,7 @@ static int test_bsdummyshuffling_random_input(void){
     
     /* 加密 */
     ossl_sm4_encrypt(block_sm4, block_sm4, &key);
+    WBSM4_bsdummyshuffling_enc(block_wbsm4_dsdummyshuffling, block_wbsm4_dsdummyshuffling);
     return 1;
 }
 #endif
