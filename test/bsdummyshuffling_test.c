@@ -1,23 +1,64 @@
-#include <stdio.h>
+/*
+ * Copyright 2025 The Tongsuo Project Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
+ * this file except in compliance with the License.  You can obtain a copy
+ * in the file LICENSE in the source distribution or at
+ * https://github.com/Tongsuo-Project/Tongsuo/blob/master/LICENSE.txt
+ */
+
+#include <stdint.h>
+#include <string.h>
+#include <openssl/rand.h>
+#include <openssl/opensslconf.h>
+#include <openssl/evp.h>
+#include <openssl/kdf.h>
+#include <openssl/core_dispatch.h>
+#include <openssl/core_names.h>
+#include "testutil.h"
 #include "crypto/bsdummyshuffling.h"
 
+#ifndef OPENSSL_NO_SM4
+#include "crypto/sm4.h"
+static int test_bsdummyshuffling_random_input(void){
 
+    uint8_t input[SM4_BLOCK_SIZE];
 
-/* KEY = "samplekey1234567" 73616d706c656b657931323334353637 */
-/* 748074076200569c9deeb1dec18a7910 74 80 74 07 62 00 56 9c 9d ee b1 de c1 8a 79 10 */
-/* 7711451c1922325b858cb74b6d5db070 77 11 45 1c 19 22 32 5b 85 8c b7 4b 6d 5d b0 70 */
+    /* 密钥需要在上层电路确定 */
+    uint8_t k[SM4_BLOCK_SIZE]={0x73, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x6b, 0x65, 0x79, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37};
+    uint8_t block_sm4[SM4_BLOCK_SIZE];
+    uint8_t block_wbsm4_dsdummyshuffling[SM4_BLOCK_SIZE];
+    SM4_KEY key;
 
-int main(void) {
-    unsigned char plaintext[16*64]={0x74, 0x80, 0x74, 0x07, 0x62, 0x00, 0x56, 0x9c, 0x9d, 0xee, 0xb1, 0xde, 0xc1, 0x8a, 0x79, 0x10};
-    unsigned char expected[16*64]= {0x77, 0x11, 0x45, 0x1c, 0x19, 0x22, 0x32, 0x5b, 0x85, 0x8c, 0xb7, 0x4b, 0x6d, 0x5d, 0xb0, 0x70};
-    unsigned char ciphertext[16*64]={0};
-    int i;
+    if(!TEST_int_eq(RAND_bytes(input,SM4_BLOCK_SIZE), 1)){
+        return 0;
+    }
+    memcpy(block_sm4, input, SM4_BLOCK_SIZE);
+    memcpy(block_wbsm4_dsdummyshuffling, input, SM4_BLOCK_SIZE);
+
+    ossl_sm4_set_key(k, &key);
     
-    SM4_128(ciphertext, plaintext);
-    for (i=0; i<16; i++)
-        if (ciphertext[i]!=expected[i]){
-            printf("failed\n");
-            break;
-        }
-    return 0;
+    /* 加密 */
+    ossl_sm4_encrypt(block_sm4, block_sm4, &key);
+    WBSM4_bsdummyshuffling_enc(block_wbsm4_dsdummyshuffling, block_wbsm4_dsdummyshuffling);
+    if (!TEST_mem_eq(block_sm4, SM4_BLOCK_SIZE, block_wbsm4_dsdummyshuffling, SM4_BLOCK_SIZE)){
+        return 0;
+    }
+
+    /* 解密 */
+    ossl_sm4_decrypt(block_sm4, block_sm4, &key);
+    WBSM4_bsdummyshuffling_dec(block_wbsm4_dsdummyshuffling, block_wbsm4_dsdummyshuffling);
+    if (!TEST_mem_eq(block_sm4, SM4_BLOCK_SIZE, block_wbsm4_dsdummyshuffling, SM4_BLOCK_SIZE)){
+        return 0;
+    }
+    
+    return 1;
+}
+#endif
+
+
+int setup_tests(void)
+{
+    ADD_TEST(test_bsdummyshuffling_random_input);
+    return 1;
 }
