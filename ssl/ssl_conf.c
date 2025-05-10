@@ -465,21 +465,130 @@ static int cmd_PrivateKey(SSL_CONF_CTX *cctx, const char *value)
 }
 
 #ifndef OPENSSL_NO_NTLS
+/*
+ * Read a file that contains our certificate in "PEM" format, possibly
+ * followed by a sequence of CA certificates that should be sent to the peer
+ * in the Certificate message.
+ */
+static int use_ntls_certificate_chain_file(SSL_CTX *ctx, SSL *ssl, int sign, const char *file)
+{
+    BIO *in;
+    int ret = 0;
+    X509 *x = NULL;
+    pem_password_cb *passwd_callback;
+    void *passwd_callback_userdata;
+
+    ERR_clear_error();          /* clear error stack for
+                                 * SSL_CTX_use_certificate() */
+
+    if (ctx != NULL) {
+        passwd_callback = ctx->default_passwd_callback;
+        passwd_callback_userdata = ctx->default_passwd_callback_userdata;
+    } else {
+        passwd_callback = ssl->default_passwd_callback;
+        passwd_callback_userdata = ssl->default_passwd_callback_userdata;
+    }
+
+    in = BIO_new(BIO_s_file());
+    if (in == NULL) {
+        //SSLerr_(SSL_F_USE_CERTIFICATE_CHAIN_FILE, ERR_R_BUF_LIB);
+        goto end;
+    }
+
+    if (BIO_read_filename(in, file) <= 0) {
+        //SSLerr_(SSL_F_USE_CERTIFICATE_CHAIN_FILE, ERR_R_SYS_LIB);
+        goto end;
+    }
+
+    x = PEM_read_bio_X509_AUX(in, NULL, passwd_callback,
+                              passwd_callback_userdata);
+    if (x == NULL) {
+        //SSLerr_(SSL_F_USE_CERTIFICATE_CHAIN_FILE, ERR_R_PEM_LIB);
+        goto end;
+    }
+
+    if (sign) {
+        if (ctx)
+            ret = SSL_CTX_use_sign_certificate(ctx, x);
+        else
+            ret = SSL_use_sign_certificate(ssl, x);
+    } else {
+        if (ctx)
+            ret = SSL_CTX_use_enc_certificate(ctx, x);
+        else
+            ret = SSL_use_enc_certificate(ssl, x);
+    }
+
+    if (ERR_peek_error() != 0)
+        ret = 0;                /* Key/certificate mismatch doesn't imply
+                                 * ret==0 ... */
+    if (ret) {
+        /*
+         * If we could set up our certificate, now proceed to the CA
+         * certificates.
+         */
+        X509 *ca;
+        int r;
+        unsigned long err;
+
+        if (ctx)
+            r = SSL_CTX_clear_chain_certs(ctx);
+        else
+            r = SSL_clear_chain_certs(ssl);
+
+        if (r == 0) {
+            ret = 0;
+            goto end;
+        }
+
+        while ((ca = PEM_read_bio_X509(in, NULL, passwd_callback,
+                                       passwd_callback_userdata))
+               != NULL) {
+            if (ctx)
+                r = SSL_CTX_add0_chain_cert(ctx, ca);
+            else
+                r = SSL_add0_chain_cert(ssl, ca);
+            /*
+             * Note that we must not free ca if it was successfully added to
+             * the chain (while we must free the main certificate, since its
+             * reference count is increased by SSL_CTX_use_certificate).
+             */
+            if (!r) {
+                X509_free(ca);
+                ret = 0;
+                goto end;
+            }
+        }
+        /* When the while loop ends, it's usually just EOF. */
+        err = ERR_peek_last_error();
+        if (ERR_GET_LIB(err) == ERR_LIB_PEM
+            && ERR_GET_REASON(err) == PEM_R_NO_START_LINE)
+            ERR_clear_error();
+        else
+            ret = 0;            /* some real error */
+    }
+
+ end:
+    X509_free(x);
+    BIO_free(in);
+    return ret;
+}
+
 static int cmd_EncCertificate(SSL_CONF_CTX *cctx, const char *value)
 {
     int rv = 1;
     CERT *c = NULL;
 
     if (cctx->ctx) {
-        /* FIXME: currently we assume all SM2 certs in PEM format */
-        rv = SSL_CTX_use_enc_certificate_file(cctx->ctx, value,
-                                              SSL_FILETYPE_PEM);
+        rv = use_ntls_certificate_chain_file(cctx->ctx, NULL, 0,
+                                             value);
         c = cctx->ctx->cert;
     }
 
     if (cctx->ssl) {
-        /* FIXME: setting certificates for SSL is not supported yet */
-        rv = 0;
+        rv = use_ntls_certificate_chain_file(NULL, cctx->ssl, 0,
+                                             value);
+        c = cctx->ssl->cert;
     }
 
     if (rv > 0 && c && cctx->flags & SSL_CONF_FLAG_REQUIRE_PRIVATE) {
@@ -501,7 +610,7 @@ static int cmd_EncPrivateKey(SSL_CONF_CTX *cctx, const char *value)
     if (cctx->ctx)
         rv = SSL_CTX_use_enc_PrivateKey_file(cctx->ctx, value, SSL_FILETYPE_PEM);
     if (cctx->ssl)
-        rv = 0;
+        rv = SSL_use_enc_PrivateKey_file(cctx->ssl, value, SSL_FILETYPE_PEM);
     return rv > 0;
 }
 
@@ -511,15 +620,15 @@ static int cmd_SignCertificate(SSL_CONF_CTX *cctx, const char *value)
     CERT *c = NULL;
 
     if (cctx->ctx) {
-        /* FIXME: currently we assume all sign certs in PEM format */
-        rv = SSL_CTX_use_sign_certificate_file(cctx->ctx, value,
-                                               SSL_FILETYPE_PEM);
+        rv = use_ntls_certificate_chain_file(cctx->ctx, NULL, 1,
+                                             value);
         c = cctx->ctx->cert;
     }
 
     if (cctx->ssl) {
-        /* FIXME: setting certificates for SSL is not supported yet */
-        rv = 0;
+        rv = use_ntls_certificate_chain_file(NULL, cctx->ssl, 1,
+                                             value);
+        c = cctx->ssl->cert;
     }
 
     if (rv > 0 && c && cctx->flags & SSL_CONF_FLAG_REQUIRE_PRIVATE) {
@@ -542,7 +651,7 @@ static int cmd_SignPrivateKey(SSL_CONF_CTX *cctx, const char *value)
         rv = SSL_CTX_use_sign_PrivateKey_file(cctx->ctx, value,
                                               SSL_FILETYPE_PEM);
     if (cctx->ssl)
-        rv = 0;
+        rv = SSL_use_sign_PrivateKey_file(cctx->ssl, value, SSL_FILETYPE_PEM);
     return rv > 0;
 }
 #endif
