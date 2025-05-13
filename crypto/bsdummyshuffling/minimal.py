@@ -7,7 +7,7 @@
 #
 # You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 
-import os, math
+import os, math, random
 from whitebox.tree.node import OptBitNode as Bit
 from whitebox.ciphers.SM4 import BitSM4, randSM4
 from whitebox.prng import LFSR, Pool
@@ -18,11 +18,14 @@ KEY = "samplekey1234567"
 if_dummy = 1
 slot = 2**1
 slice_cnt = 1
+# 随机参数
+rp=[random.randint(0, 255) for _ in range(16)]
 
 
 for if_enc in range(2):
     pt = Bit.inputs("pt", 128)
-    prng = LFSR(taps=[0, 2, 5, 18, 39, 100, 127], state=randSM4(pt))
+    rp = Bit.inputs("rp", 128)
+    prng = LFSR(taps=[0, 2, 5, 18, 39, 100, 127], state=randSM4(pt,rp))
     rand = Pool(n=128, prng=prng).step
     # dummy
     def dummy(x, k, if_enc):
