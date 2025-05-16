@@ -1,0 +1,8 @@
+# 定义目标库为 libcrypto
+LIBS=../../libcrypto
+
+# 生成白盒加密程序
+GENERATE[bsdummyshuffling.c]=minimal.pl
+
+# 将白盒加密程序添加到 libcrypto 的源文件列表中
+SOURCE[../../libcrypto]=bsdummyshuffling.c
