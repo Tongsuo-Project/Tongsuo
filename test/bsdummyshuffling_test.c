@@ -57,7 +57,6 @@ static int test_bsdummyshuffling_enc_dec(void){
     uint8_t input[SM4_BLOCK_SIZE];
 
     /* 密钥需要在上层电路确定 */
-    uint8_t k[SM4_BLOCK_SIZE]={0x73, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x6b, 0x65, 0x79, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37};
     uint8_t block_wbsm4_dsdummyshuffling[SM4_BLOCK_SIZE];
 
     if(!TEST_int_eq(RAND_bytes(input,SM4_BLOCK_SIZE), 1)){
