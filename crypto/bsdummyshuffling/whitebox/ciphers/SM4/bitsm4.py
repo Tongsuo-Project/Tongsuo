@@ -1,4 +1,10 @@
 #-*- coding:utf-8 -*-
+# Copyright 2025 The Tongsuo Project Authors. All Rights Reserved.
+# Licensed under the Apache License 2.0 (the "License").  You may not use
+# this file except in compliance with the License.  You can obtain a copy
+# in the file LICENSE in the source distribution or at
+# https://github.com/Tongsuo-Project/Tongsuo/blob/master/LICENSE.txt
+
 
 sm4_fk = [0xa3b1bac6, 0x56aa3350, 0x677d9197, 0xb27022dc]
 sm4_ck = [
