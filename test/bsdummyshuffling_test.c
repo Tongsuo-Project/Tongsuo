@@ -21,33 +21,33 @@
 #include "crypto/sm4.h"
 
 static int test_bsdummyshuffling_random_input(void){
-    uint8_t input[16];
+    uint8_t input[SM4_BLOCK_SIZE];
 
     /* 密钥需要在上层电路确定 */
-    uint8_t k[16]={0x73, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x6b, 0x65, 0x79, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37};
-    uint8_t block_sm4[16];
-    uint8_t block_wbsm4_dsdummyshuffling[16];
+    uint8_t k[SM4_BLOCK_SIZE]={0x73, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x6b, 0x65, 0x79, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37};
+    uint8_t block_sm4[SM4_BLOCK_SIZE];
+    uint8_t block_wbsm4_dsdummyshuffling[SM4_BLOCK_SIZE];
     SM4_KEY key;
 
-    if(!TEST_int_eq(RAND_bytes(input,16), 1)){
+    if(!TEST_int_eq(RAND_bytes(input,SM4_BLOCK_SIZE), 1)){
         return 0;
     }
-    memcpy(block_sm4, input, 16);
-    memcpy(block_wbsm4_dsdummyshuffling, input, 16);
+    memcpy(block_sm4, input, SM4_BLOCK_SIZE);
+    memcpy(block_wbsm4_dsdummyshuffling, input, SM4_BLOCK_SIZE);
 
     ossl_sm4_set_key(k, &key);
     
     /* 加密 */
     ossl_sm4_encrypt(block_sm4, block_sm4, &key);
     WBSM4_bsdummyshuffling_enc(block_wbsm4_dsdummyshuffling, block_wbsm4_dsdummyshuffling);
-    if (!TEST_mem_eq(block_sm4, 16, block_wbsm4_dsdummyshuffling, 16)){
+    if (!TEST_mem_eq(block_sm4, SM4_BLOCK_SIZE, block_wbsm4_dsdummyshuffling, SM4_BLOCK_SIZE)){
         return 0;
     }
 
     /* 解密 */
     ossl_sm4_decrypt(block_sm4, block_sm4, &key);
     WBSM4_bsdummyshuffling_dec(block_wbsm4_dsdummyshuffling, block_wbsm4_dsdummyshuffling);
-    if (!TEST_mem_eq(block_sm4, 16, block_wbsm4_dsdummyshuffling, 16)){
+    if (!TEST_mem_eq(block_sm4, SM4_BLOCK_SIZE, block_wbsm4_dsdummyshuffling, SM4_BLOCK_SIZE)){
         return 0;
     }
     return 1;
