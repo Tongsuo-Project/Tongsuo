@@ -629,6 +629,9 @@ IF[{- !$disabled{tests} -}]
     IF[{- !$disabled{nonlinearwbsm4} -}]
       PROGRAMS{noinst}=nonlinearwbsm4_internal_test
     ENDIF
+    IF[{- !$disabled{bsdummyshuffling} -}]
+      PROGRAMS{noinst}=bsdummyshuffling_test
+    ENDIF
     IF[{- !$disabled{zuc} -}]
       PROGRAMS{noinst}=zuc_internal_test
     ENDIF
@@ -788,6 +791,10 @@ IF[{- !$disabled{tests} -}]
     SOURCE[wbsm4_internal_test]=wbsm4_internal_test.c
     INCLUDE[wbsm4_internal_test]=.. ../include ../apps/include
     DEPEND[wbsm4_internal_test]=../libcrypto.a libtestutil.a
+
+    SOURCE[bsdummyshuffling_test]=bsdummyshuffling_test.c
+    INCLUDE[bsdummyshuffling_test]=.. ../include ../apps/include
+    DEPEND[bsdummyshuffling_test]=../libcrypto.a libtestutil.a
 
     SOURCE[zuc_internal_test]=zuc_internal_test.c
     INCLUDE[zuc_internal_test]=.. ../include ../apps/include ../crypto/include
