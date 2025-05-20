@@ -40,54 +40,36 @@ def Not(x):
     return MASK^x
 
 
-# 为什么不生成完轮密钥然后再转化为node？？？？？
-# 甚至不需要转化为node
-
-#利用s盒进行非线性变换tao()
-def tao(b):#b是一个4字节长度的word
+def tao(b):
     result=0
     for i in range(4):
         result=result+(sm4_s_box[b%(16**2)]<<(8*i))
         b=b>>8
     return result
-#循环左移
 def cir_shift(x,i):
     x=x<<i
-    low=x%(2**32)#取移位之后的低32位作为基数
-    high=x>>32#x右移32位得到加数
+    low=x%(2**32)
+    high=x>>32
     return low+high
-#线性变换L'()
 def L_pie(B):
-    #print("参数为:::::{}".format(hex(B)))
     return B^cir_shift(B,13)^cir_shift(B,23)
-#一次密钥轮变换F'，用于产生一个轮密钥关键字
 def F_pie(K0,K1,K2,K3,ck0):
-    #print("{}异或T'({})".format(hex(K0),hex(K1^K2^K3^ck0)))
     return K0^T_pie(K1^K2^K3^ck0)
-# 函数T'()
 def T_pie(X):
-    #print("参数为:{}".format(hex(X)))
-    #print("结果为:{}".format(hex(L_pie(tao(X)))))
     return L_pie(tao(X))
 def sm4_expandKey(KEY, if_enc):
-    # MKK是str，需要先转化为8位无符号数
     MKK = [ord(c) for c in KEY]
-    # 换成u32
     MK=[0 for _ in range(4)]
     for i in range(16):
         MK[int(i/4)] ^= MKK[i]<<((3-(i%4))*8)
-    rk=[]   #轮密钥关键字RK
-    K=[]    #密钥关键字K
-    #产生四个密钥关键字
+    rk=[]
+    K=[]
     for i in range(4):
         K.append(MK[i]^sm4_fk[i])
-    # print([hex(x) for x in K])
-    #首先进行32次轮密钥变换产生32个轮密钥关键字
     for i in range(32):
         rk.append(F_pie(K[i],K[i+1],K[i+2],K[i+3],sm4_ck[i]))
         K.append(rk[i])
     
-    # print(len(rk),len(K))
     if if_enc:
         return rk
     else:
@@ -95,7 +77,6 @@ def sm4_expandKey(KEY, if_enc):
 
     
 def sm4_bs_sbox(x=[]):
-    # y_t[21], t_t[8], t_m[46], y_m[18], t_b[30]
     s = [None for i in range(0, 8)]
     y_t = [None for i in range(0, 21)]
     t_t = [None for i in range(0, 8)]
@@ -265,18 +246,13 @@ def BitSM4(ptx, key, if_enc):
         for k in range(32):
             buf[j][k] = ptx[32*j+k]
     global idM32
-    # 32轮
     for i in range(32):
-        # 4道32bit数据操作
         for j in range(32):
-            # buf[4+i][j] = buf[i+1][j] ^ buf[i+2][j] ^ buf[i+3][j] ^ BS_RK_512[i][j]
             buf[i+4][j] = buf[i+1][j] ^ buf[i+2][j]
             buf[i+4][j] = buf[i+4][j] ^ buf[i+3][j]
             if kk[i] & idM32[j]:
                 buf[i+4][j] = Not(buf[i+4][j])
-        # S盒
         sm4_SubBytes(buf[i+4])
-        # 线性变换L 循环左移
         for j in range(32):
             temp[j] = buf[4+i][j] ^ buf[4+i][(j+2)%32]
             temp[j] = temp[j] ^ buf[4+i][(j+10)%32]
@@ -284,11 +260,9 @@ def BitSM4(ptx, key, if_enc):
             temp[j] = temp[j] ^ buf[4+i][(j+24)%32]
         for j in range(32):
             buf[4+i][j] = temp[j] ^ buf[i][j]
-    # 反序
     for j in range(4):
         for k in range(32):
             ctx[32*j+k]=buf[35-j][k]
-            # ctx[32*j+k]=buf[j+1][k]
     
     return ctx
 
@@ -304,16 +278,11 @@ def randSM4(ptx1, rp):
         for k in range(32):
             buf[j][k] = ptx[32*j+k]
     global idM32
-    # 32轮
     for i in range(8):
-        # 4道32bit数据操作
         for j in range(32):
-            # buf[4+i][j] = buf[i+1][j] ^ buf[i+2][j] ^ buf[i+3][j] ^ BS_RK_512[i][j]
             buf[i+4][j] = buf[i+1][j] ^ buf[i+2][j]
             buf[i+4][j] = buf[i+4][j] ^ buf[i+3][j]
-        # S盒
         sm4_SubBytes(buf[i+4])
-        # 线性变换L 循环左移
         for j in range(32):
             temp[j] = buf[4+i][j] ^ buf[4+i][(j+2)%32]
             temp[j] = temp[j] ^ buf[4+i][(j+10)%32]
@@ -321,10 +290,7 @@ def randSM4(ptx1, rp):
             temp[j] = temp[j] ^ buf[4+i][(j+24)%32]
         for j in range(32):
             buf[4+i][j] = temp[j] ^ buf[i][j]
-    # 反序
     for j in range(4):
         for k in range(32):
             ctx[32*j+k]=buf[7-j][k]
-            # ctx[32*j+k]=buf[j+1][k]
-    
     return ctx
