@@ -1153,6 +1153,11 @@
 #define NID_zuc_128_eia3                1255
 #define OBJ_zuc_128_eia3                OBJ_sm_scheme,802L
 
+#define SN_sm2dh_mlkem768_hybrid                "SM2DH-MLKEM768-HYBRID"
+#define LN_sm2dh_mlkem768_hybrid                "sm2dh-mlkem768-hybrid"
+#define NID_sm2dh_mlkem768_hybrid               1281
+#define OBJ_sm2dh_mlkem768_hybrid               OBJ_sm_scheme,1001L
+
 #define LN_hmacWithSHA224               "hmacWithSHA224"
 #define NID_hmacWithSHA224              798
 #define OBJ_hmacWithSHA224              OBJ_rsadsi,2L,8L

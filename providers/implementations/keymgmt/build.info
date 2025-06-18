@@ -8,6 +8,7 @@ $ECX_GOAL=../../libdefault.a ../../libfips.a
 $KDF_GOAL=../../libdefault.a ../../libfips.a
 $MAC_GOAL=../../libdefault.a ../../libfips.a
 $RSA_GOAL=../../libdefault.a ../../libfips.a
+$SM2DH_MLKEM768_GOAL=../../libdefault.a
 
 IF[{- !$disabled{dh} -}]
   SOURCE[$DH_GOAL]=dh_kmgmt.c
@@ -32,6 +33,12 @@ ENDIF
 IF[{- !$disabled{ec} -}]
   SOURCE[$ECX_GOAL]=ecx_kmgmt.c
   DEFINE[$ECX_GOAL]=$ECDEF
+ENDIF
+
+IF[{- !$disabled{sm2} -}]
+  IF[{- !$disabled{sm2dh-mlkem768-hybrid} -}]
+    SOURCE[$SM2DH_MLKEM768_GOAL]=sm2dh_mlkem768_hybrid_kmgmt.c
+  ENDIF
 ENDIF
 
 SOURCE[$RSA_GOAL]=rsa_kmgmt.c

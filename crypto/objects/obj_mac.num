@@ -1048,3 +1048,4 @@ wbsm4_baiwu_ofb128		1277
 wbsm4_baiwu_cfb128		1278
 wbsm4_wsise_ofb128		1279
 wbsm4_wsise_cfb128		1280
+sm2dh_mlkem768_hybrid		1281

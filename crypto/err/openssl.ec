@@ -47,6 +47,7 @@ L HTTP          include/openssl/httperr.h       crypto/http/http_err.c          
 L ZKP           include/openssl/zkperr.h        crypto/zkp/common/zkp_err.c             include/crypto/zkperr.h
 L ZKP_BP        include/openssl/zkpbperr.h      crypto/zkp/bulletproofs/bp_err.c        include/crypto/zkpbperr.h
 L ZKP_NIZK      include/openssl/zkpnizkerr.h    crypto/zkp/nizk/nizk_err.c              include/crypto/zkpnizkerr.h
+L SM2DH_MLKEM768_HYBRID NONE                            crypto/sm2dh_mlkem768/sm2dh_mlkem768_hybrid_err.c  include/crypto/sm2dh_mlkem768_hybrid_err.h
 
 # SSL/TLS alerts
 R SSL_R_SSLV3_ALERT_UNEXPECTED_MESSAGE          1010

@@ -265,3 +265,5 @@
 #define PROV_DESCS_SM2 "OpenSSL SM2 implementation"
 #define PROV_NAMES_SM2DH "SM2DH"
 #define PROV_DESCS_SM2DH "Tongsuo SM2DH implementation"
+#define PROV_NAMES_SM2DH_MLKEM768_HYBRID "SM2DH-MLKEM768-HYBRID"
+#define PROV_DESCS_SM2DH_MLKEM768_HYBRID "Hybrid KEM combining curveSM2-DH and MLKEM-768" 
