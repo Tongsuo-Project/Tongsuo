@@ -13,7 +13,7 @@
 #define _GNU_SOURCE
 #include <unistd.h>
 #include <sys/syscall.h>
-#elif __NetBSD__
+#elif defined (__NetBSD__)
 #include <sys/random.h>
 #else
 #include <unistd.h>

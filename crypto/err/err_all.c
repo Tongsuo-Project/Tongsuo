@@ -106,9 +106,11 @@ int ossl_err_load_crypto_strings(void)
         || ossl_err_load_OSSL_STORE_strings() == 0
         || ossl_err_load_PROP_strings() == 0
         || ossl_err_load_PROV_strings() == 0
-#ifndef OPENSSL_NO_SM2DH_MLKEM768_HYBRID
+
+# ifndef OPENSSL_NO_SM2DH_MLKEM768_HYBRID
         || ossl_err_load_SM2DH_MLKEM768_HYBRID_strings() == 0
-#endif
+# endif
+
 #endif
         )
         return 0;

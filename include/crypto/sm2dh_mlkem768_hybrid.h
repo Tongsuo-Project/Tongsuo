@@ -38,26 +38,25 @@
 #define SM2_DH_MLKEM_768_HYBRID_SK_SIZE (SM2_DH_SK_SIZE + MLKEM_768_SK_SIZE)
 #define SM2_DH_MLKEM_768_HYBRID_PK_SIZE (SM2_DH_PK_SIZE + MLKEM_768_PK_SIZE)
 
-struct sm2dh_mlkem768_hybrid_key{
+typedef struct sm2_dh_mlkem768_hybrid_key {
     int has_kem_sk;
     uint8_t * pk;
     uint8_t * sk;
     uint8_t * ct;
-    // shared secret
     uint8_t * ss;
-};
+    OSSL_LIB_CTX * libctx;
+} sm2dh_mlkem768_hybrid_key;
 
-typedef struct sm2dh_mlkem768_hybrid_key SM2DH_MLKEM768_HYBRID_KEY;
 
-SM2DH_MLKEM768_HYBRID_KEY * SM2DH_MLKEM768_HYBRID_KEY_new();
-void SM2DH_MLKEM768_HYBRID_KEY_free(SM2DH_MLKEM768_HYBRID_KEY * key);
+sm2dh_mlkem768_hybrid_key * sm2dh_mlkem768_hybrid_key_new(void);
+void sm2dh_mlkem768_hybrid_key_free(sm2dh_mlkem768_hybrid_key * key);
 
-int sm2_dh_mlkem768_hybrid_keygen(uint8_t *pk, size_t pk_len, uint8_t *sk, size_t sk_len);
+int sm2dh_mlkem768_hybrid_keygen(OSSL_LIB_CTX * libctx, uint8_t *pk, size_t pk_len, uint8_t *sk, size_t sk_len);
 
-int sm2_dh_mlkem768_hybrid_encaps(uint8_t *ss, size_t ss_len, uint8_t *ct, size_t ct_len,  const uint8_t *pk, size_t pk_len);
+int sm2dh_mlkem768_hybrid_encaps(OSSL_LIB_CTX * libctx, uint8_t *ss, size_t ss_len, uint8_t *ct, size_t ct_len,  const uint8_t *pk, size_t pk_len);
 
-int sm2_dh_mlkem768_hybrid_decaps(uint8_t *ss, size_t ss_len, const uint8_t *ct, size_t ct_len, const uint8_t *sk, size_t sk_len);
+int sm2dh_mlkem768_hybrid_decaps(OSSL_LIB_CTX * libctx, uint8_t *ss, size_t ss_len, const uint8_t *ct, size_t ct_len, const uint8_t *sk, size_t sk_len);
 
 # endif
 
-#endif // OSSL_CRYPTO_SM2DH_MLKEM768_H
+#endif

@@ -17,6 +17,7 @@
 #include <openssl/core_dispatch.h>
 
 #include "crypto/sm2dh_mlkem768_hybrid.h"
+#include "prov/implementations.h"
 #include "prov/providercommon.h"
 #include "prov/provider_ctx.h"
 
@@ -32,8 +33,8 @@ static OSSL_FUNC_keyexch_get_ctx_params_fn          sm2dh_mlkem768_hybrid_get_ct
 static OSSL_FUNC_keyexch_gettable_ctx_params_fn     sm2dh_mlkem768_hybrid_gettable_ctx_params;
 
 struct sm2dh_mlkem768_hybrid_keyexch_ctx {
-    SM2DH_MLKEM768_HYBRID_KEY * k;
-    SM2DH_MLKEM768_HYBRID_KEY * peer_k;
+    sm2dh_mlkem768_hybrid_key * k;
+    sm2dh_mlkem768_hybrid_key * peer_k;
     OSSL_LIB_CTX * libctx;
 };
 
@@ -60,7 +61,7 @@ static int sm2dh_mlkem768_hybrid_init(void * vctx, void * vkey, const OSSL_PARAM
     struct sm2dh_mlkem768_hybrid_keyexch_ctx * ctx = vctx;
     if (!ossl_prov_is_running() || vctx == NULL || vkey == NULL)
         return 0;
-    ctx->k = (SM2DH_MLKEM768_HYBRID_KEY *)vkey;
+    ctx->k = (sm2dh_mlkem768_hybrid_key *)vkey;
     return 1;
 }
 
@@ -69,7 +70,7 @@ static int sm2dh_mlkem768_hybrid_set_peer(void * vctx, void * vkey)
     struct sm2dh_mlkem768_hybrid_keyexch_ctx * ctx = vctx;
     if(!ossl_prov_is_running() || vctx == NULL || vkey == NULL)
         return 0;
-    ctx->peer_k = (SM2DH_MLKEM768_HYBRID_KEY *)vkey;
+    ctx->peer_k = (sm2dh_mlkem768_hybrid_key *)vkey;
     return 1;
 }
 
@@ -88,11 +89,11 @@ static int sm2dh_mlkem768_hybrid_derive(void * vpctx, unsigned char * secret, si
     }
 
     if(ctx->k->has_kem_sk) {
-        // client: call the decapsulation algorithm
-        if(!sm2_dh_mlkem768_hybrid_decaps(secret, SM2_DH_MLKEM_768_HYBRID_SS_SIZE, ctx->peer_k->ct, SM2_DH_MLKEM_768_HYBRID_CT_SIZE, ctx->k->sk, SM2_DH_MLKEM_768_HYBRID_SK_SIZE))
+        /* client: call the decapsulation algorithm */
+        if(!sm2dh_mlkem768_hybrid_decaps(ctx->libctx, secret, SM2_DH_MLKEM_768_HYBRID_SS_SIZE, ctx->peer_k->ct, SM2_DH_MLKEM_768_HYBRID_CT_SIZE, ctx->k->sk, SM2_DH_MLKEM_768_HYBRID_SK_SIZE))
             return 0;
     } else {
-        // server: get the shared secret directly
+        /* server: get the shared secret directly */
         memcpy(secret, ctx->k->ss, SM2_DH_MLKEM_768_HYBRID_SS_SIZE);
     }
     * psecret_len = SM2_DH_MLKEM_768_HYBRID_SS_SIZE;

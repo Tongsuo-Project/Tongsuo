@@ -27,7 +27,7 @@ void poly_compress(uint8_t r[KYBER_POLYCOMPRESSEDBYTES], const poly *a)
 
   for(i=0;i<KYBER_N/8;i++) {
     for(j=0;j<8;j++) {
-      // map to positive standard representatives
+
       u  = a->coeffs[8*i+j];
       u += (u >> 15) & KYBER_Q;
 /*    t[j] = ((((uint16_t)u << 4) + KYBER_Q/2)/KYBER_Q) & 15; */
@@ -47,7 +47,7 @@ void poly_compress(uint8_t r[KYBER_POLYCOMPRESSEDBYTES], const poly *a)
 #elif (KYBER_POLYCOMPRESSEDBYTES == 160)
   for(i=0;i<KYBER_N/8;i++) {
     for(j=0;j<8;j++) {
-      // map to positive standard representatives
+
       u  = a->coeffs[8*i+j];
       u += (u >> 15) & KYBER_Q;
 /*    t[j] = ((((uint32_t)u << 5) + KYBER_Q/2)/KYBER_Q) & 31; */
@@ -127,7 +127,7 @@ void poly_tobytes(uint8_t r[KYBER_POLYBYTES], const poly *a)
   uint16_t t0, t1;
 
   for(i=0;i<KYBER_N/2;i++) {
-    // map to positive standard representatives
+
     t0  = a->coeffs[2*i];
     t0 += ((int16_t)t0 >> 15) & KYBER_Q;
     t1 = a->coeffs[2*i+1];
@@ -198,8 +198,7 @@ void poly_tomsg(uint8_t msg[KYBER_INDCPA_MSGBYTES], const poly *a)
     msg[i] = 0;
     for(j=0;j<8;j++) {
       t  = a->coeffs[8*i+j];
-      // t += ((int16_t)t >> 15) & KYBER_Q;
-      // t  = (((t << 1) + KYBER_Q/2)/KYBER_Q) & 1;
+
       t <<= 1;
       t += 1665;
       t *= 80635;

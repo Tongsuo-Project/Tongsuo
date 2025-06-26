@@ -41,7 +41,7 @@ static void store64(uint8_t x[8], uint64_t u) {
   unsigned int i;
 
   for(i=0;i<8;i++)
-    x[i] = u >> 8*i;
+    x[i] = (uint8_t)(u >> 8*i);
 }
 
 /* Keccak round constants */
@@ -96,7 +96,6 @@ static void KeccakF1600_StatePermute(uint64_t state[25])
         uint64_t Ema, Eme, Emi, Emo, Emu;
         uint64_t Esa, Ese, Esi, Eso, Esu;
 
-        //copyFromState(A, state)
         Aba = state[ 0];
         Abe = state[ 1];
         Abi = state[ 2];
@@ -124,14 +123,12 @@ static void KeccakF1600_StatePermute(uint64_t state[25])
         Asu = state[24];
 
         for(round = 0; round < NROUNDS; round += 2) {
-            //    prepareTheta
             BCa = Aba^Aga^Aka^Ama^Asa;
             BCe = Abe^Age^Ake^Ame^Ase;
             BCi = Abi^Agi^Aki^Ami^Asi;
             BCo = Abo^Ago^Ako^Amo^Aso;
             BCu = Abu^Agu^Aku^Amu^Asu;
 
-            //thetaRhoPiChiIotaPrepareTheta(round, A, E)
             Da = BCu^ROL(BCe, 1);
             De = BCa^ROL(BCi, 1);
             Di = BCe^ROL(BCo, 1);
@@ -219,14 +216,12 @@ static void KeccakF1600_StatePermute(uint64_t state[25])
             Eso =   BCo ^((~BCu)&  BCa );
             Esu =   BCu ^((~BCa)&  BCe );
 
-            //    prepareTheta
             BCa = Eba^Ega^Eka^Ema^Esa;
             BCe = Ebe^Ege^Eke^Eme^Ese;
             BCi = Ebi^Egi^Eki^Emi^Esi;
             BCo = Ebo^Ego^Eko^Emo^Eso;
             BCu = Ebu^Egu^Eku^Emu^Esu;
 
-            //thetaRhoPiChiIotaPrepareTheta(round+1, E, A)
             Da = BCu^ROL(BCe, 1);
             De = BCa^ROL(BCi, 1);
             Di = BCe^ROL(BCo, 1);
@@ -315,7 +310,6 @@ static void KeccakF1600_StatePermute(uint64_t state[25])
             Asu =   BCu ^((~BCa)&  BCe );
         }
 
-        //copyToState(state, A)
         state[ 0] = Aba;
         state[ 1] = Abe;
         state[ 2] = Abi;
@@ -437,7 +431,7 @@ static unsigned int keccak_squeeze(uint8_t *out,
       pos = 0;
     }
     for(i=pos;i < r && i < pos+outlen; i++)
-      *out++ = s[i/8] >> 8*(i%8);
+      *out++ = (uint8_t)(s[i/8] >> 8*(i%8));
     outlen -= i-pos;
     pos = i;
   }
@@ -734,7 +728,7 @@ void shake256(uint8_t *out, size_t outlen, const uint8_t *in, size_t inlen)
 }
 
 /*************************************************
-* Name:        sha3_256
+* Name:        sha3_256_kyber
 *
 * Description: SHA3-256 with non-incremental API
 *
@@ -742,7 +736,7 @@ void shake256(uint8_t *out, size_t outlen, const uint8_t *in, size_t inlen)
 *              - const uint8_t *in: pointer to input
 *              - size_t inlen: length of input in bytes
 **************************************************/
-void sha3_256(uint8_t h[32], const uint8_t *in, size_t inlen)
+void sha3_256_kyber(uint8_t h[32], const uint8_t *in, size_t inlen)
 {
   unsigned int i;
   uint64_t s[25];
@@ -754,7 +748,7 @@ void sha3_256(uint8_t h[32], const uint8_t *in, size_t inlen)
 }
 
 /*************************************************
-* Name:        sha3_512
+* Name:        sha3_512_kyber
 *
 * Description: SHA3-512 with non-incremental API
 *
@@ -762,7 +756,7 @@ void sha3_256(uint8_t h[32], const uint8_t *in, size_t inlen)
 *              - const uint8_t *in: pointer to input
 *              - size_t inlen: length of input in bytes
 **************************************************/
-void sha3_512(uint8_t h[64], const uint8_t *in, size_t inlen)
+void sha3_512_kyber(uint8_t h[64], const uint8_t *in, size_t inlen)
 {
   unsigned int i;
   uint64_t s[25];

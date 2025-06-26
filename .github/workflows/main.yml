@@ -7,6 +7,7 @@
 
 name: CIFuzz
 on: [pull_request, push]
+
 jobs:
   Fuzzing:
     runs-on: ubuntu-latest

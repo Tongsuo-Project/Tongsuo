@@ -1,6 +1,6 @@
 #ifndef MLKEM_H
 #define MLKEM_H
-//api.h
+
 #include <stdint.h>
 
 #define pqcrystals_kyber512_SECRETKEYBYTES 1632

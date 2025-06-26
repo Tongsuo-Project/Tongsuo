@@ -10,11 +10,14 @@
  * A test implementation for a hybrid KEM combining DH with SM2Curve and ML-KEM-768
  * key management functions
  */
+#include "internal/deprecated.h"
 
 #include <openssl/params.h>
 #include <openssl/core_names.h>
 #include <openssl/core_dispatch.h>
+#include "crypto/ec.h"
 #include "crypto/sm2dh_mlkem768_hybrid.h"
+#include "prov/implementations.h"
 #include "prov/providercommon.h"
 #include "prov/provider_ctx.h"
 #include "internal/param_build_set.h"
@@ -41,19 +44,19 @@ static OSSL_FUNC_keymgmt_query_operation_name_fn    sm2dh_mlkem768_hybrid_query_
 struct sm2dh_mlkem768_hybrid_gen_ctx {
     OSSL_LIB_CTX * libctx;
     int set_peer;
-    SM2DH_MLKEM768_HYBRID_KEY * peer_key;
+    sm2dh_mlkem768_hybrid_key * peer_key;
 };
 
 void * sm2dh_mlkem768_hybrid_new_data(void * provctx)
 {
     if (!ossl_prov_is_running())
         return NULL;
-    return SM2DH_MLKEM768_HYBRID_KEY_new();
+    return sm2dh_mlkem768_hybrid_key_new();
 }
 
 static void sm2dh_mlkem768_hybrid_free_data(void * keydata)
 {
-    SM2DH_MLKEM768_HYBRID_KEY_free(keydata);
+    sm2dh_mlkem768_hybrid_key_free(keydata);
 }
 
 static void * sm2dh_mlkem768_hybrid_gen_init(void * provctx, int selection, const OSSL_PARAM params[])
@@ -93,21 +96,23 @@ static void * sm2dh_mlkem768_hybrid_gen(void * genctx, OSSL_CALLBACK * osslcb, v
     int ret = 0;
     struct sm2dh_mlkem768_hybrid_gen_ctx * gctx = genctx;
 
-    SM2DH_MLKEM768_HYBRID_KEY * hybrid_key = SM2DH_MLKEM768_HYBRID_KEY_new();
+    sm2dh_mlkem768_hybrid_key * hybrid_key = sm2dh_mlkem768_hybrid_key_new();
     if(!hybrid_key)
         goto err;
 
-    // distinguish client and server
+    hybrid_key->libctx = gctx->libctx;
+    
+    /* distinguish client and server */
     if(gctx->set_peer)
     {
-        // server side, the shared secret has been generated now
-        if(!sm2_dh_mlkem768_hybrid_encaps(hybrid_key->ss, SM2_DH_MLKEM_768_HYBRID_SS_SIZE, hybrid_key->ct, SM2_DH_MLKEM_768_HYBRID_CT_SIZE, gctx->peer_key->pk, SM2_DH_MLKEM_768_HYBRID_PK_SIZE) != 0)
+        /* server side, the shared secret has been generated now */
+        if(!sm2dh_mlkem768_hybrid_encaps(gctx->libctx, hybrid_key->ss, SM2_DH_MLKEM_768_HYBRID_SS_SIZE, hybrid_key->ct, SM2_DH_MLKEM_768_HYBRID_CT_SIZE, gctx->peer_key->pk, SM2_DH_MLKEM_768_HYBRID_PK_SIZE))
             goto err;
     }
     else
     {
-        // client side: only client generates the KEM private key and sets has_kem_sk = 1
-        if(!sm2_dh_mlkem768_hybrid_keygen(hybrid_key->pk, SM2_DH_MLKEM_768_HYBRID_PK_SIZE, hybrid_key->sk, SM2_DH_MLKEM_768_HYBRID_SK_SIZE))
+        /* client side: only client generates the KEM private key and sets has_kem_sk = 1 */
+        if(!sm2dh_mlkem768_hybrid_keygen(gctx->libctx, hybrid_key->pk, SM2_DH_MLKEM_768_HYBRID_PK_SIZE, hybrid_key->sk, SM2_DH_MLKEM_768_HYBRID_SK_SIZE))
             goto err;
         hybrid_key->has_kem_sk = 1;
     }
@@ -116,7 +121,7 @@ static void * sm2dh_mlkem768_hybrid_gen(void * genctx, OSSL_CALLBACK * osslcb, v
     if(ret)
         return hybrid_key;
 err:
-    SM2DH_MLKEM768_HYBRID_KEY_free(hybrid_key);
+    sm2dh_mlkem768_hybrid_key_free(hybrid_key);
     return NULL;
 }
 
@@ -126,15 +131,14 @@ static void sm2dh_mlkem768_hybrid_gen_cleanup(void * genctx)
     if (gctx == NULL)
         return;
     if (gctx->peer_key != NULL)
-        SM2DH_MLKEM768_HYBRID_KEY_free(gctx->peer_key);
+        sm2dh_mlkem768_hybrid_key_free(gctx->peer_key);
     OPENSSL_free(gctx);
 }
 
 static int sm2dh_mlkem768_hybrid_gen_set_template(void * genctx, void * template)
 {
-    
     int ret = 0;
-    SM2DH_MLKEM768_HYBRID_KEY * template_hybrid_key = template;
+    sm2dh_mlkem768_hybrid_key * template_hybrid_key = template;
     struct sm2dh_mlkem768_hybrid_gen_ctx * gctx = genctx;
   
     if(template == NULL)
@@ -143,9 +147,13 @@ static int sm2dh_mlkem768_hybrid_gen_set_template(void * genctx, void * template
         goto err;
     
     gctx->set_peer = 1;
-    gctx->peer_key = SM2DH_MLKEM768_HYBRID_KEY_new();
+    gctx->peer_key = sm2dh_mlkem768_hybrid_key_new();
+
     if(gctx->peer_key == NULL)
         goto err;
+
+    gctx->peer_key->libctx = gctx->libctx;
+
     if(gctx->peer_key->pk == NULL || template_hybrid_key->pk == NULL)
         goto err;
 
@@ -157,7 +165,7 @@ err:
     gctx->set_peer = 0;
     if(gctx->peer_key != NULL)
     {
-        SM2DH_MLKEM768_HYBRID_KEY_free(gctx->peer_key);
+        sm2dh_mlkem768_hybrid_key_free(gctx->peer_key);
     }
     return ret;
 }
@@ -179,7 +187,7 @@ int sm2dh_mlkem768_hybrid_get_params(void * key, OSSL_PARAM params[])
 {
     int ret = 0;
     OSSL_PARAM * p;
-    SM2DH_MLKEM768_HYBRID_KEY * hybrid_key = key;
+    sm2dh_mlkem768_hybrid_key * hybrid_key = key;
 
     if ((p = OSSL_PARAM_locate(params, OSSL_PKEY_PARAM_MAX_SIZE)) != NULL
         && !OSSL_PARAM_set_int(p, SM2_DH_MLKEM_768_HYBRID_PK_SIZE + SM2_DH_MLKEM_768_HYBRID_SK_SIZE))
@@ -191,14 +199,14 @@ int sm2dh_mlkem768_hybrid_get_params(void * key, OSSL_PARAM params[])
         if (!OSSL_PARAM_set_int(p, 128))
             goto err;
     }
-    // encode the public key or ciphertext
+    /* encode the public key or ciphertext */
     if((p = OSSL_PARAM_locate(params, OSSL_PKEY_PARAM_ENCODED_PUBLIC_KEY)) != NULL) {
         if(hybrid_key->has_kem_sk) {
-            // client: encode the public key from hybrid_key
+            /* client: encode the public key from hybrid_key */
             if(!OSSL_PARAM_set_octet_string(p, hybrid_key->pk, SM2_DH_MLKEM_768_HYBRID_PK_SIZE))
                 goto err;
         } else {
-            // server: encode the ciphertext from hybrid_key
+            /* server: encode the ciphertext from hybrid_key */
             if(!OSSL_PARAM_set_octet_string(p, hybrid_key->ct, SM2_DH_MLKEM_768_HYBRID_CT_SIZE))
                 goto err;
         }
@@ -226,8 +234,8 @@ static int sm2dh_mlkem768_hybrid_set_params(void * key, const OSSL_PARAM params[
     unsigned char * buf = NULL;
     size_t buf_len = 0;
 
-    SM2DH_MLKEM768_HYBRID_KEY * hybrid_key = key;
-    if (key == NULL)
+    sm2dh_mlkem768_hybrid_key * hybrid_key = key;
+    if (hybrid_key == NULL || hybrid_key->ct == NULL || hybrid_key->pk == NULL)
         return 0;
     if (params == NULL)
         return 1;
@@ -236,19 +244,20 @@ static int sm2dh_mlkem768_hybrid_set_params(void * key, const OSSL_PARAM params[
     if(p != NULL) {
         if(!OSSL_PARAM_get_octet_string(p, (void **)&buf, 0, &buf_len))
             return 0;
-        // Currently we only relies on buf_len to distinguish public key and ciphertext,
-        // since the client and server use the same function to parse the encoded public key
-        // to s_key and c_key, where both s_key and c_key are empty EVP_PKEY objects without
-        // secret keys.
-        // (TODO: Find a better approach.)
-        if(buf_len == SM2_DH_MLKEM_768_HYBRID_PK_SIZE) {
+
+        /*  
+            Note: Use a flag to determine client or server side.
+            But the behaviour of ssl_generate_param_group shoule be checked.
+        */
+        if(hybrid_key->has_kem_sk){
+            if(buf_len != SM2_DH_MLKEM_768_HYBRID_PK_SIZE)
+                goto err;
             memcpy(hybrid_key->pk, buf, SM2_DH_MLKEM_768_HYBRID_PK_SIZE);
-        } else if (buf_len == SM2_DH_MLKEM_768_HYBRID_CT_SIZE) {
-            memcpy(hybrid_key->ct, buf, SM2_DH_MLKEM_768_HYBRID_CT_SIZE);
         } else {
-            goto err;
-        }
-        
+            if(buf_len != SM2_DH_MLKEM_768_HYBRID_CT_SIZE)
+                goto err;
+            memcpy(hybrid_key->ct, buf, SM2_DH_MLKEM_768_HYBRID_CT_SIZE);
+        }       
     }
     ret = 1;
 err:
@@ -259,19 +268,18 @@ err:
 
 static int sm2dh_mlkem768_hybrid_has(const void * keydata, int selection)
 {
-    const SM2DH_MLKEM768_HYBRID_KEY * hybrid_key = keydata;
+    const sm2dh_mlkem768_hybrid_key * hybrid_key = keydata;
     int ok = 1;
 
     if (!ossl_prov_is_running() || hybrid_key == NULL)
         return 0;
 
-    // (TODO) add flags indicating the existances of public key and private key
+    /* (TODO) add flags indicating the existances of public key and private key */
     if ((selection & OSSL_KEYMGMT_SELECT_PUBLIC_KEY) != 0)
-        ok = ok;
+        ok = ok && (hybrid_key->pk != NULL);
     if ((selection & OSSL_KEYMGMT_SELECT_PRIVATE_KEY) != 0)
         ok = ok && (hybrid_key->has_kem_sk);
-    if ((selection & OSSL_KEYMGMT_SELECT_DOMAIN_PARAMETERS) != 0)
-        ok = ok;
+
     /*
      * We consider OSSL_KEYMGMT_SELECT_OTHER_PARAMETERS to always be
      * available, so no extra check is needed other than the previous one
@@ -287,7 +295,6 @@ int sm2dh_mlkem768_hybrid_import(void * keydata, int selection, const OSSL_PARAM
 
     if (!ossl_prov_is_running() || keydata == NULL)
         return 0;
-    // This function also imports nothing
     return ok;
 }
 
@@ -301,6 +308,12 @@ static int sm2dh_mlkem768_hybrid_export(void * keydata, int selection, OSSL_CALL
     int ok = 1;
     OSSL_PARAM_BLD * bld = NULL;
     OSSL_PARAM * params = NULL;
+    /*
+    EC_KEY * dummy_ec_key = NULL;
+    BN_CTX * bnctx = NULL;
+    const sm2dh_mlkem768_hybrid_key * hybrid_key = keydata;
+    unsigned char * genbuf = NULL;
+    */
 
     if (!ossl_prov_is_running() || keydata == NULL)
         return 0;
@@ -308,11 +321,35 @@ static int sm2dh_mlkem768_hybrid_export(void * keydata, int selection, OSSL_CALL
     bld = OSSL_PARAM_BLD_new();
     if( bld == NULL )
         return 0;
-    // In fact, this function exports nothing.
-    if (ok && (params = OSSL_PARAM_BLD_to_param(bld)) != NULL)
-        ok = param_cb(params, cbarg);
+       
+    /*
+    if ((selection & OSSL_KEYMGMT_SELECT_DOMAIN_PARAMETERS) != 0) {
+        dummy_ec_key = EC_KEY_new_by_curve_name_ex(hybrid_key->libctx, NULL, NID_sm2);
+        bnctx = BN_CTX_new_ex(hybrid_key->libctx);
+        if (bnctx == NULL) {
+            ok = 0;
+            goto end;
+        }
+        BN_CTX_start(bnctx);
+        ok = ok && ossl_ec_group_todata(EC_KEY_get0_group(dummy_ec_key), bld, NULL,
+                                        hybrid_key->libctx,
+                                        ossl_ec_key_get0_propq(dummy_ec_key),
+                                        bnctx, &genbuf);
+    }
+    */
 
+    if (ok && (params = OSSL_PARAM_BLD_to_param(bld)) != NULL)
+        ok = param_cb(params, cbarg); 
+
+    OSSL_PARAM_free(params);
     OSSL_PARAM_BLD_free(bld);
+    /*
+    if(dummy_ec_key)
+        EC_KEY_free(dummy_ec_key);
+    OPENSSL_free(genbuf);
+    BN_CTX_end(bnctx);
+    BN_CTX_free(bnctx);
+    */
     return ok;
 }
 

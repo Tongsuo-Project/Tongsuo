@@ -10,6 +10,7 @@
 
 
 #include <openssl/err.h>
+#include <openssl/sm2dh_mlkem768_hybriderr.h>
 #include "crypto/sm2dh_mlkem768_hybriderr.h"
 
 #ifndef OPENSSL_NO_SM2DH_MLKEM768_HYBRID

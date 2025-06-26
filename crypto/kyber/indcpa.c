@@ -161,7 +161,7 @@ static unsigned int rej_uniform(int16_t *r,
 #endif
 
 #define GEN_MATRIX_NBLOCKS ((12*KYBER_N/8*(1 << 12)/KYBER_Q + XOF_BLOCKBYTES)/XOF_BLOCKBYTES)
-// Not static for benchmarking
+
 void gen_matrix(polyvec *a, const uint8_t seed[KYBER_SYMBYTES], int transposed)
 {
   unsigned int ctr, i, j;
@@ -227,7 +227,6 @@ void indcpa_keypair_derand(uint8_t pk[KYBER_INDCPA_PUBLICKEYBYTES],
   polyvec_ntt(&skpv);
   polyvec_ntt(&e);
 
-  // matrix-vector multiplication
   for(i=0;i<KYBER_K;i++) {
     polyvec_basemul_acc_montgomery(&pkpv.vec[i], &a[i], &skpv);
     poly_tomont(&pkpv.vec[i]);
@@ -280,7 +279,6 @@ void indcpa_enc(uint8_t c[KYBER_INDCPA_BYTES],
 
   polyvec_ntt(&sp);
 
-  // matrix-vector multiplication
   for(i=0;i<KYBER_K;i++)
     polyvec_basemul_acc_montgomery(&b.vec[i], &at[i], &sp);
 

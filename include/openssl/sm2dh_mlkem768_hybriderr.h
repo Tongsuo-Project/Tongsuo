@@ -8,24 +8,19 @@
  * https://www.openssl.org/source/license.html
  */
 
-#ifndef OSSL_CRYPTO_SM2DH_MLKEM768_HYBRID_ERR_H
-# define OSSL_CRYPTO_SM2DH_MLKEM768_HYBRID_ERR_H
+#ifndef OPENSSL_SM2DH_MLKEM768_HYBRIDERR_H
+# define OPENSSL_SM2DH_MLKEM768_HYBRIDERR_H
 # pragma once
 
 # include <openssl/opensslconf.h>
 # include <openssl/symhacks.h>
+# include <openssl/cryptoerr_legacy.h>
 
-# ifdef  __cplusplus
-extern "C" {
-# endif
+/*
+ * SM2DH_MLKEM768_HYBRID reason codes.
+ */
+#  define SM2DH_MLKEM768_HYBRID_R_EC_ERROR                        100
+#  define SM2DH_MLKEM768_HYBRID_R_MLKEM_ERROR                     101 
 
-# ifndef OPENSSL_NO_SM2
 
-int ossl_err_load_SM2DH_MLKEM768_HYBRID_strings(void);
-
-# endif
-
-# ifdef  __cplusplus
-}
-# endif
 #endif

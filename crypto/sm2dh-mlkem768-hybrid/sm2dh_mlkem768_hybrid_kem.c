@@ -1,3 +1,5 @@
+#include "internal/deprecated.h"
+
 #include "crypto/sm2dh_mlkem768_hybrid.h"
 #include "crypto/sm2dh_mlkem768_hybriderr.h"
 
@@ -6,28 +8,35 @@
 #include <openssl/kdf.h>
 #include <openssl/evp.h>
 #include <openssl/err.h>
+#include <openssl/sm2dh_mlkem768_hybriderr.h>
 
-SM2DH_MLKEM768_HYBRID_KEY * SM2DH_MLKEM768_HYBRID_KEY_new()
+
+sm2dh_mlkem768_hybrid_key * sm2dh_mlkem768_hybrid_key_new(void)
 {
-    SM2DH_MLKEM768_HYBRID_KEY * hybrid_key = OPENSSL_malloc(sizeof(SM2DH_MLKEM768_HYBRID_KEY));
+    sm2dh_mlkem768_hybrid_key * hybrid_key = OPENSSL_malloc(sizeof(sm2dh_mlkem768_hybrid_key));
     if(hybrid_key == NULL)
         goto err;
+    memset(hybrid_key, 0x00, sizeof(sm2dh_mlkem768_hybrid_key));
     
     hybrid_key->pk = OPENSSL_malloc(SM2_DH_MLKEM_768_HYBRID_PK_SIZE);
     if(hybrid_key->pk == NULL)
         goto err;
+    memset(hybrid_key->pk, 0x00, SM2_DH_MLKEM_768_HYBRID_PK_SIZE);
 
     hybrid_key->sk = OPENSSL_malloc(SM2_DH_MLKEM_768_HYBRID_SK_SIZE);
     if(hybrid_key->sk == NULL)
         goto err;
+    memset(hybrid_key->sk, 0x00, SM2_DH_MLKEM_768_HYBRID_SK_SIZE);
 
     hybrid_key->ct = OPENSSL_malloc(SM2_DH_MLKEM_768_HYBRID_CT_SIZE);
-    if(hybrid_key->sk == NULL)
+    if(hybrid_key->ct == NULL)
         goto err;
-    
+    memset(hybrid_key->ct, 0x00, SM2_DH_MLKEM_768_HYBRID_CT_SIZE);
+
     hybrid_key->ss = OPENSSL_malloc(SM2_DH_MLKEM_768_HYBRID_SS_SIZE);
     if(hybrid_key->ss == NULL)
         goto err;
+    memset(hybrid_key->ss, 0x00, SM2_DH_MLKEM_768_HYBRID_SS_SIZE);
 
     hybrid_key->has_kem_sk = 0;
 
@@ -45,7 +54,7 @@ err:
     return NULL;
 }
 
-void SM2DH_MLKEM768_HYBRID_KEY_free(SM2DH_MLKEM768_HYBRID_KEY * hybrid_key)
+void sm2dh_mlkem768_hybrid_key_free(sm2dh_mlkem768_hybrid_key * hybrid_key)
 {
     if(hybrid_key->pk) {
         memset(hybrid_key->pk, 0x00, SM2_DH_MLKEM_768_HYBRID_PK_SIZE);
@@ -67,7 +76,7 @@ void SM2DH_MLKEM768_HYBRID_KEY_free(SM2DH_MLKEM768_HYBRID_KEY * hybrid_key)
 }
 
 
-int sm2_dh_mlkem768_hybrid_keygen(uint8_t *pk, size_t pk_len, uint8_t *sk, size_t sk_len) {
+int sm2dh_mlkem768_hybrid_keygen(OSSL_LIB_CTX * libctx, uint8_t *pk, size_t pk_len, uint8_t *sk, size_t sk_len) {
 
     int ret = 0;
     EC_KEY * ec_key = NULL;
@@ -84,18 +93,24 @@ int sm2_dh_mlkem768_hybrid_keygen(uint8_t *pk, size_t pk_len, uint8_t *sk, size_
         ERR_raise(ERR_LIB_SM2DH_MLKEM768_HYBRID, ERR_R_PASSED_INVALID_ARGUMENT);
         return 0;
     }
-    
     /* Generate ECDHE key with SM2Curve */
-    ec_key = EC_KEY_new_by_curve_name(NID_sm2);
+    /*
+      Note that the EC_KEY_new_by_curve_name function cannot be used here,
+      since it will lost the OSSL_LIB_CTX data which may finally fail some
+      tests. Such context data is important for EC_KEY_generate_key and
+      ECDH_compute_key.
+    */
+    ec_key = EC_KEY_new_by_curve_name_ex(libctx, NULL, NID_sm2);
     if(ec_key == NULL) {
         ERR_raise(ERR_LIB_SM2DH_MLKEM768_HYBRID, SM2DH_MLKEM768_HYBRID_R_EC_ERROR);
         return 0;
     }
+    EC_KEY_set_flags(ec_key, EC_FLAG_SM2_RANGE);
+   
     if(!EC_KEY_generate_key(ec_key)){
         ERR_raise(ERR_LIB_SM2DH_MLKEM768_HYBRID, SM2DH_MLKEM768_HYBRID_R_EC_ERROR);
         goto err;
-    }
-
+    }   
     /* Encode SM2-DH private key */
     ec_key_sk = EC_KEY_get0_private_key(ec_key);
     if(ec_key_sk == NULL) {
@@ -130,7 +145,7 @@ err:
     return ret;
 }
 
-int sm2_dh_mlkem768_hybrid_encaps(uint8_t *ss, size_t ss_len, uint8_t *ct, size_t ct_len, const uint8_t *pk, size_t pk_len) {
+int sm2dh_mlkem768_hybrid_encaps(OSSL_LIB_CTX * libctx, uint8_t *ss, size_t ss_len, uint8_t *ct, size_t ct_len, const uint8_t *pk, size_t pk_len) {
     int ret = 0;
     EC_KEY *ec_key_local = NULL;
     EC_POINT *ec_key_peer_pk = NULL;
@@ -150,11 +165,13 @@ int sm2_dh_mlkem768_hybrid_encaps(uint8_t *ss, size_t ss_len, uint8_t *ct, size_
     }
 
     /* Generate another ECDHE key with SM2Curve */
-    ec_key_local = EC_KEY_new_by_curve_name(NID_sm2);
+    ec_key_local = EC_KEY_new_by_curve_name_ex(libctx, NULL, NID_sm2);
     if(ec_key_local == NULL) {
         ERR_raise(ERR_LIB_SM2DH_MLKEM768_HYBRID, SM2DH_MLKEM768_HYBRID_R_EC_ERROR);
         goto err;
     }
+     EC_KEY_set_flags(ec_key_local, EC_FLAG_SM2_RANGE);
+
     if(!EC_KEY_generate_key(ec_key_local)){
         ERR_raise(ERR_LIB_SM2DH_MLKEM768_HYBRID, SM2DH_MLKEM768_HYBRID_R_EC_ERROR);
         goto err;
@@ -186,9 +203,10 @@ int sm2_dh_mlkem768_hybrid_encaps(uint8_t *ss, size_t ss_len, uint8_t *ct, size_
     if(EC_POINT_point2oct(group, ec_key_local_pk, POINT_CONVERSION_UNCOMPRESSED, ct, SM2_DH_PK_SIZE, NULL) != SM2_DH_PK_SIZE) {
         ERR_raise(ERR_LIB_SM2DH_MLKEM768_HYBRID, SM2DH_MLKEM768_HYBRID_R_EC_ERROR);
         goto err;
-    }
+    }   
 
     /* Calculate ECDHE shared key */
+    memset(ss, 0x00, ss_len);
     if(!ECDH_compute_key(ss, SM2_DH_SS_SIZE, ec_key_peer_pk, ec_key_local, NULL)) {
         ERR_raise(ERR_LIB_SM2DH_MLKEM768_HYBRID, SM2DH_MLKEM768_HYBRID_R_EC_ERROR);
         OPENSSL_cleanse(ss, ss_len);
@@ -209,7 +227,7 @@ err:
     return ret;
 }
 
-int sm2_dh_mlkem768_hybrid_decaps(uint8_t *ss, size_t ss_len, const uint8_t *ct, size_t ct_len, const uint8_t *sk, size_t sk_len) {
+int sm2dh_mlkem768_hybrid_decaps(OSSL_LIB_CTX * libctx, uint8_t *ss, size_t ss_len, const uint8_t *ct, size_t ct_len, const uint8_t *sk, size_t sk_len) {
     int ret = 0;
     const EC_GROUP * group;
     EC_KEY * ec_key_local = NULL;
@@ -229,7 +247,7 @@ int sm2_dh_mlkem768_hybrid_decaps(uint8_t *ss, size_t ss_len, const uint8_t *ct,
     }
 
     /* Parse local ECDHE sk */
-    ec_key_local = EC_KEY_new_by_curve_name(NID_sm2);
+    ec_key_local = EC_KEY_new_by_curve_name_ex(libctx, NULL, NID_sm2);
     if(ec_key_local == NULL) {
         ERR_raise(ERR_LIB_SM2DH_MLKEM768_HYBRID, SM2DH_MLKEM768_HYBRID_R_EC_ERROR);
         goto err;
@@ -262,10 +280,11 @@ int sm2_dh_mlkem768_hybrid_decaps(uint8_t *ss, size_t ss_len, const uint8_t *ct,
     }
 
     /* ECDHE key agreement */
+    memset(ss, 0x00, ss_len);
     if(!ECDH_compute_key(ss, SM2_DH_SS_SIZE, ec_key_peer_pk, ec_key_local, NULL)) {
         ERR_raise(ERR_LIB_SM2DH_MLKEM768_HYBRID, SM2DH_MLKEM768_HYBRID_R_EC_ERROR);
         goto err;
-    }
+    }   
 
     /* MLKEM decapsulation */
     if (pqcrystals_kyber768_ref_dec(ss + SM2_DH_SS_SIZE, ct + SM2_DH_PK_SIZE, sk + SM2_DH_SK_SIZE) != 0) {
