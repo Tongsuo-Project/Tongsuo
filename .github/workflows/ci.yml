@@ -7,7 +7,10 @@
 
 name: GitHub CI
 
-on: [pull_request, push]
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
 
 # for some reason, this does not work:
 # variables:
