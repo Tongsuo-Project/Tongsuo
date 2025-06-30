@@ -39,7 +39,7 @@ jobs:
             tests: -test_memleak
           }
         ]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
     - name: install packages
       run: |
