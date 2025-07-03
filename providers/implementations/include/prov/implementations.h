@@ -237,6 +237,9 @@ extern const OSSL_DISPATCH ossl_mac_legacy_keymgmt_functions[];
 extern const OSSL_DISPATCH ossl_cmac_legacy_keymgmt_functions[];
 #ifndef OPENSSL_NO_SM2
 extern const OSSL_DISPATCH ossl_sm2_keymgmt_functions[];
+# ifndef OPENSSL_NO_SM2DH_MLKEM768_HYBRID
+extern const OSSL_DISPATCH ossl_sm2dh_mlkem768_hybrid_keymgmt_functions[];
+# endif
 #endif
 
 /* Key Exchange */
@@ -246,6 +249,9 @@ extern const OSSL_DISPATCH ossl_x448_keyexch_functions[];
 extern const OSSL_DISPATCH ossl_ecdh_keyexch_functions[];
 #ifndef OPENSSL_NO_SM2
 extern const OSSL_DISPATCH ossl_sm2dh_keyexch_functions[];
+# ifndef OPENSSL_NO_SM2DH_MLKEM768_HYBRID
+extern const OSSL_DISPATCH ossl_sm2dh_mlkem768_hybrid_keyexch_functions[];
+# endif
 #endif
 extern const OSSL_DISPATCH ossl_kdf_tls1_prf_keyexch_functions[];
 extern const OSSL_DISPATCH ossl_kdf_hkdf_keyexch_functions[];

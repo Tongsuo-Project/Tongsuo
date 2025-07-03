@@ -367,6 +367,7 @@ OSSL_PARAM *OSSL_PARAM_BLD_to_param(OSSL_PARAM_BLD *bld)
             return NULL;
         }
     }
+
     params = OPENSSL_malloc(total);
     if (params == NULL) {
         ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);

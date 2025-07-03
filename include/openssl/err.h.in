@@ -126,6 +126,7 @@ struct err_state_st {
 # define ERR_LIB_ZKP             63
 # define ERR_LIB_ZKP_BP          64
 # define ERR_LIB_ZKP_NIZK        65
+# define ERR_LIB_SM2DH_MLKEM768_HYBRID 66
 
 # define ERR_LIB_USER            128
 
@@ -174,6 +175,7 @@ struct err_state_st {
 #  define X509V3err(f, r) ERR_raise_data(ERR_LIB_X509V3, (r), NULL)
 #  define X509err(f, r) ERR_raise_data(ERR_LIB_X509, (r), NULL)
 #  define PAILLIERerr(f, r) ERR_raise_data(ERR_LIB_PAILLIER, (r), NULL)
+#  define SM2DHMLKEM768HYBRIDerr(f, r) ERR_raise_data(ERR_LIB_SM2DH_MLKEM768_HYBRID, (r), NULL)
 # endif
 
 /*-

@@ -1049,6 +1049,8 @@ static const OSSL_ITEM standard_name2type[] = {
     { EVP_PKEY_DHX,     "X9.42 DH" },
     { EVP_PKEY_DHX,     "DHX" },
     { EVP_PKEY_DSA,     "DSA" },
+    /* SM2DH-MLKEM768-HYBRID, only for experimental purpose */
+    { EVP_PKEY_SM2DH_MLKEM768_HYBRID,   "SM2DH-MLKEM768-HYBRID"},
 };
 
 int evp_pkey_name2type(const char *name)

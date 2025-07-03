@@ -529,7 +529,9 @@ my @disablables = (
     "nizk",
     "zkp-gadget",
     "zkp-transcript",
-    "bn-method"
+    "bn-method",
+    "kyber",
+    "sm2dh-mlkem768-hybrid"
     );
 foreach my $proto ((@tls, @dtls))
         {
@@ -621,6 +623,8 @@ our %disabled = ( # "what"         => "comment"
                   "wbsm4-xiaolai"       => "default",
                   "wbsm4-baiwu"         => "default",
                   "wbsm4-wsise"         => "default",
+                  #"kyber"               => "default",
+                  #"sm2dh-mlkem768-hybrid"  => "default",
                 );
 
 # Note: => pair form used for aesthetics, not to truly make a hash table
@@ -647,8 +651,8 @@ my @disable_cascades = (
     "ssl"               => [ "ssl3" ],
     "ssl3-method"       => [ "ssl3" ],
     "zlib"              => [ "zlib-dynamic" ],
-    "ec"                => [ "ec2m", "ecdsa", "ecdh", "sm2" ],
-    "sm2"               => [ "sm2_threshold" ],
+    "ec"                => [ "ec2m", "ecdsa", "ecdh", "sm2", "sm2dh-mlkem768-hybrid"],
+    "sm2"               => [ "sm2_threshold", "sm2dh-mlkem768-hybrid"],
     "ec_elgamal"        => [ "twisted_ec_elgamal" ],
     "dgram"             => [ "dtls", "sctp" ],
     "sock"              => [ "dgram" ],
@@ -711,6 +715,7 @@ my @disable_cascades = (
     # SMTC does not support ct, and only supports builtin for now
     sub { !$disabled{"smtc"}} => [ "ct", "module" ],
     "sdf-lib"           => [ "sdf-lib-dynamic" ],
+    "kyber" => ["sm2dh-mlkem768-hybrid"],
     );
 
 # Avoid protocol support holes.  Also disable all versions below N, if version

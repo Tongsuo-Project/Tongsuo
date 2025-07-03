@@ -18,6 +18,10 @@ on: [pull_request, push]
 # before_script:
 #     - make="make -s"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check_update:
     runs-on: ubuntu-latest
@@ -244,7 +248,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: config
-      run: ./config --banner=Configured --symbol-prefix=BABA_ --strict-warnings no-ec enable-ssl-trace enable-zlib enable-zlib-dynamic enable-crypto-mdebug enable-crypto-mdebug-backtrace enable-egd enable-ktls enable-fips enable-ntls enable-optimize-chacha-choose enable-status enable-crypto-mdebug-count enable-cert-compression enable-delegated-credential && perl configdata.pm --dump
+      run: ./config --banner=Configured --symbol-prefix=BABA_ --strict-warnings no-kyber no-ec enable-ssl-trace enable-zlib enable-zlib-dynamic enable-crypto-mdebug enable-crypto-mdebug-backtrace enable-egd enable-ktls enable-fips enable-ntls enable-optimize-chacha-choose enable-status enable-crypto-mdebug-count enable-cert-compression enable-delegated-credential && perl configdata.pm --dump
     - name: make
       run: make -s -j4
     - name: make test
