@@ -2035,7 +2035,6 @@ int tls_construct_client_key_exchange_ntls(SSL *s, WPACKET *pkt)
         SSLfatal_ntls(s, SSL_AD_HANDSHAKE_FAILURE, ERR_R_INTERNAL_ERROR);
         goto err;
     }
-
     return 1;
 err:
     OPENSSL_clear_free(s->s3.tmp.pms, s->s3.tmp.pmslen);
