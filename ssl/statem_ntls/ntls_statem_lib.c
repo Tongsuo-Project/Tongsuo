@@ -189,6 +189,7 @@ int tls_construct_cert_verify_ntls(SSL *s, WPACKET *pkt)
     unsigned char *sig = NULL;
     unsigned char out[EVP_MAX_MD_SIZE];
     size_t outlen = 0;
+    unsigned int outlen_tmp = 0;
     const SIGALG_LOOKUP *lu = s->s3.tmp.sigalg;
 
     if (lu == NULL || s->s3.tmp.sign_cert == NULL) {
@@ -218,10 +219,20 @@ int tls_construct_cert_verify_ntls(SSL *s, WPACKET *pkt)
 
     if (!EVP_DigestInit_ex(mctx2, md, NULL)
             || !EVP_DigestUpdate(mctx2, hdata, hdatalen)
-            || !EVP_DigestFinal(mctx2, out, (unsigned int *)&outlen)) {
+            || !EVP_DigestFinal(mctx2, out, (unsigned int *)&outlen_tmp)) {
         SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, ERR_R_EVP_LIB);
         goto err;
     }
+    /*
+     * In MIPS64 cross-compile option where sizeof(size_t) = 8 and
+     * sizeof(unsigned int) = 4, the conversion with "(unsigned int *)outlen"
+     * raises an error of leaving some extra high-bits in outlen and finally 
+     * leading to segment error.
+     * This may be raised by an improper implementation of the compiler,
+     * but it indeed happens for --cross-compile-prefix=mips64-linux-gnuabi64-.
+     * So we fix this with an unsigned int temporary variable outlen_tmp.
+     */
+    outlen = outlen_tmp;
 
     if (EVP_DigestSignInit_ex(mctx, &pctx,
                               md == NULL ? NULL : EVP_MD_get0_name(md),
@@ -288,6 +299,7 @@ MSG_PROCESS_RETURN tls_process_cert_verify_ntls(SSL *s, PACKET *pkt)
     EVP_PKEY_CTX *pctx = NULL;
     unsigned char out[EVP_MAX_MD_SIZE];
     size_t outlen = 0;
+    unsigned int outlen_tmp = 0;
 
     if (mctx == NULL || mctx2 == NULL) {
         SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
@@ -374,13 +386,13 @@ MSG_PROCESS_RETURN tls_process_cert_verify_ntls(SSL *s, PACKET *pkt)
         goto err;
     }
 
-
     if (!EVP_DigestInit_ex(mctx2, md, NULL)
             || !EVP_DigestUpdate(mctx2, hdata, hdatalen)
-            || !EVP_DigestFinal(mctx2, out, (unsigned int *)&outlen)) {
+            || !EVP_DigestFinal(mctx2, out, (unsigned int *)&outlen_tmp)) {
         SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, ERR_R_EVP_LIB);
         goto err;
     }
+    outlen = outlen_tmp;
 
     if (EVP_PKEY_is_a(pkey, "SM2")) {
         if (EVP_PKEY_CTX_set1_id(pctx, SM2_DEFAULT_ID, SM2_DEFAULT_ID_LEN) <= 0) {
