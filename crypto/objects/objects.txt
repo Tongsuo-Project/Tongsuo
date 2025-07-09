@@ -379,6 +379,9 @@ sm-scheme 201           : ZUC                   : zuc
 sm-scheme 801           : ZUC-128-EEA3          : zuc-128-eea3
 sm-scheme 802           : ZUC-128-EIA3          : zuc-128-eia3
 
+# SM2DH-MLKEM768-hybrid key exchage (testing)
+sm-scheme 1001          : SM2DH-MLKEM768-HYBRID : sm2dh-mlkem768-hybrid 
+
 # From RFC4231
 rsadsi 2 8		:			: hmacWithSHA224
 rsadsi 2 9		:			: hmacWithSHA256

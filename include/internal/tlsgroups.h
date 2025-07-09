@@ -47,5 +47,6 @@
 # define OSSL_TLS_GROUP_ID_ffdhe4096        0x0102
 # define OSSL_TLS_GROUP_ID_ffdhe6144        0x0103
 # define OSSL_TLS_GROUP_ID_ffdhe8192        0x0104
+# define OSSL_TLS_GROUP_ID_sm2dh_mlkem768_hybrid 0xFEFE
 
 #endif

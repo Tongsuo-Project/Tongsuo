@@ -1,0 +1,5 @@
+LIBS = ../../libcrypto
+
+SOURCE[../../libcrypto] = \
+    sm2dh_mlkem768_hybrid_err.c \
+    sm2dh_mlkem768_hybrid_kem.c 

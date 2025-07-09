@@ -26,8 +26,7 @@ jobs:
         CC=gcc ./config --banner=Configured --debug --coverage no-asm enable-rc5 enable-ssl3 enable-nextprotoneg \
             enable-ssl3-method enable-weak-ssl-ciphers enable-zlib enable-ec_nistp_64_gcc_128 enable-ec_sm2p_64_gcc_128 \
             no-shared enable-buildtest-c++ enable-external-tests -DPEDANTIC -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION \
-            enable-ntls enable-cert-compression enable-delegated-credential enable-status enable-ec_elgamal \
-            enable-paillier enable-sm2_threshold
+            enable-ntls enable-cert-compression enable-delegated-credential enable-status enable-sm2_threshold
 
     - name: config dump
       run: ./configdata.pm --dump
@@ -36,7 +35,7 @@ jobs:
     - name: make test
       run: make test HARNESS_JOBS=${HARNESS_JOBS:-4}
     - name: generate coverage info
-      run: lcov -d . -c -o ./lcov.info
+      run: lcov --ignore-errors mismatch -d . -c -o ./lcov.info
     - name: Coveralls upload
       uses: coverallsapp/github-action@v1.1.2
       with:

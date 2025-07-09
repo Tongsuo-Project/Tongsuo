@@ -320,6 +320,9 @@ static const OSSL_ALGORITHM deflt_keyexch[] = {
 #endif
 #ifndef OPENSSL_NO_SM2
     { PROV_NAMES_SM2DH, "provider=default", ossl_sm2dh_keyexch_functions },
+#  ifndef OPENSSL_NO_SM2DH_MLKEM768_HYBRID
+    { PROV_NAMES_SM2DH_MLKEM768_HYBRID, "provider=default", ossl_sm2dh_mlkem768_hybrid_keyexch_functions },
+#  endif 
 #endif
     { PROV_NAMES_TLS1_PRF, "provider=default", ossl_kdf_tls1_prf_keyexch_functions },
     { PROV_NAMES_HKDF, "provider=default", ossl_kdf_hkdf_keyexch_functions },
@@ -432,6 +435,10 @@ static const OSSL_ALGORITHM deflt_keymgmt[] = {
 #ifndef OPENSSL_NO_SM2
     { PROV_NAMES_SM2, "provider=default", ossl_sm2_keymgmt_functions,
       PROV_DESCS_SM2 },
+# ifndef OPENSSL_NO_SM2DH_MLKEM768_HYBRID
+    { PROV_NAMES_SM2DH_MLKEM768_HYBRID, "provider=default", ossl_sm2dh_mlkem768_hybrid_keymgmt_functions,
+        PROV_DESCS_SM2DH_MLKEM768_HYBRID },
+# endif
 #endif
     { NULL, NULL, NULL }
 };

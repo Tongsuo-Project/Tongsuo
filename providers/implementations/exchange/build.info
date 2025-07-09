@@ -6,6 +6,7 @@ $ECDH_GOAL=../../libdefault.a ../../libfips.a
 $ECX_GOAL=../../libdefault.a ../../libfips.a
 $KDF_GOAL=../../libdefault.a ../../libfips.a
 $SM2DH_GOAL=../../libdefault.a
+$SM2DH_MLKEM768_HYBRID_GOAL=../../libdefault.a
 
 IF[{- !$disabled{dh} -}]
   SOURCE[$DH_GOAL]=dh_exch.c
@@ -29,6 +30,9 @@ ENDIF
 
 IF[{- !$disabled{sm2} -}]
   SOURCE[$SM2DH_GOAL]=sm2dh_exch.c
+  IF[{- !$disabled{sm2dh-mlkem768-hybrid} -}]
+    SOURCE[$SM2DH_MLKEM768_HYBRID_GOAL]=sm2dh_mlkem768_hybrid_exch.c
+  ENDIF
 ENDIF
 
 SOURCE[$KDF_GOAL]=kdf_exch.c

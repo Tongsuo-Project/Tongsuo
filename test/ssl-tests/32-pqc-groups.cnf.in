@@ -1,0 +1,41 @@
+# -*- mode: perl; -*-
+
+## SSL test configurations
+
+package ssltests;
+
+use strict;
+use warnings;
+
+use OpenSSL::Test;
+use OpenSSL::Test::Utils qw(anydisabled);
+
+our $fips_mode;
+
+my @groups_sm_pqc = ("SM2", "SM2DH_MLKEM768_HYBRID");
+
+our @tests = ();
+
+sub generate_tests() {
+    if (!$fips_mode) {
+        foreach (0..$#groups_sm_pqc){
+            my $curve = $groups_sm_pqc[$_];
+            push @tests, {
+                name => "curve-${curve}-tls13",
+                server => {
+                    "groups" => $curve,
+                    "MaxProtocol" => "TLSv1.3"
+                },
+                client => {
+                    "MinProtocol" => "TLSv1.3",
+                    "groups" => $curve
+                },
+                test   => {
+                    "ExpectedResult" => "Success"
+                },
+            };
+        }
+    }
+}
+
+generate_tests();
