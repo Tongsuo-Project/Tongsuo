@@ -1,0 +1,18 @@
+LIBS=../../libcrypto
+
+$COMMON_SOURCES=ml_dsa_fips202.c
+
+$VARIANT_SOURCE=ml_dsa_ntt.c \
+        ml_dsa_packing.c \
+        ml_dsa_poly.c \
+        ml_dsa_polyvec.c \
+        ml_dsa_reduce.c \
+        ml_dsa_rounding.c \
+        ml_dsa_sign.c \
+        ml_dsa_symmetric-shake.c \
+        ml_dsa_key.c
+
+IF[{- !$disabled{ml_dsa} -}]
+    SOURCE[../../libcrypto]= $COMMON_SOURCES \
+        $VARIANT_SOURCE
+ENDIF
