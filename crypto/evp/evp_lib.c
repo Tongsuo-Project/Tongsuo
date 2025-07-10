@@ -1168,8 +1168,6 @@ EVP_PKEY *EVP_PKEY_Q_keygen(OSSL_LIB_CTX *libctx, const char *propq,
     va_list args;
     size_t bits;
     char *name;
-    uint8_t * seed;
-    size_t seed_len;
     OSSL_PARAM params[] = { OSSL_PARAM_END, OSSL_PARAM_END };
     EVP_PKEY *ret = NULL;
 
@@ -1182,20 +1180,12 @@ EVP_PKEY *EVP_PKEY_Q_keygen(OSSL_LIB_CTX *libctx, const char *propq,
         name = va_arg(args, char *);
         params[0] = OSSL_PARAM_construct_utf8_string(OSSL_PKEY_PARAM_GROUP_NAME,
                                                      name, 0);
-    } else if (OPENSSL_strcasecmp(type, "ML-DSA-65") == 0) {
-        seed = va_arg(args, uint8_t *);
-        if (seed == NULL) {
-            ERR_raise(ERR_LIB_EVP, ERR_R_PASSED_INVALID_ARGUMENT);
-            goto end;
-        }
-        seed_len = va_arg(args, size_t);
-        params[0] = OSSL_PARAM_construct_octet_string(OSSL_PKEY_PARAM_ML_DSA_SEED,
-                                                     seed, seed_len);
     } else if (OPENSSL_strcasecmp(type, "ED25519") != 0
                && OPENSSL_strcasecmp(type, "X25519") != 0
                && OPENSSL_strcasecmp(type, "ED448") != 0
                && OPENSSL_strcasecmp(type, "X448") != 0
-               && OPENSSL_strcasecmp(type, "SM2") != 0) {
+               && OPENSSL_strcasecmp(type, "SM2") != 0
+               && OPENSSL_strcasecmp(type, "ML-DSA-65") != 0) {
         ERR_raise(ERR_LIB_EVP, ERR_R_PASSED_INVALID_ARGUMENT);
         goto end;
     }

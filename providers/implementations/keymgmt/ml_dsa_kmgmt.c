@@ -119,10 +119,12 @@ static int ml_dsa_gen_set_params(void *genctx, const OSSL_PARAM params[])
         return 1;
 
     if ((p = OSSL_PARAM_locate_const(params, OSSL_PKEY_PARAM_ML_DSA_SEED)) != NULL) {
-        OPENSSL_cleanse(gctx->seed, ML_DSA_SEEDBYTES);
-        gctx->seed_len = 0;
-        if (!OSSL_PARAM_get_octet_string(p, (void **)&gctx->seed, ML_DSA_SEEDBYTES, &gctx->seed_len))
+        void *vp = gctx->seed;
+        if (!OSSL_PARAM_get_octet_string(p, &vp, sizeof(gctx->seed),
+                                         &(gctx->seed_len))) {
+            gctx->seed_len = 0;
             return 0;
+        }
     }
 
     return 1;
@@ -222,6 +224,7 @@ static int ml_dsa_match(const void *keydata1, const void *keydata2, int selectio
 
 static int ml_dsa_import(void *keydata, int selection, const OSSL_PARAM params[])
 {
+    int ret = 0;
     ML_DSA_KEY *key = keydata;
     const OSSL_PARAM *p;
     uint8_t *pk = NULL, *sk = NULL;
@@ -262,11 +265,11 @@ static int ml_dsa_import(void *keydata, int selection, const OSSL_PARAM params[]
         goto err;
     }
 
-    return 1;
+    ret = 1;
 err:
     OPENSSL_free(pk);
     OPENSSL_free(sk);
-    return 0;
+    return ret;
 }
 
 static int ml_dsa_export(void *keydata, int selection,

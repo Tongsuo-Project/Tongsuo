@@ -16,7 +16,6 @@
 #include "prov/implementations.h"
 #include "prov/providercommon.h"
 #include "prov/provider_ctx.h"
-// #include "prov/der_ml_dsa.h"
 
 #include "crypto/ml_dsa.h"
 
@@ -210,7 +209,10 @@ static int ml_dsa_set_ctx_params(void *vctx, const OSSL_PARAM params[])
     }
 
     if ((p = OSSL_PARAM_locate_const(params, OSSL_SIGNATURE_PARAM_DETERMINISTIC)) != NULL) {
-        if (!OSSL_PARAM_get_int(p, &ctx->deterministic)) return 0;
+        if (!OSSL_PARAM_get_int(p, &ctx->deterministic)) {
+            ctx->deterministic = 0;
+            return 0;
+        }
     }
 
     return 1;

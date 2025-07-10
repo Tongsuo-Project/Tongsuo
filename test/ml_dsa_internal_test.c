@@ -20,14 +20,17 @@
 #include <openssl/core_names.h>
 #include <crypto/evp.h>
 #include "testutil.h"
+#include "internal/nelem.h"
 
 #include "crypto/ml_dsa.h"
+#include "ml_dsa.inc"
 
 #ifndef OPENSSL_NO_ML_DSA
 
 #define MLEN 59
 #define CTXLEN 100
 #define NTESTS 1000
+#define ALG_NAME "ML-DSA-65"
 
 #define RUN_ML_DSA_TESTS(mode) \
     do { \
@@ -62,8 +65,7 @@
     } while (0)
 
 
-static int test_ml_dsa_internal(void)
-{
+static int test_ml_dsa_internal(void) {
     static unsigned int i, j;
     static int ret = 0;
     static size_t mlen, smlen;
@@ -83,7 +85,7 @@ end:
     return 0;
 }
 
-static EVP_PKEY *do_gen_key(uint8_t *seed, size_t seed_len) {
+static EVP_PKEY *do_gen_key(const uint8_t *seed, size_t seed_len) {
     static int ret = 0;
     EVP_PKEY_CTX *ctx = NULL;
     EVP_PKEY *key = NULL;
@@ -93,7 +95,7 @@ static EVP_PKEY *do_gen_key(uint8_t *seed, size_t seed_len) {
                                                  (char *)seed, seed_len);
     *p = OSSL_PARAM_construct_end();
     
-    ctx = EVP_PKEY_CTX_new_from_name(NULL, "ML-DSA-65", NULL);
+    ctx = EVP_PKEY_CTX_new_from_name(NULL, ALG_NAME, NULL);
     if (!TEST_ptr(ctx)) {
         goto end;
     }
@@ -112,6 +114,7 @@ static EVP_PKEY *do_gen_key(uint8_t *seed, size_t seed_len) {
     if (!TEST_int_eq(ret, 1)) {
         goto end;
     }
+    EVP_PKEY_CTX_free(ctx);
     return key;
 
 end:
@@ -119,7 +122,29 @@ end:
     return NULL;
 }
 
+static int test_ml_dsa_keygen_KAT(int tst_id) {
+    int ret = 0;
+    const ML_DSA_KEYGEN_TEST_DATA *tst = &ml_dsa_keygen_testdata[tst_id];
+    EVP_PKEY *pkey = NULL;
+    uint8_t priv[5 * 1024], pub[3 * 1024];
+    size_t priv_len, pub_len;
+
+    if (!TEST_ptr(pkey = do_gen_key(tst->seed, tst->seed_len))
+            || !TEST_true(EVP_PKEY_get_octet_string_param(pkey, OSSL_PKEY_PARAM_PRIV_KEY,
+                                                          priv, sizeof(priv), &priv_len))
+            || !TEST_true(EVP_PKEY_get_octet_string_param(pkey, OSSL_PKEY_PARAM_PUB_KEY,
+                                                          pub, sizeof(pub), &pub_len))
+            || !TEST_mem_eq(pub, pub_len, tst->pub, tst->pub_len)
+            || !TEST_mem_eq(priv, priv_len, tst->priv, tst->priv_len))
+        goto err;
+    ret = 1;
+err:
+    EVP_PKEY_free(pkey);
+    return ret;
+}
+
 static int test_ml_dsa_genkey_diff(void) {
+    int ret = 0;
     static uint8_t pk[ML_DSA_PUBLICKEYBYTES] = {0};
     static uint8_t sk[ML_DSA_SECRETKEYBYTES] = {0};
     static uint8_t pk2[ML_DSA_PUBLICKEYBYTES] = {0};
@@ -129,7 +154,7 @@ static int test_ml_dsa_genkey_diff(void) {
     EVP_PKEY *k1 = NULL, *k2 = NULL;
     int bits = 0, sig_len = 0;
 
-    k1 = do_gen_key(seed, 0);
+    k1 = EVP_PKEY_Q_keygen(NULL, NULL, ALG_NAME);
     if (!TEST_ptr(k1)) {
         goto end;
     }
@@ -146,8 +171,8 @@ static int test_ml_dsa_genkey_diff(void) {
     }
 
     memset(seed, 1, ML_DSA_SEEDBYTES);
-    k2 = do_gen_key(seed, ML_DSA_SEEDBYTES);
-    if (!TEST_ptr(k1)) {
+    k2 = EVP_PKEY_Q_keygen(NULL, NULL, ALG_NAME);
+    if (!TEST_ptr(k2)) {
         goto end;
     }
 
@@ -166,30 +191,76 @@ static int test_ml_dsa_genkey_diff(void) {
         goto end;
     }
 
-    return 1;
+    ret = 1;
 end:
     EVP_PKEY_free(k1);
     EVP_PKEY_free(k2);
-    return 0;
+    return ret;
+}
+
+static int test_ml_dsa_siggen_KAT(int tst_id) {
+    int ret = 0, selection = 0;
+    const ML_DSA_SIG_GEN_TEST_DATA *td = &ml_dsa_siggen_testdata[tst_id];
+    EVP_PKEY_CTX *kctx = NULL, *sctx = NULL;
+    EVP_PKEY *pkey = NULL;
+    OSSL_PARAM params[3];
+    uint8_t *psig = NULL;
+    size_t psig_len = 0, sig_len2 = 0;
+    int deterministic = 1;
+
+    params[0] = OSSL_PARAM_construct_octet_string(OSSL_PKEY_PARAM_PRIV_KEY,
+                                                (uint8_t *)td->priv, td->priv_len);
+    params[1] = OSSL_PARAM_construct_end();
+    selection = OSSL_KEYMGMT_SELECT_PRIVATE_KEY;
+
+    if (!TEST_ptr(kctx = EVP_PKEY_CTX_new_from_name(NULL, ALG_NAME, NULL))
+            || !TEST_int_eq(EVP_PKEY_fromdata_init(kctx), 1)
+            || !TEST_int_eq(EVP_PKEY_fromdata(kctx, &pkey, selection,
+                                              params), 1))
+        goto err;
+
+    params[0] = OSSL_PARAM_construct_int(OSSL_SIGNATURE_PARAM_DETERMINISTIC, &deterministic);
+    params[1] = OSSL_PARAM_construct_octet_string(OSSL_SIGNATURE_PARAM_CONTEXT_STRING, (void*)td->context, td->context_len);
+    params[2] = OSSL_PARAM_construct_end();
+    if (!TEST_ptr(sctx = EVP_PKEY_CTX_new_from_pkey(NULL, pkey, NULL))
+            || !TEST_int_eq(EVP_PKEY_sign_init(sctx), 1)
+            || !TEST_int_eq(EVP_PKEY_CTX_set_params(sctx, params), 1)
+            || !TEST_int_eq(EVP_PKEY_sign(sctx, NULL, &psig_len,
+                                          td->msg, td->msg_len), 1)
+            || !TEST_true(EVP_PKEY_get_size_t_param(pkey, OSSL_PKEY_PARAM_MAX_SIZE,
+                                                    &sig_len2))
+            || !TEST_int_eq(sig_len2, psig_len)
+            || !TEST_ptr(psig = OPENSSL_zalloc(psig_len))
+            || !TEST_int_eq(EVP_PKEY_sign(sctx, psig, &psig_len,
+                                          td->msg, td->msg_len), 1)
+            || !TEST_mem_eq(psig, psig_len, td->sig, td->sig_len))
+        goto err;
+    ret = 1;
+
+err:
+    EVP_PKEY_CTX_free(kctx);
+    EVP_PKEY_free(pkey);
+    EVP_PKEY_CTX_free(sctx);
+    OPENSSL_free(psig);
+    return ret;
 }
 
 static int test_ml_dsa_signverify(void) {
+    int ret = 0;
     static uint8_t m[MLEN] = {0};
     static uint8_t sig[ML_DSA_SIGBYTES] = {0};
     size_t sig_len = 0;
     EVP_PKEY *pkey = NULL;
     EVP_PKEY_CTX *sctx = NULL, *vctx = NULL;
     static uint8_t ctx[CTXLEN];
-    uint8_t seed[ML_DSA_SEEDBYTES];
     OSSL_PARAM params[3];
     int deterministic = 0, i;
 
     for (i = 0; i < NTESTS; i++) {
-        RAND_bytes(seed, ML_DSA_SEEDBYTES);
         RAND_bytes(ctx, CTXLEN);
         RAND_bytes(m, MLEN);
 
-        pkey = EVP_PKEY_Q_keygen(NULL, NULL, "ML-DSA-65", seed, sizeof(seed));
+        pkey = EVP_PKEY_Q_keygen(NULL, NULL, ALG_NAME);
         if (!TEST_ptr(pkey))
             goto err;
 
@@ -239,13 +310,13 @@ static int test_ml_dsa_signverify(void) {
             goto err;
     }
 
-    return 1;
+    ret = 1;
 err:
     EVP_PKEY_CTX_free(sctx);
     EVP_PKEY_CTX_free(vctx);
     EVP_PKEY_free(pkey);
 
-    return 0;
+    return ret;
 }
 
 #endif
@@ -255,7 +326,9 @@ int setup_tests(void)
 {
 #ifndef OPENSSL_NO_ML_DSA
     ADD_TEST(test_ml_dsa_internal);
+    ADD_ALL_TESTS(test_ml_dsa_keygen_KAT, OSSL_NELEM(ml_dsa_keygen_testdata));
     ADD_TEST(test_ml_dsa_genkey_diff);
+    ADD_ALL_TESTS(test_ml_dsa_siggen_KAT, OSSL_NELEM(ml_dsa_siggen_testdata));
     ADD_TEST(test_ml_dsa_signverify);
 #endif
     return 1;
