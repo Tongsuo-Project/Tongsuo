@@ -9,6 +9,7 @@ $KDF_GOAL=../../libdefault.a ../../libfips.a
 $MAC_GOAL=../../libdefault.a ../../libfips.a
 $RSA_GOAL=../../libdefault.a ../../libfips.a
 $SM2DH_MLKEM768_GOAL=../../libdefault.a
+$ML_DSA_GOAL=../../libdefault.a 
 
 IF[{- !$disabled{dh} -}]
   SOURCE[$DH_GOAL]=dh_kmgmt.c
@@ -18,6 +19,10 @@ IF[{- !$disabled{dsa} -}]
 ENDIF
 IF[{- !$disabled{ec} -}]
   SOURCE[$EC_GOAL]=ec_kmgmt.c
+ENDIF
+
+IF[{- !$disabled{ml_dsa} -}]
+  SOURCE[$ML_DSA_GOAL]=ml_dsa_kmgmt.c
 ENDIF
 
 IF[{- !$disabled{asm} -}]
