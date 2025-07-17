@@ -47,6 +47,13 @@
 # define OSSL_TLS_GROUP_ID_ffdhe4096        0x0102
 # define OSSL_TLS_GROUP_ID_ffdhe6144        0x0103
 # define OSSL_TLS_GROUP_ID_ffdhe8192        0x0104
-# define OSSL_TLS_GROUP_ID_sm2dh_mlkem768_hybrid 0xFEFE
+/* 
+    This tls_group_id (4590) has not been registered by
+    IANA, we temporarily use this value since it is 
+    unoccupied and aligns with the other hybrid tls_groups.
+    tls_group_id 65024-65279 are used by sslapitest
+    so cannot be used here (ref. randomize_tls_group_id).
+*/
+# define OSSL_TLS_GROUP_ID_sm2dh_mlkem768_hybrid 0x11EE
 
 #endif
