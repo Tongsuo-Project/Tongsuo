@@ -47,6 +47,9 @@ IF[{- !$disabled{asm} -}]
   $BNASM_mips64=$BNASM_mips32
   $BNDEF_mips64=$BNDEF_mips32
 
+  $BNASM_loongarch64=bn_asm.c loongarch-mont.S
+  $BNDEF_loongarch64=OPENSSL_BN_ASM_MONT
+
   IF[{- ($target{perlasm_scheme} // '') eq '31' -}]
     $BNASM_s390x=bn_asm.c s390x-mont.S
   ELSE
@@ -133,6 +136,9 @@ GENERATE[bn-mips.S]=asm/mips.pl
 INCLUDE[bn-mips.o]=..
 GENERATE[mips-mont.S]=asm/mips-mont.pl
 INCLUDE[mips-mont.o]=..
+
+GENERATE[loongarch-mont.S]=asm/loongarch-mont.pl
+#INCLUDE[loongarch-mont.o]=..
 
 GENERATE[s390x-mont.S]=asm/s390x-mont.pl
 GENERATE[s390x-gf2m.s]=asm/s390x-gf2m.pl
