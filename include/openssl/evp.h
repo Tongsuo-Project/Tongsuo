@@ -81,7 +81,9 @@
 # define EVP_PKEY_ED448 NID_ED448
 # define EVP_PKEY_EIA3 NID_zuc_128_eia3
 /* SM2DH-MLKEM768-HYBRID, only for experimental purpose */
-# define EVP_PKEY_SM2DH_MLKEM768_HYBRID NID_sm2dh_mlkem768_hybrid 
+# define EVP_PKEY_SM2DH_MLKEM768_HYBRID NID_sm2dh_mlkem768_hybrid
+/* ML_DSA */
+# define EVP_PKEY_ML_DSA_65 NID_ML_DSA_65
 /* Special indicator that the object is uniquely provider side */
 # define EVP_PKEY_KEYMGMT -1
 

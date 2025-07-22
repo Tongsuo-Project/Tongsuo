@@ -92,16 +92,13 @@ int crypto_sign_keypair(uint8_t *pk, uint8_t *sk, uint8_t *seed, int rand_seed) 
 **************************************************/
 int crypto_sign_signature_internal(uint8_t *sig,
                                    size_t *siglen,
-                                   const uint8_t *m,
-                                   size_t mlen,
-                                   const uint8_t *pre,
-                                   size_t prelen,
+                                   const uint8_t *mu,
                                    const uint8_t rnd[ML_DSA_RNDBYTES],
                                    const uint8_t *sk)
 {
   unsigned int n;
-  uint8_t seedbuf[2*ML_DSA_SEEDBYTES + ML_DSA_TRBYTES + 2*ML_DSA_CRHBYTES];
-  uint8_t *rho, *tr, *key, *mu, *rhoprime;
+  uint8_t seedbuf[2*ML_DSA_SEEDBYTES + ML_DSA_TRBYTES + ML_DSA_CRHBYTES];
+  uint8_t *rho, *tr, *key, *rhoprime;
   uint16_t nonce = 0;
   polyvecl mat[ML_DSA_K], s1, y, z;
   polyveck t0, s2, w1, w0, h;
@@ -111,17 +108,8 @@ int crypto_sign_signature_internal(uint8_t *sig,
   rho = seedbuf;
   tr = rho + ML_DSA_SEEDBYTES;
   key = tr + ML_DSA_TRBYTES;
-  mu = key + ML_DSA_SEEDBYTES;
-  rhoprime = mu + ML_DSA_CRHBYTES;
+  rhoprime = key + ML_DSA_SEEDBYTES;
   unpack_sk(rho, tr, key, &t0, &s1, &s2, sk);
-
-  /* Compute mu = CRH(tr, pre, msg) */
-  shake256_init(&state);
-  shake256_absorb(&state, tr, ML_DSA_TRBYTES);
-  shake256_absorb(&state, pre, prelen);
-  shake256_absorb(&state, m, mlen);
-  shake256_finalize(&state);
-  shake256_squeeze(mu, ML_DSA_CRHBYTES, &state);
 
   /* Compute rhoprime = CRH(key, rnd, mu) */
   shake256_init(&state);
@@ -223,6 +211,11 @@ int crypto_sign_signature(uint8_t *sig,
   size_t i;
   uint8_t pre[ML_DSA_CONTEXT_STRING_BYTES+2];
   uint8_t rnd[ML_DSA_RNDBYTES];
+  uint8_t seedbuf[2*ML_DSA_SEEDBYTES + ML_DSA_TRBYTES + ML_DSA_CRHBYTES];
+  uint8_t *rho, *tr, *key, *mu;
+  polyvecl s1;
+  polyveck s2, t0;
+  keccak_state state;
 
   if(ctxlen > ML_DSA_CONTEXT_STRING_BYTES)
     return -1;
@@ -233,6 +226,20 @@ int crypto_sign_signature(uint8_t *sig,
   for(i = 0; i < ctxlen; i++)
     pre[2 + i] = ctx[i];
 
+  rho = seedbuf;
+  tr = rho + ML_DSA_SEEDBYTES;
+  key = tr + ML_DSA_TRBYTES;
+  mu = key + ML_DSA_SEEDBYTES;
+  unpack_sk(rho, tr, key, &t0, &s1, &s2, sk);
+
+  /* Compute mu = CRH(tr, pre, msg) */
+  shake256_init(&state);
+  shake256_absorb(&state, tr, ML_DSA_TRBYTES);
+  shake256_absorb(&state, pre, 2+ctxlen);
+  shake256_absorb(&state, m, mlen);
+  shake256_finalize(&state);
+  shake256_squeeze(mu, ML_DSA_CRHBYTES, &state);
+
   if (deterministic) {
     for(i=0;i<ML_DSA_RNDBYTES;i++)
       rnd[i] = 0;
@@ -241,7 +248,7 @@ int crypto_sign_signature(uint8_t *sig,
     RAND_bytes(rnd, ML_DSA_RNDBYTES);
   }
 
-  crypto_sign_signature_internal(sig,siglen,m,mlen,pre,2+ctxlen,rnd,sk);
+  crypto_sign_signature_internal(sig,siglen,mu,rnd,sk);
   return 0;
 }
 
@@ -298,16 +305,12 @@ int crypto_sign(uint8_t *sm,
 **************************************************/
 int crypto_sign_verify_internal(const uint8_t *sig,
                                 size_t siglen,
-                                const uint8_t *m,
-                                size_t mlen,
-                                const uint8_t *pre,
-                                size_t prelen,
+                                const uint8_t *mu,
                                 const uint8_t *pk)
 {
   unsigned int i;
   uint8_t buf[ML_DSA_K*POLYW1_PACKEDBYTES];
   uint8_t rho[ML_DSA_SEEDBYTES];
-  uint8_t mu[ML_DSA_CRHBYTES];
   uint8_t c[ML_DSA_CTILDEBYTES];
   uint8_t c2[ML_DSA_CTILDEBYTES];
   poly cp;
@@ -323,15 +326,6 @@ int crypto_sign_verify_internal(const uint8_t *sig,
     return -1;
   if(polyvecl_chknorm(&z, ML_DSA_GAMMA1 - ML_DSA_BETA))
     return -1;
-
-  /* Compute CRH(H(rho, t1), pre, msg) */
-  shake256(mu, ML_DSA_TRBYTES, pk, ML_DSA_PUBLICKEYBYTES);
-  shake256_init(&state);
-  shake256_absorb(&state, mu, ML_DSA_TRBYTES);
-  shake256_absorb(&state, pre, prelen);
-  shake256_absorb(&state, m, mlen);
-  shake256_finalize(&state);
-  shake256_squeeze(mu, ML_DSA_CRHBYTES, &state);
 
   /* Matrix-vector multiplication; compute Az - c2^dt1 */
   poly_challenge(&cp, c);
@@ -392,6 +386,8 @@ int crypto_sign_verify(const uint8_t *sig,
 {
   size_t i;
   uint8_t pre[ML_DSA_CONTEXT_STRING_BYTES+2];
+  uint8_t mu[ML_DSA_CRHBYTES];
+  keccak_state state;
 
   if(ctxlen > ML_DSA_CONTEXT_STRING_BYTES)
     return -1;
@@ -401,7 +397,16 @@ int crypto_sign_verify(const uint8_t *sig,
   for(i = 0; i < ctxlen; i++)
     pre[2 + i] = ctx[i];
 
-  return crypto_sign_verify_internal(sig,siglen,m,mlen,pre,2+ctxlen,pk);
+  /* Compute CRH(H(rho, t1), pre, msg) */
+  shake256(mu, ML_DSA_TRBYTES, pk, ML_DSA_PUBLICKEYBYTES);
+  shake256_init(&state);
+  shake256_absorb(&state, mu, ML_DSA_TRBYTES);
+  shake256_absorb(&state, pre, 2+ctxlen);
+  shake256_absorb(&state, m, mlen);
+  shake256_finalize(&state);
+  shake256_squeeze(mu, ML_DSA_CRHBYTES, &state);
+
+  return crypto_sign_verify_internal(sig,siglen,mu,pk);
 }
 
 /*************************************************

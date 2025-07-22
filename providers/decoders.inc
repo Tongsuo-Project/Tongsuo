@@ -81,6 +81,10 @@ DECODER_w_structure("RSA-PSS", der, PrivateKeyInfo, rsapss, yes),
 DECODER_w_structure("RSA-PSS", der, SubjectPublicKeyInfo, rsapss, yes),
 DECODER("RSA", msblob, rsa, yes),
 DECODER("RSA", pvk, rsa, yes),
+#ifndef OPENSSL_NO_ML_DSA
+DECODER_w_structure("ML-DSA-65", der, PrivateKeyInfo, ml_dsa_65, no),
+DECODER_w_structure("ML-DSA-65", der, SubjectPublicKeyInfo, ml_dsa_65, no),
+#endif
 
 /*
  * A decoder that takes a SubjectPublicKeyInfo and figures out the types of key

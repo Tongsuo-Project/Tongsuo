@@ -28,9 +28,11 @@
 #include "crypto/ec.h"           /* ossl_ec_key_get_libctx */
 #include "crypto/ecx.h"          /* ECX_KEY, etc... */
 #include "crypto/rsa.h"          /* RSA_PSS_PARAMS_30, etc... */
+#include "crypto/ml_dsa.h"
 #include "prov/bio.h"
 #include "prov/implementations.h"
 #include "endecoder_local.h"
+#include "ml_dsa_codecs.h"
 
 DEFINE_SPECIAL_STACK_OF_CONST(BIGNUM_const, BIGNUM)
 
@@ -791,6 +793,55 @@ static int rsa_to_text(BIO *out, const void *key, int selection)
 
 /* ---------------------------------------------------------------------- */
 
+#ifndef OPENSSL_NO_ML_DSA
+static int ml_dsa_to_text(BIO *out, const void *vkey, int selection)
+{
+    const uint8_t *seed, *sk, *pk;
+    ML_DSA_KEY *key = (ML_DSA_KEY *)vkey;
+
+    if (out == NULL || key == NULL) {
+        ERR_raise(ERR_LIB_PROV, ERR_R_PASSED_NULL_PARAMETER);
+        return 0;
+    }
+    pk = key->pubkey;
+    sk = key->privkey;
+    seed = NULL;
+    // seed = ossl_ml_dsa_key_get_seed(key);
+
+    if (key->pubkey_len == 0) {
+        /* Regardless of the |selection|, there must be a public key */
+        ERR_raise_data(ERR_LIB_PROV, PROV_R_MISSING_KEY,
+                       "no %s key material available", CRYPTO_ALGNAME);
+        return 0;
+    }
+
+    if ((selection & OSSL_KEYMGMT_SELECT_PRIVATE_KEY) != 0) {
+        if (key->privkey_len == 0) {
+            ERR_raise_data(ERR_LIB_PROV, PROV_R_MISSING_KEY,
+                           "no %s key material available", CRYPTO_ALGNAME);
+            return 0;
+        }
+        if (BIO_printf(out, "%s Private-Key:\n", CRYPTO_ALGNAME) <= 0)
+            return 0;
+        if (seed != NULL && !print_labeled_buf(out, "seed:", seed,
+                                                        ML_DSA_SEEDBYTES))
+            return 0;
+        if (!print_labeled_buf(out, "priv:", sk, key->privkey_len))
+            return 0;
+    } else if ((selection & OSSL_KEYMGMT_SELECT_PUBLIC_KEY) != 0) {
+        if (BIO_printf(out, "%s Public-Key:\n", CRYPTO_ALGNAME) <= 0)
+            return 0;
+    }
+
+    if (!print_labeled_buf(out, "pub:", pk, key->pubkey_len))
+        return 0;
+
+    return 1;
+}
+#endif /* OPENSSL_NO_ML_DSA */
+
+/* ---------------------------------------------------------------------- */
+
 static void *key2text_newctx(void *provctx)
 {
     return provctx;
@@ -883,3 +934,7 @@ MAKE_TEXT_ENCODER(x448, ecx);
 #endif
 MAKE_TEXT_ENCODER(rsa, rsa);
 MAKE_TEXT_ENCODER(rsapss, rsa);
+
+#ifndef OPENSSL_NO_ML_DSA
+MAKE_TEXT_ENCODER(ml_dsa_65, ml_dsa);
+#endif

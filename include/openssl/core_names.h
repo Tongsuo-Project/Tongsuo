@@ -285,7 +285,8 @@ extern "C" {
 #define OSSL_PKEY_PARAM_DIST_ID             "distid"
 #define OSSL_PKEY_PARAM_PUB_KEY             "pub"
 #define OSSL_PKEY_PARAM_PRIV_KEY            "priv"
-#define OSSL_PKEY_PARAM_ML_DSA_SEED         "ml-dsa-seed"
+#define OSSL_PKEY_PARAM_ML_DSA_SEED         "seed"
+#define OSSL_PKEY_PARAM_ML_DSA_SK_FORMAT    "sk-format" /* utf8 string */
 
 /* Diffie-Hellman/DSA Parameters */
 #define OSSL_PKEY_PARAM_FFC_P               "p"
