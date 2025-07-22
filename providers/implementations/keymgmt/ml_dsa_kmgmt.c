@@ -24,6 +24,7 @@
 
 static OSSL_FUNC_keymgmt_new_fn ml_dsa_newdata;
 static OSSL_FUNC_keymgmt_free_fn ml_dsa_freedata;
+static OSSL_FUNC_keymgmt_load_fn ml_dsa_load;
 static OSSL_FUNC_keymgmt_gen_init_fn ml_dsa_gen_init;
 static OSSL_FUNC_keymgmt_gen_fn ml_dsa_gen;
 static OSSL_FUNC_keymgmt_gen_set_params_fn ml_dsa_gen_set_params;
@@ -41,6 +42,8 @@ static OSSL_FUNC_keymgmt_export_types_fn ml_dsa_export_types;
 struct ml_dsa_gen_ctx {
     PROV_CTX *provctx;
 
+    char sk_fmt[ML_DSA_SK_FORMAT_MAX_BYTES + 1];
+
     uint8_t seed[ML_DSA_SEEDBYTES];
     size_t seed_len;
 };
@@ -55,6 +58,21 @@ static void *ml_dsa_newdata(void *provctx)
 static void ml_dsa_freedata(void *keydata)
 {
     pqcrystals_ml_dsa_key_free(keydata);
+}
+
+static void *ml_dsa_load(const void *reference, size_t reference_sz)
+{
+    ML_DSA_KEY *key = NULL;
+
+    if (ossl_prov_is_running() && reference_sz == sizeof(key)) {
+        /* The contents of the reference is the address to our object */
+        key = *(ML_DSA_KEY **)reference;
+
+        /* We grabbed, so we detach it */
+        *(ML_DSA_KEY **)reference = NULL;
+        return key;
+    }
+    return NULL;
 }
 
 static void *ml_dsa_gen_init(void *provctx, int selection,
@@ -101,6 +119,7 @@ static void *ml_dsa_gen(void * genctx, OSSL_CALLBACK * osslcb, void * cbarg)
     key->pubkey_len = ML_DSA_PUBLICKEYBYTES;
     key->privkey_len = ML_DSA_SECRETKEYBYTES;
     key->seed_len = ML_DSA_SEEDBYTES;
+    strncpy(key->sk_fmt, gctx->sk_fmt, ML_DSA_SK_FORMAT_MAX_BYTES);
 
     return key;
 err:
@@ -110,6 +129,7 @@ err:
 
 static const OSSL_PARAM ml_dsa_gen_set_params_list[] = {
     OSSL_PARAM_octet_string(OSSL_PKEY_PARAM_ML_DSA_SEED, NULL, 0),
+    OSSL_PARAM_utf8_string(OSSL_PKEY_PARAM_ML_DSA_SK_FORMAT, NULL, 0),
     OSSL_PARAM_END
 };
 
@@ -129,6 +149,14 @@ static int ml_dsa_gen_set_params(void *genctx, const OSSL_PARAM params[])
                                          &(gctx->seed_len))
                 || gctx->seed_len != ML_DSA_SEEDBYTES) {
             gctx->seed_len = 0;
+            return 0;
+        }
+    }
+
+    if ((p = OSSL_PARAM_locate_const(params, OSSL_PKEY_PARAM_ML_DSA_SK_FORMAT)) != NULL) {
+        char *vp = gctx->sk_fmt;
+        if (!OSSL_PARAM_get_utf8_string(p, &vp, sizeof(gctx->sk_fmt))) {
+            gctx->sk_fmt[0] = '\0';
             return 0;
         }
     }
@@ -227,6 +255,7 @@ static int ml_dsa_match(const void *keydata1, const void *keydata2, int selectio
 {
     const ML_DSA_KEY *key1 = keydata1;
     const ML_DSA_KEY *key2 = keydata2;
+    int key_checked = 0;
 
     if (!ossl_prov_is_running())
         return 0;
@@ -234,7 +263,27 @@ static int ml_dsa_match(const void *keydata1, const void *keydata2, int selectio
     if (key1 == NULL || key2 == NULL)
         return 0;
 
-    return memcmp(key1, key2, sizeof(ML_DSA_KEY));
+    if ((selection & OSSL_KEYMGMT_SELECT_KEYPAIR) != 0) {
+        if ((selection & OSSL_KEYMGMT_SELECT_PUBLIC_KEY) != 0) {
+            if (key1->pubkey_len != 0 && key2->pubkey_len != 0) {
+                if (memcmp(key1->pubkey, key2->pubkey,
+                                  key1->pubkey_len) != 0)
+                    return 0;
+                key_checked = 1;
+            }
+        }
+        if (!key_checked
+                && (selection & OSSL_KEYMGMT_SELECT_PRIVATE_KEY) != 0) {
+            if (key1->privkey_len != 0 && key2->privkey_len != 0) {
+                if (memcmp(key1->privkey, key2->privkey,
+                           key1->privkey_len) != 0)
+                    return 0;
+                key_checked = 1;
+            }
+        }
+        return key_checked;
+    }
+    return 1;
 }
 
 static int ml_dsa_import(void *keydata, int selection, const OSSL_PARAM params[])
@@ -369,6 +418,7 @@ static const OSSL_PARAM *ml_dsa_export_types(int selection)
 
 const OSSL_DISPATCH ossl_ml_dsa_65_keymgmt_functions[] = {
     { OSSL_FUNC_KEYMGMT_NEW, (void (*)(void))ml_dsa_newdata },
+    { OSSL_FUNC_KEYMGMT_LOAD, (void (*)(void))ml_dsa_load },
     { OSSL_FUNC_KEYMGMT_GEN_INIT, (void (*)(void))ml_dsa_gen_init },
     { OSSL_FUNC_KEYMGMT_GEN_SET_PARAMS, (void (*)(void))ml_dsa_gen_set_params },
     { OSSL_FUNC_KEYMGMT_GEN_SETTABLE_PARAMS, (void (*)(void))ml_dsa_gen_settable_params },

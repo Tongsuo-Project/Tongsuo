@@ -30,11 +30,13 @@
 #include "internal/cryptlib.h"
 #include "crypto/ecx.h"
 #include "crypto/rsa.h"
+#include "crypto/ml_dsa.h"
 #include "prov/implementations.h"
 #include "prov/bio.h"
 #include "prov/provider_ctx.h"
 #include "prov/der_rsa.h"
 #include "endecoder_local.h"
+#include "ml_dsa_codecs.h"
 
 #if defined(OPENSSL_NO_DH) && defined(OPENSSL_NO_DSA) && defined(OPENSSL_NO_EC)
 # define OPENSSL_NO_KEYPARAMS
@@ -812,6 +814,27 @@ static int ecx_pki_priv_to_der(const void *vecxkey, unsigned char **pder)
 
 /* ---------------------------------------------------------------------- */
 
+#ifndef OPENSSL_NO_ML_DSA
+static int ml_dsa_spki_pub_to_der(const void *vkey, unsigned char **pder)
+{
+    return ossl_ml_dsa_i2d_pubkey(vkey, pder);
+}
+
+static int ml_dsa_pki_priv_to_der(const void *vkey, unsigned char **pder)
+{
+    return ossl_ml_dsa_i2d_prvkey(vkey, pder);
+}
+
+# define ml_dsa_epki_priv_to_der ml_dsa_pki_priv_to_der
+# define prepare_ml_dsa_params   NULL
+# define ml_dsa_check_key_type   NULL
+
+# define ml_dsa_65_evp_type        EVP_PKEY_ML_DSA_65
+# define ml_dsa_65_pem_type        "ML-DSA-65"
+#endif
+
+/* ---------------------------------------------------------------------- */
+
 /*
  * Helper functions to prepare RSA-PSS params for encoding.  We would
  * have simply written the whole AlgorithmIdentifier, but existing libcrypto
@@ -1452,4 +1475,13 @@ MAKE_ENCODER(dhx, dh, EVP_PKEY_DHX, X9_42, pem); /* parameters only */
 #ifndef OPENSSL_NO_EC
 MAKE_ENCODER(ec, ec, EVP_PKEY_EC, X9_62, der);
 MAKE_ENCODER(ec, ec, EVP_PKEY_EC, X9_62, pem);
+#endif
+
+#ifndef OPENSSL_NO_ML_DSA
+MAKE_ENCODER(ml_dsa_65, ml_dsa, EVP_PKEY_ML_DSA_65 ,EncryptedPrivateKeyInfo, der);
+MAKE_ENCODER(ml_dsa_65, ml_dsa, EVP_PKEY_ML_DSA_65, EncryptedPrivateKeyInfo, pem);
+MAKE_ENCODER(ml_dsa_65, ml_dsa, EVP_PKEY_ML_DSA_65, PrivateKeyInfo, der);
+MAKE_ENCODER(ml_dsa_65, ml_dsa, EVP_PKEY_ML_DSA_65, PrivateKeyInfo, pem);
+MAKE_ENCODER(ml_dsa_65, ml_dsa, EVP_PKEY_ML_DSA_65, SubjectPublicKeyInfo, der);
+MAKE_ENCODER(ml_dsa_65, ml_dsa, EVP_PKEY_ML_DSA_65, SubjectPublicKeyInfo, pem);
 #endif

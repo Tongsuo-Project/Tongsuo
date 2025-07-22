@@ -18,6 +18,9 @@
 #include <openssl/err.h>
 #include <openssl/core_dispatch.h>
 #include <openssl/core_names.h>
+
+
+#include <openssl/pem.h>
 #include <crypto/evp.h>
 #include "testutil.h"
 #include "internal/nelem.h"
@@ -320,6 +323,115 @@ err:
     return ret;
 }
 
+static int test_ml_dsa_export(void)
+{
+    int ret = 0;
+    EVP_PKEY *pkey = NULL, *pkey2_from_priv = NULL, *pkey3_from_pub = NULL;
+    BIO *bio_priv_in = NULL, *bio_priv_out = NULL;
+    BIO *bio_pub_in = NULL, *bio_pub_out = NULL;
+    
+    // 解除公钥相关变量的注释
+    size_t pub_len1 = 0, pub_len2 = 0;
+    uint8_t pub1[ML_DSA_PUBLICKEYBYTES] = {0};
+    uint8_t pub2[ML_DSA_PUBLICKEYBYTES] = {0};
+
+    size_t priv_len1 = 0, priv_len2 = 0;
+    uint8_t priv1[ML_DSA_SECRETKEYBYTES] = {0};
+    uint8_t priv2[ML_DSA_SECRETKEYBYTES] = {0};
+
+    #define PRIV_PEM_FILE_NAME "test_mldsa_private_key.pem"
+    #define PUB_PEM_FILE_NAME "test_mldsa_public_key.pem"
+
+    /* --- 1. 生成原始密钥对 --- */
+    pkey = EVP_PKEY_Q_keygen(NULL, NULL, ALG_NAME);
+    if (!TEST_ptr(pkey))
+        goto err;
+
+    /* --- 2. 测试私钥的导出和导入 --- */
+    TEST_info("Testing Private Key Export/Import...");
+
+    bio_priv_out = BIO_new_file(PRIV_PEM_FILE_NAME, "w+");
+    if (!TEST_ptr(bio_priv_out))
+        goto err;
+
+    // 使用 PKCS8 格式导出私钥
+    if (!TEST_int_eq(PEM_write_bio_PKCS8PrivateKey(bio_priv_out, pkey, NULL, NULL, 0, NULL, NULL), 1))
+        goto err;
+    BIO_free_all(bio_priv_out);
+    bio_priv_out = NULL; // 避免在 err 标签中重复释放
+
+    bio_priv_in = BIO_new_file(PRIV_PEM_FILE_NAME, "r");
+    if (!TEST_ptr(bio_priv_in))
+        goto err;
+
+    pkey2_from_priv = PEM_read_bio_PrivateKey(bio_priv_in, NULL, NULL, NULL);
+    if (!TEST_ptr(pkey2_from_priv)) {
+        TEST_error("Failed to import private key from PEM.");
+        goto err;
+    }
+    
+    // 比较原始密钥和从 PEM 文件导入的密钥的私钥部分
+    if (!TEST_true(EVP_PKEY_get_octet_string_param(pkey, OSSL_PKEY_PARAM_PRIV_KEY, priv1, sizeof(priv1), &priv_len1)) ||
+        !TEST_true(EVP_PKEY_get_octet_string_param(pkey2_from_priv, OSSL_PKEY_PARAM_PRIV_KEY, priv2, sizeof(priv2), &priv_len2)) ||
+        !TEST_mem_eq(priv1, priv_len1, priv2, priv_len2)) {
+        TEST_error("Private keys do not match after PEM import.");
+        goto err;
+    }
+    TEST_info("Private key test PASSED.");
+
+
+    /* --- 3. 继续测试公钥的导出和导入 --- */
+    TEST_info("Testing Public Key Export/Import...");
+    
+    bio_pub_out = BIO_new_file(PUB_PEM_FILE_NAME, "w+");
+    if (!TEST_ptr(bio_pub_out))
+        goto err;
+
+    // 使用标准格式导出公钥
+    if (!TEST_int_eq(PEM_write_bio_PUBKEY(bio_pub_out, pkey), 1))
+        goto err;
+    BIO_free_all(bio_pub_out);
+    bio_pub_out = NULL; // 避免在 err 标签中重复释放
+
+    bio_pub_in = BIO_new_file(PUB_PEM_FILE_NAME, "r");
+    if (!TEST_ptr(bio_pub_in))
+        goto err;
+    
+    // 从 PEM 文件中读取公钥
+    pkey3_from_pub = PEM_read_bio_PUBKEY(bio_pub_in, NULL, NULL, NULL);
+    if (!TEST_ptr(pkey3_from_pub)) {
+        TEST_error("Failed to import public key from PEM.");
+        goto err;
+    }
+
+    // 比较原始密钥和从公钥 PEM 文件导入的密钥的公钥部分
+    if (!TEST_true(EVP_PKEY_get_octet_string_param(pkey, OSSL_PKEY_PARAM_PUB_KEY, pub1, sizeof(pub1), &pub_len1)) ||
+        !TEST_true(EVP_PKEY_get_octet_string_param(pkey3_from_pub, OSSL_PKEY_PARAM_PUB_KEY, pub2, sizeof(pub2), &pub_len2)) ||
+        !TEST_mem_eq(pub1, pub_len1, pub2, pub_len2)) {
+        TEST_error("Public keys do not match after PEM import.");
+        goto err;
+    }
+    TEST_info("Public key test PASSED.");
+
+    // 最终成功
+    ret = 1;
+
+err:
+    // 清理所有资源
+    EVP_PKEY_free(pkey);
+    EVP_PKEY_free(pkey2_from_priv);
+    EVP_PKEY_free(pkey3_from_pub);
+    BIO_free_all(bio_priv_in);
+    BIO_free_all(bio_priv_out);
+    BIO_free_all(bio_pub_in);
+    BIO_free_all(bio_pub_out);
+    // 清理测试文件
+    remove(PRIV_PEM_FILE_NAME);
+    remove(PUB_PEM_FILE_NAME);
+    return ret;
+}
+
+
 #endif
 
 
@@ -331,6 +443,8 @@ int setup_tests(void)
     ADD_TEST(test_ml_dsa_genkey_diff);
     ADD_ALL_TESTS(test_ml_dsa_siggen_KAT, OSSL_NELEM(ml_dsa_siggen_testdata));
     ADD_TEST(test_ml_dsa_signverify);
+    ADD_TEST(test_ml_dsa_export);
+
 #endif
     return 1;
 }

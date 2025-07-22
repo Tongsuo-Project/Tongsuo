@@ -14,6 +14,8 @@
 #include <stddef.h>
 #include <openssl/evp.h>
 
+#ifndef OPENSSL_NO_ML_DSA
+
 /*
  common parameters for ML-DSA-44、65、87
  */
@@ -62,10 +64,7 @@ int crypto_sign_keypair(uint8_t *pk, uint8_t *sk, uint8_t *seed, int rand_seed);
 #define crypto_sign_signature_internal ML_DSA_NAMESPACE(signature_internal)
 int crypto_sign_signature_internal(uint8_t *sig,
                                    size_t *siglen,
-                                   const uint8_t *m,
-                                   size_t mlen,
-                                   const uint8_t *pre,
-                                   size_t prelen,
+                                   const uint8_t *mu,
                                    const uint8_t rnd[ML_DSA_RNDBYTES],
                                    const uint8_t *sk);
 
@@ -85,10 +84,7 @@ int crypto_sign(uint8_t *sm, size_t *smlen,
 #define crypto_sign_verify_internal ML_DSA_NAMESPACE(verify_internal)
 int crypto_sign_verify_internal(const uint8_t *sig,
                                 size_t siglen,
-                                const uint8_t *m,
-                                size_t mlen,
-                                const uint8_t *pre,
-                                size_t prelen,
+                                const uint8_t *mu,
                                 const uint8_t *pk);
 
 #define crypto_sign_verify ML_DSA_NAMESPACE(verify)
@@ -103,6 +99,8 @@ int crypto_sign_open(uint8_t *m, size_t *mlen,
                      const uint8_t *ctx, size_t ctxlen,
                      const uint8_t *pk);
 
+#define ML_DSA_SK_FORMAT_MAX_BYTES 100
+
 typedef struct {
     uint8_t *seed;
     size_t seed_len;
@@ -110,6 +108,9 @@ typedef struct {
     size_t privkey_len;
     uint8_t *pubkey;
     size_t pubkey_len;
+
+    char sk_fmt[ML_DSA_SK_FORMAT_MAX_BYTES + 1];
+
     OSSL_LIB_CTX * libctx;
 } ML_DSA_KEY;
 
@@ -120,5 +121,12 @@ void pqcrystals_ml_dsa_key_free(ML_DSA_KEY *key);
 int pqcrystals_ml_dsa_pk_import(ML_DSA_KEY *key, const uint8_t *pk, size_t pk_len);
 
 int pqcrystals_ml_dsa_sk_import(ML_DSA_KEY *key, const uint8_t *sk, size_t sk_len);
+
+int pqcrystals_ml_dsa_sk2pk(const uint8_t *sk, size_t sklen, uint8_t *pk, size_t pklen);
+
+EVP_MD_CTX *pqcrystals_ml_dsa_init_mu(const ML_DSA_KEY *key, const EVP_MD *md,
+                                            const uint8_t *ctx, size_t ctxlen);
+
+#endif /* OPENSSL_NO_ML_DSA */
 
 #endif

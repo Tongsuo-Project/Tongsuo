@@ -31,10 +31,12 @@
 #include "crypto/evp.h"
 #include "crypto/ecx.h"
 #include "crypto/rsa.h"
+#include "crypto/ml_dsa.h"
 #include "crypto/x509.h"
 #include "prov/bio.h"
 #include "prov/implementations.h"
 #include "endecoder_local.h"
+#include "ml_dsa_codecs.h"
 
 struct der2key_ctx_st;           /* Forward declaration */
 typedef int check_key_fn(void *, struct der2key_ctx_st *ctx);
@@ -550,6 +552,47 @@ static void rsa_adjust(void *key, struct der2key_ctx_st *ctx)
 
 /* ---------------------------------------------------------------------- */
 
+#ifndef OPENSSL_NO_ML_DSA
+static void *
+ml_dsa_d2i_PKCS8(void **a, const uint8_t **der, long der_len, struct der2key_ctx_st *ctx)
+{
+    ML_DSA_KEY *key;
+
+    key = ossl_ml_dsa_d2i_PKCS8(*der, der_len, ctx->desc->evp_type,
+                                ctx->provctx);
+    if (key != NULL)
+        *der += der_len;
+    return key;
+}
+
+static ossl_inline void * ml_dsa_d2i_PUBKEY(void **a, const uint8_t **der, long der_len)
+{
+    ML_DSA_KEY *key;
+
+    key = ossl_ml_dsa_d2i_PUBKEY(*der, der_len, NULL);
+    if (a != NULL) {
+        pqcrystals_ml_dsa_key_free(*a);
+        *a = key;
+    }
+    if (key != NULL)
+        *der += der_len;
+    return key;
+}
+
+# define ml_dsa_65_evp_type                EVP_PKEY_ML_DSA_65
+# define ml_dsa_65_d2i_private_key         NULL
+# define ml_dsa_65_d2i_public_key          NULL
+# define ml_dsa_65_d2i_key_params          NULL
+# define ml_dsa_65_d2i_PUBKEY              ml_dsa_d2i_PUBKEY
+# define ml_dsa_65_d2i_PKCS8               ml_dsa_d2i_PKCS8
+# define ml_dsa_65_free                    (free_key_fn *)pqcrystals_ml_dsa_key_free
+# define ml_dsa_65_check                   NULL
+# define ml_dsa_65_adjust                  NULL
+
+#endif
+
+/* ---------------------------------------------------------------------- */
+
 /*
  * The DO_ macros help define the selection mask and the method functions
  * for each kind of object we want to decode.
@@ -802,3 +845,8 @@ MAKE_DECODER("RSA", rsa, rsa, type_specific_keypair);
 MAKE_DECODER("RSA", rsa, rsa, RSA);
 MAKE_DECODER("RSA-PSS", rsapss, rsapss, PrivateKeyInfo);
 MAKE_DECODER("RSA-PSS", rsapss, rsapss, SubjectPublicKeyInfo);
+
+#ifndef OPENSSL_NO_ML_DSA
+MAKE_DECODER("ML-DSA-65", ml_dsa_65, ml_dsa_65, PrivateKeyInfo);
+MAKE_DECODER("ML-DSA-65", ml_dsa_65, ml_dsa_65, SubjectPublicKeyInfo);
+#endif

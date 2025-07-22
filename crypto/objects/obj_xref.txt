@@ -20,6 +20,9 @@ rsassaPss		undef	rsassaPss
 ED25519		    undef	ED25519
 ED448		    undef	ED448
 
+# ML-DSA signatures
+ML_DSA_65 undef ML_DSA_65
+
 # Alternative deprecated OIDs. By using the older "rsa" OID this
 # type will be recognized by not normally used.
 

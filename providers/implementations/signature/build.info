@@ -31,6 +31,6 @@ DEPEND[dsa_sig.o]=../../common/include/prov/der_dsa.h
 DEPEND[ecdsa_sig.o]=../../common/include/prov/der_ec.h
 DEPEND[eddsa_sig.o]=../../common/include/prov/der_ecx.h
 DEPEND[sm2_sig.o]=../../common/include/prov/der_sm2.h
-DEPEND[ml_dsa_sig.o]=../../common/include/prov/der_dsa.h
+DEPEND[ml_dsa_sig.o]=../../common/include/prov/der_ml_dsa.h
 
 SOURCE[$MAC_GOAL]=mac_legacy_sig.c
