@@ -91,11 +91,11 @@ ___
 $code.=<<___;
 	move	$fp,$sp
 	$LD	$n0,$n0,0
-	$LD	$bi,$bp,0	# bp[0]
-	$LD	$aj,$ap,0	# ap[0]
-	$LD	$nj,$np,0	# np[0]
+	$LD	$bi,$bp,0	// bp[0]
+	$LD	$aj,$ap,0	// ap[0]
+	$LD	$nj,$np,0	// np[0]
 
-	$PTR_ADD	$sp,$sp,-2*$BNSZ	# place for two extra words
+	$PTR_ADD	$sp,$sp,-2*$BNSZ	// place for two extra words
 	slli.d	$num,$num,`log($BNSZ)/log(2)`
 	li.d	$t8,-4096
 	$SUBU	$sp,$sp,$num
@@ -103,19 +103,19 @@ $code.=<<___;
 
 	$LD	$ahi,$ap,$BNSZ
 	$LD	$nhi,$np,$BNSZ
-	$MULD	$lo0,$aj,$bi
+	$MULD	$lo0,$aj,$bi	// ap[0] * bp[0]
 	$MULHD	$hi0,$aj,$bi
-	$MULD	$m1,$lo0,$n0
+	$MULD	$m1,$lo0,$n0	// "tp[0]" * n0
 
-	$MULD	$alo,$ahi,$bi
+	$MULD	$alo,$ahi,$bi	// ap[1] * bp[0]
 	$MULHD	$ahi,$ahi,$bi
 
-	$MULD	$lo1,$nj,$m1
+	$MULD	$lo1,$nj,$m1	// np[0] * m1
 	$MULHD	$hi1,$nj,$m1
 	$ADDU	$lo1,$lo1,$lo0
 	sltu	$t8,$lo1,$lo0
 	$ADDU	$hi1,$hi1,$t8
-	$MULD	$nlo,$nhi,$m1
+	$MULD	$nlo,$nhi,$m1	// np[1] * m1
 	$MULHD	$nhi,$nhi,$m1
 
 	move	$tp,$sp
@@ -124,8 +124,8 @@ $code.=<<___;
 .L1st:
 	$ADDU	$aj,$ap,$j
 	$ADDU	$nj,$np,$j
-	$LD	$aj,$aj,0
-	$LD	$nj,$nj,0
+	$LD	$aj,$aj,0		// ap[j]
+	$LD	$nj,$nj,0		// np[j]
 
 	$ADDU	$lo0,$alo,$hi0
 	$ADDU	$lo1,$nlo,$hi1
@@ -133,16 +133,16 @@ $code.=<<___;
 	sltu	$t0,$lo1,$hi1
 	$ADDU	$hi0,$ahi,$t8
 	$ADDU	$hi1,$nhi,$t0
-	$MULD	$alo,$aj,$bi
+	$MULD	$alo,$aj,$bi	// ap[j] * bp[0]
 	$MULHD	$ahi,$aj,$bi
 
 	$ADDU	$lo1,$lo1,$lo0
 	sltu	$t8,$lo1,$lo0
 	$ADDU	$hi1,$hi1,$t8
-	addi.d	$j,$j,$BNSZ
+	addi.d	$j,$j,$BNSZ		// j++
 	$ST	$lo1,$tp,0
-	sltu	$t0,$j,$num
-	$MULD	$nlo,$nj,$m1
+	sltu	$t0,$j,$num		// j < n
+	$MULD	$nlo,$nj,$m1	// np[j] * m1
 	$MULHD	$nhi,$nj,$m1
 
 	$PTR_ADD	$tp,$tp,$BNSZ
@@ -162,7 +162,7 @@ $code.=<<___;
 	$ST	$lo1,$tp,0
 
 	$ADDU	$hi1,$hi1,$hi0
-	sltu	$t8,$hi1,$hi0
+	sltu	$t8,$hi1,$hi0	// upmost overflow bit
 	$ST	$hi1,$tp,$BNSZ
 	$ST	$t8,$tp,2*$BNSZ
 
@@ -170,35 +170,35 @@ $code.=<<___;
 .align	4
 .Louter:
 	$ADDU	$bi,$bp,$i
-	$LD	$bi,$bi,0
-	$LD	$aj,$ap,0
-	$LD	$ahi,$ap,$BNSZ
-	$LD	$tj,$sp,0
+	$LD	$bi,$bi,0		// bp[i]
+	$LD	$aj,$ap,0		// ap[0]
+	$LD	$ahi,$ap,$BNSZ	// ap[1]
+	$LD	$tj,$sp,0		// tp[0]
 
 	$LD	$nj,$np,0
 	$LD	$nhi,$np,$BNSZ
-	$MULD	$lo0,$aj,$bi
+	$MULD	$lo0,$aj,$bi	// ap[0] * bp[i]
 	$MULHD	$hi0,$aj,$bi
 	$ADDU	$lo0,$lo0,$tj
 	sltu	$t8,$lo0,$tj
 	$ADDU	$hi0,$hi0,$t8
 	$MULD	$m1,$lo0,$n0
 
-	$MULD	$alo,$ahi,$bi
+	$MULD	$alo,$ahi,$bi	// ap[1] * bp[i]
 	$MULHD	$ahi,$ahi,$bi
 
-	$MULD	$lo1,$nj,$m1
+	$MULD	$lo1,$nj,$m1	// np[0] * m1
 	$MULHD	$hi1,$nj,$m1
 
 	$ADDU	$lo1,$lo1,$lo0
 	sltu	$t8,$lo1,$lo0
 	$ADDU	$hi1,$hi1,$t8
-	$MULD	$nlo,$nhi,$m1
+	$MULD	$nlo,$nhi,$m1	// np[1] * m1
 	$MULHD	$nhi,$nhi,$m1
 
 	move	$tp,$sp
 	li.d	$j,2*$BNSZ
-	$LD	$tj,$tp,$BNSZ
+	$LD	$tj,$tp,$BNSZ		// tp[j]
 .align	4
 .Linner:
 	$ADDU	$aj,$ap,$j
@@ -212,7 +212,7 @@ $code.=<<___;
 	sltu	$t0,$lo1,$hi1
 	$ADDU	$hi0,$ahi,$t8
 	$ADDU	$hi1,$nhi,$t0
-	$MULD	$alo,$aj,$bi
+	$MULD	$alo,$aj,$bi	// ap[j] * bp[i]
 	$MULHD	$ahi,$aj,$bi
 
 	$ADDU	$lo0,$lo0,$tj
@@ -221,12 +221,12 @@ $code.=<<___;
 	$ADDU	$lo1,$lo1,$lo0
 	$ADDU	$hi0,$hi0,$t8
 	sltu	$t0,$lo1,$lo0
-	$LD	$tj,$tp,2*$BNSZ
+	$LD	$tj,$tp,2*$BNSZ		// tp[j]
 	$ADDU	$hi1,$hi1,$t0
 	sltu	$t8,$j,$num
-	$MULD	$nlo,$nj,$m1
+	$MULD	$nlo,$nj,$m1	// np[j] * m1
 	$MULHD	$nhi,$nj,$m1
-	$ST	$lo1,$tp,0
+	$ST	$lo1,$tp,0		// tp[j - 1]
 	$PTR_ADD	$tp,$tp,$BNSZ
 	bnez	$t8,.Linner
 
@@ -258,10 +258,14 @@ $code.=<<___;
 	sltu	$t0,$i,$num
 	bnez	$t0,.Louter
 
-	$ADDU	$tj,$sp,$num	# &tp[num]
+    // Final step. We see if result is larger than modulus, and
+    // if it is, subtract the modulus. But comparison implies
+    // subtraction. So we subtract modulus, see if it borrowed,
+    // and conditionally copy original value.
+	$ADDU	$tj,$sp,$num	// &tp[num]
 	move	$tp,$sp
 	move	$ap,$sp
-	li.d	$hi0,0	# clear borrow bit
+	li.d	$hi0,0	// clear borrow bit
 
 .align	4
 .Lsub:
@@ -269,7 +273,7 @@ $code.=<<___;
 	$LD	$lo1,$np,0
 	$PTR_ADD	$tp,$tp,$BNSZ
 	$PTR_ADD	$np,$np,$BNSZ
-	$SUBU	$lo1,$lo0,$lo1	# tp[i]-np[i]
+	$SUBU	$lo1,$lo0,$lo1	// tp[i]-np[i]
 	sltu	$t8,$lo0,$lo1
 	$SUBU	$lo0,$lo1,$hi0
 	sltu	$hi0,$lo1,$lo0
@@ -278,12 +282,12 @@ $code.=<<___;
 	sltu	$t8,$tp,$tj
 	$PTR_ADD	$rp,$rp,$BNSZ
 	bnez	$t8,.Lsub
-	$SUBU	$hi0,$hi1,$hi0	# handle upmost overflow bit
+	$SUBU	$hi0,$hi1,$hi0	// handle upmost overflow bit
 	move	$tp,$sp
-	$SUBU	$rp,$rp,$num	# restore rp
+	$SUBU	$rp,$rp,$num	// restore rp
 	nor	$hi1,$hi0,$zero
 .Lcopy:
-	$LD	$nj,$tp,0	# conditional move
+	$LD	$nj,$tp,0	// conditional move
 	$LD	$aj,$rp,0
 	$ST	$zero,$tp,0
 	$PTR_ADD	$tp,$tp,$BNSZ
@@ -310,6 +314,11 @@ $code.=<<___;
 	$PTR_ADD	$sp,$sp,64;
 	jr	$ra
 ___
+
+########################################################################
+# Even though this might look as LoongArch64 adaptation of mulx4x_mont
+# from ARMV8 module, it's different in sense that it **ONLY** performs
+# reduction 256 bits, since LoongArch64 without enough registers
 
 $zero="\$r0";	#zero
 $ra="\$r1";	#ra
@@ -362,9 +371,9 @@ $t3="\$r31";    #s8
 
 $code.=<<___;
 .type __bn256_mul_mont,%function
+.align 4
 
 __bn256_mul_mont:
-.align 4
 	$PTR_ADD	$sp,$sp,-160
 	alsl.d	$bp_end,$num,$bp,3
 	$LD	$n0,$n0,0
@@ -400,36 +409,36 @@ __bn256_mul_mont:
 	$REG_S	$s6,$sp,88
 	$REG_S	$s7,$sp,80
 
-.Loop_mul4x_1st_reduction:
-	$MULD	$t0,$d0,$bi		//@4
+.Loop_mul4x_reduction:
+	$MULD	$t0,$d0,$bi		// @4
 	$MULD	$t1,$d1,$bi
 	$MULD	$t2,$d2,$bi
 	$MULD	$t3,$d3,$bi
 
 	$MULHD	$t4,$d0,$bi
 	$MULHD	$t5,$d1,$bi
-	$ADDU	$acc0,$acc0,$t0		//0 adds	$acc0,$acc0,LO($d0*$bi)
-	$ADDU	$acc1,$acc1,$t1		//1 adcs	$acc1,$acc1,LO($d1*$bi)
+	$ADDU	$acc0,$acc0,$t0		// adds	$acc0,$acc0,LO($d0*$bi)
+	$ADDU	$acc1,$acc1,$t1		// adcs	$acc1,$acc1,LO($d1*$bi)
 
 	$PTR_ADD	$bp,$bp,8
-	$MULD	$t6,$n0,$acc0		//$mi alias with $t6
-	sltu	$t0,$acc0,$t0		//done 0
+	$MULD	$t6,$n0,$acc0		// $mi alias with $t6
+	sltu	$t0,$acc0,$t0
 	sltu	$t1,$acc1,$t1
 
 	$ADDU	$acc1,$acc1,$t0
-	sltu	$t7,$zero,$acc0		//10 subs	$zero,$acc0,1
-	$ADDU	$acc2,$acc2,$t2		//2 adcs	$acc2,$acc2,LO($d2*$bi)
-	$ADDU	$acc3,$acc3,$t3		//3 adcs	$acc3,$acc3,LO($d3*$bi)
+	sltu	$t7,$zero,$acc0		// subs	$zero,$acc0,1
+	$ADDU	$acc2,$acc2,$t2		// adcs	$acc2,$acc2,LO($d2*$bi)
+	$ADDU	$acc3,$acc3,$t3		// adcs	$acc3,$acc3,LO($d3*$bi)
 
 
 	sltu	$t0,$acc1,$t0
-	$ADDU	$acc1,$acc1,$t4		//11 adds	$acc1,$acc1,HI($d0*$bi)
+	$ADDU	$acc1,$acc1,$t4		// adds	$acc1,$acc1,HI($d0*$bi)
 	sltu	$t2,$acc2,$t2
 	sltu	$t3,$acc3,$t3
 
-	or	$t0,$t0,$t1		//done 1
-	sltu	$t4,$acc1,$t4		//done 11
-	$ADDU	$acc0,$acc1,$t7		//20 adcs	$acc0,$acc1,LO($m1*$mi)
+	or	$t0,$t0,$t1
+	sltu	$t4,$acc1,$t4
+	$ADDU	$acc0,$acc1,$t7		// adcs	$acc0,$acc1,LO($m1*$mi)
 	$MULHD	$t1,$d2,$bi
 
 	$MULD	$t7,$m1,$t6
@@ -440,11 +449,11 @@ __bn256_mul_mont:
 	$MULHD	$t5,$d3,$bi
 	$MULD	$bi,$m2,$t6
 	sltu	$t0,$acc2,$t0
-	$ADDU	$acc2,$acc2,$t4		//12 adcs	$acc2,$acc2,HI($d1*$bi)
+	$ADDU	$acc2,$acc2,$t4		// adcs	$acc2,$acc2,HI($d1*$bi)
 
 
-	or	$t0,$t0,$t2		//done 2
-	sltu	$t4,$acc2,$t4		//done 12
+	or	$t0,$t0,$t2
+	sltu	$t4,$acc2,$t4
 	$MULD	$t2,$m3,$t6
 	$ADDU	$acc0,$acc0,$t7
 
@@ -454,73 +463,73 @@ __bn256_mul_mont:
 	$MULHD	$t1,$m0,$t6
 
 	sltu	$t0,$acc3,$t0
-	$ADDU	$acc3,$acc3,$t4		//13 adcs	$acc3,$acc3,HI($d2*$bi)
-	or	$t7,$acc1,$t7		//done 20
-	$ADDU	$acc1,$acc2,$bi		//21 adcs	$acc1,$acc2,LO($m2*$mi)
+	$ADDU	$acc3,$acc3,$t4		// adcs	$acc3,$acc3,HI($d2*$bi)
+	or	$t7,$acc1,$t7
+	$ADDU	$acc1,$acc2,$bi		// adcs	$acc1,$acc2,LO($m2*$mi)
 
-	or	$t0,$t0,$t3		//done 3,	adc $acc4,$zero,$zero
-	sltu	$t4,$acc3,$t4		//done 13
+	or	$t0,$t0,$t3			// adc $acc4,$zero,$zero
+	sltu	$t4,$acc3,$t4
 	sltu	$acc2,$acc1,$acc2
 	$MULHD	$t3,$m1,$t6
 
 	$ADDU	$t4,$t4,$t5
 	$ADDU	$acc1,$acc1,$t7
-	$ADDU	$acc3,$acc3,$t2		//22 adcs	$acc2,$acc3,LO($m3*$mi)
+	$ADDU	$acc3,$acc3,$t2		// adcs	$acc2,$acc3,LO($m3*$mi)
 	$MULHD	$t5,$m2,$t6
 
 
-	$ADDU	$t0,$t0,$t4		//14 addc	$acc4,$acc4,HI($d3*$bi)
+	$ADDU	$t0,$t0,$t4		// addc	$acc4,$acc4,HI($d3*$bi)
 	sltu	$t7,$acc1,$t7
 	sltu	$t2,$acc3,$t2
-	$ADDU	$acc0,$acc0,$t1		//30 adcs	$acc0,$acc0,HI($m0*$mi)
+	$ADDU	$acc0,$acc0,$t1		// adcs	$acc0,$acc0,HI($m0*$mi)
 
-	or	$t7,$acc2,$t7		//done 21
+	or	$t7,$acc2,$t7
 	sltu	$t1,$acc0,$t1
 	$LD	$bi,$bp,0
-	$ADDU	$t0,$t0,$carry  	//23 adcs	$acc3,$acc4,$carry
+	$ADDU	$t0,$t0,$carry  	// adcs	$acc3,$acc4,$carry
 
 	$ADDU	$acc2,$acc3,$t7
-	$ADDU	$t1,$t3,$t1		//done 30
+	$ADDU	$t1,$t3,$t1
 	$MULHD	$t6,$m3,$t6
 	sltu	$carry,$t0,$carry
 
 
 	sltu	$t7,$acc2,$acc3
-	$ADDU	$acc1,$acc1,$t1		//31 adcs	$acc1,$acc1,HI($m1*$mi)
+	$ADDU	$acc1,$acc1,$t1		// adcs	$acc1,$acc1,HI($m1*$mi)
 
-	or	$t7,$t2,$t7		//done 22
-	sltu	$t1,$acc1,$t1		//done 31
+	or	$t7,$t2,$t7
+	sltu	$t1,$acc1,$t1
 
 	$ADDU	$acc3,$t0,$t7
 	$ADDU	$t1,$t1,$t5
 
 	sltu	$t7,$acc3,$t7
-	$ADDU	$acc2,$acc2,$t1		//32 adcs	$acc2,$acc2,HI($m2*$mi)
+	$ADDU	$acc2,$acc2,$t1		// adcs	$acc2,$acc2,HI($m2*$mi)
 
-	or	$carry,$carry,$t7	//done 23, adc	$carry,$zero,$zero
-	sltu	$t1,$acc2,$t1		//done 32
+	or	$carry,$carry,$t7	// adc	$carry,$zero,$zero
+	sltu	$t1,$acc2,$t1
 
 	$ADDU	$t1,$t1,$t6
 
-	$ADDU	$acc3,$acc3,$t1		//33 adcs	$acc3,$acc3,HI($m3*$mi)
-	sltu	$t1,$acc3,$t1		//done 33
+	$ADDU	$acc3,$acc3,$t1		// adcs	$acc3,$acc3,HI($m3*$mi)
+	sltu	$t1,$acc3,$t1
 
-	$ADDU	$carry,$carry,$t1	//adc $carry,$carry,$zero
+	$ADDU	$carry,$carry,$t1	// adc $carry,$carry,$zero
 
-	bne	$bp,$bp_end,.Loop_mul4x_1st_reduction
+	bne	$bp,$bp_end,.Loop_mul4x_reduction
 
-	sltu	$n0,$acc0,$m0		//subs	$t0,$acc0,$m0
+	sltu	$n0,$acc0,$m0		// subs	$t0,$acc0,$m0
 	$SUBU	$t0,$acc0,$m0
-	sltu	$bp_end,$acc1,$m1	//sbcs	$t1,$acc1,$m1
+	sltu	$bp_end,$acc1,$m1	// sbcs	$t1,$acc1,$m1
 	$SUBU	$t1,$acc1,$m1
 
 	sltu	$m1,$t1,$n0
 	$SUBU	$t1,$t1,$n0
-	sltu	$bp,$acc2,$m2		//sbcs	$t2,$acc2,$m2
+	sltu	$bp,$acc2,$m2		// sbcs	$t2,$acc2,$m2
 	$SUBU	$t2,$acc2,$m2
 
 	or	$n0,$bp_end,$m1
-	sltu	$bp_end,$acc3,$m3	//sbcs	$t3,$acc3,$m3
+	sltu	$bp_end,$acc3,$m3	// sbcs	$t3,$acc3,$m3
 	$SUBU	$t3,$acc3,$m3
 
 	sltu	$m2,$t2,$n0
@@ -537,7 +546,7 @@ __bn256_mul_mont:
 
 	or	$n0,$bp_end,$m3
 
-	sltu	$n0,$carry,$n0		//sbcs	$zero,$carry,$zero
+	sltu	$n0,$carry,$n0		// sbcs	$zero,$carry,$zero
 
 	maskeqz	$m3,$acc3,$n0
 	masknez	$d3,$t3,$n0
