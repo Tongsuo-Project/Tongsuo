@@ -10,7 +10,7 @@
  */
 
 /* Serialized OID's */
-static const unsigned char so[6636] = {
+static const unsigned char so[6645] = {
     0x2A,0x86,0x48,0x86,0xF7,0x0D,                 /* [    0] OBJ_rsadsi */
     0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,            /* [    6] OBJ_pkcs */
     0x2A,0x86,0x48,0x86,0xF7,0x0D,0x02,0x05,       /* [   13] OBJ_md5 */
@@ -932,9 +932,10 @@ static const unsigned char so[6636] = {
     0x60,0x86,0x48,0x01,0x86,0xF9,0x66,            /* [ 6608] OBJ_oracle */
     0x60,0x86,0x48,0x01,0x86,0xF9,0x66,0xAD,0xCA,0x7B,0x01,0x01,  /* [ 6615] OBJ_oracle_jdk_trustedkeyusage */
     0x2A,0x81,0x1C,0xCF,0x55,0x01,0x87,0x69,       /* [ 6627] OBJ_sm2dh_mlkem768_hybrid */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x12,  /* [ 6635] OBJ_ML_DSA_65 */
 };
 
-#define NUM_NID 1282
+#define NUM_NID 1283
 static const ASN1_OBJECT nid_objs[NUM_NID] = {
     {"UNDEF", "undefined", NID_undef},
     {"rsadsi", "RSA Data Security, Inc.", NID_rsadsi, 6, &so[0]},
@@ -2218,9 +2219,10 @@ static const ASN1_OBJECT nid_objs[NUM_NID] = {
     {"WBSM4-WSISE-OFB", "wbsm4-wsise-ofb", NID_wbsm4_wsise_ofb128},
     {"WBSM4-WSISE-CFB", "wbsm4-wsise-cfb", NID_wbsm4_wsise_cfb128},
     {"SM2DH-MLKEM768-HYBRID", "sm2dh-mlkem768-hybrid", NID_sm2dh_mlkem768_hybrid, 8, &so[6627]},
+    {"id-ml-dsa-65", "ML-DSA-65", NID_ML_DSA_65, 9, &so[6635]},
 };
 
-#define NUM_SN 1032
+#define NUM_SN 1033
 static const unsigned int sn_objs[NUM_SN] = {
      364,    /* "AD_DVCS" */
      419,    /* "AES-128-CBC" */
@@ -2734,6 +2736,7 @@ static const unsigned int sn_objs[NUM_SN] = {
      128,    /* "id-kp" */
     1221,    /* "id-kp-BrandIndicatorforMessageIdentification" */
     1220,    /* "id-kp-bgpsec-router" */
+    1282,    /* "id-ml-dsa-65" */
      280,    /* "id-mod-attribute-cert" */
      274,    /* "id-mod-cmc" */
      277,    /* "id-mod-cmp" */
@@ -3256,7 +3259,7 @@ static const unsigned int sn_objs[NUM_SN] = {
     1093,    /* "x509ExtAdmission" */
 };
 
-#define NUM_LN 1032
+#define NUM_LN 1033
 static const unsigned int ln_objs[NUM_LN] = {
      363,    /* "AD Time Stamping" */
      405,    /* "ANSI X9.62" */
@@ -3321,6 +3324,7 @@ static const unsigned int ln_objs[NUM_LN] = {
      647,    /* "International Organizations" */
      142,    /* "Invalidity Date" */
      504,    /* "MIME MHS" */
+    1282,    /* "ML-DSA-65" */
      388,    /* "Mail" */
      383,    /* "Management" */
      417,    /* "Microsoft CSP Name" */
@@ -4292,7 +4296,7 @@ static const unsigned int ln_objs[NUM_LN] = {
     1255,    /* "zuc-128-eia3" */
 };
 
-#define NUM_OBJ 927
+#define NUM_OBJ 928
 static const unsigned int obj_objs[NUM_OBJ] = {
        0,    /* OBJ_undef                        0 */
      181,    /* OBJ_iso                          1 */
@@ -5026,6 +5030,7 @@ static const unsigned int obj_objs[NUM_OBJ] = {
     1117,    /* OBJ_RSA_SHA3_256                 2 16 840 1 101 3 4 3 14 */
     1118,    /* OBJ_RSA_SHA3_384                 2 16 840 1 101 3 4 3 15 */
     1119,    /* OBJ_RSA_SHA3_512                 2 16 840 1 101 3 4 3 16 */
+    1282,    /* OBJ_ML_DSA_65                    2 16 840 1 101 3 4 3 18 */
       71,    /* OBJ_netscape_cert_type           2 16 840 1 113730 1 1 */
       72,    /* OBJ_netscape_base_url            2 16 840 1 113730 1 2 */
       73,    /* OBJ_netscape_revocation_url      2 16 840 1 113730 1 3 */

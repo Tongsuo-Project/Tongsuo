@@ -285,6 +285,8 @@ extern "C" {
 #define OSSL_PKEY_PARAM_DIST_ID             "distid"
 #define OSSL_PKEY_PARAM_PUB_KEY             "pub"
 #define OSSL_PKEY_PARAM_PRIV_KEY            "priv"
+#define OSSL_PKEY_PARAM_ML_DSA_SEED         "seed"
+#define OSSL_PKEY_PARAM_ML_DSA_SK_FORMAT    "sk-format" /* utf8 string */
 
 /* Diffie-Hellman/DSA Parameters */
 #define OSSL_PKEY_PARAM_FFC_P               "p"
@@ -458,6 +460,8 @@ extern "C" {
 #define OSSL_SIGNATURE_PARAM_MGF1_PROPERTIES    \
     OSSL_PKEY_PARAM_MGF1_PROPERTIES
 #define OSSL_SIGNATURE_PARAM_DIGEST_SIZE        OSSL_PKEY_PARAM_DIGEST_SIZE
+#define OSSL_SIGNATURE_PARAM_CONTEXT_STRING "context-string"
+#define OSSL_SIGNATURE_PARAM_DETERMINISTIC      "deterministic"
 
 /* Asym cipher parameters */
 #define OSSL_ASYM_CIPHER_PARAM_DIGEST                   OSSL_PKEY_PARAM_DIGEST

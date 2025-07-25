@@ -241,6 +241,9 @@ extern const OSSL_DISPATCH ossl_sm2_keymgmt_functions[];
 extern const OSSL_DISPATCH ossl_sm2dh_mlkem768_hybrid_keymgmt_functions[];
 # endif
 #endif
+#ifndef OPENSSL_NO_ML_DSA
+extern const OSSL_DISPATCH ossl_ml_dsa_65_keymgmt_functions[];
+#endif
 
 /* Key Exchange */
 extern const OSSL_DISPATCH ossl_dh_keyexch_functions[];
@@ -269,6 +272,7 @@ extern const OSSL_DISPATCH ossl_mac_legacy_poly1305_signature_functions[];
 extern const OSSL_DISPATCH ossl_mac_legacy_cmac_signature_functions[];
 extern const OSSL_DISPATCH ossl_mac_legacy_eia3_signature_functions[];
 extern const OSSL_DISPATCH ossl_sm2_signature_functions[];
+extern const OSSL_DISPATCH ossl_ml_dsa_65_signature_functions[];
 
 /* Asym Cipher */
 extern const OSSL_DISPATCH ossl_rsa_asym_cipher_functions[];
@@ -414,6 +418,15 @@ extern const OSSL_DISPATCH ossl_x448_to_SubjectPublicKeyInfo_pem_encoder_functio
 extern const OSSL_DISPATCH ossl_x448_to_OSSL_current_der_encoder_functions[];
 extern const OSSL_DISPATCH ossl_x448_to_text_encoder_functions[];
 
+extern const OSSL_DISPATCH ossl_ml_dsa_65_to_EncryptedPrivateKeyInfo_der_encoder_functions[];
+extern const OSSL_DISPATCH ossl_ml_dsa_65_to_EncryptedPrivateKeyInfo_pem_encoder_functions[];
+extern const OSSL_DISPATCH ossl_ml_dsa_65_to_PrivateKeyInfo_der_encoder_functions[];
+extern const OSSL_DISPATCH ossl_ml_dsa_65_to_PrivateKeyInfo_pem_encoder_functions[];
+extern const OSSL_DISPATCH ossl_ml_dsa_65_to_SubjectPublicKeyInfo_der_encoder_functions[];
+extern const OSSL_DISPATCH ossl_ml_dsa_65_to_SubjectPublicKeyInfo_pem_encoder_functions[];
+extern const OSSL_DISPATCH ossl_ml_dsa_65_to_OSSL_current_der_encoder_functions[];
+extern const OSSL_DISPATCH ossl_ml_dsa_65_to_text_encoder_functions[];
+
 /* Decoders */
 extern const OSSL_DISPATCH ossl_PrivateKeyInfo_der_to_dh_decoder_functions[];
 extern const OSSL_DISPATCH ossl_SubjectPublicKeyInfo_der_to_dh_decoder_functions[];
@@ -470,3 +483,6 @@ extern const OSSL_DISPATCH ossl_SubjectPublicKeyInfo_der_to_der_decoder_function
 extern const OSSL_DISPATCH ossl_pem_to_der_decoder_functions[];
 
 extern const OSSL_DISPATCH ossl_file_store_functions[];
+
+extern const OSSL_DISPATCH ossl_PrivateKeyInfo_der_to_ml_dsa_65_decoder_functions[];
+extern const OSSL_DISPATCH ossl_SubjectPublicKeyInfo_der_to_ml_dsa_65_decoder_functions[];
