@@ -15,7 +15,7 @@
 #include <openssl/params.h>
 #include <openssl/opensslv.h>
 #include "crypto/cryptlib.h"
-#include "crypto/evp.h" /* evp_method_store_flush */
+#include "crypto/evp.h" /* evp_method_store_cache_flush */
 #include "crypto/rand.h"
 #include "internal/nelem.h"
 #include "internal/thread_once.h"
@@ -1166,7 +1166,31 @@ static int provider_flush_store_cache(const OSSL_PROVIDER *prov)
     CRYPTO_THREAD_unlock(store->lock);
 
     if (!freeing)
-        return evp_method_store_flush(prov->libctx);
+        return evp_method_store_cache_flush(prov->libctx);
+    return 1;
+}
+
+static int provider_remove_store_methods(OSSL_PROVIDER *prov)
+{
+    struct provider_store_st *store;
+    int freeing;
+
+    if ((store = get_provider_store(prov->libctx)) == NULL)
+        return 0;
+
+    if (!CRYPTO_THREAD_read_lock(store->lock))
+        return 0;
+    freeing = store->freeing;
+    CRYPTO_THREAD_unlock(store->lock);
+
+    if (!freeing) {
+        OPENSSL_free(prov->operation_bits);
+        prov->operation_bits = NULL;
+        prov->operation_bits_sz = 0;
+        CRYPTO_THREAD_unlock(prov->opbits_lock);
+
+        return evp_method_store_remove_all_provided(prov);
+    }
     return 1;
 }
 
@@ -1197,7 +1221,7 @@ int ossl_provider_deactivate(OSSL_PROVIDER *prov, int removechildren)
     if (prov == NULL
             || (count = provider_deactivate(prov, 1, removechildren)) < 0)
         return 0;
-    return count == 0 ? provider_flush_store_cache(prov) : 1;
+    return count == 0 ? provider_remove_store_methods(prov) : 1;
 }
 
 void *ossl_provider_ctx(const OSSL_PROVIDER *prov)
@@ -1522,7 +1546,7 @@ int ossl_provider_self_test(const OSSL_PROVIDER *prov)
         return 1;
     ret = prov->self_test(prov->provctx);
     if (ret == 0)
-        (void)provider_flush_store_cache(prov);
+        (void)provider_remove_store_methods((OSSL_PROVIDER *)prov);
     return ret;
 }
 
@@ -1558,33 +1582,6 @@ void ossl_provider_unquery_operation(const OSSL_PROVIDER *prov,
 {
     if (prov->unquery_operation != NULL)
         prov->unquery_operation(prov->provctx, operation_id, algs);
-}
-
-int ossl_provider_clear_all_operation_bits(OSSL_LIB_CTX *libctx)
-{
-    struct provider_store_st *store;
-    OSSL_PROVIDER *provider;
-    int i, num, res = 1;
-
-    if ((store = get_provider_store(libctx)) != NULL) {
-        if (!CRYPTO_THREAD_read_lock(store->lock))
-            return 0;
-        num = sk_OSSL_PROVIDER_num(store->providers);
-        for (i = 0; i < num; i++) {
-            provider = sk_OSSL_PROVIDER_value(store->providers, i);
-            if (!CRYPTO_THREAD_write_lock(provider->opbits_lock)) {
-                res = 0;
-                continue;
-            }
-            if (provider->operation_bits != NULL)
-                memset(provider->operation_bits, 0,
-                       provider->operation_bits_sz);
-            CRYPTO_THREAD_unlock(provider->opbits_lock);
-        }
-        CRYPTO_THREAD_unlock(store->lock);
-        return res;
-    }
-    return 0;
 }
 
 int ossl_provider_set_operation_bit(OSSL_PROVIDER *provider, size_t bitnum)
