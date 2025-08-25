@@ -488,6 +488,7 @@ my @disablables = (
     "siv",
     "sm2",
     "sm2_threshold",
+    "sm2-mldsa65-hybrid",
     "sm3",
     "sm4",
     "wbsm4-xiaolai",
@@ -627,6 +628,7 @@ our %disabled = ( # "what"         => "comment"
                   "wbsm4-wsise"         => "default",
                   #"kyber"               => "default",
                   #"sm2dh-mlkem768-hybrid"  => "default",
+                  "sm2-mldsa65-hybrid" => "default",
                 );
 
 # Note: => pair form used for aesthetics, not to truly make a hash table
@@ -654,7 +656,7 @@ my @disable_cascades = (
     "ssl3-method"       => [ "ssl3" ],
     "zlib"              => [ "zlib-dynamic" ],
     "ec"                => [ "ec2m", "ecdsa", "ecdh", "sm2", "sm2dh-mlkem768-hybrid"],
-    "sm2"               => [ "sm2_threshold", "sm2dh-mlkem768-hybrid"],
+    "sm2"               => [ "sm2_threshold", "sm2dh-mlkem768-hybrid","sm2-mldsa65-hybrid"],
     "ec_elgamal"        => [ "twisted_ec_elgamal" ],
     "dgram"             => [ "dtls", "sctp" ],
     "sock"              => [ "dgram" ],
@@ -718,6 +720,7 @@ my @disable_cascades = (
     sub { !$disabled{"smtc"}} => [ "ct", "module" ],
     "sdf-lib"           => [ "sdf-lib-dynamic" ],
     "kyber" => ["sm2dh-mlkem768-hybrid"],
+    "ml_dsa" => ["sm2-mldsa65-hybrid"],
     );
 
 # Avoid protocol support holes.  Also disable all versions below N, if version
