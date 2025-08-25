@@ -244,6 +244,9 @@ extern const OSSL_DISPATCH ossl_sm2dh_mlkem768_hybrid_keymgmt_functions[];
 #ifndef OPENSSL_NO_ML_DSA
 extern const OSSL_DISPATCH ossl_ml_dsa_65_keymgmt_functions[];
 #endif
+#ifndef OPENSSL_NO_SM2_MLDSA65_HYBRID
+extern const OSSL_DISPATCH ossl_sm2_mldsa65_hybrid_keymgmt_functions[];
+#endif
 
 /* Key Exchange */
 extern const OSSL_DISPATCH ossl_dh_keyexch_functions[];

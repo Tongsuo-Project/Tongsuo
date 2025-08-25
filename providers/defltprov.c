@@ -447,6 +447,10 @@ static const OSSL_ALGORITHM deflt_keymgmt[] = {
     { PROV_NAMES_ML_DSA_65, "provider=default", ossl_ml_dsa_65_keymgmt_functions,
       PROV_DESCS_ML_DSA_65 },
 #endif
+#ifndef OPENSSL_NO_SM2_MLDSA65_HYBRID
+    { PROV_NAMES_SM2_MLDSA65_HYBRID, "provider=default", ossl_sm2_mldsa65_hybrid_keymgmt_functions,
+      PROV_DESCS_SM2_MLDSA65_HYBRID },
+#endif
     { NULL, NULL, NULL }
 };
 
