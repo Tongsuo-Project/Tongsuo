@@ -2,5 +2,6 @@ LIBS = ../../libcrypto
 
 IF[{- !$disabled{"sm2-mldsa65-hybrid"} -}]
     SOURCE[../../libcrypto] = \
-        sm2_mldsa65_hybrid_key.c
+        sm2_mldsa65_hybrid_key.c \
+        sm2_mldsa65_hybrid_codecs.c
 ENDIF

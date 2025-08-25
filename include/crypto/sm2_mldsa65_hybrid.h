@@ -69,4 +69,25 @@ void sm2_mldsa65_hybrid_key_free(SM2_MLDSA65_HYBRID_KEY *key);
 #define sm2_mldsa65_hybrid_have_pubkey(key) ((key)->status > 0)
 #define sm2_mldsa65_hybrid_have_prvkey(key) ((key)->status > 1)
 
+#ifndef OPENSSL_NO_SM2_MLDSA65_HYBRID
+ /*-
+  * The DER ASN.1 encoding of sm2-mldsa65-hybrid public keys prepends 24 bytes
+  * to the encoded public key:
+  *
+  * - 4 byte outer sequence tag and length
+  * -  2 byte algorithm sequence tag and length
+  * -    2 byte algorithm OID tag and length
+  * -      11 byte algorithm OID (testing)
+  * -  4 byte bit string tag and length
+  * -    1 bitstring lead byte
+  */
+#define SM2_MLDSA_HYBRID_SPKI_OVERHEAD   24
+
+__owur
+SM2_MLDSA65_HYBRID_KEY *ossl_sm2_mldsa65_hybrid_d2i_PUBKEY(const uint8_t *pk, int pk_len, OSSL_LIB_CTX *libctx);
+__owur
+SM2_MLDSA65_HYBRID_KEY *ossl_sm2_mldsa65_hybrid_key_from_pkcs8(const PKCS8_PRIV_KEY_INFO *p8inf,
+                             OSSL_LIB_CTX *libctx, const char *propq);
+#endif /* OPENSSL_NO_SM2_MLDSA65_HYBRID */
+
 #endif

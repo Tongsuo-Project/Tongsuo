@@ -195,6 +195,84 @@ err:
     return ret;
 }
 
+static int test_sm2_mldsa65_hybrid_export(void)
+{
+    int ret = 0;
+    EVP_PKEY *pkey = NULL, *pkey2_from_priv = NULL, *pkey3_from_pub = NULL;
+    BIO *bio_pub = NULL, *bio_priv = NULL;
+
+    size_t pub_len1 = 0, pub_len2 = 0;
+    uint8_t pub1[SM2_MLDSA65_HYBRID_PK_SIZE] = {0};
+    uint8_t pub2[SM2_MLDSA65_HYBRID_PK_SIZE] = {0};
+
+    size_t priv_len1 = 0, priv_len2 = 0;
+    uint8_t priv1[SM2_MLDSA65_HYBRID_SK_SIZE] = {0};
+    uint8_t priv2[SM2_MLDSA65_HYBRID_SK_SIZE] = {0};
+
+    /* --- 1. 生成原始密钥对 --- */
+    pkey = EVP_PKEY_Q_keygen(NULL, NULL, ALG_NAME);
+    if (!TEST_ptr(pkey))
+        goto err;
+
+    /* --- 2. 测试私钥的导出和导入 --- */
+    TEST_info("Testing Private Key Export/Import...");
+
+    bio_priv = BIO_new(BIO_s_mem());
+    if (!TEST_ptr(bio_priv))
+        goto err;
+
+    if (!TEST_int_eq(PEM_write_bio_PKCS8PrivateKey(bio_priv, pkey, NULL, NULL, 0, NULL, NULL), 1))
+        goto err;
+
+    pkey2_from_priv = PEM_read_bio_PrivateKey(bio_priv, NULL, NULL, NULL);
+    if (!TEST_ptr(pkey2_from_priv)) {
+        TEST_error("Failed to import private key from PEM.");
+        goto err;
+    }
+
+    if (!TEST_true(EVP_PKEY_get_octet_string_param(pkey, OSSL_PKEY_PARAM_PRIV_KEY, priv1, sizeof(priv1), &priv_len1)) ||
+        !TEST_true(EVP_PKEY_get_octet_string_param(pkey2_from_priv, OSSL_PKEY_PARAM_PRIV_KEY, priv2, sizeof(priv2), &priv_len2)) ||
+        !TEST_mem_eq(priv1, priv_len1, priv2, priv_len2)) {
+        TEST_error("Private keys do not match after PEM import.");
+        goto err;
+    }
+    TEST_info("Private key test PASSED.");
+
+
+    /* --- 3. 继续测试公钥的导出和导入 --- */
+    TEST_info("Testing Public Key Export/Import...");
+
+    bio_pub = BIO_new(BIO_s_mem());
+    if (!TEST_ptr(bio_pub))
+        goto err;
+
+    if (!TEST_int_eq(PEM_write_bio_PUBKEY(bio_pub, pkey), 1))
+        goto err;
+
+    pkey3_from_pub = PEM_read_bio_PUBKEY(bio_pub, NULL, NULL, NULL);
+    if (!TEST_ptr(pkey3_from_pub)) {
+        TEST_error("Failed to import public key from PEM.");
+        goto err;
+    }
+
+    if (!TEST_true(EVP_PKEY_get_octet_string_param(pkey, OSSL_PKEY_PARAM_PUB_KEY, pub1, sizeof(pub1), &pub_len1)) ||
+        !TEST_true(EVP_PKEY_get_octet_string_param(pkey3_from_pub, OSSL_PKEY_PARAM_PUB_KEY, pub2, sizeof(pub2), &pub_len2)) ||
+        !TEST_mem_eq(pub1, pub_len1, pub2, pub_len2)) {
+        TEST_error("Public keys do not match after PEM import.");
+        goto err;
+    }
+    TEST_info("Public key test PASSED.");
+
+    ret = 1;
+
+err:
+    EVP_PKEY_free(pkey);
+    EVP_PKEY_free(pkey2_from_priv);
+    EVP_PKEY_free(pkey3_from_pub);
+    BIO_free_all(bio_priv);
+    BIO_free_all(bio_pub);
+    return ret;
+}
 #endif
 
 int setup_tests(void)
@@ -202,6 +280,7 @@ int setup_tests(void)
 #ifndef OPENSSL_NO_SM2_MLDSA65_HYBRID
     ADD_TEST(test_sm2_mldsa65_hybrid_genkey);
     ADD_TEST(test_sm2_mldsa65_hybrid_signverify);
+    ADD_TEST(test_sm2_mldsa65_hybrid_export);
 #endif
     return 1;
 }

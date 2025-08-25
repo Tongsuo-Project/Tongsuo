@@ -71,6 +71,10 @@ ENCODER_TEXT("SM2", sm2, no),
 ENCODER_TEXT("ML-DSA-65", ml_dsa_65, no),
 #endif
 
+#ifndef OPENSSL_NO_SM2_MLDSA65_HYBRID
+ENCODER_TEXT("SM2-MLDSA65-HYBRID", sm2_mldsa65_hybrid, no),
+#endif
+
 /*
  * Entries for key type specific output formats.  The structure name on these
  * is the same as the key type name.  This allows us to say something like:
@@ -231,6 +235,15 @@ ENCODER_w_structure("ML-DSA-65", ml_dsa_65, no, der, PrivateKeyInfo),
 ENCODER_w_structure("ML-DSA-65", ml_dsa_65, no, pem, PrivateKeyInfo),
 ENCODER_w_structure("ML-DSA-65", ml_dsa_65, no, der, SubjectPublicKeyInfo),
 ENCODER_w_structure("ML-DSA-65", ml_dsa_65, no, pem, SubjectPublicKeyInfo),
+#endif
+
+#ifndef OPENSSL_NO_SM2_MLDSA65_HYBRID
+ENCODER_w_structure("SM2-MLDSA65-HYBRID", sm2_mldsa65_hybrid, no, der, EncryptedPrivateKeyInfo),
+ENCODER_w_structure("SM2-MLDSA65-HYBRID", sm2_mldsa65_hybrid, no, pem, EncryptedPrivateKeyInfo),
+ENCODER_w_structure("SM2-MLDSA65-HYBRID", sm2_mldsa65_hybrid, no, der, PrivateKeyInfo),
+ENCODER_w_structure("SM2-MLDSA65-HYBRID", sm2_mldsa65_hybrid, no, pem, PrivateKeyInfo),
+ENCODER_w_structure("SM2-MLDSA65-HYBRID", sm2_mldsa65_hybrid, no, der, SubjectPublicKeyInfo),
+ENCODER_w_structure("SM2-MLDSA65-HYBRID", sm2_mldsa65_hybrid, no, pem, SubjectPublicKeyInfo),
 #endif
 
 /*

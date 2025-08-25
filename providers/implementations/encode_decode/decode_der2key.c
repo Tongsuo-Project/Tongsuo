@@ -32,6 +32,7 @@
 #include "crypto/ecx.h"
 #include "crypto/rsa.h"
 #include "crypto/ml_dsa.h"
+#include "crypto/sm2_mldsa65_hybrid.h"
 #include "crypto/x509.h"
 #include "prov/bio.h"
 #include "prov/implementations.h"
@@ -593,6 +594,38 @@ static ossl_inline void * ml_dsa_d2i_PUBKEY(void **a, const uint8_t **der, long 
 
 /* ---------------------------------------------------------------------- */
 
+#ifndef OPENSSL_NO_SM2_MLDSA65_HYBRID
+static void *
+sm2_mldsa65_hybrid_d2i_PKCS8(void **a, const uint8_t **der, long der_len, struct der2key_ctx_st *ctx)
+{
+    return der2key_decode_p8(der, der_len, ctx,
+                             (key_from_pkcs8_t *)ossl_sm2_mldsa65_hybrid_key_from_pkcs8);
+}
+
+static void * sm2_mldsa65_hybrid_d2i_PUBKEY(void **a, const uint8_t **der, long der_len)
+{
+    SM2_MLDSA65_HYBRID_KEY *key = NULL;
+
+    key = ossl_sm2_mldsa65_hybrid_d2i_PUBKEY(*der, der_len, NULL);
+    if (key != NULL)
+        *der += der_len;
+    return key;
+}
+
+# define sm2_mldsa65_hybrid_evp_type                EVP_PKEY_SM2_MLDSA65_HYBRID
+# define sm2_mldsa65_hybrid_d2i_private_key         NULL
+# define sm2_mldsa65_hybrid_d2i_public_key          NULL
+# define sm2_mldsa65_hybrid_d2i_key_params          NULL
+# define sm2_mldsa65_hybrid_d2i_PUBKEY              sm2_mldsa65_hybrid_d2i_PUBKEY
+# define sm2_mldsa65_hybrid_d2i_PKCS8               sm2_mldsa65_hybrid_d2i_PKCS8
+# define sm2_mldsa65_hybrid_free                    (free_key_fn *)sm2_mldsa65_hybrid_key_free
+# define sm2_mldsa65_hybrid_check                   NULL
+# define sm2_mldsa65_hybrid_adjust                  NULL
+
+#endif
+
+/* ---------------------------------------------------------------------- */
+
 /*
  * The DO_ macros help define the selection mask and the method functions
  * for each kind of object we want to decode.
@@ -849,4 +882,9 @@ MAKE_DECODER("RSA-PSS", rsapss, rsapss, SubjectPublicKeyInfo);
 #ifndef OPENSSL_NO_ML_DSA
 MAKE_DECODER("ML-DSA-65", ml_dsa_65, ml_dsa_65, PrivateKeyInfo);
 MAKE_DECODER("ML-DSA-65", ml_dsa_65, ml_dsa_65, SubjectPublicKeyInfo);
+#endif
+
+#ifndef OPENSSL_NO_SM2_MLDSA65_HYBRID
+MAKE_DECODER("SM2-MLDSA65-HYBRID", sm2_mldsa65_hybrid, sm2_mldsa65_hybrid, PrivateKeyInfo);
+MAKE_DECODER("SM2-MLDSA65-HYBRID", sm2_mldsa65_hybrid, sm2_mldsa65_hybrid, SubjectPublicKeyInfo);
 #endif
