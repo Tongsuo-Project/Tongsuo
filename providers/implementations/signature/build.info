@@ -7,6 +7,7 @@ $MAC_GOAL=../../libdefault.a ../../libfips.a
 $RSA_GOAL=../../libdefault.a ../../libfips.a
 $SM2_GOAL=../../libdefault.a
 $ML_DSA_GOAL=../../libdefault.a
+$SM2_MLDSA65_GOAL=../../libdefault.a
 
 IF[{- !$disabled{dsa} -}]
   SOURCE[$DSA_GOAL]=dsa_sig.c
@@ -22,6 +23,10 @@ ENDIF
 
 IF[{- !$disabled{ml_dsa} -}]
   SOURCE[$ML_DSA_GOAL]=ml_dsa_sig.c
+ENDIF
+
+IF[{- !$disabled{'sm2-mldsa65-hybrid'} -}]
+  SOURCE[$SM2_MLDSA65_GOAL]=sm2_mldsa65_hybrid_sig.c
 ENDIF
 
 SOURCE[$RSA_GOAL]=rsa_sig.c

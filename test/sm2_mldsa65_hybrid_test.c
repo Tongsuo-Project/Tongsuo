@@ -107,12 +107,101 @@ end:
     return ret;
 }
 
+static int test_sm2_mldsa65_hybrid_signverify(void) {
+    int ret = 0;
+    static uint8_t m[MLEN] = {0};
+    static uint8_t sig[SM2_MLDSA65_HYBRID_SIG_SIZE] = {0};
+    size_t sig_len = 0;
+    EVP_PKEY *pkey = NULL;
+    EVP_MD_CTX *mctx = NULL;
+    EVP_PKEY_CTX *pctx = NULL;
+    static uint8_t ctx[CTXLEN];
+    OSSL_PARAM params[3], *p = params;
+    int i;
+
+    for (i = 0; i < NTESTS; i++) {
+        pkey = NULL;
+        pctx = NULL;
+        mctx = NULL;
+        p = params;
+
+        RAND_bytes(ctx, CTXLEN);
+        RAND_bytes(m, MLEN);
+
+        if (!TEST_ptr(pctx = EVP_PKEY_CTX_new_from_name(NULL, ALG_NAME, NULL))
+                || !TEST_int_eq(EVP_PKEY_keygen_init(pctx), 1)
+                || !TEST_int_eq(EVP_PKEY_generate(pctx, &pkey), 1)) {
+            EVP_PKEY_CTX_free(pctx);
+            return 0;
+        }
+        EVP_PKEY_CTX_free(pctx);
+        pctx = NULL;
+
+        // sign
+        mctx = EVP_MD_CTX_new();
+        if (!TEST_ptr(mctx))
+            goto err;
+
+        if (!TEST_int_eq(EVP_DigestSignInit(mctx, &pctx, EVP_sm3(), NULL, pkey), 1))
+            goto err;
+
+        *p++ = OSSL_PARAM_construct_octet_string(OSSL_SIGNATURE_PARAM_CONTEXT_STRING, ctx, sizeof(ctx));
+        *p = OSSL_PARAM_construct_end();
+        if (!TEST_int_eq(EVP_PKEY_CTX_set_params(pctx, params), 1))
+            goto err;
+
+        if (!TEST_int_eq(EVP_DigestSign(mctx, NULL, &sig_len, m, sizeof(m)), 1)
+                || !TEST_int_ge(sig_len, SM2_MLDSA65_HYBRID_SIG_SIZE))
+            goto err;
+
+        if (!TEST_int_eq(EVP_DigestSign(mctx, sig, &sig_len, m, sizeof(m)), 1))
+            goto err;
+
+        EVP_MD_CTX_free(mctx);
+        mctx = NULL;
+        // verify
+        mctx = EVP_MD_CTX_new();
+        if (!TEST_ptr(mctx))
+            goto err;
+
+        if (!TEST_int_eq(EVP_DigestVerifyInit(mctx, &pctx, EVP_sm3(), NULL, pkey), 1))
+            goto err;
+
+        if (!TEST_int_eq(EVP_PKEY_CTX_set_params(pctx, params), 1))
+            goto err;
+
+        if (!TEST_int_eq(EVP_DigestVerify(mctx, sig, sig_len, m, sizeof(m)), 1))
+            goto err;
+
+        // negative tests
+        sig[0] = sig[0] ^ 0xff;
+        if (!TEST_int_eq(EVP_DigestVerify(mctx, sig, sig_len, m, sizeof(m)), 0))
+            goto err;
+
+        sig[0] = sig[0] ^ 0xff;
+        m[1] = m[1] ^ 0xff;
+        if (!TEST_int_eq(EVP_DigestVerify(mctx, sig, sig_len, m, sizeof(m)), 0))
+            goto err;
+
+        EVP_MD_CTX_free(mctx);
+        EVP_PKEY_free(pkey);
+    }
+
+    return 1;
+err:
+    EVP_MD_CTX_free(mctx);
+    EVP_PKEY_free(pkey);
+
+    return ret;
+}
+
 #endif
 
 int setup_tests(void)
 {
 #ifndef OPENSSL_NO_SM2_MLDSA65_HYBRID
     ADD_TEST(test_sm2_mldsa65_hybrid_genkey);
+    ADD_TEST(test_sm2_mldsa65_hybrid_signverify);
 #endif
     return 1;
 }
