@@ -40,18 +40,24 @@ static int test_afalg_aes_cbc(int keysize_idx)
     static const unsigned char iv[] =
         "\x3d\xaf\xba\x42\x9d\x9e\xb4\x30\xb4\x22\xda\x80\x2c\x9f\xac\x41";
     /* input = "Single block msg\n" 17 Bytes*/
-    static const unsigned char in[BUFFER_SIZE] =
-        "\x53\x69\x6e\x67\x6c\x65\x20\x62\x6c\x6f\x63\x6b\x20\x6d\x73\x67"
-        "\x0a";
-    static const unsigned char encresult_128[BUFFER_SIZE] =
-        "\xe3\x53\x77\x9c\x10\x79\xae\xb8\x27\x08\x94\x2d\xbe\x77\x18\x1a"
-        "\x2d";
-    static const unsigned char encresult_192[BUFFER_SIZE] =
-        "\xf7\xe4\x26\xd1\xd5\x4f\x8f\x39\xb1\x9e\xe0\xdf\x61\xb9\xc2\x55"
-        "\xeb";
-    static const unsigned char encresult_256[BUFFER_SIZE] =
-        "\xa0\x76\x85\xfd\xc1\x65\x71\x9d\xc7\xe9\x13\x6e\xae\x55\x49\xb4"
-        "\x13";
+
+    static const unsigned char in[BUFFER_SIZE] = {
+        0x53, 0x69, 0x6e, 0x67, 0x6c, 0x65, 0x20, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x20, 0x6d, 0x73, 0x67, 0x0a
+    };
+    
+    static const unsigned char encresult_128[BUFFER_SIZE] = {
+        0xe3, 0x53, 0x77, 0x9c, 0x10, 0x79, 0xae, 0xb8, 0x27, 0x08, 0x94, 0x2d, 0xbe, 0x77, 0x18, 0x1a, 0x2d
+    };
+    
+    static const unsigned char encresult_192[BUFFER_SIZE] = {
+        0xf7, 0xe4, 0x26, 0xd1, 0xd5, 0x4f, 0x8f, 0x39, 0xb1, 0x9e, 0xe0, 0xdf, 0x61, 0xb9, 0xc2, 0x55, 0xeb
+    };
+    
+    static const unsigned char encresult_256[BUFFER_SIZE] = {
+        0xa0, 0x76, 0x85, 0xfd, 0xc1, 0x65, 0x71, 0x9d, 0xc7, 0xe9, 0x13, 0x6e, 0xae, 0x55, 0x49, 0xb4, 0x13
+    };
+
+    
 
 #ifdef OSSL_SANITIZE_MEMORY
     /*
