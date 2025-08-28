@@ -3045,6 +3045,11 @@
 #define NID_RSA_SHA3_512                1119
 #define OBJ_RSA_SHA3_512                OBJ_sigAlgs,16L
 
+#define SN_ML_DSA_65            "id-ml-dsa-65"
+#define LN_ML_DSA_65            "ML-DSA-65"
+#define NID_ML_DSA_65           1282
+#define OBJ_ML_DSA_65           OBJ_sigAlgs,18L
+
 #define SN_hold_instruction_code                "holdInstructionCode"
 #define LN_hold_instruction_code                "Hold Instruction Code"
 #define NID_hold_instruction_code               430
