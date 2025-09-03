@@ -10,7 +10,7 @@
  */
 
 /* Serialized OID's */
-static const unsigned char so[6645] = {
+static const unsigned char so[6723] = {
     0x2A,0x86,0x48,0x86,0xF7,0x0D,                 /* [    0] OBJ_rsadsi */
     0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,            /* [    6] OBJ_pkcs */
     0x2A,0x86,0x48,0x86,0xF7,0x0D,0x02,0x05,       /* [   13] OBJ_md5 */
@@ -933,9 +933,34 @@ static const unsigned char so[6645] = {
     0x60,0x86,0x48,0x01,0x86,0xF9,0x66,0xAD,0xCA,0x7B,0x01,0x01,  /* [ 6615] OBJ_oracle_jdk_trustedkeyusage */
     0x2A,0x81,0x1C,0xCF,0x55,0x01,0x87,0x69,       /* [ 6627] OBJ_sm2dh_mlkem768_hybrid */
     0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x12,  /* [ 6635] OBJ_ML_DSA_65 */
+    0x55,0x1D,0x26,                                /* [ 6644] OBJ_authority_attribute_identifier */
+    0x55,0x1D,0x27,                                /* [ 6647] OBJ_role_spec_cert_identifier */
+    0x55,0x1D,0x29,                                /* [ 6650] OBJ_basic_att_constraints */
+    0x55,0x1D,0x2A,                                /* [ 6653] OBJ_delegated_name_constraints */
+    0x55,0x1D,0x2B,                                /* [ 6656] OBJ_time_specification */
+    0x55,0x1D,0x30,                                /* [ 6659] OBJ_attribute_descriptor */
+    0x55,0x1D,0x31,                                /* [ 6662] OBJ_user_notice */
+    0x55,0x1D,0x32,                                /* [ 6665] OBJ_soa_identifier */
+    0x55,0x1D,0x34,                                /* [ 6668] OBJ_acceptable_cert_policies */
+    0x55,0x1D,0x39,                                /* [ 6671] OBJ_acceptable_privilege_policies */
+    0x55,0x1D,0x3D,                                /* [ 6674] OBJ_indirect_issuer */
+    0x55,0x1D,0x3E,                                /* [ 6677] OBJ_no_assertion */
+    0x55,0x1D,0x3F,                                /* [ 6680] OBJ_id_aa_issuing_distribution_point */
+    0x55,0x1D,0x40,                                /* [ 6683] OBJ_issued_on_behalf_of */
+    0x55,0x1D,0x41,                                /* [ 6686] OBJ_single_use */
+    0x55,0x1D,0x42,                                /* [ 6689] OBJ_group_ac */
+    0x55,0x1D,0x43,                                /* [ 6692] OBJ_allowed_attribute_assignments */
+    0x55,0x1D,0x44,                                /* [ 6695] OBJ_attribute_mappings */
+    0x55,0x1D,0x45,                                /* [ 6698] OBJ_holder_name_constraints */
+    0x55,0x1D,0x46,                                /* [ 6701] OBJ_authorization_validation */
+    0x55,0x1D,0x47,                                /* [ 6704] OBJ_prot_restrict */
+    0x55,0x1D,0x48,                                /* [ 6707] OBJ_subject_alt_public_key_info */
+    0x55,0x1D,0x49,                                /* [ 6710] OBJ_alt_signature_algorithm */
+    0x55,0x1D,0x4A,                                /* [ 6713] OBJ_alt_signature_value */
+    0x55,0x1D,0x4B,                                /* [ 6716] OBJ_associated_information */
 };
 
-#define NUM_NID 1283
+#define NUM_NID 1320
 static const ASN1_OBJECT nid_objs[NUM_NID] = {
     {"UNDEF", "undefined", NID_undef},
     {"rsadsi", "RSA Data Security, Inc.", NID_rsadsi, 6, &so[0]},
@@ -2220,9 +2245,46 @@ static const ASN1_OBJECT nid_objs[NUM_NID] = {
     {"WBSM4-WSISE-CFB", "wbsm4-wsise-cfb", NID_wbsm4_wsise_cfb128},
     {"SM2DH-MLKEM768-HYBRID", "sm2dh-mlkem768-hybrid", NID_sm2dh_mlkem768_hybrid, 8, &so[6627]},
     {"id-ml-dsa-65", "ML-DSA-65", NID_ML_DSA_65, 9, &so[6635]},
+    { NULL, NULL, NID_undef },
+    { NULL, NULL, NID_undef },
+    { NULL, NULL, NID_undef },
+    { NULL, NULL, NID_undef },
+    { NULL, NULL, NID_undef },
+    { NULL, NULL, NID_undef },
+    { NULL, NULL, NID_undef },
+    { NULL, NULL, NID_undef },
+    { NULL, NULL, NID_undef },
+    { NULL, NULL, NID_undef },
+    { NULL, NULL, NID_undef },
+    { NULL, NULL, NID_undef },
+    {"authorityAttributeIdentifier", "X509v3 Authority Attribute Identifier", NID_authority_attribute_identifier, 3, &so[6644]},
+    {"roleSpecCertIdentifier", "X509v3 Role Specification Certificate Identifier", NID_role_spec_cert_identifier, 3, &so[6647]},
+    {"basicAttConstraints", "X509v3 Basic Attribute Certificate Constraints", NID_basic_att_constraints, 3, &so[6650]},
+    {"delegatedNameConstraints", "X509v3 Delegated Name Constraints", NID_delegated_name_constraints, 3, &so[6653]},
+    {"timeSpecification", "X509v3 Time Specification", NID_time_specification, 3, &so[6656]},
+    {"attributeDescriptor", "X509v3 Attribute Descriptor", NID_attribute_descriptor, 3, &so[6659]},
+    {"userNotice", "X509v3 User Notice", NID_user_notice, 3, &so[6662]},
+    {"sOAIdentifier", "X509v3 Source of Authority Identifier", NID_soa_identifier, 3, &so[6665]},
+    {"acceptableCertPolicies", "X509v3 Acceptable Certification Policies", NID_acceptable_cert_policies, 3, &so[6668]},
+    {"acceptablePrivPolicies", "X509v3 Acceptable Privilege Policies", NID_acceptable_privilege_policies, 3, &so[6671]},
+    {"indirectIssuer", "X509v3 Indirect Issuer", NID_indirect_issuer, 3, &so[6674]},
+    {"noAssertion", "X509v3 No Assertion", NID_no_assertion, 3, &so[6677]},
+    {"aAissuingDistributionPoint", "X509v3 Attribute Authority Issuing Distribution Point", NID_id_aa_issuing_distribution_point, 3, &so[6680]},
+    {"issuedOnBehalfOf", "X509v3 Issued On Behalf Of", NID_issued_on_behalf_of, 3, &so[6683]},
+    {"singleUse", "X509v3 Single Use", NID_single_use, 3, &so[6686]},
+    {"groupAC", "X509v3 Group Attribute Certificate", NID_group_ac, 3, &so[6689]},
+    {"allowedAttributeAssignments", "X509v3 Allowed Attribute Assignments", NID_allowed_attribute_assignments, 3, &so[6692]},
+    {"attributeMappings", "X509v3 Attribute Mappings", NID_attribute_mappings, 3, &so[6695]},
+    {"holderNameConstraints", "X509v3 Holder Name Constraints", NID_holder_name_constraints, 3, &so[6698]},
+    {"authorizationValidation", "X509v3 Authorization Validation", NID_authorization_validation, 3, &so[6701]},
+    {"protRestrict", "X509v3 Protocol Restriction", NID_prot_restrict, 3, &so[6704]},
+    {"subjectAltPublicKeyInfo", "X509v3 Subject Alternative Public Key Info", NID_subject_alt_public_key_info, 3, &so[6707]},
+    {"altSignatureAlgorithm", "X509v3 Alternative Signature Algorithm", NID_alt_signature_algorithm, 3, &so[6710]},
+    {"altSignatureValue", "X509v3 Alternative Signature Value", NID_alt_signature_value, 3, &so[6713]},
+    {"associatedInformation", "X509v3 Associated Information", NID_associated_information, 3, &so[6716]},
 };
 
-#define NUM_SN 1033
+#define NUM_SN 1058
 static const unsigned int sn_objs[NUM_SN] = {
      364,    /* "AD_DVCS" */
      419,    /* "AES-128-CBC" */
@@ -2454,24 +2516,36 @@ static const unsigned int sn_objs[NUM_SN] = {
     1249,    /* "ZUC-128-EEA3" */
     1255,    /* "ZUC-128-EIA3" */
      478,    /* "aRecord" */
+    1307,    /* "aAissuingDistributionPoint" */
      289,    /* "aaControls" */
      287,    /* "ac-auditEntity" */
      397,    /* "ac-proxying" */
      288,    /* "ac-targeting" */
+    1303,    /* "acceptableCertPolicies" */
+    1304,    /* "acceptablePrivPolicies" */
      368,    /* "acceptableResponses" */
      446,    /* "account" */
      363,    /* "ad_timestamping" */
      376,    /* "algorithm" */
+    1311,    /* "allowedAttributeAssignments" */
+    1317,    /* "altSignatureAlgorithm" */
+    1318,    /* "altSignatureValue" */
      405,    /* "ansi-X9-62" */
      910,    /* "anyExtendedKeyUsage" */
      746,    /* "anyPolicy" */
      370,    /* "archiveCutoff" */
      484,    /* "associatedDomain" */
+    1319,    /* "associatedInformation" */
      485,    /* "associatedName" */
+    1300,    /* "attributeDescriptor" */
+    1312,    /* "attributeMappings" */
      501,    /* "audio" */
+    1295,    /* "authorityAttributeIdentifier" */
      177,    /* "authorityInfoAccess" */
       90,    /* "authorityKeyIdentifier" */
      882,    /* "authorityRevocationList" */
+    1314,    /* "authorizationValidation" */
+    1297,    /* "basicAttConstraints" */
       87,    /* "basicConstraints" */
      365,    /* "basicOCSPResponse" */
      285,    /* "biometricInfo" */
@@ -2548,6 +2622,7 @@ static const unsigned int sn_objs[NUM_SN] = {
      495,    /* "dSAQuality" */
      434,    /* "data" */
      390,    /* "dcobject" */
+    1298,    /* "delegatedNameConstraints" */
     1256,    /* "delegationUsage" */
      140,    /* "deltaCRL" */
      891,    /* "deltaRevocationList" */
@@ -2614,6 +2689,7 @@ static const unsigned int sn_objs[NUM_SN] = {
      490,    /* "friendlyCountryName" */
      156,    /* "friendlyName" */
      509,    /* "generationQualifier" */
+    1310,    /* "groupAC" */
      797,    /* "hmacWithMD5" */
      163,    /* "hmacWithSHA1" */
      798,    /* "hmacWithSHA224" */
@@ -2627,6 +2703,7 @@ static const unsigned int sn_objs[NUM_SN] = {
      430,    /* "holdInstructionCode" */
      431,    /* "holdInstructionNone" */
      433,    /* "holdInstructionReject" */
+    1313,    /* "holderNameConstraints" */
      486,    /* "homePostalAddress" */
      473,    /* "homeTelephoneNumber" */
      466,    /* "host" */
@@ -2867,6 +2944,7 @@ static const unsigned int sn_objs[NUM_SN] = {
      676,    /* "identified-organization" */
     1170,    /* "ieee" */
     1171,    /* "ieee-siswg" */
+    1305,    /* "indirectIssuer" */
      461,    /* "info" */
      748,    /* "inhibitAnyPolicy" */
      101,    /* "initials" */
@@ -2879,6 +2957,7 @@ static const unsigned int sn_objs[NUM_SN] = {
     1022,    /* "ipsecIKE" */
      295,    /* "ipsecTunnel" */
      296,    /* "ipsecUser" */
+    1308,    /* "issuedOnBehalfOf" */
       86,    /* "issuerAltName" */
      770,    /* "issuingDistributionPoint" */
      492,    /* "janetMailbox" */
@@ -2920,6 +2999,7 @@ static const unsigned int sn_objs[NUM_SN] = {
      481,    /* "nSRecord" */
      173,    /* "name" */
      666,    /* "nameConstraints" */
+    1306,    /* "noAssertion" */
      369,    /* "noCheck" */
      403,    /* "noRevAvail" */
       72,    /* "nsBaseUrl" */
@@ -2991,6 +3071,7 @@ static const unsigned int sn_objs[NUM_SN] = {
      415,    /* "prime256v1" */
      385,    /* "private" */
       84,    /* "privateKeyUsagePeriod" */
+    1315,    /* "protRestrict" */
      886,    /* "protocolInformation" */
      663,    /* "proxyCertInfo" */
      510,    /* "pseudonym" */
@@ -3001,6 +3082,7 @@ static const unsigned int sn_objs[NUM_SN] = {
      870,    /* "registeredAddress" */
      400,    /* "role" */
      877,    /* "roleOccupant" */
+    1296,    /* "roleSpecCertIdentifier" */
      448,    /* "room" */
      463,    /* "roomNumber" */
     1243,    /* "rpkiManifest" */
@@ -3009,6 +3091,7 @@ static const unsigned int sn_objs[NUM_SN] = {
      644,    /* "rsaOAEPEncryptionSET" */
      377,    /* "rsaSignature" */
        1,    /* "rsadsi" */
+    1302,    /* "sOAIdentifier" */
      482,    /* "sOARecord" */
      155,    /* "safeContentsBag" */
      291,    /* "sbgp-autonomousSysNum" */
@@ -3197,10 +3280,12 @@ static const unsigned int sn_objs[NUM_SN] = {
       52,    /* "signingTime" */
      454,    /* "simpleSecurityObject" */
      496,    /* "singleLevelQuality" */
+    1309,    /* "singleUse" */
     1142,    /* "sm-scheme" */
      387,    /* "snmpv2" */
      660,    /* "street" */
       85,    /* "subjectAltName" */
+    1316,    /* "subjectAltPublicKeyInfo" */
      769,    /* "subjectDirectoryAttributes" */
      398,    /* "subjectInfoAccess" */
       82,    /* "subjectKeyIdentifier" */
@@ -3214,6 +3299,7 @@ static const unsigned int sn_objs[NUM_SN] = {
      865,    /* "telexNumber" */
      459,    /* "textEncodedORAddress" */
      293,    /* "textNotice" */
+    1299,    /* "timeSpecification" */
      133,    /* "timeStamping" */
      106,    /* "title" */
     1020,    /* "tlsfeature" */
@@ -3237,6 +3323,7 @@ static const unsigned int sn_objs[NUM_SN] = {
       49,    /* "unstructuredName" */
      880,    /* "userCertificate" */
      465,    /* "userClass" */
+    1301,    /* "userNotice" */
      879,    /* "userPassword" */
      373,    /* "valid" */
      678,    /* "wap" */
@@ -3259,7 +3346,7 @@ static const unsigned int sn_objs[NUM_SN] = {
     1093,    /* "x509ExtAdmission" */
 };
 
-#define NUM_LN 1033
+#define NUM_LN 1058
 static const unsigned int ln_objs[NUM_LN] = {
      363,    /* "AD Time Stamping" */
      405,    /* "ANSI X9.62" */
@@ -3409,30 +3496,55 @@ static const unsigned int ln_objs[NUM_LN] = {
     1035,    /* "X448" */
       12,    /* "X509" */
      402,    /* "X509v3 AC Targeting" */
+    1303,    /* "X509v3 Acceptable Certification Policies" */
+    1304,    /* "X509v3 Acceptable Privilege Policies" */
+    1311,    /* "X509v3 Allowed Attribute Assignments" */
+    1317,    /* "X509v3 Alternative Signature Algorithm" */
+    1318,    /* "X509v3 Alternative Signature Value" */
      746,    /* "X509v3 Any Policy" */
+    1319,    /* "X509v3 Associated Information" */
+    1307,    /* "X509v3 Attribute Authority Issuing Distribution Point" */
+    1300,    /* "X509v3 Attribute Descriptor" */
+    1312,    /* "X509v3 Attribute Mappings" */
+    1295,    /* "X509v3 Authority Attribute Identifier" */
       90,    /* "X509v3 Authority Key Identifier" */
+    1314,    /* "X509v3 Authorization Validation" */
+    1297,    /* "X509v3 Basic Attribute Certificate Constraints" */
       87,    /* "X509v3 Basic Constraints" */
      103,    /* "X509v3 CRL Distribution Points" */
       88,    /* "X509v3 CRL Number" */
      141,    /* "X509v3 CRL Reason Code" */
      771,    /* "X509v3 Certificate Issuer" */
       89,    /* "X509v3 Certificate Policies" */
+    1298,    /* "X509v3 Delegated Name Constraints" */
     1256,    /* "X509v3 Delegation Usage" */
      140,    /* "X509v3 Delta CRL Indicator" */
      126,    /* "X509v3 Extended Key Usage" */
      857,    /* "X509v3 Freshest CRL" */
+    1310,    /* "X509v3 Group Attribute Certificate" */
+    1313,    /* "X509v3 Holder Name Constraints" */
+    1305,    /* "X509v3 Indirect Issuer" */
      748,    /* "X509v3 Inhibit Any Policy" */
+    1308,    /* "X509v3 Issued On Behalf Of" */
       86,    /* "X509v3 Issuer Alternative Name" */
      770,    /* "X509v3 Issuing Distribution Point" */
       83,    /* "X509v3 Key Usage" */
      666,    /* "X509v3 Name Constraints" */
+    1306,    /* "X509v3 No Assertion" */
      403,    /* "X509v3 No Revocation Available" */
      401,    /* "X509v3 Policy Constraints" */
      747,    /* "X509v3 Policy Mappings" */
       84,    /* "X509v3 Private Key Usage Period" */
+    1315,    /* "X509v3 Protocol Restriction" */
+    1296,    /* "X509v3 Role Specification Certificate Identifier" */
+    1309,    /* "X509v3 Single Use" */
+    1302,    /* "X509v3 Source of Authority Identifier" */
       85,    /* "X509v3 Subject Alternative Name" */
+    1316,    /* "X509v3 Subject Alternative Public Key Info" */
      769,    /* "X509v3 Subject Directory Attributes" */
       82,    /* "X509v3 Subject Key Identifier" */
+    1299,    /* "X509v3 Time Specification" */
+    1301,    /* "X509v3 User Notice" */
      920,    /* "X9.42 DH" */
      184,    /* "X9.57" */
      185,    /* "X9.57 CM ?" */
@@ -4296,7 +4408,7 @@ static const unsigned int ln_objs[NUM_LN] = {
     1255,    /* "zuc-128-eia3" */
 };
 
-#define NUM_OBJ 928
+#define NUM_OBJ 953
 static const unsigned int obj_objs[NUM_OBJ] = {
        0,    /* OBJ_undef                        0 */
      181,    /* OBJ_iso                          1 */
@@ -4407,10 +4519,35 @@ static const unsigned int obj_objs[NUM_OBJ] = {
       90,    /* OBJ_authority_key_identifier     2 5 29 35 */
      401,    /* OBJ_policy_constraints           2 5 29 36 */
      126,    /* OBJ_ext_key_usage                2 5 29 37 */
+    1295,    /* OBJ_authority_attribute_identifier 2 5 29 38 */
+    1296,    /* OBJ_role_spec_cert_identifier    2 5 29 39 */
+    1297,    /* OBJ_basic_att_constraints        2 5 29 41 */
+    1298,    /* OBJ_delegated_name_constraints   2 5 29 42 */
+    1299,    /* OBJ_time_specification           2 5 29 43 */
      857,    /* OBJ_freshest_crl                 2 5 29 46 */
+    1300,    /* OBJ_attribute_descriptor         2 5 29 48 */
+    1301,    /* OBJ_user_notice                  2 5 29 49 */
+    1302,    /* OBJ_soa_identifier               2 5 29 50 */
+    1303,    /* OBJ_acceptable_cert_policies     2 5 29 52 */
      748,    /* OBJ_inhibit_any_policy           2 5 29 54 */
      402,    /* OBJ_target_information           2 5 29 55 */
      403,    /* OBJ_no_rev_avail                 2 5 29 56 */
+    1304,    /* OBJ_acceptable_privilege_policies 2 5 29 57 */
+    1305,    /* OBJ_indirect_issuer              2 5 29 61 */
+    1306,    /* OBJ_no_assertion                 2 5 29 62 */
+    1307,    /* OBJ_id_aa_issuing_distribution_point 2 5 29 63 */
+    1308,    /* OBJ_issued_on_behalf_of          2 5 29 64 */
+    1309,    /* OBJ_single_use                   2 5 29 65 */
+    1310,    /* OBJ_group_ac                     2 5 29 66 */
+    1311,    /* OBJ_allowed_attribute_assignments 2 5 29 67 */
+    1312,    /* OBJ_attribute_mappings           2 5 29 68 */
+    1313,    /* OBJ_holder_name_constraints      2 5 29 69 */
+    1314,    /* OBJ_authorization_validation     2 5 29 70 */
+    1315,    /* OBJ_prot_restrict                2 5 29 71 */
+    1316,    /* OBJ_subject_alt_public_key_info  2 5 29 72 */
+    1317,    /* OBJ_alt_signature_algorithm      2 5 29 73 */
+    1318,    /* OBJ_alt_signature_value          2 5 29 74 */
+    1319,    /* OBJ_associated_information       2 5 29 75 */
      513,    /* OBJ_set_ctype                    2 23 42 0 */
      514,    /* OBJ_set_msgExt                   2 23 42 1 */
      515,    /* OBJ_set_attr                     2 23 42 3 */

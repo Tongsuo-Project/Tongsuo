@@ -395,4 +395,10 @@ EVP_PKEY *ossl_d2i_PUBKEY_legacy(EVP_PKEY **a, const unsigned char **pp,
 
 int x509v3_add_len_value_uchar(const char *name, const unsigned char *value,
                                size_t vallen, STACK_OF(CONF_VALUE) **extlist);
+
+int ossl_print_attribute_value(BIO *out,
+                               int obj_nid,
+                               const ASN1_TYPE *av,
+                               int indent);
+
 #endif  /* OSSL_CRYPTO_X509_H */
