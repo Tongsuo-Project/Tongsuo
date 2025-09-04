@@ -10,7 +10,7 @@
  */
 
 /* Serialized OID's */
-static const unsigned char so[6723] = {
+static const unsigned char so[6720] = {
     0x2A,0x86,0x48,0x86,0xF7,0x0D,                 /* [    0] OBJ_rsadsi */
     0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,            /* [    6] OBJ_pkcs */
     0x2A,0x86,0x48,0x86,0xF7,0x0D,0x02,0x05,       /* [   13] OBJ_md5 */
@@ -2515,8 +2515,8 @@ static const unsigned int sn_objs[NUM_SN] = {
     1248,    /* "ZUC" */
     1249,    /* "ZUC-128-EEA3" */
     1255,    /* "ZUC-128-EIA3" */
-     478,    /* "aRecord" */
     1307,    /* "aAissuingDistributionPoint" */
+     478,    /* "aRecord" */
      289,    /* "aaControls" */
      287,    /* "ac-auditEntity" */
      397,    /* "ac-proxying" */

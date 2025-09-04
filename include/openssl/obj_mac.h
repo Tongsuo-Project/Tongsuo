@@ -2491,6 +2491,11 @@
 #define NID_ext_key_usage               126
 #define OBJ_ext_key_usage               OBJ_id_ce,37L
 
+#define SN_delegation_usage             "delegationUsage"
+#define LN_delegation_usage             "X509v3 Delegation Usage"
+#define NID_delegation_usage            1256
+#define OBJ_delegation_usage            1L,3L,6L,1L,4L,1L,44363L,44L
+
 #define SN_authority_attribute_identifier               "authorityAttributeIdentifier"
 #define LN_authority_attribute_identifier               "X509v3 Authority Attribute Identifier"
 #define NID_authority_attribute_identifier              1295
@@ -2515,11 +2520,6 @@
 #define LN_time_specification           "X509v3 Time Specification"
 #define NID_time_specification          1299
 #define OBJ_time_specification          OBJ_id_ce,43L
-
-#define SN_delegation_usage             "delegationUsage"
-#define LN_delegation_usage             "X509v3 Delegation Usage"
-#define NID_delegation_usage            1256
-#define OBJ_delegation_usage            1L,3L,6L,1L,4L,1L,44363L,44L
 
 #define SN_freshest_crl         "freshestCRL"
 #define LN_freshest_crl         "X509v3 Freshest CRL"
