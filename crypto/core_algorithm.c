@@ -108,7 +108,7 @@ static int algorithm_do_this(OSSL_PROVIDER *provider, void *cbdata)
         map = ossl_provider_query_operation(provider, cur_operation,
                                             &no_store);
         ret = algorithm_do_map(provider, map, cur_operation, no_store, data);
-	ossl_provider_unquery_operation(provider, cur_operation, map);
+	    ossl_provider_unquery_operation(provider, cur_operation, map);
 
         if (ret < 0)
             /* Hard error, bail out immediately! */
