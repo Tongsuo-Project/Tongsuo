@@ -2496,11 +2496,6 @@
 #define NID_delegation_usage            1256
 #define OBJ_delegation_usage            1L,3L,6L,1L,4L,1L,44363L,44L
 
-#define SN_delegated_name_constraints           "delegatedNameConstraints"
-#define LN_delegated_name_constraints           "X509v3 Delegated Name Constraints"
-#define NID_delegated_name_constraints          1298
-#define OBJ_delegated_name_constraints          OBJ_id_ce,42L
-
 #define SN_freshest_crl         "freshestCRL"
 #define LN_freshest_crl         "X509v3 Freshest CRL"
 #define NID_freshest_crl                857

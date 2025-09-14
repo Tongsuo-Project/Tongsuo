@@ -10,7 +10,7 @@
  */
 
 /* Serialized OID's */
-static const unsigned char so[6651] = {
+static const unsigned char so[6648] = {
     0x2A,0x86,0x48,0x86,0xF7,0x0D,                 /* [    0] OBJ_rsadsi */
     0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,            /* [    6] OBJ_pkcs */
     0x2A,0x86,0x48,0x86,0xF7,0x0D,0x02,0x05,       /* [   13] OBJ_md5 */
@@ -933,8 +933,7 @@ static const unsigned char so[6651] = {
     0x60,0x86,0x48,0x01,0x86,0xF9,0x66,0xAD,0xCA,0x7B,0x01,0x01,  /* [ 6615] OBJ_oracle_jdk_trustedkeyusage */
     0x2A,0x81,0x1C,0xCF,0x55,0x01,0x87,0x69,       /* [ 6627] OBJ_sm2dh_mlkem768_hybrid */
     0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x12,  /* [ 6635] OBJ_ML_DSA_65 */
-    0x55,0x1D,0x2A,                                /* [ 6644] OBJ_delegated_name_constraints */
-    0x55,0x1D,0x4B,                                /* [ 6647] OBJ_associated_information */
+    0x55,0x1D,0x4B,                                /* [ 6644] OBJ_associated_information */
 };
 
 #define NUM_NID 1320
@@ -2237,7 +2236,6 @@ static const ASN1_OBJECT nid_objs[NUM_NID] = {
     { NULL, NULL, NID_undef },
     { NULL, NULL, NID_undef },
     { NULL, NULL, NID_undef },
-    {"delegatedNameConstraints", "X509v3 Delegated Name Constraints", NID_delegated_name_constraints, 3, &so[6644]},
     { NULL, NULL, NID_undef },
     { NULL, NULL, NID_undef },
     { NULL, NULL, NID_undef },
@@ -2258,10 +2256,11 @@ static const ASN1_OBJECT nid_objs[NUM_NID] = {
     { NULL, NULL, NID_undef },
     { NULL, NULL, NID_undef },
     { NULL, NULL, NID_undef },
-    {"associatedInformation", "X509v3 Associated Information", NID_associated_information, 3, &so[6647]},
+    { NULL, NULL, NID_undef },
+    {"associatedInformation", "X509v3 Associated Information", NID_associated_information, 3, &so[6644]},
 };
 
-#define NUM_SN 1035
+#define NUM_SN 1034
 static const unsigned int sn_objs[NUM_SN] = {
      364,    /* "AD_DVCS" */
      419,    /* "AES-128-CBC" */
@@ -2588,7 +2587,6 @@ static const unsigned int sn_objs[NUM_SN] = {
      495,    /* "dSAQuality" */
      434,    /* "data" */
      390,    /* "dcobject" */
-    1298,    /* "delegatedNameConstraints" */
     1256,    /* "delegationUsage" */
      140,    /* "deltaCRL" */
      891,    /* "deltaRevocationList" */
@@ -3300,7 +3298,7 @@ static const unsigned int sn_objs[NUM_SN] = {
     1093,    /* "x509ExtAdmission" */
 };
 
-#define NUM_LN 1035
+#define NUM_LN 1034
 static const unsigned int ln_objs[NUM_LN] = {
      363,    /* "AD Time Stamping" */
      405,    /* "ANSI X9.62" */
@@ -3459,7 +3457,6 @@ static const unsigned int ln_objs[NUM_LN] = {
      141,    /* "X509v3 CRL Reason Code" */
      771,    /* "X509v3 Certificate Issuer" */
       89,    /* "X509v3 Certificate Policies" */
-    1298,    /* "X509v3 Delegated Name Constraints" */
     1256,    /* "X509v3 Delegation Usage" */
      140,    /* "X509v3 Delta CRL Indicator" */
      126,    /* "X509v3 Extended Key Usage" */
@@ -4339,7 +4336,7 @@ static const unsigned int ln_objs[NUM_LN] = {
     1255,    /* "zuc-128-eia3" */
 };
 
-#define NUM_OBJ 930
+#define NUM_OBJ 929
 static const unsigned int obj_objs[NUM_OBJ] = {
        0,    /* OBJ_undef                        0 */
      181,    /* OBJ_iso                          1 */
@@ -4450,7 +4447,6 @@ static const unsigned int obj_objs[NUM_OBJ] = {
       90,    /* OBJ_authority_key_identifier     2 5 29 35 */
      401,    /* OBJ_policy_constraints           2 5 29 36 */
      126,    /* OBJ_ext_key_usage                2 5 29 37 */
-    1298,    /* OBJ_delegated_name_constraints   2 5 29 42 */
      857,    /* OBJ_freshest_crl                 2 5 29 46 */
      748,    /* OBJ_inhibit_any_policy           2 5 29 54 */
      402,    /* OBJ_target_information           2 5 29 55 */
