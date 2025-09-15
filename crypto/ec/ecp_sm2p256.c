@@ -494,7 +494,7 @@ static void smallfelem_expand(felem out, const smallfelem in)
  * On exit:
  *   out[i] < 7 * 2^64 < 2^67
  */
-static void smallfelem_square(longfelem out, const smallfelem small)
+static void inline smallfelem_square(longfelem out, const smallfelem small)
 {
     limb a;
     u64 high, low;
@@ -567,20 +567,6 @@ static void smallfelem_square(longfelem out, const smallfelem small)
 }
 
 /*-
- * felem_square sets |out| = |in|^2
- * On entry:
- *   in[i] < 2^109
- * On exit:
- *   out[i] < 7 * 2^64 < 2^67
- */
-static void felem_square(longfelem out, const felem in)
-{
-    u64 small[4];
-    felem_shrink(small, in);
-    smallfelem_square(out, small);
-}
-
-/*-
  * smallfelem_mul sets |out| = |small1| * |small2|
  * On entry:
  *   small1[i] < 2^64
@@ -588,7 +574,7 @@ static void felem_square(longfelem out, const felem in)
  * On exit:
  *   out[i] < 7 * 2^64 < 2^67
  */
-static void smallfelem_mul(longfelem out, const smallfelem small1,
+static void inline smallfelem_mul(longfelem out, const smallfelem small1,
                            const smallfelem small2)
 {
     limb a;
@@ -732,7 +718,7 @@ static void felem_small_mul(longfelem out, const smallfelem small1,
  * On exit:
  *   out[i] < 2^101
  */
-static void felem_reduce(felem out, const longfelem in)
+static void inline felem_reduce(felem out, const longfelem in)
 {
     uint128_t a, b, c, d;
     a = in[6] + in[7];
@@ -744,6 +730,43 @@ static void felem_reduce(felem out, const longfelem in)
     out[2] = in[2] + (b << 32) + a + in[7];
     out[1] = in[1] + ((c + in[6]) << 32) - c;
     out[0] = in[0] + (d << 32) + d + in[4];
+}
+
+static void smallfelem_mul_reduced(felem out, const smallfelem small1, const smallfelem small2)
+{
+    longfelem tmp;
+    smallfelem_mul(tmp, small1, small2);
+    felem_reduce(out, tmp);
+}
+
+static void smallfelem_square_reduced(felem out, const smallfelem small)
+{
+    longfelem tmp;
+    smallfelem_square(tmp, small);
+    felem_reduce(out, tmp);
+}
+
+static void felem_mul_reduced(felem out, const felem in1, const felem in2)
+{
+    smallfelem small1, small2;
+    felem_shrink(small1, in1);
+    felem_shrink(small2, in2);
+    smallfelem_mul_reduced(out, small1, small2);
+}
+
+static void felem_small_mul_reduced(felem out, const smallfelem small1,
+                            const felem in2)
+{
+    smallfelem small2;
+    felem_shrink(small2, in2);
+    smallfelem_mul_reduced(out, small1, small2);
+}
+
+static void felem_square_reduced(felem out, const felem in)
+{
+    u64 small[4];
+    felem_shrink(small, in);
+    smallfelem_square_reduced(out, small);
 }
 
 /*
@@ -827,22 +850,18 @@ static void felem_contract(smallfelem out, const felem in)
 
 static void smallfelem_square_contract(smallfelem out, const smallfelem in)
 {
-    longfelem longtmp;
     felem tmp;
 
-    smallfelem_square(longtmp, in);
-    felem_reduce(tmp, longtmp);
+    smallfelem_square_reduced(tmp, in);
     felem_contract(out, tmp);
 }
 
 static void smallfelem_mul_contract(smallfelem out, const smallfelem in1,
                                     const smallfelem in2)
 {
-    longfelem longtmp;
     felem tmp;
 
-    smallfelem_mul(longtmp, in1, in2);
-    felem_reduce(tmp, longtmp);
+    smallfelem_mul_reduced(tmp, in1, in2);
     felem_contract(out, tmp);
 }
 
@@ -906,109 +925,76 @@ static void felem_inv(felem out, const felem in)
 {
     felem t0, t1, t2, t3;
     felem ftmp;
-    longfelem tmp;
     unsigned i;
-
     /* Step 1: t0 = a^3 = (2^2 - 2^0) * a */
-    felem_square(tmp, in);
-    felem_reduce(ftmp, tmp);
-    felem_mul(tmp, ftmp, in);
-    felem_reduce(t0, tmp);
+    felem_square_reduced(ftmp, in);
+    felem_mul_reduced(t0, ftmp, in);
     /* Step 2: t1 = t0^2 * a = (2^3 - 2^0) * a */
-    felem_square(tmp, t0);
-    felem_reduce(ftmp, tmp);
-    felem_mul(tmp, ftmp, in);
-    felem_reduce(t1, tmp);
+    felem_square_reduced(ftmp, t0);
+    felem_mul_reduced(t1, ftmp, in);
     /* Step 3: t2= t1^(2^3) * t1 = (2^6 - 2^0) * a */
     felem_assign(ftmp, t1);
     for (i = 0; i < 3; i++) {
-        felem_square(tmp, ftmp);
-        felem_reduce(ftmp, tmp);
-    }          
-    felem_mul(tmp, ftmp, t1);
-    felem_reduce(t2, tmp); 
+        felem_square_reduced(ftmp, ftmp);
+    }
+    felem_mul_reduced(t2, ftmp, t1);
     /* Step 4: t1 = t2^2 = (2^7 - 2^1) * a */
-    felem_square(tmp, t2);
-    felem_reduce(t1, tmp);
+    felem_square_reduced(t1, t2);
     /* Step 5: t3 = t1 * z = (2^7 - 2^0) * a */
-    felem_mul(tmp, t1, in);
-    felem_reduce(t3, tmp);
+    felem_mul_reduced(t3, t1, in);
     /* Step 6: t1= t1^(2^5) * t2 = (2^12 - 2^0) * a */
     felem_assign(ftmp, t1);
     for (i = 0; i < 5; i++) {
-        felem_square(tmp, ftmp);
-        felem_reduce(ftmp, tmp);
-    }          
-    felem_mul(tmp, ftmp, t2);
-    felem_reduce(t1, tmp); 
+        felem_square_reduced(ftmp, ftmp);
+    }
+    felem_mul_reduced(t1, ftmp, t2);
     /* Step 7: t2= t1^(2^12) * t1 = (2^24 - 2^0) * a */
     felem_assign(ftmp, t1);
     for (i = 0; i < 12; i++) {
-        felem_square(tmp, ftmp);
-        felem_reduce(ftmp, tmp);
-    }          
-    felem_mul(tmp, ftmp, t1);
-    felem_reduce(t2, tmp); 
+        felem_square_reduced(ftmp, ftmp);
+    }
+    felem_mul_reduced(t2, ftmp, t1);
     /* Step 8: t1= t2^(2^7) * t3 = (2^31 - 2^0) * a */
     felem_assign(ftmp, t2);
     for (i = 0; i < 7; i++) {
-        felem_square(tmp, ftmp);
-        felem_reduce(ftmp, tmp);
-    }          
-    felem_mul(tmp, ftmp, t3);
-    felem_reduce(t1, tmp); 
+        felem_square_reduced(ftmp, ftmp);
+    }
+    felem_mul_reduced(t1, ftmp, t3);
     /* Step 9: t2 = t1^4 = (2^33 - 2^2) * a */
-    felem_square(tmp, t1);
-    felem_reduce(ftmp, tmp);
-    felem_square(tmp, ftmp);
-    felem_reduce(t2, tmp);
+    felem_square_reduced(ftmp, t1);
+    felem_square_reduced(t2, ftmp);
     /* Step 10: t3= t2^(2^29) = (2^62 - 2^31) * a */
     felem_assign(t3, t2);
     for (i = 0; i < 29; i++) {
-        felem_square(tmp, t3);
-        felem_reduce(t3, tmp);
-    }          
+        felem_square_reduced(t3, t3);
+    }
     /* Step 11: t1 = t1 * t3 = (2^62 - 2^0) * a */
-    felem_mul(tmp, t1, t3);
-    felem_reduce(t1, tmp);
+    felem_mul_reduced(t1, t1, t3);
     /* Step 12: t3 = t3^4 = (2^64 - 2^33) * a */
-    felem_square(tmp, t3);
-    felem_reduce(t3, tmp);
-    felem_square(tmp, t3);
-    felem_reduce(t3, tmp);
+    felem_square_reduced(t3, t3);
+    felem_square_reduced(t3, t3);
     /* Step 13: t0 = t0 * t3 * t2 = (2^64 - 2^0) * a */
-    felem_mul(tmp, t0, t3);
-    felem_reduce(t0, tmp);
-    felem_mul(tmp, t0, t2);
-    felem_reduce(t0, tmp);
+    felem_mul_reduced(t0, t0, t3);
+    felem_mul_reduced(t0, t0, t2);
     /* Step 14: t2= ((t3^(2^32) * t0)^(2^64) * t0)^(2^94) = (2^254 - 2^222 - 2^94) * a */
     felem_assign(ftmp, t3);
     for (i = 0; i < 32; i++) {
-        felem_square(tmp, ftmp);
-        felem_reduce(ftmp, tmp);
-    }          
-    felem_mul(tmp, ftmp, t0);
-    felem_reduce(ftmp, tmp);
-    for (i = 0; i < 64; i++) {
-        felem_square(tmp, ftmp);
-        felem_reduce(ftmp, tmp);
+        felem_square_reduced(ftmp, ftmp);
     }
-    felem_mul(tmp, ftmp, t0);
-    felem_reduce(ftmp, tmp);
+    felem_mul_reduced(ftmp, ftmp, t0);
+    for (i = 0; i < 64; i++) {
+        felem_square_reduced(ftmp, ftmp);
+    }
+    felem_mul_reduced(ftmp, ftmp, t0);
     for (i = 0; i < 94; i++) {
-        felem_square(tmp, ftmp);
-        felem_reduce(ftmp, tmp);
+        felem_square_reduced(ftmp, ftmp);
     }
     felem_assign(t2, ftmp);
     /* Step 15: out = (t1 * t2)^4 * a = (2^256 - 2^224 - 2^96 + 2^64 -1) * a */
-    felem_mul(tmp, t1, t2);
-    felem_reduce(ftmp, tmp);
-    felem_square(tmp, ftmp);
-    felem_reduce(ftmp, tmp);
-    felem_square(tmp, ftmp);
-    felem_reduce(ftmp, tmp);
-    felem_mul(tmp, ftmp, in);
-    felem_reduce(out, tmp);
+    felem_mul_reduced(ftmp, t1, t2);
+    felem_square_reduced(ftmp, ftmp);
+    felem_square_reduced(ftmp, ftmp);
+    felem_mul_reduced(out, ftmp, in);
 }
 
 static void smallfelem_inv_contract(smallfelem out, const smallfelem in)
@@ -1052,19 +1038,16 @@ point_double(felem x_out, felem y_out, felem z_out,
     /* ftmp2[i] < 2^106 */
 
     /* delta = z^2 */
-    felem_square(tmp, z_in);
-    felem_reduce(delta, tmp);
+    felem_square_reduced(delta, z_in);
     /* delta[i] < 2^101 */
 
     /* gamma = y^2 */
-    felem_square(tmp, y_in);
-    felem_reduce(gamma, tmp);
+    felem_square_reduced(gamma, y_in);
     /* gamma[i] < 2^101 */
     felem_shrink(small1, gamma);
 
     /* beta = x*gamma */
-    felem_small_mul(tmp, small1, x_in);
-    felem_reduce(beta, tmp);
+    felem_small_mul_reduced(beta, small1, x_in);
     /* beta[i] < 2^101 */
 
     /* alpha = 3*(x-delta)*(x+delta) */
@@ -1074,14 +1057,12 @@ point_double(felem x_out, felem y_out, felem z_out,
     /* ftmp2[i] < 2^105 + 2^106 < 2^107 */
     felem_scalar(ftmp2, 3);
     /* ftmp2[i] < 3 * 2^107 < 2^109 */
-    felem_mul(tmp, ftmp, ftmp2);
-    felem_reduce(alpha, tmp);
+    felem_mul_reduced(alpha, ftmp, ftmp2);
     /* alpha[i] < 2^101 */
     felem_shrink(small2, alpha);
 
     /* x' = alpha^2 - 8*beta */
-    smallfelem_square(tmp, small2);
-    felem_reduce(x_out, tmp);
+    smallfelem_square_reduced(x_out, small2);
     felem_assign(ftmp, beta);
     felem_scalar(ftmp, 8);
     /* ftmp[i] < 8 * 2^101 = 2^104 */
@@ -1094,8 +1075,7 @@ point_double(felem x_out, felem y_out, felem z_out,
     felem_assign(ftmp, y_in);
     felem_sum(ftmp, z_in);
     /* ftmp[i] < 2^106 + 2^106 = 2^107 */
-    felem_square(tmp, ftmp);
-    felem_reduce(z_out, tmp);
+    felem_square_reduced(z_out, ftmp);
     felem_diff(z_out, delta);
     /* z_out[i] < 2^105 + 2^101 < 2^106 */
 
@@ -1187,23 +1167,20 @@ static void point_add(felem x3, felem y3, felem z3,
     z2_is_zero = smallfelem_is_zero(z2);
 
     /* ftmp = z1z1 = z1**2 */
-    smallfelem_square(tmp, small3);
-    felem_reduce(ftmp, tmp);
+    smallfelem_square_reduced(ftmp, small3);
     /* ftmp[i] < 2^101 */
     felem_shrink(small1, ftmp);
 
     if (!mixed) {
         /* ftmp2 = z2z2 = z2**2 */
-        smallfelem_square(tmp, z2);
-        felem_reduce(ftmp2, tmp);
+        smallfelem_square_reduced(ftmp2, z2);
         /* ftmp2[i] < 2^101 */
         felem_shrink(small2, ftmp2);
 
         felem_shrink(small5, x1);
 
         /* u1 = ftmp3 = x1*z2z2 */
-        smallfelem_mul(tmp, small5, small2);
-        felem_reduce(ftmp3, tmp);
+        smallfelem_mul_reduced(ftmp3, small5, small2);
         /* ftmp3[i] < 2^101 */
 
         /* ftmp5 = z1 + z2 */
@@ -1212,8 +1189,7 @@ static void point_add(felem x3, felem y3, felem z3,
         /* ftmp5[i] < 2^107 */
 
         /* ftmp5 = (z1 + z2)**2 - (z1z1 + z2z2) = 2z1z2 */
-        felem_square(tmp, ftmp5);
-        felem_reduce(ftmp5, tmp);
+        felem_square_reduced(ftmp5, ftmp5);
         /* ftmp2 = z2z2 + z1z1 */
         felem_sum(ftmp2, ftmp);
         /* ftmp2[i] < 2^101 + 2^101 = 2^102 */
@@ -1221,12 +1197,10 @@ static void point_add(felem x3, felem y3, felem z3,
         /* ftmp5[i] < 2^105 + 2^101 < 2^106 */
 
         /* ftmp2 = z2 * z2z2 */
-        smallfelem_mul(tmp, small2, z2);
-        felem_reduce(ftmp2, tmp);
+        smallfelem_mul_reduced(ftmp2, small2, z2);
 
         /* s1 = ftmp2 = y1 * z2**3 */
-        felem_mul(tmp, y1, ftmp2);
-        felem_reduce(ftmp6, tmp);
+        felem_mul_reduced(ftmp6, y1, ftmp2);
         /* ftmp6[i] < 2^101 */
     } else {
         /*
@@ -1248,8 +1222,7 @@ static void point_add(felem x3, felem y3, felem z3,
     }
 
     /* u2 = x2*z1z1 */
-    smallfelem_mul(tmp, x2, small1);
-    felem_reduce(ftmp4, tmp);
+    smallfelem_mul_reduced(ftmp4, x2, small1);
 
     /* h = ftmp4 = u2 - u1 */
     felem_diff_zero107(ftmp4, ftmp3);
@@ -1259,17 +1232,14 @@ static void point_add(felem x3, felem y3, felem z3,
     x_equal = smallfelem_is_zero(small4);
 
     /* z_out = ftmp5 * h */
-    felem_small_mul(tmp, small4, ftmp5);
-    felem_reduce(z_out, tmp);
+    felem_small_mul_reduced(z_out, small4, ftmp5);
     /* z_out[i] < 2^101 */
 
     /* ftmp = z1 * z1z1 */
-    smallfelem_mul(tmp, small1, small3);
-    felem_reduce(ftmp, tmp);
+    smallfelem_mul_reduced(ftmp, small1, small3);
 
     /* s2 = tmp = y2 * z1**3 */
-    felem_small_mul(tmp, y2, ftmp);
-    felem_reduce(ftmp5, tmp);
+    felem_small_mul_reduced(ftmp5, y2, ftmp);
 
     /* r = ftmp5 = (s2 - s1)*2 */
     felem_diff_zero107(ftmp5, ftmp6);
@@ -1307,20 +1277,16 @@ static void point_add(felem x3, felem y3, felem z3,
     felem_assign(ftmp, ftmp4);
     felem_scalar(ftmp, 2);
     /* ftmp[i] < 2*2^108 = 2^109 */
-    felem_square(tmp, ftmp);
-    felem_reduce(ftmp, tmp);
+    felem_square_reduced(ftmp, ftmp);
 
     /* J = ftmp2 = h * I */
-    felem_mul(tmp, ftmp4, ftmp);
-    felem_reduce(ftmp2, tmp);
+    felem_mul_reduced(ftmp2, ftmp4, ftmp);
 
     /* V = ftmp4 = U1 * I */
-    felem_mul(tmp, ftmp3, ftmp);
-    felem_reduce(ftmp4, tmp);
+    felem_mul_reduced(ftmp4, ftmp3, ftmp);
 
     /* x_out = r**2 - J - 2V */
-    smallfelem_square(tmp, small1);
-    felem_reduce(x_out, tmp);
+    smallfelem_square_reduced(x_out, small1);
     felem_assign(ftmp3, ftmp4);
     felem_scalar(ftmp4, 2);
     felem_sum(ftmp4, ftmp2);
@@ -1890,7 +1856,6 @@ int ossl_ec_GFp_sm2p256_point_get_affine_coordinates(const EC_GROUP *group,
 {
     felem z1, z2, x_in, y_in;
     smallfelem x_out, y_out;
-    longfelem tmp;
 
     if (EC_POINT_is_at_infinity(group, point)) {
         ERR_raise(ERR_LIB_EC, EC_R_POINT_AT_INFINITY);
@@ -1900,10 +1865,8 @@ int ossl_ec_GFp_sm2p256_point_get_affine_coordinates(const EC_GROUP *group,
         (!BN_to_felem(z1, point->Z)))
         return 0;
     felem_inv(z2, z1);
-    felem_square(tmp, z2);
-    felem_reduce(z1, tmp);
-    felem_mul(tmp, x_in, z1);
-    felem_reduce(x_in, tmp);
+    felem_square_reduced(z1, z2);
+    felem_mul_reduced(x_in, x_in, z1);
     felem_contract(x_out, x_in);
     if (x != NULL) {
         if (!smallfelem_to_BN(x, x_out)) {
@@ -1911,10 +1874,8 @@ int ossl_ec_GFp_sm2p256_point_get_affine_coordinates(const EC_GROUP *group,
             return 0;
         }
     }
-    felem_mul(tmp, z1, z2);
-    felem_reduce(z1, tmp);
-    felem_mul(tmp, y_in, z1);
-    felem_reduce(y_in, tmp);
+    felem_mul_reduced(z1, z1, z2);
+    felem_mul_reduced(y_in, y_in, z1);
     felem_contract(y_out, y_in);
     if (y != NULL) {
         if (!smallfelem_to_BN(y, y_out)) {
