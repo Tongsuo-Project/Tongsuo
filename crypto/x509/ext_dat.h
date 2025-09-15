@@ -23,6 +23,8 @@ extern const X509V3_EXT_METHOD ossl_v3_addr, ossl_v3_asid;
 extern const X509V3_EXT_METHOD ossl_v3_ct_scts[3];
 extern const X509V3_EXT_METHOD ossl_v3_tls_feature;
 extern const X509V3_EXT_METHOD ossl_v3_ext_admission;
+extern const X509V3_EXT_METHOD ossl_v3_subj_dir_attrs;
+extern const X509V3_EXT_METHOD ossl_v3_associated_info;
 #ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
 extern const X509V3_EXT_METHOD ossl_v3_dc_usage;
 #endif

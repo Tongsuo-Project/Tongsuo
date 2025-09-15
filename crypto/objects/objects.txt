@@ -814,6 +814,8 @@ id-ce 54		: inhibitAnyPolicy	: X509v3 Inhibit Any Policy
 id-ce 55		: targetInformation	: X509v3 AC Targeting
 !Cname no-rev-avail
 id-ce 56		: noRevAvail		: X509v3 No Revocation Available
+!Cname associated-information
+id-ce 75		: associatedInformation : X509v3 Associated Information
 
 # From RFC5280
 ext-key-usage 0		: anyExtendedKeyUsage	: Any Extended Key Usage
