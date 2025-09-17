@@ -27,7 +27,6 @@
 #ifndef FIPS_MODULE
 # include "crypto/asn1.h"
 #endif
-#include "crypto/ctype.h"
 #include "crypto/evp.h"
 #include "crypto/dh.h"
 #include "crypto/ec.h"
