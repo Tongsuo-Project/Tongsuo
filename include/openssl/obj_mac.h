@@ -4510,4 +4510,14 @@
 #define LN_wbsm4_wsise_ccm              "wbsm4-wsise-ccm"
 #define NID_wbsm4_wsise_ccm             1276
 
+#define SN_compsig              "Compsig"
+#define LN_compsig              "composite ML-DSA signature"
+#define NID_compsig             1320
+#define OBJ_compsig             OBJ_joint_iso_itu_t,16L,840L,1L,114027L,80L,9L,1L
+
+#define SN_sm2_mldsa65_hybrid           "SM2-MLDSA65-HYBRID"
+#define LN_sm2_mldsa65_hybrid           "sm2-mldsa65-hybrid"
+#define NID_sm2_mldsa65_hybrid          1321
+#define OBJ_sm2_mldsa65_hybrid          OBJ_compsig,21L
+
 #endif /* OPENSSL_OBJ_MAC_H */

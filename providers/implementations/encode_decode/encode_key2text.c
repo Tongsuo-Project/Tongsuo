@@ -19,6 +19,7 @@
 #include <openssl/core_names.h>
 #include <openssl/bn.h>
 #include <openssl/err.h>
+#include <crypto/evp.h>
 #include <openssl/safestack.h>
 #include <openssl/proverr.h>
 #include "internal/ffc.h"
@@ -29,6 +30,7 @@
 #include "crypto/ecx.h"          /* ECX_KEY, etc... */
 #include "crypto/rsa.h"          /* RSA_PSS_PARAMS_30, etc... */
 #include "crypto/ml_dsa.h"
+#include "crypto/sm2_mldsa65_hybrid.h"
 #include "prov/bio.h"
 #include "prov/implementations.h"
 #include "endecoder_local.h"
@@ -842,6 +844,26 @@ static int ml_dsa_to_text(BIO *out, const void *vkey, int selection)
 
 /* ---------------------------------------------------------------------- */
 
+#ifndef OPENSSL_NO_SM2_MLDSA65_HYBRID
+static int sm2_mldsa65_hybrid_to_text(BIO *out, const void *vkey, int selection)
+{
+    SM2_MLDSA65_HYBRID_KEY *key = (SM2_MLDSA65_HYBRID_KEY *)vkey;
+
+    if (out == NULL || key == NULL || key->mldsa_key == NULL || key->sm2_key == NULL) {
+        ERR_raise(ERR_LIB_PROV, ERR_R_PASSED_NULL_PARAMETER);
+        return 0;
+    }
+
+    if (sm2_mldsa65_hybrid_have_prvkey(key))
+        return EVP_PKEY_print_private(out, key->mldsa_key, 0, NULL)
+            && EVP_PKEY_print_private(out, key->sm2_key, 0, NULL);
+    return EVP_PKEY_print_public(out, key->mldsa_key, 0, NULL)
+        && EVP_PKEY_print_public(out, key->sm2_key, 0, NULL);
+}
+#endif
+
+/* ---------------------------------------------------------------------- */
+
 static void *key2text_newctx(void *provctx)
 {
     return provctx;
@@ -937,4 +959,8 @@ MAKE_TEXT_ENCODER(rsapss, rsa);
 
 #ifndef OPENSSL_NO_ML_DSA
 MAKE_TEXT_ENCODER(ml_dsa_65, ml_dsa);
+#endif
+
+#ifndef OPENSSL_NO_SM2_MLDSA65_HYBRID
+MAKE_TEXT_ENCODER(sm2_mldsa65_hybrid, sm2_mldsa65_hybrid);
 #endif

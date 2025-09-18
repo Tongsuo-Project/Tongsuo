@@ -85,6 +85,10 @@ DECODER("RSA", pvk, rsa, yes),
 DECODER_w_structure("ML-DSA-65", der, PrivateKeyInfo, ml_dsa_65, no),
 DECODER_w_structure("ML-DSA-65", der, SubjectPublicKeyInfo, ml_dsa_65, no),
 #endif
+#ifndef OPENSSL_NO_SM2_MLDSA65_HYBRID
+DECODER_w_structure("SM2-MLDSA65-HYBRID", der, PrivateKeyInfo, sm2_mldsa65_hybrid, no),
+DECODER_w_structure("SM2-MLDSA65-HYBRID", der, SubjectPublicKeyInfo, sm2_mldsa65_hybrid, no),
+#endif
 
 /*
  * A decoder that takes a SubjectPublicKeyInfo and figures out the types of key

@@ -1052,3 +1052,5 @@ sm2dh_mlkem768_hybrid		1281
 ML_DSA_65		1282
 delegated_name_constraints		1298
 associated_information		1319
+compsig		1320
+sm2_mldsa65_hybrid		1321

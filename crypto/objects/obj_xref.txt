@@ -59,3 +59,5 @@ dhSinglePass_cofactorDH_sha384kdf_scheme	sha384	dh_cofactor_kdf
 dhSinglePass_cofactorDH_sha512kdf_scheme	sha512	dh_cofactor_kdf
 
 SM2_with_SM3		sm3	sm2
+
+sm2_mldsa65_hybrid sm3 sm2_mldsa65_hybrid

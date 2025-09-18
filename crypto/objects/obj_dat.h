@@ -10,7 +10,7 @@
  */
 
 /* Serialized OID's */
-static const unsigned char so[6648] = {
+static const unsigned char so[6669] = {
     0x2A,0x86,0x48,0x86,0xF7,0x0D,                 /* [    0] OBJ_rsadsi */
     0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,            /* [    6] OBJ_pkcs */
     0x2A,0x86,0x48,0x86,0xF7,0x0D,0x02,0x05,       /* [   13] OBJ_md5 */
@@ -934,9 +934,11 @@ static const unsigned char so[6648] = {
     0x2A,0x81,0x1C,0xCF,0x55,0x01,0x87,0x69,       /* [ 6627] OBJ_sm2dh_mlkem768_hybrid */
     0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x12,  /* [ 6635] OBJ_ML_DSA_65 */
     0x55,0x1D,0x4B,                                /* [ 6644] OBJ_associated_information */
+    0x60,0x86,0x48,0x01,0x86,0xFA,0x6B,0x50,0x09,0x01,  /* [ 6647] OBJ_compsig */
+    0x60,0x86,0x48,0x01,0x86,0xFA,0x6B,0x50,0x09,0x01,0x15,  /* [ 6657] OBJ_sm2_mldsa65_hybrid */
 };
 
-#define NUM_NID 1320
+#define NUM_NID 1322
 static const ASN1_OBJECT nid_objs[NUM_NID] = {
     {"UNDEF", "undefined", NID_undef},
     {"rsadsi", "RSA Data Security, Inc.", NID_rsadsi, 6, &so[0]},
@@ -2258,9 +2260,11 @@ static const ASN1_OBJECT nid_objs[NUM_NID] = {
     { NULL, NULL, NID_undef },
     { NULL, NULL, NID_undef },
     {"associatedInformation", "X509v3 Associated Information", NID_associated_information, 3, &so[6644]},
+    {"Compsig", "composite ML-DSA signature", NID_compsig, 10, &so[6647]},
+    {"SM2-MLDSA65-HYBRID", "sm2-mldsa65-hybrid", NID_sm2_mldsa65_hybrid, 11, &so[6657]},
 };
 
-#define NUM_SN 1034
+#define NUM_SN 1036
 static const unsigned int sn_objs[NUM_SN] = {
      364,    /* "AD_DVCS" */
      419,    /* "AES-128-CBC" */
@@ -2313,6 +2317,7 @@ static const unsigned int sn_objs[NUM_SN] = {
      417,    /* "CSPName" */
     1019,    /* "ChaCha20" */
     1018,    /* "ChaCha20-Poly1305" */
+    1320,    /* "Compsig" */
      367,    /* "CrlID" */
      391,    /* "DC" */
       31,    /* "DES-CBC" */
@@ -2434,6 +2439,7 @@ static const unsigned int sn_objs[NUM_SN] = {
     1100,    /* "SHAKE128" */
     1101,    /* "SHAKE256" */
     1172,    /* "SM2" */
+    1321,    /* "SM2-MLDSA65-HYBRID" */
     1204,    /* "SM2-SM3" */
     1281,    /* "SM2DH-MLKEM768-HYBRID" */
     1143,    /* "SM3" */
@@ -3298,7 +3304,7 @@ static const unsigned int sn_objs[NUM_SN] = {
     1093,    /* "x509ExtAdmission" */
 };
 
-#define NUM_LN 1034
+#define NUM_LN 1036
 static const unsigned int ln_objs[NUM_LN] = {
      363,    /* "AD Time Stamping" */
      405,    /* "ANSI X9.62" */
@@ -3590,6 +3596,7 @@ static const unsigned int ln_objs[NUM_LN] = {
      633,    /* "cleartext track 2" */
      894,    /* "cmac" */
       13,    /* "commonName" */
+    1320,    /* "composite ML-DSA signature" */
      513,    /* "content types" */
       50,    /* "contentType" */
       53,    /* "countersignature" */
@@ -4249,6 +4256,7 @@ static const unsigned int ln_objs[NUM_LN] = {
     1062,    /* "siphash" */
     1142,    /* "sm-scheme" */
     1172,    /* "sm2" */
+    1321,    /* "sm2-mldsa65-hybrid" */
     1281,    /* "sm2dh-mlkem768-hybrid" */
     1143,    /* "sm3" */
     1144,    /* "sm3WithRSAEncryption" */
@@ -4336,7 +4344,7 @@ static const unsigned int ln_objs[NUM_LN] = {
     1255,    /* "zuc-128-eia3" */
 };
 
-#define NUM_OBJ 929
+#define NUM_OBJ 931
 static const unsigned int obj_objs[NUM_OBJ] = {
        0,    /* OBJ_undef                        0 */
      181,    /* OBJ_iso                          1 */
@@ -5173,6 +5181,7 @@ static const unsigned int obj_objs[NUM_OBJ] = {
      952,    /* OBJ_ct_precert_poison            1 3 6 1 4 1 11129 2 4 3 */
      953,    /* OBJ_ct_precert_signer            1 3 6 1 4 1 11129 2 4 4 */
      954,    /* OBJ_ct_cert_scts                 1 3 6 1 4 1 11129 2 4 5 */
+    1320,    /* OBJ_compsig                      2 16 840 1 114027 80 9 1 */
     1158,    /* OBJ_dstu4145le                   1 2 804 2 1 1 1 1 3 1 1 */
      196,    /* OBJ_id_smime_mod_cms             1 2 840 113549 1 9 16 0 1 */
      197,    /* OBJ_id_smime_mod_ess             1 2 840 113549 1 9 16 0 2 */
@@ -5255,6 +5264,7 @@ static const unsigned int obj_objs[NUM_OBJ] = {
      955,    /* OBJ_jurisdictionLocalityName     1 3 6 1 4 1 311 60 2 1 1 */
      956,    /* OBJ_jurisdictionStateOrProvinceName 1 3 6 1 4 1 311 60 2 1 2 */
      957,    /* OBJ_jurisdictionCountryName      1 3 6 1 4 1 311 60 2 1 3 */
+    1321,    /* OBJ_sm2_mldsa65_hybrid           2 16 840 1 114027 80 9 1 21 */
     1259,    /* OBJ_oracle_jdk_trustedkeyusage   2 16 840 1 113894 746875 1 1 */
     1159,    /* OBJ_dstu4145be                   1 2 804 2 1 1 1 1 3 1 1 1 1 */
     1160,    /* OBJ_uacurve0                     1 2 804 2 1 1 1 1 3 1 1 2 0 */

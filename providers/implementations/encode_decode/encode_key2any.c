@@ -31,6 +31,7 @@
 #include "crypto/ecx.h"
 #include "crypto/rsa.h"
 #include "crypto/ml_dsa.h"
+#include "crypto/sm2_mldsa65_hybrid.h"
 #include "prov/implementations.h"
 #include "prov/bio.h"
 #include "prov/provider_ctx.h"
@@ -835,6 +836,76 @@ static int ml_dsa_pki_priv_to_der(const void *vkey, unsigned char **pder)
 
 /* ---------------------------------------------------------------------- */
 
+#ifndef OPENSSL_NO_SM2_MLDSA65_HYBRID
+static int sm2_mldsa65_hybrid_spki_pub_to_der(const void *vkey, unsigned char **pder)
+{
+    SM2_MLDSA65_HYBRID_KEY *key = (SM2_MLDSA65_HYBRID_KEY *)vkey;
+    uint8_t *buf = NULL;
+    size_t pklen = 0;
+
+    if (key == NULL || !sm2_mldsa65_hybrid_have_pubkey(key)) {
+        ERR_raise_data(ERR_LIB_PROV, PROV_R_NOT_A_PUBLIC_KEY,
+                       "no sm2_mldsa65_hybrid public key data available");
+        return 0;
+    }
+
+    if (pder == NULL)
+        return SM2_MLDSA65_HYBRID_PK_SIZE;
+
+    if ((buf = OPENSSL_malloc(SM2_MLDSA65_HYBRID_PK_SIZE)) == NULL) {
+        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
+        return 0;
+    }
+
+    if (!sm2_mldsa65_hybrid_key_serialize(key,
+                    buf, SM2_MLDSA65_HYBRID_PK_SIZE, &pklen, NULL, 0, NULL)) {
+        OPENSSL_free(buf);
+        return 0;
+    }
+
+    *pder = buf;
+
+    return pklen;
+}
+
+static int sm2_mldsa65_hybrid_pki_priv_to_der(const void *vkey, unsigned char **pder)
+{
+    SM2_MLDSA65_HYBRID_KEY *key = (SM2_MLDSA65_HYBRID_KEY *)vkey;
+    uint8_t *buf = NULL;
+    size_t sklen = 0;
+
+    if (key == NULL || !sm2_mldsa65_hybrid_have_prvkey(key)) {
+        ERR_raise_data(ERR_LIB_PROV, PROV_R_NOT_A_PRIVATE_KEY,
+                       "no sm2_mldsa65_hybrid private key data available");
+        return 0;
+    }
+
+    if ((buf = OPENSSL_malloc(SM2_MLDSA65_HYBRID_SK_SIZE)) == NULL) {
+        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
+        return 0;
+    }
+
+    if (!sm2_mldsa65_hybrid_key_serialize(key,
+                            NULL, 0, NULL, buf, SM2_MLDSA65_HYBRID_SK_SIZE, &sklen)) {
+        OPENSSL_free(buf);
+        return 0;
+    }
+
+    *pder = buf;
+
+    return sklen;
+}
+
+# define sm2_mldsa65_hybrid_epki_priv_to_der sm2_mldsa65_hybrid_pki_priv_to_der
+# define prepare_sm2_mldsa65_hybrid_params   NULL
+# define sm2_mldsa65_hybrid_check_key_type   NULL
+
+# define sm2_mldsa65_hybrid_evp_type           EVP_PKEY_SM2_MLDSA65_HYBRID
+# define sm2_mldsa65_hybrid_pem_type           "SM2-MLDSA65-HYBRID"
+#endif
+
+/* ---------------------------------------------------------------------- */
+
 /*
  * Helper functions to prepare RSA-PSS params for encoding.  We would
  * have simply written the whole AlgorithmIdentifier, but existing libcrypto
@@ -1484,4 +1555,13 @@ MAKE_ENCODER(ml_dsa_65, ml_dsa, EVP_PKEY_ML_DSA_65, PrivateKeyInfo, der);
 MAKE_ENCODER(ml_dsa_65, ml_dsa, EVP_PKEY_ML_DSA_65, PrivateKeyInfo, pem);
 MAKE_ENCODER(ml_dsa_65, ml_dsa, EVP_PKEY_ML_DSA_65, SubjectPublicKeyInfo, der);
 MAKE_ENCODER(ml_dsa_65, ml_dsa, EVP_PKEY_ML_DSA_65, SubjectPublicKeyInfo, pem);
+#endif
+
+#ifndef OPENSSL_NO_SM2_MLDSA65_HYBRID
+MAKE_ENCODER(sm2_mldsa65_hybrid, sm2_mldsa65_hybrid, EVP_PKEY_SM2_MLDSA65_HYBRID ,EncryptedPrivateKeyInfo, der);
+MAKE_ENCODER(sm2_mldsa65_hybrid, sm2_mldsa65_hybrid, EVP_PKEY_SM2_MLDSA65_HYBRID, EncryptedPrivateKeyInfo, pem);
+MAKE_ENCODER(sm2_mldsa65_hybrid, sm2_mldsa65_hybrid, EVP_PKEY_SM2_MLDSA65_HYBRID, PrivateKeyInfo, der);
+MAKE_ENCODER(sm2_mldsa65_hybrid, sm2_mldsa65_hybrid, EVP_PKEY_SM2_MLDSA65_HYBRID, PrivateKeyInfo, pem);
+MAKE_ENCODER(sm2_mldsa65_hybrid, sm2_mldsa65_hybrid, EVP_PKEY_SM2_MLDSA65_HYBRID, SubjectPublicKeyInfo, der);
+MAKE_ENCODER(sm2_mldsa65_hybrid, sm2_mldsa65_hybrid, EVP_PKEY_SM2_MLDSA65_HYBRID, SubjectPublicKeyInfo, pem);
 #endif

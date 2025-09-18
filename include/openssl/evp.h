@@ -84,6 +84,8 @@
 # define EVP_PKEY_SM2DH_MLKEM768_HYBRID NID_sm2dh_mlkem768_hybrid
 /* ML_DSA */
 # define EVP_PKEY_ML_DSA_65 NID_ML_DSA_65
+/* SM2-MLDSA65-HYBRID */
+# define EVP_PKEY_SM2_MLDSA65_HYBRID NID_sm2_mldsa65_hybrid
 /* Special indicator that the object is uniquely provider side */
 # define EVP_PKEY_KEYMGMT -1
 

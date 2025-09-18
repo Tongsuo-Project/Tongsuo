@@ -1453,3 +1453,8 @@ oracle 746875 1 1 : oracle-jdk-trustedkeyusage : Trusted key usage (Oracle)
     : WBSM4-WSISE-CTR             : wbsm4-wsise-ctr
     : WBSM4-WSISE-GCM             : wbsm4-wsise-gcm
     : WBSM4-WSISE-CCM             : wbsm4-wsise-ccm
+
+# sm2 & ml-dsa-65 hybrid signature (testing)
+!Cname compsig
+joint-iso-itu-t 16 840 1 114027 80 9 1  : Compsig               : composite ML-DSA signature
+compsig 21                              : SM2-MLDSA65-HYBRID    : sm2-mldsa65-hybrid
