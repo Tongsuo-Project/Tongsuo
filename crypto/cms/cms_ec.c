@@ -48,7 +48,7 @@ static EVP_PKEY *pkey_type2param(int ptype, const void *pval,
         if (pctx == NULL || EVP_PKEY_paramgen_init(pctx) <= 0)
             goto err;
         if (OBJ_obj2txt(groupname, sizeof(groupname), poid, 0) <= 0
-                || !EVP_PKEY_CTX_set_group_name(pctx, groupname)) {
+                || EVP_PKEY_CTX_set_group_name(pctx, groupname) <= 0) {
             ERR_raise(ERR_LIB_CMS, CMS_R_DECODE_ERROR);
             goto err;
         }
@@ -289,7 +289,7 @@ static int ecdh_cms_encrypt(CMS_RecipientInfo *ri)
     kdf_type = EVP_PKEY_CTX_get_ecdh_kdf_type(pctx);
     if (kdf_type <= 0)
         goto err;
-    if (!EVP_PKEY_CTX_get_ecdh_kdf_md(pctx, &kdf_md))
+    if (EVP_PKEY_CTX_get_ecdh_kdf_md(pctx, &kdf_md) <= 0)
         goto err;
     ecdh_nid = EVP_PKEY_CTX_get_ecdh_cofactor_mode(pctx);
     if (ecdh_nid < 0)
