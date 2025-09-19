@@ -36,4 +36,5 @@ INCLUDE[chacha-armv8.o]=..
 INCLUDE[chacha-s390x.o]=..
 GENERATE[chacha-c64xplus.S]=asm/chacha-c64xplus.pl
 GENERATE[chacha-s390x.S]=asm/chacha-s390x.pl
-GENERATE[chacha-ia64.s]=asm/chacha-ia64.pl
+GENERATE[chacha-ia64.S]=asm/chacha-ia64.pl
+GENERATE[chacha-ia64.s]=chacha-ia64.S
