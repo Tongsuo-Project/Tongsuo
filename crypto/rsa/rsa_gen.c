@@ -426,11 +426,17 @@ static int rsa_keygen(OSSL_LIB_CTX *libctx, RSA *rsa, int bits, int primes,
 {
     int ok = 0;
 
+#ifdef FIPS_MODULE
+    ok = ossl_rsa_sp800_56b_generate_key(rsa, bits, e_value, cb);
+    pairwise_test = 1; /* FIPS MODE needs to always run the pairwise test */
+#else
     /*
-     * Only multi-prime keys or insecure keys with a small key length will use
-     * the older rsa_multiprime_keygen().
+     * Only multi-prime keys or insecure keys with a small key length or a
+     * public exponent <= 2^16 will use the older rsa_multiprime_keygen().
      */
-    if (primes == 2 && bits >= 2048)
+    if (primes == 2
+            && bits >= 2048
+            && (e_value == NULL || BN_num_bits(e_value) > 16))
         ok = ossl_rsa_sp800_56b_generate_key(rsa, bits, e_value, cb);
 #ifndef FIPS_MODULE
     else
