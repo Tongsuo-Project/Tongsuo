@@ -519,7 +519,7 @@ int PKCS7_decrypt(PKCS7 *p7, EVP_PKEY *pkey, X509 *cert, BIO *data, int flags)
         }
         ret = SMIME_text(bread, data);
         if (ret > 0 && BIO_method_type(tmpmem) == BIO_TYPE_CIPHER) {
-            if (!BIO_get_cipher_status(tmpmem))
+            if (BIO_get_cipher_status(tmpmem) <= 0)
                 ret = 0;
         }
         BIO_free_all(bread);
@@ -534,7 +534,7 @@ int PKCS7_decrypt(PKCS7 *p7, EVP_PKEY *pkey, X509 *cert, BIO *data, int flags)
         if (i <= 0) {
             ret = 1;
             if (BIO_method_type(tmpmem) == BIO_TYPE_CIPHER) {
-                if (!BIO_get_cipher_status(tmpmem))
+                if (BIO_get_cipher_status(tmpmem) <= 0)
                     ret = 0;
             }
 
