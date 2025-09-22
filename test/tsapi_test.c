@@ -14,7 +14,7 @@
 #include <openssl/sgd.h>
 #include "testutil.h"
 #include "../crypto/sdf/sdf_local.h"
-#ifdef SDF_LIB
+#ifdef SDF_LIB_DEBUG
 # include "sdfe_api.h"
 #endif
 
@@ -194,7 +194,7 @@ end:
     return ok;
 }
 
-# ifdef SDF_LIB
+# ifdef SDF_LIB_DEBUG
 static int bitmap_is_inuse(uint64_t *pu64, int32_t index)
 {
 
@@ -214,7 +214,7 @@ static int bitmap_is_inuse(uint64_t *pu64, int32_t index)
 static int test_TSAPI_SM2Decrypt(void)
 {
     int ok = 0;
-# ifdef SDF_LIB
+# ifdef SDF_LIB_DEBUG
     void *hDeviceHandle = NULL;
     void *hSessionHandle = NULL;
     sdfe_login_arg_t login_arg;
@@ -261,7 +261,7 @@ static int test_TSAPI_SM2Decrypt(void)
     if (!TEST_ptr(key))
         goto end;
 
-# ifdef SDF_LIB
+# ifdef SDF_LIB_DEBUG
     memset(&login_arg, 0, sizeof(login_arg));
 
     strcpy((char *)login_arg.name, "admin");
@@ -339,7 +339,7 @@ static int test_TSAPI_SM2Decrypt(void)
 end:
     BIO_free(bio);
     EVP_PKEY_free(key);
-# ifdef SDF_LIB
+# ifdef SDF_LIB_DEBUG
     OPENSSL_free(pubkey);
     OPENSSL_free(privkey);
     OPENSSL_free(pECCCipher);

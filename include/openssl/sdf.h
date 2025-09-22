@@ -7,18 +7,18 @@
  * https://github.com/Tongsuo-Project/Tongsuo/blob/master/LICENSE.txt
  */
 
-#ifndef OPENSSL_SDF_H
-# define OPENSSL_SDF_H
+#ifndef OPENSSL_TSAPI_SDF_H
+# define OPENSSL_TSAPI_SDF_H
 # pragma once
 
 # include <stdint.h>
 # include <openssl/evp.h>
 
 # ifdef __cplusplus
-extern "C" {
+ "C" {
 # endif
 
-/* SDF error codes from GM/T 0018-2012 Appendix A */
+/* TSAPI_SDF error codes from GM/T 0018-2012 Appendix A */
 # define OSSL_SDR_OK                         0
 # define OSSL_SDR_BASE                       0x01000000
 # define OSSL_SDR_UNKNOWNERR                 (OSSL_SDR_BASE + 1)
@@ -52,67 +52,153 @@ extern "C" {
 # define OSSL_SDR_INARGERR                   (OSSL_SDR_BASE + 29)
 # define OSSL_SDR_OUTARGERR                  (OSSL_SDR_BASE + 30)
 
-#define OSSL_SDFE_ASYM_KEY_TYPE_SM2         (0xa0)
-#define OSSL_SDFE_SYM_KEY_TYPE_SM4          (0xb0)
+#define OSSL_TSAPI_SDFE_ASYM_KEY_TYPE_SM2         (0xa0)
+#define OSSL_TSAPI_SDFE_SYM_KEY_TYPE_SM4          (0xb0)
+
+
+#define RSAref_MAX_BITS 2048
+#define RSAref_MAX_LEN ((RSAref_MAX_BITS + 7) / 8)
+#define RSAref_MAX_PBITS ((RSAref_MAX_BITS + 1) / 2)
+#define RSAref_MAX_PLEN ((RSAref_MAX_PBITS + 7) / 8)
+
+#define ECCref_MAX_BITS 512
+#define ECCref_MAX_LEN ((ECCref_MAX_BITS + 7) / 8)
+
+typedef struct OSSL_RSArefPublicKey_st{
+    unsigned int bits;
+    unsigned char m[RSAref_MAX_LEN];
+    unsigned char e[RSAref_MAX_LEN];
+} ;
+typedef struct OSSL_RSArefPrivateKey_st{
+    unsigned int bits;
+    unsigned char m[RSAref_MAX_LEN];
+    unsigned char e[RSAref_MAX_LEN];
+    unsigned char d[RSAref_MAX_LEN];
+    unsigned char prime[2][RSAref_MAX_PLEN];
+    unsigned char pexp[2][RSAref_MAX_PLEN];
+    unsigned char coef[RSAref_MAX_PLEN];
+} ;
+
+typedef struct OSSL_ECCrefPublicKey_st{
+    unsigned int bits;
+    unsigned char x[ECCref_MAX_LEN];
+    unsigned char y[ECCref_MAX_LEN];
+} ;
+typedef struct OSSL_ECCrefPrivateKey_st
+{
+    unsigned int bits;
+    unsigned char K[ECCref_MAX_LEN];
+} ;
+typedef struct OSSL_ECCCipher_st{
+    unsigned char x[ECCref_MAX_LEN];
+    unsigned char y[ECCref_MAX_LEN];
+    unsigned char M[32];
+    unsigned int L;
+	unsigned char C[1];
+	// Extend sizeof(C) to SM2_MAX_PLAINTEXT_SIZE
+	// unsigned char C_[254]; 
+};
+typedef struct OSSL_ECCSignature_st{
+    unsigned char r[ECCref_MAX_LEN];
+    unsigned char s[ECCref_MAX_LEN];
+} ;
 
 typedef struct OSSL_ECCCipher_st OSSL_ECCCipher;
 typedef struct OSSL_ECCSignature_st OSSL_ECCSignature;
 typedef struct OSSL_ECCrefPrivateKey_st OSSL_ECCrefPrivateKey;
 typedef struct OSSL_ECCrefPublicKey_st OSSL_ECCrefPublicKey;
-int TSAPI_SDF_OpenDevice(void **phDeviceHandle);
-int TSAPI_SDF_CloseDevice(void *hDeviceHandle);
-int TSAPI_SDF_OpenSession(void *hDeviceHandle, void **phSessionHandle);
-int TSAPI_SDF_CloseSession(void *hSessionHandle);
-int TSAPI_SDF_GenerateRandom(void *hSessionHandle, unsigned int uiLength,
-                             unsigned char *pucRandom);
-int TSAPI_SDF_GetPrivateKeyAccessRight(void *hSessionHandle,
-                                       unsigned int uiKeyIndex,
-                                       unsigned char *pucPassword,
-                                       unsigned int uiPwdLength);
-int TSAPI_SDF_ReleasePrivateKeyAccessRight(void *hSessionHandle,
-                                           unsigned int uiKeyIndex);               
-int TSAPI_SDF_ImportKeyWithISK_ECC(void *hSessionHandle,
-                                   unsigned int uiISKIndex,
-                                   OSSL_ECCCipher *pucKey,
-                                   void **phKeyHandle);
-int TSAPI_SDF_ImportKeyWithKEK(void *hSessionHandle, unsigned int uiAlgID,
-    unsigned int uiKEKIndex, unsigned char *pucKey, unsigned int puiKeyLength,
-    void **phKeyHandle);
-int TSAPI_SDF_ExportSignPublicKey_ECC(void *hSessionHandle,
-                                      unsigned int uiKeyIndex,
-                                      OSSL_ECCrefPublicKey *pucPublicKey);
-int TSAPI_SDF_ExportEncPublicKey_ECC(void *hSessionHandle,
-                                      unsigned int uiKeyIndex,
-                                      OSSL_ECCrefPublicKey *pucPublicKey);
-int TSAPI_SDF_DestroyKey(void *hSessionHandle, void *hKeyHandle);
-int TSAPI_SDF_InternalEncrypt_ECC(void *hSessionHandle, unsigned int uiISKIndex,
-                                  unsigned char *pucData,
-                                  unsigned int uiDataLength,
-                                  OSSL_ECCCipher *pucEncData);
-int TSAPI_SDF_InternalDecrypt_ECC(void *hSessionHandle, unsigned int uiISKIndex,
-                                  OSSL_ECCCipher *pucEncData,
-                                  unsigned char *pucData,
-                                  unsigned int *puiDataLength);
-int TSAPI_SDF_Encrypt(void *hSessionHandle, void *hKeyHandle,
-    unsigned int uiAlgID, unsigned char *pucIV, unsigned char *pucData,
-    unsigned int uiDataLength, unsigned char *pucEncData,
-    unsigned int *puiEncDataLength);
-int TSAPI_SDF_Decrypt(void *hSessionHandle, void *hKeyHandle,
-    unsigned int uiAlgID, unsigned char *pucIV, unsigned char *pucEncData,
-    unsigned int uiEncDataLength, unsigned char *pucData,
-    unsigned int *puiDataLength);
-int TSAPI_SDF_CalculateMAC(void *hSessionHandle, void *hKeyHandle,
-    unsigned int uiAlgID, unsigned char *pucIV, unsigned char *pucData,
-    unsigned int uiDataLength, unsigned char *pucMac,
-    unsigned int *puiMACLength);
-int TSAPI_SDF_GenerateKey(void *hSessionHandle, uint8_t type, uint8_t no_kek,
-    uint32_t len, void **pkey_handle);
-int TSAPI_SDF_InternalSign_ECC(void *hSessionHandle, unsigned int uiISKIndex,
-                               unsigned char *pucData,
-                               unsigned int uiDataLength,
-                               OSSL_ECCSignature *pucSignature);
+typedef struct OSSL_RSArefPublicKey_st OSSL_RSArefPublicKey;
+typedef struct OSSL_RSArefPrivateKey_st OSSL_RSArefPrivateKey;
+
+
+ int TSAPI_SDF_OpenDevice(void **phDeviceHandle) ;
+ int TSAPI_SDF_CloseDevice(void *hDeviceHandle) ;
+ int TSAPI_SDF_OpenSession(void *hDeviceHandle, void **phSessionHandle) ;
+ int TSAPI_SDF_CloseSession(void *hSessionHandle) ;
+ int TSAPI_SDF_GetDeviceInfo(void *hDeviceHandle, DEVICEINFO *pstDeviceInfo) ;
+ int TSAPI_SDF_GenerateRandom(void *hSessionHandle, unsigned int uiLength,unsigned char *pucRandom) ;
+ int TSAPI_SDF_GetPrivateKeyAccessRight(void *hSessionHandle,unsigned int uiKeyIndex, unsigned char *pucPassword,unsigned int uiPwdLength) ;
+ int TSAPI_SDF_ReleasePrivateKeyAccessRight(void *hSessionHandle,unsigned int uiKeyIndex) ;
+ int TSAPI_SDF_ExportSignPublicKey_RSA(void *hSessionHandle, unsigned int uiKeyIndex, RSArefPublicKey *pubPublicKey) ;
+ int TSAPI_SDF_ExportEncPublicKey_RSA(void *hSessionHandle, unsigned int uiKeyIndex, RSArefPublicKey *pubPublicKey) ;
+ int TSAPI_SDF_GenerateKeyPair_RSA(unsigned int uiKeyBits, RSArefPublicKey *pucPublicKey, RSArefPrivateKey *pucPrivateKey) ;
+ int TSAPI_SDF_GenerateKeyWithIPK_RSA(void *hSessionHandle, unsigned int uiKeyIndex, unsigned int uiKeyBits, unsigned char *pucKey, unsigned int *puiKeyLength, void **phKeyHandle) ;
+ int TSAPI_SDF_GenerateKeyWithEPK_RSA(void *hSessionHandle, unsigned int uiKeyBits, RSArefPublicKey *pucPublicKey, unsigned char *pubKcy, unsigned int *puiKeyLength, void **phKeyHandle) ;
+ int TSAPI_SDF_ImportKeyWithISK_RSA(void *hSessionHandle, unsigned int uiISKIndex, unsigned char *pucKey, unsigned int PuiKeyLength, void **phKeyHandle) ;
+ int TSAPI_SDF_ExchangeDigitEnvelopeBaseOnRSA_fn(void *hSessionHandle, unsigned int uiKeyIndex, RSArefPublicKey *pucPublicKey, unsigned char *pucDEInput, unsigned int uiDELength, unsigned char *pucDEOutput, unsigned int *puiDELength);
+ int TSAPI_SDF_ExportSignPublicKey_ECC(void *hSessionHandle,unsigned int uiKeyIndex, ECCrefPublicKey *pucPublicKey);
+ int TSAPI_SDF_ExportEncPublicKey_ECC(void *hSessionHandle,unsigned int uiKeyIndex, ECCrefPublicKey *pucPublicKey);
+ int TSAPI_SDF_GenerateKeyPair_ECC(unsigned int uiAlgID, unsigned int uiKeyBits, ECCrefPublicKey *pucPublicKey, ECCrefPrivateKey *pucPrivateKey) ;
+ int TSAPI_SDF_GenerateKeyWithIPK_ECC(void *hSessionHandle,unsigned int uiIPKIndex, unsigned int uiKeyBits, ECCCipher *pucKey,void **phKeyHandle) ;
+ int TSAPI_SDF_GenerateKeyWithEPK_ECC(void *hSessionHandle,unsigned int uiKeyBits, unsigned int uiAlgID, ECCrefPublicKey *pucPublicKey,ECCCipher *pucKey, void **phKeyHandle) ;
+ int TSAPI_SDF_ImportKeyWithISK_ECC(void *hSessionHandle,unsigned int uiISKIndex, ECCCipher *pucKey,void **phKeyHandle) ;
+ int TSAPI_SDF_GenerateAgreementDataWithECC(void *hSessionHandle,unsigned int uiISKIndex, unsigned int uiKeyBits, unsigned char *pucSponsorID,unsigned int uiSponsorIDLength, ECCrefPublicKey *pucSponsorPublicKey,ECCrefPublicKey *pucSponsorTmpPublicKey, void **phAgreementHandle) ;
+ int TSAPI_SDF_GenerateKeyWithECC(void *hSessionHandle,unsigned char *pucResponseID, unsigned int uiResponseIDLength,ECCrefPublicKey *pucResponsePublicKey, ECCrefPublicKey *pucResponseTmpPublicKey,void *hAgreementHandle, void **phKeyHandle) ;
+ int TSAPI_SDF_GenerateAgreementDataAndKeyWithECC(void *hSessionHandle,unsigned int uiISKIndex, unsigned int uiKeyBits, unsigned char *pucResponseID,unsigned int uiResponseIDLength, unsigned char *pucSponsorID,unsigned int uiSponsorIDLength, ECCrefPublicKey *pucSponsorPublicKey,ECCrefPublicKey *pucSponsorTmpPublicKey, ECCrefPublicKey *pucResponsePublicKey,ECCrefPublicKey *pucResponseTmpPublicKey, void **phKeyHandle) ;
+ int TSAPI_SDF_ExchangeDigitEnvelopeBaseOnECC(void *hSessionHandle,unsigned int uiKeyIndex, unsigned int uiAlgID, ECCrefPublicKey *pucPublicKey,ECCCipher *pucEncDataIn, ECCCipher *pucEncDataOut) ;
+ int TSAPI_SDF_GenerateKeyWithKEK(void *hSessionHandle,unsigned int uiKeyBits, unsigned int uiAlgID, unsigned int uiKEKIndex,unsigned char *pucKey, unsigned int *puiKeyLength,void **phKeyHandle) ;
+ int TSAPI_SDF_ImportKeyWithKEK(void *hSessionHandle,unsigned int uiAlgID, unsigned int uiKEKIndex, unsigned char *pucKey,unsigned int puiKeyLength, void **phKeyHandle) ;
+ int TSAPI_SDF_DestroyKey(void *hSessionHandle, void *hKeyHandle);
+
+ int TSAPI_SDF_alPublicKeyOperation_RSA(void *hSessionHandle,RSArefPublicKey *pucPublicKey, unsigned char *pucDataInput,unsigned int uiInputLength, unsigned char *pucDataOutput,unsigned int *puiOutputLength) ;
+ int TSAPI_SDF_InternalPublicKeyOperation_RSA(void *hSessionHandle, unsigned int uiKeyIndex, unsigned char *pucDataInput, unsigned int uiInputLength, unsigned char *pucDataOutput, unsigned int *puiOutputLength) ;
+ int TSAPI_SDF_InternalPrivateKeyOperation_RSA(void *hSessionHandle,unsigned int uiKeyIndex, unsigned char *pucDataInput,unsigned int uiInputLength, unsigned char *pucDataOutput,unsigned int *puiOutputLength) ;
+ int TSAPI_SDF_alVerify_ECC(void *hSessionHandle,unsigned int uiAlgID, ECCrefPublicKey *pucPublicKey,unsigned char *pucDataInput, unsigned int uiInputLength,ECCSignature *pucSignature) ;
+ int TSAPI_SDF_InternalSign_ECC(void *hSessionHandle,unsigned int uiISKIndex, unsigned char *pucData,unsigned int uiDataLength, ECCSignature *pucSignature) ;
+ int TSAPI_SDF_InternalVerify_ECC(void *hSessionHandle,unsigned int uiISKIndex, unsigned char *pucData,unsigned int uiDataLength, ECCSignature *pucSignature) ;
+ int TSAPI_SDF_alEncrypt_ECC(void *hSessionHandle,unsigned int uiAlgID, ECCrefPublicKey *pucPublicKey,unsigned char *pucData, unsigned int uiDataLength,ECCCipher *pucEncData) ;
+ int TSAPI_SDF_Encrypt(void *hSessionHandle, void *hKeyHandle,unsigned int uiAlgID, unsigned char *pucIV, unsigned char *pucData,unsigned int uiDataLength, unsigned char *pucEncData,unsigned int *puiEncDataLength) ;
+ int TSAPI_SDF_Decrypt(void *hSessionHandle, void *hKeyHandle,unsigned int uiAlgID, unsigned char *pucIV, unsigned char *pucEncData,unsigned int uiEncDataLength, unsigned char *pucData,unsigned int *puiDataLength) ;
+ int TSAPI_SDF_CalculateMAC(void *hSessionHandle, void *hKeyHandle,unsigned int uiAlgID, unsigned char *pucIV, unsigned char *pucData,unsigned int uiDataLength, unsigned char *pucMac,unsigned int *puiMACLength) ;
+
+#ifdef TSAPI_SDF_VERSION_2023
+ int TSAPI_SDF_AuthEnc(void *hSessionHandle, void *hKeyHandle, unsigned int uiAlgID, unsigned char *pucStartVar, unsigned int uiStartVarLength, unsigned char *pucAad, unsigned int uiAadLength, unsigned char *pucData, unsigned int uiDataLength, unsigned char *pucEncData, unsigned int *puiEncDataLength, unsigned char *pucAuthData, unsigned int *puiAuthDataLength) ;
+ int TSAPI_SDF_AuthDec(void *hSessionHandle, void *hKeyHandle, unsigned int uiAlgID, unsigned char *pucStartVar, unsigned int uiStartVarLength, unsigned char *pucAad, unsigned int uiAadLength, unsigned char *pucAuthData, unsigned int *puiAuthDataLength, unsigned char *pucEncData, unsigned int uiEncDataLength, unsigned char *pucData, unsigned int *puiDataLength) ;
+ int TSAPI_SDF_EncryptInit(void *hSessionHandle, void *hKeyHandle, unsigned int uiAlgID, unsigned char *pucIV, unsigned int uiIVLength) ;
+ int TSAPI_SDF_EncryptUpdate(void *hSessionHandle, char *pucData, unsigned int uiDataLength, unsigned char *pucEncData, unsigned int *puiEncDataLength) ;
+ int TSAPI_SDF_EncryptFinal(void *hSessionHandle, unsigned char *pucLastEncData, unsigned int *puiLastEncDataLength) ;
+ int TSAPI_SDF_DecryptInit(void *hSessionHandle, void *hKeyHandle, unsigned int uiAlgID, unsigned char *pucIV, unsigned int uiIVLength) ;
+ int TSAPI_SDF_DecryptUpdate(void *hSessionHandle, char *pucEncData, unsigned int uiEncDataLength, unsigned char *pucData, unsigned int *puiDataLength) ;
+ int TSAPI_SDF_DecryptFinal(void *hSessionHandle, unsigned char *pucLastData, unsigned int *puiLastDataLength) ;
+ int TSAPI_SDF_CalculateMACInit(void *hSessionHandle, void *hKeyHandle, unsigned int uiAlgID, unsigned char *pucIV, unsigned int uiIVLength) ;
+ int TSAPI_SDF_CalculateMACUpdate(void *hSessionHandle, unsigned char *pucData, unsigned int uiDataLength) ;
+ int TSAPI_SDF_CalculateMACFinal(void *hSessionHandle, unsigned char *pucMac, unsigned int *puiMacLength) ;
+ int TSAPI_SDF_AuthEncInit(void *hSessionHandle, void *hKeyHandle, unsigned int uiAlgID, unsigned char *pucStartVar, unsigned int uiStartVarLength, unsigned char *pucAad, unsigned int uiAadLength, unsigned int uiDataLength) ;
+ int TSAPI_SDF_AuthEncUpdate(void *hSessionHandle, unsigned char *pucData, unsigned int uiDataLength, unsigned char *pucEncData, unsigned int *puiEncDataLength) ;
+ int TSAPI_SDF_AuthEncFinal(void *hSessionHandle, unsigned char *pucLastEncData, unsigned int *puiLastEncDataLength, unsigned char *pucAuthData, unsigned int *puiAuthDataLength) ;
+ int TSAPI_SDF_AuthDecInit(void *hSessionHandle, void *hKeyHandle, unsigned int uiAlgID, unsigned char *pucStartVar, unsigned int uiStartVarLength, unsigned char *pucAad, unsigned int uiAadLength, unsigned char *pucAuthData, unsigned int uiAuthDataLength, unsigned int uiDataLength) ;
+ int TSAPI_SDF_AuthDecUpdate(void *hSessionHandle, unsigned char *pucEncData, unsigned int uiEncDataLength, unsigned char *pucData, unsigned int *puiDataLength) ;
+ int TSAPI_SDF_AuthDecFinal(void *hSessionHandle, unsigned char *pucLastData, unsigned int *puLastDataLength) ;
+ int TSAPI_SDF_HMACInit(void *hSessionHandle, void *hKeyHandle, unsigned int uiAlgID) ;
+ int TSAPI_SDF_HMACUpdate(void *hSessionHandle, char *pucData, unsigned int uiDataLength) ;
+ int TSAPI_SDF_HMACFinal(void *hSessionHandle, char *pucHMac, unsigned int *puiMacLength) ;
+#endifunsigned
+ int TSAPI_SDF_HashInit(void *hSessionHandle, unsigned int uiAlgID, ECCrefPublicKey *pucPublicKey, char *pucID, unsigned int uiIDLength) ;
+ int TSAPI_SDF_HashUpdate(void *hSessionHandle, char *pucData, unsigned int uiDataLength) ;
+ int TSAPI_SDF_HashFinal(void *hSessionHandle, char *pucHash, unsigned int *puiHashLength) ;
+ int TSAPI_SDF_CreateFile(void *hSessionHandle, char *pucFileName, unsigned int uiNameLen, unsigned int uiFileSize) ;
+ int TSAPI_SDF_ReadFile(void *hSessionHandle, char *pucfileName, unsigned int uiNameLen, unsigned int uiOffset, unsigned int *puiFileLength, unsigned char *pucBuffer) ;
+ int TSAPI_SDF_WriteFile(void *hSessionHandle, char *pucFileName, unsigned int uiNamelen, unsigned int uiOffset, unsigned int uiFileLength, char *pucBuffer) ;
+ int TSAPI_SDF_DeleteFile(void *hSessionHandle, char *pucFileName, unsigned int uiNameLen) ;
+
+#ifdef TSAPI_SDF_VERSION_2023
+//  int TSAPI_SDF_GenerateKeyPair_RSA(unsigned int uiKeyBits, RSArefPublicKey *pucPublicKey, RSArefPrivateKey *pucPrivateKey) ;
+//  int TSAPI_SDF_GenerateKeyPair_ECC(unsigned int uiAlgID, unsigned int uiKeyBits, ECCrefPublicKey *pucPublicKey, ECCrefPrivateKey *pucPrivateKey) ;
+ int TSAPI_SDF_alPrivateKeyOperation_RSA(RSArefPrivateKey *pucPrivateKey, unsigned char *pucDataInput, unsigned int uiInputLength, unsigned char *pucDataOutput, unsigned int *puiOutputLength) ;
+ int TSAPI_SDF_alSign_ECC(unsigned int uiAlgID, ECCrefPrivateKey *pucPrivateKey, unsigned char *pucDataInput, unsigned int uiInputLength, ECCSignature *pucSignature) ;
+ int TSAPI_SDF_alDecrypt_ECC(unsigned int uiAlgID, ECCrefPrivateKey *pucPrivateKey, ECCCipher *pucEncData, unsigned char *pucData, unsigned int *uiDataLength) ;
+ int TSAPI_SDF_alSign_SM9(SM9SignMasterPublicKey *pSignMasterPublicKey, SM9SignUserPrivateKey *pSignUserPrivateKey, unsigned char *pucData, unsigned int uiDataLength, SM9Signature *pSignature) ;
+ int TSAPI_SDF_alDecrypt_SM9(SM9EncUserPrivateKey *pEncUserPrivateKey, unsigned char *pucUserID, unsigned int uiUserIDLen, unsigned char *pucIV, unsigned char *pucData, unsigned int uiDataLength, SM9Cipher *pEncData) ;
+ int TSAPI_SDF_alKeyEncrypt(unsigned int uiAlgID, unsigned char *pucKey, unsigned int uiKeyLength, unsigned char *pucIV, unsigned int uiIVLength, unsigned char *pucData, unsigned int uiDataLength, unsigned char *pucEncData, unsigned int *puiEncDataLength) ;
+ int TSAPI_SDF_alKeyDecrypt(unsigned int uiAlgID, unsigned char *pucKey, unsigned int uiKeyLength, unsigned char *pucIV, unsigned int uiIVLength, unsigned char *pucEncData, unsigned int uiEncDataLength, unsigned char *pucData, unsigned int *puiDataLength) ;
+ int TSAPI_SDF_alKeyEncryptInit(void *hSessionHandle, unsigned int uiAlgID, unsigned char *pucKey, unsigned int uiKeyLength, unsigned char *pucIV, unsigned int uiIVLength) ;
+ int TSAPI_SDF_alKeyDecryptInit(void *hSessionHandle, unsigned int uiAlgID, unsigned char *pucKey, unsigned int uiKeyLength, unsigned char *pucIV, unsigned int uiIVLength) ;
+ int TSAPI_SDF_alKeyHMACInit(void *hSessionHandle, unsigned int uiAlgID, unsigned char *pucKey, unsigned int uiKeyLength) ;
+ int TSAPI_SDF_GenerateKey(void *hSessionHandle, uint8_t type, uint8_t no_kek, uint32_t len, void **pkey_handle) ;
+#endif
+
 
 # ifdef __cplusplus
 }
 # endif
-#endif /* OPENSSL_SDF_H */
+#endif /* OPENSSL_TSAPI_SDF_H */

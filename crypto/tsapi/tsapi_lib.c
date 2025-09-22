@@ -23,7 +23,7 @@
 #include "crypto/rand.h"
 #include "crypto/sm2.h"
 #include "../sdf/sdf_local.h"
-#ifdef SDF_LIB
+#ifdef SDF_LIB_DEBUG
 # include "sdfe_api.h"
 #endif
 
@@ -96,7 +96,7 @@ int TSAPI_DelSm2KeyWithIndex(int index, int sign, const char *user,
                              const char *password)
 {
     int ok = 0;
-#ifdef SDF_LIB
+#ifdef SDF_LIB_DEBUG
     void *hDeviceHandle = NULL;
     void *hSessionHandle = NULL;
     sdfe_login_arg_t login_arg;
@@ -148,7 +148,7 @@ int TSAPI_GenerateSM2KeyWithIndex(int index, int sign, const char *user,
                                   const char *password)
 {
     int ok = 0;
-#ifdef SDF_LIB
+#ifdef SDF_LIB_DEBUG
     void *hDeviceHandle = NULL;
     void *hSessionHandle = NULL;
     sdfe_login_arg_t login_arg;
@@ -366,7 +366,7 @@ int TSAPI_ImportSM2Key(int index, int sign, const char *user,
                        const char *password, const EVP_PKEY *sm2_pkey)
 {
     int ok = 0;
-#ifdef SDF_LIB
+#ifdef SDF_LIB_DEBUG
     int area;
     void *hDeviceHandle = NULL;
     void *hSessionHandle = NULL;
@@ -443,7 +443,7 @@ int TSAPI_ImportSM2KeyWithEvlp(int index, int sign, const char *user,
                                size_t keylen, unsigned char *dek, size_t deklen)
 {
     int ok = 0;
-#ifdef SDF_LIB
+#ifdef SDF_LIB_DEBUG
     int area;
     void *hDeviceHandle = NULL;
     void *hSessionHandle = NULL;
@@ -528,7 +528,7 @@ int TSAPI_ExportSM2KeyWithEvlp(int index, int sign, const char *user,
 
 {
     int ok = 0;
-#ifdef SDF_LIB
+#ifdef SDF_LIB_DEBUG
     int area;
     void *hDeviceHandle = NULL;
     void *hSessionHandle = NULL;
@@ -630,7 +630,7 @@ EVP_PKEY *TSAPI_ExportSM2KeyWithIndex(int index, int sign, const char *user,
                                       const char *password)
 {
     EVP_PKEY *pkey = NULL;
-#ifdef SDF_LIB
+#ifdef SDF_LIB_DEBUG
     void *hDeviceHandle = NULL;
     void *hSessionHandle = NULL;
     sdfe_login_arg_t login_arg;
@@ -692,7 +692,7 @@ end:
 EVP_PKEY *TSAPI_ExportSM2PubKeyWithIndex(int index, int sign)
 {
     EVP_PKEY *pkey = NULL;
-#ifdef SDF_LIB
+#ifdef SDF_LIB_DEBUG
     void *hDeviceHandle = NULL;
     void *hSessionHandle = NULL;
     OSSL_ECCrefPublicKey pubkey;
@@ -764,7 +764,7 @@ end:
 int TSAPI_UpdateSm2KeyWithIndex(int index, int sign, const char *user, const char *password)
 {
     int ok = 0;
-#ifdef SDF_LIB
+#ifdef SDF_LIB_DEBUG
     void *hDeviceHandle = NULL;
     void *hSessionHandle = NULL;
     sdfe_login_arg_t login_arg;
@@ -954,7 +954,7 @@ unsigned char *TSAPI_SM2DecryptWithISK(int isk, const unsigned char *in,
                                        size_t inlen, size_t *outlen)
 {
     unsigned char *out = NULL;
-#ifdef SDF_LIB
+#ifdef SDF_LIB_DEBUG
     void *hDeviceHandle = NULL;
     void *hSessionHandle = NULL;
     OSSL_ECCCipher *ecc = NULL;
@@ -1001,7 +1001,7 @@ unsigned char *TSAPI_SM2EncryptWithISK(int isk, const unsigned char *in,
                                        size_t inlen, size_t *outlen)
 {
     unsigned char *out = NULL;
-#ifdef SDF_LIB
+#ifdef SDF_LIB_DEBUG
     void *hDeviceHandle = NULL;
     void *hSessionHandle = NULL;
     OSSL_ECCCipher *ecc = NULL;
@@ -1146,7 +1146,7 @@ static unsigned char *do_SM4Crypt(int mode, int enc,
                                   const unsigned char *in, size_t inlen,
                                   size_t *outlen)
 {
-# ifdef SDF_LIB
+# ifdef SDF_LIB_DEBUG
     void *hDeviceHandle = NULL;
     void *hSessionHandle = NULL;
     void *hkeyHandle = NULL;
@@ -1203,7 +1203,7 @@ static unsigned char *do_SM4Crypt(int mode, int enc,
 
         len += lenf;
     }
-# ifdef SDF_LIB
+# ifdef SDF_LIB_DEBUG
     else {
 
         if (TSAPI_SDF_OpenDevice(&hDeviceHandle) != OSSL_SDR_OK)
@@ -1252,7 +1252,7 @@ static unsigned char *do_SM4Crypt(int mode, int enc,
     *outlen = len;
 end:
     EVP_CIPHER_CTX_free(ctx);
-# ifdef SDF_LIB
+# ifdef SDF_LIB_DEBUG
     if (isk >= 0) {
         TSAPI_SDF_DestroyKey(hSessionHandle, hkeyHandle);
         TSAPI_SDF_ReleasePrivateKeyAccessRight(hSessionHandle, isk);
