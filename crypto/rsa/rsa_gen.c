@@ -438,14 +438,10 @@ static int rsa_keygen(OSSL_LIB_CTX *libctx, RSA *rsa, int bits, int primes,
             && bits >= 2048
             && (e_value == NULL || BN_num_bits(e_value) > 16))
         ok = ossl_rsa_sp800_56b_generate_key(rsa, bits, e_value, cb);
-#ifndef FIPS_MODULE
     else
         ok = rsa_multiprime_keygen(rsa, bits, primes, e_value, cb);
 #endif /* FIPS_MODULE */
 
-#ifdef FIPS_MODULE
-    pairwise_test = 1; /* FIPS MODE needs to always run the pairwise test */
-#endif
     if (pairwise_test && ok > 0) {
         OSSL_CALLBACK *stcb = NULL;
         void *stcbarg = NULL;
