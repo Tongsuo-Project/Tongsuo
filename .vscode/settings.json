@@ -1,5 +1,10 @@
 {
     "files.associations": {
-        "sdf_bind.h": "c"
+        "sdf_bind.h": "c",
+        "evp.h": "c",
+        "sdf.h": "c",
+        "sdf_local.h": "c",
+        "ec.h": "c",
+        "tsapi.h": "c"
     }
 }

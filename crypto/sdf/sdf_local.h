@@ -27,9 +27,10 @@
 #define ECCref_MAX_BITS 512
 #define ECCref_MAX_LEN ((ECCref_MAX_BITS + 7) / 8)
 
-
-
-typedef struct DeviceInfo_st{
+// include/openssl/sdf.h
+#ifndef DEVICEINFO_DEFINED
+#define DEVICEINFO_DEFINED
+typedef struct DeviceInfo_st {
     unsigned char IssuerName[40];
     unsigned char SerialNumber[16];
     unsigned char FirmwareVersion[16];
@@ -40,7 +41,7 @@ typedef struct DeviceInfo_st{
     unsigned int HashAlgAbility;
     unsigned int BufferSize;
 } DEVICEINFO;
-
+#endif // DEVICEINFO_DEFINED
 typedef struct RSArefPublicKey_st{
     unsigned int bits;
     unsigned char m[RSAref_MAX_LEN];
@@ -74,6 +75,7 @@ typedef struct ECCCipher_st{
 	unsigned char C[1];
 	// Extend sizeof(C) to SM2_MAX_PLAINTEXT_SIZE
 	// unsigned char C_[254]; 
+    unsigned char *C_;
 } ECCCipher;
 typedef struct ECCSignature_st{
     unsigned char r[ECCref_MAX_LEN];

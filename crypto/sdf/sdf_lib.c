@@ -30,13 +30,14 @@ static DSO *sdf_dso = NULL;
 
 static CRYPTO_ONCE sdf_lib_once = CRYPTO_ONCE_STATIC_INIT;
 static SDF_METHOD sdfm;
+static int tag = 0;
 
 DEFINE_RUN_ONCE_STATIC(ossl_sdf_lib_init)
 {
 # ifdef SDF_LIB_SHARED
 #  ifndef LIBSDF
 // #   define LIBSDF "sdf"
-#  define LIBSDF "libwsds.so"
+#  define LIBSDF "swsds"
 #  endif
 
     sdf_dso = DSO_load(NULL, LIBSDF, NULL, 0);
@@ -63,10 +64,31 @@ void ossl_sdf_lib_cleanup(void)
 static const SDF_METHOD *sdf_get_method(void)
 {
     const SDF_METHOD *meth = &ts_sdf_meth;
+    printf("==========DEBUG1========\n");
 
 #ifdef SDF_LIB
-    if (RUN_ONCE(&sdf_lib_once, ossl_sdf_lib_init))
-        meth = &sdfm;
+    printf("==========DEBUG========\n");
+    if (tag == 0)
+    {
+        sdf_dso = DSO_load(NULL, LIBSDF, NULL, 0);
+        printf("==========DEBUG2========\n");
+        if (sdf_dso != NULL) {
+            #include "sdf_bind.h"
+            sdf_bind_init(&sdfm, sdf_dso);
+
+            printf("Debug1: This is a debug message.\n");
+        }
+        tag = 1;
+    }
+
+    // if (RUN_ONCE(&sdf_lib_once, ossl_sdf_lib_init))
+    // {
+    //     meth = &sdfm;
+    //      printf("==========DEBUG2========\n");
+
+    // }
+    meth = &sdfm;
+
 #endif
     return meth;
 }
@@ -1047,38 +1069,38 @@ int TSAPI_SDF_DeleteFile(void *hSessionHandle, unsigned char *pucFileName,
  * 验证调试类 (12)
  * ============================================================= */
 #if defined(SDF_VERSION_2023)
-// int TSAPI_SDF_GenerateKeyPair_RSA(unsigned int uiKeyBits,
-//                                   OSSL_RSArefPublicKey *pucPublicKey,
-//                                   OSSL_RSArefPrivateKey *pucPrivateKey)
-// {
-//     const SDF_METHOD *meth = sdf_get_method();
-//     RSArefPublicKey raw_pub; RSArefPrivateKey raw_pri;
-//     if (meth == NULL || meth->GenerateKeyPair_RSA == NULL)
-//         return OSSL_SDR_NOTSUPPORT;
-//     int ret = meth->GenerateKeyPair_RSA(uiKeyBits, &raw_pub, &raw_pri);
-//     if (ret == OSSL_SDR_OK) {
-//         sdf_to_ossl_rsa_pub(&raw_pub, pucPublicKey);
-//         memcpy(pucPrivateKey, &raw_pri, sizeof(RSArefPrivateKey)); /* 简单复制 */
-//     }
-//     return ret;
-// }
+int TSAPI_SDF_GenerateKeyPair_RSA(unsigned int uiKeyBits,
+                                  OSSL_RSArefPublicKey *pucPublicKey,
+                                  OSSL_RSArefPrivateKey *pucPrivateKey)
+{
+    const SDF_METHOD *meth = sdf_get_method();
+    RSArefPublicKey raw_pub; RSArefPrivateKey raw_pri;
+    if (meth == NULL || meth->GenerateKeyPair_RSA == NULL)
+        return OSSL_SDR_NOTSUPPORT;
+    int ret = meth->GenerateKeyPair_RSA(uiKeyBits, &raw_pub, &raw_pri);
+    if (ret == OSSL_SDR_OK) {
+        sdf_to_ossl_rsa_pub(&raw_pub, pucPublicKey);
+        memcpy(pucPrivateKey, &raw_pri, sizeof(RSArefPrivateKey)); /* 简单复制 */
+    }
+    return ret;
+}
 
-// int TSAPI_SDF_GenerateKeyPair_ECC(unsigned int uiAlgID,
-//                                   unsigned int uiKeyBits,
-//                                   OSSL_ECCrefPublicKey *pucPublicKey,
-//                                   OSSL_ECCrefPrivateKey *pucPrivateKey)
-// {
-//     const SDF_METHOD *meth = sdf_get_method();
-//     ECCrefPublicKey raw_pub; ECCrefPrivateKey raw_pri;
-//     if (meth == NULL || meth->GenerateKeyPair_ECC == NULL)
-//         return OSSL_SDR_NOTSUPPORT;
-//     int ret = meth->GenerateKeyPair_ECC(uiAlgID, uiKeyBits, &raw_pub, &raw_pri);
-//     if (ret == OSSL_SDR_OK) {
-//         sdf_to_ossl_eccref_publickey(&raw_pub, pucPublicKey);
-//         memcpy(pucPrivateKey, &raw_pri, sizeof(ECCrefPrivateKey));
-//     }
-//     return ret;
-// }
+int TSAPI_SDF_GenerateKeyPair_ECC(unsigned int uiAlgID,
+                                  unsigned int uiKeyBits,
+                                  OSSL_ECCrefPublicKey *pucPublicKey,
+                                  OSSL_ECCrefPrivateKey *pucPrivateKey)
+{
+    const SDF_METHOD *meth = sdf_get_method();
+    ECCrefPublicKey raw_pub; ECCrefPrivateKey raw_pri;
+    if (meth == NULL || meth->GenerateKeyPair_ECC == NULL)
+        return OSSL_SDR_NOTSUPPORT;
+    int ret = meth->GenerateKeyPair_ECC(uiAlgID, uiKeyBits, &raw_pub, &raw_pri);
+    if (ret == OSSL_SDR_OK) {
+        sdf_to_ossl_eccref_publickey(&raw_pub, pucPublicKey);
+        memcpy(pucPrivateKey, &raw_pri, sizeof(ECCrefPrivateKey));
+    }
+    return ret;
+}
 
 int TSAPI_SDF_ExternalPrivateKeyOperation_RSA(
     OSSL_RSArefPrivateKey *pucPrivateKey, unsigned char *pucDataInput,
