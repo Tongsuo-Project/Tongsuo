@@ -22,7 +22,7 @@ extern int SDF_GenerateKeyPair_RSA(unsigned int uiKeyBits, RSArefPublicKey *pucP
 extern int SDF_GenerateKeyWithIPK_RSA(void *hSessionHandle, unsigned int uiKeyIndex, unsigned int uiKeyBits, unsigned char *pucKey, unsigned int *puiKeyLength, void **phKeyHandle) __attribute__((weak));
 extern int SDF_GenerateKeyWithEPK_RSA(void *hSessionHandle, unsigned int uiKeyBits, RSArefPublicKey *pucPublicKey, unsigned char *pubKcy, unsigned int *puiKeyLength, void **phKeyHandle) __attribute__((weak));
 extern int SDF_ImportKeyWithISK_RSA(void *hSessionHandle, unsigned int uiISKIndex, unsigned char *pucKey, unsigned int PuiKeyLength, void **phKeyHandle) __attribute__((weak));
-extern int SDF_ExchangeDigitEnvelopeBaseOnRSA_fn(void *hSessionHandle, unsigned int uiKeyIndex, RSArefPublicKey *pucPublicKey, unsigned char *pucDEInput, unsigned int uiDELength, unsigned char *pucDEOutput, unsigned int *puiDELength)__attribute__((weak));
+extern int SDF_ExchangeDigitEnvelopeBaseOnRSA(void *hSessionHandle, unsigned int uiKeyIndex, RSArefPublicKey *pucPublicKey, unsigned char *pucDEInput, unsigned int uiDELength, unsigned char *pucDEOutput, unsigned int *puiDELength)__attribute__((weak));
 extern int SDF_ExportSignPublicKey_ECC(void *hSessionHandle,unsigned int uiKeyIndex, ECCrefPublicKey *pucPublicKey)__attribute__((weak));
 extern int SDF_ExportEncPublicKey_ECC(void *hSessionHandle,unsigned int uiKeyIndex, ECCrefPublicKey *pucPublicKey)__attribute__((weak));
 extern int SDF_GenerateKeyPair_ECC(unsigned int uiAlgID, unsigned int uiKeyBits, ECCrefPublicKey *pucPublicKey, ECCrefPrivateKey *pucPrivateKey) __attribute__((weak));

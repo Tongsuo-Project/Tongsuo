@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Tongsuo Project Authors. All Rights Reserved.
+ * Copyright 2025 The Tongsuo Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -9,9 +9,6 @@
 
 
 // OK
-
-
-
 #include <openssl/crypto.h>
 #include <openssl/types.h>
 #include <openssl/sdf.h>
@@ -20,6 +17,13 @@
 #include "internal/sdf.h"
 #include "sdf_local.h"
 #include <string.h>
+// #define DEBUG
+// #ifdef DEBUG
+//     #define debug_printf(...) printf(__VA_ARGS__)
+// #else
+//     #define debug_printf(...)
+// #endif
+
 
 #ifdef SDF_LIB
 # ifdef SDF_LIB_SHARED
@@ -64,14 +68,11 @@ void ossl_sdf_lib_cleanup(void)
 static const SDF_METHOD *sdf_get_method(void)
 {
     const SDF_METHOD *meth = &ts_sdf_meth;
-    printf("==========DEBUG1========\n");
 
 #ifdef SDF_LIB
-    printf("==========DEBUG========\n");
     if (tag == 0)
     {
         sdf_dso = DSO_load(NULL, LIBSDF, NULL, 0);
-        printf("==========DEBUG2========\n");
         if (sdf_dso != NULL) {
             #include "sdf_bind.h"
             sdf_bind_init(&sdfm, sdf_dso);
@@ -113,18 +114,29 @@ static void sdf_to_ossl_ecc_signature(const ECCSignature *sdf_sig,
     memcpy(ossl_sig->s, sdf_sig->s, ECCref_MAX_LEN);
 }
 
-static void sdf_to_ossl_ecc_cipher(const ECCCipher *sdf_c,
-                                   OSSL_ECCCipher *ossl_c)
+static void sdf_to_ossl_ecc_cipher(const ECCCipher *sdf_c, OSSL_ECCCipher *ossl_c)
 {
-    if (sdf_c == NULL || ossl_c == NULL)return;
+if (sdf_c == NULL || ossl_c == NULL) {
+        return -1;
+    }
+
     memcpy(ossl_c->x, sdf_c->x, ECCref_MAX_LEN);
     memcpy(ossl_c->y, sdf_c->y, ECCref_MAX_LEN);
     memcpy(ossl_c->M, sdf_c->M, sizeof(sdf_c->M));
+    
     ossl_c->L = sdf_c->L;
-    /* C + C_ 合并为连续缓冲区（目标结构应与 header 中注释一致） */
-    ossl_c->C[0] = sdf_c->C[0];
-    memcpy(ossl_c->C + 1, sdf_c->C_, sizeof(sdf_c->C_));
+    
+    if (ossl_c->L > sizeof(ossl_c->C)) {
+        fprintf(stderr, "ossl_c->C space is insufficient, need %d, have %zu\n", 
+                ossl_c->L, sizeof(ossl_c->C));
+        return -1;
+    }
+    
+    memcpy(ossl_c->C, sdf_c->C, sdf_c->L);
+    
+    return 0;
 }
+
 
 static void sdf_to_ossl_rsa_pub(const RSArefPublicKey *sdf_rsa,
                                 OSSL_RSArefPublicKey *ossl_rsa)
@@ -599,7 +611,6 @@ int TSAPI_SDF_ExternalPublicKeyOperation_RSA(void *hSessionHandle,
         sdf_to_ossl_rsa_pub(&raw, pucPublicKey);
     return ret;
 }
-
 int TSAPI_SDF_InternalPublicKeyOperation_RSA(void *hSessionHandle,
                                              unsigned int uiKeyIndex,
                                              unsigned char *pucDataInput,

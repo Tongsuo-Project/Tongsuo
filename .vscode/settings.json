@@ -5,6 +5,17 @@
         "sdf.h": "c",
         "sdf_local.h": "c",
         "ec.h": "c",
-        "tsapi.h": "c"
-    }
+        "tsapi.h": "c",
+        "macros.h": "c",
+        "sgd.h": "c",
+        "progs.h": "c",
+        "apps.h": "c",
+        "string.h": "c",
+        "stdio.h": "c",
+        "thread_once.h": "c",
+        "crypto.h": "c",
+        "skf_local.h": "c",
+        "*.inc": "c"
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }

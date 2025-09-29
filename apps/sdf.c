@@ -86,7 +86,6 @@ const OPTIONS sdf_options[] = {
     {NULL}
 };
 
-/* 辅助函数 */
 static int parse_index(const char *arg)
 {
     int index = atoi(arg);
@@ -112,6 +111,8 @@ static void print_version(void)
     BIO_printf(bio_out, "SDF Command Line Tool\n");
     BIO_printf(bio_out, "Based on GM/T 0018-2012 Standard\n");
     BIO_printf(bio_out, "Built with Tongsuo Project\n");
+
+
 }
 
 /* 测试函数 */

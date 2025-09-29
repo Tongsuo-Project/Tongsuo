@@ -75,7 +75,7 @@ typedef struct ECCCipher_st{
 	unsigned char C[1];
 	// Extend sizeof(C) to SM2_MAX_PLAINTEXT_SIZE
 	// unsigned char C_[254]; 
-    unsigned char *C_;
+    // unsigned char *C_;
 } ECCCipher;
 typedef struct ECCSignature_st{
     unsigned char r[ECCref_MAX_LEN];

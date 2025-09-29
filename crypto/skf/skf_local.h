@@ -16,98 +16,188 @@ extern "C" {
 
 // #include "skf_ext.h"
 
-/**
- * @brief Default Config
- *
- */
+
 #define SKF_DEFAULT_ADMIN_PIN_RETRY_COUNT   10
 #define SKF_DEFAULT_USER_PIN_RETRY_COUNT    10
 #define SKF_DEFAULT_FILE_RIGHTS             0
 
+#define MAX_RSA_MODULUS_LEN 256
+#define MAX_RSA_EXPONENT_LEN 4
+
+#define ECC_MAX_XCOORDINATE_BITS_LEN 512
+#define ECC_MAX_YCOORDINATE_BITS_LEN 512
+#define MAX_IV_LEN 32
+typedef struct Struct_Version{
+    unsigned char major;
+    unsigned char minor;
+}VERSION;
+
+typedef struct Struct_DEVINFO{
+    VERSION Version;
+    unsigned char Manufacturer[64];
+    unsigned char Issuer[64];
+    unsigned char Label[32];
+    unsigned char SerialNumber[32];
+    VERSION HWVersion;
+    VERSION FirmwareVersion;
+    unsigned int AlgSymCap;
+    unsigned int AlgAsymCap;
+    unsigned int DevAuthAlgId;
+    unsigned int TotalSpace;
+    unsigned int FreeSpace;
+    unsigned char Reserved[64];
+}DEVINFO,*PDEVINFO;
+
+
+typedef struct Struct_RSAPUBLICKEYBLOB{
+    unsigned int AlgID;
+    unsigned int BitLen;
+    unsigned char Modulus[MAX_RSA_MODULUS_LEN];
+    unsigned char PublicExponent[MAX_RSA_EXPONENT_LEN];
+}RSAPUBLICKEYBLOB,*PRSAPUBLICKEYBLOB;
+
+typedef struct  Struct_RSAPRIVATEKEYBLOB{
+    unsigned int AlgID;
+    unsigned int BitLen;
+    unsigned char Modulus[MAX_RSA_MODULUS_LEN];
+    unsigned char PublicExponent[MAX_RSA_EXPONENT_LEN];
+    unsigned char PrivateExponent[MAX_RSA_MODULUS_LEN];
+    unsigned char Prime1[MAX_RSA_MODULUS_LEN/2];
+    unsigned char Prime2[MAX_RSA_MODULUS_LEN/2];
+    unsigned char Prime1Exponent[MAX_RSA_MODULUS_LEN/2];
+    unsigned char Prime2Exponent[MAX_RSA_MODULUS_LEN/2];
+    unsigned char Coefficient[MAX_RSA_MODULUS_LEN/2];
+}RSAPRIVATEKEYBLOB,*PRSAPRIVATEKEYBLOB;
+
+
+typedef struct Struct_ECCPUBLICKEYBLOB{
+    unsigned int BitLen;
+    unsigned char XCoordinate[ECC_MAX_XCOORDINATE_BITS_LEN/8];
+    unsigned char YCoordinate[ECC_MAX_YCOORDINATE_BITS_LEN/8];
+}ECCPUBLICKEYBLOB,*PECCPUBLICKEYBLOB;
+
+typedef struct Struct_ECCCIPHERBLOB{
+    unsigned char XCoordinate[ECC_MAX_XCOORDINATE_BITS_LEN/8];
+    unsigned char YCoordinate[ECC_MAX_YCOORDINATE_BITS_LEN/8];
+    unsigned char HASH[32];
+    unsigned int CipherLen;
+    unsigned char Cipher[1];
+}ECCCIPHERBLOB,*PECCCIPHERBLOB;
+typedef struct Struct_ECCSIGNATUREBLOB{
+    unsigned char r[ECC_MAX_XCOORDINATE_BITS_LEN/8];
+    unsigned char s[ECC_MAX_XCOORDINATE_BITS_LEN/8];
+}ECCSIGNATUREBLOB,*PECCSIGNATUREBLOB;
+
+typedef struct Struct_BLOCKCIPHERPARAM{
+    unsigned char IV[MAX_IV_LEN];
+    unsigned int IVLen;
+    unsigned int PaddingType;
+    unsigned int FeedBitLen;
+}BLOCKCIPHERPARAM,*PBLOCKCIPHERPARAM;
+
+typedef struct SKF_ENVELOPEDKEYBLOB
+{
+    unsigned int Version;
+    unsigned int ulSymmAlgID;
+    unsigned int ulBits;
+    unsigned char cbEncryptedPriKey[64];
+    ECCPUBLICKEYBLOB PubKey;
+    ECCCIPHERBLOB ECCCipherBlob;
+};
+
+
+typedef struct Struct_FILEATTRIBUTE{
+    unsigned char FileName[32];
+    unsigned int FileSize;
+    unsigned int ReadRights;
+    unsigned int WriteRights;
+}FILEATTRIBUTE,*PFILEATTRIBUTE;
+
+
 /* SKF Standard API */
-typedef ULONG (*SKF_WaitForDevEvent_fn)(char * szDevName, ULONG *pulDevNameLen, ULONG *pulEvent);
-typedef ULONG (*SKF_CancelWaitForDevEvent_fn)(void);
-typedef ULONG (*SKF_EnumDev_fn)(BOOL bPresent, char * szNameList, ULONG *pulSize);
-typedef ULONG (*SKF_ConnectDev_fn)(char * szName, DEVHANDLE *phDev);
-typedef ULONG (*SKF_DisConnectDev_fn)(DEVHANDLE hDev);
-typedef ULONG (*SKF_GetDevState_fn)(char * szDevName, ULONG *pulDevState);
-typedef ULONG (*SKF_SetLabel_fn)(DEVHANDLE hDev, char * szLabel);
-typedef ULONG (*SKF_GetDevInfo_fn)(DEVHANDLE hDev, DEVINFO *pDevInfo);
-typedef ULONG (*SKF_LockDev_fn)(DEVHANDLE hDev, ULONG ulTimeOut);
-typedef ULONG (*SKF_UnlockDev_fn)(DEVHANDLE hDev);
-typedef ULONG (*SKF_Transmit_fn)(DEVHANDLE hDev, BYTE *pbCommand, ULONG ulCommandLen, BYTE *pbData, ULONG *pulDataLen);
-typedef ULONG (*SKF_ChangeDevAuthKey_fn)(DEVHANDLE hDev, BYTE *pbKeyValue, ULONG ulKeyLen);
-typedef ULONG (*SKF_DevAuth_fn)(DEVHANDLE hDev, BYTE *pbAuthData, ULONG ulLen);
-typedef ULONG (*SKF_ChangePIN_fn)(HAPPLICATION hApplication, ULONG ulPINType, char * szOldPin, char * szNewPin, ULONG *pulRetryCount);
-typedef ULONG (*SKF_GetPINInfo_fn)(HAPPLICATION hApplication, ULONG ulPINType, ULONG *pulMaxRetryCount, ULONG *pulRemainRetryCount, BOOL *pbDefaultPin);
-typedef ULONG (*SKF_VerifyPIN_fn)(HAPPLICATION hApplication, ULONG ulPINType, char * szPIN, ULONG *pulRetryCount);
-typedef ULONG (*SKF_UnblockPIN_fn)(HAPPLICATION hApplication, char * szAdminPIN, char * szNewUserPIN, ULONG *pulRetryCount);
-typedef ULONG (*SKF_ClearSecureState_fn)(HAPPLICATION hApplication);
-typedef ULONG (*SKF_CreateApplication_fn)(DEVHANDLE hDev, char * szAppName, char * szAdminPin, DWORD dwAdminPinRetryCount, char * szUserPin, DWORD dwUserPinRetryCount, DWORD dwCreateFileRights, HAPPLICATION *phApplication);
-typedef ULONG (*SKF_EnumApplication_fn)(DEVHANDLE hDev, char * szAppName, ULONG *pulSize);
-typedef ULONG (*SKF_DeleteApplication_fn)(DEVHANDLE hDev, char * szAppName);
-typedef ULONG (*SKF_OpenApplication_fn)(DEVHANDLE hDev, char * szAppName, HAPPLICATION *phApplication);
-typedef ULONG (*SKF_CloseApplication_fn)(HAPPLICATION hApplication);
-typedef ULONG (*SKF_CreateFile_fn)(HAPPLICATION hApplication, char * szFileName, ULONG ulFileSize, ULONG ulReadRights, ULONG ulWriteRights);
-typedef ULONG (*SKF_DeleteFile_fn)(HAPPLICATION hApplication, char * szFileName);
-typedef ULONG (*SKF_EnumFiles_fn)(HAPPLICATION hApplication, char * szFileList, ULONG *pulSize);
-typedef ULONG (*SKF_GetFileInfo_fn)(HAPPLICATION hApplication, char * szFileName, FILEATTRIBUTE *pFileInfo);
-typedef ULONG (*SKF_ReadFile_fn)(HAPPLICATION hApplication, char * szFileName, ULONG ulOffset, ULONG ulSize, BYTE *pbOutData, ULONG *pulOutLen);
-typedef ULONG (*SKF_WriteFile_fn)(HAPPLICATION hApplication, char * szFileName, ULONG ulOffset, BYTE *pbData, ULONG ulSize);
-typedef ULONG (*SKF_CreateContainer_fn)(HAPPLICATION hApplication, char * szContainerName, HCONTAINER *phContainer);
-typedef ULONG (*SKF_DeleteContainer_fn)(HAPPLICATION hApplication, char * szContainerName);
-typedef ULONG (*SKF_OpenContainer_fn)(HAPPLICATION hApplication, char * szContainerName, HCONTAINER *phContainer);
-typedef ULONG (*SKF_CloseContainer_fn)(HCONTAINER hContainer);
-typedef ULONG (*SKF_EnumContainer_fn)(HAPPLICATION hApplication, char * szContainerName, ULONG *pulSize);
-typedef ULONG (*SKF_GetContainerType_fn)(HCONTAINER hContainer, ULONG *pulContainerType);
-typedef ULONG (*SKF_ImportCertificate_fn)(HCONTAINER hContainer, BOOL bExportSignKey, BYTE *pbCert, ULONG ulCertLen);
-typedef ULONG (*SKF_ExportCertificate_fn)(HCONTAINER hContainer, BOOL bSignFlag, BYTE *pbCert, ULONG *pulCertLen);
-typedef ULONG (*SKF_GenRandom_fn)(DEVHANDLE hDev, BYTE *pbRandom, ULONG ulRandomLen);
-typedef ULONG (*SKF_GenExtRSAKey_fn)(DEVHANDLE hDev, ULONG ulBitsLen, RSAPRIVATEKEYBLOB *pBlob);
-typedef ULONG (*SKF_GenRSAKeyPair_fn)(HCONTAINER hContainer, ULONG ulBitsLen, RSAPUBLICKEYBLOB *pBlob);
-typedef ULONG (*SKF_ImportRSAKeyPair_fn)(HCONTAINER hContainer, ULONG ulSymAlgId, BYTE *pbWrappedKey, ULONG ulWrappedKeyLen, BYTE *pbEncryptedData, ULONG ulEncryptedDataLen);
-typedef ULONG (*SKF_RSASignData_fn)(HCONTAINER hContainer, BYTE *pbData, ULONG ulDataLen, BYTE *pbSignature, ULONG *pulSignLen);
-typedef ULONG (*SKF_RSAVerify_fn)(DEVHANDLE hDev, RSAPUBLICKEYBLOB *pRSAPubKeyBlob, BYTE *pbData, ULONG ulDataLen, BYTE *pbSignature, ULONG ulSignLen);
-typedef ULONG (*SKF_RSAExportSessionKey_fn)(HCONTAINER hContainer, ULONG ulAlgId, RSAPUBLICKEYBLOB *pPubKey, BYTE *pbData, ULONG *pulDataLen, HANDLE *phSessionKey);
-typedef ULONG (*SKF_ExtRSAPubKeyOperation_fn)(DEVHANDLE hDev, RSAPUBLICKEYBLOB *pRSAPubKeyBlob, BYTE *pbInput, ULONG ulInputLen, BYTE *pbOutput, ULONG *pulOutputLen);
-typedef ULONG (*SKF_ExtRSAPriKeyOperation_fn)(DEVHANDLE hDev, RSAPRIVATEKEYBLOB *pRSAPriKeyBlob, BYTE *pbInput, ULONG ulInputLen, BYTE *pbOutput, ULONG *pulOutputLen);
-typedef ULONG (*SKF_GenECCKeyPair_fn)(HCONTAINER hContainer, ULONG ulAlgId, ECCPUBLICKEYBLOB *pBlob);
-typedef ULONG (*SKF_ImportECCKeyPair_fn)(HCONTAINER hContainer, ENVELOPEDKEYBLOB *pEnvelopedKeyBlob);
-typedef ULONG (*SKF_ECCSignData_fn)(HCONTAINER hContainer, BYTE *pbDigest, ULONG ulDigestLen, ECCSIGNATUREBLOB *pSignature);
-typedef ULONG (*SKF_ECCVerify_fn)(DEVHANDLE hDev, ECCPUBLICKEYBLOB *pECCPubKeyBlob, BYTE *pbData, ULONG ulDataLen, ECCSIGNATUREBLOB *pSignature);
-typedef ULONG (*SKF_ECCExportSessionKey_fn)(HCONTAINER hContainer, ULONG ulAlgId, ECCPUBLICKEYBLOB *pPubKey, ECCCIPHERBLOB *pData, HANDLE *phSessionKey);
-typedef ULONG (*SKF_ExtECCEncrypt_fn)(DEVHANDLE hDev, ECCPUBLICKEYBLOB *pECCPubKeyBlob, BYTE *pbPlainText, ULONG ulPlainTextLen, ECCCIPHERBLOB *pCipherText);
-typedef ULONG (*SKF_ExtECCDecrypt_fn)(DEVHANDLE hDev, ECCPRIVATEKEYBLOB *pECCPriKeyBlob, ECCCIPHERBLOB *pCipherText, BYTE *pbPlainText, ULONG *pulPlainTextLen);
-typedef ULONG (*SKF_ExtECCSign_fn)(DEVHANDLE hDev, ECCPRIVATEKEYBLOB *pECCPriKeyBlob, BYTE *pbData, ULONG ulDataLen, ECCSIGNATUREBLOB *pSignature);
-typedef ULONG (*SKF_ExtECCVerify_fn)(DEVHANDLE hDev, ECCPUBLICKEYBLOB *pECCPubKeyBlob, BYTE *pbData, ULONG ulDataLen, ECCSIGNATUREBLOB *pSignature);
-typedef ULONG (*SKF_GenerateAgreementDataWithECC_fn)(HCONTAINER hContainer, ULONG ulAlgId, ECCPUBLICKEYBLOB *pTempECCPubKeyBlob, BYTE *pbID, ULONG ulIDLen, HANDLE *phAgreementHandle);
-typedef ULONG (*SKF_GenerateAgreementDataAndKeyWithECC_fn)(HANDLE hContainer, ULONG ulAlgId, ECCPUBLICKEYBLOB *pSponsorECCPubKeyBlob, ECCPUBLICKEYBLOB *pSponsorTempECCPubKeyBlob, ECCPUBLICKEYBLOB *pTempECCPubKeyBlob, BYTE *pbID, ULONG ulIDLen, BYTE *pbSponsorID, ULONG ulSponsorIDLen, HANDLE *phKeyHandle);
-typedef ULONG (*SKF_GenerateKeyWithECC_fn)(HANDLE hAgreementHandle, ECCPUBLICKEYBLOB *pECCPubKeyBlob, ECCPUBLICKEYBLOB *pTempECCPubKeyBlob, BYTE *pbID, ULONG ulIDLen, HANDLE *phKeyHandle);
-typedef ULONG (*SKF_ExportPublicKey_fn)(HCONTAINER hContainer, BOOL bSignFlag, BYTE *pbBlob, ULONG *pulBlobLen);
-typedef ULONG (*SKF_ImportSessionKey_fn)(HCONTAINER hContainer, ULONG ulAlgId, BYTE *pbWrapedData, ULONG ulWrapedLen, HANDLE *phKey);
-typedef ULONG (*SKF_SetSymmKey_fn)(DEVHANDLE hDev, BYTE *pbKey, ULONG ulAlgID, HANDLE *phKey);
-typedef ULONG (*SKF_EncryptInit_fn)(HANDLE hKey, BLOCKCIPHERPARAM EncryptParam);
-typedef ULONG (*SKF_Encrypt_fn)(HANDLE hKey, BYTE *pbData, ULONG ulDataLen, BYTE *pbEncryptedData, ULONG *pulEncryptedLen);
-typedef ULONG (*SKF_EncryptUpdate_fn)(HANDLE hKey, BYTE *pbData, ULONG ulDataLen, BYTE *pbEncryptedData, ULONG *pulEncryptedLen);
-typedef ULONG (*SKF_EncryptFinal_fn)(HANDLE hKey, BYTE *pbEncryptedData, ULONG *pulEncryptedDataLen);
-typedef ULONG (*SKF_DecryptInit_fn)(HANDLE hKey, BLOCKCIPHERPARAM DecryptParam);
-typedef ULONG (*SKF_Decrypt_fn)(HANDLE hKey, BYTE *pbEncryptedData, ULONG ulEncryptedLen, BYTE *pbData, ULONG *pulDataLen);
-typedef ULONG (*SKF_DecryptUpdate_fn)(HANDLE hKey, BYTE *pbEncryptedData, ULONG ulEncryptedLen, BYTE *pbData, ULONG *pulDataLen);
-typedef ULONG (*SKF_DecryptFinal_fn)(HANDLE hKey, BYTE *pbDecryptedData, ULONG *pulDecryptedDataLen);
-typedef ULONG (*SKF_DigestInit_fn)(DEVHANDLE hDev, ULONG ulAlgID, ECCPUBLICKEYBLOB *pPubKey, BYTE *pbID, ULONG ulIDLen, HANDLE *phHash);
-typedef ULONG (*SKF_Digest_fn)(HANDLE hHash, BYTE *pbData, ULONG ulDataLen, BYTE *pbHashData, ULONG *pulHashLen);
-typedef ULONG (*SKF_DigestUpdate_fn)(HANDLE hHash, BYTE *pbData, ULONG ulDataLen);
-typedef ULONG (*SKF_DigestFinal_fn)(HANDLE hHash, BYTE *pHashData, ULONG *pulHashLen);
-typedef ULONG (*SKF_MacInit_fn)(HANDLE hKey, BLOCKCIPHERPARAM *pMacParam, HANDLE *phMac);
-typedef ULONG (*SKF_Mac_fn)(HANDLE hMac, BYTE *pbData, ULONG ulDataLen, BYTE *pbMacData, ULONG *pulMacLen);
-typedef ULONG (*SKF_MacUpdate_fn)(HANDLE hMac, BYTE *pbData, ULONG ulDataLen);
-typedef ULONG (*SKF_MacFinal_fn)(HANDLE hMac, BYTE *pbMacData, ULONG *pulMacDataLen);
-typedef ULONG (*SKF_CloseHandle_fn)(HANDLE hHandle);
+typedef unsigned int  (*SKF_WaitForDevEvent_fn)(char * szDevName, unsigned int  *pulDevNameLen, unsigned int  *pulEvent);
+typedef unsigned int  (*SKF_CancelWaitForDevEvent_fn)(void);
+typedef unsigned int  (*SKF_EnumDev_fn)(int bPresent, char * szNameList, unsigned int  *pulSize);
+typedef unsigned int  (*SKF_ConnectDev_fn)(char * szName, void  * *phDev);
+typedef unsigned int  (*SKF_DisConnectDev_fn)(void  * hDev);
+typedef unsigned int  (*SKF_GetDevState_fn)(char * szDevName, unsigned int  *pulDevState);
+typedef unsigned int  (*SKF_SetLabel_fn)(void  * hDev, char * szLabel);
+typedef unsigned int  (*SKF_GetDevInfo_fn)(void  * hDev, DEVINFO *pDevInfo);
+typedef unsigned int  (*SKF_LockDev_fn)(void  * hDev, unsigned int  ulTimeOut);
+typedef unsigned int  (*SKF_UnlockDev_fn)(void  * hDev);
+typedef unsigned int  (*SKF_Transmit_fn)(void  * hDev, unsigned char  *pbCommand, unsigned int  ulCommandLen, unsigned char  *pbData, unsigned int  *pulDataLen);
+typedef unsigned int  (*SKF_ChangeDevAuthKey_fn)(void  * hDev, unsigned char  *pbKeyValue, unsigned int  ulKeyLen);
+typedef unsigned int  (*SKF_DevAuth_fn)(void  * hDev, unsigned char  *pbAuthData, unsigned int  ulLen);
+typedef unsigned int  (*SKF_ChangePIN_fn)(void * hApplication, unsigned int  ulPINType, char * szOldPin, char * szNewPin, unsigned int  *pulRetryCount);
+typedef unsigned int  (*SKF_GetPINInfo_fn)(void * hApplication, unsigned int  ulPINType, unsigned int  *pulMaxRetryCount, unsigned int  *pulRemainRetryCount, int *pbDefaultPin);
+typedef unsigned int  (*SKF_VerifyPIN_fn)(void * hApplication, unsigned int  ulPINType, char * szPIN, unsigned int  *pulRetryCount);
+typedef unsigned int  (*SKF_UnblockPIN_fn)(void * hApplication, char * szAdminPIN, char * szNewUserPIN, unsigned int  *pulRetryCount);
+typedef unsigned int  (*SKF_ClearSecureState_fn)(void * hApplication);
+typedef unsigned int  (*SKF_CreateApplication_fn)(void  * hDev, char * szAppName, char * szAdminPin, unsigned int dwAdminPinRetryCount, char * szUserPin, unsigned int dwUserPinRetryCount, unsigned int dwCreateFileRights, void * *phApplication);
+typedef unsigned int  (*SKF_EnumApplication_fn)(void  * hDev, char * szAppName, unsigned int  *pulSize);
+typedef unsigned int  (*SKF_DeleteApplication_fn)(void  * hDev, char * szAppName);
+typedef unsigned int  (*SKF_OpenApplication_fn)(void  * hDev, char * szAppName, void * *phApplication);
+typedef unsigned int  (*SKF_CloseApplication_fn)(void * hApplication);
+typedef unsigned int  (*SKF_CreateFile_fn)(void * hApplication, char * szFileName, unsigned int  ulFileSize, unsigned int  ulReadRights, unsigned int  ulWriteRights);
+typedef unsigned int  (*SKF_DeleteFile_fn)(void * hApplication, char * szFileName);
+typedef unsigned int  (*SKF_EnumFiles_fn)(void * hApplication, char * szFileList, unsigned int  *pulSize);
+typedef unsigned int  (*SKF_GetFileInfo_fn)(void * hApplication, char * szFileName, FILEATTRIBUTE *pFileInfo);
+typedef unsigned int  (*SKF_ReadFile_fn)(void * hApplication, char * szFileName, unsigned int  ulOffset, unsigned int  ulSize, unsigned char  *pbOutData, unsigned int  *pulOutLen);
+typedef unsigned int  (*SKF_WriteFile_fn)(void * hApplication, char * szFileName, unsigned int  ulOffset, unsigned char  *pbData, unsigned int  ulSize);
+typedef unsigned int  (*SKF_CreateContainer_fn)(void * hApplication, char * szContainerName, void * *phContainer);
+typedef unsigned int  (*SKF_DeleteContainer_fn)(void * hApplication, char * szContainerName);
+typedef unsigned int  (*SKF_OpenContainer_fn)(void * hApplication, char * szContainerName, void * *phContainer);
+typedef unsigned int  (*SKF_CloseContainer_fn)(void * hContainer);
+typedef unsigned int  (*SKF_EnumContainer_fn)(void * hApplication, char * szContainerName, unsigned int  *pulSize);
+typedef unsigned int  (*SKF_GetContainerType_fn)(void * hContainer, unsigned int  *pulContainerType);
+typedef unsigned int  (*SKF_ImportCertificate_fn)(void * hContainer, int bExportSignKey, unsigned char  *pbCert, unsigned int  ulCertLen);
+typedef unsigned int  (*SKF_ExportCertificate_fn)(void * hContainer, int bSignFlag, unsigned char  *pbCert, unsigned int  *pulCertLen);
+typedef unsigned int  (*SKF_GenRandom_fn)(void  * hDev, unsigned char  *pbRandom, unsigned int  ulRandomLen);
+typedef unsigned int  (*SKF_GenExtRSAKey_fn)(void  * hDev, unsigned int  ulBitsLen, RSAPRIVATEKEYBLOB *pBlob);
+typedef unsigned int  (*SKF_GenRSAKeyPair_fn)(void * hContainer, unsigned int  ulBitsLen, RSAPUBLICKEYBLOB *pBlob);
+typedef unsigned int  (*SKF_ImportRSAKeyPair_fn)(void * hContainer, unsigned int  ulSymAlgId, unsigned char  *pbWrappedKey, unsigned int  ulWrappedKeyLen, unsigned char  *pbEncryptedData, unsigned int  ulEncryptedDataLen);
+typedef unsigned int  (*SKF_RSASignData_fn)(void * hContainer, unsigned char  *pbData, unsigned int  ulDataLen, unsigned char  *pbSignature, unsigned int  *pulSignLen);
+typedef unsigned int  (*SKF_RSAVerify_fn)(void  * hDev, RSAPUBLICKEYBLOB *pRSAPubKeyBlob, unsigned char  *pbData, unsigned int  ulDataLen, unsigned char  *pbSignature, unsigned int  ulSignLen);
+typedef unsigned int  (*SKF_RSAExportSessionKey_fn)(void * hContainer, unsigned int  ulAlgId, RSAPUBLICKEYBLOB *pPubKey, unsigned char  *pbData, unsigned int  *pulDataLen, void * *phSessionKey);
+typedef unsigned int  (*SKF_ExtRSAPubKeyOperation_fn)(void  * hDev, RSAPUBLICKEYBLOB *pRSAPubKeyBlob, unsigned char  *pbInput, unsigned int  ulInputLen, unsigned char  *pbOutput, unsigned int  *pulOutputLen);
+typedef unsigned int  (*SKF_ExtRSAPriKeyOperation_fn)(void  * hDev, RSAPRIVATEKEYBLOB *pRSAPriKeyBlob, unsigned char  *pbInput, unsigned int  ulInputLen, unsigned char  *pbOutput, unsigned int  *pulOutputLen);
+typedef unsigned int  (*SKF_GenECCKeyPair_fn)(void * hContainer, unsigned int  ulAlgId, ECCPUBLICKEYBLOB *pBlob);
+typedef unsigned int  (*SKF_ImportECCKeyPair_fn)(void * hContainer, ENVELOPEDKEYBLOB *pEnvelopedKeyBlob);
+typedef unsigned int  (*SKF_ECCSignData_fn)(void * hContainer, unsigned char  *pbDigest, unsigned int  ulDigestLen, ECCSIGNATUREBLOB *pSignature);
+typedef unsigned int  (*SKF_ECCVerify_fn)(void  * hDev, ECCPUBLICKEYBLOB *pECCPubKeyBlob, unsigned char  *pbData, unsigned int  ulDataLen, ECCSIGNATUREBLOB *pSignature);
+typedef unsigned int  (*SKF_ECCExportSessionKey_fn)(void * hContainer, unsigned int  ulAlgId, ECCPUBLICKEYBLOB *pPubKey, ECCCIPHERBLOB *pData, void * *phSessionKey);
+typedef unsigned int  (*SKF_ExtECCEncrypt_fn)(void  * hDev, ECCPUBLICKEYBLOB *pECCPubKeyBlob, unsigned char  *pbPlainText, unsigned int  ulPlainTextLen, ECCCIPHERBLOB *pCipherText);
+typedef unsigned int  (*SKF_ExtECCDecrypt_fn)(void  * hDev, ECCPRIVATEKEYBLOB *pECCPriKeyBlob, ECCCIPHERBLOB *pCipherText, unsigned char  *pbPlainText, unsigned int  *pulPlainTextLen);
+typedef unsigned int  (*SKF_ExtECCSign_fn)(void  * hDev, ECCPRIVATEKEYBLOB *pECCPriKeyBlob, unsigned char  *pbData, unsigned int  ulDataLen, ECCSIGNATUREBLOB *pSignature);
+typedef unsigned int  (*SKF_ExtECCVerify_fn)(void  * hDev, ECCPUBLICKEYBLOB *pECCPubKeyBlob, unsigned char  *pbData, unsigned int  ulDataLen, ECCSIGNATUREBLOB *pSignature);
+typedef unsigned int  (*SKF_GenerateAgreementDataWithECC_fn)(void * hContainer, unsigned int  ulAlgId, ECCPUBLICKEYBLOB *pTempECCPubKeyBlob, unsigned char  *pbID, unsigned int  ulIDLen, void * *phAgreementvoid *);
+typedef unsigned int  (*SKF_GenerateAgreementDataAndKeyWithECC_fn)(void * hContainer, unsigned int  ulAlgId, ECCPUBLICKEYBLOB *pSponsorECCPubKeyBlob, ECCPUBLICKEYBLOB *pSponsorTempECCPubKeyBlob, ECCPUBLICKEYBLOB *pTempECCPubKeyBlob, unsigned char  *pbID, unsigned int  ulIDLen, unsigned char  *pbSponsorID, unsigned int  ulSponsorIDLen, void * *phKeyvoid *);
+typedef unsigned int  (*SKF_GenerateKeyWithECC_fn)(void * hAgreementvoid *, ECCPUBLICKEYBLOB *pECCPubKeyBlob, ECCPUBLICKEYBLOB *pTempECCPubKeyBlob, unsigned char  *pbID, unsigned int  ulIDLen, void * *phKeyvoid *);
+typedef unsigned int  (*SKF_ExportPublicKey_fn)(void * hContainer, int bSignFlag, unsigned char  *pbBlob, unsigned int  *pulBlobLen);
+typedef unsigned int  (*SKF_ImportSessionKey_fn)(void * hContainer, unsigned int  ulAlgId, unsigned char  *pbWrapedData, unsigned int  ulWrapedLen, void * *phKey);
+typedef unsigned int  (*SKF_SetSymmKey_fn)(void  * hDev, unsigned char  *pbKey, unsigned int  ulAlgID, void * *phKey);
+typedef unsigned int  (*SKF_EncryptInit_fn)(void * hKey, BLOCKCIPHERPARAM EncryptParam);
+typedef unsigned int  (*SKF_Encrypt_fn)(void * hKey, unsigned char  *pbData, unsigned int  ulDataLen, unsigned char  *pbEncryptedData, unsigned int  *pulEncryptedLen);
+typedef unsigned int  (*SKF_EncryptUpdate_fn)(void * hKey, unsigned char  *pbData, unsigned int  ulDataLen, unsigned char  *pbEncryptedData, unsigned int  *pulEncryptedLen);
+typedef unsigned int  (*SKF_EncryptFinal_fn)(void * hKey, unsigned char  *pbEncryptedData, unsigned int  *pulEncryptedDataLen);
+typedef unsigned int  (*SKF_DecryptInit_fn)(void * hKey, BLOCKCIPHERPARAM DecryptParam);
+typedef unsigned int  (*SKF_Decrypt_fn)(void * hKey, unsigned char  *pbEncryptedData, unsigned int  ulEncryptedLen, unsigned char  *pbData, unsigned int  *pulDataLen);
+typedef unsigned int  (*SKF_DecryptUpdate_fn)(void * hKey, unsigned char  *pbEncryptedData, unsigned int  ulEncryptedLen, unsigned char  *pbData, unsigned int  *pulDataLen);
+typedef unsigned int  (*SKF_DecryptFinal_fn)(void * hKey, unsigned char  *pbDecryptedData, unsigned int  *pulDecryptedDataLen);
+typedef unsigned int  (*SKF_DigestInit_fn)(void  * hDev, unsigned int  ulAlgID, ECCPUBLICKEYBLOB *pPubKey, unsigned char  *pbID, unsigned int  ulIDLen, void * *phHash);
+typedef unsigned int  (*SKF_Digest_fn)(void * hHash, unsigned char  *pbData, unsigned int  ulDataLen, unsigned char  *pbHashData, unsigned int  *pulHashLen);
+typedef unsigned int  (*SKF_DigestUpdate_fn)(void * hHash, unsigned char  *pbData, unsigned int  ulDataLen);
+typedef unsigned int  (*SKF_DigestFinal_fn)(void * hHash, unsigned char  *pHashData, unsigned int  *pulHashLen);
+typedef unsigned int  (*SKF_MacInit_fn)(void * hKey, BLOCKCIPHERPARAM *pMacParam, void * *phMac);
+typedef unsigned int  (*SKF_Mac_fn)(void * hMac, unsigned char  *pbData, unsigned int  ulDataLen, unsigned char  *pbMacData, unsigned int  *pulMacLen);
+typedef unsigned int  (*SKF_MacUpdate_fn)(void * hMac, unsigned char  *pbData, unsigned int  ulDataLen);
+typedef unsigned int  (*SKF_MacFinal_fn)(void * hMac, unsigned char  *pbMacData, unsigned int  *pulMacDataLen);
+typedef unsigned int  (*SKF_CloseHandle_fn)(void * hvoid *);
 
 /* SKF Extention API */
-typedef ULONG (*SKF_AuthDev_fn)(DEVHANDLE hDev);
-typedef ULONG (*SKF_ECCDecrypt_fn)(HCONTAINER hContainer, BOOL bSignFlag, ECCCIPHERBLOB *pCipherBlob, BYTE *pbPlainText, ULONG *pulPlainTextLen);
-typedef ULONG (*SKF_RSADecrypt_fn)(HCONTAINER hContainer, BYTE *pbCipherText, ULONG ulCipherTextLen, BYTE *pbPlainText, ULONG *pulPlainTextLen);
+typedef unsigned int  (*SKF_AuthDev_fn)(void  * hDev);
+typedef unsigned int  (*SKF_ECCDecrypt_fn)(void * hContainer, int bSignFlag, ECCCIPHERBLOB *pCipherBlob, unsigned char  *pbPlainText, unsigned int  *pulPlainTextLen);
+typedef unsigned int  (*SKF_RSADecrypt_fn)(void * hContainer, unsigned char  *pbCipherText, unsigned int  ulCipherTextLen, unsigned char  *pbPlainText, unsigned int  *pulPlainTextLen);
 
 /**
  * @brief SKF method structure
@@ -126,15 +216,17 @@ struct skf_method_st {
     SKF_LockDev_fn LockDev;
     SKF_UnlockDev_fn UnlockDev;
     SKF_Transmit_fn Transmit;
+
+    // Access Control
     SKF_ChangeDevAuthKey_fn ChangeDevAuthKey;
     SKF_DevAuth_fn DevAuth;
-
-    /* Application Management Functions */
     SKF_ChangePIN_fn ChangePIN;
     SKF_GetPINInfo_fn GetPINInfo;
     SKF_VerifyPIN_fn VerifyPIN;
     SKF_UnblockPIN_fn UnblockPIN;
     SKF_ClearSecureState_fn ClearSecureState;
+
+    /* Application Management Functions */
     SKF_CreateApplication_fn CreateApplication;
     SKF_EnumApplication_fn EnumApplication;
     SKF_DeleteApplication_fn DeleteApplication;
@@ -152,14 +244,14 @@ struct skf_method_st {
     /* Container Management Functions */
     SKF_CreateContainer_fn CreateContainer;
     SKF_DeleteContainer_fn DeleteContainer;
+    SKF_EnumContainer_fn EnumContainer;
     SKF_OpenContainer_fn OpenContainer;
     SKF_CloseContainer_fn CloseContainer;
-    SKF_EnumContainer_fn EnumContainer;
     SKF_GetContainerType_fn GetContainerType;
     SKF_ImportCertificate_fn ImportCertificate;
     SKF_ExportCertificate_fn ExportCertificate;
 
-    /* Random Number Generation */
+    /* Crypto Service */
     SKF_GenRandom_fn GenRandom;
 
     /* RSA Functions */
@@ -217,10 +309,11 @@ struct skf_method_st {
     SKF_CloseHandle_fn CloseHandle;
 
     /* Extension Functions */
-    SKF_AuthDev_fn AuthDev;
-    SKF_ECCDecrypt_fn ECCDecrypt;
-    SKF_RSADecrypt_fn RSADecrypt;
+    // SKF_AuthDev_fn AuthDev;
+    // SKF_ECCDecrypt_fn ECCDecrypt;
+    // SKF_RSADecrypt_fn RSADecrypt;
 };
+extern SKF_METHOD ts_skf_meth;
 
 # ifdef __cplusplus
 }

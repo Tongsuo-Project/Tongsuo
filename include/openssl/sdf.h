@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Tongsuo Project Authors. All Rights Reserved.
+ * Copyright 2025 The Tongsuo Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -97,7 +97,7 @@ struct OSSL_ECCrefPublicKey_st{
 	unsigned char C[1];
 	// Extend sizeof(C) to SM2_MAX_PLAINTEXT_SIZE
 	// unsigned char C_[254];
-    unsigned char *C_; 
+    // unsigned char *C_; 
 };
  struct OSSL_ECCSignature_st{
     unsigned char r[ECCref_MAX_LEN];

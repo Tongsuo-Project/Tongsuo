@@ -245,6 +245,8 @@ typedef struct ossl_decoder_ctx_st OSSL_DECODER_CTX;
 typedef struct ossl_self_test_st OSSL_SELF_TEST;
 
 typedef struct sdf_method_st SDF_METHOD;
+typedef struct skf_method_st SKF_METHOD;
+
 
 #ifdef  __cplusplus
 }
