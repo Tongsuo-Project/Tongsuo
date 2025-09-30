@@ -10,7 +10,7 @@
  */
 
 /* Serialized OID's */
-static const unsigned char so[6648] = {
+static const unsigned char so[6647] = {
     0x2A,0x86,0x48,0x86,0xF7,0x0D,                 /* [    0] OBJ_rsadsi */
     0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,            /* [    6] OBJ_pkcs */
     0x2A,0x86,0x48,0x86,0xF7,0x0D,0x02,0x05,       /* [   13] OBJ_md5 */
@@ -928,12 +928,12 @@ static const unsigned char so[6648] = {
     0x2A,0x81,0x1C,0xCF,0x55,0x01,0x68,0x09,       /* [ 6573] OBJ_sm4_ccm */
     0x2A,0x81,0x1C,0xCF,0x55,0x01,0x86,0x22,       /* [ 6581] OBJ_zuc_128_eia3 */
     0x2B,0x06,0x01,0x04,0x01,0x82,0xDA,0x4B,0x2C,  /* [ 6589] OBJ_delegation_usage */
-    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x83,0x11,0x03,0x01,  /* [ 6598] OBJ_hmacWithSM3 */
-    0x60,0x86,0x48,0x01,0x86,0xF9,0x66,            /* [ 6608] OBJ_oracle */
-    0x60,0x86,0x48,0x01,0x86,0xF9,0x66,0xAD,0xCA,0x7B,0x01,0x01,  /* [ 6615] OBJ_oracle_jdk_trustedkeyusage */
-    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x87,0x69,       /* [ 6627] OBJ_sm2dh_mlkem768_hybrid */
-    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x12,  /* [ 6635] OBJ_ML_DSA_65 */
-    0x55,0x1D,0x4B,                                /* [ 6644] OBJ_associated_information */
+    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x83,0x11,0x02,  /* [ 6598] OBJ_hmacWithSM3 */
+    0x60,0x86,0x48,0x01,0x86,0xF9,0x66,            /* [ 6607] OBJ_oracle */
+    0x60,0x86,0x48,0x01,0x86,0xF9,0x66,0xAD,0xCA,0x7B,0x01,0x01,  /* [ 6614] OBJ_oracle_jdk_trustedkeyusage */
+    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x87,0x69,       /* [ 6626] OBJ_sm2dh_mlkem768_hybrid */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x12,  /* [ 6634] OBJ_ML_DSA_65 */
+    0x55,0x1D,0x4B,                                /* [ 6643] OBJ_associated_information */
 };
 
 #define NUM_NID 1320
@@ -2195,9 +2195,9 @@ static const ASN1_OBJECT nid_objs[NUM_NID] = {
     {"AuthSM2", "auth-sm2", NID_auth_sm2},
     {"ZUC-128-EIA3", "zuc-128-eia3", NID_zuc_128_eia3, 8, &so[6581]},
     {"delegationUsage", "X509v3 Delegation Usage", NID_delegation_usage, 9, &so[6589]},
-    {"hmacWithSM3", "hmacWithSM3", NID_hmacWithSM3, 10, &so[6598]},
-    {"oracle-organization", "Oracle organization", NID_oracle, 7, &so[6608]},
-    {"oracle-jdk-trustedkeyusage", "Trusted key usage (Oracle)", NID_oracle_jdk_trustedkeyusage, 12, &so[6615]},
+    {"hmacWithSM3", "hmacWithSM3", NID_hmacWithSM3, 9, &so[6598]},
+    {"oracle-organization", "Oracle organization", NID_oracle, 7, &so[6607]},
+    {"oracle-jdk-trustedkeyusage", "Trusted key usage (Oracle)", NID_oracle_jdk_trustedkeyusage, 12, &so[6614]},
     {"WBSM4-XIAOLAI-ECB", "wbsm4-xiaolai-ecb", NID_wbsm4_xiaolai_ecb},
     {"WBSM4-XIAOLAI-CBC", "wbsm4-xiaolai-cbc", NID_wbsm4_xiaolai_cbc},
     {"WBSM4-XIAOLAI-OFB", "wbsm4-xiaolai-ofb", NID_wbsm4_xiaolai_ofb128},
@@ -2219,8 +2219,8 @@ static const ASN1_OBJECT nid_objs[NUM_NID] = {
     {"WBSM4-BAIWU-CFB", "wbsm4-baiwu-cfb", NID_wbsm4_baiwu_cfb128},
     {"WBSM4-WSISE-OFB", "wbsm4-wsise-ofb", NID_wbsm4_wsise_ofb128},
     {"WBSM4-WSISE-CFB", "wbsm4-wsise-cfb", NID_wbsm4_wsise_cfb128},
-    {"SM2DH-MLKEM768-HYBRID", "sm2dh-mlkem768-hybrid", NID_sm2dh_mlkem768_hybrid, 8, &so[6627]},
-    {"id-ml-dsa-65", "ML-DSA-65", NID_ML_DSA_65, 9, &so[6635]},
+    {"SM2DH-MLKEM768-HYBRID", "sm2dh-mlkem768-hybrid", NID_sm2dh_mlkem768_hybrid, 8, &so[6626]},
+    {"id-ml-dsa-65", "ML-DSA-65", NID_ML_DSA_65, 9, &so[6634]},
     { NULL, NULL, NID_undef },
     { NULL, NULL, NID_undef },
     { NULL, NULL, NID_undef },
@@ -2257,7 +2257,7 @@ static const ASN1_OBJECT nid_objs[NUM_NID] = {
     { NULL, NULL, NID_undef },
     { NULL, NULL, NID_undef },
     { NULL, NULL, NID_undef },
-    {"associatedInformation", "X509v3 Associated Information", NID_associated_information, 3, &so[6644]},
+    {"associatedInformation", "X509v3 Associated Information", NID_associated_information, 3, &so[6643]},
 };
 
 #define NUM_SN 1034
@@ -4928,6 +4928,7 @@ static const unsigned int obj_objs[NUM_OBJ] = {
      439,    /* OBJ_pilotAttributeSyntax         0 9 2342 19200300 100 3 */
      440,    /* OBJ_pilotObjectClass             0 9 2342 19200300 100 4 */
      441,    /* OBJ_pilotGroups                  0 9 2342 19200300 100 10 */
+    1257,    /* OBJ_hmacWithSM3                  1 2 156 10197 1 401 2 */
      782,    /* OBJ_id_PasswordBasedMAC          1 2 840 113533 7 66 13 */
      783,    /* OBJ_id_DHBasedMac                1 2 840 113533 7 66 30 */
        6,    /* OBJ_rsaEncryption                1 2 840 113549 1 1 1 */
@@ -5146,7 +5147,6 @@ static const unsigned int obj_objs[NUM_OBJ] = {
      455,    /* OBJ_pilotOrganization            0 9 2342 19200300 100 4 20 */
      456,    /* OBJ_pilotDSA                     0 9 2342 19200300 100 4 21 */
      457,    /* OBJ_qualityLabelledData          0 9 2342 19200300 100 4 22 */
-    1257,    /* OBJ_hmacWithSM3                  1 2 156 10197 1 401 3 1 */
      189,    /* OBJ_id_smime_mod                 1 2 840 113549 1 9 16 0 */
      190,    /* OBJ_id_smime_ct                  1 2 840 113549 1 9 16 1 */
      191,    /* OBJ_id_smime_aa                  1 2 840 113549 1 9 16 2 */
