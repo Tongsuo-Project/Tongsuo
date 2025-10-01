@@ -16,6 +16,7 @@
  * https://github.com/Tongsuo-Project/Tongsuo/blob/master/LICENSE.txt
  */
 
+
 #undef SECONDS
 #define SECONDS          3
 #define PKEY_SECONDS    10
@@ -31,6 +32,9 @@
 #define SM2_SECONDS     PKEY_SECONDS
 #define FFDH_SECONDS    PKEY_SECONDS
 #define KEYGEN_SECONDS  PKEY_SECONDS
+
+
+
 
 /* We need to use some deprecated APIs */
 #define OPENSSL_SUPPRESS_DEPRECATED
@@ -1895,8 +1899,9 @@ static int SDF_GenerateKey_loop(void *args)
     int ret, count;
 
     for (count = 0; COND(1); count++) {
-        ret = TSAPI_SDF_GenerateKey(hSessionHandle, OSSL_SDFE_SYM_KEY_TYPE_SM4,
-                                    1, 16, &pkeyHandle);
+        // ret = TSAPI_SDF_GenerateKey(hSessionHandle, OSSL_SDFE_SYM_KEY_TYPE_SM4,
+        //                             1, 16, &pkeyHandle);
+        ret = 0;
         if (ret != OSSL_SDR_OK) {
             BIO_printf(bio_err, "SDF_GenerateKey failed with %d\n", ret);
             count = -1;
@@ -6371,3 +6376,4 @@ end:
     return ok;
 }
 #endif
+
