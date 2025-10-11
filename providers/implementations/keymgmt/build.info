@@ -9,7 +9,8 @@ $KDF_GOAL=../../libdefault.a ../../libfips.a
 $MAC_GOAL=../../libdefault.a ../../libfips.a
 $RSA_GOAL=../../libdefault.a ../../libfips.a
 $SM2DH_MLKEM768_GOAL=../../libdefault.a
-$ML_DSA_GOAL=../../libdefault.a 
+$ML_DSA_GOAL=../../libdefault.a
+$SM2_MLDSA65_GOAL=../../libdefault.a
 
 IF[{- !$disabled{dh} -}]
   SOURCE[$DH_GOAL]=dh_kmgmt.c
@@ -44,6 +45,10 @@ IF[{- !$disabled{sm2} -}]
   IF[{- !$disabled{sm2dh-mlkem768-hybrid} -}]
     SOURCE[$SM2DH_MLKEM768_GOAL]=sm2dh_mlkem768_hybrid_kmgmt.c
   ENDIF
+ENDIF
+
+IF[{- !$disabled{'sm2-mldsa65-hybrid'} -}]
+  SOURCE[$SM2_MLDSA65_GOAL]=sm2_mldsa65_hybrid_kmgmt.c
 ENDIF
 
 SOURCE[$RSA_GOAL]=rsa_kmgmt.c

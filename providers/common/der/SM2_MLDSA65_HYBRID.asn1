@@ -1,0 +1,79 @@
+-- Copyright 2025 The Tongsuo Project Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License 2.0 (the "License").  You may not use
+-- this file except in compliance with the License.  You can obtain a copy
+-- in the file LICENSE in the source distribution or at
+-- https://github.com/Tongsuo-Project/Tongsuo/blob/master/LICENSE.txt
+
+-- ASN.1 Module for PQC Composite Signatures
+-- Based on draft-ietf-lamps-pq-composite-sigs-07
+
+<CODE STARTS>
+
+Composite-MLDSA-2025
+  { iso(1) identified-organization(3) dod(6) internet(1)
+        security(5) mechanisms(5) pkix(7) id-mod(0)
+        id-mod-composite-mldsa-2025(TBDMOD) }
+
+
+DEFINITIONS IMPLICIT TAGS ::= BEGIN
+
+EXPORTS ALL;
+
+IMPORTS
+  PUBLIC-KEY, SIGNATURE-ALGORITHM, SMIME-CAPS, AlgorithmIdentifier{}
+    FROM AlgorithmInformation-2009  -- RFC 5912 [X509ASN1]
+      { iso(1) identified-organization(3) dod(6) internet(1)
+        security(5) mechanisms(5) pkix(7) id-mod(0)
+        id-mod-algorithmInformation-02(58) }
+;
+
+--
+-- Object Identifiers
+--
+
+--
+-- Information Object Classes
+--
+
+pk-CompositeSignature {OBJECT IDENTIFIER:id}
+    PUBLIC-KEY ::= {
+      IDENTIFIER id
+      -- KEY without ASN.1 wrapping --
+      PARAMS ARE absent
+      CERT-KEY-USAGE { digitalSignature, nonRepudiation, keyCertSign,
+                                                            cRLSign}
+    }
+
+sa-CompositeSignature{OBJECT IDENTIFIER:id,
+   PUBLIC-KEY:publicKeyType }
+      SIGNATURE-ALGORITHM ::=  {
+         IDENTIFIER id
+         -- VALUE without ASN.1 wrapping --
+         PARAMS ARE absent
+         PUBLIC-KEYS {publicKeyType}
+      }
+
+
+-- Composite ML-DSA which uses a PreHash Message
+
+-- TODO: OID to be replaced by IANA
+id-MLDSA65-SM2-SM3 OBJECT IDENTIFIER ::= {
+   joint-iso-itu-t(2) country(16) us(840) organization(1)
+   entrust(114027) algorithm(80) composite-mldsa(9) signature(1) 21 }
+
+pk-MLDSA65-SM2-SM3 PUBLIC-KEY ::=
+  pk-CompositeSignature{ id-MLDSA65-SM2-SM3}
+
+sa-MLDSA65-SM2-SM3 SIGNATURE-ALGORITHM ::=
+    sa-CompositeSignature{
+       id-MLDSA65-SM2-SM3,
+       pk-MLDSA65-SM2-SM3 }
+
+SignatureAlgorithmSet SIGNATURE-ALGORITHM ::= {
+  sa-MLDSA65-SM2-SM3,
+  ... }
+
+END
+
+<CODE ENDS>

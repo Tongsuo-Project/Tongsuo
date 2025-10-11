@@ -65,6 +65,7 @@ static const nid_triple sigoid_srt[] = {
     {NID_RSA_SHA3_512, NID_sha3_512, NID_rsaEncryption},
     {NID_SM2_with_SM3, NID_sm3, NID_sm2},
     {NID_ML_DSA_65, NID_undef, NID_ML_DSA_65},
+    {NID_sm2_mldsa65_hybrid, NID_sm3, NID_sm2_mldsa65_hybrid},
 };
 
 static const nid_triple *const sigoid_srt_xref[] = {
@@ -102,4 +103,5 @@ static const nid_triple *const sigoid_srt_xref[] = {
     &sigoid_srt[36],
     &sigoid_srt[37],
     &sigoid_srt[38],
+    &sigoid_srt[40],
 };
