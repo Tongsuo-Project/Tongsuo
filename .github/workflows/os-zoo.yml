@@ -37,7 +37,7 @@ jobs:
     - uses: actions/checkout@v4
     - name: config
       run: |
-        ./config --banner=Configured no-shared -Wall -Werror enable-ntls --strict-warnings \
+        ./config --strict-warnings --banner=Configured no-shared enable-ntls \
                  ${EXTRA_CFLAGS}
     - name: config dump
       run: ./configdata.pm --dump
@@ -55,8 +55,6 @@ jobs:
       fail-fast: false
       matrix:
         zoo:
-          - image: docker.io/library/debian:10
-            install: apt-get update && apt-get install -y gcc make perl
           - image: docker.io/library/debian:11
             install: apt-get update && apt-get install -y gcc make perl
           - image: docker.io/library/debian:12
@@ -122,7 +120,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-2019, windows-2022]
+        os: [windows-2022, windows-2025]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
