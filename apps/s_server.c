@@ -3122,7 +3122,7 @@ static int sv_body(int s, int stype, int prot, unsigned char *context)
 
                 BIO_set_callback_arg(SSL_get_rbio(con), (char *)&read_counter);
                 i = init_ssl_connection(con);
-		BIO_set_callback_arg(SSL_get_rbio(con), NULL);
+                BIO_set_callback_arg(SSL_get_rbio(con), NULL);
 
                 /*
                  * If initialization fails without reads, then

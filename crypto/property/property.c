@@ -267,7 +267,7 @@ void ossl_method_store_free(OSSL_METHOD_STORE *store)
             ossl_sa_ALGORITHM_doall_arg(store->algs, &alg_cleanup, store);
         ossl_sa_ALGORITHM_free(store->algs);
         CRYPTO_THREAD_lock_free(store->lock);
-	CRYPTO_THREAD_lock_free(store->biglock);
+        CRYPTO_THREAD_lock_free(store->biglock);
         OPENSSL_free(store);
     }
 }

@@ -408,7 +408,7 @@ inner_ossl_encoder_fetch(struct encoder_data_st *methdata, int id,
             get_tmp_encoder_store,
             reserve_encoder_store,
             unreserve_encoder_store,
-	    get_encoder_from_store,
+            get_encoder_from_store,
             put_encoder_in_store,
             construct_encoder,
             destruct_encoder
