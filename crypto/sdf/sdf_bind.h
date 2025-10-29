@@ -1,0 +1,92 @@
+#pragma once
+#include "sdf_local.h"
+#include "internal/dso.h"
+
+// OK
+
+extern SDF_OpenDevice_fn OpenDevice;
+extern SDF_CloseDevice_fn CloseDevice;
+extern SDF_OpenSession_fn OpenSession;
+extern SDF_CloseSession_fn CloseSession;
+extern SDF_GetDeviceInfo_fn GetDeviceInfo;
+extern SDF_GenerateRandom_fn GenerateRandom;
+extern SDF_GetPrivateKeyAccessRight_fn GetPrivateKeyAccessRight;
+extern SDF_ReleasePrivateKeyAccessRight_fn ReleasePrivateKeyAccessRight;
+extern SDF_ExportSignPublicKey_RSA_fn ExportSignPublicKey_RSA;
+extern SDF_ExportEncPublicKey_RSA_fn ExportEncPublicKey_RSA;
+extern SDF_GenerateKeyPair_RSA_fn  GenerateKeyPair_RSA;
+
+extern SDF_GenerateKeyWithIPK_RSA_fn GenerateKeyWithIPK_RSA;
+extern SDF_GenerateKeyWithEPK_RSA_fn GenerateKeyWithEPK_RSA;
+extern SDF_ImportKeyWithISK_RSA_fn ImportKeyWithISK_RSA;
+extern SDF_ExchangeDigitEnvelopeBaseOnRSA_fn ExchangeDigitEnvelopeBaseOnRSA;
+
+extern SDF_ExportSignPublicKey_ECC_fn ExportSignPublicKey_ECC;
+extern SDF_ExportEncPublicKey_ECC_fn ExportEncPublicKey_ECC;
+extern SDF_GenerateKeyPair_ECC_fn GenerateKeyPair_ECC;
+extern SDF_GenerateKeyWithIPK_ECC_fn GenerateKeyWithIPK_ECC;
+extern SDF_GenerateKeyWithEPK_ECC_fn GenerateKeyWithEPK_ECC;
+extern SDF_ImportKeyWithISK_ECC_fn ImportKeyWithISK_ECC;
+extern SDF_GenerateAgreementDataWithECC_fn GenerateAgreementDataWithECC;
+extern SDF_GenerateKeyWithECC_fn GenerateKeyWithECC;
+extern SDF_GenerateAgreementDataAndKeyWithECC_fn GenerateAgreementDataAndKeyWithECC;
+extern SDF_ExchangeDigitEnvelopeBaseOnECC_fn ExchangeDigitEnvelopeBaseOnECC;
+extern SDF_GenerateKeyWithKEK_fn GenerateKeyWithKEK;
+extern SDF_ImportKeyWithKEK_fn ImportKeyWithKEK;
+extern SDF_DestroyKey_fn DestroyKey;
+extern SDF_ExternalPublicKeyOperation_RSA_fn ExternalPublicKeyOperation_RSA;
+extern SDF_InternalPublicKeyOperation_RSA_fn InternalPublicKeyOperation_RSA;
+extern SDF_InternalPrivateKeyOperation_RSA_fn InternalPrivateKeyOperation_RSA;
+extern SDF_ExternalVerify_ECC_fn ExternalVerify_ECC;
+extern SDF_InternalSign_ECC_fn InternalSign_ECC;
+extern SDF_InternalVerify_ECC_fn InternalVerify_ECC;
+extern SDF_ExternalEncrypt_ECC_fn ExternalEncrypt_ECC;
+extern SDF_Encrypt_fn Encrypt;
+extern SDF_Decrypt_fn Decrypt;
+extern SDF_CalculateMAC_fn CalculateMAC;
+#if defined(SDF_VERSION_2023)
+
+extern SDF_AuthEnc_fn AuthEnc;
+extern SDF_AuthDec_fn AuthDec;
+extern SDF_EncryptInit_fn EncryptInit;
+extern SDF_EncryptUpdate_fn EncryptUpdate;
+extern SDF_EncryptFinal_fn EncryptFinal;
+extern SDF_DecryptInit_fn DecryptInit;
+extern SDF_DecryptUpdate_fn DecryptUpdate;
+extern SDF_DecryptFinal_fn DecryptFinal;
+extern SDF_CalculateMACInit_fn CalculateMACInit;
+extern SDF_CalculateMACUpdate_fn CalculateMACUpdate;
+extern SDF_CalculateMACFinal_fn CalculateMACFinal;
+extern SDF_AuthEncInit_fn AuthEncInit;
+extern SDF_AuthEncUpdate_fn AuthEncUpdate;
+extern SDF_AuthEncFinal_fn AuthEncFinal;
+extern SDF_AuthDecInit_fn AuthDecInit;
+extern SDF_AuthDecUpdate_fn AuthDecUpdate;
+extern SDF_AuthDecFinal_fn AuthDecFinal;
+extern SDF_HMACInit_fn HMACInit;
+extern SDF_HMACUpdate_fn HMACUpdate;
+extern SDF_HMACFinal_fn HMACFinal;
+#endif
+extern SDF_HashInit_fn HashInit;
+extern SDF_HashUpdate_fn HashUpdate;
+extern SDF_HashFinal_fn HashFinal;
+extern SDF_CreateFile_fn CreateFile;
+extern SDF_ReadFile_fn ReadFile;
+extern SDF_WriteFile_fn WriteFile;
+extern SDF_DeleteFile_fn DeleteFile;
+#if defined(SDF_VERSION_2023)
+// extern SDF_GenerateKeyPair_RSA_fn GenerateKeyPair_RSA;
+// extern SDF_GenerateKeyPair_ECC_fn GenerateKeyPair_ECC;
+extern SDF_ExternalPrivateKeyOperation_RSA_fn ExternalPrivateKeyOperation_RSA;
+extern SDF_ExternalSign_ECC_fn ExternalSign_ECC;
+extern SDF_ExternalDecrypt_ECC_fn ExternalDecrypt_ECC;
+extern SDF_ExternalSign_SM_fn9 ExternalSign_SM9;
+extern SDF_ExternalDecrypt_SM_fn9 ExternalDecrypt_SM9;
+extern SDF_ExternalKeyEncrypt_fn ExternalKeyEncrypt;
+extern SDF_ExternalKeyDecrypt_fn ExternalKeyDecrypt;
+extern SDF_ExternalKeyEncryptInit_fn ExternalKeyEncryptInit;
+extern SDF_ExternalKeyDecryptInit_fn ExternalKeyDecryptInit;
+extern SDF_ExternalKeyHMACInit_fn ExternalKeyHMACInit;
+#endif
+
+int sdf_bind_init(SDF_METHOD *sdfm, DSO *sdf_dso);

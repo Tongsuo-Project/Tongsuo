@@ -21,76 +21,141 @@
 # include <openssl/evp.h>
 # include <openssl/sdf.h>
 
+
+# define OSSL_SDR_OK                         0
+# define OSSL_SDR_BASE                       0x01000000
+# define OSSL_SDR_UNKNOWNERR                 (OSSL_SDR_BASE + 1)
+# define OSSL_SDR_NOTSUPPORT                 (OSSL_SDR_BASE + 2)
+# define OSSL_SDR_COMMFAIL                   (OSSL_SDR_BASE + 3)
+# define OSSL_SDR_HARDFAIL                   (OSSL_SDR_BASE + 4)
+# define OSSL_SDR_OPENDEVICE                 (OSSL_SDR_BASE + 5)
+# define OSSL_SDR_OPENSESSION                (OSSL_SDR_BASE + 6)
+# define OSSL_SDR_PARDENY                    (OSSL_SDR_BASE + 7)
+# define OSSL_SDR_KEYNOTEXIST                (OSSL_SDR_BASE + 8)
+# define OSSL_SDR_ALGNOTSUPPORT              (OSSL_SDR_BASE + 9)
+# define OSSL_SDR_ALGMODNOTSUPPORT           (OSSL_SDR_BASE + 10)
+# define OSSL_SDR_PKOPERR                    (OSSL_SDR_BASE + 11)
+# define OSSL_SDR_SKOPERR                    (OSSL_SDR_BASE + 12)
+# define OSSL_SDR_SIGNERR                    (OSSL_SDR_BASE + 13)
+# define OSSL_SDR_VERIFYERR                  (OSSL_SDR_BASE + 14)
+# define OSSL_SDR_SYMOPERR                   (OSSL_SDR_BASE + 15)
+# define OSSL_SDR_STEPERR                    (OSSL_SDR_BASE + 16)
+# define OSSL_SDR_FILESIZEERR                (OSSL_SDR_BASE + 17)
+# define OSSL_SDR_FILENOTEXIST               (OSSL_SDR_BASE + 18)
+# define OSSL_SDR_FILEOFSERR                 (OSSL_SDR_BASE + 19)
+# define OSSL_SDR_KEYTYPEERR                 (OSSL_SDR_BASE + 20)
+# define OSSL_SDR_KEYERR                     (OSSL_SDR_BASE + 21)
+# define OSSL_SDR_ENCDATAERR                 (OSSL_SDR_BASE + 22)
+# define OSSL_SDR_RANDERR                    (OSSL_SDR_BASE + 23)
+# define OSSL_SDR_PRKRERR                    (OSSL_SDR_BASE + 24)
+# define OSSL_SDR_MACERR                     (OSSL_SDR_BASE + 25)
+# define OSSL_SDR_FILEEXISTS                 (OSSL_SDR_BASE + 26)
+# define OSSL_SDR_FILEWERR                   (OSSL_SDR_BASE + 27)
+# define OSSL_SDR_NOBUFFER                   (OSSL_SDR_BASE + 28)
+# define OSSL_SDR_INARGERR                   (OSSL_SDR_BASE + 29)
+# define OSSL_SDR_OUTARGERR                  (OSSL_SDR_BASE + 30)
+
+#define OSSL_TSAPI_SDFE_ASYM_KEY_TYPE_SM2         (0xa0)
+#define OSSL_TSAPI_SDFE_SYM_KEY_TYPE_SM4          (0xb0)
+
+
+#define RSAref_MAX_BITS 2048
+#define RSAref_MAX_LEN ((RSAref_MAX_BITS + 7) / 8)
+#define RSAref_MAX_PBITS ((RSAref_MAX_BITS + 1) / 2)
+#define RSAref_MAX_PLEN ((RSAref_MAX_PBITS + 7) / 8)
+
+#define ECCref_MAX_BITS 512
+#define ECCref_MAX_LEN ((ECCref_MAX_BITS + 7) / 8)
+
 # ifdef  __cplusplus
 extern "C" {
 # endif
 
-unsigned char *TSAPI_GetEntropy(int entropy, size_t *outlen);
-void TSAPI_FreeEntropy(unsigned char *ent, size_t len);
-char *TSAPI_Version(void);
-unsigned char *TSAPI_RandBytes(size_t len);
+    int TSAPI_Device();
+    int TSAPI_Session();
+    int TSAPI_GetDeviceInfo();
+    int TSAPI_GenerateRandom(unsigned int uiLength);
+    int TSAPI_PrivateKeyAccessRight();
+    int TSAPI_ExportEncPublicKey_ECC(unsigned int KeyIndex);
+    int TSAPI_ExportSignPublicKey_ECC(unsigned int KeyIndex);
+    int TSAPI_ExportEncPublic_RSA(unsigned int KeyIndex);
+    int TSAPI_ExportSignPublicKey_RSA(unsigned int KeyIndex);
+    int TSAPI_GenerateKeyWithKEK(unsigned int KeyIndex);
+    int TSAPI_GenerateKeyWithIPK_RSA(unsigned int KeyIndex);
+    int TSAPI_GenerateKeyWithEPK_RSA(unsigned int KeyIndex);
+    int TSAPI_GenerateKeyWithIPK_ECC(unsigned int KeyIndex);
+    int TSAPI_GenerateKeyWithEPK_ECC(unsigned int KeyIndex);
+    int TSAPI_ImportKeyWithKEK(unsigned int KeyIndex);
+    int TSAPI_ImportKeyWithISK_RSA(unsigned int KeyIndex);
+    int TSAPI_ImportKeyWithISK_ECC(unsigned int KeyIndex);
+    void ExtRSAOptTest();
+    void IntRSAOptTest();
+    void ExtECCSignTest();   // 2023
+    void ExtECCOptTest(); // 2023
+    void SymmEncDecTest();
+    int TSAPI_Encrypt();
+    int TSAPI_Decrypt();
+    int TSAPI_CalculateMAC();
 
-# ifndef OPENSSL_NO_SM2
-EVP_PKEY *TSAPI_SM2Keygen(void);
-#  ifndef OPENSSL_NO_SM3
-unsigned char *TSAPI_SM2Sign(EVP_PKEY *key, const unsigned char *tbs,
-                             size_t tbslen, size_t *siglen);
-int TSAPI_SM2Verify(EVP_PKEY *key, const unsigned char *tbs, size_t tbslen,
-                    const unsigned char *sig, size_t siglen);
-#  endif
-unsigned char *TSAPI_SM2Encrypt(EVP_PKEY *key, const unsigned char *in,
-                                size_t inlen, size_t *outlen);
-unsigned char *TSAPI_SM2Decrypt(EVP_PKEY *key, const unsigned char *in,
-                                size_t inlen, size_t *outlen);
-unsigned char *TSAPI_SM2EncryptWithISK(int isk, const unsigned char *in,
-                                       size_t inlen, size_t *outlen);
-unsigned char *TSAPI_SM2DecryptWithISK(int isk, const unsigned char *in,
-                                       size_t inlen, size_t *outlen);
-unsigned char *TSAPI_ECCCipher_to_SM2Ciphertext(const OSSL_ECCCipher *ecc,
-                                                size_t *ciphertext_len);
-OSSL_ECCCipher *TSAPI_SM2Ciphertext_to_ECCCipher(const unsigned char *ciphertext,
-                                                 size_t ciphertext_len);
-int TSAPI_ImportSM2Key(int index, int sign, const char *user,
-                       const char *password, const EVP_PKEY *sm2_pkey);
-OSSL_ECCrefPublicKey *TSAPI_EVP_PKEY_get_ECCrefPublicKey(const EVP_PKEY *pkey);
-OSSL_ECCrefPrivateKey *TSAPI_EVP_PKEY_get_ECCrefPrivateKey(const EVP_PKEY *pkey);
-EVP_PKEY *TSAPI_ExportSM2KeyWithIndex(int index, int sign, const char *user,
-                                      const char *password);
-EVP_PKEY *TSAPI_EVP_PKEY_new_from_ECCrefKey(const OSSL_ECCrefPublicKey *pubkey,
-                                            const OSSL_ECCrefPrivateKey *privkey);
-int TSAPI_ImportSM2KeyWithEvlp(int index, int sign, const char *user,
-                               const char *password, unsigned char *key,
-                               size_t keylen, unsigned char *dek,
-                               size_t deklen);
-int TSAPI_ExportSM2KeyWithEvlp(int index, int sign, const char *user,
-                               const char *password, EVP_PKEY *sm2_pubkey,
-                               unsigned char **priv, size_t *privlen,
-                               unsigned char **pub, size_t *publen,
-                               unsigned char **outevlp, size_t *outevlplen);
-int TSAPI_GenerateSM2KeyWithIndex(int index, int sign, const char *user, const char *password);
-int TSAPI_DelSm2KeyWithIndex(int index, int sign, const char *user,
-                                const char *password);
-int TSAPI_UpdateSm2KeyWithIndex(int index, int sign, const char *user,
-                                const char *password);
-EVP_PKEY *TSAPI_ExportSM2PubKeyWithIndex(int index, int sign);
-# endif
 
-# ifndef OPENSSL_NO_SM4
-unsigned char *TSAPI_SM4Encrypt(int mode, const unsigned char *key,
-                                size_t keylen, int isk,
-                                const unsigned char *iv,
-                                const unsigned char *in, size_t inlen,
-                                size_t *outlen);
-unsigned char *TSAPI_SM4Decrypt(int mode, const unsigned char *key,
-                                size_t keylen, int isk,
-                                const unsigned char *iv,
-                                const unsigned char *in, size_t inlen,
-                                size_t *outlen);
-# endif
-# ifndef OPENSSL_NO_SM3
-unsigned char *TSAPI_SM3(const void *data, size_t datalen, size_t *outlen);
-# endif
+    // int TSAPI_AuthEnc();
+    // int TSAPI_AuthDec();
 
+
+    // int TSAPI_EncryptInit();
+    // int TSAPI_EncryptUpdate();
+    // int TSAPI_EncryptFinal();
+    // int TSAPI_DecryptInit();
+    // int TSAPI_DecryptUpdate();
+    // int TSAPI_DecryptFinal();
+    // int TSAPI_CalculateMACInit();
+    // int TSAPI_CalculateMACUpdate();
+    // int TSAPI_CalculateMACFinal();
+    // int TSAPI_AuthEncInit();
+    // int TSAPI_AuthEncUpdate();
+    // int TSAPI_AuthEncFinal();
+    // int TSAPI_AuthDecInit();
+    // int TSAPI_AuthDecUpdate();
+    // int TSAPI_AuthDecFinal();
+    // int TSAPI_HMACInit();
+    // int TSAPI_HMACUpdate();
+    // int TSAPI_HMACFinal();
+    // int TSAPI_HashInit();
+    // int TSAPI_HashUpdate();
+    // int TSAPI_HashFinal();
+    // int TSAPI_CreateFile();
+    // int TSAPI_ReadFile();
+    // int TSAPI_WriteFile();
+    // int TSAPI_DeleteFile();
+    // int TSAPI_GenerateKeyPair_RSA();
+    // int TSAPI_GenerateKeyPair_ECC();
+    // int TSAPI_ExternalPrivateKeyOperation_RSA();
+    // int TSAPI_ExternalSign_ECC();
+    // int TSAPI_ExternalDecrypt_ECC();
+    // int TSAPI_ExternalSign_SM9();
+    // int TSAPI_ExternalDecrypt_SM9();
+    // int TSAPI_ExternalKeyEncrypt();
+    // int TSAPI_ExternalKeyDecrypt();
+    // int TSAPI_ExternalKeyEncryptInit();
+    // int TSAPI_ExternalKeyDecryptInit();
+    // int TSAPI_ExternalKeyHMACInit();
+
+
+
+    // void ExtRSAOptTest();
+    // void IntRSAOptTest();
+    // void IntECCSignTest();
+    // void ExtECCOptTest();
+    // void ExtECCSignTest();
+    // // void IntECCOptTest();
+
+    // void SymmEncDecTest();
+
+
+    void parse_device_alg_ability(const unsigned int asym_alg_ability[2], 
+                             unsigned int sym_alg_ability, 
+                             unsigned int hash_alg_ability);
+    void analyze_asym_ability(const unsigned int asym_alg_ability[2]);
 # ifdef  __cplusplus
 }
 # endif

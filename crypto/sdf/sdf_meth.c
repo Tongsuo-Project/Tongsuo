@@ -53,7 +53,7 @@ static int x_ReleasePrivateKeyAccessRight(void *hSessionHandlek,
 
 static int x_ImportKeyWithISK_ECC(void *hSessionHandle,
                                     unsigned int uiISKIndex,
-                                    OSSL_ECCCipher *pucKey,
+                                    ECCCipher *pucKey,
                                     void **phKeyHandle)
 {
     return OSSL_SDR_NOTSUPPORT;
@@ -89,13 +89,13 @@ static int x_DestroyKey(void *hSessionHandle, void *hKeyHandle)
 static int x_InternalEncrypt_ECC(void *hSessionHandle, unsigned int uiISKIndex,
                                   unsigned char *pucData,
                                   unsigned int uiDataLength,
-                                  OSSL_ECCCipher *pucEncData)
+                                  ECCCipher *pucEncData)
 {
     return OSSL_SDR_NOTSUPPORT;
 }
 
 static int x_InternalDecrypt_ECC(void *hSessionHandle, unsigned int uiISKIndex,
-                                  OSSL_ECCCipher *pucEncData,
+                                  ECCCipher *pucEncData,
                                   unsigned char *pucData,
                                   unsigned int *puiDataLength)
 {
@@ -153,8 +153,8 @@ SDF_METHOD ts_sdf_meth = {
     x_ReleasePrivateKeyAccessRight,
     x_ImportKeyWithISK_ECC,
     x_ImportKeyWithKEK,
-    x_ExportSignPublicKey_ECC,
-    x_ExportEncPublicKey_ECC,
+    // x_ExportSignPublicKey_ECC,
+    // x_ExportEncPublicKey_ECC,
     x_DestroyKey,
     x_InternalEncrypt_ECC,
     x_InternalDecrypt_ECC,
