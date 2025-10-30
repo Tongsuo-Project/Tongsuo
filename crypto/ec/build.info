@@ -32,6 +32,11 @@ IF[{- !$disabled{asm} -}]
 
   $ECASM_c64xplus=
 
+  IF[{- !$disabled{'ec_sm2p_64_gcc_128'} -}]
+    $ECASM_loongarch64=ecp_sm2p256.c ecp_sm2p256-loongarch64.s
+    $ECDEF_loongarch64=ECP_SM2P256_ASM ECP_SM2P256_LOONGARCH64_ASM
+  ENDIF
+
   # Now that we have defined all the arch specific variables, use the
   # appropriate one, and define the appropriate macros
   IF[$ECASM_{- $target{asm_arch} -}]
@@ -91,6 +96,9 @@ INCLUDE[ecp_nistz256-armv8.o]=..
 GENERATE[ecp_nistz256-ppc64.s]=asm/ecp_nistz256-ppc64.pl
 
 GENERATE[ecp_nistp521-ppc64.s]=asm/ecp_nistp521-ppc64.pl
+
+GENERATE[ecp_sm2p256-loongarch64.s]=asm/ecp_sm2p256-loongarch64.S
+INCLUDE[ecp_sm2p256-loongarch64.o]=..
 
 GENERATE[x25519-x86_64.s]=asm/x25519-x86_64.pl
 GENERATE[x25519-ppc64.s]=asm/x25519-ppc64.pl
