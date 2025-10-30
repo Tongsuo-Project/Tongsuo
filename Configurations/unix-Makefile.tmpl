@@ -542,6 +542,7 @@ clean: libclean
 	-find . -type l \! -name '.*' -exec $(RM) {} \;
 
 distclean: clean
+	$(RM) include/openssl/configuration.h
 	$(RM) configdata.pm
 	$(RM) Makefile
 
@@ -1288,7 +1289,7 @@ EOF
           my $ord_name = $args{generator}->[1] || $args{product};
           return <<"EOF";
 $target: $gen0 $deps \$(SRCDIR)/util/mkdef.pl
-	\$(PERL) \$(SRCDIR)/util/mkdef.pl$ord_ver --ordinals $gen0  --name $ord_name --OS $mkdef_os > $target
+	\$(PERL) \$(SRCDIR)/util/mkdef.pl$ord_ver --type $args{intent} --ordinals $gen0  --name $ord_name --OS $mkdef_os > $target
 EOF
       } elsif (platform->isasm($args{src})) {
           #
