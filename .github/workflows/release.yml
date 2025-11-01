@@ -1,0 +1,118 @@
+# Copyright 2022 The Tongsuo Project Authors. All Rights Reserved.
+#
+# Licensed under the Apache License 2.0 (the "License").  You may not use
+# this file except in compliance with the License.  You can obtain a copy
+# in the file LICENSE in the source distribution or at
+# https://github.com/Tongsuo-Project/Tongsuo/blob/master/LICENSE.txt
+
+name: Tongsuo Release
+
+on:
+  release:
+    types: [published]
+    branches: [ master ]
+
+jobs:
+  build-linux:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - os: ubuntu-latest
+            arch: x86-64-linux-gnu
+            libs: libc6-dev-amd64-cross
+            cc_prefix: x86_64-linux-gnu-
+            rpath: '/opt/tongsuo/lib64:./opt/tongsuo/lib64:./tongsuo/lib64'
+            target: linux-x86_64
+          - os: ubuntu-latest
+            arch: aarch64-linux-gnu
+            libs: libc6-dev-arm64-cross
+            cc_prefix: aarch64-linux-gnu-
+            rpath: '/opt/tongsuo/lib64:./opt/tongsuo/lib64:./tongsuo/lib64'
+            target: linux-aarch64
+          - os: macos-10.15
+            rpath: '/opt/tongsuo/lib64:./opt/tongsuo/lib64:./tongsuo/lib64'
+            target: darwin64-x86_64
+    runs-on: ${{ matrix.platform.os }}
+    steps:
+    - name: install packages
+      if: ${{ matrix.platform.os == 'ubuntu-latest' }}
+      run: |
+        sudo apt-get update
+        sudo apt-get -yq --force-yes install \
+            gcc-${{ matrix.platform.arch }} \
+            ${{ matrix.platform.libs }}
+    - uses: actions/checkout@v2
+    - name: config
+      run: ./config --banner=Configured --strict-warnings --prefix=/opt/tongsuo --cross-compile-prefix=${{ matrix.platform.cc_prefix }} ${{ matrix.platform.target }} -Wl,-rpath,${{ matrix.platform.rpath }} enable-ssl-trace enable-crypto-mdebug enable-crypto-mdebug-backtrace enable-egd enable-ktls enable-fips enable-ntls enable-optimize-chacha-choose enable-status enable-crypto-mdebug-count enable-cert-compression enable-delegated-credential enable-ec_elgamal enable-sm2 enable-sm3 enable-sm4 enable-dynamic-ciphers enable-session-lookup enable-session-reused-type enable-rsa-multi-prime-key-compat enable-skip-scsv enable-verify-sni enable-evp-cipher-api-compat && perl configdata.pm --dump
+    - name: make
+      run: make -j
+    - name: make install
+      run: sudo make install
+    - name: pack
+      run: tar zcvf ./tongsuo-${{ matrix.platform.target }}.tar.gz /opt/tongsuo
+    - name: upload
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: |
+          tongsuo-${{ matrix.platform.target }}.tar.gz
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: debug with ssh tunnel
+      if: ${{ failure() }}
+      uses: wa5i/ssh-to-actions@main
+      with:
+        SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+        NPS_SERVER: ${{ secrets.NPS_SERVER }}
+        NPS_VKEY: ${{ secrets.NPS_VKEY }}
+  build-windows:
+    strategy:
+      matrix:
+        platform:
+          - arch: win64
+            config: VC-WIN64A enable-fips
+          - arch: win32
+            config: VC-WIN32 --strict-warnings no-fips
+    runs-on: windows-2019
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: ${{ matrix.platform.arch }}
+    - uses: ilammy/setup-nasm@v1
+      with:
+        platform: ${{ matrix.platform.arch }}
+    - uses: shogo82148/actions-setup-perl@v1
+    - name: prepare the build directory
+      run: mkdir _build
+    - name: config
+      working-directory: _build
+      run: |
+        perl ..\Configure --banner=Configured no-makedepend ${{ matrix.platform.config }} enable-ssl-trace enable-crypto-mdebug enable-crypto-mdebug-backtrace enable-egd enable-ktls enable-fips enable-ntls enable-optimize-chacha-choose enable-status enable-crypto-mdebug-count enable-cert-compression enable-delegated-credential enable-ec_elgamal enable-sm2 enable-sm3 enable-sm4 enable-dynamic-ciphers enable-session-lookup enable-session-reused-type enable-rsa-multi-prime-key-compat enable-skip-scsv enable-verify-sni enable-evp-cipher-api-compat
+        perl configdata.pm --dump
+    - name: build
+      working-directory: _build
+      run: nmake /S
+    - name: install
+      run: |
+        mkdir ..\tongsuo
+        nmake install DESTDIR=..\tongsuo
+      working-directory: _build
+    - name: pack
+      run: tar zcvf .\tongsuo-${{ matrix.platform.arch }}.tar.gz .\tongsuo
+    - name: upload
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: |
+          tongsuo-${{ matrix.platform.arch }}.tar.gz
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: debug with ssh tunnel
+      if: ${{ failure() }}
+      uses: wa5i/ssh-to-actions@main
+      with:
+        SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+        NPS_SERVER: ${{ secrets.NPS_SERVER }}
+        NPS_VKEY: ${{ secrets.NPS_VKEY }}
