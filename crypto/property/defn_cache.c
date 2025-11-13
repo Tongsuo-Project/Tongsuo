@@ -85,6 +85,11 @@ OSSL_PROPERTY_LIST *ossl_prop_defn_get(OSSL_LIB_CTX *ctx, const char *prop)
     return r != NULL ? r->defn : NULL;
 }
 
+/*
+ * Cache the property list for a given property string. Callers of this function
+ * should call ossl_prop_defn_get first to ensure that there is no existing
+ * cache entry for this property string.
+ */
 int ossl_prop_defn_set(OSSL_LIB_CTX *ctx, const char *prop,
                        OSSL_PROPERTY_LIST *pl)
 {

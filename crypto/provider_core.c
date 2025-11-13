@@ -460,7 +460,15 @@ static OSSL_PROVIDER *provider_new(const char *name,
 #ifndef HAVE_ATOMICS
         || (prov->refcnt_lock = CRYPTO_THREAD_lock_new()) == NULL
 #endif
-        || (prov->opbits_lock = CRYPTO_THREAD_lock_new()) == NULL
+       ) {
+        OPENSSL_free(prov);
+        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
+        return NULL;
+    }
+
+    prov->refcnt = 1; /* 1 One reference to be returned */
+
+    if ((prov->opbits_lock = CRYPTO_THREAD_lock_new()) == NULL
         || (prov->flag_lock = CRYPTO_THREAD_lock_new()) == NULL
         || (prov->name = OPENSSL_strdup(name)) == NULL
         || (prov->parameters = sk_INFOPAIR_deep_copy(parameters,
@@ -471,7 +479,6 @@ static OSSL_PROVIDER *provider_new(const char *name,
         return NULL;
     }
 
-    prov->refcnt = 1; /* 1 One reference to be returned */
     prov->init_function = init_function;
 
     return prov;
@@ -1415,8 +1422,10 @@ int ossl_provider_doall_activated(OSSL_LIB_CTX *ctx,
     for (curr = 0; curr < max; curr++) {
         OSSL_PROVIDER *prov = sk_OSSL_PROVIDER_value(provs, curr);
 
-        if (!cb(prov, cbdata))
+        if (!cb(prov, cbdata)) {
+            curr = -1;
             goto finish;
+        }
     }
     curr = -1;
 
