@@ -372,6 +372,7 @@ static void longfelem_diff(longfelem out, const longfelem in)
     out[7] -= in[7];
 }
 
+#if !defined(ECP_SM2P256_LOONGARCH64_ASM)
 #define two64m0 (((limb)1) << 64) - 1
 #define two64m32 (((limb)1) << 64) - (((limb)1) << 32)
 #define two64m32m0 (((limb)1) << 64) - (((limb)1) << 32) - 1
@@ -477,6 +478,9 @@ static void felem_shrink(smallfelem out, const felem in)
     out[2] = tmp[2];
     out[3] = tmp[3];
 }
+#else
+static void felem_shrink(smallfelem out, const felem in);
+#endif
 
 /* smallfelem_expand converts a smallfelem to an felem */
 static void smallfelem_expand(felem out, const smallfelem in)
@@ -487,6 +491,7 @@ static void smallfelem_expand(felem out, const smallfelem in)
     out[3] = in[3];
 }
 
+#if !defined(ECP_SM2P256_LOONGARCH64_ASM)
 /*-
  * smallfelem_square sets |out| = |small|^2
  * On entry:
@@ -676,6 +681,10 @@ static void inline smallfelem_mul(longfelem out, const smallfelem small1,
     out[6] += low;
     out[7] = high;
 }
+#else
+static void smallfelem_square(longfelem out, const smallfelem small);
+static void smallfelem_mul(longfelem out, const smallfelem small1, const smallfelem small2);
+#endif
 
 /*-
  * felem_mul sets |out| = |in1| * |in2|
@@ -709,6 +718,7 @@ static void felem_small_mul(longfelem out, const smallfelem small1,
     smallfelem_mul(out, small1, small2);
 }
 
+#if !defined(ECP_SM2P256_LOONGARCH64_ASM)
 /*-
  * felem_reduce converts a longfelem into an felem.
  * To be called directly after felem_square or felem_mul.
@@ -745,6 +755,11 @@ static void smallfelem_square_reduced(felem out, const smallfelem small)
     smallfelem_square(tmp, small);
     felem_reduce(out, tmp);
 }
+#else
+static void felem_reduce(felem out, const longfelem in);
+static void smallfelem_square_reduced(felem out, const smallfelem small);
+static void smallfelem_mul_reduced(felem out, const smallfelem small1, const smallfelem small2);
+#endif
 
 static void felem_mul_reduced(felem out, const felem in1, const felem in2)
 {
