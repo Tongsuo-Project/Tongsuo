@@ -103,6 +103,7 @@ my @defltfiles = qw(
                      evpmac_poly1305.txt
                      evpmac_zuc_eia3.txt
                      evpmac_siphash.txt
+		     evpmac_sm3.txt
                      evpmd_md.txt
                      evpmd_sm3.txt
                      evppbe_scrypt.txt
