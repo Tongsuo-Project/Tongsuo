@@ -25,6 +25,10 @@ static int gcm_cipher_internal(PROV_GCM_CTX *ctx, unsigned char *out,
                                size_t *padlen, const unsigned char *in,
                                size_t len);
 
+/*
+ * Called from EVP_CipherInit when there is currently no context via
+ * the new_ctx() function
+ */
 void ossl_gcm_initctx(void *provctx, PROV_GCM_CTX *ctx, size_t keybits,
                       const PROV_GCM_HW *hw)
 {
@@ -38,6 +42,9 @@ void ossl_gcm_initctx(void *provctx, PROV_GCM_CTX *ctx, size_t keybits,
     ctx->libctx = PROV_LIBCTX_OF(provctx);
 }
 
+/*
+ * Called by EVP_CipherInit via the _einit and _dinit functions
+ */
 static int gcm_init(void *vctx, const unsigned char *key, size_t keylen,
                     const unsigned char *iv, size_t ivlen,
                     const OSSL_PARAM params[], int enc)
