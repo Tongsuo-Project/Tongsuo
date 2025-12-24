@@ -661,6 +661,14 @@ int ssl3_write_bytes(SSL *s, int type, const void *buf_, size_t len,
     }
 }
 
+/*
+ * Encryption growth may result from padding in CBC ciphersuites (never more
+ * than SSL_RT_MAX_CIPHER_BLOCK_SIZE bytes), or from an AEAD tag (never more
+ * than EVP_MAX_MD_SIZE bytes). In the case of stitched ciphersuites growth can
+ * come from both of these.
+ */
+#define MAX_ENCRYPTION_GROWTH (EVP_MAX_MD_SIZE + SSL_RT_MAX_CIPHER_BLOCK_SIZE)
+
 int do_ssl3_write(SSL *s, int type, const unsigned char *buf,
                   size_t *pipelens, size_t numpipes,
                   int create_empty_fragment, size_t *written)
@@ -995,15 +1003,9 @@ int do_ssl3_write(SSL *s, int type, const unsigned char *buf,
             }
         }
 
-        /*
-         * Reserve some bytes for any growth that may occur during encryption.
-         * This will be at most one cipher block or the tag length if using
-         * AEAD. SSL_RT_MAX_CIPHER_BLOCK_SIZE covers either case.
-         */
+        /* Reserve some bytes for any growth that may occur during encryption. */
         if (!BIO_get_ktls_send(s->wbio)) {
-            if (!WPACKET_reserve_bytes(thispkt,
-                                        SSL_RT_MAX_CIPHER_BLOCK_SIZE,
-                                        NULL)
+            if (!WPACKET_reserve_bytes(thispkt, MAX_ENCRYPTION_GROWTH, NULL)
                 /*
                  * We also need next the amount of bytes written to this
                  * sub-packet
@@ -1055,6 +1057,9 @@ int do_ssl3_write(SSL *s, int type, const unsigned char *buf,
 
         /* Allocate bytes for the encryption overhead */
         if (!WPACKET_get_length(thispkt, &origlen)
+                   /* Check we allowed enough room for the encryption growth */
+                || !ossl_assert(origlen + MAX_ENCRYPTION_GROWTH
+                                >= thiswr->length)
                    /* Encryption should never shrink the data! */
                 || origlen > thiswr->length
                 || (thiswr->length > origlen
