@@ -516,6 +516,10 @@ static int test_ntls_ssl_set_cert_pkey_api(int i)
     if (!TEST_true(ssl != NULL))
         goto err;
 
+    SSL_CTX_set_security_level(ctx, 2);
+    SSL_CTX_set_min_proto_version(ctx, NTLS1_1_VERSION);
+    SSL_CTX_set_max_proto_version(ctx, NTLS1_1_VERSION);
+
     if (!TEST_int_eq(SSL_use_sign_certificate(ssl, sign_cert), 1))
         goto err;
 
