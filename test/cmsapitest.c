@@ -295,7 +295,6 @@ static int test_d2i_CMS_bio_file_encrypted_data(void)
     CMS_ContentInfo *cms = NULL;
     int ret = 0;
 
-    ERR_clear_error();
 
     if (!TEST_ptr(bio = BIO_new_file(derin, "r"))
       || !TEST_ptr(cms = d2i_CMS_bio(bio, NULL)))
