@@ -138,7 +138,7 @@ jobs:
         sudo cat /proc/sys/vm/mmap_rnd_bits
         sudo sysctl -w vm.mmap_rnd_bits=28
     - name: config
-      run: ./config --banner=Configured --debug enable-asan enable-ubsan enable-rc5 enable-md2 enable-ec_nistp_64_gcc_128 enable-fips enable-quic -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION && perl configdata.pm --dump
+      run: ./config --banner=Configured --debug enable-asan enable-ubsan enable-rc5 enable-ec_nistp_64_gcc_128 enable-fips enable-cert-compression enable-bn-method enable-delegated-credential -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION && perl configdata.pm --dump
     - name: make
       run: make -s -j4
     - name: make test
