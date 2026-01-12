@@ -362,6 +362,7 @@ static int add_provider_groups(const OSSL_PARAM params[], void *data)
      * it.
      */
     ret = 1;
+    ERR_set_mark();
     keymgmt = EVP_KEYMGMT_fetch(ctx->libctx, ginf->algorithm, ctx->propq);
     if (keymgmt != NULL) {
         /*
@@ -383,6 +384,7 @@ static int add_provider_groups(const OSSL_PARAM params[], void *data)
         }
         EVP_KEYMGMT_free(keymgmt);
     }
+    ERR_pop_to_mark();
  err:
     if (ginf != NULL) {
         OPENSSL_free(ginf->tlsname);
@@ -744,8 +746,11 @@ static int gid_cb(const char *elem, int len, void *arg)
     etmp[len] = 0;
 
     gid = tls1_group_name2id(garg->ctx, etmp);
-    if (gid == 0)
+    if (gid == 0) {
+        ERR_raise_data(ERR_LIB_SSL, ERR_R_PASSED_INVALID_ARGUMENT,
+                       "group '%s' cannot be set", etmp);
         return 0;
+    }
     for (i = 0; i < garg->gidcnt; i++)
         if (garg->gid_arr[i] == gid)
             return 0;
@@ -1815,7 +1820,7 @@ SSL_TICKET_STATUS tls_decrypt_ticket(SSL *s, const unsigned char *etick,
     SSL_SESSION *sess = NULL;
     unsigned char *sdec;
     const unsigned char *p;
-    int slen, renew_ticket = 0, declen;
+    int slen, ivlen, renew_ticket = 0, declen;
     SSL_TICKET_STATUS ret = SSL_TICKET_FATAL_ERR_OTHER;
     size_t mlen;
     unsigned char tick_hmac[EVP_MAX_MD_SIZE];
@@ -1957,9 +1962,15 @@ SSL_TICKET_STATUS tls_decrypt_ticket(SSL *s, const unsigned char *etick,
         goto end;
     }
 
+    ivlen = EVP_CIPHER_CTX_get_iv_length(ctx);
+    if (ivlen < 0) {
+        ret = SSL_TICKET_FATAL_ERR_OTHER;
+        goto end;
+    }
+
+
     /* Sanity check ticket length: must exceed keyname + IV + HMAC */
-    if (eticklen <=
-        TLSEXT_KEYNAME_LENGTH + EVP_CIPHER_CTX_get_iv_length(ctx) + mlen) {
+    if (eticklen <= TLSEXT_KEYNAME_LENGTH + ivlen + mlen) {
         ret = SSL_TICKET_NO_DECRYPT;
         goto end;
     }
@@ -1977,8 +1988,8 @@ SSL_TICKET_STATUS tls_decrypt_ticket(SSL *s, const unsigned char *etick,
     }
     /* Attempt to decrypt session data */
     /* Move p after IV to start of encrypted ticket, update length */
-    p = etick + TLSEXT_KEYNAME_LENGTH + EVP_CIPHER_CTX_get_iv_length(ctx);
-    eticklen -= TLSEXT_KEYNAME_LENGTH + EVP_CIPHER_CTX_get_iv_length(ctx);
+    p = etick + TLSEXT_KEYNAME_LENGTH + ivlen;
+    eticklen -= TLSEXT_KEYNAME_LENGTH + ivlen;
     sdec = OPENSSL_malloc(eticklen);
     if (sdec == NULL || EVP_DecryptUpdate(ctx, sdec, &slen, p,
                                           (int)eticklen) <= 0) {
