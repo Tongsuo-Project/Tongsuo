@@ -21,6 +21,7 @@
 #include <openssl/pem.h>
 #include <openssl/provider.h>
 #include <openssl/rsa.h>
+#include <openssl/dh.h>
 #include <openssl/core_names.h>
 #include "testutil.h"
 #include "internal/nelem.h"
