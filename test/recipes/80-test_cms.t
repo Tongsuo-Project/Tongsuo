@@ -48,7 +48,7 @@ my $smcont_zero = srctop_file("test", "smcont_zero.txt");
 my ($no_des, $no_dh, $no_dsa, $no_ec, $no_ec2m, $no_zlib)
     = disabled qw/des dh dsa ec ec2m zlib/;
 
-plan tests => 12;
+plan tests => 13;
 
 ok(run(test(["pkcs7_test"])), "test pkcs7");
 
@@ -916,3 +916,14 @@ sub check_availability {
 
     return "";
 }
+
+# Test case for the locking problem reported in #19643.
+# This will fail if the fix is in and deadlock on Windows (and possibly
+# other platforms) if not.
+ok(!run(app(['openssl', 'cms', '-verify',
+             '-CAfile', srctop_file("test/certs", "pkitsta.pem"),
+             '-policy', 'anyPolicy',
+             '-in', srctop_file("test/smime-eml",
+                                "SignedInvalidMappingFromanyPolicyTest7.eml")
+            ])),
+   "issue#19643");
