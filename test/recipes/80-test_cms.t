@@ -48,7 +48,7 @@ my $smcont_zero = srctop_file("test", "smcont_zero.txt");
 my ($no_des, $no_dh, $no_dsa, $no_ec, $no_ec2m, $no_zlib)
     = disabled qw/des dh dsa ec ec2m zlib/;
 
-plan tests => 13;
+plan tests => 14;
 
 ok(run(test(["pkcs7_test"])), "test pkcs7");
 
@@ -808,6 +808,24 @@ subtest "CMS Check that bad attributes fail when verifying signers\n" => sub {
                      catfile($datadir, $name), "-inform", "DER", "-CAfile",
                      $smroot, "-out", $out ])),
             $name);
+    }
+};
+
+subtest "CMS Check that bad encryption algorithm fails\n" => sub {
+    plan tests => 1;
+
+    SKIP: {
+        skip "DES or Legacy isn't supported in this build", 1
+            if disabled("des") || disabled("legacy");
+
+        my $out = "smtst.txt";
+
+        ok(!run(app(["openssl", "cms", @legacyprov, "-encrypt",
+                    "-in", $smcont,
+                    "-stream", "-recip", $smrsa1,
+                    "-des-ede3",
+                    "-out", $out ])),
+           "Decrypt message from OpenSSL 1.1.1");
     }
 };
 
