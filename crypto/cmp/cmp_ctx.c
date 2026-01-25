@@ -23,7 +23,7 @@
 /*
  * Get current certificate store containing trusted root CA certs
  */
-X509_STORE *OSSL_CMP_CTX_get0_trustedStore(const OSSL_CMP_CTX *ctx)
+X509_STORE *OSSL_CMP_CTX_get0_trusted(const OSSL_CMP_CTX *ctx)
 {
     if (ctx == NULL) {
         ERR_raise(ERR_LIB_CMP, CMP_R_NULL_ARGUMENT);
@@ -37,7 +37,7 @@ X509_STORE *OSSL_CMP_CTX_get0_trustedStore(const OSSL_CMP_CTX *ctx)
  * and a cert verification callback function used for CMP server authentication.
  * Any already existing store entry is freed. Given NULL, the entry is reset.
  */
-int OSSL_CMP_CTX_set0_trustedStore(OSSL_CMP_CTX *ctx, X509_STORE *store)
+int OSSL_CMP_CTX_set0_trusted(OSSL_CMP_CTX *ctx, X509_STORE *store)
 {
     if (ctx == NULL) {
         ERR_raise(ERR_LIB_CMP, CMP_R_NULL_ARGUMENT);
