@@ -13,7 +13,7 @@ use warnings;
 use POSIX;
 use File::Spec::Functions qw/catfile/;
 use File::Compare qw/compare_text compare/;
-use OpenSSL::Test qw/:DEFAULT srctop_dir srctop_file bldtop_dir bldtop_file with/;
+use OpenSSL::Test qw/:DEFAULT srctop_dir srctop_file bldtop_dir bldtop_file with data_file/;
 
 use OpenSSL::Test::Utils;
 
@@ -48,7 +48,7 @@ my $smcont_zero = srctop_file("test", "smcont_zero.txt");
 my ($no_des, $no_dh, $no_dsa, $no_ec, $no_ec2m, $no_zlib)
     = disabled qw/des dh dsa ec ec2m zlib/;
 
-plan tests => 15;
+plan tests => 16;
 
 ok(run(test(["pkcs7_test"])), "test pkcs7");
 
@@ -915,6 +915,17 @@ subtest "CMS binary input tests\n" => sub {
                 "-binary", "-in", $signed.".crlf", "-out", $verified.".crlf2"])),
        "verify binary input with -binary missing -crlfeol");
 };
+
+# Test case for missing MD algorithm (must not segfault)
+
+with({ exit_checker => sub { return shift == 4; } },
+    sub {
+        ok(run(app(['openssl', 'smime', '-verify', '-noverify',
+                    '-inform', 'PEM',
+                    '-in', data_file("pkcs7-md4.pem"),
+                   ])),
+            "Check failure of EVP_DigestInit is handled correctly");
+    });
 
 sub check_availability {
     my $tnam = shift;
