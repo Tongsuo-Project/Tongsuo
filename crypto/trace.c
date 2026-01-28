@@ -138,9 +138,7 @@ static const struct trace_category_st
     TRACE_CATEGORY_(DECODER),
     TRACE_CATEGORY_(ENCODER),
     TRACE_CATEGORY_(REF_COUNT),
-#ifdef SMTC_MODULE
     TRACE_CATEGORY_(SMTC),
-#endif
 };
 
 const char *OSSL_trace_get_category_name(int num)
