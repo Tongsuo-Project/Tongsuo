@@ -12,7 +12,7 @@ use OpenSSL::Test::Utils qw(anydisabled);
 
 our $fips_mode;
 
-my @groups_sm_pqc = ("SM2", "SM2DH_MLKEM768_HYBRID");
+my @groups_sm_pqc = ("SM2", "curveSM2MLKEM768");
 
 our @tests = ();
 

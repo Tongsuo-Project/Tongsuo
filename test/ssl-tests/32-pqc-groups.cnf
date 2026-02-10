@@ -3,7 +3,7 @@
 num_tests = 2
 
 test-0 = 0-curve-SM2-tls13
-test-1 = 1-curve-SM2DH_MLKEM768_HYBRID-tls13
+test-1 = 1-curve-curveSM2MLKEM768-tls13
 # ===========================================================
 
 [0-curve-SM2-tls13]
@@ -33,26 +33,26 @@ ExpectedResult = Success
 
 # ===========================================================
 
-[1-curve-SM2DH_MLKEM768_HYBRID-tls13]
-ssl_conf = 1-curve-SM2DH_MLKEM768_HYBRID-tls13-ssl
+[1-curve-curveSM2MLKEM768-tls13]
+ssl_conf = 1-curve-curveSM2MLKEM768-tls13-ssl
 
-[1-curve-SM2DH_MLKEM768_HYBRID-tls13-ssl]
-server = 1-curve-SM2DH_MLKEM768_HYBRID-tls13-server
-client = 1-curve-SM2DH_MLKEM768_HYBRID-tls13-client
+[1-curve-curveSM2MLKEM768-tls13-ssl]
+server = 1-curve-curveSM2MLKEM768-tls13-server
+client = 1-curve-curveSM2MLKEM768-tls13-client
 
-[1-curve-SM2DH_MLKEM768_HYBRID-tls13-server]
+[1-curve-curveSM2MLKEM768-tls13-server]
 Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
 CipherString = DEFAULT
 MaxProtocol = TLSv1.3
 PrivateKey = ${ENV::TEST_CERTS_DIR}/serverkey.pem
-groups = SM2DH_MLKEM768_HYBRID
+groups = curveSM2MLKEM768
 
-[1-curve-SM2DH_MLKEM768_HYBRID-tls13-client]
+[1-curve-curveSM2MLKEM768-tls13-client]
 CipherString = DEFAULT
 MinProtocol = TLSv1.3
 VerifyCAFile = ${ENV::TEST_CERTS_DIR}/rootcert.pem
 VerifyMode = Peer
-groups = SM2DH_MLKEM768_HYBRID
+groups = curveSM2MLKEM768
 
 [test-1]
 ExpectedResult = Success
