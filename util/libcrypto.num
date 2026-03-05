@@ -5724,3 +5724,4 @@ ATTRIBUTES_SYNTAX_free                  ?	3_0_3	EXIST::FUNCTION:
 ATTRIBUTES_SYNTAX_new                   ?	3_0_3	EXIST::FUNCTION:
 ATTRIBUTES_SYNTAX_it                    ?	3_0_3	EXIST::FUNCTION:
 OSSL_CMP_CTX_reset_geninfo_ITAVs        ?	3_0_3	EXIST::FUNCTION:CMP
+OSSL_CMP_MSG_update_recipNonce          ?	3_0_9	EXIST::FUNCTION:CMP
