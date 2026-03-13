@@ -194,9 +194,10 @@ static SSL_SESSION *ssl_session_dup_intern(const SSL_SESSION *src, int ticket)
     dest->quic_early_data_context = NULL;
     dest->quic_early_data_context_len = 0;
 #endif
-    /* We deliberately don't copy the prev and next pointers */
+    /* As the copy is not in the cache, we remove the associated pointers */
     dest->prev = NULL;
     dest->next = NULL;
+    dest->owner = NULL;
 
     dest->references = 1;
 
