@@ -154,6 +154,12 @@ static int padlock_aes_set_decrypt_key(const unsigned char *userKey,
                                        const int bits,
                                        AES_KEY *key);
 #   define AES_ASM
+#  ifdef AES_set_encrypt_key
+#   undef AES_set_encrypt_key
+#  endif
+#  ifdef AES_set_decrypt_key
+#   undef AES_set_decrypt_key
+#  endif
 #   define AES_set_encrypt_key padlock_aes_set_encrypt_key
 #   define AES_set_decrypt_key padlock_aes_set_decrypt_key
 #   include "../crypto/aes/aes_core.c"
