@@ -207,7 +207,7 @@ static int duplicated(LHASH_OF(OPENSSL_STRING) *addexts, char *kv)
 
     /* Check syntax. */
     /* Skip leading whitespace, make a copy. */
-    while (*kv && isspace(*kv))
+    while (*kv && isspace(_UC(*kv)))
         if (*++kv == '\0')
             return 1;
     if ((p = strchr(kv, '=')) == NULL)
@@ -218,7 +218,7 @@ static int duplicated(LHASH_OF(OPENSSL_STRING) *addexts, char *kv)
 
     /* Skip trailing space before the equal sign. */
     for (p = kv + off; p > kv; --p)
-        if (!isspace(p[-1]))
+        if (!isspace(_UC(p[-1])))
             break;
     if (p == kv) {
         OPENSSL_free(kv);

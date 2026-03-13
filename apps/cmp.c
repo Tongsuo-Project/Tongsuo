@@ -2113,7 +2113,7 @@ static const char *prev_item(const char *opt, const char *end)
     beg = end;
     while (beg > opt) {
         --beg;
-        if (beg[0] == ',' || isspace(beg[0])) {
+        if (beg[0] == ',' || isspace(_UC(beg[0]))) {
             ++beg;
             break;
         }
@@ -2128,7 +2128,7 @@ static const char *prev_item(const char *opt, const char *end)
     opt_item[len] = '\0';
     while (beg > opt) {
         --beg;
-        if (beg[0] != ',' && !isspace(beg[0])) {
+        if (beg[0] != ',' && !isspace(_UC(beg[0]))) {
             ++beg;
             break;
         }
