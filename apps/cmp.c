@@ -2937,6 +2937,7 @@ int cmp_main(int argc, char **argv)
             CMP_warn("-server option is not used if enough filenames given for -rspin");
         if (opt_use_mock_srv)
             CMP_warn("-use_mock_srv option is not used if enough filenames given for -rspin");
+    }
 #endif
 
     if (!setup_client_ctx(cmp_ctx, engine)) {
