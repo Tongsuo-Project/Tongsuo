@@ -42,6 +42,7 @@ static int tls_dump_write(BIO *b, const char *in, int inl);
 static long tls_dump_ctrl(BIO *b, int cmd, long num, void *ptr);
 static int tls_dump_gets(BIO *bp, char *buf, int size);
 static int tls_dump_puts(BIO *bp, const char *str);
+static int retry_err = -1;
 
 /* Choose a sufficiently large type likely to be unused for this custom BIO */
 #define BIO_TYPE_TLS_DUMP_FILTER  (0x80 | BIO_TYPE_FILTER)
@@ -771,16 +772,21 @@ static int always_retry_free(BIO *bio)
     return 1;
 }
 
+void set_always_retry_err_val(int err)
+{
+    retry_err = err;
+}
+
 static int always_retry_read(BIO *bio, char *out, int outl)
 {
     BIO_set_retry_read(bio);
-    return -1;
+    return retry_err;
 }
 
 static int always_retry_write(BIO *bio, const char *in, int inl)
 {
     BIO_set_retry_write(bio);
-    return -1;
+    return retry_err;
 }
 
 static long always_retry_ctrl(BIO *bio, int cmd, long num, void *ptr)
@@ -806,13 +812,13 @@ static long always_retry_ctrl(BIO *bio, int cmd, long num, void *ptr)
 static int always_retry_gets(BIO *bio, char *buf, int size)
 {
     BIO_set_retry_read(bio);
-    return -1;
+    return retry_err;
 }
 
 static int always_retry_puts(BIO *bio, const char *str)
 {
     BIO_set_retry_write(bio);
-    return -1;
+    return retry_err;
 }
 
 int create_ssl_ctx_pair(OSSL_LIB_CTX *libctx, const SSL_METHOD *sm,
