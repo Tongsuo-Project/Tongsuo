@@ -48,7 +48,7 @@ my $smcont_zero = srctop_file("test", "smcont_zero.txt");
 my ($no_des, $no_dh, $no_dsa, $no_ec, $no_ec2m, $no_zlib)
     = disabled qw/des dh dsa ec ec2m zlib/;
 
-plan tests => 17;
+plan tests => 18;
 
 ok(run(test(["pkcs7_test"])), "test pkcs7");
 
@@ -981,3 +981,14 @@ with({ exit_checker => sub { return shift == 3; } },
             "issue#21986");
         }
     });
+
+# Test for problem reported in #22225
+with({ exit_checker => sub { return shift == 3; } },
+    sub {
+	ok(run(app(['openssl', 'cms', '-encrypt',
+		    '-in', srctop_file("test", "smcont.txt"),
+		    '-aes-256-ctr', '-recip',
+		    catfile($smdir, "smec1.pem"),
+		   ])),
+	   "Check for failure when cipher does not have an assigned OID (issue#22225)");
+     });
