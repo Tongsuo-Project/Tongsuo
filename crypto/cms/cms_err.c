@@ -154,6 +154,8 @@ static const ERR_STRING_DATA CMS_str_reasons[] = {
     "unsupported recipientinfo type"},
     {ERR_PACK(ERR_LIB_CMS, 0, CMS_R_UNSUPPORTED_RECIPIENT_TYPE),
     "unsupported recipient type"},
+    {ERR_PACK(ERR_LIB_CMS, 0, CMS_R_UNSUPPORTED_SIGNATURE_ALGORITHM),
+    "unsupported signature algorithm"},
     {ERR_PACK(ERR_LIB_CMS, 0, CMS_R_UNSUPPORTED_TYPE), "unsupported type"},
     {ERR_PACK(ERR_LIB_CMS, 0, CMS_R_UNWRAP_ERROR), "unwrap error"},
     {ERR_PACK(ERR_LIB_CMS, 0, CMS_R_UNWRAP_FAILURE), "unwrap failure"},
