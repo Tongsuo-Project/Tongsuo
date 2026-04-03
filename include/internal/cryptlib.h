@@ -22,10 +22,10 @@
 #  define BIO_FLAGS_UPLINK_INTERNAL 0
 # endif
 
+# include "crypto/asn1.h"
 # include <openssl/crypto.h>
 # include <openssl/buffer.h>
 # include <openssl/bio.h>
-# include <openssl/asn1.h>
 # include <openssl/err.h>
 # include "internal/nelem.h"
 

@@ -594,6 +594,7 @@ int ssl3_get_record(SSL *s)
         }
     }
 
+    ERR_set_mark();
     enc_err = s->method->ssl3_enc->enc(s, rr, num_recs, 0, macbufs, mac_size);
 
     /*-
@@ -605,6 +606,7 @@ int ssl3_get_record(SSL *s)
     if (enc_err == 0) {
         if (ossl_statem_in_error(s)) {
             /* SSLfatal() already got called */
+            ERR_clear_last_mark();
             goto end;
         }
         if (num_recs == 1 && ossl_statem_skip_early_data(s)) {
@@ -612,6 +614,12 @@ int ssl3_get_record(SSL *s)
              * Valid early_data that we cannot decrypt will fail here. We treat
              * it like an empty record.
              */
+
+            /*
+             * Remove any errors from the stack. Decryption failures are normal
+             * behaviour.
+             */
+            ERR_pop_to_mark();
 
             thisrr = &rr[0];
 
@@ -628,9 +636,12 @@ int ssl3_get_record(SSL *s)
             ret = 1;
             goto end;
         }
-        SSLfatal(s, SSL_AD_BAD_RECORD_MAC,
+        ERR_clear_last_mark();
+	SSLfatal(s, SSL_AD_BAD_RECORD_MAC,
                  SSL_R_DECRYPTION_FAILED_OR_BAD_RECORD_MAC);
         goto end;
+    } else {
+        ERR_clear_last_mark();
     }
     OSSL_TRACE_BEGIN(TLS) {
         BIO_printf(trc_out, "dec %lu\n", (unsigned long)rr[0].length);

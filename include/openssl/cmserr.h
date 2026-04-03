@@ -113,6 +113,7 @@
 #  define CMS_R_UNSUPPORTED_LABEL_SOURCE                   193
 #  define CMS_R_UNSUPPORTED_RECIPIENTINFO_TYPE             155
 #  define CMS_R_UNSUPPORTED_RECIPIENT_TYPE                 154
+#  define CMS_R_UNSUPPORTED_SIGNATURE_ALGORITHM            195
 #  define CMS_R_UNSUPPORTED_TYPE                           156
 #  define CMS_R_UNWRAP_ERROR                               157
 #  define CMS_R_UNWRAP_FAILURE                             180

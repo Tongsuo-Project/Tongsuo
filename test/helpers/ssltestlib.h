@@ -35,6 +35,7 @@ void bio_s_mempacket_test_free(void);
 
 const BIO_METHOD *bio_s_always_retry(void);
 void bio_s_always_retry_free(void);
+void set_always_retry_err_val(int err);
 
 /* Packet types - value 0 is reserved */
 #define INJECT_PACKET                   1
@@ -49,7 +50,8 @@ void bio_s_always_retry_free(void);
 #define MEMPACKET_CTRL_GET_DROP_REC         (3 << 15)
 #define MEMPACKET_CTRL_SET_DUPLICATE_REC    (4 << 15)
 
-int mempacket_swap_recent(BIO *bio);
+int mempacket_swap_epoch(BIO *bio);
+int mempacket_move_packet(BIO *bio, int d, int s);
 int mempacket_test_inject(BIO *bio, const char *in, int inl, int pktnum,
                           int type);
 

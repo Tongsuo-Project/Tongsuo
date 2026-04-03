@@ -218,7 +218,8 @@ static int psk_find_session_cb(SSL *ssl, const unsigned char *identity,
             || !SSL_SESSION_set_cipher(tmpsess, cipher)
             || !SSL_SESSION_set_protocol_version(tmpsess, SSL_version(ssl))) {
         OPENSSL_free(key);
-        return 0;
+        SSL_SESSION_free(tmpsess);
+	return 0;
     }
     OPENSSL_free(key);
     *sess = tmpsess;
@@ -817,7 +818,7 @@ const OPTIONS s_server_options[] = {
      "second server certificate chain file in PEM format"},
     {"dkey", OPT_DKEY, '<',
      "Second private key file to use (usually for DSA)"},
-    {"dkeyform", OPT_DKEYFORM, 'F',
+    {"dkeyform", OPT_DKEYFORM, 'f',
      "Second key file format (ENGINE, other values ignored)"},
     {"dpass", OPT_DPASS, 's',
      "Second private key and cert file pass phrase source"},

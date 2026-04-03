@@ -129,11 +129,11 @@ static const OSSL_LIB_CTX_METHOD ossl_ctx_global_properties_method = {
 };
 
 OSSL_PROPERTY_LIST **ossl_ctx_global_properties(OSSL_LIB_CTX *libctx,
-                                                int loadconfig)
+                                                ossl_unused int loadconfig)
 {
     OSSL_GLOBAL_PROPERTIES *globp;
 
-#ifndef FIPS_MODULE
+#if !defined(FIPS_MODULE) && !defined(OPENSSL_NO_AUTOLOAD_CONFIG)
     if (loadconfig && !OPENSSL_init_crypto(OPENSSL_INIT_LOAD_CONFIG, NULL))
         return NULL;
 #endif
@@ -510,13 +510,14 @@ int ossl_method_store_fetch(OSSL_METHOD_STORE *store,
     int ret = 0;
     int j, best = -1, score, optional;
 
-#ifndef FIPS_MODULE
-    if (!OPENSSL_init_crypto(OPENSSL_INIT_LOAD_CONFIG, NULL))
-        return 0;
-#endif
-
     if (nid <= 0 || method == NULL || store == NULL)
         return 0;
+
+#if !defined(FIPS_MODULE) && !defined(OPENSSL_NO_AUTOLOAD_CONFIG)
+    if (ossl_lib_ctx_is_default(store->ctx)
+            && !OPENSSL_init_crypto(OPENSSL_INIT_LOAD_CONFIG, NULL))
+        return 0;
+#endif
 
     /* This only needs to be a read lock, because the query won't create anything */
     if (!ossl_property_read_lock(store))

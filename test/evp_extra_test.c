@@ -899,6 +899,8 @@ static int test_EC_priv_pub(void)
     BIGNUM *priv = NULL;
     int ret = 0;
     unsigned char *encoded = NULL;
+    size_t len = 0;
+    unsigned char buffer[128];
 
     /*
      * Setup the parameters for our pkey object. For our purposes they don't
@@ -1018,6 +1020,26 @@ static int test_EC_priv_pub(void)
         goto err;
     }
 
+    /* Positive and negative testcase for EVP_PKEY_get_octet_string_param */
+    if (!TEST_int_eq(EVP_PKEY_get_octet_string_param(params_and_pub,
+                                                     OSSL_PKEY_PARAM_ENCODED_PUBLIC_KEY,
+                                                     buffer, sizeof(buffer), &len), 1)
+        || !TEST_int_eq(len, 65))
+        goto err;
+
+    len = 0;
+    if (!TEST_int_eq(EVP_PKEY_get_octet_string_param(params_and_pub,
+                                                     OSSL_PKEY_PARAM_ENCODED_PUBLIC_KEY,
+                                                     NULL, 0, &len), 1)
+        || !TEST_int_eq(len, 65))
+        goto err;
+
+    /* too-short buffer len*/
+    if (!TEST_int_eq(EVP_PKEY_get_octet_string_param(params_and_pub,
+                                                     OSSL_PKEY_PARAM_ENCODED_PUBLIC_KEY,
+                                                     buffer, 10, &len), 0))
+        goto err;
+
     ret = 1;
  err:
     OSSL_PARAM_free(params);
@@ -1111,11 +1133,11 @@ static int test_EVP_PKEY_sign(int tst)
 
     if (tst == 0 ) {
         if (!TEST_ptr(pkey = load_example_rsa_key()))
-                goto out;
+            goto out;
     } else if (tst == 1) {
 #ifndef OPENSSL_NO_DSA
         if (!TEST_ptr(pkey = load_example_dsa_key()))
-                goto out;
+            goto out;
 #else
         ret = 1;
         goto out;
@@ -1123,7 +1145,7 @@ static int test_EVP_PKEY_sign(int tst)
     } else {
 #ifndef OPENSSL_NO_EC
         if (!TEST_ptr(pkey = load_example_ec_key()))
-                goto out;
+            goto out;
 #else
         ret = 1;
         goto out;
@@ -1156,6 +1178,88 @@ static int test_EVP_PKEY_sign(int tst)
     EVP_PKEY_free(pkey);
     return ret;
 }
+
+#ifndef OPENSSL_NO_DEPRECATED_3_0
+static int test_EVP_PKEY_sign_with_app_method(int tst)
+{
+    int ret = 0;
+    EVP_PKEY *pkey = NULL;
+    RSA *rsa = NULL;
+    RSA_METHOD *rsa_meth = NULL;
+#ifndef OPENSSL_NO_DSA
+    DSA *dsa = NULL;
+    DSA_METHOD *dsa_meth = NULL;
+#endif
+    unsigned char *sig = NULL;
+    size_t sig_len = 0, shortsig_len = 1;
+    EVP_PKEY_CTX *ctx = NULL;
+    unsigned char tbs[] = {
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b,
+        0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13
+    };
+
+    if (tst == 0) {
+        if (!TEST_ptr(pkey = load_example_rsa_key()))
+            goto out;
+        if (!TEST_ptr(rsa_meth = RSA_meth_dup(RSA_get_default_method())))
+            goto out;
+
+        if (!TEST_ptr(rsa = EVP_PKEY_get1_RSA(pkey))
+            || !TEST_int_gt(RSA_set_method(rsa, rsa_meth), 0)
+            || !TEST_int_gt(EVP_PKEY_assign_RSA(pkey, rsa), 0))
+            goto out;
+        rsa = NULL; /* now owned by the pkey */
+    } else {
+#ifndef OPENSSL_NO_DSA
+        if (!TEST_ptr(pkey = load_example_dsa_key()))
+                goto out;
+        if (!TEST_ptr(dsa_meth = DSA_meth_dup(DSA_get_default_method())))
+            goto out;
+
+        if (!TEST_ptr(dsa = EVP_PKEY_get1_DSA(pkey))
+            || !TEST_int_gt(DSA_set_method(dsa, dsa_meth), 0)
+            || !TEST_int_gt(EVP_PKEY_assign_DSA(pkey, dsa), 0))
+            goto out;
+        dsa = NULL; /* now owned by the pkey */
+#else
+        ret = 1;
+        goto out;
+#endif
+    }
+
+    ctx = EVP_PKEY_CTX_new_from_pkey(testctx, pkey, NULL);
+    if (!TEST_ptr(ctx)
+            || !TEST_int_gt(EVP_PKEY_sign_init(ctx), 0)
+            || !TEST_int_gt(EVP_PKEY_sign(ctx, NULL, &sig_len, tbs,
+                                          sizeof(tbs)), 0))
+        goto out;
+    sig = OPENSSL_malloc(sig_len);
+    if (!TEST_ptr(sig)
+            /* Test sending a signature buffer that is too short is rejected */
+            || !TEST_int_le(EVP_PKEY_sign(ctx, sig, &shortsig_len, tbs,
+                                          sizeof(tbs)), 0)
+            || !TEST_int_gt(EVP_PKEY_sign(ctx, sig, &sig_len, tbs, sizeof(tbs)),
+                            0)
+            /* Test the signature round-trips */
+            || !TEST_int_gt(EVP_PKEY_verify_init(ctx), 0)
+            || !TEST_int_gt(EVP_PKEY_verify(ctx, sig, sig_len, tbs, sizeof(tbs)),
+                            0))
+        goto out;
+
+    ret = 1;
+ out:
+    EVP_PKEY_CTX_free(ctx);
+    OPENSSL_free(sig);
+    EVP_PKEY_free(pkey);
+    RSA_free(rsa);
+    RSA_meth_free(rsa_meth);
+#ifndef OPENSSL_NO_DSA
+    DSA_free(dsa);
+    DSA_meth_free(dsa_meth);
+#endif
+    return ret;
+}
+#endif /* !OPENSSL_NO_DEPRECATED_3_0 */
 
 /*
  * n = 0 => test using legacy cipher
@@ -2798,6 +2902,36 @@ static int test_RSA_OAEP_set_get_params(void)
             || !TEST_str_eq(mgf1md, OSSL_DIGEST_NAME_SHA1))
             goto err;
     }
+
+    ret = 1;
+
+ err:
+    EVP_PKEY_free(key);
+    EVP_PKEY_CTX_free(key_ctx);
+
+    return ret;
+}
+
+/* https://github.com/openssl/openssl/issues/21288 */
+static int test_RSA_OAEP_set_null_label(void)
+{
+    int ret = 0;
+    EVP_PKEY *key = NULL;
+    EVP_PKEY_CTX *key_ctx = NULL;
+
+    if (!TEST_ptr(key = load_example_rsa_key())
+        || !TEST_ptr(key_ctx = EVP_PKEY_CTX_new_from_pkey(testctx, key, NULL))
+        || !TEST_true(EVP_PKEY_encrypt_init(key_ctx)))
+        goto err;
+
+    if (!TEST_true(EVP_PKEY_CTX_set_rsa_padding(key_ctx, RSA_PKCS1_OAEP_PADDING)))
+        goto err;
+
+    if (!TEST_true(EVP_PKEY_CTX_set0_rsa_oaep_label(key_ctx, OPENSSL_strdup("foo"), 0)))
+        goto err;
+
+    if (!TEST_true(EVP_PKEY_CTX_set0_rsa_oaep_label(key_ctx, NULL, 0)))
+        goto err;
 
     ret = 1;
 
@@ -5115,6 +5249,9 @@ int setup_tests(void)
     ADD_TEST(test_EVP_Digest);
     ADD_TEST(test_EVP_md_null);
     ADD_ALL_TESTS(test_EVP_PKEY_sign, 3);
+#ifndef OPENSSL_NO_DEPRECATED_3_0
+    ADD_ALL_TESTS(test_EVP_PKEY_sign_with_app_method, 2);
+#endif
     ADD_ALL_TESTS(test_EVP_Enveloped, 2);
     ADD_ALL_TESTS(test_d2i_AutoPrivateKey, OSSL_NELEM(keydata));
     ADD_TEST(test_privatekey_to_pkcs8);
@@ -5158,6 +5295,7 @@ int setup_tests(void)
 #endif
     ADD_TEST(test_RSA_get_set_params);
     ADD_TEST(test_RSA_OAEP_set_get_params);
+    ADD_TEST(test_RSA_OAEP_set_null_label);
 #if !defined(OPENSSL_NO_CHACHA) && !defined(OPENSSL_NO_POLY1305)
     ADD_TEST(test_decrypt_null_chunks);
 #endif

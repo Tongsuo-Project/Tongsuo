@@ -5356,12 +5356,22 @@ skip_hmac:
     }
 
     for (k = 0; k < ALGOR_NUM; k++) {
+        const char *alg_name = names[k];
+
         if (!doit[k])
             continue;
+
+        if (k == D_EVP) {
+            if (evp_cipher == NULL)
+                alg_name = evp_md_name;
+            else if ((alg_name = EVP_CIPHER_get0_name(evp_cipher)) == NULL)
+                app_bail_out("failed to get name of cipher '%s'\n", evp_cipher);
+        }
+
         if (mr)
-            printf("+F:%u:%s", k, names[k]);
+            printf("+F:%u:%s", k, alg_name);
         else
-            printf("%-13s", names[k]);
+            printf("%-13s", alg_name);
         for (testnum = 0; testnum < size_num; testnum++) {
             if (results[k][testnum] > 10000 && !mr)
                 printf(" %11.2fk", results[k][testnum] / 1e3);
@@ -6275,7 +6285,8 @@ static void multiblock_speed(const EVP_CIPHER *evp_cipher, int lengths_single,
             } else {
                 int pad;
 
-                RAND_bytes(out, 16);
+                if (RAND_bytes(inp, 16) <= 0)
+                    app_bail_out("error setting random bytes\n");
                 len += 16;
                 aad[11] = (unsigned char)(len >> 8);
                 aad[12] = (unsigned char)(len);
