@@ -103,8 +103,10 @@ static SXNET *sxnet_v2i(X509V3_EXT_METHOD *method, X509V3_CTX *ctx,
     int i;
     for (i = 0; i < sk_CONF_VALUE_num(nval); i++) {
         cnf = sk_CONF_VALUE_value(nval, i);
-        if (!SXNET_add_id_asc(&sx, cnf->name, cnf->value, -1))
+        if (!SXNET_add_id_asc(&sx, cnf->name, cnf->value, -1)) {
+            SXNET_free(sx);
             return NULL;
+	}
     }
     return sx;
 }
@@ -195,6 +197,7 @@ int SXNET_add_id_INTEGER(SXNET **psx, ASN1_INTEGER *zone, const char *user,
         goto err;
     if (!sk_SXNETID_push(sx->ids, id))
         goto err;
+    ASN1_INTEGER_free(id->zone);
     id->zone = zone;
     *psx = sx;
     return 1;
