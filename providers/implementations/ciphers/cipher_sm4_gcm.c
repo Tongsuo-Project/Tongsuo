@@ -34,6 +34,21 @@ static void *sm4_gcm_newctx(void *provctx, size_t keybits)
     return ctx;
 }
 
+static void *sm4_gcm_dupctx(void *provctx)
+{
+    PROV_SM4_GCM_CTX *ctx = provctx;
+    PROV_SM4_GCM_CTX *dupctx = NULL;
+
+    if (ctx == NULL)
+        return NULL;
+
+    dupctx = OPENSSL_memdup(ctx, sizeof(*ctx));
+    if (dupctx != NULL && dupctx->base.gcm.key != NULL)
+        dupctx->base.gcm.key = &dupctx->ks.ks;
+
+    return dupctx;
+}
+
 static OSSL_FUNC_cipher_freectx_fn sm4_gcm_freectx;
 static void sm4_gcm_freectx(void *vctx)
 {

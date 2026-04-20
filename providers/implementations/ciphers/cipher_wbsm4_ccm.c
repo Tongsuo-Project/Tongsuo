@@ -29,6 +29,21 @@ static void *wbsm4_xiaolai_ccm_newctx(void *provctx, size_t keybits)
     return ctx;
 }
 
+static void *wbsm4_xiaolai_ccm_dupctx(void *provctx)
+{
+    PROV_WBSM4_XIAOLAI_CCM_CTX *ctx = provctx;
+    PROV_WBSM4_XIAOLAI_CCM_CTX *dupctx = NULL;
+
+    if (ctx == NULL)
+        return NULL;
+    dupctx = OPENSSL_memdup(provctx, sizeof(*ctx));
+    if (dupctx == NULL)
+        return NULL;
+    dupctx->base.ccm_ctx.key = &dupctx->ks.ks;
+
+    return dupctx;
+}
+
 static OSSL_FUNC_cipher_freectx_fn wbsm4_xiaolai_ccm_freectx;
 static void wbsm4_xiaolai_ccm_freectx(void *vctx)
 {
@@ -56,6 +71,21 @@ static void *wbsm4_baiwu_ccm_newctx(void *provctx, size_t keybits)
     return ctx;
 }
 
+static void *wbsm4_baiwu_ccm_dupctx(void *provctx)
+{
+    PROV_WBSM4_BAIWU_CCM_CTX *ctx = provctx;
+    PROV_WBSM4_BAIWU_CCM_CTX *dupctx = NULL;
+
+    if (ctx == NULL)
+        return NULL;
+    dupctx = OPENSSL_memdup(provctx, sizeof(*ctx));
+    if (dupctx == NULL)
+        return NULL;
+    dupctx->base.ccm_ctx.key = &dupctx->ks.ks;
+
+    return dupctx;
+}
+
 static OSSL_FUNC_cipher_freectx_fn wbsm4_baiwu_ccm_freectx;
 static void wbsm4_baiwu_ccm_freectx(void *vctx)
 {
@@ -81,6 +111,21 @@ static void *wbsm4_wsise_ccm_newctx(void *provctx, size_t keybits)
         ossl_ccm_initctx(&ctx->base, keybits,
                         ossl_prov_wbsm4_wsise_hw_ccm(keybits));
     return ctx;
+}
+
+static void *wbsm4_wsise_ccm_dupctx(void *provctx)
+{
+    PROV_WBSM4_WSISE_CCM_CTX *ctx = provctx;
+    PROV_WBSM4_WSISE_CCM_CTX *dupctx = NULL;
+
+    if (ctx == NULL)
+        return NULL;
+    dupctx = OPENSSL_memdup(provctx, sizeof(*ctx));
+    if (dupctx == NULL)
+        return NULL;
+    dupctx->base.ccm_ctx.key = &dupctx->ks.ks;
+
+    return dupctx;
 }
 
 static OSSL_FUNC_cipher_freectx_fn wbsm4_wsise_ccm_freectx;

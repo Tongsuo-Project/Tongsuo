@@ -28,6 +28,21 @@ static void *sm4_ccm_newctx(void *provctx, size_t keybits)
     return ctx;
 }
 
+static void *sm4_ccm_dupctx(void *provctx)
+{
+    PROV_SM4_CCM_CTX *ctx = provctx;
+    PROV_SM4_CCM_CTX *dupctx = NULL;
+
+    if (ctx == NULL)
+        return NULL;
+    dupctx = OPENSSL_memdup(provctx, sizeof(*ctx));
+    if (dupctx == NULL)
+        return NULL;
+    dupctx->base.ccm_ctx.key = &dupctx->ks.ks;
+
+    return dupctx;
+}
+
 static OSSL_FUNC_cipher_freectx_fn sm4_ccm_freectx;
 static void sm4_ccm_freectx(void *vctx)
 {
