@@ -223,9 +223,6 @@ int setup_tests(void)
 {
     int tests = 1;
 
-    if (fips_provider_version_ge(NULL, 3, 3, 1))
-        tests = 2;
-
     ADD_ALL_TESTS(test_kdf_tls1_prf, tests);
     ADD_ALL_TESTS(test_kdf_hkdf, tests);
 #ifndef OPENSSL_NO_SCRYPT
