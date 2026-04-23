@@ -1,7 +1,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-//#define DILITHIUM_MODE 2
+#define DILITHIUM_MODE 3
 
 #define CRYPTO_ALGNAME "Dilithium"
 

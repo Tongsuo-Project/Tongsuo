@@ -13,6 +13,7 @@ and related or neighboring rights to the source code in this file.
 http://creativecommons.org/publicdomain/zero/1.0/
 */
 
+#include "../ml_dsa_avx2_target.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

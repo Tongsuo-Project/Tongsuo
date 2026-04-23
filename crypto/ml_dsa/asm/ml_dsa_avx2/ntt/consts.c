@@ -1,3 +1,4 @@
+#include "../ml_dsa_avx2_target.h"
 #include "consts.h"
 #include "params.h"
 #include <stdint.h>

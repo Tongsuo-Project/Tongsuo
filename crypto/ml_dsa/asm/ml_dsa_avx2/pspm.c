@@ -1,3 +1,4 @@
+#include "ml_dsa_avx2_target.h"
 #include <stdio.h>
 #include "pspm.h"
 #include "polyvec.h"

@@ -4,7 +4,61 @@ $COMMON=ml_dsa_encoders.c ml_dsa_key_compress.c ml_dsa_key.c \
         ml_dsa_matrix.c ml_dsa_ntt.c ml_dsa_params.c ml_dsa_sample.c \
         ml_dsa_sign.c
 
-IF[{- !$disabled{'ml-dsa'} -}]
-  SOURCE[../../libcrypto]=$COMMON
-  SOURCE[../../providers/libfips.a]=$COMMON
+$MLDSAASM=
+$MLDSADEF=
+IF[{- !$disabled{asm} -}]
+  $MLDSAASM_x86_64=asm/ml_dsa_avx2/sign.c \
+                    asm/ml_dsa_avx2/poly.c \
+                    asm/ml_dsa_avx2/polyvec.c \
+                    asm/ml_dsa_avx2/packing.c \
+                    asm/ml_dsa_avx2/rejsample.c \
+                    asm/ml_dsa_avx2/rounding.c \
+                    asm/ml_dsa_avx2/hybrid.c \
+                    asm/ml_dsa_avx2/pspm.c \
+                    asm/ml_dsa_avx2/randombytes.c \
+                    asm/ml_dsa_avx2/ntt/ntt_avx2.c \
+                    asm/ml_dsa_avx2/ntt/intt_avx2.c \
+                    asm/ml_dsa_avx2/ntt/consts.c \
+                    asm/ml_dsa_avx2/ntt/pointwise.S \
+                    asm/ml_dsa_avx2/keccak4x/fips202.c \
+                    asm/ml_dsa_avx2/keccak4x/fips202x4.c \
+                    asm/ml_dsa_avx2/keccak4x/KeccakP-1600-times4-SIMD256.c
+  $MLDSADEF_x86_64=ML_DSA_AVX2_ASM
+
+  IF[$MLDSAASM_{- $target{asm_arch} -}]
+    $MLDSAASM=$MLDSAASM_{- $target{asm_arch} -}
+    $MLDSADEF=$MLDSADEF_{- $target{asm_arch} -}
+  ENDIF
 ENDIF
+
+IF[{- !$disabled{'ml-dsa'} -}]
+  SOURCE[../../libcrypto]=$COMMON $MLDSAASM
+  SOURCE[../../providers/libfips.a]=$COMMON $MLDSAASM
+ENDIF
+
+DEFINE[../../libcrypto]=$MLDSADEF
+DEFINE[../../providers/libfips.a]=$MLDSADEF
+DEFINE[../../providers/libdefault.a]=$MLDSADEF
+
+# Per-object INCLUDE for AVX2 source files (x86_64)
+# Root-level AVX2 files
+INCLUDE[asm/ml_dsa_avx2/sign.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/poly.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/polyvec.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/packing.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/rejsample.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/rounding.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/hybrid.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x asm/ml_dsa_avx2/ntt
+INCLUDE[asm/ml_dsa_avx2/pspm.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/randombytes.o]=asm/ml_dsa_avx2
+
+# ntt/ subdirectory files
+INCLUDE[asm/ml_dsa_avx2/ntt/ntt_avx2.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/ntt
+INCLUDE[asm/ml_dsa_avx2/ntt/intt_avx2.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/ntt
+INCLUDE[asm/ml_dsa_avx2/ntt/consts.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/ntt
+INCLUDE[asm/ml_dsa_avx2/ntt/pointwise.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/ntt
+
+# keccak4x/ subdirectory files
+INCLUDE[asm/ml_dsa_avx2/keccak4x/fips202.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/keccak4x/fips202x4.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/keccak4x/KeccakP-1600-times4-SIMD256.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x

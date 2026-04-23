@@ -1,3 +1,4 @@
+#include "ml_dsa_avx2_target.h"
 #include "fips202x4.h"
 #include "rejsample.h"
 #include "hybrid.h"

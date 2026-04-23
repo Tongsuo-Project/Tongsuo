@@ -1,6 +1,7 @@
 //
 // Created by xurq on 2023/5/15.
 //
+#include "../ml_dsa_avx2_target.h"
 #include <x86intrin.h>
 
 #include "cdecl.h"

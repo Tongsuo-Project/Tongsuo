@@ -1,7 +1,6 @@
 #ifndef DILITHIUM2_AVX2_FIPS202X4_H
 #define DILITHIUM2_AVX2_FIPS202X4_H
 
-#include <fips202x4.h>
 #include <immintrin.h>
 #include <stddef.h>
 #include <stdint.h>
