@@ -150,6 +150,9 @@ providers/smtc/smtckey.h
 /apps/progs.c
 /apps/progs.h
 
+# macOS
+.DS_Store
+
 # Windows (legacy)
 /tmp32
 /tmp32.dbg
