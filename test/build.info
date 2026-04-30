@@ -57,7 +57,8 @@ IF[{- !$disabled{tests} -}]
           context_internal_test aesgcmtest params_test evp_pkey_dparams_test \
           keymgmt_internal_test hexstr_test provider_status_test defltfips_test \
           bio_readbuffer_test user_property_test pkcs7_test upcallstest \
-          provfetchtest prov_config_test rand_test babasslapitest tsapi_test nodefltctxtest
+          provfetchtest prov_config_test rand_test babasslapitest tsapi_test \
+          nodefltctxtest bio_pw_callback_test
 
   IF[{- !$disabled{'deprecated-3.0'} -}]
     PROGRAMS{noinst}=enginetest
@@ -1026,6 +1027,10 @@ ENDIF
   SOURCE[ssl_ctx_test]=ssl_ctx_test.c
   INCLUDE[ssl_ctx_test]=../include ../apps/include
   DEPEND[ssl_ctx_test]=../libcrypto ../libssl libtestutil.a
+
+  SOURCE[bio_pw_callback_test]=bio_pw_callback_test.c
+  INCLUDE[bio_pw_callback_test]=../include ../apps/include
+  DEPEND[bio_pw_callback_test]=../libcrypto libtestutil.a
 
 {-
    use File::Spec::Functions;
