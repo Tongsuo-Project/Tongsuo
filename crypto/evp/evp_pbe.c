@@ -36,7 +36,8 @@ static const EVP_PBE_CTL builtin_pbe[] = {
     {EVP_PBE_TYPE_OUTER, NID_pbeWithMD5AndDES_CBC,
      NID_des_cbc, NID_md5, PKCS5_PBE_keyivgen, PKCS5_PBE_keyivgen_ex},
 
-    {EVP_PBE_TYPE_OUTER, NID_id_pbkdf2, -1, -1, PKCS5_v2_PBKDF2_keyivgen},
+    {EVP_PBE_TYPE_OUTER, NID_id_pbkdf2, -1, -1, PKCS5_v2_PBKDF2_keyivgen,
+     PKCS5_v2_PBKDF2_keyivgen_ex},
 
     {EVP_PBE_TYPE_OUTER, NID_pbe_WithSHA1And128BitRC4,
      NID_rc4, NID_sha1, PKCS12_PBE_keyivgen, &PKCS12_PBE_keyivgen_ex},
