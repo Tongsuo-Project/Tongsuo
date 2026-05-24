@@ -4,6 +4,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "internal/sha3.h"
+
 #define SHAKE128_RATE 168
 #define SHAKE256_RATE 136
 #define SHA3_256_RATE 136
@@ -12,8 +14,7 @@
 #define FIPS202_NAMESPACE(s) pqcrystals_fips202_ref##s
 
 typedef struct {
-  uint64_t s[25];
-  unsigned int pos;
+  KECCAK1600_CTX ctx;
 } keccak_state;
 
 #define shake128_init FIPS202_NAMESPACE(_shake128_init)
