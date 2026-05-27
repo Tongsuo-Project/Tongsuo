@@ -744,6 +744,12 @@ CON_FUNC_RETURN tls_construct_finished(SSL_CONNECTION *s, WPACKET *pkt)
 
 CON_FUNC_RETURN tls_construct_key_update(SSL_CONNECTION *s, WPACKET *pkt)
 {
+    if (SSL_IS_QUIC_HANDSHAKE(s)) {
+        /* TLS KeyUpdate is not used for QUIC, so this is an error. */
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+        return CON_FUNC_ERROR;
+    }
+
     if (!WPACKET_put_bytes_u8(pkt, s->key_update)) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
         return CON_FUNC_ERROR;
@@ -756,6 +762,12 @@ CON_FUNC_RETURN tls_construct_key_update(SSL_CONNECTION *s, WPACKET *pkt)
 MSG_PROCESS_RETURN tls_process_key_update(SSL_CONNECTION *s, PACKET *pkt)
 {
     unsigned int updatetype;
+
+    if (SSL_IS_QUIC_HANDSHAKE(s)) {
+        /* TLS KeyUpdate is not used for QUIC, so this is an error. */
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+        return MSG_PROCESS_ERROR;
+    }
 
     /*
      * A KeyUpdate message signals a key change so the end of the message must
