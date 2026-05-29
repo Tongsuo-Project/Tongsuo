@@ -37,7 +37,7 @@ jobs:
     - name: generate coverage info
       run: lcov --ignore-errors mismatch -d . -c -o ./lcov.info
     - name: Coveralls upload
-      uses: coverallsapp/github-action@v1.1.2
+      uses: coverallsapp/github-action@8cbef1dea373ebce56de0a14c68d6267baa10b44 # v1.1.2
       with:
         github-token: ${{ secrets.github_token }}
         path-to-lcov: ./lcov.info
