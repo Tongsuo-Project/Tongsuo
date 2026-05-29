@@ -28,6 +28,8 @@ static int has_selection;
 static int imptypes_selection;
 static int query_id;
 
+unsigned fake_rsa_query_operation_name = 0;
+
 static void *fake_rsa_keymgmt_new(void *provctx)
 {
     unsigned char *keydata = OPENSSL_zalloc(1);
@@ -61,7 +63,7 @@ static const char *fake_rsa_keymgmt_query(int id)
     /* record global for checking */
     query_id = id;
 
-    return "RSA";
+    return fake_rsa_query_operation_name ? NULL : "RSA";
 }
 
 static int fake_rsa_keymgmt_import(void *keydata, int selection,
