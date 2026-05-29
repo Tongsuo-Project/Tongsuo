@@ -19,6 +19,7 @@
 #include <openssl/rsa.h>
 #include <openssl/aes.h>
 #include <openssl/rsa.h>
+#include <openssl/x509_vfy.h>
 #include "testutil.h"
 #include "threadstest.h"
 
@@ -30,6 +31,7 @@
 
 static int do_fips = 0;
 static char *privkey;
+static char *storedir;
 static char *config_file = NULL;
 static int multidefault_run = 0;
 
@@ -581,7 +583,6 @@ static int test_multi_default(void)
 {
     thread_t thread1, thread2;
     int testresult = 0;
-    OSSL_PROVIDER *prov = NULL;
 
     /* Avoid running this test twice */
     if (multidefault_run) {
@@ -592,9 +593,6 @@ static int test_multi_default(void)
 
     multi_success = 1;
     multi_libctx = NULL;
-    prov = OSSL_PROVIDER_load(multi_libctx, "default");
-    if (!TEST_ptr(prov))
-        goto err;
 
     if (!TEST_true(run_thread(&thread1, thread_multi_simple_fetch))
             || !TEST_true(run_thread(&thread2, thread_multi_simple_fetch)))
@@ -610,7 +608,6 @@ static int test_multi_default(void)
     testresult = 1;
 
  err:
-    OSSL_PROVIDER_unload(prov);
     return testresult;
 }
 
@@ -647,6 +644,62 @@ static int test_multi_load(void)
         (void)TEST_true(wait_for_thread(threads[i]));
 
     return res && multi_success;
+}
+
+static X509_STORE *store = NULL;
+
+static void test_x509_store_by_subject(void)
+{
+    X509_STORE_CTX *ctx;
+    X509_OBJECT *obj = NULL;
+    X509_NAME *name = NULL;
+    int success = 0;
+
+    ctx = X509_STORE_CTX_new();
+    if (!TEST_ptr(ctx))
+        goto err;
+
+    if (!TEST_true(X509_STORE_CTX_init(ctx, store, NULL, NULL)))
+        goto err;
+
+    name = X509_NAME_new();
+    if (!TEST_ptr(name))
+        goto err;
+    if (!TEST_true(X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC,
+                                              (unsigned char *)"Root CA",
+                                              -1, -1, 0)))
+        goto err;
+    obj = X509_STORE_CTX_get_obj_by_subject(ctx, X509_LU_X509, name);
+    if (!TEST_ptr(obj))
+        goto err;
+
+    success = 1;
+ err:
+    X509_OBJECT_free(obj);
+    X509_STORE_CTX_free(ctx);
+    X509_NAME_free(name);
+    if (!success)
+        multi_success = 0;
+}
+
+/* Test accessing an X509_STORE from multiple threads */
+static int test_x509_store(void)
+{
+    int ret = 0;
+
+    store = X509_STORE_new();
+    if (!TEST_ptr(store))
+        return 0;
+    if (!TEST_true(X509_STORE_load_store(store, storedir)))
+        goto err;
+
+    ret = thread_run_test(&test_x509_store_by_subject, MAXIMUM_THREADS,
+                          &test_x509_store_by_subject, 0, NULL);
+
+ err:
+    X509_STORE_free(store);
+    store = NULL;
+    return ret;
 }
 
 typedef enum OPTION_choice {
@@ -695,6 +748,8 @@ int setup_tests(void)
     if (!TEST_ptr(privkey))
         return 0;
 
+    storedir = test_mk_file_path(datadir, "store");
+
     /* Keep first to validate auto creation of default library context */
     ADD_TEST(test_multi_default);
 
@@ -704,10 +759,12 @@ int setup_tests(void)
     ADD_TEST(test_atomic);
     ADD_TEST(test_multi_load);
     ADD_ALL_TESTS(test_multi, 6);
+    ADD_TEST(test_x509_store);
     return 1;
 }
 
 void cleanup_tests(void)
 {
     OPENSSL_free(privkey);
+    OPENSSL_free(storedir);
 }
