@@ -2,24 +2,42 @@ LIBS=../../libcrypto
 
 $COMMON=ml_dsa_encoders.c ml_dsa_key_compress.c ml_dsa_key.c \
         ml_dsa_matrix.c ml_dsa_ntt.c ml_dsa_params.c ml_dsa_sample.c \
-        ml_dsa_sign.c
+        ml_dsa_sign.c ml_dsa_avx2.c
 
 $MLDSAASM=
 $MLDSADEF=
 IF[{- !$disabled{asm} -}]
-  $MLDSAASM_x86_64=asm/ml_dsa_avx2/sign.c \
-                    asm/ml_dsa_avx2/poly.c \
-                    asm/ml_dsa_avx2/polyvec.c \
-                    asm/ml_dsa_avx2/packing.c \
-                    asm/ml_dsa_avx2/rejsample.c \
-                    asm/ml_dsa_avx2/rounding.c \
-                    asm/ml_dsa_avx2/hybrid.c \
-                    asm/ml_dsa_avx2/pspm.c \
+  $MLDSAASM_x86_64=asm/ml_dsa_avx2/mldsa44_sign.c \
+                    asm/ml_dsa_avx2/mldsa44_poly.c \
+                    asm/ml_dsa_avx2/mldsa44_polyvec.c \
+                    asm/ml_dsa_avx2/mldsa44_packing.c \
+                    asm/ml_dsa_avx2/mldsa44_rejsample.c \
+                    asm/ml_dsa_avx2/mldsa44_rounding.c \
+                    asm/ml_dsa_avx2/mldsa44_hybrid.c \
+                    asm/ml_dsa_avx2/mldsa44_pspm.c \
+                    asm/ml_dsa_avx2/mldsa44_pointwise.S \
+                    asm/ml_dsa_avx2/mldsa65_sign.c \
+                    asm/ml_dsa_avx2/mldsa65_poly.c \
+                    asm/ml_dsa_avx2/mldsa65_polyvec.c \
+                    asm/ml_dsa_avx2/mldsa65_packing.c \
+                    asm/ml_dsa_avx2/mldsa65_rejsample.c \
+                    asm/ml_dsa_avx2/mldsa65_rounding.c \
+                    asm/ml_dsa_avx2/mldsa65_hybrid.c \
+                    asm/ml_dsa_avx2/mldsa65_pspm.c \
+                    asm/ml_dsa_avx2/mldsa65_pointwise.S \
+                    asm/ml_dsa_avx2/mldsa87_sign.c \
+                    asm/ml_dsa_avx2/mldsa87_poly.c \
+                    asm/ml_dsa_avx2/mldsa87_polyvec.c \
+                    asm/ml_dsa_avx2/mldsa87_packing.c \
+                    asm/ml_dsa_avx2/mldsa87_rejsample.c \
+                    asm/ml_dsa_avx2/mldsa87_rounding.c \
+                    asm/ml_dsa_avx2/mldsa87_hybrid.c \
+                    asm/ml_dsa_avx2/mldsa87_pspm.c \
+                    asm/ml_dsa_avx2/mldsa87_pointwise.S \
                     asm/ml_dsa_avx2/randombytes.c \
                     asm/ml_dsa_avx2/ntt/ntt_avx2.c \
                     asm/ml_dsa_avx2/ntt/intt_avx2.c \
                     asm/ml_dsa_avx2/ntt/consts.c \
-                    asm/ml_dsa_avx2/ntt/pointwise.S \
                     asm/ml_dsa_avx2/keccak4x/fips202.c \
                     asm/ml_dsa_avx2/keccak4x/fips202x4.c \
                     asm/ml_dsa_avx2/keccak4x/KeccakP-1600-times4-SIMD256.c
@@ -41,22 +59,39 @@ DEFINE[../../providers/libfips.a]=$MLDSADEF
 DEFINE[../../providers/libdefault.a]=$MLDSADEF
 
 # Per-object INCLUDE for AVX2 source files (x86_64)
-# Root-level AVX2 files
-INCLUDE[asm/ml_dsa_avx2/sign.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
-INCLUDE[asm/ml_dsa_avx2/poly.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
-INCLUDE[asm/ml_dsa_avx2/polyvec.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
-INCLUDE[asm/ml_dsa_avx2/packing.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
-INCLUDE[asm/ml_dsa_avx2/rejsample.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
-INCLUDE[asm/ml_dsa_avx2/rounding.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
-INCLUDE[asm/ml_dsa_avx2/hybrid.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x asm/ml_dsa_avx2/ntt
-INCLUDE[asm/ml_dsa_avx2/pspm.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/mldsa44_sign.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/mldsa44_poly.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/mldsa44_polyvec.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/mldsa44_packing.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/mldsa44_rejsample.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/mldsa44_rounding.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/mldsa44_hybrid.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x asm/ml_dsa_avx2/ntt
+INCLUDE[asm/ml_dsa_avx2/mldsa44_pspm.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/mldsa44_pointwise.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/ntt
+INCLUDE[asm/ml_dsa_avx2/mldsa65_sign.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/mldsa65_poly.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/mldsa65_polyvec.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/mldsa65_packing.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/mldsa65_rejsample.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/mldsa65_rounding.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/mldsa65_hybrid.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x asm/ml_dsa_avx2/ntt
+INCLUDE[asm/ml_dsa_avx2/mldsa65_pspm.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/mldsa65_pointwise.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/ntt
+INCLUDE[asm/ml_dsa_avx2/mldsa87_sign.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/mldsa87_poly.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/mldsa87_polyvec.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/mldsa87_packing.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/mldsa87_rejsample.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/mldsa87_rounding.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/mldsa87_hybrid.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x asm/ml_dsa_avx2/ntt
+INCLUDE[asm/ml_dsa_avx2/mldsa87_pspm.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x
+INCLUDE[asm/ml_dsa_avx2/mldsa87_pointwise.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/ntt
 INCLUDE[asm/ml_dsa_avx2/randombytes.o]=asm/ml_dsa_avx2
 
 # ntt/ subdirectory files
 INCLUDE[asm/ml_dsa_avx2/ntt/ntt_avx2.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/ntt
 INCLUDE[asm/ml_dsa_avx2/ntt/intt_avx2.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/ntt
 INCLUDE[asm/ml_dsa_avx2/ntt/consts.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/ntt
-INCLUDE[asm/ml_dsa_avx2/ntt/pointwise.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/ntt
 
 # keccak4x/ subdirectory files
 INCLUDE[asm/ml_dsa_avx2/keccak4x/fips202.o]=asm/ml_dsa_avx2 asm/ml_dsa_avx2/keccak4x

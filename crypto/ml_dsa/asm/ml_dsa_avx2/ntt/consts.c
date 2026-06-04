@@ -1,4 +1,7 @@
 #include "../ml_dsa_avx2_target.h"
+#ifndef DILITHIUM_MODE
+# define DILITHIUM_MODE 3
+#endif
 #include "consts.h"
 #include "params.h"
 #include <stdint.h>

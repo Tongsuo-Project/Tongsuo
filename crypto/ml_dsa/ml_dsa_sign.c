@@ -16,6 +16,7 @@
 #include "ml_dsa_matrix.h"
 #include "ml_dsa_sign.h"
 #include "ml_dsa_hash.h"
+#include "ml_dsa_avx2.h"
 
 #define ML_DSA_MAX_LAMBDA 256 /* bit strength for ML-DSA-87 */
 
@@ -390,7 +391,11 @@ int ossl_ml_dsa_sign(const ML_DSA_KEY *priv, int msg_is_mu,
             if (m != msg && m != m_tmp)
                 alloced_m = m;
         }
-        ret = ml_dsa_sign_internal(priv, msg_is_mu, m, m_len, rand, rand_len, sig);
+        ret = ossl_ml_dsa_avx2_sign(priv, msg_is_mu, m, m_len, rand, rand_len,
+                                    sig, sig_len);
+        if (ret == 0)
+            ret = ml_dsa_sign_internal(priv, msg_is_mu, m, m_len,
+                                       rand, rand_len, sig);
         OPENSSL_free(alloced_m);
     }
     if (sig_len != NULL)
@@ -427,7 +432,9 @@ int ossl_ml_dsa_verify(const ML_DSA_KEY *pub, int msg_is_mu,
             alloced_m = m;
     }
 
-    ret = ml_dsa_verify_internal(pub, msg_is_mu, m, m_len, sig, sig_len);
+    ret = ossl_ml_dsa_avx2_verify(pub, msg_is_mu, m, m_len, sig, sig_len);
+    if (ret == 0)
+        ret = ml_dsa_verify_internal(pub, msg_is_mu, m, m_len, sig, sig_len);
     OPENSSL_free(alloced_m);
     return ret;
 }

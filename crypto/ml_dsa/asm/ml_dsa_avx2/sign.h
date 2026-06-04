@@ -15,6 +15,12 @@ int crypto_sign_signature(uint8_t *sig, size_t *siglen,
                           const uint8_t *m, size_t mlen,
                           const uint8_t *sk);
 
+int crypto_sign_signature_ex(uint8_t *sig, size_t *siglen,
+                             const uint8_t *m, size_t mlen,
+                             const uint8_t *sk,
+                             const uint8_t *rnd, size_t rnd_len,
+                             int msg_is_mu);
+
 int crypto_sign(uint8_t *sm, size_t *smlen,
                 const uint8_t *m, size_t mlen,
                 const uint8_t *sk);

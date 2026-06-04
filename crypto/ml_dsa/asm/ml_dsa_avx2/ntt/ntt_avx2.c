@@ -2,6 +2,9 @@
 // Created by xurq on 2023/5/15.
 //
 #include "../ml_dsa_avx2_target.h"
+#ifndef DILITHIUM_MODE
+# define DILITHIUM_MODE 3
+#endif
 #include <x86intrin.h>
 
 #include "cdecl.h"

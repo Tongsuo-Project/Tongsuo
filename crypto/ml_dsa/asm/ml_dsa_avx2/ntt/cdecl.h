@@ -18,7 +18,12 @@
  * This define helps us get around this
  */
 
-#define _cdecl(s) _##s
-#define cdecl(s) s
+#if defined(ML_DSA_AVX2_ASM_SYM)
+# define _cdecl(s) _##ML_DSA_AVX2_ASM_SYM(s)
+# define cdecl(s) ML_DSA_AVX2_ASM_SYM(s)
+#else
+# define _cdecl(s) _##s
+# define cdecl(s) s
+#endif
 
 #endif

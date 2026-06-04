@@ -1,7 +1,9 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define DILITHIUM_MODE 3
+#ifndef DILITHIUM_MODE
+# error "DILITHIUM_MODE must be defined by the ML-DSA AVX2 wrapper"
+#endif
 
 #define CRYPTO_ALGNAME "Dilithium"
 

@@ -97,7 +97,12 @@ int crypto_sign_keypair(uint8_t *pk, uint8_t *sk) {
 *
 * Returns 0 (success)
 **************************************************/
-int crypto_sign_signature(uint8_t *sig, size_t *siglen, const uint8_t *m, size_t mlen, const uint8_t *sk) {
+int crypto_sign_signature_ex(uint8_t *sig, size_t *siglen,
+                             const uint8_t *m, size_t mlen,
+                             const uint8_t *sk,
+                             const uint8_t *rnd_external,
+                             size_t rnd_external_len,
+                             int msg_is_mu) {
     unsigned int i, j, n, pos;
     ALIGN(32) uint8_t seedbuf[3 * SEEDBYTES + 2 * CRHBYTES];
     uint8_t *rho, *tr, *key, *mu, *rhoprime, *rnd;
@@ -108,7 +113,12 @@ int crypto_sign_signature(uint8_t *sig, size_t *siglen, const uint8_t *m, size_t
     poly h, c;
     sword s1list[L][3 * N];
     sword s2list[K][3 * N];
-    uint8_t *buf = (uint8_t *) malloc(CRHBYTES + mlen);
+    uint8_t *buf = NULL;
+
+    if (msg_is_mu || rnd_external == NULL || rnd_external_len != SEEDBYTES)
+        return 1;
+
+    buf = (uint8_t *) malloc(CRHBYTES + mlen);
     if (buf == NULL) return 1;
 
     loop_queue loop;
@@ -123,7 +133,7 @@ int crypto_sign_signature(uint8_t *sig, size_t *siglen, const uint8_t *m, size_t
     rhoprime = mu + CRHBYTES;
     unpack_sk(rho, tr, key, &t0, s1list, s2list, sk);
     memcpy(buf + CRHBYTES, m, mlen);
-    randombytes(rnd, SEEDBYTES);
+    memcpy(rnd, rnd_external, SEEDBYTES);
 
     hybrid_hash_ExpandA_shuffled(mu, CRHBYTES, buf, CRHBYTES + mlen, &mat[0].vec[0], &mat[0].vec[1], &mat[0].vec[2], rho, 0,
                                  1, 2);
@@ -210,6 +220,18 @@ rej:
     *siglen = CRYPTO_BYTES;
     free(buf);
     return 0;
+}
+
+int crypto_sign_signature(uint8_t *sig, size_t *siglen,
+                          const uint8_t *m, size_t mlen, const uint8_t *sk) {
+    uint8_t rnd[SEEDBYTES];
+    int ret;
+
+    randombytes(rnd, sizeof(rnd));
+    ret = crypto_sign_signature_ex(sig, siglen, m, mlen, sk,
+                                   rnd, sizeof(rnd), 0);
+    memset(rnd, 0, sizeof(rnd));
+    return ret;
 }
 
 /*************************************************
