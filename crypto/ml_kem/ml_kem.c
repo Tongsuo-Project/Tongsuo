@@ -11,6 +11,7 @@
 #include <openssl/rand.h>
 #include <openssl/proverr.h>
 #include "crypto/ml_kem.h"
+#include "ml_kem_avx2.h"
 #include "internal/common.h"
 #include "internal/constant_time.h"
 #include "internal/sha3.h"
@@ -120,6 +121,8 @@ typedef __owur
 int (*CBD_FUNC)(scalar *out, uint8_t in[ML_KEM_RANDOM_BYTES + 1],
                 EVP_MD_CTX *mdctx, const ML_KEM_KEY *key);
 static void scalar_encode(uint8_t *out, const scalar *s, int bits);
+static __owur
+int add_storage(scalar *p, int private, ML_KEM_KEY *key);
 
 /*
  * The wire-form of a losslessly encoded vector uses 12-bits per element.
@@ -1337,6 +1340,52 @@ static int parse_prvkey(const uint8_t *in, EVP_MD_CTX *mdctx, ML_KEM_KEY *key)
     return 1;
 }
 
+static int genkey_avx2(const uint8_t seed[ML_KEM_SEED_BYTES],
+                       EVP_MD_CTX *mdctx, uint8_t *pubenc, ML_KEM_KEY *key)
+{
+    const ML_KEM_VINFO *vinfo = key->vinfo;
+    int ret = 0, avx2_ok = 0;
+
+# define case_genkey_avx2(bits)                                             \
+    case EVP_PKEY_ML_KEM_##bits:                                            \
+        {                                                                   \
+            uint8_t pk[PUBKEY_BYTES(bits)];                                 \
+            uint8_t sk[PRVKEY_BYTES(bits)];                                 \
+                                                                            \
+            avx2_ok = ossl_ml_kem_avx2_keypair_derand(vinfo, pk, sizeof(pk),\
+                                                      sk, sizeof(sk), seed, \
+                                                      ML_KEM_SEED_BYTES);   \
+            if (avx2_ok) {                                                  \
+                ret = -1;                                                   \
+                if (add_storage(OPENSSL_malloc(vinfo->prvalloc), 1, key)    \
+                    && parse_prvkey(sk, mdctx, key)) {                      \
+                    if (pubenc != NULL)                                     \
+                        memcpy(pubenc, pk, sizeof(pk));                     \
+                    key->d = key->z + ML_KEM_RANDOM_BYTES;                  \
+                    if (key->prov_flags & ML_KEM_KEY_RETAIN_SEED) {         \
+                        memcpy(key->d, seed, ML_KEM_RANDOM_BYTES);          \
+                    } else {                                                \
+                        OPENSSL_cleanse(key->d, ML_KEM_RANDOM_BYTES);       \
+                        key->d = NULL;                                      \
+                    }                                                       \
+                    ret = 1;                                                \
+                }                                                           \
+            }                                                               \
+            OPENSSL_cleanse(sk, sizeof(sk));                                \
+            break;                                                          \
+        }
+    switch (vinfo->evp_type) {
+    case_genkey_avx2(512);
+    case_genkey_avx2(768);
+    case_genkey_avx2(1024);
+    }
+# undef case_genkey_avx2
+
+    if (ret < 0)
+        ossl_ml_kem_key_reset(key);
+    return ret;
+}
+
 /*
  * FIPS 203, Section 6.1, Algorithm 16: "ML-KEM.KeyGen_internal".
  *
@@ -1875,8 +1924,11 @@ int ossl_ml_kem_genkey(uint8_t *pubenc, size_t publen, ML_KEM_KEY *key)
      */
     CONSTTIME_SECRET(seed, ML_KEM_SEED_BYTES);
 
-    if (add_storage(OPENSSL_malloc(vinfo->prvalloc), 1, key))
+    ret = genkey_avx2(seed, mdctx, pubenc, key);
+    if (ret == 0 && add_storage(OPENSSL_malloc(vinfo->prvalloc), 1, key))
         ret = genkey(seed, mdctx, pubenc, key);
+    if (ret < 0)
+        ret = 0;
     OPENSSL_cleanse(seed, sizeof(seed));
 
     /* Declassify secret inputs and derived outputs before returning control */
@@ -1930,9 +1982,15 @@ int ossl_ml_kem_encap_seed(uint8_t *ctext, size_t clen,
 #   define case_encap_seed(bits)                                            \
     case EVP_PKEY_ML_KEM_##bits:                                            \
         {                                                                   \
+            uint8_t pk[PUBKEY_BYTES(bits)];                                 \
             scalar tmp[2 * ML_KEM_##bits##_RANK];                           \
                                                                             \
-            ret = encap(ctext, shared_secret, entropy, tmp, mdctx, key);    \
+            encode_pubkey(pk, key);                                         \
+            ret = ossl_ml_kem_avx2_encap_derand(vinfo, ctext, clen,         \
+                                                shared_secret, slen, pk,    \
+                                                sizeof(pk), entropy, elen); \
+            if (ret == 0)                                                   \
+                ret = encap(ctext, shared_secret, entropy, tmp, mdctx, key); \
             OPENSSL_cleanse((void *)tmp, sizeof(tmp));                      \
             break;                                                          \
         }
@@ -2007,15 +2065,21 @@ int ossl_ml_kem_decap(uint8_t *shared_secret, size_t slen,
      * retained on return from this function.
      * We stack-allocate these.
      */
-#   define case_decap(bits)                                             \
-    case EVP_PKEY_ML_KEM_##bits:                                        \
-        {                                                               \
-            uint8_t cbuf[CTEXT_BYTES(bits)];                            \
-            scalar tmp[2 * ML_KEM_##bits##_RANK];                       \
-                                                                        \
-            ret = decap(shared_secret, ctext, cbuf, tmp, mdctx, key);   \
-            OPENSSL_cleanse((void *)tmp, sizeof(tmp));                  \
-            break;                                                      \
+#   define case_decap(bits)                                                 \
+    case EVP_PKEY_ML_KEM_##bits:                                            \
+        {                                                                   \
+            uint8_t cbuf[CTEXT_BYTES(bits)];                                \
+            uint8_t sk[PRVKEY_BYTES(bits)];                                 \
+            scalar tmp[2 * ML_KEM_##bits##_RANK];                           \
+                                                                            \
+            encode_prvkey(sk, key);                                         \
+            ret = ossl_ml_kem_avx2_decap(vinfo, shared_secret, slen,        \
+                                         ctext, clen, sk, sizeof(sk));      \
+            if (ret == 0)                                                   \
+                ret = decap(shared_secret, ctext, cbuf, tmp, mdctx, key);   \
+            OPENSSL_cleanse(sk, sizeof(sk));                                \
+            OPENSSL_cleanse((void *)tmp, sizeof(tmp));                      \
+            break;                                                          \
         }
     switch (vinfo->evp_type) {
     case_decap(512);
