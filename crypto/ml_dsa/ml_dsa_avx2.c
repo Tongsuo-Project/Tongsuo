@@ -90,14 +90,11 @@ int ossl_ml_dsa_avx2_keygen(ML_DSA_KEY *key)
     if (ret != 0)
         goto err;
 
-    /*
-     * Decode to initialize and validate the internal key representation.
-     * Explicit private-key decoding normally drops the retained seed.
-     */
+    /* Decode the internally generated pair without recomputing its public key. */
     seed = key->seed;
     key->seed = NULL;
-    ret = ossl_ml_dsa_sk_decode(key, sk, params->sk_len)
-          && CRYPTO_memcmp(key->pub_encoding, pk, params->pk_len) == 0;
+    ret = ossl_ml_dsa_generated_keypair_decode(key, pk, params->pk_len,
+                                               sk, params->sk_len);
     key->seed = seed;
     if (ret) {
         if ((key->prov_flags & ML_DSA_KEY_RETAIN_SEED) == 0) {
@@ -164,7 +161,7 @@ int ossl_ml_dsa_avx2_verify(const ML_DSA_KEY *pub, int msg_is_mu,
     const ML_DSA_PARAMS *params;
 
     if (pub == NULL || msg_is_mu || sig == NULL || !ml_dsa_avx2_eligible())
-        return 0;
+        return ML_DSA_AVX2_VERIFY_UNAVAILABLE;
 
     params = ossl_ml_dsa_key_params(pub);
     switch (params->evp_type) {
@@ -184,9 +181,9 @@ int ossl_ml_dsa_avx2_verify(const ML_DSA_KEY *pub, int msg_is_mu,
                                                      pub->pub_encoding);
         break;
     default:
-        return 0;
+        return ML_DSA_AVX2_VERIFY_UNAVAILABLE;
     }
-    return ret == 0;
+    return ret == 0 ? ML_DSA_AVX2_VERIFY_VALID : ML_DSA_AVX2_VERIFY_INVALID;
 }
 
 #else
@@ -208,7 +205,7 @@ int ossl_ml_dsa_avx2_verify(const ML_DSA_KEY *pub, int msg_is_mu,
                             const uint8_t *msg, size_t msg_len,
                             const uint8_t *sig, size_t sig_len)
 {
-    return 0;
+    return ML_DSA_AVX2_VERIFY_UNAVAILABLE;
 }
 
 #endif

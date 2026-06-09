@@ -433,7 +433,7 @@ int ossl_ml_dsa_verify(const ML_DSA_KEY *pub, int msg_is_mu,
     }
 
     ret = ossl_ml_dsa_avx2_verify(pub, msg_is_mu, m, m_len, sig, sig_len);
-    if (ret == 0)
+    if (ret == ML_DSA_AVX2_VERIFY_UNAVAILABLE)
         ret = ml_dsa_verify_internal(pub, msg_is_mu, m, m_len, sig, sig_len);
     OPENSSL_free(alloced_m);
     return ret;
