@@ -16,6 +16,7 @@
 #include "ml_dsa_key.h"
 #include "ml_dsa_matrix.h"
 #include "ml_dsa_hash.h"
+#include "ml_dsa_avx2.h"
 #include "internal/encoder.h"
 
 const ML_DSA_PARAMS *ossl_ml_dsa_key_params(const ML_DSA_KEY *key)
@@ -475,9 +476,14 @@ int ossl_ml_dsa_generate_key(ML_DSA_KEY *out)
     sk = out->priv_encoding;
     out->priv_encoding = NULL;
     if (sk == NULL) {
-        ret = keygen_internal(out);
+        ret = ossl_ml_dsa_avx2_keygen(out);
+        if (ret == 0)
+            ret = keygen_internal(out);
     } else {
-        if ((ret = keygen_internal(out)) != 0
+        ret = ossl_ml_dsa_avx2_keygen(out);
+        if (ret == 0)
+            ret = keygen_internal(out);
+        if (ret != 0
             && memcmp(out->priv_encoding, sk, out->params->sk_len) != 0) {
             ret = 0;
             ossl_ml_dsa_key_reset(out);

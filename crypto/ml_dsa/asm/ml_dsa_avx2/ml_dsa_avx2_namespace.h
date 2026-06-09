@@ -10,6 +10,7 @@
 #define ML_DSA_AVX2_SYM(s) ML_DSA_AVX2_CAT(ML_DSA_AVX2_NAMESPACE, s)
 
 #define crypto_sign_keypair ML_DSA_AVX2_SYM(crypto_sign_keypair)
+#define crypto_sign_keypair_internal ML_DSA_AVX2_SYM(crypto_sign_keypair_internal)
 #define crypto_sign_signature ML_DSA_AVX2_SYM(crypto_sign_signature)
 #define crypto_sign_signature_ex ML_DSA_AVX2_SYM(crypto_sign_signature_ex)
 #define crypto_sign ML_DSA_AVX2_SYM(crypto_sign)

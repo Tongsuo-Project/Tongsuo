@@ -7,6 +7,7 @@
 
 # include "crypto/ml_dsa.h"
 
+int ossl_ml_dsa_avx2_keygen(ML_DSA_KEY *key);
 int ossl_ml_dsa_avx2_sign(const ML_DSA_KEY *priv, int msg_is_mu,
                           const uint8_t *msg, size_t msg_len,
                           const uint8_t *rand, size_t rand_len,

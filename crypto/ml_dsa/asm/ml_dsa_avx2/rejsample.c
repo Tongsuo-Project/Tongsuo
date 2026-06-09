@@ -1269,6 +1269,24 @@ static uint32_t rej_eta_with_pipe(int32_t *a,
 #endif
 
 
+static void expand_s_state_init(keccakx4_state *state,
+                                const uint64_t seed[8],
+                                uint16_t nonce0, uint16_t nonce1,
+                                uint16_t nonce2, uint16_t nonce3)
+{
+    int i;
+
+    for (i = 0; i < 8; ++i)
+        state->s[i] = _mm256_set1_epi64x(seed[i]);
+    state->s[8] = _mm256_set_epi64x((0x1f << 16) ^ nonce3,
+                                    (0x1f << 16) ^ nonce2,
+                                    (0x1f << 16) ^ nonce1,
+                                    (0x1f << 16) ^ nonce0);
+    for (i = 9; i < 25; ++i)
+        state->s[i] = _mm256_setzero_si256();
+    state->s[16] = _mm256_set1_epi64x(0x1ULL << 63);
+}
+
 #if DILITHIUM_MODE == 2
 
 
@@ -1276,7 +1294,7 @@ static uint32_t rej_eta_with_pipe(int32_t *a,
 void ExpandS_with_pack(polyvecl *s1,
                        polyveck *s2,
                        uint8_t *r,
-                       const uint64_t seed[4]) {
+                       const uint64_t seed[8]) {
     unsigned int ctr[4] = {0};
     ALIGN(32) uint8_t buf[4][REJ_UNIFORM_ETA_BUFLEN];
     ALIGN(32) uint8_t pipe[4][288];  //20 bytes redundancy
@@ -1285,17 +1303,7 @@ void ExpandS_with_pack(polyvecl *s1,
 
     // sample and pack s1
 
-    state.s[0] = _mm256_set1_epi64x(seed[0]);
-    state.s[1] = _mm256_set1_epi64x(seed[1]);
-    state.s[2] = _mm256_set1_epi64x(seed[2]);
-    state.s[3] = _mm256_set1_epi64x(seed[3]);
-    state.s[4] = _mm256_set_epi64x((0x1f << 16) ^ 3, (0x1f << 16) ^ 2,
-                                   (0x1f << 16) ^ 1, (0x1f << 16) ^ 0);
-
-    for (int j = 5; j < 25; ++j)
-        state.s[j] = _mm256_setzero_si256();
-
-    state.s[16] = _mm256_set1_epi64x(0x1ULL << 63);
+    expand_s_state_init(&state, seed, 0, 1, 2, 3);
 
     XURQ_AVX2_shake256x4_squeezeblocks(buf[0], buf[1], buf[2], buf[3], 1, &state);
 
@@ -1319,17 +1327,7 @@ void ExpandS_with_pack(polyvecl *s1,
 
     // sample and pack s2
 
-    state.s[0] = _mm256_set1_epi64x(seed[0]);
-    state.s[1] = _mm256_set1_epi64x(seed[1]);
-    state.s[2] = _mm256_set1_epi64x(seed[2]);
-    state.s[3] = _mm256_set1_epi64x(seed[3]);
-    state.s[4] = _mm256_set_epi64x((0x1f << 16) ^ 7, (0x1f << 16) ^ 6,
-                                   (0x1f << 16) ^ 5, (0x1f << 16) ^ 4);
-
-    for (int j = 5; j < 25; ++j)
-        state.s[j] = _mm256_setzero_si256();
-
-    state.s[16] = _mm256_set1_epi64x(0x1ULL << 63);
+    expand_s_state_init(&state, seed, 4, 5, 6, 7);
 
     XURQ_AVX2_shake256x4_squeezeblocks(buf[0], buf[1], buf[2], buf[3], 1, &state);
 
@@ -1605,7 +1603,7 @@ static uint32_t rej_eta_with_pipe(int32_t *a,
 void ExpandS_with_pack(polyvecl *s1,
                        polyveck *s2,
                        uint8_t *r,
-                       const uint64_t seed[4]) {
+                       const uint64_t seed[8]) {
     unsigned int ctr[4] = {0};
     ALIGN(32) uint8_t buf[4][REJ_UNIFORM_ETA_BUFLEN];
     ALIGN(32) uint8_t pipe[4][288];  //32 bytes redundancy
@@ -1614,17 +1612,7 @@ void ExpandS_with_pack(polyvecl *s1,
 
     // sample and pack s1[0] s1[1] s1[2] s1[3]
 
-    state.s[0] = _mm256_set1_epi64x(seed[0]);
-    state.s[1] = _mm256_set1_epi64x(seed[1]);
-    state.s[2] = _mm256_set1_epi64x(seed[2]);
-    state.s[3] = _mm256_set1_epi64x(seed[3]);
-    state.s[4] = _mm256_set_epi64x((0x1f << 16) ^ 3, (0x1f << 16) ^ 2,
-                                   (0x1f << 16) ^ 1, (0x1f << 16) ^ 0);
-
-    for (int j = 5; j < 25; ++j)
-        state.s[j] = _mm256_setzero_si256();
-
-    state.s[16] = _mm256_set1_epi64x(0x1ULL << 63);
+    expand_s_state_init(&state, seed, 0, 1, 2, 3);
 
     XURQ_AVX2_shake256x4_squeezeblocks(buf[0], buf[1], buf[2], buf[3], REJ_UNIFORM_ETA_NBLOCKS, &state);
 
@@ -1652,17 +1640,7 @@ void ExpandS_with_pack(polyvecl *s1,
 
     // sample and pack  s1[4] s2[0] s2[1] s2[2]
 
-    state.s[0] = _mm256_set1_epi64x(seed[0]);
-    state.s[1] = _mm256_set1_epi64x(seed[1]);
-    state.s[2] = _mm256_set1_epi64x(seed[2]);
-    state.s[3] = _mm256_set1_epi64x(seed[3]);
-    state.s[4] = _mm256_set_epi64x((0x1f << 16) ^ 7, (0x1f << 16) ^ 6,
-                                   (0x1f << 16) ^ 5, (0x1f << 16) ^ 4);
-
-    for (int j = 5; j < 25; ++j)
-        state.s[j] = _mm256_setzero_si256();
-
-    state.s[16] = _mm256_set1_epi64x(0x1ULL << 63);
+    expand_s_state_init(&state, seed, 4, 5, 6, 7);
 
     XURQ_AVX2_shake256x4_squeezeblocks(buf[0], buf[1], buf[2], buf[3],  REJ_UNIFORM_ETA_NBLOCKS, &state);
 
@@ -1688,17 +1666,7 @@ void ExpandS_with_pack(polyvecl *s1,
 
     // sample and pack   s2[3] s2[4] s2[5]
 
-    state.s[0] = _mm256_set1_epi64x(seed[0]);
-    state.s[1] = _mm256_set1_epi64x(seed[1]);
-    state.s[2] = _mm256_set1_epi64x(seed[2]);
-    state.s[3] = _mm256_set1_epi64x(seed[3]);
-    state.s[4] = _mm256_set_epi64x((0x1f << 16) ^ 11, (0x1f << 16) ^ 10,
-                                   (0x1f << 16) ^ 9, (0x1f << 16) ^ 8);
-
-    for (int j = 5; j < 25; ++j)
-        state.s[j] = _mm256_setzero_si256();
-
-    state.s[16] = _mm256_set1_epi64x(0x1ULL << 63);
+    expand_s_state_init(&state, seed, 8, 9, 10, 11);
 
     XURQ_AVX2_shake256x4_squeezeblocks(buf[0], buf[1], buf[2], buf[3],  REJ_UNIFORM_ETA_NBLOCKS, &state);
 
@@ -1709,7 +1677,7 @@ void ExpandS_with_pack(polyvecl *s1,
     while (ctr[0] < N || ctr[1] < N || ctr[2] < N ) {
         XURQ_AVX2_shake256x4_squeezeblocks(buf[0], buf[1], buf[2], buf[3],  1, &state);
 
-        ctr[0] = rej_eta_with_pipe(s1->vec[3].coeffs, ctr[0],pipe[0],buf[0]);
+        ctr[0] = rej_eta_with_pipe(s2->vec[3].coeffs, ctr[0],pipe[0],buf[0]);
         ctr[1] = rej_eta_with_pipe(s2->vec[4].coeffs, ctr[1],pipe[1],buf[1]);
         ctr[2] = rej_eta_with_pipe(s2->vec[5].coeffs, ctr[2],pipe[2],buf[2]);
     }
@@ -1725,7 +1693,7 @@ void ExpandS_with_pack(polyvecl *s1,
 void ExpandS_with_pack(polyvecl *s1,
                        polyveck *s2,
                        uint8_t *r,
-                       const uint64_t seed[4]){
+                       const uint64_t seed[8]){
     unsigned int ctr[4] = {0};
     ALIGN(32) uint8_t buf[4][REJ_UNIFORM_ETA_BUFLEN];
     ALIGN(32) uint8_t pipe[4][288];  //32 bytes redundancy
@@ -1734,17 +1702,7 @@ void ExpandS_with_pack(polyvecl *s1,
 
     // sample and pack s1
 
-    state.s[0] = _mm256_set1_epi64x(seed[0]);
-    state.s[1] = _mm256_set1_epi64x(seed[1]);
-    state.s[2] = _mm256_set1_epi64x(seed[2]);
-    state.s[3] = _mm256_set1_epi64x(seed[3]);
-    state.s[4] = _mm256_set_epi64x((0x1f << 16) ^ 3, (0x1f << 16) ^ 2,
-                                   (0x1f << 16) ^ 1, (0x1f << 16) ^ 0);
-
-    for (int j = 5; j < 25; ++j)
-        state.s[j] = _mm256_setzero_si256();
-
-    state.s[16] = _mm256_set1_epi64x(0x1ULL << 63);
+    expand_s_state_init(&state, seed, 0, 1, 2, 3);
 
     XURQ_AVX2_shake256x4_squeezeblocks(buf[0], buf[1], buf[2], buf[3], 1, &state);
 
@@ -1766,17 +1724,7 @@ void ExpandS_with_pack(polyvecl *s1,
         pack_eta_avx2(r + i * POLYETA_PACKEDBYTES, pipe[i]);
     }
 
-    state.s[0] = _mm256_set1_epi64x(seed[0]);
-    state.s[1] = _mm256_set1_epi64x(seed[1]);
-    state.s[2] = _mm256_set1_epi64x(seed[2]);
-    state.s[3] = _mm256_set1_epi64x(seed[3]);
-    state.s[4] = _mm256_set_epi64x((0x1f << 16) ^ 7, (0x1f << 16) ^ 6,
-                                   (0x1f << 16) ^ 5, (0x1f << 16) ^ 4);
-
-    for (int j = 5; j < 25; ++j)
-        state.s[j] = _mm256_setzero_si256();
-
-    state.s[16] = _mm256_set1_epi64x(0x1ULL << 63);
+    expand_s_state_init(&state, seed, 4, 5, 6, 7);
 
     XURQ_AVX2_shake256x4_squeezeblocks(buf[0], buf[1], buf[2], buf[3], 1, &state);
 
@@ -1800,17 +1748,7 @@ void ExpandS_with_pack(polyvecl *s1,
 
     // sample and pack s2
 
-    state.s[0] = _mm256_set1_epi64x(seed[0]);
-    state.s[1] = _mm256_set1_epi64x(seed[1]);
-    state.s[2] = _mm256_set1_epi64x(seed[2]);
-    state.s[3] = _mm256_set1_epi64x(seed[3]);
-    state.s[4] = _mm256_set_epi64x((0x1f << 16) ^ 10, (0x1f << 16) ^ 9,
-                                   (0x1f << 16) ^ 8, (0x1f << 16) ^ 7);
-
-    for (int j = 5; j < 25; ++j)
-        state.s[j] = _mm256_setzero_si256();
-
-    state.s[16] = _mm256_set1_epi64x(0x1ULL << 63);
+    expand_s_state_init(&state, seed, 7, 8, 9, 10);
 
     XURQ_AVX2_shake256x4_squeezeblocks(buf[0], buf[1], buf[2], buf[3], 1, &state);
 
@@ -1834,17 +1772,7 @@ void ExpandS_with_pack(polyvecl *s1,
     }
 
 
-    state.s[0] = _mm256_set1_epi64x(seed[0]);
-    state.s[1] = _mm256_set1_epi64x(seed[1]);
-    state.s[2] = _mm256_set1_epi64x(seed[2]);
-    state.s[3] = _mm256_set1_epi64x(seed[3]);
-    state.s[4] = _mm256_set_epi64x((0x1f << 16) ^ 14, (0x1f << 16) ^ 13,
-                                   (0x1f << 16) ^ 12, (0x1f << 16) ^ 11);
-
-    for (int j = 5; j < 25; ++j)
-        state.s[j] = _mm256_setzero_si256();
-
-    state.s[16] = _mm256_set1_epi64x(0x1ULL << 63);
+    expand_s_state_init(&state, seed, 11, 12, 13, 14);
 
     XURQ_AVX2_shake256x4_squeezeblocks(buf[0], buf[1], buf[2], buf[3], 1, &state);
 

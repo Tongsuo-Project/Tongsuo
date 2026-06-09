@@ -30,8 +30,10 @@
 *
 * Returns 0 (success)
 **************************************************/
-int crypto_sign_keypair(uint8_t *pk, uint8_t *sk) {
+int crypto_sign_keypair_internal(uint8_t *pk, uint8_t *sk,
+                                 const uint8_t seed[SEEDBYTES]) {
     unsigned int i;
+    uint8_t augmented_seed[SEEDBYTES + 2];
     ALIGN(32) uint8_t seedbuf[2* SEEDBYTES + CRHBYTES];
     ALIGN(32) uint8_t tr[CRHBYTES];
     const uint8_t *rho, *rhoprime, *key;
@@ -41,9 +43,11 @@ int crypto_sign_keypair(uint8_t *pk, uint8_t *sk) {
     polyveck s2;
     poly t1, t0;
 
-    /* Get randomness for rho, rhoprime and key */
-    randombytes(seedbuf, SEEDBYTES);
-    shake256(seedbuf, 2* SEEDBYTES + CRHBYTES, seedbuf, SEEDBYTES);
+    /* FIPS 204 Algorithm 6: expand seed || k || l. */
+    memcpy(augmented_seed, seed, SEEDBYTES);
+    augmented_seed[SEEDBYTES] = K;
+    augmented_seed[SEEDBYTES + 1] = L;
+    shake256(seedbuf, sizeof(seedbuf), augmented_seed, sizeof(augmented_seed));
     rho = seedbuf;
     rhoprime = seedbuf + SEEDBYTES;
     key = seedbuf + SEEDBYTES + CRHBYTES;
@@ -82,6 +86,13 @@ int crypto_sign_keypair(uint8_t *pk, uint8_t *sk) {
     for (i = 0; i < CRHBYTES; ++i) sk[2 * SEEDBYTES + i] = tr[i];
 
     return 0;
+}
+
+int crypto_sign_keypair(uint8_t *pk, uint8_t *sk) {
+    uint8_t seed[SEEDBYTES];
+
+    randombytes(seed, sizeof(seed));
+    return crypto_sign_keypair_internal(pk, sk, seed);
 }
 
 /*************************************************

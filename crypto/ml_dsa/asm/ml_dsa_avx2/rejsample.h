@@ -51,7 +51,7 @@ void pack_eta(uint8_t *r, const uint8_t *pipe);
 void ExpandS_with_pack(polyvecl *s1,
                        polyveck *s2,
                        uint8_t *r,
-                       const uint64_t seed[4]);
+                       const uint64_t seed[8]);
 
 void poly_uniform_4x_op13_state_trans(poly *a0,
                           poly *a1,
