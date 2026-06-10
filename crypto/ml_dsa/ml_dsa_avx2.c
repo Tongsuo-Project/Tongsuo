@@ -49,7 +49,7 @@ int ossl_ml_dsa_87_avx2_crypto_sign_verify(const uint8_t *sig, size_t siglen,
                                             const uint8_t *m, size_t mlen,
                                             const uint8_t *pk);
 
-static int ml_dsa_avx2_eligible(void)
+int ossl_ml_dsa_avx2_eligible(void)
 {
     return ML_DSA_AVX2_CAPABLE != 0
         && ML_DSA_BMI2_CAPABLE != 0
@@ -62,7 +62,7 @@ int ossl_ml_dsa_avx2_keygen(ML_DSA_KEY *key)
     uint8_t *pk = NULL, *sk = NULL, *seed;
     const ML_DSA_PARAMS *params;
 
-    if (key == NULL || key->seed == NULL || !ml_dsa_avx2_eligible())
+    if (key == NULL || key->seed == NULL)
         return 0;
 
     params = ossl_ml_dsa_key_params(key);
@@ -123,9 +123,8 @@ int ossl_ml_dsa_avx2_sign(const ML_DSA_KEY *priv, int msg_is_mu,
     int ret;
     const ML_DSA_PARAMS *params;
 
-    if (priv == NULL || msg_is_mu || sig == NULL || rand == NULL
-        || !ml_dsa_avx2_eligible())
-        return 0;
+    if (priv == NULL || msg_is_mu || sig == NULL || rand == NULL)
+        return ML_DSA_AVX2_SIGN_DATA_UNSUPPORTED;
 
     params = ossl_ml_dsa_key_params(priv);
     switch (params->evp_type) {
@@ -148,9 +147,9 @@ int ossl_ml_dsa_avx2_sign(const ML_DSA_KEY *priv, int msg_is_mu,
                                                            rand, rand_len, 0);
         break;
     default:
-        return 0;
+        return ML_DSA_AVX2_SIGN_DATA_UNSUPPORTED;
     }
-    return ret == 0;
+    return ret == 0 ? ML_DSA_AVX2_SIGN_SUCCESS : ML_DSA_AVX2_SIGN_ERROR;
 }
 
 int ossl_ml_dsa_avx2_verify(const ML_DSA_KEY *pub, int msg_is_mu,
@@ -160,8 +159,8 @@ int ossl_ml_dsa_avx2_verify(const ML_DSA_KEY *pub, int msg_is_mu,
     int ret;
     const ML_DSA_PARAMS *params;
 
-    if (pub == NULL || msg_is_mu || sig == NULL || !ml_dsa_avx2_eligible())
-        return ML_DSA_AVX2_VERIFY_UNAVAILABLE;
+    if (pub == NULL || msg_is_mu || sig == NULL)
+        return ML_DSA_AVX2_VERIFY_DATA_UNSUPPORTED;
 
     params = ossl_ml_dsa_key_params(pub);
     switch (params->evp_type) {
@@ -181,12 +180,17 @@ int ossl_ml_dsa_avx2_verify(const ML_DSA_KEY *pub, int msg_is_mu,
                                                      pub->pub_encoding);
         break;
     default:
-        return ML_DSA_AVX2_VERIFY_UNAVAILABLE;
+        return ML_DSA_AVX2_VERIFY_DATA_UNSUPPORTED;
     }
     return ret == 0 ? ML_DSA_AVX2_VERIFY_VALID : ML_DSA_AVX2_VERIFY_INVALID;
 }
 
 #else
+
+int ossl_ml_dsa_avx2_eligible(void)
+{
+    return 0;
+}
 
 int ossl_ml_dsa_avx2_keygen(ML_DSA_KEY *key)
 {
@@ -198,14 +202,14 @@ int ossl_ml_dsa_avx2_sign(const ML_DSA_KEY *priv, int msg_is_mu,
                           const uint8_t *rand, size_t rand_len,
                           unsigned char *sig, size_t *sig_len)
 {
-    return 0;
+    return ML_DSA_AVX2_SIGN_DATA_UNSUPPORTED;
 }
 
 int ossl_ml_dsa_avx2_verify(const ML_DSA_KEY *pub, int msg_is_mu,
                             const uint8_t *msg, size_t msg_len,
                             const uint8_t *sig, size_t sig_len)
 {
-    return ML_DSA_AVX2_VERIFY_UNAVAILABLE;
+    return ML_DSA_AVX2_VERIFY_DATA_UNSUPPORTED;
 }
 
 #endif

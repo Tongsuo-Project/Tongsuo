@@ -476,12 +476,14 @@ int ossl_ml_dsa_generate_key(ML_DSA_KEY *out)
     sk = out->priv_encoding;
     out->priv_encoding = NULL;
     if (sk == NULL) {
-        ret = ossl_ml_dsa_avx2_keygen(out);
-        if (ret == 0)
+        if (ossl_ml_dsa_avx2_eligible())
+            ret = ossl_ml_dsa_avx2_keygen(out);
+        else
             ret = keygen_internal(out);
     } else {
-        ret = ossl_ml_dsa_avx2_keygen(out);
-        if (ret == 0)
+        if (ossl_ml_dsa_avx2_eligible())
+            ret = ossl_ml_dsa_avx2_keygen(out);
+        else
             ret = keygen_internal(out);
         if (ret != 0
             && memcmp(out->priv_encoding, sk, out->params->sk_len) != 0) {

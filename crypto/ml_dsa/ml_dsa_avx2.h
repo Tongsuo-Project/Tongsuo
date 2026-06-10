@@ -7,10 +7,15 @@
 
 # include "crypto/ml_dsa.h"
 
-# define ML_DSA_AVX2_VERIFY_UNAVAILABLE -1
-# define ML_DSA_AVX2_VERIFY_INVALID      0
-# define ML_DSA_AVX2_VERIFY_VALID        1
+# define ML_DSA_AVX2_SIGN_DATA_UNSUPPORTED -1
+# define ML_DSA_AVX2_SIGN_ERROR             0
+# define ML_DSA_AVX2_SIGN_SUCCESS           1
 
+# define ML_DSA_AVX2_VERIFY_DATA_UNSUPPORTED -1
+# define ML_DSA_AVX2_VERIFY_INVALID           0
+# define ML_DSA_AVX2_VERIFY_VALID             1
+
+int ossl_ml_dsa_avx2_eligible(void);
 int ossl_ml_dsa_avx2_keygen(ML_DSA_KEY *key);
 int ossl_ml_dsa_avx2_sign(const ML_DSA_KEY *priv, int msg_is_mu,
                           const uint8_t *msg, size_t msg_len,
