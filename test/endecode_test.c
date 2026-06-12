@@ -1027,6 +1027,10 @@ DOMAIN_KEYS(ECExplicitTri2G);
 IMPLEMENT_TEST_SUITE(ECExplicitTri2G, "EC", 0)
 IMPLEMENT_TEST_SUITE_LEGACY(ECExplicitTri2G, "EC")
 # endif
+# ifndef OPENSSL_NO_SM2
+KEYS(SM2);
+IMPLEMENT_TEST_SUITE(SM2, "SM2", 0)
+# endif
 KEYS(ED25519);
 IMPLEMENT_TEST_SUITE(ED25519, "ED25519", 1)
 KEYS(ED448);
@@ -1236,6 +1240,28 @@ static int create_ec_explicit_trinomial_params(OSSL_PARAM_BLD *bld)
     return do_create_ec_explicit_trinomial_params(bld, gen2, sizeof(gen2));
 }
 # endif /* OPENSSL_NO_EC2M */
+
+/*
+ * Test that multiple calls to OSSL_ENCODER_to_data() do not cause side effects
+ */
+static int ec_encode_to_data_multi(void)
+{
+    int ret;
+    OSSL_ENCODER_CTX *ectx = NULL;
+    EVP_PKEY *key = NULL;
+    uint8_t *enc = NULL;
+    size_t enc_len = 0;
+
+    ret = TEST_ptr(key = EVP_PKEY_Q_keygen(testctx, "", "EC", "P-256"))
+        && TEST_ptr(ectx = OSSL_ENCODER_CTX_new_for_pkey(key, EVP_PKEY_KEYPAIR,
+                                                         "DER", NULL, NULL))
+        && TEST_int_eq(OSSL_ENCODER_to_data(ectx, NULL, &enc_len), 1)
+        && TEST_int_eq(OSSL_ENCODER_to_data(ectx, &enc, &enc_len), 1);
+    OPENSSL_free(enc);
+    EVP_PKEY_free(key);
+    OSSL_ENCODER_CTX_free(ectx);
+    return ret;
+}
 #endif /* OPENSSL_NO_EC */
 
 typedef enum OPTION_choice {
@@ -1377,6 +1403,9 @@ int setup_tests(void)
     MAKE_DOMAIN_KEYS(ECExplicitTriNamedCurve, "EC", ec_explicit_tri_params_nc);
     MAKE_DOMAIN_KEYS(ECExplicitTri2G, "EC", ec_explicit_tri_params_explicit);
 # endif
+# ifndef OPENSSL_NO_SM2
+    MAKE_KEYS(SM2, "SM2", NULL);
+# endif
     MAKE_KEYS(ED25519, "ED25519", NULL);
     MAKE_KEYS(ED448, "ED448", NULL);
     MAKE_KEYS(X25519, "X25519", NULL);
@@ -1410,6 +1439,7 @@ int setup_tests(void)
 # endif
 #endif
 #ifndef OPENSSL_NO_EC
+        ADD_TEST(ec_encode_to_data_multi);
         ADD_TEST_SUITE(EC);
         ADD_TEST_SUITE_PARAMS(EC);
         ADD_TEST_SUITE_LEGACY(EC);
@@ -1422,6 +1452,9 @@ int setup_tests(void)
         ADD_TEST_SUITE_LEGACY(ECExplicitTriNamedCurve);
         ADD_TEST_SUITE(ECExplicitTri2G);
         ADD_TEST_SUITE_LEGACY(ECExplicitTri2G);
+# endif
+# ifndef OPENSSL_NO_SM2
+        ADD_TEST_SUITE(SM2);
 # endif
         ADD_TEST_SUITE(ED25519);
         ADD_TEST_SUITE(ED448);
@@ -1479,6 +1512,9 @@ void cleanup_tests(void)
 # ifndef OPENSSL_NO_EC2M
     FREE_DOMAIN_KEYS(ECExplicitTriNamedCurve);
     FREE_DOMAIN_KEYS(ECExplicitTri2G);
+# endif
+# ifndef OPENSSL_NO_SM2
+    FREE_KEYS(SM2);
 # endif
     FREE_KEYS(ED25519);
     FREE_KEYS(ED448);

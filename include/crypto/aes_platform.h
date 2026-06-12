@@ -65,6 +65,7 @@ void AES_xts_decrypt(const unsigned char *inp, unsigned char *out, size_t len,
 #   ifdef VPAES_ASM
 #    define VPAES_CAPABLE (OPENSSL_ppccap_P & PPC_ALTIVEC)
 #   endif
+#   if !defined(OPENSSL_SYS_MACOSX)
 #   define HWAES_CAPABLE  (OPENSSL_ppccap_P & PPC_CRYPTO207)
 #   ifdef HWAES_set_encrypt_key
 #    undef HWAES_set_encrypt_key
@@ -98,6 +99,7 @@ void AES_xts_decrypt(const unsigned char *inp, unsigned char *out, size_t len,
 #    undef HWAES_xts_decrypt
 #   endif
 #   define HWAES_xts_decrypt aes_p8_xts_decrypt
+#   endif /* OPENSSL_SYS_MACOSX */
 #  endif /* PPC */
 
 #  if (defined(__arm__) || defined(__arm) || defined(__aarch64__))

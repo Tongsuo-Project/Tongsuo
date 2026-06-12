@@ -660,7 +660,8 @@ redo_accept:
                 resp =
                     OCSP_response_create(OCSP_RESPONSE_STATUS_MALFORMEDREQUEST,
                                          NULL);
-                send_ocsp_response(cbio, resp);
+                if (resp != NULL)
+                    send_ocsp_response(cbio, resp);
             }
             goto done_resp;
         }
@@ -758,16 +759,18 @@ redo_accept:
         BIO_free(derbio);
     }
 
-    i = OCSP_response_status(resp);
-    if (i != OCSP_RESPONSE_STATUS_SUCCESSFUL) {
-        BIO_printf(out, "Responder Error: %s (%d)\n",
-                   OCSP_response_status_str(i), i);
-        if (!ignore_err)
+    if (resp != NULL) {
+        i = OCSP_response_status(resp);
+        if (i != OCSP_RESPONSE_STATUS_SUCCESSFUL) {
+            BIO_printf(out, "Responder Error: %s (%d)\n",
+                       OCSP_response_status_str(i), i);
+            if (!ignore_err)
                 goto end;
-    }
+        }
 
-    if (resp_text)
-        OCSP_RESPONSE_print(out, resp, 0);
+        if (resp_text)
+            OCSP_RESPONSE_print(out, resp, 0);
+    }
 
     /* If running as responder don't verify our own response */
     if (cbio != NULL) {
@@ -1043,6 +1046,10 @@ static void make_ocsp_response(BIO *err, OCSP_RESPONSE **resp, OCSP_REQUEST *req
     }
 
     bs = OCSP_BASICRESP_new();
+    if (bs == NULL) {
+        *resp = OCSP_response_create(OCSP_RESPONSE_STATUS_INTERNALERROR, bs);
+        goto end;
+    }
     thisupd = X509_gmtime_adj(NULL, 0);
     if (ndays != -1)
         nextupd = X509_time_adj_ex(NULL, ndays, nmin * 60, NULL);

@@ -107,9 +107,12 @@ static int save_statusInfo(OSSL_CMP_CTX *ctx, OSSL_CMP_PKISI *si)
     ss = si->statusString; /* may be NULL */
     for (i = 0; i < sk_ASN1_UTF8STRING_num(ss); i++) {
         ASN1_UTF8STRING *str = sk_ASN1_UTF8STRING_value(ss, i);
+        ASN1_UTF8STRING *dup = ASN1_STRING_dup(str);
 
-        if (!sk_ASN1_UTF8STRING_push(ctx->statusString, ASN1_STRING_dup(str)))
+        if (dup == NULL || !sk_ASN1_UTF8STRING_push(ctx->statusString, dup)) {
+            ASN1_UTF8STRING_free(dup);
             return 0;
+        }
     }
     return 1;
 }
@@ -608,8 +611,10 @@ static int cert_response(OSSL_CMP_CTX *ctx, int sleep, int rid,
         ERR_add_error_data(1, "; cannot extract certificate from response");
         return 0;
     }
-    if (!ossl_cmp_ctx_set0_newCert(ctx, cert))
+    if (!ossl_cmp_ctx_set0_newCert(ctx, cert)) {
+        X509_free(cert);
         return 0;
+    }
 
     /*
      * if the CMP server returned certificates in the caPubs field, copy them

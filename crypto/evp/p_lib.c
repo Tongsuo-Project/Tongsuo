@@ -1132,15 +1132,14 @@ int EVP_PKEY_can_sign(const EVP_PKEY *pkey)
     } else {
         const OSSL_PROVIDER *prov = EVP_KEYMGMT_get0_provider(pkey->keymgmt);
         OSSL_LIB_CTX *libctx = ossl_provider_libctx(prov);
-        const char *supported_sig =
-            pkey->keymgmt->query_operation_name != NULL
-            ? pkey->keymgmt->query_operation_name(OSSL_OP_SIGNATURE)
-            : EVP_KEYMGMT_get0_name(pkey->keymgmt);
-        EVP_SIGNATURE *signature = NULL;
+        EVP_SIGNATURE *sig;
+        const char *name;
 
-        signature = EVP_SIGNATURE_fetch(libctx, supported_sig, NULL);
-        if (signature != NULL) {
-            EVP_SIGNATURE_free(signature);
+        name = evp_keymgmt_util_query_operation_name(pkey->keymgmt,
+                                                     OSSL_OP_SIGNATURE);
+        sig = EVP_SIGNATURE_fetch(libctx, name, NULL);
+        if (sig != NULL) {
+            EVP_SIGNATURE_free(sig);
             return 1;
         }
     }
@@ -1948,7 +1947,15 @@ void *evp_pkey_export_to_provider(EVP_PKEY *pk, OSSL_LIB_CTX *libctx,
              * If |tmp_keymgmt| is present in the operation cache, it means
              * that export doesn't need to be redone.  In that case, we take
              * token copies of the cached pointers, to have token success
-             * values to return.
+             * values to return. It is possible (e.g. in a no-cached-fetch
+             * build), for op->keymgmt to be a different pointer to tmp_keymgmt
+             * even though the name/provider must be the same. In other words
+             * the keymgmt instance may be different but still equivalent, i.e.
+             * same algorithm/provider instance - but we make the simplifying
+             * assumption that the keydata can be used with either keymgmt
+             * instance. Not doing so introduces significant complexity and
+             * probably requires refactoring - since we would have to ripple
+             * the change in keymgmt instance up the call chain.
              */
             if (op != NULL && op->keymgmt != NULL) {
                 keydata = op->keydata;

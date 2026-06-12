@@ -367,7 +367,7 @@ jobs:
       uses: actions/setup-python@v2.2.2
       with:
         python-version: ${{ matrix.PYTHON }}
-    - uses: actions-rs/toolchain@v1
+    - uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # v1
       with:
         profile: minimal
         toolchain: ${{ matrix.RUST }}

@@ -256,7 +256,11 @@ static int test_pass_rsa(FIXTURE *fixture)
         }
 
         ret = (ret == OSSL_NELEM(expected));
-        if (!ret || !TEST_ptr(dup_pk = EVP_PKEY_dup(pk)))
+
+        if (!ret || dup_pk != NULL)
+            break;
+
+        if (!TEST_ptr(dup_pk = EVP_PKEY_dup(pk)))
             goto err;
 
         ret = TEST_int_eq(EVP_PKEY_eq(pk, dup_pk), 1);

@@ -12,3 +12,11 @@
 /* Fake RSA provider implementation */
 OSSL_PROVIDER *fake_rsa_start(OSSL_LIB_CTX *libctx);
 void fake_rsa_finish(OSSL_PROVIDER *p);
+
+/*
+ * When fake_rsa_query_operation_name is set to a non-zero value,
+ * query_operation_name() will return NULL.
+ *
+ * By default, it is 0, in which case query_operation_name() will return "RSA".
+ */
+extern unsigned fake_rsa_query_operation_name;

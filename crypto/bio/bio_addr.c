@@ -547,8 +547,13 @@ int BIO_parse_hostserv(const char *hostserv, char **host, char **service,
             *service = NULL;
         } else {
             *service = OPENSSL_strndup(p, pl);
-            if (*service == NULL)
+            if (*service == NULL) {
+                if (h != NULL && host != NULL) {
+                    OPENSSL_free(*host);
+                    *host = NULL;
+                }
                 goto memerr;
+            }
         }
     }
 
@@ -766,14 +771,11 @@ int BIO_lookup_ex(const char *host, const char *service, int lookup_type,
 
         if (!RUN_ONCE(&bio_lookup_init, do_bio_lookup_init)) {
             ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
-            ret = 0;
-            goto err;
+            return 0;
         }
 
-        if (!CRYPTO_THREAD_write_lock(bio_lookup_lock)) {
-            ret = 0;
-            goto err;
-        }
+        if (!CRYPTO_THREAD_write_lock(bio_lookup_lock))
+            return 0;
         he_fallback_address = INADDR_ANY;
         if (host == NULL) {
             he = &he_fallback;

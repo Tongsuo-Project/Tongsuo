@@ -352,10 +352,10 @@ static const char *get_sigtype(int nid)
         return "ECDSA";
 
     case NID_ED25519:
-        return "Ed25519";
+        return "ed25519";
 
     case NID_ED448:
-        return "Ed448";
+        return "ed448";
 
     default:
         return NULL;
@@ -391,6 +391,26 @@ static int do_print_sigalgs(BIO *out, SSL *s, int shared)
             SSL_get_sigalgs(s, i, &sign_nid, &hash_nid, NULL, &rsign, &rhash);
         if (i)
             BIO_puts(out, ":");
+        switch (rsign | rhash << 8) {
+        case 0x0809:
+            BIO_puts(out, "rsa_pss_pss_sha256");
+            continue;
+        case 0x080a:
+            BIO_puts(out, "rsa_pss_pss_sha384");
+            continue;
+        case 0x080b:
+            BIO_puts(out, "rsa_pss_pss_sha512");
+            continue;
+        case 0x081a:
+            BIO_puts(out, "ecdsa_brainpoolP256r1_sha256");
+            continue;
+        case 0x081b:
+            BIO_puts(out, "ecdsa_brainpoolP384r1_sha384");
+            continue;
+        case 0x081c:
+            BIO_puts(out, "ecdsa_brainpoolP512r1_sha512");
+            continue;
+        }
         sstr = get_sigtype(sign_nid);
         if (sstr)
             BIO_printf(out, "%s", sstr);
@@ -753,7 +773,7 @@ void msg_cb(int write_p, int version, int content_type, const void *buf,
     (void)BIO_flush(bio);
 }
 
-static STRINT_PAIR tlsext_types[] = {
+static const STRINT_PAIR tlsext_types[] = {
     {"server name", TLSEXT_TYPE_server_name},
     {"max fragment length", TLSEXT_TYPE_max_fragment_length},
     {"client certificate URL", TLSEXT_TYPE_client_certificate_url},
@@ -792,6 +812,7 @@ static STRINT_PAIR tlsext_types[] = {
     {"psk kex modes", TLSEXT_TYPE_psk_kex_modes},
     {"certificate authorities", TLSEXT_TYPE_certificate_authorities},
     {"post handshake auth", TLSEXT_TYPE_post_handshake_auth},
+    {"early_data", TLSEXT_TYPE_early_data},
     {NULL}
 };
 
@@ -1419,7 +1440,8 @@ int ssl_load_stores(SSL_CTX *ctx,
         if (vfyCAstore != NULL && !X509_STORE_load_store(vfy, vfyCAstore))
             goto err;
         add_crls_store(vfy, crls);
-        SSL_CTX_set1_verify_cert_store(ctx, vfy);
+        if (SSL_CTX_set1_verify_cert_store(ctx, vfy) == 0)
+            goto err;
         if (crl_download)
             store_setup_crl_download(vfy);
     }
@@ -1433,7 +1455,8 @@ int ssl_load_stores(SSL_CTX *ctx,
             goto err;
         if (chCAstore != NULL && !X509_STORE_load_store(ch, chCAstore))
             goto err;
-        SSL_CTX_set1_chain_cert_store(ctx, ch);
+        if (SSL_CTX_set1_chain_cert_store(ctx, ch) == 0)
+            goto err;
     }
     rv = 1;
  err:

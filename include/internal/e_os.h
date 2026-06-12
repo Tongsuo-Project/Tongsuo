@@ -126,17 +126,6 @@
 #    define EACCES   13
 #   endif
 #   include <string.h>
-#   ifdef _WIN64
-#    define strlen(s) _strlen31(s)
-/* cut strings to 2GB */
-static __inline unsigned int _strlen31(const char *str)
-{
-    unsigned int len = 0;
-    while (*str && len < 0x80000000U)
-        str++, len++;
-    return len & 0x7FFFFFFF;
-}
-#   endif
 #   include <malloc.h>
 #   if defined(_MSC_VER) && !defined(_WIN32_WCE) && !defined(_DLL) && defined(stdin)
 #    if _MSC_VER>=1300 && _MSC_VER<1600
@@ -250,20 +239,17 @@ static ossl_inline void ossl_sleep(unsigned long millis)
     ts.tv_sec = (long int) (millis / 1000);
     ts.tv_nsec = (long int) (millis % 1000) * 1000000ul;
     nanosleep(&ts, NULL);
-# elif defined(__TANDEM)
-#  if !defined(_REENTRANT)
+# elif defined(__TANDEM) && !defined(_REENTRANT)
 #   include <cextdecs.h(PROCESS_DELAY_)>
     /* HPNS does not support usleep for non threaded apps */
     PROCESS_DELAY_(millis * 1000);
-#  elif defined(_SPT_MODEL_)
-#   include <spthread.h>
-#   include <spt_extensions.h>
-    usleep(millis * 1000);
-#  else
-    usleep(millis * 1000);
-#  endif
 # else
-    usleep(millis * 1000);
+    unsigned int s = (unsigned int)(millis / 1000);
+    unsigned int us = (unsigned int)((millis % 1000) * 1000);
+
+    if (s > 0)
+        sleep(s);
+    usleep(us);
 # endif
 }
 #elif defined(_WIN32)

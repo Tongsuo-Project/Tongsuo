@@ -389,7 +389,7 @@ static int test_fromdata_rsa(void)
                                           fromdata_params), 1))
         goto err;
 
-    while (dup_pk == NULL) {
+    for (;;) {
         ret = 0;
         if (!TEST_int_eq(EVP_PKEY_get_bits(pk), 32)
             || !TEST_int_eq(EVP_PKEY_get_security_bits(pk), 8)
@@ -417,7 +417,10 @@ static int test_fromdata_rsa(void)
         ret = test_print_key_using_pem("RSA", pk)
               && test_print_key_using_encoder("RSA", pk);
 
-        if (!ret || !TEST_ptr(dup_pk = EVP_PKEY_dup(pk)))
+        if (!ret || dup_pk != NULL)
+            break;
+
+        if (!TEST_ptr(dup_pk = EVP_PKEY_dup(pk)))
             goto err;
         ret = ret && TEST_int_eq(EVP_PKEY_eq(pk, dup_pk), 1);
         EVP_PKEY_free(pk);
@@ -602,7 +605,7 @@ static int test_fromdata_dh_named_group(void)
                                                       &len)))
         goto err;
 
-    while (dup_pk == NULL) {
+    for (;;) {
         ret = 0;
         if (!TEST_int_eq(EVP_PKEY_get_bits(pk), 2048)
             || !TEST_int_eq(EVP_PKEY_get_security_bits(pk), 112)
@@ -682,7 +685,10 @@ static int test_fromdata_dh_named_group(void)
         ret = test_print_key_using_pem("DH", pk)
               && test_print_key_using_encoder("DH", pk);
 
-        if (!ret || !TEST_ptr(dup_pk = EVP_PKEY_dup(pk)))
+        if (!ret || dup_pk != NULL)
+            break;
+
+        if (!TEST_ptr(dup_pk = EVP_PKEY_dup(pk)))
             goto err;
         ret = ret && TEST_int_eq(EVP_PKEY_eq(pk, dup_pk), 1);
         EVP_PKEY_free(pk);
@@ -783,7 +789,7 @@ static int test_fromdata_dh_fips186_4(void)
                                           fromdata_params), 1))
         goto err;
 
-    while (dup_pk == NULL) {
+    for (;;) {
         ret = 0;
         if (!TEST_int_eq(EVP_PKEY_get_bits(pk), 2048)
             || !TEST_int_eq(EVP_PKEY_get_security_bits(pk), 112)
@@ -857,7 +863,10 @@ static int test_fromdata_dh_fips186_4(void)
         ret = test_print_key_using_pem("DH", pk)
               && test_print_key_using_encoder("DH", pk);
 
-        if (!ret || !TEST_ptr(dup_pk = EVP_PKEY_dup(pk)))
+        if (!ret || dup_pk != NULL)
+            break;
+
+        if (!TEST_ptr(dup_pk = EVP_PKEY_dup(pk)))
             goto err;
         ret = ret && TEST_int_eq(EVP_PKEY_eq(pk, dup_pk), 1);
         EVP_PKEY_free(pk);
@@ -1090,7 +1099,7 @@ static int test_fromdata_ecx(int tst)
                                           fromdata_params), 1))
         goto err;
 
-    while (dup_pk == NULL) {
+    for (;;) {
         ret = 0;
         if (!TEST_int_eq(EVP_PKEY_get_bits(pk), bits)
             || !TEST_int_eq(EVP_PKEY_get_security_bits(pk), security_bits)
@@ -1145,7 +1154,10 @@ static int test_fromdata_ecx(int tst)
             ret = test_print_key_using_pem(alg, pk)
                   && test_print_key_using_encoder(alg, pk);
 
-        if (!ret || !TEST_ptr(dup_pk = EVP_PKEY_dup(pk)))
+        if (!ret || dup_pk != NULL)
+            break;
+
+        if (!TEST_ptr(dup_pk = EVP_PKEY_dup(pk)))
             goto err;
         ret = ret && TEST_int_eq(EVP_PKEY_eq(pk, dup_pk), 1);
         EVP_PKEY_free(pk);
@@ -1262,7 +1274,7 @@ static int test_fromdata_ec(void)
                                           fromdata_params), 1))
         goto err;
 
-    while (dup_pk == NULL) {
+    for (;;) {
         ret = 0;
         if (!TEST_int_eq(EVP_PKEY_get_bits(pk), 256)
             || !TEST_int_eq(EVP_PKEY_get_security_bits(pk), 128)
@@ -1301,6 +1313,15 @@ static int test_fromdata_ec(void)
             || !TEST_BN_eq(group_b, b))
             goto err;
 
+        EC_GROUP_free(group);
+        group = NULL;
+        BN_free(group_p);
+        group_p = NULL;
+        BN_free(group_a);
+        group_a = NULL;
+        BN_free(group_b);
+        group_b = NULL;
+
         if (!EVP_PKEY_get_utf8_string_param(pk, OSSL_PKEY_PARAM_GROUP_NAME,
                                             out_curve_name,
                                             sizeof(out_curve_name),
@@ -1329,7 +1350,10 @@ static int test_fromdata_ec(void)
         ret = test_print_key_using_pem(alg, pk)
               && test_print_key_using_encoder(alg, pk);
 
-        if (!ret || !TEST_ptr(dup_pk = EVP_PKEY_dup(pk)))
+        if (!ret || dup_pk != NULL)
+            break;
+
+        if (!TEST_ptr(dup_pk = EVP_PKEY_dup(pk)))
             goto err;
         ret = ret && TEST_int_eq(EVP_PKEY_eq(pk, dup_pk), 1);
         EVP_PKEY_free(pk);
@@ -1575,7 +1599,7 @@ static int test_fromdata_dsa_fips186_4(void)
                                           fromdata_params), 1))
         goto err;
 
-    while (dup_pk == NULL) {
+    for (;;) {
         ret = 0;
         if (!TEST_int_eq(EVP_PKEY_get_bits(pk), 2048)
             || !TEST_int_eq(EVP_PKEY_get_security_bits(pk), 112)
@@ -1624,12 +1648,12 @@ static int test_fromdata_dsa_fips186_4(void)
                                                  &pcounter_out))
             || !TEST_int_eq(pcounter, pcounter_out))
             goto err;
-        BN_free(p);
-        p = NULL;
-        BN_free(q);
-        q = NULL;
-        BN_free(g);
-        g = NULL;
+        BN_free(p_out);
+        p_out = NULL;
+        BN_free(q_out);
+        q_out = NULL;
+        BN_free(g_out);
+        g_out = NULL;
         BN_free(j_out);
         j_out = NULL;
         BN_free(pub_out);
@@ -1657,7 +1681,10 @@ static int test_fromdata_dsa_fips186_4(void)
         ret = test_print_key_using_pem("DSA", pk)
               && test_print_key_using_encoder("DSA", pk);
 
-        if (!ret || !TEST_ptr(dup_pk = EVP_PKEY_dup(pk)))
+        if (!ret || dup_pk != NULL)
+            break;
+
+        if (!TEST_ptr(dup_pk = EVP_PKEY_dup(pk)))
             goto err;
         ret = ret && TEST_int_eq(EVP_PKEY_eq(pk, dup_pk), 1);
         EVP_PKEY_free(pk);
@@ -1755,6 +1782,53 @@ err:
     return ret;
 }
 
+static const char *name_dup_algs[] = {
+#ifndef OPENSSL_NO_ECX
+    "ED25519",
+#endif
+#ifndef OPENSSL_NO_ML_KEM
+    "ML-KEM-512",
+#endif
+#ifndef OPENSSL_NO_ML_DSA
+    "ML-DSA-44",
+#endif
+    NULL
+};
+
+static int test_name_dup(int idx)
+{
+    const char *alg = name_dup_algs[idx];
+    EVP_PKEY *key = NULL;
+    EVP_PKEY_CTX *factory = NULL, *ctx = NULL;
+    int i, ret = 0;
+
+    if (alg == NULL
+        || (factory = EVP_PKEY_CTX_new_from_name(NULL, alg, NULL)) == NULL)
+        return 1;
+    TEST_info("Testing fresh context dup for: %s", alg);
+
+    /* Run twice to check that *repeated* use works */
+    for (i = 0; i < 2; ++i) {
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(key);
+        key = NULL;
+        if (!TEST_ptr(ctx = EVP_PKEY_CTX_dup(factory))
+            || !TEST_int_gt(EVP_PKEY_keygen_init(ctx), 0)
+            || !TEST_int_gt(EVP_PKEY_keygen(ctx, &key), 0)) {
+            ERR_print_errors(bio_err);
+            goto end;
+        }
+    }
+    ret = 1;
+
+ end:
+    EVP_PKEY_CTX_free(factory);
+    EVP_PKEY_CTX_free(ctx);
+    EVP_PKEY_free(key);
+
+    return ret;
+}
+
 int setup_tests(void)
 {
     if (!test_skip_common_options()) {
@@ -1766,6 +1840,7 @@ int setup_tests(void)
         return 0;
 
     ADD_TEST(test_evp_pkey_ctx_dup_kdf_fail);
+    ADD_ALL_TESTS(test_name_dup, OSSL_NELEM(name_dup_algs));
     ADD_TEST(test_evp_pkey_get_bn_param_large);
     ADD_TEST(test_fromdata_rsa);
 #ifndef OPENSSL_NO_DH

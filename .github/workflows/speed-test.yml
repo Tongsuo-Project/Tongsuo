@@ -18,7 +18,7 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
       - name: fetch all branch
-        uses: nick-fields/retry@v2
+        uses: nick-fields/retry@14672906e672a08bd6eeb15720e9ed3ce869cdd4 # v2
         with:
           timeout_seconds: 30
           max_attempts: 60
@@ -139,7 +139,7 @@ jobs:
               commit -a -m "Benchmark automated testing." \
               --author="${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>"
       - name: push speed test result
-        uses: nick-fields/retry@v2
+        uses: nick-fields/retry@14672906e672a08bd6eeb15720e9ed3ce869cdd4 # v2
         with:
           timeout_seconds: 30
           max_attempts: 60

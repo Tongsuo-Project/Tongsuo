@@ -270,16 +270,22 @@ sub start_mock_server {
     print "Current directory is ".getcwd()."\n";
     print "Launching mock server: $cmd\n";
     die "Invalid port: $server_port" unless $server_port =~ m/^\d+$/;
-    my $pid = open($server_fh, "$cmd|") or die "Trying to $cmd";
+    my $pid = open($server_fh, "$cmd 2>".result_dir()."/error.txt |") or die "Trying to $cmd";
     print "Pid is: $pid\n";
     if ($server_port == 0) {
         # Find out the actual server port
+        my $pid0 = $pid;
         while (<$server_fh>) {
             print "Server output: $_";
             next if m/using section/;
             s/\R$//;                # Better chomp
             ($server_port, $pid) = ($1, $2) if /^ACCEPT\s.*:(\d+) PID=(\d+)$/;
             last; # Do not loop further to prevent hangs on server misbehavior
+        }
+        if ($pid0 != $pid) {
+            # kill the shell process
+            kill('KILL', $pid0);
+            waitpid($pid0, 0);
         }
     }
     unless ($server_port > 0) {

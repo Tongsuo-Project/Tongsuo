@@ -14,6 +14,7 @@
 #include <openssl/err.h>
 #include "internal/propertyerr.h"
 #include "internal/property.h"
+#include "internal/numbers.h"
 #include "crypto/ctype.h"
 #include "internal/nelem.h"
 #include "property_local.h"
@@ -641,7 +642,7 @@ static void put_str(const char *str, char **buf, size_t *remain, size_t *needed)
         }
 
     quotes = quote != '\0';
-    if (*remain == 0) {
+    if (*remain <= (size_t)quotes) {
         *needed += 2 * quotes;
         return;
     }

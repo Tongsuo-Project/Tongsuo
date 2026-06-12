@@ -1210,6 +1210,8 @@ static int fix_ecdh_cofactor(enum state state,
         /* The initial value for |ctx->action_type| must not be zero. */
         if (!ossl_assert(ctx->action_type != NONE))
             return 0;
+    } else if (state == POST_PARAMS_TO_CTRL && ctx->action_type == NONE) {
+        ctx->action_type = GET;
     }
 
     if ((ret = default_check(state, translation, ctx)) <= 0)
@@ -1235,6 +1237,8 @@ static int fix_ecdh_cofactor(enum state state,
         }
     } else if (state == PRE_PARAMS_TO_CTRL && ctx->action_type == GET) {
         ctx->p1 = -2;
+    } else if (state == POST_PARAMS_TO_CTRL && ctx->action_type == GET) {
+        ctx->p1 = ret;
     }
 
     return ret;
@@ -1351,7 +1355,7 @@ static int fix_rsa_padding_mode(enum state state,
         if (i == OSSL_NELEM(str_value_map)) {
             ERR_raise_data(ERR_LIB_RSA, RSA_R_UNKNOWN_PADDING_TYPE,
                            "[action:%d, state:%d] padding name %s",
-                           ctx->action_type, state, ctx->p1);
+                           ctx->action_type, state, (const char *)ctx->p2);
             ctx->p1 = ret = -2;
         } else if (state == POST_CTRL_TO_PARAMS) {
             /* EVP_PKEY_CTRL_GET_RSA_PADDING weirdness explained further up */
@@ -2819,7 +2823,7 @@ static int evp_pkey_ctx_setget_params_to_ctrl(EVP_PKEY_CTX *pctx,
         fixup_args_fn *fixup = default_fixup_args;
         int ret;
 
-        tmpl.action_type = action_type;
+        ctx.action_type = tmpl.action_type = action_type;
         tmpl.keytype1 = tmpl.keytype2 = keytype;
         tmpl.optype = optype;
         tmpl.param_key = params->key;
@@ -2828,7 +2832,6 @@ static int evp_pkey_ctx_setget_params_to_ctrl(EVP_PKEY_CTX *pctx,
         if (translation != NULL) {
             if (translation->fixup_args != NULL)
                 fixup = translation->fixup_args;
-            ctx.action_type = translation->action_type;
             ctx.ctrl_cmd = translation->ctrl_num;
 	}
         ctx.pctx = pctx;
@@ -2843,8 +2846,14 @@ static int evp_pkey_ctx_setget_params_to_ctrl(EVP_PKEY_CTX *pctx,
         /*
          * In POST, we pass the return value as p1, allowing the fixup_args
          * function to put it to good use, or maybe affect it.
+         *
+         * NOTE: even though EVP_PKEY_CTX_ctrl return value is documented
+         * as return positive on Success and 0 or negative on falure. There
+         * maybe parameters (e.g. ecdh_cofactor), which actually return 0
+         * as success value. That is why we do POST_PARAMS_TO_CTRL for 0
+         * value as well
          */
-        if (ret > 0) {
+        if (ret >= 0) {
             ctx.p1 = ret;
             fixup(POST_PARAMS_TO_CTRL, translation, &ctx);
             ret = ctx.p1;
@@ -2860,11 +2869,15 @@ static int evp_pkey_ctx_setget_params_to_ctrl(EVP_PKEY_CTX *pctx,
 
 int evp_pkey_ctx_set_params_to_ctrl(EVP_PKEY_CTX *ctx, const OSSL_PARAM *params)
 {
+    if (ctx->keymgmt != NULL)
+        return 0;
     return evp_pkey_ctx_setget_params_to_ctrl(ctx, SET, (OSSL_PARAM *)params);
 }
 
 int evp_pkey_ctx_get_params_to_ctrl(EVP_PKEY_CTX *ctx, OSSL_PARAM *params)
 {
+    if (ctx->keymgmt != NULL)
+        return 0;
     return evp_pkey_ctx_setget_params_to_ctrl(ctx, GET, params);
 }
 

@@ -190,7 +190,7 @@ static int compare_hex_encoded_buffer(const char *hex_encoded,
         return 1;
 
     for (i = j = 0; i < raw_length && j + 1 < hex_length; i++, j += 2) {
-        sprintf(hexed, "%02x", raw[i]);
+        BIO_snprintf(hexed, sizeof(hexed), "%02x", raw[i]);
         if (!TEST_int_eq(hexed[0], hex_encoded[j])
                 || !TEST_int_eq(hexed[1], hex_encoded[j + 1]))
             return 1;
@@ -3468,6 +3468,25 @@ static int setupearly_data_test(SSL_CTX **cctx, SSL_CTX **sctx, SSL **clientssl,
     return 1;
 }
 
+static int check_early_data_timeout(time_t timer)
+{
+    int res = 0;
+
+    /*
+     * Early data is time sensitive. We have an approx 8 second allowance
+     * between writing the early data and reading it. If we exceed that time
+     * then this test will fail. This can sometimes (rarely) occur in normal CI
+     * operation. We can try and detect this and just ignore the result of this
+     * test if it has taken too long. We assume anything over 7 seconds is too
+     * long
+     */
+    timer = time(NULL) - timer;
+    if (timer >= 7)
+        res = TEST_skip("Test took too long, ignoring result");
+
+    return res;
+}
+
 static int test_early_data_read_write(int idx)
 {
     SSL_CTX *cctx = NULL, *sctx = NULL;
@@ -3477,6 +3496,7 @@ static int test_early_data_read_write(int idx)
     unsigned char buf[20], data[1024];
     size_t readbytes, written, eoedlen, rawread, rawwritten;
     BIO *rbio;
+    time_t timer;
 
     if (!TEST_true(setupearly_data_test(&cctx, &sctx, &clientssl,
                                         &serverssl, &sess, idx,
@@ -3484,13 +3504,20 @@ static int test_early_data_read_write(int idx)
         goto end;
 
     /* Write and read some early data */
+    timer = time(NULL);
     if (!TEST_true(SSL_write_early_data(clientssl, MSG1, strlen(MSG1),
                                         &written))
-            || !TEST_size_t_eq(written, strlen(MSG1))
-            || !TEST_int_eq(SSL_read_early_data(serverssl, buf,
-                                                sizeof(buf), &readbytes),
-                            SSL_READ_EARLY_DATA_SUCCESS)
-            || !TEST_mem_eq(MSG1, readbytes, buf, strlen(MSG1))
+            || !TEST_size_t_eq(written, strlen(MSG1)))
+        goto end;
+
+    if (!TEST_int_eq(SSL_read_early_data(serverssl, buf, sizeof(buf),
+                                         &readbytes),
+                     SSL_READ_EARLY_DATA_SUCCESS)) {
+        testresult = check_early_data_timeout(timer);
+        goto end;
+    }
+
+    if (!TEST_mem_eq(MSG1, readbytes, buf, strlen(MSG1))
             || !TEST_int_eq(SSL_get_early_data_status(serverssl),
                             SSL_EARLY_DATA_ACCEPTED))
         goto end;
@@ -3707,6 +3734,7 @@ static int test_early_data_replay_int(int idx, int usecb, int confopt)
     SSL_SESSION *sess = NULL;
     size_t readbytes, written;
     unsigned char buf[20];
+    time_t timer;
 
     allow_ed_cb_called = 0;
 
@@ -3761,6 +3789,7 @@ static int test_early_data_replay_int(int idx, int usecb, int confopt)
         goto end;
 
     /* Write and read some early data */
+    timer = time(NULL);
     if (!TEST_true(SSL_write_early_data(clientssl, MSG1, strlen(MSG1),
                                         &written))
             || !TEST_size_t_eq(written, strlen(MSG1)))
@@ -3781,8 +3810,11 @@ static int test_early_data_replay_int(int idx, int usecb, int confopt)
         /* In this case the callback decides to accept the early data */
         if (!TEST_int_eq(SSL_read_early_data(serverssl, buf, sizeof(buf),
                                              &readbytes),
-                         SSL_READ_EARLY_DATA_SUCCESS)
-                || !TEST_mem_eq(MSG1, strlen(MSG1), buf, readbytes)
+                         SSL_READ_EARLY_DATA_SUCCESS)) {
+            testresult = check_early_data_timeout(timer);
+            goto end;
+        }
+        if (!TEST_mem_eq(MSG1, strlen(MSG1), buf, readbytes)
                    /*
                     * Server will have sent its flight so client can now send
                     * end of early data and complete its half of the handshake
@@ -3885,7 +3917,7 @@ static int early_data_skip_helper(int testtype, int cipher, int idx)
         if (!TEST_true(SSL_set1_groups_list(serverssl, "ffdhe3072")))
             goto end;
 #else
-        if (!TEST_true(SSL_set1_groups_list(serverssl, "P-256")))
+        if (!TEST_true(SSL_set1_groups_list(serverssl, "P-384")))
             goto end;
 #endif
     } else if (idx == 2) {
@@ -4299,13 +4331,19 @@ static int test_early_data_psk(int idx)
                 || !TEST_int_eq(ERR_GET_REASON(ERR_get_error()), err))
             goto end;
     } else {
+        time_t timer = time(NULL);
+
         if (!TEST_true(SSL_write_early_data(clientssl, MSG1, strlen(MSG1),
                                             &written)))
             goto end;
 
         if (!TEST_int_eq(SSL_read_early_data(serverssl, buf, sizeof(buf),
-                                             &readbytes), readearlyres)
-                || (readearlyres == SSL_READ_EARLY_DATA_SUCCESS
+                                             &readbytes), readearlyres)) {
+            testresult = check_early_data_timeout(timer);
+            goto end;
+        }
+
+        if ((readearlyres == SSL_READ_EARLY_DATA_SUCCESS
                     && !TEST_mem_eq(buf, readbytes, MSG1, strlen(MSG1)))
                 || !TEST_int_eq(SSL_get_early_data_status(serverssl), edstatus)
                 || !TEST_int_eq(SSL_connect(clientssl), connectres))
@@ -4343,6 +4381,7 @@ static int test_early_data_psk_with_all_ciphers(int idx)
     unsigned char buf[20];
     size_t readbytes, written;
     const SSL_CIPHER *cipher;
+    time_t timer;
     const char *cipher_str[] = {
         TLS1_3_RFC_AES_128_GCM_SHA256,
         TLS1_3_RFC_AES_256_GCM_SHA384,
@@ -4394,14 +4433,19 @@ static int test_early_data_psk_with_all_ciphers(int idx)
         goto end;
 
     SSL_set_connect_state(clientssl);
+    timer = time(NULL);
     if (!TEST_true(SSL_write_early_data(clientssl, MSG1, strlen(MSG1),
                                         &written)))
         goto end;
 
     if (!TEST_int_eq(SSL_read_early_data(serverssl, buf, sizeof(buf),
                                          &readbytes),
-                                         SSL_READ_EARLY_DATA_SUCCESS)
-            || !TEST_mem_eq(buf, readbytes, MSG1, strlen(MSG1))
+                                         SSL_READ_EARLY_DATA_SUCCESS)) {
+        testresult = check_early_data_timeout(timer);
+        goto end;
+    }
+
+    if (!TEST_mem_eq(buf, readbytes, MSG1, strlen(MSG1))
             || !TEST_int_eq(SSL_get_early_data_status(serverssl),
                                                       SSL_EARLY_DATA_ACCEPTED)
             || !TEST_int_eq(SSL_connect(clientssl), 1)
@@ -4842,10 +4886,14 @@ static int test_key_exchange(int idx)
             kexch_name0 = "secp521r1";
             break;
         case 4:
+            if (is_fips)
+                return TEST_skip("X25519 might not be supported by fips provider.");
             kexch_alg = NID_X25519;
             kexch_name0 = "x25519";
             break;
         case 5:
+            if (is_fips)
+                return TEST_skip("X448 might not be supported by fips provider.");
             kexch_alg = NID_X448;
             kexch_name0 = "x448";
             break;
@@ -5059,6 +5107,9 @@ static int test_negotiated_group(int idx)
         expectednid = NID_undef;
     else
         expectednid = kexch_alg;
+
+    if (is_fips && (kexch_alg == NID_X25519 || kexch_alg == NID_X448))
+        return TEST_skip("X25519 and X448 might not be available in fips provider.");
 
     if (!istls13)
         max_version = TLS1_2_VERSION;
@@ -5481,7 +5532,7 @@ static int test_tls13_psk(int idx)
     if (!TEST_true(SSL_set1_groups_list(serverssl, "ffdhe3072")))
         goto end;
 #else
-    if (!TEST_true(SSL_set1_groups_list(serverssl, "P-256")))
+    if (!TEST_true(SSL_set1_groups_list(serverssl, "P-384")))
         goto end;
 #endif
 
@@ -7445,6 +7496,7 @@ static int test_info_callback(int tst)
         SSL_SESSION *sess = NULL;
         size_t written, readbytes;
         unsigned char buf[80];
+        time_t timer;
 
         /* early_data tests */
         if (!TEST_true(setupearly_data_test(&cctx, &sctx, &clientssl,
@@ -7459,13 +7511,20 @@ static int test_info_callback(int tst)
                               sslapi_info_callback);
 
         /* Write and read some early data and then complete the connection */
+        timer = time(NULL);
         if (!TEST_true(SSL_write_early_data(clientssl, MSG1, strlen(MSG1),
                                             &written))
-                || !TEST_size_t_eq(written, strlen(MSG1))
-                || !TEST_int_eq(SSL_read_early_data(serverssl, buf,
-                                                    sizeof(buf), &readbytes),
-                                SSL_READ_EARLY_DATA_SUCCESS)
-                || !TEST_mem_eq(MSG1, readbytes, buf, strlen(MSG1))
+                || !TEST_size_t_eq(written, strlen(MSG1)))
+            goto end;
+
+        if (!TEST_int_eq(SSL_read_early_data(serverssl, buf,
+                                             sizeof(buf), &readbytes),
+                         SSL_READ_EARLY_DATA_SUCCESS)) {
+            testresult = check_early_data_timeout(timer);
+            goto end;
+        }
+
+        if (!TEST_mem_eq(MSG1, readbytes, buf, strlen(MSG1))
                 || !TEST_int_eq(SSL_get_early_data_status(serverssl),
                                 SSL_EARLY_DATA_ACCEPTED)
                 || !TEST_true(create_ssl_connection(serverssl, clientssl,
@@ -9372,19 +9431,10 @@ static int test_pluggable_group(int idx)
     OSSL_PROVIDER *tlsprov = OSSL_PROVIDER_load(libctx, "tls-provider");
     /* Check that we are not impacted by a provider without any groups */
     OSSL_PROVIDER *legacyprov = OSSL_PROVIDER_load(libctx, "legacy");
-    const char *group_name = idx == 0 ? "xorgroup" : "xorkemgroup";
+    const char *group_name = idx == 0 ? "xorkemgroup" : "xorgroup";
 
     if (!TEST_ptr(tlsprov))
         goto end;
-
-    if (legacyprov == NULL) {
-        /*
-         * In this case we assume we've been built with "no-legacy" and skip
-         * this test (there is no OPENSSL_NO_LEGACY)
-         */
-        testresult = 1;
-        goto end;
-    }
 
     if (!TEST_true(create_ssl_ctx_pair(libctx, TLS_server_method(),
                                        TLS_client_method(),
@@ -9395,7 +9445,9 @@ static int test_pluggable_group(int idx)
                                              NULL, NULL)))
         goto end;
 
-    if (!TEST_true(SSL_set1_groups_list(serverssl, group_name))
+    /* ensure GROUPLIST_INCREMENT (=40) logic triggers: */
+    if (!TEST_true(SSL_set1_groups_list(serverssl, "xorgroup:xorkemgroup:dummy1:dummy2:dummy3:dummy4:dummy5:dummy6:dummy7:dummy8:dummy9:dummy10:dummy11:dummy12:dummy13:dummy14:dummy15:dummy16:dummy17:dummy18:dummy19:dummy20:dummy21:dummy22:dummy23:dummy24:dummy25:dummy26:dummy27:dummy28:dummy29:dummy30:dummy31:dummy32:dummy33:dummy34:dummy35:dummy36:dummy37:dummy38:dummy39:dummy40:dummy41:dummy42:dummy43"))
+    /* removing a single algorithm from the list makes the test pass */
             || !TEST_true(SSL_set1_groups_list(clientssl, group_name)))
         goto end;
 
@@ -11210,6 +11262,79 @@ static int test_alpn(int idx)
     return testresult;
 }
 
+static int test_no_renegotiation(int idx)
+{
+    SSL_CTX *sctx = NULL, *cctx = NULL;
+    SSL *serverssl = NULL, *clientssl = NULL;
+    int testresult = 0, ret;
+    int max_proto;
+    const SSL_METHOD *sm, *cm;
+    unsigned char buf[5];
+
+    if (idx == 0) {
+#ifndef OPENSSL_NO_TLS1_2
+        max_proto = TLS1_2_VERSION;
+        sm = TLS_server_method();
+        cm = TLS_client_method();
+#else
+        return TEST_skip("TLSv1.2 is disabled in this build");
+#endif
+    } else {
+#ifndef OPENSSL_NO_DTLS1_2
+        max_proto = DTLS1_2_VERSION;
+        sm = DTLS_server_method();
+        cm = DTLS_client_method();
+#else
+        return TEST_skip("DTLSv1.2 is disabled in this build");
+#endif
+    }
+    if (!TEST_true(create_ssl_ctx_pair(libctx, sm, cm, 0, max_proto,
+                                       &sctx, &cctx, cert, privkey)))
+        goto end;
+
+    SSL_CTX_set_options(sctx, SSL_OP_NO_RENEGOTIATION);
+
+    if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl, &clientssl, NULL,
+                                      NULL)))
+        goto end;
+
+    if (!TEST_true(create_ssl_connection(serverssl, clientssl, SSL_ERROR_NONE)))
+        goto end;
+
+    if (!TEST_true(SSL_renegotiate(clientssl))
+            || !TEST_int_le(ret = SSL_connect(clientssl), 0)
+            || !TEST_int_eq(SSL_get_error(clientssl, ret), SSL_ERROR_WANT_READ))
+        goto end;
+
+    /*
+     * We've not sent any application data, so we expect this to fail. It should
+     * also read the renegotiation attempt, and send back a no_renegotiation
+     * warning alert because we have renegotiation disabled.
+     */
+    if (!TEST_int_le(ret = SSL_read(serverssl, buf, sizeof(buf)), 0))
+        goto end;
+    if (!TEST_int_eq(SSL_get_error(serverssl, ret), SSL_ERROR_WANT_READ))
+        goto end;
+
+    /*
+     * The client should now see the no_renegotiation warning and fail the
+     * connection.
+     */
+    if (!TEST_int_le(ret = SSL_connect(clientssl), 0)
+            || !TEST_int_eq(SSL_get_error(clientssl, ret), SSL_ERROR_SSL)
+            || !TEST_int_eq(ERR_GET_REASON(ERR_get_error()), SSL_R_NO_RENEGOTIATION))
+        goto end;
+
+    testresult = 1;
+ end:
+    SSL_free(serverssl);
+    SSL_free(clientssl);
+    SSL_CTX_free(sctx);
+    SSL_CTX_free(cctx);
+
+    return testresult;
+}
+
 /*
  * Force a write retry during handshaking. We test various combinations of
  * scenarios. We test a large certificate message which will fill the buffering
@@ -11586,6 +11711,7 @@ int setup_tests(void)
     ADD_ALL_TESTS(test_npn, 5);
 #endif
     ADD_ALL_TESTS(test_alpn, 4);
+    ADD_ALL_TESTS(test_no_renegotiation, 2);
 #if !defined(OPENSSL_NO_TLS1_2) && !defined(OSSL_NO_USABLE_TLS1_3)
     ADD_ALL_TESTS(test_serverinfo_custom, 4);
 #endif

@@ -165,7 +165,7 @@ static ossl_inline int io_getevents(aio_context_t ctx, long min, long max,
             ts32.tv_sec = (__kernel_long_t) timeout->tv_sec;
             ts32.tv_nsec = (__kernel_long_t) timeout->tv_nsec;
 
-            return syscall(__NR_io_getevents, ctx, min, max, events, ts32);
+            return syscall(__NR_io_getevents, ctx, min, max, events, &ts32);
         } else {
             return syscall(__NR_io_getevents, ctx, min, max, events, NULL);
         }
@@ -811,8 +811,10 @@ static int bind_helper(ENGINE *e, const char *id)
     if (!afalg_chk_platform())
         return 0;
 
-    if (!bind_afalg(e))
+    if (!bind_afalg(e)) {
+        afalg_destroy(e);
         return 0;
+    }
     return 1;
 }
 

@@ -413,6 +413,7 @@ my @disablables = (
     "asan",
     "asm",
     "async",
+    "atexit",
     "autoalginit",
     "autoerrinit",
     "autoload-config",
@@ -3490,6 +3491,13 @@ sub print_table_entry
 # existing directory.
 sub absolutedir {
     my $dir = shift;
+
+    # realpath() on Windows seems to check if the directory actually exists,
+    # which isn't what is wanted here.  All we want to know is if a directory
+    # spec is absolute, not if it exists.
+    if ($^O eq "MSWin32") {
+        return rel2abs($dir);
+    }
 
     # We use realpath() on Unix, since no other will properly clean out
     # a directory spec.

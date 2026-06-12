@@ -38,7 +38,13 @@
 
 # include <assert.h>
 
-# ifdef PTHREAD_RWLOCK_INITIALIZER
+/*
+ * The Non-Stop KLT thread model currently seems broken in its rwlock
+ * implementation
+ * Likewise is there a problem with the glibc implementation on riscv.
+ */
+# if defined(PTHREAD_RWLOCK_INITIALIZER) && !defined(_KLT_MODEL_) \
+                                         && !defined(__riscv)
 #  define USE_RWLOCK
 # endif
 
@@ -252,7 +258,7 @@ int CRYPTO_atomic_or(uint64_t *val, uint64_t op, uint64_t *ret,
 
 int CRYPTO_atomic_load(uint64_t *val, uint64_t *ret, CRYPTO_RWLOCK *lock)
 {
-# if defined(__GNUC__) && defined(__ATOMIC_ACQUIRE) && !defined(BROKEN_CLANG_ATOMICS)
+# if defined(__GNUC__) && defined(__ATOMIC_ACQ_REL) && !defined(BROKEN_CLANG_ATOMICS)
     if (__atomic_is_lock_free(sizeof(*val), val)) {
         __atomic_load(val, ret, __ATOMIC_ACQUIRE);
         return 1;

@@ -40,8 +40,8 @@ const OPTIONS asn1parse_options[] = {
     {"length", OPT_LENGTH, 'p', "length of section in file"},
     {"strparse", OPT_STRPARSE, 'p',
      "offset; a series of these can be used to 'dig'"},
-    {"genstr", OPT_GENSTR, 's', "string to generate ASN1 structure from"},
     {OPT_MORE_STR, 0, 0, "into multiple ASN1 blob wrappings"},
+    {"genstr", OPT_GENSTR, 's', "string to generate ASN1 structure from"},
     {"genconf", OPT_GENCONF, 's', "file to generate ASN1 structure from"},
     {"strictpem", OPT_STRICTPEM, 0,
      "do not attempt base64 decode outside PEM markers"},
@@ -127,7 +127,8 @@ int asn1parse_main(int argc, char **argv)
             dump = strtol(opt_arg(), NULL, 0);
             break;
         case OPT_STRPARSE:
-            sk_OPENSSL_STRING_push(osk, opt_arg());
+            if (sk_OPENSSL_STRING_push(osk, opt_arg()) <= 0)
+                goto end;
             break;
         case OPT_GENSTR:
             genstr = opt_arg();

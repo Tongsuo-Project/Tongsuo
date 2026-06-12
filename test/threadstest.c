@@ -19,11 +19,19 @@
 #include <openssl/rsa.h>
 #include <openssl/aes.h>
 #include <openssl/rsa.h>
+#include <openssl/x509_vfy.h>
 #include "testutil.h"
 #include "threadstest.h"
 
+/* Limit the maximum number of threads */
+#define MAXIMUM_THREADS     10
+
+/* Limit the maximum number of providers loaded into a library context */
+#define MAXIMUM_PROVIDERS   4
+
 static int do_fips = 0;
 static char *privkey;
+static char *storedir;
 static char *config_file = NULL;
 static int multidefault_run = 0;
 
@@ -209,6 +217,94 @@ static int test_atomic(void)
 
 static OSSL_LIB_CTX *multi_libctx = NULL;
 static int multi_success;
+static OSSL_PROVIDER *multi_provider[MAXIMUM_PROVIDERS + 1];
+static size_t multi_num_threads;
+static thread_t multi_threads[MAXIMUM_THREADS];
+
+static void multi_intialise(void)
+{
+    multi_success = 1;
+    multi_libctx = NULL;
+    multi_num_threads = 0;
+    memset(multi_threads, 0, sizeof(multi_threads));
+    memset(multi_provider, 0, sizeof(multi_provider));
+}
+
+static void thead_teardown_libctx(void)
+{
+    OSSL_PROVIDER **p;
+
+    for (p = multi_provider; *p != NULL; p++)
+        OSSL_PROVIDER_unload(*p);
+    OSSL_LIB_CTX_free(multi_libctx);
+    multi_intialise();
+}
+
+static int thread_setup_libctx(int libctx, const char *providers[])
+{
+    size_t n;
+
+    if (libctx && !TEST_true(test_get_libctx(&multi_libctx, NULL, config_file,
+                                             NULL, NULL)))
+        return 0;
+
+    if (providers != NULL)
+        for (n = 0; providers[n] != NULL; n++)
+            if (!TEST_size_t_lt(n, MAXIMUM_PROVIDERS)
+                || !TEST_ptr(multi_provider[n] = OSSL_PROVIDER_load(multi_libctx,
+                                                                    providers[n]))) {
+                thead_teardown_libctx();
+                return 0;
+            }
+    return 1;
+}
+
+static int teardown_threads(void)
+{
+    size_t i;
+
+    for (i = 0; i < multi_num_threads; i++)
+        if (!TEST_true(wait_for_thread(multi_threads[i])))
+            return 0;
+    return 1;
+}
+
+static int start_threads(size_t n, void (*thread_func)(void))
+{
+    size_t i;
+
+    if (!TEST_size_t_le(multi_num_threads + n, MAXIMUM_THREADS))
+        return 0;
+
+    for (i = 0 ; i < n; i++)
+        if (!TEST_true(run_thread(multi_threads + multi_num_threads++, thread_func)))
+            return 0;
+    return 1;
+}
+
+/* Template multi-threaded test function */
+static int thread_run_test(void (*main_func)(void),
+                           size_t num_threads, void (*thread_func)(void),
+                           int libctx, const char *providers[])
+{
+    int testresult = 0;
+
+    multi_intialise();
+    if (!thread_setup_libctx(libctx, providers)
+            || !start_threads(num_threads, thread_func))
+        goto err;
+
+    if (main_func != NULL)
+        main_func();
+
+    if (!teardown_threads()
+            || !TEST_true(multi_success))
+        goto err;
+    testresult = 1;
+ err:
+    thead_teardown_libctx();
+    return testresult;
+}
 
 static void thread_general_worker(void)
 {
@@ -263,7 +359,7 @@ static void thread_general_worker(void)
      * Therefore we use an insecure bit length where we can (512).
      * In the FIPS module though we must use a longer length.
      */
-    pkey = EVP_PKEY_Q_keygen(multi_libctx, NULL, "RSA", isfips ? 2048 : 512);
+    pkey = EVP_PKEY_Q_keygen(multi_libctx, NULL, "RSA", (size_t)(isfips ? 2048 : 512));
     if (!TEST_ptr(pkey))
         goto err;
 
@@ -487,7 +583,6 @@ static int test_multi_default(void)
 {
     thread_t thread1, thread2;
     int testresult = 0;
-    OSSL_PROVIDER *prov = NULL;
 
     /* Avoid running this test twice */
     if (multidefault_run) {
@@ -498,9 +593,6 @@ static int test_multi_default(void)
 
     multi_success = 1;
     multi_libctx = NULL;
-    prov = OSSL_PROVIDER_load(multi_libctx, "default");
-    if (!TEST_ptr(prov))
-        goto err;
 
     if (!TEST_true(run_thread(&thread1, thread_multi_simple_fetch))
             || !TEST_true(run_thread(&thread2, thread_multi_simple_fetch)))
@@ -516,7 +608,6 @@ static int test_multi_default(void)
     testresult = 1;
 
  err:
-    OSSL_PROVIDER_unload(prov);
     return testresult;
 }
 
@@ -553,6 +644,62 @@ static int test_multi_load(void)
         (void)TEST_true(wait_for_thread(threads[i]));
 
     return res && multi_success;
+}
+
+static X509_STORE *store = NULL;
+
+static void test_x509_store_by_subject(void)
+{
+    X509_STORE_CTX *ctx;
+    X509_OBJECT *obj = NULL;
+    X509_NAME *name = NULL;
+    int success = 0;
+
+    ctx = X509_STORE_CTX_new();
+    if (!TEST_ptr(ctx))
+        goto err;
+
+    if (!TEST_true(X509_STORE_CTX_init(ctx, store, NULL, NULL)))
+        goto err;
+
+    name = X509_NAME_new();
+    if (!TEST_ptr(name))
+        goto err;
+    if (!TEST_true(X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC,
+                                              (unsigned char *)"Root CA",
+                                              -1, -1, 0)))
+        goto err;
+    obj = X509_STORE_CTX_get_obj_by_subject(ctx, X509_LU_X509, name);
+    if (!TEST_ptr(obj))
+        goto err;
+
+    success = 1;
+ err:
+    X509_OBJECT_free(obj);
+    X509_STORE_CTX_free(ctx);
+    X509_NAME_free(name);
+    if (!success)
+        multi_success = 0;
+}
+
+/* Test accessing an X509_STORE from multiple threads */
+static int test_x509_store(void)
+{
+    int ret = 0;
+
+    store = X509_STORE_new();
+    if (!TEST_ptr(store))
+        return 0;
+    if (!TEST_true(X509_STORE_load_store(store, storedir)))
+        goto err;
+
+    ret = thread_run_test(&test_x509_store_by_subject, MAXIMUM_THREADS,
+                          &test_x509_store_by_subject, 0, NULL);
+
+ err:
+    X509_STORE_free(store);
+    store = NULL;
+    return ret;
 }
 
 typedef enum OPTION_choice {
@@ -601,6 +748,8 @@ int setup_tests(void)
     if (!TEST_ptr(privkey))
         return 0;
 
+    storedir = test_mk_file_path(datadir, "store");
+
     /* Keep first to validate auto creation of default library context */
     ADD_TEST(test_multi_default);
 
@@ -610,10 +759,12 @@ int setup_tests(void)
     ADD_TEST(test_atomic);
     ADD_TEST(test_multi_load);
     ADD_ALL_TESTS(test_multi, 6);
+    ADD_TEST(test_x509_store);
     return 1;
 }
 
 void cleanup_tests(void)
 {
     OPENSSL_free(privkey);
+    OPENSSL_free(storedir);
 }

@@ -352,8 +352,10 @@ static int digest_test_init(EVP_TEST *t, const char *alg)
     if ((digest = fetched_digest = EVP_MD_fetch(libctx, alg, NULL)) == NULL
         && (digest = EVP_get_digestbyname(alg)) == NULL)
         return 0;
-    if (!TEST_ptr(mdat = OPENSSL_zalloc(sizeof(*mdat))))
+    if (!TEST_ptr(mdat = OPENSSL_zalloc(sizeof(*mdat)))) {
+        EVP_MD_free(fetched_digest);
         return 0;
+    }
     t->data = mdat;
     mdat->digest = digest;
     mdat->fetched_digest = fetched_digest;
@@ -2733,30 +2735,33 @@ static int kdf_test_ctrl(EVP_TEST *t, EVP_KDF_CTX *kctx,
     if (!TEST_ptr(name = OPENSSL_strdup(value)))
         return 0;
     p = strchr(name, ':');
-    if (p != NULL)
+    if (p == NULL)
+        p = "";
+    else
         *p++ = '\0';
 
     rv = OSSL_PARAM_allocate_from_text(kdata->p, defs, name, p,
-                                       p != NULL ? strlen(p) : 0, NULL);
+                                       strlen(p), NULL);
     *++kdata->p = OSSL_PARAM_construct_end();
     if (!rv) {
         t->err = "KDF_PARAM_ERROR";
         OPENSSL_free(name);
         return 0;
     }
-    if (p != NULL && strcmp(name, "digest") == 0) {
+    if (strcmp(name, "digest") == 0) {
         if (is_digest_disabled(p)) {
             TEST_info("skipping, '%s' is disabled", p);
             t->skip = 1;
         }
     }
-    if (p != NULL
-        && (strcmp(name, "cipher") == 0
-            || strcmp(name, "cekalg") == 0)
+
+    if ((strcmp(name, "cipher") == 0
+        || strcmp(name, "cekalg") == 0)
         && is_cipher_disabled(p)) {
         TEST_info("skipping, '%s' is disabled", p);
         t->skip = 1;
     }
+
     OPENSSL_free(name);
     return 1;
 }
@@ -3896,7 +3901,9 @@ static int run_file_tests(int i)
     clear_test(t);
 
     free_key_list(public_keys);
+    public_keys = NULL;
     free_key_list(private_keys);
+    private_keys = NULL;
     BIO_free(t->s.key);
     c = t->s.errors;
     OPENSSL_free(t);

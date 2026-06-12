@@ -217,6 +217,8 @@ extern "C" {
 # define TLSEXT_max_fragment_length_1024        2
 # define TLSEXT_max_fragment_length_2048        3
 # define TLSEXT_max_fragment_length_4096        4
+/* OpenSSL value for unset maximum fragment length extension */
+# define TLSEXT_max_fragment_length_UNSPECIFIED 255
 /* TLS Certificate Compression Algorithm IDs from RFC8879 */
 # define TLSEXT_cert_compression_zlib           1
 # define TLSEXT_cert_compression_brotli         2

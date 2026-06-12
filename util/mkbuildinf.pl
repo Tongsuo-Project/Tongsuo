@@ -9,10 +9,14 @@
 use strict;
 use warnings;
 
-my ($cflags, $platform) = @ARGV;
+my $platform = pop @ARGV;
+my $cflags = join(' ', @ARGV);
+$cflags =~ s(\\)(\\\\)g;
 $cflags = "compiler: $cflags";
 
-my $date = gmtime($ENV{'SOURCE_DATE_EPOCH'} || time()) . " UTC";
+# Use the value of the envvar SOURCE_DATE_EPOCH, even if it's
+# zero or the empty string.
+my $date = gmtime($ENV{'SOURCE_DATE_EPOCH'} // time()) . " UTC";
 
 print <<"END_OUTPUT";
 /*
