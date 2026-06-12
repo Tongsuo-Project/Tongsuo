@@ -536,6 +536,11 @@ static void collect_cipher_names(EVP_CIPHER *cipher, void *cipher_names_list)
     if (OSSL_PROVIDER_available(libctx, "fips")
             && strncmp(name, "DES", 3) == 0)
         return;
+
+    /* Skip whitebox SM4 since the key size exceeds test key's 64-byte buffer */
+    if (strncmp(name, "WBSM4", 5) == 0)
+        return;
+
     assert(name != NULL);
     /* the cipher will be freed after returning, strdup is needed */
     if ((namedup = OPENSSL_strdup(name)) != NULL

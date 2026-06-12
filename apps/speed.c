@@ -3905,8 +3905,7 @@ int speed_main(int argc, char **argv)
             OPENSSL_free(local_key);
 
             for (testnum = 0; st && testnum < size_num; testnum++) {
-                print_message(names[algindex], c[algindex][testnum],
-                            lengths[testnum], seconds.sym);
+                print_message(names[algindex], lengths[testnum], seconds.sym);
                 Time_F(START);
                 count =
                     run_benchmark(async_jobs, EVP_Cipher_loop, loopargs);
@@ -3942,8 +3941,7 @@ int speed_main(int argc, char **argv)
             OPENSSL_free(local_key);
 
             for (testnum = 0; st && testnum < size_num; testnum++) {
-                print_message(names[algindex], c[algindex][testnum],
-                            lengths[testnum], seconds.sym);
+                print_message(names[algindex], lengths[testnum], seconds.sym);
                 Time_F(START);
                 count =
                     run_benchmark(async_jobs, EVP_Cipher_loop, loopargs);
@@ -3979,8 +3977,7 @@ int speed_main(int argc, char **argv)
             OPENSSL_free(local_key);
 
             for (testnum = 0; st && testnum < size_num; testnum++) {
-                print_message(names[algindex], c[algindex][testnum],
-                            lengths[testnum], seconds.sym);
+                print_message(names[algindex], lengths[testnum], seconds.sym);
                 Time_F(START);
                 count =
                     run_benchmark(async_jobs, EVP_Cipher_loop, loopargs);

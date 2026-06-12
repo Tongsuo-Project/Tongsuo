@@ -19,7 +19,7 @@ static int wbsm4_xiaolai_gcm_initkey(PROV_GCM_CTX *ctx,
     PROV_WBSM4_XIAOLAI_GCM_CTX *actx = (PROV_WBSM4_XIAOLAI_GCM_CTX *)ctx;
     wbsm4_xiaolai_key *ks = &actx->ks.ks;
 
-    ctx->ks = ks;
+    //ctx->ks = ks;
 
     wbsm4_xiaolai_set_key(key, ks);
     CRYPTO_gcm128_init(&ctx->gcm, ks, (block128_f)wbsm4_xiaolai_encrypt);
@@ -77,7 +77,7 @@ static int wbsm4_baiwu_gcm_initkey(PROV_GCM_CTX *ctx, const unsigned char *key,
     PROV_WBSM4_BAIWU_GCM_CTX *actx = (PROV_WBSM4_BAIWU_GCM_CTX *)ctx;
     wbsm4_baiwu_key *ks = &actx->ks.ks;
 
-    ctx->ks = ks;
+    //ctx->ks = ks;
 
     wbsm4_baiwu_set_key(key, ks);
     CRYPTO_gcm128_init(&ctx->gcm, ks, (block128_f)wbsm4_baiwu_encrypt);
@@ -134,7 +134,7 @@ static int wbsm4_wsise_gcm_initkey(PROV_GCM_CTX *ctx, const unsigned char *key,
     PROV_WBSM4_WSISE_GCM_CTX *actx = (PROV_WBSM4_WSISE_GCM_CTX *)ctx;
     wbsm4_wsise_key *ks = &actx->ks.ks;
 
-    ctx->ks = ks;
+    //ctx->ks = ks;
 
     wbsm4_wsise_set_key(key, ks);
     CRYPTO_gcm128_init(&ctx->gcm, ks, (block128_f)wbsm4_wsise_encrypt);
