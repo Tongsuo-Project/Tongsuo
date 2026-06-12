@@ -1337,6 +1337,15 @@ struct ssl_connection_st {
 
     /* QUIC API method */
     const SSL_QUIC_METHOD *quic_api_method;
+    /* 
+     * BoringSSL style QUIC-API allows the SSL_set_quic_transport_params
+     * caller to use the buffer for other purposes after calling, 
+     * but OpenSSL's API does not.
+     * We use a temporary buffer to accommodate both API styles. 
+     */
+    uint8_t *quic_api_method_transport_params;
+    size_t quic_api_method_transport_params_len;
+
     /* QUIC early data context */
     uint8_t *quic_early_data_context;
     size_t quic_early_data_context_len;

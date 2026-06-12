@@ -473,11 +473,19 @@ int SSL_set_quic_early_data_context(SSL *ssl, const uint8_t *context,
     return 1;
 }
 
-int SSL_set_quic_transport_params(SSL *ssl,
-                                 const uint8_t *params,
-                                 size_t params_len)
+int SSL_set_quic_transport_params(SSL *ssl, const uint8_t *params,
+                                  size_t params_len)
 {
-    return SSL_set_quic_tls_transport_params(ssl, params, params_len);
+    SSL_CONNECTION *sc = SSL_CONNECTION_FROM_SSL(ssl);
+    if (sc == NULL || params == NULL || params_len == 0)
+        return 0;
+
+    OPENSSL_free(sc->quic_api_method_transport_params);
+    sc->quic_api_method_transport_params = OPENSSL_memdup(params, params_len);
+    sc->quic_api_method_transport_params_len = params_len;
+
+    return SSL_set_quic_tls_transport_params(ssl, sc->quic_api_method_transport_params,
+                                             sc->quic_api_method_transport_params_len);
 }
 
 void SSL_get_peer_quic_transport_params(const SSL *ssl, const uint8_t **out_params, 

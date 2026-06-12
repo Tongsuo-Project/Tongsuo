@@ -1603,6 +1603,7 @@ void ossl_ssl_connection_free(SSL *ssl)
         OPENSSL_free(s->qtarg);
         s->qtarg = NULL;
     }   
+    OPENSSL_free(s->quic_api_method_transport_params);
     OPENSSL_free(s->quic_early_data_context);
 }
 
