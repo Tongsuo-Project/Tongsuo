@@ -4,6 +4,7 @@
 
 #include "ml_dsa_avx2.h"
 #include "ml_dsa_key.h"
+#include "ml_dsa_local.h"
 
 #if defined(ML_DSA_AVX2_ASM) && defined(OPENSSL_CPUID_OBJ) \
     && (defined(__x86_64) || defined(__x86_64__) \
@@ -41,13 +42,13 @@ int ossl_ml_dsa_87_avx2_crypto_sign_keypair_internal(uint8_t *pk, uint8_t *sk,
                                                       const uint8_t *seed);
 int ossl_ml_dsa_44_avx2_crypto_sign_verify(const uint8_t *sig, size_t siglen,
                                             const uint8_t *m, size_t mlen,
-                                            const uint8_t *pk);
+                                            const uint8_t *pk, int msg_is_mu);
 int ossl_ml_dsa_65_avx2_crypto_sign_verify(const uint8_t *sig, size_t siglen,
                                             const uint8_t *m, size_t mlen,
-                                            const uint8_t *pk);
+                                            const uint8_t *pk, int msg_is_mu);
 int ossl_ml_dsa_87_avx2_crypto_sign_verify(const uint8_t *sig, size_t siglen,
                                             const uint8_t *m, size_t mlen,
-                                            const uint8_t *pk);
+                                            const uint8_t *pk, int msg_is_mu);
 
 int ossl_ml_dsa_avx2_eligible(void)
 {
@@ -123,8 +124,10 @@ int ossl_ml_dsa_avx2_sign(const ML_DSA_KEY *priv, int msg_is_mu,
     int ret;
     const ML_DSA_PARAMS *params;
 
-    if (priv == NULL || msg_is_mu || sig == NULL || rand == NULL)
+    if (priv == NULL || sig == NULL || rand == NULL)
         return ML_DSA_AVX2_SIGN_DATA_UNSUPPORTED;
+    if (msg_is_mu && msg_len != ML_DSA_MU_BYTES)
+        return ML_DSA_AVX2_SIGN_ERROR;
 
     params = ossl_ml_dsa_key_params(priv);
     switch (params->evp_type) {
@@ -132,19 +135,22 @@ int ossl_ml_dsa_avx2_sign(const ML_DSA_KEY *priv, int msg_is_mu,
         ret = ossl_ml_dsa_44_avx2_crypto_sign_signature_ex(sig, sig_len,
                                                            msg, msg_len,
                                                            priv->priv_encoding,
-                                                           rand, rand_len, 0);
+                                                           rand, rand_len,
+                                                           msg_is_mu);
         break;
     case EVP_PKEY_ML_DSA_65:
         ret = ossl_ml_dsa_65_avx2_crypto_sign_signature_ex(sig, sig_len,
                                                            msg, msg_len,
                                                            priv->priv_encoding,
-                                                           rand, rand_len, 0);
+                                                           rand, rand_len,
+                                                           msg_is_mu);
         break;
     case EVP_PKEY_ML_DSA_87:
         ret = ossl_ml_dsa_87_avx2_crypto_sign_signature_ex(sig, sig_len,
                                                            msg, msg_len,
                                                            priv->priv_encoding,
-                                                           rand, rand_len, 0);
+                                                           rand, rand_len,
+                                                           msg_is_mu);
         break;
     default:
         return ML_DSA_AVX2_SIGN_DATA_UNSUPPORTED;
@@ -159,25 +165,30 @@ int ossl_ml_dsa_avx2_verify(const ML_DSA_KEY *pub, int msg_is_mu,
     int ret;
     const ML_DSA_PARAMS *params;
 
-    if (pub == NULL || msg_is_mu || sig == NULL)
+    if (pub == NULL || sig == NULL)
         return ML_DSA_AVX2_VERIFY_DATA_UNSUPPORTED;
+    if (msg_is_mu && msg_len != ML_DSA_MU_BYTES)
+        return ML_DSA_AVX2_VERIFY_INVALID;
 
     params = ossl_ml_dsa_key_params(pub);
     switch (params->evp_type) {
     case EVP_PKEY_ML_DSA_44:
         ret = ossl_ml_dsa_44_avx2_crypto_sign_verify(sig, sig_len, msg,
                                                      msg_len,
-                                                     pub->pub_encoding);
+                                                     pub->pub_encoding,
+                                                     msg_is_mu);
         break;
     case EVP_PKEY_ML_DSA_65:
         ret = ossl_ml_dsa_65_avx2_crypto_sign_verify(sig, sig_len, msg,
                                                      msg_len,
-                                                     pub->pub_encoding);
+                                                     pub->pub_encoding,
+                                                     msg_is_mu);
         break;
     case EVP_PKEY_ML_DSA_87:
         ret = ossl_ml_dsa_87_avx2_crypto_sign_verify(sig, sig_len, msg,
                                                      msg_len,
-                                                     pub->pub_encoding);
+                                                     pub->pub_encoding,
+                                                     msg_is_mu);
         break;
     default:
         return ML_DSA_AVX2_VERIFY_DATA_UNSUPPORTED;

@@ -125,36 +125,48 @@ int crypto_sign_signature_ex(uint8_t *sig, size_t *siglen,
     sword s1list[L][3 * N];
     sword s2list[K][3 * N];
     uint8_t *buf = NULL;
+    ALIGN(32) uint8_t trbuf[CRHBYTES];
 
-    if (msg_is_mu || rnd_external == NULL || rnd_external_len != SEEDBYTES)
+    if (rnd_external == NULL || rnd_external_len != SEEDBYTES)
+        return 1;
+    if (msg_is_mu && mlen != CRHBYTES)
         return 1;
 
-    buf = (uint8_t *) malloc(CRHBYTES + mlen);
-    if (buf == NULL) return 1;
+    if (!msg_is_mu) {
+        buf = (uint8_t *) malloc(CRHBYTES + mlen);
+        if (buf == NULL) return 1;
+    }
 
     loop_queue loop;
     loop.start = 0;
     loop.size = 0;
 
-    tr = buf;
+    tr = msg_is_mu ? trbuf : buf;
     rho = seedbuf;
     key = rho + SEEDBYTES;
     rnd = key + SEEDBYTES;
     mu = rnd + SEEDBYTES;
     rhoprime = mu + CRHBYTES;
     unpack_sk(rho, tr, key, &t0, s1list, s2list, sk);
-    memcpy(buf + CRHBYTES, m, mlen);
     memcpy(rnd, rnd_external, SEEDBYTES);
 
-    hybrid_hash_ExpandA_shuffled(mu, CRHBYTES, buf, CRHBYTES + mlen, &mat[0].vec[0], &mat[0].vec[1], &mat[0].vec[2], rho, 0,
-                                 1, 2);
+    if (msg_is_mu) {
+        memcpy(mu, m, CRHBYTES);
+        ExpandA_shuffled(mat, rho);
+    } else {
+        memcpy(buf + CRHBYTES, m, mlen);
+        hybrid_hash_ExpandA_shuffled(mu, CRHBYTES, buf, CRHBYTES + mlen,
+                                     &mat[0].vec[0], &mat[0].vec[1],
+                                     &mat[0].vec[2], rho, 0, 1, 2);
+    }
     crh(rhoprime, key, SEEDBYTES + SEEDBYTES + CRHBYTES);
 
-    ExpandA_shuffled_part(mat, rho, &loop, rhoprime, nonce);
+    if (!msg_is_mu)
+        ExpandA_shuffled_part(mat, rho, &loop, rhoprime, nonce);
 #if K==4 || K==8
-    nonce += 3;
+    if (!msg_is_mu) nonce += 3;
 #elif K==6
-    nonce++;
+    if (!msg_is_mu) nonce++;
 #endif
 
     int count = 0;
@@ -283,7 +295,7 @@ int crypto_sign(uint8_t *sm, size_t *smlen, const uint8_t *m, size_t mlen, const
 *
 * Returns 0 if signature could be verified correctly and -1 otherwise
 **************************************************/
-int crypto_sign_verify(const uint8_t *sig, size_t siglen, const uint8_t *m, size_t mlen, const uint8_t *pk) {
+int crypto_sign_verify(const uint8_t *sig, size_t siglen, const uint8_t *m, size_t mlen, const uint8_t *pk, int msg_is_mu) {
     unsigned int i, j, pos = 0;
     ALIGN(32) uint8_t buf[K * POLYW1_PACKEDBYTES];
     uint8_t mu[CRHBYTES];
@@ -295,8 +307,15 @@ int crypto_sign_verify(const uint8_t *sig, size_t siglen, const uint8_t *m, size
     polyvecl mat[K];
     const uint8_t *rho = pk;
     if (siglen != CRYPTO_BYTES) return -1;
-    hybrid_hash_pk_and_ExpandA(mu, pk, mat, rho);
-    hybrid_ExpandA_and_hashof_mu_and_challenge(mat, rho, mu, mu, m, mlen, &cp, sig);
+    if (msg_is_mu && mlen != CRHBYTES) return -1;
+    if (msg_is_mu) {
+        memcpy(mu, m, CRHBYTES);
+        ExpandA(mat, rho);
+        poly_challenge(&cp, sig);
+    } else {
+        hybrid_hash_pk_and_ExpandA(mu, pk, mat, rho);
+        hybrid_ExpandA_and_hashof_mu_and_challenge(mat, rho, mu, mu, m, mlen, &cp, sig);
+    }
 
     poly_ntt_bo(&cp);
 
@@ -367,7 +386,7 @@ int crypto_sign_open(uint8_t *m, size_t *mlen, const uint8_t *sm, size_t smlen, 
     if (smlen < CRYPTO_BYTES) goto badsig;
 
     *mlen = smlen - CRYPTO_BYTES;
-    if (crypto_sign_verify(sm, CRYPTO_BYTES, sm + CRYPTO_BYTES, *mlen, pk)) goto badsig;
+    if (crypto_sign_verify(sm, CRYPTO_BYTES, sm + CRYPTO_BYTES, *mlen, pk, 0)) goto badsig;
     else {
         /* All good, copy msg, return 0 */
         for (i = 0; i < *mlen; ++i) m[i] = sm[CRYPTO_BYTES + i];
