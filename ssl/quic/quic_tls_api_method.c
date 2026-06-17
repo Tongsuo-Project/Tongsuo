@@ -439,6 +439,7 @@ void SSL_set_quic_early_data_enabled(SSL *ssl, int enabled)
     if (sc->server) {
         sc->max_early_data = 0xffffffff;
         sc->early_data_state = SSL_EARLY_DATA_ACCEPTING;
+        return;
     }
 
     if ((sc->session == NULL || sc->session->ext.max_early_data != 0xffffffff)
