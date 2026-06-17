@@ -761,21 +761,26 @@ err:
  *
  * @returns 1 if the private key was decoded successfully or 0 otherwise.
  */
-int ossl_ml_dsa_sk_decode(ML_DSA_KEY *key, const uint8_t *in, size_t in_len)
+static int ml_dsa_sk_decode(ML_DSA_KEY *key, const uint8_t *in, size_t in_len,
+                            int generated_pair)
 {
     DECODE_FN *decode_fn;
     const ML_DSA_PARAMS *params = key->params;
     size_t i, k = params->k, l = params->l;
+    uint8_t input_rho[ML_DSA_RHO_BYTES];
     uint8_t input_tr[ML_DSA_TR_BYTES];
     PACKET pkt;
 
     /* When loading from an explicit key, drop the seed. */
-    OPENSSL_clear_free(key->seed, ML_DSA_SEED_BYTES);
-    key->seed = NULL;
+    if (!generated_pair) {
+        OPENSSL_clear_free(key->seed, ML_DSA_SEED_BYTES);
+        key->seed = NULL;
+    }
 
     /* Allow the key encoding to be already set to the provided pointer */
     if ((key->priv_encoding != NULL && key->priv_encoding != in)
-        || key->pub_encoding != NULL)
+        || (!generated_pair && key->pub_encoding != NULL)
+        || (generated_pair && key->pub_encoding == NULL))
         return 0; /* Do not allow key mutation */
     if (in_len != key->params->sk_len)
         return 0;
@@ -789,10 +794,16 @@ int ossl_ml_dsa_sk_decode(ML_DSA_KEY *key, const uint8_t *in, size_t in_len)
         decode_fn = poly_decode_signed_2;
 
     if (!PACKET_buf_init(&pkt, in, in_len)
-            || !PACKET_copy_bytes(&pkt, key->rho, sizeof(key->rho))
+            || !PACKET_copy_bytes(&pkt, input_rho, sizeof(input_rho))
             || !PACKET_copy_bytes(&pkt, key->K, sizeof(key->K))
             || !PACKET_copy_bytes(&pkt, input_tr, sizeof(input_tr)))
         return 0;
+    if (generated_pair) {
+        if (CRYPTO_memcmp(input_rho, key->rho, sizeof(input_rho)) != 0)
+            return 0;
+    } else {
+        memcpy(key->rho, input_rho, sizeof(input_rho));
+    }
 
     for (i = 0; i < l; ++i)
         if (!decode_fn(key->s1.poly + i, &pkt))
@@ -808,6 +819,8 @@ int ossl_ml_dsa_sk_decode(ML_DSA_KEY *key, const uint8_t *in, size_t in_len)
     if (key->priv_encoding == NULL
         && (key->priv_encoding = OPENSSL_memdup(in, in_len)) == NULL)
         goto err;
+    if (generated_pair)
+        return CRYPTO_memcmp(input_tr, key->tr, sizeof(input_tr)) == 0;
     /*
      * Computing the public key also computes its hash, which must be equal to
      * the |tr| value in the private key, else the key was corrupted.
@@ -824,6 +837,23 @@ int ossl_ml_dsa_sk_decode(ML_DSA_KEY *key, const uint8_t *in, size_t in_len)
     return 1;
  err:
     return 0;
+}
+
+int ossl_ml_dsa_sk_decode(ML_DSA_KEY *key, const uint8_t *in, size_t in_len)
+{
+    return ml_dsa_sk_decode(key, in, in_len, 0);
+}
+
+int ossl_ml_dsa_generated_keypair_decode(ML_DSA_KEY *key,
+                                         const uint8_t *pk, size_t pk_len,
+                                         const uint8_t *sk, size_t sk_len)
+{
+    if (!ossl_ml_dsa_pk_decode(key, pk, pk_len)
+            || !ml_dsa_sk_decode(key, sk, sk_len, 1)) {
+        ossl_ml_dsa_key_reset(key);
+        return 0;
+    }
+    return 1;
 }
 
 /*
