@@ -26,4 +26,10 @@
 #  endif
 # endif
 
+void ossl_enable_syslog(void);
+void ossl_disable_syslog(void);
+void ossl_syslog(int priority, const char *message, ...);
+
+void OSSL_syslog_info(const char *message);
+
 #endif

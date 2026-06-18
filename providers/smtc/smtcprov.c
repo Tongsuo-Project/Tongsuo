@@ -299,7 +299,7 @@ static int smtc_reset(void *provctx)
     }
 
     ok = 1;
-    OSSL_syslog(LOG_NOTICE, "[SMTC] Reset module\n");
+    ossl_syslog(LOG_NOTICE, "[SMTC] Reset module\n");
 end:
     NCONF_free(conf);
     BIO_free(out);
@@ -677,9 +677,9 @@ int OSSL_provider_init_int(const OSSL_CORE_HANDLE *handle,
     ossl_prov_cache_exported_algorithms(smtc_ciphers, exported_ciphers);
 
     if (fgbl->selftest_params.syslog && atoi(fgbl->selftest_params.syslog) != 0)
-        OSSL_enable_syslog();
+        ossl_enable_syslog();
 
-    OSSL_syslog(LOG_INFO, "[SMTC] SMTC module init\n");
+    ossl_syslog(LOG_INFO, "[SMTC] SMTC module init\n");
 
     if (!SELF_TEST_post(&fgbl->selftest_params, 0)) {
         OSSL_TRACE(SMTC, "SELF_TEST_post failed\n");

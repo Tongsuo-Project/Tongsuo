@@ -15,17 +15,22 @@
 
 static int logging = 0;
 
-void OSSL_enable_syslog(void)
+void OSSL_syslog_info(const char *message)
+{
+    ossl_syslog(LOG_INFO, message);
+}
+
+void ossl_enable_syslog(void)
 {
     logging = 1;
 }
 
-void OSSL_disable_syslog(void)
+void ossl_disable_syslog(void)
 {
     logging = 0;
 }
 
-void OSSL_syslog(int priority, const char *message, ...)
+void ossl_syslog(int priority, const char *message, ...)
 {
     va_list args;
     unsigned char buf[4096];

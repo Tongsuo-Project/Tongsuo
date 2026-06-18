@@ -282,7 +282,7 @@ int EVP_PKEY_keygen(EVP_PKEY_CTX *ctx, EVP_PKEY **ppkey)
     }
 
 #ifdef SMTC_MODULE
-    OSSL_syslog(LOG_INFO, "Creating a key pair\n");
+    ossl_syslog(LOG_INFO, "Creating a key pair\n");
 #endif
     return EVP_PKEY_generate(ctx, ppkey);
 }

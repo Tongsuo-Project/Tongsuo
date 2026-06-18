@@ -565,10 +565,6 @@ void OSSL_sleep(uint64_t millis);
 
 void *OSSL_LIB_CTX_get_data(OSSL_LIB_CTX *ctx, int index);
 
-void OSSL_enable_syslog(void);
-void OSSL_disable_syslog(void);
-void OSSL_syslog(int priority, const char *message, ...);
-
 # ifdef  __cplusplus
 }
 # endif
