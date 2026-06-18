@@ -25,6 +25,7 @@
 #include "crypto/evp.h"
 #include "crypto/rand.h"
 #include "internal/e_os.h"
+#include "internal/slog.h"
 #include "internal/thread_once.h"
 #include "prov/providercommon.h"
 #include "prov/seeding.h"

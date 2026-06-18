@@ -22,6 +22,10 @@
 #include "crypto/evp.h"
 #include "evp_local.h"
 
+#ifdef SMTC_MODULE
+# include "internal/slog.h"
+#endif
+
 static int gen_init(EVP_PKEY_CTX *ctx, int operation)
 {
     int ret = 0;

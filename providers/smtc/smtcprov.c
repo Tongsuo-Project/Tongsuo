@@ -27,6 +27,7 @@
 #include "prov/seeding.h"
 #include "self_test.h"
 #include "internal/core.h"
+#include "internal/slog.h"
 #include "internal/smtc_names.h"
 #include "internal/thread_once.h"
 #include "crypto/context.h"

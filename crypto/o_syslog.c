@@ -11,6 +11,7 @@
 #include <openssl/bio.h>
 #include <openssl/crypto.h>
 #include "internal/nelem.h"
+#include "internal/slog.h"
 
 static int logging = 0;
 
