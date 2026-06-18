@@ -21,15 +21,11 @@
 #   define LOG_INFO        6
 #   define LOG_DEBUG       7
 #   define LOG_DAEMON      (3<<3)
-#  elif (!defined(MSDOS) || defined(WATT32)) && !defined(OPENSSL_SYS_VXWORKS)
+#  elif (!defined(MSDOS) || defined(WATT32)) && !defined(OPENSSL_SYS_VXWORKS) && !defined(OPENSSL_SYS_WINCE)
 #   include <syslog.h>
 #  endif
 # endif
 
-void ossl_enable_syslog(void);
-void ossl_disable_syslog(void);
 void ossl_syslog(int priority, const char *message, ...);
-
-void OSSL_syslog_info(const char *message);
 
 #endif

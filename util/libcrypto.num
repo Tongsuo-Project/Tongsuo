@@ -5897,8 +5897,8 @@ TSAPI_SDF_ImportKeyWithKEK              6181	3_0_3	EXIST::FUNCTION:
 TSAPI_SDF_Encrypt                       6182	3_0_3	EXIST::FUNCTION:
 TSAPI_SDF_Decrypt                       6183	3_0_3	EXIST::FUNCTION:
 TSAPI_SDF_CalculateMAC                  6184	3_0_3	EXIST::FUNCTION:
-OSSL_enable_syslog                      6185	3_0_3	NOEXIST::FUNCTION:
-OSSL_disable_syslog                     6186	3_0_3	NOEXIST::FUNCTION:
+OSSL_enable_syslog                      6185	3_0_3	EXIST::FUNCTION:
+OSSL_disable_syslog                     6186	3_0_3	EXIST::FUNCTION:
 OSSL_syslog                             6187	3_0_3	NOEXIST::FUNCTION:
 TSAPI_SDF_GetPrivateKeyAccessRight      6188	3_0_3	EXIST::FUNCTION:
 TSAPI_SDF_ReleasePrivateKeyAccessRight  6189	3_0_3	EXIST::FUNCTION:
@@ -6210,4 +6210,6 @@ ZKP_RANGE_PROOF_new                     6516	3_0_3	EXIST::FUNCTION:ZKP_GADGET
 ZKP_RANGE_PROOF_free                    6517	3_0_3	EXIST::FUNCTION:ZKP_GADGET
 ZKP_RANGE_PROOF_prove                   6518	3_0_3	EXIST::FUNCTION:ZKP_GADGET
 ZKP_RANGE_PROOF_verify                  6519	3_0_3	EXIST::FUNCTION:ZKP_GADGET
-OSSL_syslog_info                        6520    3_5_0   EXIST::FUNCTION:
+OSSL_syslog_err                         6520	3_0_3	EXIST::FUNCTION:
+OSSL_syslog_notice                      6521	3_0_3	EXIST::FUNCTION:
+OSSL_syslog_info                        6522	3_0_3	EXIST::FUNCTION:

@@ -15,17 +15,27 @@
 
 static int logging = 0;
 
+void OSSL_syslog_err(const char *message)
+{
+    ossl_syslog(LOG_ERR, message);
+}
+
+void OSSL_syslog_notice(const char *message)
+{
+    ossl_syslog(LOG_NOTICE, message);
+}
+
 void OSSL_syslog_info(const char *message)
 {
     ossl_syslog(LOG_INFO, message);
 }
 
-void ossl_enable_syslog(void)
+void OSSL_enable_syslog(void)
 {
     logging = 1;
 }
 
-void ossl_disable_syslog(void)
+void OSSL_disable_syslog(void)
 {
     logging = 0;
 }

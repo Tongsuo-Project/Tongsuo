@@ -24,7 +24,6 @@
 #include <openssl/crypto.h>
 #include <openssl/sm3.h>
 #include "internal/smtc_names.h"
-#include "internal/slog.h"
 #include "../providers/smtc/smtckey.h"
 
 #define BUFSIZE             4096

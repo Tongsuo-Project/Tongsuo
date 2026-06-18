@@ -27,7 +27,6 @@
 #include "prov/seeding.h"
 #include "self_test.h"
 #include "internal/core.h"
-#include "internal/slog.h"
 #include "internal/smtc_names.h"
 #include "internal/thread_once.h"
 #include "crypto/context.h"
@@ -299,7 +298,7 @@ static int smtc_reset(void *provctx)
     }
 
     ok = 1;
-    ossl_syslog(LOG_NOTICE, "[SMTC] Reset module\n");
+    OSSL_syslog_notice("[SMTC] Reset module\n");
 end:
     NCONF_free(conf);
     BIO_free(out);
@@ -677,9 +676,9 @@ int OSSL_provider_init_int(const OSSL_CORE_HANDLE *handle,
     ossl_prov_cache_exported_algorithms(smtc_ciphers, exported_ciphers);
 
     if (fgbl->selftest_params.syslog && atoi(fgbl->selftest_params.syslog) != 0)
-        ossl_enable_syslog();
+        OSSL_enable_syslog();
 
-    ossl_syslog(LOG_INFO, "[SMTC] SMTC module init\n");
+    OSSL_syslog_info("[SMTC] SMTC module init\n");
 
     if (!SELF_TEST_post(&fgbl->selftest_params, 0)) {
         OSSL_TRACE(SMTC, "SELF_TEST_post failed\n");
