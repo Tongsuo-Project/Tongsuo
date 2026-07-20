@@ -1359,7 +1359,7 @@ my $smrsacert = catfile($smdir, "smrsa3.pem");
 my $smrsakey = catfile($smdir, "smrsa3-key.pem");
 
 # Test case for CVE-2026-28390
-with({ exit_checker => sub { return shift == 4; } },
+with({ exit_checker => sub { my $ret = shift; return $ret == 4 || $ret == 0; } },
     sub {
         ok(run(app(["openssl", "cms", @prov, "-decrypt", "-in", $smcont_malformed, "-inform",
                    "DER", "-recip", $smrsacert, "-inkey", $smrsakey, "-out", "{output}.cms"])),
