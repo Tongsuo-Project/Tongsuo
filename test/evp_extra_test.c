@@ -928,6 +928,32 @@ static EVP_PKEY *load_example_ec_key(void)
 #endif
 
 #ifndef OPENSSL_NO_DEPRECATED_3_0
+
+static EVP_PKEY *make_bad_rsa_pubkey(void)
+{
+    RSA *rsa = NULL;
+    BIGNUM *n = NULL, *e = NULL;
+    EVP_PKEY *pkey = NULL;
+
+    /* Deliberately invalid public key: n = 17, e = 17 */
+    if (!TEST_ptr(pkey = EVP_PKEY_new())
+        || !TEST_ptr(rsa = RSA_new())
+        || !TEST_ptr(n = BN_new())
+        || !TEST_ptr(e = BN_new())
+        || !TEST_true(BN_set_word(n, 17))
+        || !TEST_true(BN_set_word(e, 17))
+        || !TEST_true(RSA_set0_key(rsa, n, e, NULL))
+        || !EVP_PKEY_assign_RSA(pkey, rsa))
+        goto err;
+
+    return pkey;
+err:
+    BN_free(n);
+    BN_free(e);
+    RSA_free(rsa);
+    return NULL;
+}
+
 # ifndef OPENSSL_NO_DH
 static EVP_PKEY *load_example_dh_key(void)
 {
@@ -5946,6 +5972,46 @@ static int test_custom_ciph_meth(void)
     return testresult;
 }
 
+static int test_rsasve_kem_with_invalid_pub_key(void)
+{
+    RSA *rsa = NULL;
+    EVP_PKEY *pkey = NULL;
+    EVP_PKEY_CTX *ctx = NULL;
+    unsigned char *ct = NULL;
+    unsigned char *secret = NULL;
+    size_t ctlen = 0, secretlen = 0;
+    int testresult = 0;
+
+    if (nullprov != NULL) {
+        testresult = TEST_skip("Test does not support a non-default library context");
+        goto err;
+    }
+
+    if (!TEST_ptr(pkey = make_bad_rsa_pubkey()))
+        goto err;
+
+    if (!TEST_ptr(ctx = EVP_PKEY_CTX_new_from_pkey(testctx, pkey, NULL))
+        || !TEST_int_eq(EVP_PKEY_encapsulate_init(ctx, NULL), 1)
+        || !TEST_int_eq(EVP_PKEY_CTX_set_kem_op(ctx, "RSASVE"), 1)
+        || !TEST_int_eq(EVP_PKEY_encapsulate(ctx, NULL, &ctlen, NULL, &secretlen), 1)
+        || !TEST_ptr(ct = OPENSSL_malloc(ctlen))
+        || !TEST_ptr(secret = OPENSSL_malloc(secretlen)))
+        goto err;
+
+    if (!TEST_int_eq(EVP_PKEY_encapsulate(ctx, ct, &ctlen, secret, &secretlen), 0))
+        goto err;
+
+    testresult = 1;
+
+err:
+    OPENSSL_free(secret);
+    OPENSSL_free(ct);
+    EVP_PKEY_CTX_free(ctx);
+    RSA_free(rsa);
+    EVP_PKEY_free(pkey);
+    return testresult;
+}
+
 # ifndef OPENSSL_NO_DYNAMIC_ENGINE
 /* Test we can create a signature keys with an associated ENGINE */
 static int test_signatures_with_engine(int tst)
@@ -7051,6 +7117,7 @@ int setup_tests(void)
     ADD_TEST(test_evp_md_cipher_meth);
     ADD_TEST(test_custom_md_meth);
     ADD_TEST(test_custom_ciph_meth);
+    ADD_TEST(test_rsasve_kem_with_invalid_pub_key);
 
 # ifndef OPENSSL_NO_DYNAMIC_ENGINE
     /* Tests only support the default libctx */
