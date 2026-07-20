@@ -161,7 +161,7 @@ int enc_main(int argc, char **argv)
 #if !defined(OPENSSL_NO_WBSM4_XIAOLAI) || !defined(OPENSSL_NO_WBSM4_BAIWU) || \
     !defined(OPENSSL_NO_WBSM4_WSISE)
     unsigned char *rawkey = NULL;
-    int rawkeylen = 0;
+    size_t rawkeylen = 0;
 #endif
     int do_brotli = 0;
     BIO *bbrot = NULL;
@@ -306,8 +306,7 @@ int enc_main(int argc, char **argv)
             in = bio_open_default(opt_arg(), 'r', FORMAT_BINARY);
             if (in == NULL)
                 goto opthelp;    
-            rawkeylen = bio_to_mem(&rawkey, 1024 * 1024 * 40, in);
-            if (rawkeylen <= 0)
+            if (!bio_to_mem(&rawkey, &rawkeylen,1024 * 1024 * 40, in))
                 goto opthelp;
             break;
 #endif
@@ -440,7 +439,7 @@ int enc_main(int argc, char **argv)
     !defined(OPENSSL_NO_WBSM4_WSISE)
     if (rawkey != NULL) {
         if (cipher != NULL && rawkeylen != EVP_CIPHER_key_length(cipher)) {
-            BIO_printf(bio_err, "invalid raw key length: %d, need: %d\n",
+            BIO_printf(bio_err, "invalid raw key length: %zu, need: %d\n",
                       rawkeylen, EVP_CIPHER_key_length(cipher));
             goto end;
         }

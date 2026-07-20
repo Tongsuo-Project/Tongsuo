@@ -116,7 +116,7 @@ int sdf_main(int argc, char **argv)
     OPTION_CHOICE o;
     BIO *outkey = NULL, *outdek = NULL, *key_bio = NULL;
     BIO *in = NULL, *out = NULL;
-    int ret = 1, index = -1, sign = 1, keylen = 0, deklen = 0, mode = 0;
+    int ret = 1, index = -1, sign = 1, mode = 0;
     int isk = -1;
     int gensm2 = 0, delsm2 = 0, updatesm2 = 0;
     int exportsm2pubkey = 0, exportsm2keywithevlp = 0, importsm2keywithevlp = 0;
@@ -132,8 +132,7 @@ int sdf_main(int argc, char **argv)
     unsigned char *iv = NULL;
     EVP_PKEY *pkey = NULL, *peer = NULL;
     unsigned char *priv = NULL, *pub = NULL, *outevlp = NULL;
-    size_t privlen = 0, publen = 0, outevlplen = 0;
-    int inbuflen = -1;
+    size_t privlen = 0, publen = 0, outevlplen = 0, keylen = 0, deklen = 0, inbuflen = 0;
     size_t outbuflen = 0;
 
     prog = opt_init(argc, argv, sdf_options);
@@ -385,14 +384,13 @@ opthelp:
             goto end;
         }
 
-        keylen = bio_to_mem(&inkey, 4096, key_bio);
-        BIO_free(key_bio);
-        key_bio = NULL;
-
-        if (keylen < 0) {
+        if (!bio_to_mem(&inkey, &keylen, 4096, key_bio)) {
+            BIO_free(key_bio);
             BIO_printf(bio_err, "Error reading key\n");
             goto end;
         }
+        BIO_free(key_bio);
+        key_bio = NULL;
     }
 
     if (indekfile) {
@@ -407,14 +405,13 @@ opthelp:
             goto end;
         }
 
-        deklen = bio_to_mem(&indek, 4096, key_bio);
-        BIO_free(key_bio);
-        key_bio = NULL;
-
-        if (deklen < 0) {
+        if (!bio_to_mem(&indek, &deklen, 4096, key_bio)){
+            BIO_free(key_bio);
             BIO_printf(bio_err, "Error reading key\n");
             goto end;
         }
+        BIO_free(key_bio);
+        key_bio = NULL;
     }
 
     if (importsm2keywithevlp) {
@@ -439,8 +436,8 @@ opthelp:
             goto end;
 
         /* Note: Only supports files less than 1GB */
-        inbuflen = bio_to_mem(&inbuf, 1024 * 1024 * 1024, in);
-        if (inbuflen < 0) {
+        if (!bio_to_mem(&inbuf, &inbuflen, 1024 * 1024 * 1024, in)) {
+            BIO_free(in);
             BIO_printf(bio_err, "Error reading input\n");
             goto end;
         }
@@ -453,7 +450,7 @@ opthelp:
     }
 
     if (encrypt || decrypt) {
-        if (inbuf == NULL || inbuflen < 0 || out == NULL || algo == NULL) {
+        if (inbuf == NULL || out == NULL || algo == NULL) {
             BIO_printf(bio_err, "No input, output or algorithm specified\n");
             goto end;
         }
