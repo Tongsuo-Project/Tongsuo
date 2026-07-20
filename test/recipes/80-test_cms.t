@@ -51,7 +51,7 @@ my $smcont_zero = srctop_file("test", "smcont_zero.txt");
 my ($no_des, $no_dh, $no_dsa, $no_ec, $no_ec2m, $no_zlib)
     = disabled qw/des dh dsa ec ec2m zlib/;
 
-plan tests => 32;
+plan tests => 33;
 
 ok(run(test(["pkcs7_test"])), "test pkcs7");
 
@@ -1352,6 +1352,18 @@ with({ exit_checker => sub { return shift == 4; } },
                        "-inform", "DER", "-recip", $smecdhcert, "-inkey", $smecdhkey])),
              "Must not crash on malformed cms inputs with ecdh key");
         }
+    });
+
+$smcont_malformed = srctop_file("test", "recipes", "80-test_cms_data", "rsa-malformed.der");
+my $smrsacert = catfile($smdir, "smrsa3.pem");
+my $smrsakey = catfile($smdir, "smrsa3-key.pem");
+
+# Test case for CVE-2026-28390
+with({ exit_checker => sub { return shift == 4; } },
+    sub {
+        ok(run(app(["openssl", "cms", @prov, "-decrypt", "-in", $smcont_malformed, "-inform",
+                   "DER", "-recip", $smrsacert, "-inkey", $smrsakey, "-out", "{output}.cms"])),
+           "Must not crash on malformed cms inputs with RSA key");
     });
 
 # Test encrypt to three recipients, and decrypt using key-only;
