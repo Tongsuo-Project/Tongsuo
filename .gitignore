@@ -127,14 +127,6 @@ providers/smtc/smtckey.h
 /tools/c_rehash.pl
 /util/shlib_wrap.sh
 /util/wrap.pl
-/crypto/ml_dsa/asm/ml_dsa_avx2/mldsa*_hybrid.c
-/crypto/ml_dsa/asm/ml_dsa_avx2/mldsa*_packing.c
-/crypto/ml_dsa/asm/ml_dsa_avx2/mldsa*_poly.c
-/crypto/ml_dsa/asm/ml_dsa_avx2/mldsa*_polyvec.c
-/crypto/ml_dsa/asm/ml_dsa_avx2/mldsa*_pspm.c
-/crypto/ml_dsa/asm/ml_dsa_avx2/mldsa*_rejsample.c
-/crypto/ml_dsa/asm/ml_dsa_avx2/mldsa*_rounding.c
-/crypto/ml_dsa/asm/ml_dsa_avx2/mldsa*_sign.c
 /tags
 /TAGS
 *.map

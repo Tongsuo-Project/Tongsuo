@@ -21,7 +21,7 @@ http://creativecommons.org/publicdomain/zero/1.0/
 #include <wmmintrin.h>
 #include <immintrin.h>
 #include <emmintrin.h>
-#include "../align.h"
+#include "align.h"
 #include "KeccakP-1600-times4-SnP.h"
 #include "SIMD256-config.h"
 

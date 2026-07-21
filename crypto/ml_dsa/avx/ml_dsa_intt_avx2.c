@@ -1,15 +1,16 @@
 //
 // Created by xurq on 2023/5/26.
 //
-#include "../ml_dsa_avx2_target.h"
-#ifndef DILITHIUM_MODE
-# define DILITHIUM_MODE 3
-#endif
 #include <x86intrin.h>
+#include "ml_dsa_avx2_target.h"
 
-#include "cdecl.h"
-#include "consts.h"
-#include "../params.h"
+#include "../ml_dsa_local.h"
+#include "ml_dsa_consts_avx2.h"
+#include "ml_dsa_ntt_avx2.h"
+
+
+#define DIV 41978 // mont^2/256
+#define DIV_QINV (-8395782)
 
 
 static const __m256i* in_zeta = (__m256i*)(inv_qdata);
@@ -127,94 +128,94 @@ reduce(z3)\
 
 
 #define LOAD(n,m) \
-z0 = _mm256_load_si256((c + (n)     ));\
-z1 = _mm256_load_si256((c + (n) + 8 ));\
-z2 = _mm256_load_si256((c + (n) + 16));\
-z3 = _mm256_load_si256((c + (n) + 24));\
-z4 = _mm256_load_si256((c + (m)     ));\
-z5 = _mm256_load_si256((c + (m) + 8 ));\
-z6 = _mm256_load_si256((c + (m) + 16));\
-z7 = _mm256_load_si256((c + (m) + 24));\
+z0 = _mm256_loadu_si256((c + (n)     ));\
+z1 = _mm256_loadu_si256((c + (n) + 8 ));\
+z2 = _mm256_loadu_si256((c + (n) + 16));\
+z3 = _mm256_loadu_si256((c + (n) + 24));\
+z4 = _mm256_loadu_si256((c + (m)     ));\
+z5 = _mm256_loadu_si256((c + (m) + 8 ));\
+z6 = _mm256_loadu_si256((c + (m) + 16));\
+z7 = _mm256_loadu_si256((c + (m) + 24));\
 \
 
 
 
 #define STORE(n,m) \
-_mm256_store_si256((c + (n)     ), z0);\
-_mm256_store_si256((c + (n) + 8 ), z1);\
-_mm256_store_si256((c + (n) + 16), z2);\
-_mm256_store_si256((c + (n) + 24), z3);\
-_mm256_store_si256((c + (m)     ), z4);\
-_mm256_store_si256((c + (m) + 8 ), z5);\
-_mm256_store_si256((c + (m) + 16), z6);\
-_mm256_store_si256((c + (m) + 24), z7);\
+_mm256_storeu_si256((c + (n)     ), z0);\
+_mm256_storeu_si256((c + (n) + 8 ), z1);\
+_mm256_storeu_si256((c + (n) + 16), z2);\
+_mm256_storeu_si256((c + (n) + 24), z3);\
+_mm256_storeu_si256((c + (m)     ), z4);\
+_mm256_storeu_si256((c + (m) + 8 ), z5);\
+_mm256_storeu_si256((c + (m) + 16), z6);\
+_mm256_storeu_si256((c + (m) + 24), z7);\
 \
 
 
 
 
 #define levels0to2(n,m) \
-zeta = _mm256_load_si256(in_zeta + ((n) >> 4)); \
-zinvq = _mm256_load_si256(in_zeta + ((n) >> 4) + 16); \
+zeta = _mm256_loadu_si256(in_zeta + ((n) >> 4)); \
+zinvq = _mm256_loadu_si256(in_zeta + ((n) >> 4) + 16); \
 shuffle_forward(z0,z1)\
 butterfly0(z0,z1)      \
 shuffle2(z0,z1)        \
 \
-zeta = _mm256_load_si256(in_zeta + ((n) >> 4) + 1);\
-zinvq = _mm256_load_si256(in_zeta + ((n) >> 4) + 17); \
+zeta = _mm256_loadu_si256(in_zeta + ((n) >> 4) + 1);\
+zinvq = _mm256_loadu_si256(in_zeta + ((n) >> 4) + 17); \
 shuffle_forward(z2,z3)\
 butterfly0(z2,z3)      \
 shuffle2(z2,z3)  \
 \
-zeta = _mm256_load_si256(in_zeta + ((n) >> 4) + 2);\
-zinvq = _mm256_load_si256(in_zeta + ((n) >> 4) + 18); \
+zeta = _mm256_loadu_si256(in_zeta + ((n) >> 4) + 2);\
+zinvq = _mm256_loadu_si256(in_zeta + ((n) >> 4) + 18); \
 shuffle_forward(z4,z5)\
 butterfly0(z4,z5)      \
 shuffle2(z4,z5)  \
 \
-zeta = _mm256_load_si256(in_zeta + ((n) >> 4) + 3);\
-zinvq = _mm256_load_si256(in_zeta + ((n) >> 4) + 19); \
+zeta = _mm256_loadu_si256(in_zeta + ((n) >> 4) + 3);\
+zinvq = _mm256_loadu_si256(in_zeta + ((n) >> 4) + 19); \
 shuffle_forward(z6,z7)\
 butterfly0(z6,z7)      \
 shuffle2(z6,z7)  \
 \
-zeta = _mm256_load_si256(in_zeta + ((n) >> 4) + 32);  \
+zeta = _mm256_loadu_si256(in_zeta + ((n) >> 4) + 32);  \
 zinvq = _mm256_srli_epi64(zeta,32);\
 butterfly(z0,z1)      \
 shuffle4(z0,z1)\
 \
-zeta = _mm256_load_si256(in_zeta + ((n) >> 4) + 33);  \
+zeta = _mm256_loadu_si256(in_zeta + ((n) >> 4) + 33);  \
 zinvq = _mm256_srli_epi64(zeta,32);\
 butterfly(z2,z3)      \
 shuffle4(z2,z3)\
 \
-zeta = _mm256_load_si256(in_zeta + ((n) >> 4) + 34);  \
+zeta = _mm256_loadu_si256(in_zeta + ((n) >> 4) + 34);  \
 zinvq = _mm256_srli_epi64(zeta,32);\
 butterfly(z4,z5)      \
 shuffle4(z4,z5)\
 \
-zeta = _mm256_load_si256(in_zeta + ((n) >> 4) + 35);  \
+zeta = _mm256_loadu_si256(in_zeta + ((n) >> 4) + 35);  \
 zinvq = _mm256_srli_epi64(zeta,32);\
 zinvq = _mm256_srli_epi64(zeta,32);\
 butterfly(z6,z7)      \
 shuffle4(z6,z7)\
 \
-zeta = _mm256_load_si256(in_zeta + ((n) >> 4) + 48);  \
+zeta = _mm256_loadu_si256(in_zeta + ((n) >> 4) + 48);  \
 zinvq = _mm256_srli_epi64(zeta,32);\
 butterfly(z0,z1)      \
 shuffle8(z0,z1)\
 \
-zeta = _mm256_load_si256(in_zeta + ((n) >> 4) + 49);  \
+zeta = _mm256_loadu_si256(in_zeta + ((n) >> 4) + 49);  \
 zinvq = _mm256_srli_epi64(zeta,32);\
 butterfly(z2,z3)\
 shuffle8(z2,z3)\
 \
-zeta = _mm256_load_si256(in_zeta + ((n) >> 4) + 50);  \
+zeta = _mm256_loadu_si256(in_zeta + ((n) >> 4) + 50);  \
 zinvq = _mm256_srli_epi64(zeta,32);\
 butterfly(z4,z5)\
 shuffle8(z4,z5)\
 \
-zeta = _mm256_load_si256(in_zeta + ((n) >> 4) + 51);  \
+zeta = _mm256_loadu_si256(in_zeta + ((n) >> 4) + 51);  \
 zinvq = _mm256_srli_epi64(zeta,32);\
 butterfly(z6,z7)\
 shuffle8(z6,z7)\
@@ -223,72 +224,70 @@ shuffle8(z6,z7)\
 
 
 #define levels0to2_so(n,m) \
-zeta = _mm256_load_si256(in_zeta + ((n) >> 4)); \
-zinvq = _mm256_load_si256(in_zeta + ((n) >> 4) + 16); \
+zeta = _mm256_loadu_si256(in_zeta + ((n) >> 4)); \
+zinvq = _mm256_loadu_si256(in_zeta + ((n) >> 4) + 16); \
 butterfly0(z0,z1)      \
 shuffle2(z0,z1)        \
 \
-zeta = _mm256_load_si256(in_zeta + ((n) >> 4) + 1);\
-zinvq = _mm256_load_si256(in_zeta + ((n) >> 4) + 17); \
+zeta = _mm256_loadu_si256(in_zeta + ((n) >> 4) + 1);\
+zinvq = _mm256_loadu_si256(in_zeta + ((n) >> 4) + 17); \
 butterfly0(z2,z3)      \
 shuffle2(z2,z3)  \
 \
-zeta = _mm256_load_si256(in_zeta + ((n) >> 4) + 2);\
-zinvq = _mm256_load_si256(in_zeta + ((n) >> 4) + 18); \
+zeta = _mm256_loadu_si256(in_zeta + ((n) >> 4) + 2);\
+zinvq = _mm256_loadu_si256(in_zeta + ((n) >> 4) + 18); \
 butterfly0(z4,z5)      \
 shuffle2(z4,z5)  \
 \
-zeta = _mm256_load_si256(in_zeta + ((n) >> 4) + 3);\
-zinvq = _mm256_load_si256(in_zeta + ((n) >> 4) + 19); \
+zeta = _mm256_loadu_si256(in_zeta + ((n) >> 4) + 3);\
+zinvq = _mm256_loadu_si256(in_zeta + ((n) >> 4) + 19); \
 butterfly0(z6,z7)      \
 shuffle2(z6,z7)  \
 \
-zeta = _mm256_load_si256(in_zeta + ((n) >> 4) + 32);  \
+zeta = _mm256_loadu_si256(in_zeta + ((n) >> 4) + 32);  \
 zinvq = _mm256_srli_epi64(zeta,32);\
 butterfly(z0,z1)      \
 shuffle4(z0,z1)\
 \
-zeta = _mm256_load_si256(in_zeta + ((n) >> 4) + 33);  \
+zeta = _mm256_loadu_si256(in_zeta + ((n) >> 4) + 33);  \
 zinvq = _mm256_srli_epi64(zeta,32);\
 butterfly(z2,z3)      \
 shuffle4(z2,z3)\
 \
-zeta = _mm256_load_si256(in_zeta + ((n) >> 4) + 34);  \
+zeta = _mm256_loadu_si256(in_zeta + ((n) >> 4) + 34);  \
 zinvq = _mm256_srli_epi64(zeta,32);\
 butterfly(z4,z5)      \
 shuffle4(z4,z5)\
 \
-zeta = _mm256_load_si256(in_zeta + ((n) >> 4) + 35);  \
+zeta = _mm256_loadu_si256(in_zeta + ((n) >> 4) + 35);  \
 zinvq = _mm256_srli_epi64(zeta,32);\
 zinvq = _mm256_srli_epi64(zeta,32);\
 butterfly(z6,z7)      \
 shuffle4(z6,z7)\
 \
-zeta = _mm256_load_si256(in_zeta + ((n) >> 4) + 48);  \
+zeta = _mm256_loadu_si256(in_zeta + ((n) >> 4) + 48);  \
 zinvq = _mm256_srli_epi64(zeta,32);\
 butterfly(z0,z1)      \
 shuffle8(z0,z1)\
 \
-zeta = _mm256_load_si256(in_zeta + ((n) >> 4) + 49);  \
+zeta = _mm256_loadu_si256(in_zeta + ((n) >> 4) + 49);  \
 zinvq = _mm256_srli_epi64(zeta,32);\
 butterfly(z2,z3)\
 shuffle8(z2,z3)\
 \
-zeta = _mm256_load_si256(in_zeta + ((n) >> 4) + 50);  \
+zeta = _mm256_loadu_si256(in_zeta + ((n) >> 4) + 50);  \
 zinvq = _mm256_srli_epi64(zeta,32);\
 butterfly(z4,z5)\
 shuffle8(z4,z5)\
 \
-zeta = _mm256_load_si256(in_zeta + ((n) >> 4) + 51);  \
+zeta = _mm256_loadu_si256(in_zeta + ((n) >> 4) + 51);  \
 zinvq = _mm256_srli_epi64(zeta,32);\
 butterfly(z6,z7)\
 shuffle8(z6,z7)\
 \
 
-
-
 void XRQ_intt_avx2_bo(int32_t c[256]) {
-    const __m256i q = _mm256_set1_epi32(Q);
+    const __m256i q = _mm256_set1_epi32(ML_DSA_Q);
     const __m256i div = _mm256_set1_epi32(DIV);
     const __m256i dqiv = _mm256_set1_epi32(DIV_QINV);
 
@@ -505,222 +504,5 @@ void XRQ_intt_avx2_bo(int32_t c[256]) {
     mont_reduce()
     STORE(96,224)
 
-}
-
-
-
-void XRQ_intt_avx2_so(int32_t c[256]) {
-    const __m256i q = _mm256_set1_epi32(Q);
-    const __m256i div = _mm256_set1_epi32(DIV);
-    const __m256i dqiv = _mm256_set1_epi32(DIV_QINV);
-
-    __m256i z0, z1, z2, z3, z4, z5, z6, z7;
-    __m256i zeta,r0,r1,t,f,zinvq;
-    int i = 0;
-
-    LOAD(0,32)
-    levels0to2_so(0,32)
-    //level 3
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-    butterfly(z0, z1)
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-    butterfly(z2, z3)
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-    butterfly(z4, z5)
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-    butterfly(z6, z7)
-    // level 4
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-    butterfly(z0, z2)
-    butterfly(z1, z3)
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-    butterfly(z4, z6)
-    butterfly(z5, z7)
-    //level 5
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-    butterfly(z0, z4)
-    butterfly(z1, z5)
-    butterfly(z2, z6)
-    butterfly(z3, z7)
-    STORE(0,32)
-
-    LOAD(64,96)
-    levels0to2_so(64,96)
-    //level 3
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-    butterfly(z0, z1)
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-    butterfly(z2, z3)
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-    butterfly(z4, z5)
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-    butterfly(z6, z7)
-    // level 4
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-    butterfly(z0, z2)
-    butterfly(z1, z3)
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-    butterfly(z4, z6)
-    butterfly(z5, z7)
-    //level 5
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-    butterfly(z0, z4)
-    butterfly(z1, z5)
-    butterfly(z2, z6)
-    butterfly(z3, z7)
-    STORE(64,96)
-
-    LOAD(128,160)
-    levels0to2_so(128,160)
-    //level 3
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-    butterfly(z0, z1)
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-    butterfly(z2, z3)
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-    butterfly(z4, z5)
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-    butterfly(z6, z7)
-    // level 4
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-    butterfly(z0, z2)
-    butterfly(z1, z3)
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-    butterfly(z4, z6)
-    butterfly(z5, z7)
-    //level 5
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-    butterfly(z0, z4)
-    butterfly(z1, z5)
-    butterfly(z2, z6)
-    butterfly(z3, z7)
-    STORE(128,160)
-
-    LOAD(192,224)
-    levels0to2_so(192,224)
-    //level 3
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-    butterfly(z0, z1)
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-    butterfly(z2, z3)
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-    butterfly(z4, z5)
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-    butterfly(z6, z7)
-    // level 4
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-    butterfly(z0, z2)
-    butterfly(z1, z3)
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-    butterfly(z4, z6)
-    butterfly(z5, z7)
-    //level 5
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-    butterfly(z0, z4)
-    butterfly(z1, z5)
-    butterfly(z2, z6)
-    butterfly(z3, z7)
-    STORE(192,224)
-
-
-
-
-    //level 6
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-    LOAD(0,64)
-    butterfly(z0, z4)
-    butterfly(z1, z5)
-    butterfly(z2, z6)
-    butterfly(z3, z7)
-    STORE(0,64)
-
-    LOAD(32,96)
-    butterfly(z0, z4)
-    butterfly(z1, z5)
-    butterfly(z2, z6)
-    butterfly(z3, z7)
-    STORE(32,96)
-
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-
-    LOAD(128,192)
-    butterfly(z0, z4)
-    butterfly(z1, z5)
-    butterfly(z2, z6)
-    butterfly(z3, z7)
-    STORE(128,192)
-
-    LOAD(160,224)
-    butterfly(z0, z4)
-    butterfly(z1, z5)
-    butterfly(z2, z6)
-    butterfly(z3, z7)
-    STORE(160,224)
-
-
-    //level 7
-    zeta = _mm256_set1_epi64x(inte_data2[i++]);
-    zinvq = _mm256_srli_epi64(zeta,32);
-    LOAD(0,128)
-    butterfly(z0, z4)
-    butterfly(z1, z5)
-    butterfly(z2, z6)
-    butterfly(z3, z7)
-    mont_reduce()
-    STORE(0,128)
-
-    LOAD(32,160)
-    butterfly(z0, z4)
-    butterfly(z1, z5)
-    butterfly(z2, z6)
-    butterfly(z3, z7)
-    mont_reduce()
-    STORE(32,160)
-
-    LOAD(64,192)
-    butterfly(z0, z4)
-    butterfly(z1, z5)
-    butterfly(z2, z6)
-    butterfly(z3, z7)
-    mont_reduce()
-    STORE(64,192)
-
-    LOAD(96,224)
-    butterfly(z0, z4)
-    butterfly(z1, z5)
-    butterfly(z2, z6)
-    butterfly(z3, z7)
-    mont_reduce()
-    STORE(96,224)
-
+    poly_normalize_avx2(c);
 }

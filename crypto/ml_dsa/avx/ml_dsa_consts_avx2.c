@@ -1,20 +1,14 @@
-#include "../ml_dsa_avx2_target.h"
-#ifndef DILITHIUM_MODE
-# define DILITHIUM_MODE 3
-#endif
-#include "consts.h"
-#include "params.h"
 #include <stdint.h>
-#include "cdecl.h"
+#include "ml_dsa_avx2_target.h"
+#include "ml_dsa_consts_avx2.h"
 
-ALIGN(32)
-const int32_t qdata[568] = {
-    QINV, QINV, QINV, QINV, QINV, QINV, QINV, QINV,
-    Q, Q, Q, Q, Q, Q, Q, Q,
-  };
+#include "../ml_dsa_local.h"
 
+const int32_t qdata[16] = {
+    ML_DSA_Q_INV, ML_DSA_Q_INV, ML_DSA_Q_INV, ML_DSA_Q_INV, ML_DSA_Q_INV, ML_DSA_Q_INV, ML_DSA_Q_INV, ML_DSA_Q_INV,
+    ML_DSA_Q, ML_DSA_Q, ML_DSA_Q, ML_DSA_Q, ML_DSA_Q, ML_DSA_Q, ML_DSA_Q, ML_DSA_Q,
+};
 
-ALIGN(32)
 const int32_t inte_qdata[512] = {
 #define ZETA 0
         //level 5
@@ -96,7 +90,6 @@ const int32_t inte_qdata[512] = {
 
 };
 
-ALIGN(32)
 const int32_t inv_qdata[512] = {
 //level 0 zeta
         -1976782, 846154, -1400424, -3937738, 1362209, 48306, -3919660, 554416, 3545687, -1612842, 976891, -183443,
@@ -160,7 +153,7 @@ const int32_t inv_qdata[512] = {
 
 };
 
-ALIGN(32)const int64_t inte_data2[32] = {
+const int64_t inte_data2[32] = {
     0x45c31a3bfffbba3b, 0x5602adffffc2cdff, 0x927c0bde00004bde, 0xec5e8fcbffe52fcb, -2688021319612163367,
     1227061264427025847, -7046899915112783396, 0x2c9f036800320368, 0x4af67b0900155b09, 0x345e0519003ae519,
     0x9d65922a0020522a, 0xe14ae4f7002c04f7, 0x7301c58bffd0658b, 0x9fe85ed8000d5ed8, 0xd730cc8500202c85,
