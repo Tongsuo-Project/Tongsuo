@@ -51,7 +51,7 @@ my $smcont_zero = srctop_file("test", "smcont_zero.txt");
 my ($no_des, $no_dh, $no_dsa, $no_ec, $no_ec2m, $no_zlib)
     = disabled qw/des dh dsa ec ec2m zlib/;
 
-plan tests => 33;
+plan tests => 34;
 
 ok(run(test(["pkcs7_test"])), "test pkcs7");
 
@@ -1221,6 +1221,23 @@ subtest "CMS code signing test" => sub {
                     "-content", $smcont])),
        "fail verify CMS signature with code signing certificate for purpose smime_sign");
 };
+
+# Regression test for PKCS7_verify() ownership handling when
+# digestAlgorithms is an empty SET.
+# The malformed structure must fail cleanly without crashing or
+# triggering use-after-free behaviour.
+with({ exit_checker => sub { return shift == 4; } },
+    sub {
+        ok(run(app([
+                'openssl', 'smime',
+                '-verify',
+                '-noverify',
+                '-in',
+                srctop_file('test', 'smime-eml',
+                            'pkcs7-empty-digest-set.eml'),
+            ])),
+           "Check empty digestAlgorithms SET is handled safely");
+    });
 
 # Test case for missing MD algorithm (must not segfault)
 
