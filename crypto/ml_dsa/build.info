@@ -2,9 +2,19 @@ LIBS=../../libcrypto
 
 $COMMON=ml_dsa_encoders.c ml_dsa_key_compress.c ml_dsa_key.c \
         ml_dsa_matrix.c ml_dsa_ntt.c ml_dsa_params.c ml_dsa_sample.c \
-        ml_dsa_sign.c
+        ml_dsa_sign.c ml_dsa_avx2.c
+
+$ML_DSA_AVX2_SRC=
+IF[{- !$disabled{asm} -}]
+  IF[{- $target{asm_arch} eq "x86_64" -}]
+    $ML_DSA_AVX2_SRC=avx/ml_dsa_poly_avx2.c avx/ml_dsa_consts_avx2.c \
+                     avx/ml_dsa_ntt_avx2.c avx/ml_dsa_intt_avx2.c \
+                     avx/ml_dsa_sample_avx2.c avx/keccak4x/fips202.c \
+                     avx/keccak4x/fips202x4.c avx/keccak4x/KeccakP-1600-times4-SIMD256.c
+  ENDIF
+ENDIF
 
 IF[{- !$disabled{'ml-dsa'} -}]
-  SOURCE[../../libcrypto]=$COMMON
-  SOURCE[../../providers/libfips.a]=$COMMON
+  SOURCE[../../libcrypto]=$COMMON $ML_DSA_AVX2_SRC
+  SOURCE[../../providers/libfips.a]=$COMMON $ML_DSA_AVX2_SRC
 ENDIF
