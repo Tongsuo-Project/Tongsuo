@@ -52,7 +52,7 @@ ENDIF
 $KECCAK1600ASM=keccak1600.c
 IF[{- !$disabled{asm} -}]
   $KECCAK1600ASM_x86=
-  $KECCAK1600ASM_x86_64=keccak1600-x86_64.s
+  $KECCAK1600ASM_x86_64=keccak1600-x86_64.s keccak1600x4-avx512vl.s sha3_x4_avx512vl.c
 
   $KECCAK1600ASM_s390x=keccak1600-s390x.S
 
@@ -105,6 +105,7 @@ GENERATE[sha256-x86_64.s]=asm/sha512-x86_64.pl
 GENERATE[sha256-mb-x86_64.s]=asm/sha256-mb-x86_64.pl
 GENERATE[sha512-x86_64.s]=asm/sha512-x86_64.pl
 GENERATE[keccak1600-x86_64.s]=asm/keccak1600-x86_64.pl
+GENERATE[keccak1600x4-avx512vl.s]=asm/keccak1600x4-avx512vl.pl
 
 GENERATE[sha1-ppc.s]=asm/sha1-ppc.pl
 GENERATE[sha256-ppc.s]=asm/sha512-ppc.pl
