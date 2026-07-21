@@ -51,7 +51,7 @@ my $smcont_zero = srctop_file("test", "smcont_zero.txt");
 my ($no_des, $no_dh, $no_dsa, $no_ec, $no_ec2m, $no_zlib)
     = disabled qw/des dh dsa ec ec2m zlib/;
 
-plan tests => 34;
+plan tests => 35;
 
 ok(run(test(["pkcs7_test"])), "test pkcs7");
 
@@ -1513,3 +1513,22 @@ subtest "SLH-DSA tests for CMS" => sub {
            "accept CMS verify with SLH-DSA-SHAKE-256s");
     }
 };
+
+# Regression test for NULL dereference in PWRI decrypt path
+# when optional keyDerivationAlgorithm is omitted.
+subtest "PWRI missing keyDerivationAlgorithm regression" => sub {
+    plan tests => 1;
+
+    with({ exit_checker => sub { return shift == 4; } }, sub {
+        ok(run(app([
+            "openssl", "cms", @prov,
+            "-decrypt",
+            "-inform", "DER",
+            "-in",
+            srctop_file('test', 'cms-msg', 'missing-kdf.der'),
+            "-out", "pwri-out.txt",
+            "-pwri_password", "secret"])),
+        "missing keyDerivationAlgorithm is rejected");
+    });
+};
+
