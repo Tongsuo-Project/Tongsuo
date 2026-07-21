@@ -10,6 +10,34 @@
 #include "ml_dsa_local.h"
 #include "ml_dsa_poly.h"
 
+#include "avx/ml_dsa_ntt_avx2.h"
+#include "avx/ml_dsa_consts_avx2.h"
+#include "ml_dsa_avx2.h"
+
+
+/*
+ * Function pointer types for NTT operations.
+ * These allow selecting AVX2 or scalar implementations at initialization time.
+ */
+typedef void (*ml_dsa_poly_ntt_fn)(POLY *p);
+typedef void (*ml_dsa_poly_ntt_inverse_fn)(POLY *p);
+typedef void (*ml_dsa_poly_ntt_mult_fn)(const POLY *lhs, const POLY *rhs,
+    POLY *out);
+
+/* Forward declarations of scalar NTT functions */
+static void poly_ntt_scalar(POLY *p);
+static void poly_ntt_inverse_scalar(POLY *p);
+static void poly_ntt_mult_scalar(const POLY *lhs, const POLY *rhs, POLY *out);
+
+/*
+ * NTT function pointers - initialized to scalar implementations by default.
+ */
+static ml_dsa_poly_ntt_fn poly_ntt_impl = poly_ntt_scalar;
+static ml_dsa_poly_ntt_inverse_fn poly_ntt_inverse_impl = poly_ntt_inverse_scalar;
+static ml_dsa_poly_ntt_mult_fn poly_ntt_mult_impl = poly_ntt_mult_scalar;
+
+static CRYPTO_ONCE ml_dsa_ntt_once = CRYPTO_ONCE_STATIC_INIT;
+
 /*
  * This file has multiple parts required for fast matrix multiplication,
  * 1) NTT (See https://eprint.iacr.org/2024/585.pdf)
@@ -108,7 +136,7 @@ static uint32_t reduce_montgomery(uint64_t a)
  * @param rhs A polynomial multiplier
  * @param out The returned result of the polynomial multiply
  */
-void ossl_ml_dsa_poly_ntt_mult(const POLY *lhs, const POLY *rhs, POLY *out)
+void poly_ntt_mult_scalar(const POLY *lhs, const POLY *rhs, POLY *out)
 {
     int i;
 
@@ -126,7 +154,7 @@ void ossl_ml_dsa_poly_ntt_mult(const POLY *lhs, const POLY *rhs, POLY *out)
  * @param p a polynomial that is used as the input, that is replaced with
  *        the NTT of the polynomial
  */
-void ossl_ml_dsa_poly_ntt(POLY *p)
+void poly_ntt_scalar(POLY *p)
 {
     int i, j, k;
     int step;
@@ -160,7 +188,7 @@ void ossl_ml_dsa_poly_ntt(POLY *p)
  * @param p a polynomial that is used as the input, that is overwritten with
  *          the inverse of the NTT.
  */
-void ossl_ml_dsa_poly_ntt_inverse(POLY *p)
+void poly_ntt_inverse_scalar(POLY *p)
 {
     /*
      * Step: 128, 64, 32, 16, ..., 1
@@ -195,4 +223,51 @@ void ossl_ml_dsa_poly_ntt_inverse(POLY *p)
     for (i = 0; i < ML_DSA_NUM_POLY_COEFFICIENTS; i++)
         p->coeff[i] = reduce_montgomery((uint64_t)p->coeff[i] *
                                         (uint64_t)inverse_degree_montgomery);
+}
+
+#ifdef ML_DSA_AVX
+static void poly_ntt_mult_avx2(const POLY *lhs, const POLY *rhs,
+    POLY *out)
+{
+    pointwise_avx(&out->coeff, &lhs->coeff, &rhs->coeff);
+}
+
+static void poly_ntt_avx2(POLY *p)
+{
+    XRQ_ntt_avx2_bo(&p->coeff);
+}
+
+static void poly_ntt_inverse_avx2(POLY *p)
+{
+    XRQ_intt_avx2_bo(&p->coeff);
+}
+#endif
+
+static void ml_dsa_ntt_init(void)
+{
+#ifdef ML_DSA_AVX
+    if (ossl_ml_dsa_avx2_capable()) {
+        poly_ntt_impl = poly_ntt_avx2;
+        poly_ntt_inverse_impl = poly_ntt_inverse_avx2;
+        poly_ntt_mult_impl = poly_ntt_mult_avx2;
+    }
+#endif
+}
+
+void ossl_ml_dsa_poly_ntt_mult(const POLY *lhs, const POLY *rhs, POLY *out)
+{
+    (void)CRYPTO_THREAD_run_once(&ml_dsa_ntt_once, ml_dsa_ntt_init);
+    poly_ntt_mult_impl(lhs, rhs, out);
+}
+
+void ossl_ml_dsa_poly_ntt(POLY *p)
+{
+    (void)CRYPTO_THREAD_run_once(&ml_dsa_ntt_once, ml_dsa_ntt_init);
+    poly_ntt_impl(p);
+}
+
+void ossl_ml_dsa_poly_ntt_inverse(POLY *p)
+{
+    (void)CRYPTO_THREAD_run_once(&ml_dsa_ntt_once, ml_dsa_ntt_init);
+    poly_ntt_inverse_impl(p);
 }

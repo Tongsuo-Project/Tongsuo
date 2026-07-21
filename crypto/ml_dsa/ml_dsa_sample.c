@@ -15,6 +15,9 @@
 #include "internal/sha3.h"
 #include "internal/packet.h"
 
+#include "avx/ml_dsa_sample_avx2.h"
+#include "ml_dsa_avx2.h"
+
 #define SHAKE128_BLOCKSIZE SHA3_BLOCKSIZE(128)
 #define SHAKE256_BLOCKSIZE SHA3_BLOCKSIZE(256)
 
@@ -184,6 +187,31 @@ static int rej_bounded_poly(EVP_MD_CTX *h_ctx, const EVP_MD *md,
     }
 }
 
+
+/*
+ * Function pointer types for sample(uniform) operations.
+ * These allow selecting AVX2 or scalar implementations at initialization time.
+ */
+typedef int (*ossl_ml_dsa_matrix_expand_A_fn)(EVP_MD_CTX *g_ctx, const EVP_MD *md,
+                                const uint8_t *rho, MATRIX *out);
+typedef int (*ossl_ml_dsa_vector_expand_S_fn)(EVP_MD_CTX *h_ctx, const EVP_MD *md, int eta,
+                                const uint8_t *seed, VECTOR *s1, VECTOR *s2);
+
+/* Forward declarations of scalar sample(uniform) functions */
+int ossl_ml_dsa_matrix_expand_A_scalar(EVP_MD_CTX *g_ctx, const EVP_MD *md,
+                                const uint8_t *rho, MATRIX *out);
+int ossl_ml_dsa_vector_expand_S_scalar(EVP_MD_CTX *h_ctx, const EVP_MD *md, int eta,
+                                const uint8_t *seed, VECTOR *s1, VECTOR *s2);
+
+/*
+ * sample(uniform) function pointers - initialized to scalar implementations by default.
+ */
+static ossl_ml_dsa_matrix_expand_A_fn ossl_ml_dsa_matrix_expand_A_impl = ossl_ml_dsa_matrix_expand_A_scalar;
+static ossl_ml_dsa_vector_expand_S_fn ossl_ml_dsa_vector_expand_S_impl = ossl_ml_dsa_vector_expand_S_scalar;
+
+
+static CRYPTO_ONCE ml_dsa_sample_once = CRYPTO_ONCE_STATIC_INIT;
+
 /**
  * @brief Generate a k * l matrix that has uniformly distributed polynomial
  *        elements using rejection sampling.
@@ -197,7 +225,7 @@ static int rej_bounded_poly(EVP_MD_CTX *h_ctx, const EVP_MD *md,
  *            in the range of 0..q-1.
  * @returns 1 if the matrix was generated, or 0 on error.
  */
-int ossl_ml_dsa_matrix_expand_A(EVP_MD_CTX *g_ctx, const EVP_MD *md,
+int ossl_ml_dsa_matrix_expand_A_scalar(EVP_MD_CTX *g_ctx, const EVP_MD *md,
                                 const uint8_t *rho, MATRIX *out)
 {
     int ret = 0;
@@ -240,7 +268,7 @@ err:
  *           the range (q-eta)..0..eta
  * @returns 1 if s1 and s2 were successfully generated, or 0 otherwise.
  */
-int ossl_ml_dsa_vector_expand_S(EVP_MD_CTX *h_ctx, const EVP_MD *md, int eta,
+int ossl_ml_dsa_vector_expand_S_scalar(EVP_MD_CTX *h_ctx, const EVP_MD *md, int eta,
                                 const uint8_t *seed, VECTOR *s1, VECTOR *s2)
 {
     int ret = 0;
@@ -287,6 +315,97 @@ int ossl_ml_dsa_poly_expand_mask(POLY *out, const uint8_t *seed, size_t seed_len
 
     return shake_xof(h_ctx, md, seed, seed_len, buf, buf_len)
         && ossl_ml_dsa_poly_decode_expand_mask(out, buf, buf_len, gamma1);
+}
+
+#ifdef ML_DSA_AVX
+extern void ExpandA_44(MATRIX *mat, const uint8_t *rho);
+extern void ExpandA_65(MATRIX *mat, const uint8_t *rho);
+extern void ExpandA_87(MATRIX *mat, const uint8_t *rho);
+
+extern void ExpandS_44(VECTOR *s1, VECTOR *s2, const uint64_t seed[8]);
+extern void ExpandS_65(VECTOR *s1, VECTOR *s2, const uint64_t seed[8]);
+extern void ExpandS_87(VECTOR *s1, VECTOR *s2, const uint64_t seed[8]);
+
+static int ossl_ml_dsa_matrix_expand_A_avx2(EVP_MD_CTX *g_ctx, const EVP_MD *md,
+                                const uint8_t *rho, MATRIX *out)
+{
+    int ret = 0;
+    
+    if (out == NULL || rho == NULL)
+        goto err;
+
+    if (out->k == 4 && out->l == 4) 
+    {
+        ExpandA_44(out, rho);
+        ret = 1;
+    } else if (out->k == 6 && out->l == 5) 
+    {
+        ExpandA_65(out, rho);
+        ret = 1;
+    } else if (out->k == 8 && out->l == 7) 
+    {
+        ExpandA_87(out, rho);
+        ret = 1;
+    }
+
+    // printf("expand A avx has been called");
+
+err:
+    return ret;
+}
+
+static int ossl_ml_dsa_vector_expand_S_avx2(EVP_MD_CTX *h_ctx, const EVP_MD *md, int eta,
+                                const uint8_t *seed, VECTOR *s1, VECTOR *s2)
+{
+    int ret = 0;
+    
+    if (s1 == NULL || s2 == NULL || seed == NULL)
+        goto err;
+
+    if (s1->num_poly == 4 && s2->num_poly == 4) 
+    {
+        ExpandS_44(s1, s2, seed);
+        ret = 1;
+    } else if (s1->num_poly == 5 && s2->num_poly == 6) 
+    {
+        ExpandS_65(s1, s2, seed);
+        ret = 1;
+    } else if (s1->num_poly == 7 && s2->num_poly == 8) 
+    {
+        ExpandS_87(s1, s2, seed);
+        ret = 1;
+    }
+
+    // printf("expand S avx has been called");
+
+err:
+    return ret;
+}
+
+#endif
+
+static void ml_dsa_sample_init(void)
+{
+#ifdef ML_DSA_AVX
+    if (ossl_ml_dsa_avx2_capable()) {
+        ossl_ml_dsa_matrix_expand_A_impl = ossl_ml_dsa_matrix_expand_A_avx2;
+        ossl_ml_dsa_vector_expand_S_impl = ossl_ml_dsa_vector_expand_S_avx2;
+    }
+#endif
+}
+
+int ossl_ml_dsa_matrix_expand_A(EVP_MD_CTX *g_ctx, const EVP_MD *md,
+                                const uint8_t *rho, MATRIX *out)
+{
+    (void)CRYPTO_THREAD_run_once(&ml_dsa_sample_once, ml_dsa_sample_init);
+    return ossl_ml_dsa_matrix_expand_A_impl(g_ctx, md, rho, out);
+}
+
+int ossl_ml_dsa_vector_expand_S(EVP_MD_CTX *h_ctx, const EVP_MD *md, int eta,
+                                const uint8_t *seed, VECTOR *s1, VECTOR *s2)
+{
+    (void)CRYPTO_THREAD_run_once(&ml_dsa_sample_once, ml_dsa_sample_init);
+    return ossl_ml_dsa_vector_expand_S_impl(h_ctx, md, eta, seed, s1, s2);
 }
 
 /*
