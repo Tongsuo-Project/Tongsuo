@@ -438,11 +438,84 @@ static int paillier_tests(void)
     return 1;
 }
 
+/*
+ * Reject ciphertexts not in Z*_n^2 (gcd(c, n^2) != 1), including c = 0 and
+ * c = n^2 which previously could zero results or break inversion.
+ */
+static int expect_reject_ct(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *bad)
+{
+    int32_t plain = 0;
+    PAILLIER_CIPHERTEXT *good = NULL, *out = NULL;
+    int ok = 0;
+
+    if (!TEST_false(PAILLIER_decrypt(ctx, &plain, bad)))
+        return 0;
+
+    if (!TEST_ptr(good = PAILLIER_CIPHERTEXT_new(ctx))
+        || !TEST_ptr(out = PAILLIER_CIPHERTEXT_new(ctx))
+        || !TEST_true(PAILLIER_encrypt(ctx, good, 7)))
+        goto err;
+
+    if (!TEST_false(PAILLIER_add(ctx, out, good, bad))
+        || !TEST_false(PAILLIER_sub(ctx, out, good, bad))
+        || !TEST_false(PAILLIER_mul(ctx, out, bad, 3))
+        || !TEST_false(PAILLIER_add_plain(ctx, out, bad, 1)))
+        goto err;
+
+    ok = 1;
+err:
+    PAILLIER_CIPHERTEXT_free(good);
+    PAILLIER_CIPHERTEXT_free(out);
+    return ok;
+}
+
+static int paillier_reject_invalid_ciphertext_test(void)
+{
+    int ret = 0;
+    PAILLIER_KEY *key = NULL;
+    PAILLIER_CTX *ctx = NULL;
+    PAILLIER_CIPHERTEXT *ct = NULL;
+    unsigned char z = 0;
+
+    if (!TEST_ptr(key = PAILLIER_KEY_new())
+        || !TEST_true(PAILLIER_KEY_generate_key(key, 255))
+        || !TEST_ptr(ctx = PAILLIER_CTX_new(key, PAILLIER_MAX_THRESHOLD))
+        || !TEST_ptr(ct = PAILLIER_CIPHERTEXT_new(ctx)))
+        goto err;
+
+    /* c = 0 */
+    BN_zero(ct->data);
+    if (!TEST_true(expect_reject_ct(ctx, ct)))
+        goto err;
+
+    /* decode path: all-zero bytes */
+    if (!TEST_false(PAILLIER_CIPHERTEXT_decode(ctx, ct, &z, 1)))
+        goto err;
+
+    /* c = n  ∉ Z*_n^2 */
+    if (!TEST_ptr(BN_copy(ct->data, key->n))
+        || !TEST_true(expect_reject_ct(ctx, ct)))
+        goto err;
+
+    /* c = n^2 */
+    if (!TEST_ptr(BN_copy(ct->data, key->n_square))
+        || !TEST_true(expect_reject_ct(ctx, ct)))
+        goto err;
+
+    ret = 1;
+err:
+    PAILLIER_CIPHERTEXT_free(ct);
+    PAILLIER_CTX_free(ctx);
+    PAILLIER_KEY_free(key);
+    return ret;
+}
+
 int setup_tests(void)
 {
     OPENSSL_load_builtin_modules();
     ENGINE_load_builtin_engines();
     ADD_TEST(paillier_tests);
+    ADD_TEST(paillier_reject_invalid_ciphertext_test);
     return 1;
 }
 
