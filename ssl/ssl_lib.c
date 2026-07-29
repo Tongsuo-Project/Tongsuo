@@ -8447,14 +8447,22 @@ int BABASSL_check_tlsext_status(SSL *s)
 
 void BABASSL_debug(SSL *s, unsigned char *str, int len)
 {
+#ifdef OPENSSL_NO_STDIO
+    (void)s;
+    (void)str;
+    (void)len;
+#else
     int i;
+
+    (void)s;
     if (!str)
         return;
 
-    for(i = 0; i < len; i++)
+    for (i = 0; i < len; i++)
         printf("%02x", str[i]);
     printf("\n");
     printf("%d\n", len);
+#endif
 }
 
 int SSL_get_alert_level(SSL *ssl, int *level, int *desc)
