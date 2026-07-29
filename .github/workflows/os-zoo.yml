@@ -55,11 +55,11 @@ jobs:
       fail-fast: false
       matrix:
         zoo:
-          - image: docker.io/library/debian:10
-            install: apt-get update && apt-get install -y gcc make perl
           - image: docker.io/library/debian:11
             install: apt-get update && apt-get install -y gcc make perl
           - image: docker.io/library/debian:12
+            install: apt-get update && apt-get install -y gcc make perl
+          - image: docker.io/library/debian:13
             install: apt-get update && apt-get install -y gcc make perl
           - image: docker.io/library/ubuntu:20.04
             install: apt-get update && apt-get install -y gcc make perl
