@@ -11,8 +11,24 @@
 #include <openssl/bio.h>
 #include <openssl/crypto.h>
 #include "internal/nelem.h"
+#include "internal/slog.h"
 
 static int logging = 0;
+
+void OSSL_syslog_err(const char *message)
+{
+    ossl_syslog(LOG_ERR, message);
+}
+
+void OSSL_syslog_notice(const char *message)
+{
+    ossl_syslog(LOG_NOTICE, message);
+}
+
+void OSSL_syslog_info(const char *message)
+{
+    ossl_syslog(LOG_INFO, message);
+}
 
 void OSSL_enable_syslog(void)
 {
@@ -24,7 +40,7 @@ void OSSL_disable_syslog(void)
     logging = 0;
 }
 
-void OSSL_syslog(int priority, const char *message, ...)
+void ossl_syslog(int priority, const char *message, ...)
 {
     va_list args;
     unsigned char buf[4096];

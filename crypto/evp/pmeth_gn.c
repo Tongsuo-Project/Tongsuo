@@ -22,6 +22,10 @@
 #include "crypto/evp.h"
 #include "evp_local.h"
 
+#ifdef SMTC_MODULE
+# include "internal/slog.h"
+#endif
+
 static int gen_init(EVP_PKEY_CTX *ctx, int operation)
 {
     int ret = 0;
@@ -278,7 +282,7 @@ int EVP_PKEY_keygen(EVP_PKEY_CTX *ctx, EVP_PKEY **ppkey)
     }
 
 #ifdef SMTC_MODULE
-    OSSL_syslog(LOG_INFO, "Creating a key pair\n");
+    ossl_syslog(LOG_INFO, "Creating a key pair\n");
 #endif
     return EVP_PKEY_generate(ctx, ppkey);
 }

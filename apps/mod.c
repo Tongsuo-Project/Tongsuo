@@ -172,7 +172,7 @@ static int setup_password(EVP_PKEY *kek, unsigned char *auth_salt,
     }
 
     ok = 1;
-    OSSL_syslog(LOG_NOTICE, "Setup password success\n");
+    OSSL_syslog_info("Setup password success\n");
 end:
     EVP_PKEY_CTX_free(ctx);
     OPENSSL_free(enc_key);

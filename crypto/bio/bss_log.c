@@ -21,6 +21,7 @@
 
 #include "bio_local.h"
 #include "internal/cryptlib.h"
+#include "internal/slog.h"
 
 #include <openssl/crypto.h>
 #include <openssl/buffer.h>

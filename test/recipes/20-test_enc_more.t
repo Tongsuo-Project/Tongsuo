@@ -41,6 +41,10 @@ my @ciphers =
                       |desx|rc4)/x} @ciphers
     if disabled("legacy");
 
+# Currently we cannot derive whitebox keys from a password.
+# TODO: consider password=>normal key=>whitebox key
+@ciphers = grep {!/^-wbsm4/} @ciphers;
+
 plan tests => 3 + scalar @ciphers;
 
 SKIP: {

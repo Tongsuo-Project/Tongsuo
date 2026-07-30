@@ -38,7 +38,7 @@ jobs:
         CC=gcc ./config --banner=Configured --debug enable-ntls enable-smtc enable-smtc-debug enable-rc5 enable-ssl3 \
         enable-nextprotoneg enable-ssl3-method enable-weak-ssl-ciphers enable-zlib enable-ec_nistp_64_gcc_128 no-shared \
         enable-buildtest-c++ enable-external-tests enable-ec_elgamal enable-twisted_ec_elgamal enable-paillier \
-        enable-cert-compression enable-delegated-credential enable-bn-method enable-bulletproofs enable-nizk \
+        enable-delegated-credential enable-bn-method enable-bulletproofs enable-nizk \
         enable-zkp-gadget enable-sm2_threshold -DPEDANTIC
     - name: config dump
       run: ./configdata.pm --dump

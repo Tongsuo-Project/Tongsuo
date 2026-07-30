@@ -408,10 +408,10 @@ static int verify_password(OSSL_LIB_CTX *libctx, const char *conf_key,
 end:
     if (!ok) {
         OSSL_TRACE(SMTC, "Authentication failed\n");
-        OSSL_syslog(LOG_ERR, "[SMTC] Admin login failed!\n");
+        OSSL_syslog_err("[SMTC] Admin login failed!\n");
         OSSL_sleep(3000);
     } else {
-        OSSL_syslog(LOG_INFO, "[SMTC] Admin login success\n");
+        OSSL_syslog_info("[SMTC] Admin login success\n");
     }
     EVP_PKEY_CTX_free(ctx);
     OPENSSL_free(mac_key);
@@ -444,9 +444,9 @@ static void smtc_set_state(int state)
     }
 
     if (state == SMTC_STATE_ERROR) {
-        OSSL_syslog(LOG_ERR, "[SMTC] SMTC module entering error state\n");
+        OSSL_syslog_err("[SMTC] SMTC module entering error state\n");
     } else if (state == SMTC_STATE_RUNNING) {
-        OSSL_syslog(LOG_INFO, "[SMTC] SMTC module ready\n");
+        OSSL_syslog_info("[SMTC] SMTC module ready\n");
     }
 }
 
@@ -673,10 +673,10 @@ end:
         ossl_prov_bio_free(bio_module);
 
     if (ok) {
-        OSSL_syslog(LOG_INFO, "[SMTC] Self-test passed\n");
+        OSSL_syslog_info("[SMTC] Self-test passed\n");
         smtc_set_state(SMTC_STATE_RUNNING);
     } else {
-        OSSL_syslog(LOG_ERR, "[SMTC] Self-test failed\n");
+        OSSL_syslog_err("[SMTC] Self-test failed\n");
         smtc_set_state(SMTC_STATE_ERROR);
     }
     CRYPTO_THREAD_unlock(self_test_lock);
