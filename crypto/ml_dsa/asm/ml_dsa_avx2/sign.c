@@ -1,4 +1,3 @@
-#include "ml_dsa_avx2_target.h"
 #include <stdint.h>
 #include "params.h"
 #include "sign.h"
@@ -122,8 +121,8 @@ int crypto_sign_signature_ex(uint8_t *sig, size_t *siglen,
     polyvecl mat[K], y, z;
     polyveck t0, w1, w0, tmp;
     poly h, c;
-    sword s1list[L][3 * N];
-    sword s2list[K][3 * N];
+    ALIGN(32) sword s1list[L][3 * N];
+    ALIGN(32) sword s2list[K][3 * N];
     uint8_t *buf = NULL;
     ALIGN(32) uint8_t trbuf[CRHBYTES];
 
@@ -177,10 +176,12 @@ rej:
         nonce += 4;
         count++;
     }
-    for (i = 0; i < L; ++i) polyz_unpack(&y.vec[i], loop_dequeue(&loop));
+    /* Save each initialized polynomial before transforming y. */
+    for (i = 0; i < L; ++i) {
+        polyz_unpack(&y.vec[i], loop_dequeue(&loop));
+        z.vec[i] = y.vec[i];
+    }
 
-    /* Save y and transform it */
-    z = y;
     polyvecl_ntt_so(&y);
 
     for (i = 0; i < K; i++) {

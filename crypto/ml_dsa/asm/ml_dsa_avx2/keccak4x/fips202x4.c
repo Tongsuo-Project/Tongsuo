@@ -1,4 +1,3 @@
-#include "../ml_dsa_avx2_target.h"
 #include "fips202.h"
 #include "fips202x4.h"
 #include "KeccakP-1600-times4-SnP.h"
@@ -6,7 +5,9 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include "../ml_dsa_avx2_target.h"
 
+ML_DSA_AVX2_TARGET_BEGIN
 
 void XURQ_AVX2_shake128x4_squeezeblocks(uint8_t *out0,
                                         uint8_t *out1,
@@ -224,3 +225,5 @@ void XURQ_AVX2_shake256x4_squeezeblocks(uint8_t *out0,
 
 
 }
+
+ML_DSA_AVX2_TARGET_END

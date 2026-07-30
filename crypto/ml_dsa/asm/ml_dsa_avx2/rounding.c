@@ -1,9 +1,11 @@
-#include "ml_dsa_avx2_target.h"
 #include <stdint.h>
 #include <immintrin.h>
 #include "params.h"
 #include "rounding.h"
 #include "ntt/consts.h"
+#include "ml_dsa_avx2_target.h"
+
+ML_DSA_AVX2_TARGET_BEGIN
 
 #define _mm256_blendv_epi32(a,b,mask) \
   _mm256_castps_si256(_mm256_blendv_ps(_mm256_castsi256_ps(a), \
@@ -199,3 +201,5 @@ void use_hint_avx(int32_t * restrict b, const int32_t * restrict a, const int32_
     _mm256_store_si256((__m256i *)&b[8*i],g);
   }
 }
+
+ML_DSA_AVX2_TARGET_END

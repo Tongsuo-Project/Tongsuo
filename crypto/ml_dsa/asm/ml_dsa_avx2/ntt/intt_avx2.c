@@ -1,7 +1,6 @@
 //
 // Created by xurq on 2023/5/26.
 //
-#include "../ml_dsa_avx2_target.h"
 #ifndef DILITHIUM_MODE
 # define DILITHIUM_MODE 3
 #endif
@@ -9,11 +8,14 @@
 
 #include "cdecl.h"
 #include "consts.h"
+#include "ntt.h"
 #include "../params.h"
+#include "../ml_dsa_avx2_target.h"
 
+ML_DSA_AVX2_TARGET_BEGIN
 
-static const __m256i* in_zeta = (__m256i*)(inv_qdata);
-// static const __m256i* v_zinvq = (__m256i*)(inv_qdata + 128);
+static const __m256i *in_zeta =
+    (const __m256i *)(const void *)inv_qdata;
 
 
 #define shuffle8(a,b) \
@@ -126,28 +128,34 @@ reduce(z3)\
 
 
 
+#define ML_DSA_LOAD256(ptr) \
+    _mm256_load_si256((const __m256i *)(const void *)(ptr))
+
+#define ML_DSA_STORE256(ptr, value) \
+    _mm256_store_si256((__m256i *)(void *)(ptr), (value))
+
 #define LOAD(n,m) \
-z0 = _mm256_load_si256((c + (n)     ));\
-z1 = _mm256_load_si256((c + (n) + 8 ));\
-z2 = _mm256_load_si256((c + (n) + 16));\
-z3 = _mm256_load_si256((c + (n) + 24));\
-z4 = _mm256_load_si256((c + (m)     ));\
-z5 = _mm256_load_si256((c + (m) + 8 ));\
-z6 = _mm256_load_si256((c + (m) + 16));\
-z7 = _mm256_load_si256((c + (m) + 24));\
+z0 = ML_DSA_LOAD256(c + (n)     );\
+z1 = ML_DSA_LOAD256(c + (n) + 8 );\
+z2 = ML_DSA_LOAD256(c + (n) + 16);\
+z3 = ML_DSA_LOAD256(c + (n) + 24);\
+z4 = ML_DSA_LOAD256(c + (m)     );\
+z5 = ML_DSA_LOAD256(c + (m) + 8 );\
+z6 = ML_DSA_LOAD256(c + (m) + 16);\
+z7 = ML_DSA_LOAD256(c + (m) + 24);\
 \
 
 
 
 #define STORE(n,m) \
-_mm256_store_si256((c + (n)     ), z0);\
-_mm256_store_si256((c + (n) + 8 ), z1);\
-_mm256_store_si256((c + (n) + 16), z2);\
-_mm256_store_si256((c + (n) + 24), z3);\
-_mm256_store_si256((c + (m)     ), z4);\
-_mm256_store_si256((c + (m) + 8 ), z5);\
-_mm256_store_si256((c + (m) + 16), z6);\
-_mm256_store_si256((c + (m) + 24), z7);\
+ML_DSA_STORE256(c + (n)     , z0);\
+ML_DSA_STORE256(c + (n) + 8 , z1);\
+ML_DSA_STORE256(c + (n) + 16, z2);\
+ML_DSA_STORE256(c + (n) + 24, z3);\
+ML_DSA_STORE256(c + (m)     , z4);\
+ML_DSA_STORE256(c + (m) + 8 , z5);\
+ML_DSA_STORE256(c + (m) + 16, z6);\
+ML_DSA_STORE256(c + (m) + 24, z7);\
 \
 
 
@@ -507,15 +515,13 @@ void XRQ_intt_avx2_bo(int32_t c[256]) {
 
 }
 
-
-
 void XRQ_intt_avx2_so(int32_t c[256]) {
     const __m256i q = _mm256_set1_epi32(Q);
     const __m256i div = _mm256_set1_epi32(DIV);
     const __m256i dqiv = _mm256_set1_epi32(DIV_QINV);
 
     __m256i z0, z1, z2, z3, z4, z5, z6, z7;
-    __m256i zeta,r0,r1,t,f,zinvq;
+    __m256i zeta,r0,r1,t,zinvq;
     int i = 0;
 
     LOAD(0,32)
@@ -724,3 +730,5 @@ void XRQ_intt_avx2_so(int32_t c[256]) {
     STORE(96,224)
 
 }
+
+ML_DSA_AVX2_TARGET_END

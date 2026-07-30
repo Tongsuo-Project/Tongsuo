@@ -1,10 +1,37 @@
-#include "ml_dsa_avx2_target.h"
 #include <stdio.h>
 #include "pspm.h"
 #include "polyvec.h"
 #include "params.h"
 #include <immintrin.h>
 #include <string.h>
+#include "ml_dsa_avx2_target.h"
+
+ML_DSA_AVX2_TARGET_BEGIN
+
+static inline __m256i ml_dsa_load256(const void *ptr)
+{
+    return _mm256_load_si256((const __m256i *)ptr);
+}
+
+static inline __m256i ml_dsa_loadu256(const void *ptr)
+{
+    return _mm256_loadu_si256((const __m256i_u *)ptr);
+}
+
+static inline void ml_dsa_store256(void *ptr, __m256i value)
+{
+    _mm256_store_si256((__m256i *)ptr, value);
+}
+
+static inline void ml_dsa_storeu256(void *ptr, __m256i value)
+{
+    _mm256_storeu_si256((__m256i_u *)ptr, value);
+}
+
+#define _mm256_load_si256(ptr) ml_dsa_load256(ptr)
+#define _mm256_loadu_si256(ptr) ml_dsa_loadu256(ptr)
+#define _mm256_store_si256(ptr, value) ml_dsa_store256((ptr), (value))
+#define _mm256_storeu_si256(ptr, value) ml_dsa_storeu256((ptr), (value))
 
 #if ETA == 2
 void poly_emulate_cs(poly *r, const poly *c, sword s1_table[N * 3]) {
@@ -120,7 +147,7 @@ void emulate_cs2(polyveck *r, const poly *c, uint16_t s2_table[K][N * 3])
 {
     ALIGN(32) uint16_t w[N];
     uint16_t *s;
-    __m256i w256, s256, f0, f1, f2, f3, t;
+    __m256i w256, s256;
 
     for (int k = 0; k < K; k++)
     {
@@ -200,7 +227,7 @@ int emulate_ct(polyveck *r, const poly *c, const polyveck *t)
     ALIGN(32) int32_t stable[N * 3];
 
     int32_t *stable32;
-    __m256i w256, s256, f0, f1, f2, f3;
+    __m256i w256, s256, f0, f1;
     const __m256i zero = _mm256_setzero_si256();
 
     for (int k = 0; k < K; k++)
@@ -264,3 +291,10 @@ int poly_emulate_ct(poly *r, const poly *c, const poly *t) {
 
     return 0;
 }
+
+#undef _mm256_storeu_si256
+#undef _mm256_store_si256
+#undef _mm256_loadu_si256
+#undef _mm256_load_si256
+
+ML_DSA_AVX2_TARGET_END

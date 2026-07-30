@@ -1,4 +1,3 @@
-#include "ml_dsa_avx2_target.h"
 #include "params.h"
 #include "packing.h"
 
@@ -6,7 +5,54 @@
 
 #include "polyvec.h"
 #include "poly.h"
+#include "ml_dsa_avx2_target.h"
 
+ML_DSA_AVX2_TARGET_BEGIN
+
+static inline __m256i ml_dsa_load256(const void *ptr)
+{
+  return _mm256_load_si256((const __m256i *)ptr);
+}
+
+static inline __m256i ml_dsa_loadu256(const void *ptr)
+{
+  return _mm256_loadu_si256((const __m256i_u *)ptr);
+}
+
+static inline __m256i ml_dsa_load_partial(const void *ptr, size_t length)
+{
+  __m256i value = _mm256_setzero_si256();
+
+  memcpy(&value, ptr, length);
+  return value;
+}
+
+static inline void ml_dsa_store256(void *ptr, __m256i value)
+{
+  _mm256_store_si256((__m256i *)ptr, value);
+}
+
+static inline void ml_dsa_storeu256(void *ptr, __m256i value)
+{
+  _mm256_storeu_si256((__m256i_u *)ptr, value);
+}
+
+static inline void ml_dsa_store_partial(void *ptr, __m128i value,
+                                        size_t length)
+{
+  memcpy(ptr, &value, length);
+}
+
+static inline void ml_dsa_store_partial256(void *ptr, __m256i value,
+                                           size_t length)
+{
+  memcpy(ptr, &value, length);
+}
+
+#define _mm256_load_si256(ptr) ml_dsa_load256(ptr)
+#define _mm256_loadu_si256(ptr) ml_dsa_loadu256(ptr)
+#define _mm256_store_si256(ptr, value) ml_dsa_store256((ptr), (value))
+#define _mm256_storeu_si256(ptr, value) ml_dsa_storeu256((ptr), (value))
 /*************************************************
 * Name:        pack_pk
 *
@@ -78,7 +124,7 @@ static void gen_slist(sword slist[N * 3], const uint8_t *a) {
   const __m256i eta = _mm256_set1_epi8(ETA);
 
   for (int i = 0; i < N/32; ++i) {
-    t = _mm256_loadu_si256((__m256i *) (a + 12 * i));
+    t = ml_dsa_load_partial(a + 12 * i, 12);
 
     f0 = _mm256_permutevar8x32_epi32(t,zero);
     f0 = _mm256_srlv_epi32(f0,idx0);
@@ -326,8 +372,8 @@ void polyt1_pack(uint8_t *r, const poly *a) {
 
     g0 = _mm256_castsi256_si128(f0);
     g1 = _mm256_extractf128_si256(f0, 1);
-    _mm_storeu_si128((__m128i_u *) (r + i * 10), g0);
-    _mm_storeu_si128((__m128i_u *) (r + i * 10 + 5), g1);
+    ml_dsa_store_partial(r + i * 10, g0, 5);
+    ml_dsa_store_partial(r + i * 10 + 5, g1, 5);
   }
   uint64_t v0, v1;
   for (int i = 30; i < 32; ++i) {
@@ -370,7 +416,7 @@ void polyt1_unpack(poly *r, const uint8_t *a) {
   __m256i index = _mm256_set_epi32(6, 4, 2, 0, 6, 4, 2, 0);
 
   for (int i = 0; i < 16; ++i) {
-    b = _mm256_loadu_si256((__m256i *) (a + 20 * i));
+    b = ml_dsa_load_partial(a + 20 * i, 20);
     b = _mm256_permutevar8x32_epi32(b, mask0);
     b = _mm256_shuffle_epi8(b, mask1);
     b0 = _mm256_cvtepi16_epi32(_mm256_castsi256_si128(b));
@@ -426,7 +472,7 @@ void polyt0_pack(uint8_t *r, const poly *a) {
     f0 = _mm256_srlv_epi64(f0, idx0);
 
     g0 = _mm256_castsi256_si128(f0);
-    _mm_storeu_si128((__m128i_u *) (r + i * 13), g0);
+    ml_dsa_store_partial(r + i * 13, g0, 13);
   }
 }
 
@@ -448,7 +494,7 @@ void polyt0_unpack(poly *r, const uint8_t *a) {
   const __m256i d = _mm256_set1_epi32(1 << (D - 1));
 
   for (int i = 0; i < N / 8; ++i) {
-    f0 = _mm256_loadu_si256((__m256i *) (a + 13 * i));
+    f0 = ml_dsa_load_partial(a + 13 * i, 13);
 
     f1 = _mm256_permute4x64_epi64(f0, 0x44);
     f1 = _mm256_shuffle_epi8(f1, idx0);
@@ -522,29 +568,28 @@ void polyz_pack(uint8_t *r, const poly *a) {
 
     g0 = _mm256_castsi256_si128(f0);
     g1 = _mm256_extractf128_si256(f0, 1);
-    _mm_storeu_si128((__m128i_u *) (r + i * 72 + 0), g0);
-    _mm_storeu_si128((__m128i_u *) (r + i * 72 + 9), g1);
+    ml_dsa_store_partial(r + i * 72 + 0, g0, 9);
+    ml_dsa_store_partial(r + i * 72 + 9, g1, 9);
 
     g0 = _mm256_castsi256_si128(f1);
     g1 = _mm256_extractf128_si256(f1, 1);
-    _mm_storeu_si128((__m128i_u *) (r + i * 72 + 18), g0);
-    _mm_storeu_si128((__m128i_u *) (r + i * 72 + 27), g1);
+    ml_dsa_store_partial(r + i * 72 + 18, g0, 9);
+    ml_dsa_store_partial(r + i * 72 + 27, g1, 9);
 
     g0 = _mm256_castsi256_si128(f2);
     g1 = _mm256_extractf128_si256(f2, 1);
-    _mm_storeu_si128((__m128i_u *) (r + i * 72 + 36), g0);
-    _mm_storeu_si128((__m128i_u *) (r + i * 72 + 45), g1);
+    ml_dsa_store_partial(r + i * 72 + 36, g0, 9);
+    ml_dsa_store_partial(r + i * 72 + 45, g1, 9);
 
     g0 = _mm256_castsi256_si128(f3);
     g1 = _mm256_extractf128_si256(f3, 1);
-    _mm_storeu_si128((__m128i_u *) (r + i * 72 + 54), g0);
-    _mm_storeu_si128((__m128i_u *) (r + i * 72 + 63), g1);
+    ml_dsa_store_partial(r + i * 72 + 54, g0, 9);
+    ml_dsa_store_partial(r + i * 72 + 63, g1, 9);
   }
 }
 #elif GAMMA1 == (1 << 19)
 void polyz_pack(uint8_t *r, const poly *a) {
-  __m256i f0, f1, f2, f3;
-  __m256i p0, p1, p2, p3;
+  __m256i f0, p0;
 
   const __m256i mask0 = _mm256_set1_epi64x(0xffffffff);
   const __m256i gamma = _mm256_set1_epi32(GAMMA1);
@@ -559,8 +604,9 @@ void polyz_pack(uint8_t *r, const poly *a) {
     f0 = (f0 & mask0) | _mm256_srli_epi64(p0, 12);
     f0 = _mm256_shuffle_epi8(f0, index);
 
-    _mm_storeu_si128(r + 20 * i, _mm256_castsi256_si128(f0));
-    _mm_storeu_si128(r + 20 * i + 10, _mm256_extracti128_si256(f0, 1));
+    ml_dsa_store_partial(r + 20 * i, _mm256_castsi256_si128(f0), 10);
+    ml_dsa_store_partial(r + 20 * i + 10,
+                         _mm256_extracti128_si256(f0, 1), 10);
   }
 }
 #endif
@@ -586,7 +632,7 @@ void polyz_unpack(poly *restrict r, const uint8_t *a) {
   const __m256i gamma1 = _mm256_set1_epi32(GAMMA1);
 
   for (i = 0; i < N / 8; i++) {
-    f = _mm256_loadu_si256(a + 20 * i);
+    f = ml_dsa_load_partial(a + 20 * i, 20);
     f = _mm256_permute4x64_epi64(f, 0x94);
     f = _mm256_shuffle_epi8(f, shufbidx);
     f = _mm256_srlv_epi32(f, srlvdidx);
@@ -607,9 +653,9 @@ void polyz_unpack(poly *r, const uint8_t *a) {
   const __m256i gamma1 = _mm256_set1_epi32(GAMMA1);
 
   for (int i = 0; i < 30; i += 3) {
-    f0 = _mm256_loadu_si256((__m256i *) &a[18 * i]);
-    f1 = _mm256_loadu_si256((__m256i *) &a[18 * i + 18]);
-    f2 = _mm256_loadu_si256((__m256i *) &a[18 * i + 36]);
+    f0 = ml_dsa_load_partial(&a[18 * i], 18);
+    f1 = ml_dsa_load_partial(&a[18 * i + 18], 18);
+    f2 = ml_dsa_load_partial(&a[18 * i + 36], 18);
 
     f0 = _mm256_permute4x64_epi64(f0, 0x94);
     f1 = _mm256_permute4x64_epi64(f1, 0x94);
@@ -636,8 +682,8 @@ void polyz_unpack(poly *r, const uint8_t *a) {
     _mm256_store_si256(&r->vec[i + 2], f2);
   }
 
-  f0 = _mm256_loadu_si256((__m256i *) &a[18 * 30]);
-  f1 = _mm256_loadu_si256((__m256i *) &a[18 * 31]);
+  f0 = ml_dsa_load_partial(&a[18 * 30], 18);
+  f1 = ml_dsa_load_partial(&a[18 * 31], 18);
 
   f0 = _mm256_permute4x64_epi64(f0, 0x94);
   f1 = _mm256_permute4x64_epi64(f1, 0x94);
@@ -693,7 +739,7 @@ void polyw1_pack(uint8_t *r, const poly *a) {
     f0 = _mm256_permutevar8x32_epi32(f0, shufdidx1);
     f0 = _mm256_shuffle_epi8(f0, shufbidx);
     f0 = _mm256_permutevar8x32_epi32(f0, shufdidx2);
-    _mm256_storeu_si256((__m256i *) &r[24 * i], f0);
+    ml_dsa_store_partial256(&r[24 * i], f0, 24);
   }
 }
 
@@ -750,3 +796,10 @@ void polyw1_pack(uint8_t *restrict r, const poly *restrict a) {
   }
 }
 #endif
+
+#undef _mm256_storeu_si256
+#undef _mm256_store_si256
+#undef _mm256_loadu_si256
+#undef _mm256_load_si256
+
+ML_DSA_AVX2_TARGET_END

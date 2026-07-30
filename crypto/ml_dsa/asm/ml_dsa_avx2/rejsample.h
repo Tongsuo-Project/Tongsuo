@@ -42,9 +42,10 @@ void poly_uniform_4x_op13(poly *a0, poly *a1, poly *a2, poly *a3, const uint8_t 
 
 void ExpandA_shuffled(polyvecl mat[K], const uint8_t rho[32]);
 
-void ExpandA(polyvecl mat[K], const uint8_t *rho);
+void ExpandA(polyvecl mat[K], const uint8_t rho[SEEDBYTES]);
 
-void ExpandA_row(polyvecl **row, polyvecl buf[2], const uint8_t *rho, unsigned int i);
+void ExpandA_row(polyvecl **row, polyvecl buf[2], const uint8_t rho[SEEDBYTES],
+                 unsigned int i);
 
 void pack_eta(uint8_t *r, const uint8_t *pipe);
 

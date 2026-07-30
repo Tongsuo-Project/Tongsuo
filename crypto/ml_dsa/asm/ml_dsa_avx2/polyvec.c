@@ -1,4 +1,3 @@
-#include "ml_dsa_avx2_target.h"
 #include <stdint.h>
 #include "params.h"
 #include "polyvec.h"

@@ -1,4 +1,3 @@
-#include "ml_dsa_avx2_target.h"
 #include <openssl/rand.h>
 #include "randombytes.h"
 

@@ -4,9 +4,13 @@
 #include <stdint.h>
 #include "params.h"
 
-void power2round_avx(int32_t a1[N], int32_t a0[N], const int32_t a[N]);
-void decompose_avx(int32_t a1[N], int32_t a0[N], const int32_t a[N]);
-unsigned int make_hint_avx(int32_t h[N], const int32_t a0[N], const int32_t a1[N]);
-void use_hint_avx(int32_t b[N], const int32_t a[N], const int32_t hint[N]);
+void power2round_avx(int32_t *restrict a1, int32_t *restrict a0,
+                     const int32_t *restrict a);
+void decompose_avx(int32_t *restrict a1, int32_t *restrict a0,
+                   const int32_t *restrict a);
+unsigned int make_hint_avx(int32_t *restrict h, const int32_t *restrict a0,
+                           const int32_t *restrict a1);
+void use_hint_avx(int32_t *restrict b, const int32_t *restrict a,
+                  const int32_t *restrict hint);
 
 #endif

@@ -41,7 +41,7 @@ uint8_t *mu,uint8_t *tr, const uint8_t *m,int mlen,
 poly *c,const uint8_t *c_seed);
 
 void hybrid_uniform_2x_and_ExpandRand(poly *a0, poly *a1, loop_queue *loop, const uint8_t rho[32],
-                                      const uint8_t rhoprime[32], uint16_t nonce0, uint16_t nonce1, uint16_t noncey0,
+                                      const uint8_t rhoprime[64], uint16_t nonce0, uint16_t nonce1, uint16_t noncey0,
                                       uint16_t noncey1);
 
 void hybrid_uniform_3x_and_ExpandRand(poly *a0, poly *a1, poly *a2, loop_queue *loop, const uint8_t rho[32],

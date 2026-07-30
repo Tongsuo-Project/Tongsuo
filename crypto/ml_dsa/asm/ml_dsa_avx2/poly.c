@@ -1,4 +1,3 @@
-#include "ml_dsa_avx2_target.h"
 #include <stdint.h>
 #include <immintrin.h>
 #include "params.h"
@@ -9,7 +8,9 @@
 #include "keccak4x/symmetric.h"
 #include "fips202x4.h"
 #include "ntt/consts.h"
+#include "ml_dsa_avx2_target.h"
 
+ML_DSA_AVX2_TARGET_BEGIN
 
 #define _mm256_blendv_epi32(a,b,mask) \
   _mm256_castps_si256(_mm256_blendv_ps(_mm256_castsi256_ps(a), \
@@ -351,3 +352,5 @@ int poly_challenge_with_buf(poly *c, const uint8_t *c_buf, int round, uint64_t *
   *sign = signs;
   return round;
 }
+
+ML_DSA_AVX2_TARGET_END

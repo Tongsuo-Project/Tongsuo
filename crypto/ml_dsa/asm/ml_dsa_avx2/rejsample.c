@@ -1,4 +1,3 @@
-#include "ml_dsa_avx2_target.h"
 #include <stdint.h>
 #include <immintrin.h>
 #include "params.h"
@@ -10,7 +9,9 @@
 #include "keccak4x/fips202x4.h"
 #include "ntt/consts.h"
 #include "ntt/ntt.h"
+#include "ml_dsa_avx2_target.h"
 
+ML_DSA_AVX2_TARGET_BEGIN
 
 
 ALIGN(32)
@@ -287,8 +288,7 @@ void poly_uniform_4x_op13_state_trans(poly *a0,
     unsigned int ctr[4] = {0};
     ALIGN(32) uint8_t buf[4][192];
     keccakx4_state state;
-    uint64_t *seed64 = (uint64_t *) seed;
-    __m256i f0, f1, f2, f3, f4, f5, f6, f7;;
+    __m256i f0, f1, f2, f3;
 
     f0 = _mm256_loadu_si256((__m256i *)seed);
     f1 = f0;
@@ -388,7 +388,7 @@ void poly_uniform_4x_op13(poly *a0,
 
 #if K == 4
 
-void ExpandA_shuffled(polyvecl mat[4], const uint8_t *rho) {
+void ExpandA_shuffled(polyvecl mat[4], const uint8_t rho[SEEDBYTES]) {
     poly_uniform_4x_op13(&mat[0].vec[0], &mat[0].vec[1], &mat[0].vec[2], &mat[0].vec[3], rho, 0, 1, 2, 3);
     shuffle(mat[0].vec[0].coeffs);
     shuffle(mat[0].vec[1].coeffs);
@@ -444,33 +444,39 @@ void ExpandA_row(polyvecl **row, polyvecl buf[2], const uint8_t rho[32], unsigne
 
 #elif K == 6
 
-void XURQ_AVX2_polyvec_matrix_expand_row0(polyvecl *rowa, polyvecl *rowb, const uint8_t rho[SEEDBYTES]) {
+static void XURQ_AVX2_polyvec_matrix_expand_row0(polyvecl *rowa, polyvecl *rowb,
+                                                const uint8_t rho[SEEDBYTES]) {
     poly_uniform_4x_op13(&rowa->vec[0], &rowa->vec[1], &rowa->vec[2], &rowa->vec[3], rho, 0, 1, 2, 3);
     poly_uniform_4x_op13(&rowa->vec[4], &rowb->vec[0], &rowb->vec[1], &rowb->vec[2], rho, 4, 256, 257, 258);
 }
 
-void XURQ_AVX2_polyvec_matrix_expand_row1(polyvecl *rowa, polyvecl *rowb, const uint8_t rho[SEEDBYTES]) {
+static void XURQ_AVX2_polyvec_matrix_expand_row1(polyvecl *rowa, polyvecl *rowb,
+                                                const uint8_t rho[SEEDBYTES]) {
     poly_uniform_4x_op13(&rowa->vec[3], &rowa->vec[4], &rowb->vec[0], &rowb->vec[1], rho, 259, 260, 512, 513);
 
 }
 
-void XURQ_AVX2_polyvec_matrix_expand_row2(polyvecl *rowa, polyvecl *rowb, const uint8_t rho[SEEDBYTES]) {
+static void XURQ_AVX2_polyvec_matrix_expand_row2(polyvecl *rowa, polyvecl *rowb,
+                                                const uint8_t rho[SEEDBYTES]) {
     poly_uniform_4x_op13(&rowa->vec[2], &rowa->vec[3], &rowa->vec[4], &rowb->vec[0], rho, 514, 515, 516, 768);
 
 }
 
-void XURQ_AVX2_polyvec_matrix_expand_row3(polyvecl *rowa, polyvecl *rowb, const uint8_t rho[SEEDBYTES]) {
+static void XURQ_AVX2_polyvec_matrix_expand_row3(polyvecl *rowa, polyvecl *rowb,
+                                                const uint8_t rho[SEEDBYTES]) {
     poly_uniform_4x_op13(&rowa->vec[1], &rowa->vec[2], &rowa->vec[3], &rowa->vec[4], rho, 769, 770, 771, 772);
 
 }
 
-void XURQ_AVX2_polyvec_matrix_expand_row4(polyvecl *rowa, polyvecl *rowb, const uint8_t rho[SEEDBYTES]) {
+static void XURQ_AVX2_polyvec_matrix_expand_row4(polyvecl *rowa, polyvecl *rowb,
+                                                const uint8_t rho[SEEDBYTES]) {
     poly_uniform_4x_op13(&rowa->vec[0], &rowa->vec[1], &rowa->vec[2], &rowa->vec[3], rho, 1024, 1025, 1026, 1027);
     poly_uniform_4x_op13(&rowa->vec[4], &rowb->vec[0], &rowb->vec[1], &rowb->vec[2], rho, 1028, 1280, 1281, 1282);
 
 }
 
-void XURQ_AVX2_polyvec_matrix_expand_row5(polyvecl *rowa, polyvecl *rowb, const uint8_t rho[SEEDBYTES]) {
+static void XURQ_AVX2_polyvec_matrix_expand_row5(polyvecl *rowa, polyvecl *rowb,
+                                                const uint8_t rho[SEEDBYTES]) {
     poly_uniform_4x_op13(&rowa->vec[3], &rowa->vec[4], &rowb->vec[0], &rowb->vec[1], rho, 1283, 1284, 1536, 1537);
 
 }
@@ -757,11 +763,9 @@ void ExpandA_row(polyvecl **row, polyvecl buf[2], const uint8_t rho[SEEDBYTES], 
 }
 #endif
 
-
-
 #if K == 4
 
-void ExpandA(polyvecl mat[K], const uint8_t *rho) {
+void ExpandA(polyvecl mat[K], const uint8_t rho[SEEDBYTES]) {
     poly_uniform_4x_op13(&mat[0].vec[0], &mat[0].vec[1], &mat[0].vec[2], &mat[0].vec[3], rho, 0, 1, 2, 3);
     poly_uniform_4x_op13(&mat[1].vec[0], &mat[1].vec[1], &mat[1].vec[2], &mat[1].vec[3], rho, 256, 257,
                          258, 259);
@@ -938,30 +942,24 @@ static uint32_t rej_eta_final2(int32_t *restrict r, uint8_t *pipe, uint32_t ctr,
         return ctr;
     }
 
-    //ctr > 248
-    ALIGN(32) int32_t t[8];
+    /* Fewer than eight coefficients remain. Preserve the order of all
+     * accepted nibbles instead of counting one half and reading the other. */
+    ALIGN(16) int8_t t[16];
 
-    d0 = _mm_loadl_epi64((__m128i *) &idxlut[good0 & 0xFF]);
-    d0 = _mm_shuffle_epi8(g0,d0);
-    f0 = _mm256_cvtepi8_epi32(d0);
-
-    _mm256_storeu_si256((__m256i *) t, f0);
-
-    int count = _mm_popcnt_u32((good0 >> 8) & 0xFF);
-    int i = 0;
-    while(count > 0 && ctr < N) {
-        r[ctr] = t[i];
-        pipe[ctr] = ETA - t[i];
-        i++;
-        count--;
-        ctr++;
+    _mm_store_si128((__m128i *)t, g0);
+    for (unsigned int i = 0; i < 16 && ctr < N; i++) {
+        if ((good0 & (1U << i)) != 0) {
+            r[ctr] = t[i];
+            pipe[ctr] = ETA - t[i];
+            ctr++;
+        }
     }
 
     return ctr;
 }
 
 unsigned int XURQ_AVX2_rej_eta_avx_with_pack(int32_t *restrict r, uint8_t *pipe, const uint8_t buf[REJ_UNIFORM_ETA_BUFLEN]) {
-    unsigned int ctr, pos;
+    unsigned int ctr;
     uint32_t good0, good1, good2, good3;
     __m256i f0, f1, f2, f3, f4, f5, f6, f7;
     __m128i g0, g1, g2, g3;
@@ -1111,7 +1109,7 @@ unsigned int XURQ_AVX2_rej_eta_avx_with_pack(int32_t *restrict r, uint8_t *pipe,
 
 
 static void pack_eta_avx2(uint8_t *r, const uint8_t *pipe) {
-    __m256i b0, b1, b2, b3, b4, b5, b6, b7;
+    __m256i b0, b1, b2, b3;
     int ptr = 0;
 
     const __m256i mask0 = _mm256_set1_epi16(0xff);
@@ -1339,10 +1337,10 @@ void ExpandS_with_pack(polyvecl *s1,
     while (ctr[0] < N || ctr[1] < N || ctr[2] < N || ctr[3] < N) {
         XURQ_AVX2_shake256x4_squeezeblocks(buf[0], buf[1], buf[2], buf[3], 1, &state);
 
-        ctr[0] += rej_eta_with_pipe(s2->vec[0].coeffs, ctr[0],pipe[0],buf[0]);
-        ctr[1] += rej_eta_with_pipe(s2->vec[1].coeffs, ctr[1],pipe[1],buf[1]);
-        ctr[2] += rej_eta_with_pipe(s2->vec[2].coeffs, ctr[2],pipe[2],buf[2]);
-        ctr[3] += rej_eta_with_pipe(s2->vec[3].coeffs, ctr[3],pipe[3],buf[3]);
+        ctr[0] = rej_eta_with_pipe(s2->vec[0].coeffs, ctr[0],pipe[0],buf[0]);
+        ctr[1] = rej_eta_with_pipe(s2->vec[1].coeffs, ctr[1],pipe[1],buf[1]);
+        ctr[2] = rej_eta_with_pipe(s2->vec[2].coeffs, ctr[2],pipe[2],buf[2]);
+        ctr[3] = rej_eta_with_pipe(s2->vec[3].coeffs, ctr[3],pipe[3],buf[3]);
     }
 
 
@@ -1800,3 +1798,5 @@ void ExpandS_with_pack(polyvecl *s1,
 
 
 #endif
+
+ML_DSA_AVX2_TARGET_END

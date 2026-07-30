@@ -1,4 +1,3 @@
-#include "ml_dsa_avx2_target.h"
 #include "fips202x4.h"
 #include "rejsample.h"
 #include "hybrid.h"
@@ -9,7 +8,9 @@
 #include "KeccakP-1600-times4-SnP.h"
 #include "ntt.h"
 #include "keccak4x/fips202x4.h"
+#include "ml_dsa_avx2_target.h"
 
+ML_DSA_AVX2_TARGET_BEGIN
 
 uint8_t *loop_dequeue(loop_queue *loop) {
     int now = loop->start;
@@ -80,7 +81,7 @@ static unsigned int rej_uniform(int32_t *a, unsigned int len, const uint8_t *buf
 
 static void shake128x3_squeezeblocks(uint8_t *out0, uint8_t *out1, uint8_t *out2, int nblocks, keccakx4_state *state) {
     __m256i t0, t1, t2, t3, t4, t5, t6, t7;
-    __m256i f0, f1, f2, f3, f4, f5, f6, f7;
+    __m256i f0, f1, f2, f4, f5, f6;
     __m128i t;
 
     for (int i = 0; i < nblocks; ++i) {
@@ -173,8 +174,8 @@ static void shake128x3_squeezeblocks(uint8_t *out0, uint8_t *out1, uint8_t *out2
     }
 }
 
-void shake128x3_shake256x1_squeezeblocks(uint8_t *out0, uint8_t *out1, uint8_t *out2, uint8_t *out3, int nblocks,
-                                         keccakx4_state *state) {
+static void shake128x3_shake256x1_squeezeblocks(uint8_t *out0, uint8_t *out1, uint8_t *out2, uint8_t *out3,
+                                                int nblocks, keccakx4_state *state) {
     __m256i t0, t1, t2, t3, t4, t5, t6, t7;
     __m256i f0, f1, f2, f3, f4, f5, f6, f7;
     __m128i t;
@@ -196,7 +197,6 @@ void shake128x3_shake256x1_squeezeblocks(uint8_t *out0, uint8_t *out1, uint8_t *
         f1 = _mm256_permute2x128_si256(t1, t3, 0x20);
         f2 = _mm256_permute2x128_si256(t0, t2, 0x31);
         f3 = _mm256_permute2x128_si256(t1, t3, 0x31);
-
         f4 = _mm256_permute2x128_si256(t4, t6, 0x20);
         f5 = _mm256_permute2x128_si256(t5, t7, 0x20);
         f6 = _mm256_permute2x128_si256(t4, t6, 0x31);
@@ -231,7 +231,6 @@ void shake128x3_shake256x1_squeezeblocks(uint8_t *out0, uint8_t *out1, uint8_t *
         f1 = _mm256_permute2x128_si256(t1, t3, 0x20);
         f2 = _mm256_permute2x128_si256(t0, t2, 0x31);
         f3 = _mm256_permute2x128_si256(t1, t3, 0x31);
-
         f4 = _mm256_permute2x128_si256(t4, t6, 0x20);
         f5 = _mm256_permute2x128_si256(t5, t7, 0x20);
         f6 = _mm256_permute2x128_si256(t4, t6, 0x31);
@@ -343,12 +342,10 @@ static void shake128x2_shake256x2_squeezeblocks(uint8_t *out0, uint8_t *out1, ui
         f0 = _mm256_permute2x128_si256(t0, t2, 0x20);
         f1 = _mm256_permute2x128_si256(t1, t3, 0x20);
         f2 = _mm256_permute2x128_si256(t0, t2, 0x31);
-        f3 = _mm256_permute2x128_si256(t1, t3, 0x31);
 
         f4 = _mm256_permute2x128_si256(t4, t6, 0x20);
         f5 = _mm256_permute2x128_si256(t5, t7, 0x20);
         f6 = _mm256_permute2x128_si256(t4, t6, 0x31);
-        f7 = _mm256_permute2x128_si256(t5, t7, 0x31);
 
         _mm256_storeu_si256((__m256i *) out0, f0);
         _mm256_storeu_si256((__m256i *) out1, f1);
@@ -393,6 +390,7 @@ static void shake128x2_shake256x2_squeezeblocks(uint8_t *out0, uint8_t *out1, ui
     }
 }
 
+#if K != 6
 static void shake128x1_shake256x3_squeezeblocks(uint8_t *out0, uint8_t *out1, uint8_t *out2, uint8_t *out3, int nblocks,
                                                 keccakx4_state *state) {
     __m256i t0, t1, t2, t3, t4, t5, t6, t7;
@@ -500,6 +498,7 @@ static void shake128x1_shake256x3_squeezeblocks(uint8_t *out0, uint8_t *out1, ui
         // out1 += 8;
     }
 }
+#endif
 
 static uint64_t load_in(const uint8_t *x, int len) {
     uint64_t r = 0;
@@ -554,9 +553,9 @@ static void absorb_hash_SHAKE256RATE_tail_process_interval(keccakx4_state *state
     state->s[16] = _mm256_xor_si256(state->s[16], f);
 }
 
-void extract_lanes_x3_shake128(uint8_t *out0, uint8_t *out1, uint8_t *out2, keccakx4_state *state) {
+static void extract_lanes_x3_shake128(uint8_t *out0, uint8_t *out1, uint8_t *out2, keccakx4_state *state) {
     __m256i t0, t1, t2, t3, t4, t5, t6, t7;
-    __m256i f0, f1, f2, f3, f4, f5, f6, f7;
+    __m256i f0, f1, f2, f4, f5, f6;
     __m128i t;
 
 
@@ -643,12 +642,12 @@ void extract_lanes_x3_shake128(uint8_t *out0, uint8_t *out1, uint8_t *out2, kecc
     _mm_storeu_si64(out2, t);
 }
 
-void extract_lanes_x3_shake256(uint8_t *out0,
-                                        uint8_t *out1,
-                                        uint8_t *out2,
-                                        keccakx4_state *state) {
+static void extract_lanes_x3_shake256(uint8_t *out0,
+                                      uint8_t *out1,
+                                      uint8_t *out2,
+                                      keccakx4_state *state) {
     __m256i t0, t1, t2, t3, t4, t5, t6, t7;
-    __m256i f0, f1, f2, f3, f4, f5, f6, f7;
+    __m256i f0, f1, f2, f4, f5, f6;
     __m128i t;
 
         t0 = _mm256_unpacklo_epi64(state->s[0], state->s[1]);
@@ -664,12 +663,9 @@ void extract_lanes_x3_shake256(uint8_t *out0,
         f0 = _mm256_permute2x128_si256(t0, t2, 0x20);
         f1 = _mm256_permute2x128_si256(t1, t3, 0x20);
         f2 = _mm256_permute2x128_si256(t0, t2, 0x31);
-        f3 = _mm256_permute2x128_si256(t1, t3, 0x31);
-
         f4 = _mm256_permute2x128_si256(t4, t6, 0x20);
         f5 = _mm256_permute2x128_si256(t5, t7, 0x20);
         f6 = _mm256_permute2x128_si256(t4, t6, 0x31);
-        f7 = _mm256_permute2x128_si256(t5, t7, 0x31);
 
         _mm256_storeu_si256((__m256i *) out0, f0);
         _mm256_storeu_si256((__m256i *) out1, f1);
@@ -698,12 +694,10 @@ void extract_lanes_x3_shake256(uint8_t *out0,
         f0 = _mm256_permute2x128_si256(t0, t2, 0x20);
         f1 = _mm256_permute2x128_si256(t1, t3, 0x20);
         f2 = _mm256_permute2x128_si256(t0, t2, 0x31);
-        f3 = _mm256_permute2x128_si256(t1, t3, 0x31);
 
         f4 = _mm256_permute2x128_si256(t4, t6, 0x20);
         f5 = _mm256_permute2x128_si256(t5, t7, 0x20);
         f6 = _mm256_permute2x128_si256(t4, t6, 0x31);
-        f7 = _mm256_permute2x128_si256(t5, t7, 0x31);
 
         _mm256_storeu_si256((__m256i *) out0, f0);
         _mm256_storeu_si256((__m256i *) out1, f1);
@@ -742,7 +736,7 @@ struct coroutine {
 static void uniform_x3(keccakx4_state *state, polyvecl mat[K], uint8_t buf[4][192], const uint8_t *rho,
                 struct coroutine *cor) {
     poly *a0, *a1, *a2;
-    int nonce0, nonce1, nonce2;
+    int nonce0 = 0, nonce1 = 0, nonce2 = 0;
 #if K==4
     switch (cor->round) {
         case 0:
@@ -868,7 +862,7 @@ void hybrid_hash_ExpandA_shuffled(uint8_t *hash_out, int hash_out_len, const uin
     ALIGN(32) uint8_t buf[4][192];
     keccakx4_state state;
     int tail_len = hash_in_len % SHAKE256_RATE;
-    uint8_t *in_ptr = hash_in;
+    const uint8_t *in_ptr = hash_in;
 
     for (int j = 0; j < 25; ++j) state.s[j] = _mm256_setzero_si256();
 
@@ -903,7 +897,7 @@ void hybrid_hash_pk_and_ExpandA(uint8_t *hash_out, const uint8_t *pk, polyvecl m
     struct coroutine cor = {.max = (K - 2) >> 1, .round = 0, .ctr = {0}};
     ALIGN(32) uint8_t buf[4][192];
     keccakx4_state state;
-    uint8_t *pk_ptr = pk;
+    const uint8_t *pk_ptr = pk;
     int tail_len = CRYPTO_PUBLICKEYBYTES % SHAKE256_RATE;
 
     for (int j = 0; j < 25; ++j) state.s[j] = _mm256_setzero_si256();
@@ -1083,13 +1077,13 @@ void hybrid_uniform_3x_and_ExpandRand(poly *a0, poly *a1, poly *a2, loop_queue *
     shuffle(a2->coeffs);
 }
 
-void hybrid_uniform_1x_and_ExpandRand_3x(poly *a0, loop_queue *loop, const uint8_t rho[32],
-                                      const uint8_t rhoprime[64], uint16_t nonceA0,
-                                      uint16_t noncey0) {
-    unsigned int ctr0 = 0, ctr1 = 0, ctr2 = 0;
+#if K != 6
+static void hybrid_uniform_1x_and_ExpandRand_3x(poly *a0, loop_queue *loop, const uint8_t rho[32],
+                                               const uint8_t rhoprime[64], uint16_t nonceA0,
+                                               uint16_t noncey0) {
+    unsigned int ctr0 = 0;
     ALIGNED_UINT8(REJ_UNIFORM_BUFLEN + 8) buf[3];
     keccakx4_state state;
-    uint64_t *rhoprime64 = (uint64_t *) rhoprime;
 
     state.s[0] = _mm256_set_epi64x(load64(rhoprime), load64(rhoprime), load64(rhoprime), load64(rho));
     state.s[1] = _mm256_set_epi64x(load64(rhoprime + 8) , load64(rhoprime + 8) , load64(rhoprime + 8) , load64(rho + 8) );
@@ -1124,6 +1118,7 @@ void hybrid_uniform_1x_and_ExpandRand_3x(poly *a0, loop_queue *loop, const uint8
     }
 
 }
+#endif
 
 //for mldsa.sign
 void ExpandA_shuffled_part(polyvecl mat[K], const uint8_t rho[SEEDBYTES], loop_queue *loop, const uint8_t rhoprime[64],
@@ -1476,7 +1471,9 @@ void hybrid_hash_mu_and_uniform(uint8_t *mu, poly *c, poly *a0, poly*a1, uint8_t
     }
 }
 
-void hybrid_hash_mu_and_challenge(uint8_t *mu, poly *c, uint8_t *tr, const uint8_t *m, const uint8_t *c_seed, int mlen) {
+#if K == 8
+static void hybrid_hash_mu_and_challenge(uint8_t *mu, poly *c, uint8_t *tr, const uint8_t *m,
+                                         const uint8_t *c_seed, int mlen) {
     ALIGN(32) uint8_t buf[4][192];
     keccakx4_state state;
     int len = CRHBYTES + mlen;
@@ -1514,6 +1511,7 @@ void hybrid_hash_mu_and_challenge(uint8_t *mu, poly *c, uint8_t *tr, const uint8
         round = poly_challenge_with_buf(c,buf[2],round,&sign);
     }
 }
+#endif
 
 //for mldsa.verify
 void hybrid_ExpandA_and_hashof_mu_and_challenge(polyvecl mat[K], const uint8_t rho[SEEDBYTES],
@@ -1524,7 +1522,7 @@ poly *c,const uint8_t *c_seed) {
     poly_uniform_4x_op13(&mat[2].vec[2], &mat[2].vec[3], &mat[3].vec[0], &mat[3].vec[1], rho, 514, 515, 768, 769);
     hybrid_hash_mu_and_uniform(mu, c, &mat[3].vec[2], &mat[3].vec[3], tr, m, c_seed,  mlen, rho, 770, 771);
 #elif K == 6
-    poly r0, r1, r2;
+    poly r0;
     poly_uniform_4x_op13(&mat[1].vec[4], &mat[2].vec[0], &mat[2].vec[1], &mat[2].vec[2], rho, 260, 512, 513, 514);
     poly_uniform_4x_op13(&mat[2].vec[3], &mat[2].vec[4], &mat[3].vec[0], &mat[3].vec[1], rho, 515, 516, 768, 769);
     poly_uniform_4x_op13(&mat[3].vec[2], &mat[3].vec[3], &mat[3].vec[4], &mat[4].vec[0], rho, 770, 771, 772, 1024);
@@ -1564,7 +1562,6 @@ static void state_trans4x4(__m256i * s, __m256i f0, __m256i f1, __m256i f2, __m2
 void poly_generate_random_gamma1_4x_state_trans(loop_queue *loop, const uint8_t seed[64], uint16_t nonce0, uint16_t nonce1,
                                     uint16_t nonce2, uint16_t nonce3) {
     keccakx4_state state;
-    uint64_t *seed64 = (uint64_t *) seed;
     uint8_t *y_buff1, *y_buff2, *y_buff3, *y_buff4;
     __m256i f0, f1, f2, f3, f4, f5, f6, f7;;
 
@@ -1632,79 +1629,6 @@ void poly_generate_random_gamma1_4x(loop_queue *loop, const uint8_t seed[64], ui
 }
 
 
-static void extract_last_three_lanes_from_shake256_state(uint8_t *out1, uint8_t *out2, uint8_t *out3,
-                                                         const keccakx4_state *state) {
-    __m256i t0, t1, t2, t3, t4, t5, t6, t7;
-    __m256i f0, f1, f2, f3, f4, f5, f6, f7;
-    __m128i t;
-
-
-    t0 = _mm256_unpacklo_epi64(state->s[0], state->s[1]);
-    t1 = _mm256_unpackhi_epi64(state->s[0], state->s[1]);
-    t2 = _mm256_unpacklo_epi64(state->s[2], state->s[3]);
-    t3 = _mm256_unpackhi_epi64(state->s[2], state->s[3]);
-
-    t4 = _mm256_unpacklo_epi64(state->s[4], state->s[5]);
-    t5 = _mm256_unpackhi_epi64(state->s[4], state->s[5]);
-    t6 = _mm256_unpacklo_epi64(state->s[6], state->s[7]);
-    t7 = _mm256_unpackhi_epi64(state->s[6], state->s[7]);
-
-    f1 = _mm256_permute2x128_si256(t1, t3, 0x20);
-    f2 = _mm256_permute2x128_si256(t0, t2, 0x31);
-    f3 = _mm256_permute2x128_si256(t1, t3, 0x31);
-
-    f5 = _mm256_permute2x128_si256(t5, t7, 0x20);
-    f6 = _mm256_permute2x128_si256(t4, t6, 0x31);
-    f7 = _mm256_permute2x128_si256(t5, t7, 0x31);
-
-    _mm256_storeu_si256((__m256i *) out1, f1);
-    _mm256_storeu_si256((__m256i *) out2, f2);
-    _mm256_storeu_si256((__m256i *) out3, f3);
-    _mm256_storeu_si256((__m256i *) (out1 + 32), f5);
-    _mm256_storeu_si256((__m256i *) (out2 + 32), f6);
-    _mm256_storeu_si256((__m256i *) (out3 + 32), f7);
-
-    out1 += 64;
-    out2 += 64;
-    out3 += 64;
-
-    t0 = _mm256_unpacklo_epi64(state->s[8], state->s[9]);
-    t1 = _mm256_unpackhi_epi64(state->s[8], state->s[9]);
-    t2 = _mm256_unpacklo_epi64(state->s[10], state->s[11]);
-    t3 = _mm256_unpackhi_epi64(state->s[10], state->s[11]);
-
-    t4 = _mm256_unpacklo_epi64(state->s[12], state->s[13]);
-    t5 = _mm256_unpackhi_epi64(state->s[12], state->s[13]);
-    t6 = _mm256_unpacklo_epi64(state->s[14], state->s[15]);
-    t7 = _mm256_unpackhi_epi64(state->s[14], state->s[15]);
-
-    f1 = _mm256_permute2x128_si256(t1, t3, 0x20);
-    f2 = _mm256_permute2x128_si256(t0, t2, 0x31);
-    f3 = _mm256_permute2x128_si256(t1, t3, 0x31);
-
-    f5 = _mm256_permute2x128_si256(t5, t7, 0x20);
-    f6 = _mm256_permute2x128_si256(t4, t6, 0x31);
-    f7 = _mm256_permute2x128_si256(t5, t7, 0x31);
-
-    _mm256_storeu_si256((__m256i *) out1, f1);
-    _mm256_storeu_si256((__m256i *) out2, f2);
-    _mm256_storeu_si256((__m256i *) out3, f3);
-    _mm256_storeu_si256((__m256i *) (out1 + 32), f5);
-    _mm256_storeu_si256((__m256i *) (out2 + 32), f6);
-    _mm256_storeu_si256((__m256i *) (out3 + 32), f7);
-
-    out1 += 64;
-    out2 += 64;
-    out3 += 64;
-
-    t = _mm256_castsi256_si128(state->s[16]);
-    *(uint64_t *) out1 = _mm_extract_epi64(t, 1);
-    t = _mm256_extracti128_si256(state->s[16], 1);
-    *(uint64_t *) out2 = _mm_extract_epi64(t, 0);
-    *(uint64_t *) out3 = _mm_extract_epi64(t, 1);
-}
-
-
 /****
  * Hashes u and w_1 to derive 256-bit ctilde,and generate random numbers for sampling y
  * absorb CRHBYTES bytes from mu, and absorb K * POLYW1_PACKEDBYTES bytes from sig
@@ -1755,3 +1679,5 @@ void hybrid_challenge_and_ExpandRand_x3(uint8_t *c_tiled_out, const uint8_t *mu,
         _mm_storeu_si64(c_tiled_out + 8 * i, _mm256_castsi256_si128(f));
     }
 }
+
+ML_DSA_AVX2_TARGET_END

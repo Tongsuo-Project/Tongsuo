@@ -13,7 +13,6 @@ and related or neighboring rights to the source code in this file.
 http://creativecommons.org/publicdomain/zero/1.0/
 */
 
-#include "../ml_dsa_avx2_target.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,11 +23,14 @@ http://creativecommons.org/publicdomain/zero/1.0/
 #include "../align.h"
 #include "KeccakP-1600-times4-SnP.h"
 #include "SIMD256-config.h"
+#include "../ml_dsa_avx2_target.h"
 
 #include "brg_endian.h"
 #if (PLATFORM_BYTE_ORDER != IS_LITTLE_ENDIAN)
 #error Expecting a little-endian platform
 #endif
+
+ML_DSA_AVX2_TARGET_BEGIN
 
 typedef unsigned char UINT8;
 typedef unsigned long long int UINT64;
@@ -1029,3 +1031,5 @@ size_t KeccakP1600times4_12rounds_FastLoop_Absorb(void *states, unsigned int lan
         return data - dataStart;
     }
 }
+
+ML_DSA_AVX2_TARGET_END
