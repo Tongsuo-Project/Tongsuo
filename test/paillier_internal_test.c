@@ -441,7 +441,9 @@ static int paillier_tests(void)
 int setup_tests(void)
 {
     OPENSSL_load_builtin_modules();
+#ifndef OPENSSL_NO_ENGINE
     ENGINE_load_builtin_engines();
+#endif
     ADD_TEST(paillier_tests);
     return 1;
 }

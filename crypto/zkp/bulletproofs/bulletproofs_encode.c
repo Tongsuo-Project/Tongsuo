@@ -71,7 +71,7 @@ static int bp_stack_of_variable_encode(STACK_OF(BP_VARIABLE) *sk, unsigned char 
             continue;
         }
 
-        stpcpy((char *)p, V->name);
+        strcpy((char *)p, V->name);
         p += strlen(V->name) + 1;
     }
 
