@@ -168,13 +168,11 @@ int crypto_sign_signature_ex(uint8_t *sig, size_t *siglen,
     if (!msg_is_mu) nonce++;
 #endif
 
-    int count = 0;
 rej:
     /* Sample intermediate vector y */
     while (loop.size < L) {
         poly_generate_random_gamma1_4x(&loop, rhoprime, nonce, nonce + 1, nonce + 2, nonce + 3);
         nonce += 4;
-        count++;
     }
     /* Save each initialized polynomial before transforming y. */
     for (i = 0; i < L; ++i) {

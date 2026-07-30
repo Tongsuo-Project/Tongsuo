@@ -6,8 +6,6 @@
 #include "keccak4x/symmetric.h"
 #include "align.h"
 
-#define ALIGN(x) __attribute__ ((aligned(x)))
-
 typedef ALIGNED_INT32(N) poly;
 
 #if ETA == 2

@@ -42,7 +42,7 @@ typedef __m256i V256;
 #if defined(KeccakP1600times4_useAVX2)
     #define ANDnu256(a, b)          _mm256_andnot_si256(a, b)
     #define CONST256(a)             _mm256_load_si256((const V256 *)&(a))
-    #define CONST256_64(a)          (V256)_mm256_broadcast_sd((const double*)(&a))
+    #define CONST256_64(a)          _mm256_set1_epi64x((long long)(a))
     #define LOAD256(a)              _mm256_load_si256((const V256 *)&(a))
     #define LOAD256u(a)             _mm256_loadu_si256((const V256 *)&(a))
     #define LOAD4_64(a, b, c, d)    _mm256_set_epi64x((UINT64)(a), (UINT64)(b), (UINT64)(c), (UINT64)(d))
@@ -58,8 +58,7 @@ static const UINT64 rho56[4] = {0x0007060504030201, 0x080F0E0D0C0B0A09, 0x101716
     #define XOReq256(a, b)          a = _mm256_xor_si256(a, b)
     #define UNPACKL( a, b )         _mm256_unpacklo_epi64((a), (b))
     #define UNPACKH( a, b )         _mm256_unpackhi_epi64((a), (b))
-    #define PERM128( a, b, c )      (V256)_mm256_permute2f128_ps((__m256)(a), (__m256)(b), c)
-    #define SHUFFLE64( a, b, c )    (V256)_mm256_shuffle_pd((__m256d)(a), (__m256d)(b), c)
+    #define PERM128( a, b, c )      _mm256_permute2x128_si256((a), (b), (c))
 
     #define UNINTLEAVE()            lanesL01 = UNPACKL( lanes0, lanes1 ),                   \
                                     lanesH01 = UNPACKH( lanes0, lanes1 ),                   \
@@ -74,10 +73,10 @@ static const UINT64 rho56[4] = {0x0007060504030201, 0x080F0E0D0C0B0A09, 0x101716
                                     lanesH01 = PERM128( lanes1, lanes3, 0x20 ),             \
                                     lanesL23 = PERM128( lanes0, lanes2, 0x31 ),             \
                                     lanesH23 = PERM128( lanes1, lanes3, 0x31 ),             \
-                                    lanes0 = SHUFFLE64( lanesL01, lanesH01, 0x00 ),         \
-                                    lanes1 = SHUFFLE64( lanesL01, lanesH01, 0x0F ),         \
-                                    lanes2 = SHUFFLE64( lanesL23, lanesH23, 0x00 ),         \
-                                    lanes3 = SHUFFLE64( lanesL23, lanesH23, 0x0F )
+                                    lanes0 = UNPACKL( lanesL01, lanesH01 ),                 \
+                                    lanes1 = UNPACKH( lanesL01, lanesH01 ),                 \
+                                    lanes2 = UNPACKL( lanesL23, lanesH23 ),                 \
+                                    lanes3 = UNPACKH( lanesL23, lanesH23 )
 
 #endif
 

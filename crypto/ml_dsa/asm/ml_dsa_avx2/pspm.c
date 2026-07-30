@@ -8,6 +8,12 @@
 
 ML_DSA_AVX2_TARGET_BEGIN
 
+#if defined(_MSC_VER)
+# define ML_DSA_M256I_U __m256i
+#else
+# define ML_DSA_M256I_U __m256i_u
+#endif
+
 static inline __m256i ml_dsa_load256(const void *ptr)
 {
     return _mm256_load_si256((const __m256i *)ptr);
@@ -15,7 +21,7 @@ static inline __m256i ml_dsa_load256(const void *ptr)
 
 static inline __m256i ml_dsa_loadu256(const void *ptr)
 {
-    return _mm256_loadu_si256((const __m256i_u *)ptr);
+    return _mm256_loadu_si256((const ML_DSA_M256I_U *)ptr);
 }
 
 static inline void ml_dsa_store256(void *ptr, __m256i value)
@@ -25,7 +31,7 @@ static inline void ml_dsa_store256(void *ptr, __m256i value)
 
 static inline void ml_dsa_storeu256(void *ptr, __m256i value)
 {
-    _mm256_storeu_si256((__m256i_u *)ptr, value);
+    _mm256_storeu_si256((ML_DSA_M256I_U *)ptr, value);
 }
 
 #define _mm256_load_si256(ptr) ml_dsa_load256(ptr)
@@ -296,5 +302,6 @@ int poly_emulate_ct(poly *r, const poly *c, const poly *t) {
 #undef _mm256_store_si256
 #undef _mm256_loadu_si256
 #undef _mm256_load_si256
+#undef ML_DSA_M256I_U
 
 ML_DSA_AVX2_TARGET_END

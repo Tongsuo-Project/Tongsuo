@@ -68,9 +68,11 @@ IF[{- !$disabled{asm} -}]
                     asm/ml_dsa_avx2/keccak4x/KeccakP-1600-times4-SIMD256.c
   $MLDSADEF_x86_64=ML_DSA_AVX2_ASM
 
-  IF[$MLDSAASM_{- $target{asm_arch} -}]
-    $MLDSAASM=$MLDSAASM_{- $target{asm_arch} -}
-    $MLDSADEF=$MLDSADEF_{- $target{asm_arch} -}
+  IF[{- $config{target} !~ /^VC-/ -}]
+    IF[$MLDSAASM_{- $target{asm_arch} -}]
+      $MLDSAASM=$MLDSAASM_{- $target{asm_arch} -}
+      $MLDSADEF=$MLDSADEF_{- $target{asm_arch} -}
+    ENDIF
   ENDIF
 ENDIF
 
