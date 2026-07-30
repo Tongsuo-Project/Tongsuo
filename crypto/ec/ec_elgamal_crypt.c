@@ -338,6 +338,7 @@ int EC_ELGAMAL_bn_encrypt(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r,
             goto err;
     }
 
+loop:    
     if (rand == NULL)
         BN_rand_range(random, EC_GROUP_get0_order(ctx->key->group));
     else
@@ -363,6 +364,15 @@ int EC_ELGAMAL_bn_encrypt(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r,
 #ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
     }
 #endif
+
+    /* Infinity point check*/
+    if (EC_POINT_is_at_infinity(ctx->key->group, r->C1) 
+        || EC_POINT_is_at_infinity(ctx->key->group, r->C2)) {
+        if (rand == NULL)
+            goto loop;
+        else
+            goto err;
+    }
 
     ret = 1;
 
@@ -390,7 +400,7 @@ err:
 int EC_ELGAMAL_MR_encrypt(EC_ELGAMAL_MR_CTX *ctx, EC_ELGAMAL_MR_CIPHERTEXT *r,
                           const BIGNUM *plaintext, BIGNUM *rand)
 {
-    int ret = 0, i;
+    int ret = 0, i, inf_flag = 0;
     EC_KEY *key;
     BN_CTX *bn_ctx = NULL;
     BIGNUM *random = NULL;
@@ -431,54 +441,68 @@ int EC_ELGAMAL_MR_encrypt(EC_ELGAMAL_MR_CTX *ctx, EC_ELGAMAL_MR_CIPHERTEXT *r,
             goto err;
     }
 
-    if (rand == NULL) {
-        BN_rand_range(random, EC_GROUP_get0_order(ctx->group));
-        rand = random;
+    for (i = 0; i < sk_EC_KEY_num(ctx->sk_key); i++) {
+        key = sk_EC_KEY_value(ctx->sk_key, i);
+
+        if ((C1 = EC_POINT_new(ctx->group)) == NULL)
+            goto err;
+
+        if (sk_EC_POINT_push(r->sk_C1, C1) <= 0){
+            EC_POINT_free(C1);
+            goto err;
+        }
+            
+        C1 = NULL;
     }
+
+loop:
+    inf_flag = 0;
+    if (rand == NULL) 
+        BN_rand_range(random, EC_GROUP_get0_order(ctx->group));
+    else 
+        random = rand;
 
 #ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
     if (ctx->flag == EC_ELGAMAL_FLAG_TWISTED) {
         for (i = 0; i < sk_EC_KEY_num(ctx->sk_key); i++) {
             key = sk_EC_KEY_value(ctx->sk_key, i);
-
-            C1 = EC_POINT_new(ctx->group);
-            if (C1 == NULL)
+            C1 = sk_EC_POINT_value(r->sk_C1, i);
+            if (!EC_POINT_mul(ctx->group, C1, NULL, key->pub_key, random, bn_ctx))
                 goto err;
-
-            if (!EC_POINT_mul(ctx->group, C1, NULL, key->pub_key, rand, bn_ctx))
-                goto err;
-
-            if (sk_EC_POINT_push(r->sk_C1, C1) <= 0)
-                goto err;
-
-            C1 = NULL;
         }
 
-        if (!EC_POINT_mul(ctx->group, r->C2, rand, ctx->h, plaintext, bn_ctx))
+        if (!EC_POINT_mul(ctx->group, r->C2, random, ctx->h, plaintext, bn_ctx))
             goto err;
     } else {
 #endif
         for (i = 0; i < sk_EC_KEY_num(ctx->sk_key); i++) {
             key = sk_EC_KEY_value(ctx->sk_key, i);
-
-            C1 = EC_POINT_new(ctx->group);
-            if (C1 == NULL)
+            C1 = sk_EC_POINT_value(r->sk_C1, i);
+            if (!EC_POINT_mul(ctx->group, C1, plaintext, key->pub_key, random, bn_ctx))
                 goto err;
-
-            if (!EC_POINT_mul(ctx->group, C1, plaintext, key->pub_key, rand, bn_ctx))
-                goto err;
-
-            if (sk_EC_POINT_push(r->sk_C1, C1) <= 0)
-                goto err;
-
-            C1 = NULL;
         }
 
-        if (!EC_POINT_mul(ctx->group, r->C2, rand, NULL, NULL, bn_ctx))
+        if (!EC_POINT_mul(ctx->group, r->C2, random, NULL, NULL, bn_ctx))
             goto err;
 #ifndef OPENSSL_NO_TWISTED_EC_ELGAMAL
     }
 #endif
+
+    /* infinity point check */
+    for (i = 0; i < sk_EC_KEY_num(ctx->sk_key); i++) {
+        C1 = sk_EC_POINT_value(r->sk_C1, i);
+        if (EC_POINT_is_at_infinity(ctx->group, C1))
+            inf_flag = 1;
+    }
+    if (EC_POINT_is_at_infinity(ctx->group, r->C2))
+        inf_flag = 1;
+
+    if (inf_flag == 1) {
+        if (rand == NULL)
+            goto loop;
+        else
+            goto err;
+    }
 
     ret = 1;
 
@@ -487,7 +511,6 @@ err:
     BN_CTX_free(bn_ctx);
 
     if (!ret) {
-        EC_POINT_free(C1);
         EC_POINT_free(r->C2);
         sk_EC_POINT_pop_free(r->sk_C1, EC_POINT_free);
         r->sk_C1 = NULL;
@@ -511,7 +534,8 @@ int EC_ELGAMAL_decrypt(EC_ELGAMAL_CTX *ctx, int32_t *r,
     EC_POINT *M = NULL;
     BN_CTX *bn_ctx = NULL;
 
-    if (ctx == NULL || ctx->key == NULL || ctx->key->priv_key == NULL || r == NULL) {
+    if (ctx == NULL || ctx->key == NULL || ctx->key->priv_key == NULL || r == NULL 
+        || ciphertext == NULL || ciphertext->C1 == NULL || ciphertext->C2 == NULL) {
         ERR_raise(ERR_LIB_EC, ERR_R_PASSED_NULL_PARAMETER);
         return ret;
     }
@@ -519,6 +543,14 @@ int EC_ELGAMAL_decrypt(EC_ELGAMAL_CTX *ctx, int32_t *r,
     M = EC_POINT_new(ctx->key->group);
     if (M == NULL)
         goto err;
+
+    /* Infinity point check */
+    if (EC_POINT_is_at_infinity(ctx->key->group, ciphertext->C1) 
+        || EC_POINT_is_at_infinity(ctx->key->group, ciphertext->C2)) {
+        ERR_raise(ERR_LIB_EC, EC_R_POINT_AT_INFINITY);
+        goto err;
+    }
+        
 
     bn_ctx = BN_CTX_new();
     if (bn_ctx == NULL) {

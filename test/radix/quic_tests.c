@@ -294,6 +294,336 @@ DEF_SCRIPT(check_cwm, "check stream obeys cwm")
     OP_WRITE_FAIL(C);
 }
 
+struct mutcbk_ctx {
+    QUIC_PKT_HDR mutctx_qhdrin;
+    OSSL_QTX_IOVEC mutctx_iov;
+    const unsigned char *mutctx_inject;
+    size_t mutctx_inject_sz;
+    int mutctx_done;
+};
+
+static int mutcbk_inject_frames(const QUIC_PKT_HDR *hdrin,
+    const OSSL_QTX_IOVEC *iovecin, size_t numin, QUIC_PKT_HDR **hdrout,
+    const OSSL_QTX_IOVEC **iovecout, size_t *numout, void *arg)
+{
+    struct mutcbk_ctx *mutctx = (struct mutcbk_ctx *)arg;
+    size_t i;
+    size_t grow_allowance = 1200; /* QUIC_MIN_INITIAL_DGRAM_LEN */
+    size_t bufsz = 0;
+    char *buf;
+
+    /*
+     * make injection callback a one shot event,
+     * callback is invoked for every packet we
+     * want to modify only one packet here.
+     */
+    if (mutctx->mutctx_done)
+        return 0;
+
+    mutctx->mutctx_done = 1;
+
+    for (i = 0; i < numin; i++)
+        bufsz += iovecin[i].buf_len;
+
+    mutctx->mutctx_iov.buf_len = bufsz; /* keeps old size */
+    grow_allowance -= (bufsz < grow_allowance) ? bufsz : grow_allowance;
+    /* AEAD tag (16 bytes) + long header (14 bytes) */
+    grow_allowance -= (30 < grow_allowance) ? 30 : grow_allowance;
+
+    grow_allowance -= (hdrin->dst_conn_id.id_len < grow_allowance) ? hdrin->dst_conn_id.id_len : grow_allowance;
+    grow_allowance -= (hdrin->src_conn_id.id_len < grow_allowance) ? hdrin->src_conn_id.id_len : grow_allowance;
+
+    if (grow_allowance == 0) {
+        TEST_info("mutcbk_inject_frames() not enough space to inject");
+        return 0;
+    }
+    bufsz += grow_allowance;
+
+    /* discard const */
+    OPENSSL_free((char *)mutctx->mutctx_iov.buf);
+    mutctx->mutctx_iov.buf = OPENSSL_malloc(bufsz);
+    /* discard const */
+    buf = (char *)mutctx->mutctx_iov.buf;
+    if (buf == NULL) {
+        TEST_info("mutcbk_inject_frames() OPENSSL_malloc() failed");
+        return 0;
+    }
+
+    for (i = 0; i < numin; i++) {
+        memcpy(buf, iovecin[i].buf, iovecin[i].buf_len);
+        buf += iovecin[i].buf_len;
+    }
+
+    /* discard const */
+    buf = (char *)mutctx->mutctx_iov.buf;
+    if (mutctx->mutctx_inject != NULL) {
+        memmove(buf + mutctx->mutctx_inject_sz, buf,
+            mutctx->mutctx_iov.buf_len);
+        memcpy(buf, mutctx->mutctx_inject, mutctx->mutctx_inject_sz);
+    }
+    /*
+     * perhaps needed to have not looked at yet
+     */
+    mutctx->mutctx_qhdrin = *hdrin;
+    *hdrout = &mutctx->mutctx_qhdrin;
+    mutctx->mutctx_iov.buf_len += mutctx->mutctx_inject_sz;
+    *iovecout = &mutctx->mutctx_iov;
+    *numout = 1;
+
+    return 1;
+}
+
+static void mutcbk_finish_injecct_frames(void *arg)
+{
+    struct mutcbk_ctx *mutctx = (struct mutcbk_ctx *)arg;
+
+    OPENSSL_free((char *)mutctx->mutctx_iov.buf);
+    mutctx->mutctx_iov.buf = NULL;
+}
+
+/* 16 path challenge frames */
+#define PATH_CHALLENGE_FRAMES \
+    "\x1a"                    \
+    "ABCDEFGH"                \
+    "\x1a"                    \
+    "ABCDEFGH"                \
+    "\x1a"                    \
+    "ABCDEFGH"                \
+    "\x1a"                    \
+    "ABCDEFGH"                \
+    "\x1a"                    \
+    "ABCDEFGH"                \
+    "\x1a"                    \
+    "ABCDEFGH"                \
+    "\x1a"                    \
+    "ABCDEFGH"                \
+    "\x1a"                    \
+    "ABCDEFGH"                \
+    "\x1a"                    \
+    "ABCDEFGH"                \
+    "\x1a"                    \
+    "ABCDEFGH"                \
+    "\x1a"                    \
+    "ABCDEFGH"                \
+    "\x1a"                    \
+    "ABCDEFGH"                \
+    "\x1a"                    \
+    "ABCDEFGH"                \
+    "\x1a"                    \
+    "ABCDEFGH"                \
+    "\x1a"                    \
+    "ABCDEFGH"                \
+    "\x1a"                    \
+    "ABCDEFGH"
+
+DEF_FUNC(mount_flood)
+{
+    int ok = 0;
+    SSL *ssl;
+    QUIC_CHANNEL *ch;
+    static struct mutcbk_ctx mutctx = { 0 };
+    static const unsigned char *inject_frames = (const unsigned char *)PATH_CHALLENGE_FRAMES;
+
+    mutctx.mutctx_inject = inject_frames;
+    mutctx.mutctx_inject_sz = sizeof(PATH_CHALLENGE_FRAMES) - 1;
+    REQUIRE_SSL(ssl);
+    ch = ossl_quic_conn_get_channel(ssl);
+    if (!TEST_ptr(ch))
+        goto err;
+
+    if (!TEST_true(ossl_quic_channel_set_mutator(ch, mutcbk_inject_frames,
+            mutcbk_finish_injecct_frames, &mutctx)))
+        goto err;
+    ok = 1;
+err:
+    return ok;
+}
+
+DEF_FUNC(check_flood_stats)
+{
+    int ok = 0;
+    SSL *ssl;
+    QUIC_CHANNEL *ch;
+    uint64_t path_response_count;
+    uint64_t path_challenge_count;
+
+    REQUIRE_SSL(ssl);
+    ch = ossl_quic_conn_get_channel(ssl);
+    if (!TEST_ptr(ch))
+        goto err;
+
+    path_challenge_count = ossl_quic_channel_get_path_challenge_count(ch);
+    path_response_count = ossl_quic_channel_get_path_response_count(ch);
+
+    /*
+     * The flood is delivered over a real socket and processed by the
+     * connection's assist thread asynchronously, so give it a chance to
+     * catch up rather than failing on the first observation.
+     */
+    if (path_challenge_count < 16 || path_response_count < 1)
+        F_SPIN_AGAIN();
+
+    if (!TEST_uint64_t_eq(path_challenge_count, 16))
+        goto err;
+    if (!TEST_uint64_t_eq(path_response_count, 1))
+        goto err;
+
+    ok = 1;
+err:
+    return ok;
+}
+
+DEF_SCRIPT(check_pc_flood, "check path challenge flood")
+{
+    OP_SIMPLE_PAIR_CONN();
+    OP_SELECT_SSL(0, C);
+    OP_FUNC(mount_flood);
+    OP_ACCEPT_CONN_WAIT(L, S, 0);
+    OP_WRITE_B(C, "attack");
+    OP_SELECT_SSL(0, S);
+    OP_FUNC(check_flood_stats);
+}
+
+/*
+ * Test to make sure that SSL_accept_connection returns the same ssl object
+ * that is used in the various TLS callbacks
+ *
+ * Unlike TCP, QUIC processes new connections independently from their
+ * acceptance, and so we need to pre-allocate tls objects to return during
+ * connection acceptance via the user_ssl.  This is just a quic test to validate
+ * that:
+ * 1) The new callback to inform the user of a new pending ssl acceptance works
+ *    properly
+ * 2) That the object returned from SSL_accept_connection matches the one passed
+ *    to various callbacks
+ *
+ * It would be better as its own test, but currently the tserver used in the
+ * other quic_tests doesn't actually accept connections (it pre-creates them
+ * and fixes them up in place), so testing there is not feasible at the moment
+ *
+ * For details on this issue see:
+ * https://github.com/openssl/project/issues/918
+ */
+static SSL *pending_ssl_obj = NULL;
+static SSL *client_hello_ssl_obj = NULL;
+static int check_pending_match = 0;
+static int pending_cb_called = 0;
+static int hello_cb_called = 0;
+
+static int new_pending_cb(SSL_CTX *ctx, SSL *new_ssl, void *arg)
+{
+    pending_ssl_obj = new_ssl;
+    pending_cb_called = 1;
+    return 1;
+}
+
+static int client_hello_cb(SSL *s, int *al, void *arg)
+{
+    client_hello_ssl_obj = s;
+    hello_cb_called = 1;
+    return 1;
+}
+
+DEF_FUNC(init_pending_test)
+{
+    pending_ssl_obj = NULL;
+    client_hello_ssl_obj = NULL;
+    check_pending_match = 0;
+    pending_cb_called = 0;
+    hello_cb_called = 0;
+
+    return 1;
+}
+
+DEF_FUNC(check_pending)
+{
+    int ok = 0;
+    SSL *conn;
+
+    REQUIRE_SSL(conn);
+
+    if (check_pending_match) {
+        if (!TEST_true(pending_cb_called))
+            goto err;
+
+        if (!TEST_true(hello_cb_called))
+            goto err;
+
+        if (!TEST_ptr_eq(pending_ssl_obj, client_hello_ssl_obj))
+            goto err;
+
+        if (!TEST_ptr_eq(pending_ssl_obj, conn))
+            goto err;
+
+        pending_ssl_obj = client_hello_ssl_obj = NULL;
+        check_pending_match = 0;
+        pending_cb_called = hello_cb_called = 0;
+    }
+
+    ok = 1;
+err:
+    return ok;
+}
+
+DEF_FUNC(new_listener)
+{
+    int ok = 0;
+    SSL_CTX *ctx = NULL;
+    SSL *listener;
+    const char *name;
+
+    F_POP(name);
+
+    if (!TEST_ptr(ctx = SSL_CTX_new(OSSL_QUIC_server_method())))
+        goto err;
+
+#if defined(OPENSSL_THREADS)
+    if (!TEST_true(SSL_CTX_set_domain_flags(ctx,
+            SSL_DOMAIN_FLAG_MULTI_THREAD
+                | SSL_DOMAIN_FLAG_BLOCKING)))
+        goto err;
+#endif
+
+    if (!TEST_true(ssl_ctx_configure(ctx, 1)))
+        goto err;
+
+    SSL_CTX_set_new_pending_conn_cb(ctx, new_pending_cb, NULL);
+    SSL_CTX_set_client_hello_cb(ctx, client_hello_cb, NULL);
+    check_pending_match = 1;
+    if (!TEST_ptr(listener = SSL_new_listener(ctx, 0)))
+        goto err;
+
+    if (!TEST_true(ssl_attach_bio_dgram(listener, 0, NULL))) {
+        SSL_free(listener);
+        goto err;
+    }
+
+    if (!TEST_true(RADIX_PROCESS_set_ssl(RP(), name, listener))) {
+        SSL_free(listener);
+        goto err;
+    }
+
+    ok = 1;
+err:
+    /* SSL object will hold ref, we don't need it */
+    SSL_CTX_free(ctx);
+    return ok;
+}
+
+DEF_SCRIPT(check_ctx_cbks, "Check new_pending and client_hello callbacks")
+{
+    OP_FUNC(init_pending_test);
+    OP_PUSH_PZ("L");
+    OP_FUNC(new_listener);
+    OP_LISTEN(L);
+    OP_NEW_SSL_C(C);
+    OP_SET_PEER_ADDR_FROM(C, L);
+    OP_CONNECT_WAIT(C);
+    OP_ACCEPT_CONN_WAIT(L, S, 0);
+    OP_SELECT_SSL(0, S);
+    OP_FUNC(check_pending);
+}
+
 /*
  * List of Test Scripts
  * ============================================================================
@@ -303,4 +633,6 @@ static SCRIPT_INFO *const scripts[] = {
     USE(simple_thread)
     USE(ssl_poll)
     USE(check_cwm)
+    USE(check_pc_flood)
+    USE(check_ctx_cbks)
 };

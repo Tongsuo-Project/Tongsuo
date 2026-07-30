@@ -279,7 +279,6 @@ int mod_main(int argc, char **argv)
     int ret = 1, ok = 0, reset = 0, i, install = 0, pass = 0;
     char *prog;
     unsigned char *sig = NULL, *auth_key = NULL;
-    int siglen = 0;
     const char *sigfile = NULL, *kek_file = NULL;
     OPTION_CHOICE o;
     unsigned char buf[BUFSIZE];
@@ -409,18 +408,19 @@ opthelp:
     if (install) {
         if (sigfile) {
             BIO *sigbio = BIO_new_file(sigfile, "rb");
+            size_t siglen = 0;
 
             if (sigbio == NULL) {
                 BIO_printf(bio_err, "Can't open signature file %s\n", sigfile);
                 goto end;
             }
-            siglen = bio_to_mem(&sig, 4096, sigbio);
-            BIO_free(sigbio);
 
-            if (siglen < 0) {
+            if (!bio_to_mem(&sig, &siglen, 4096, sigbio)){
+                BIO_free(sigbio);
                 BIO_printf(bio_err, "Error reading signature data\n");
                 goto end;
             }
+            BIO_free(sigbio);
 
             sc.sig = OPENSSL_buf2hexstr(sig, siglen);
             if (sc.sig == NULL)

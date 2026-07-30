@@ -14,6 +14,7 @@
 #include <openssl/opensslconf.h>
 #include <openssl/bio.h>
 #include <openssl/ec.h>
+#include <openssl/err.h>
 #include <openssl/pem.h>
 #include <openssl/objects.h>
 #include <time.h>
@@ -397,6 +398,54 @@ err:
 }
 #endif
 
+/*
+ * Verify EC_ELGAMAL_decrypt rejects ciphertext components at infinity.
+ * C1 = O is the critical forgery case: decrypt would ignore the private key.
+ */
+static int ec_elgamal_decrypt_reject_infinity_test(void)
+{
+    int ret = 0;
+    int32_t plaintext = 0;
+    EC_KEY *key = NULL;
+    EC_ELGAMAL_CTX *ctx = NULL;
+    EC_ELGAMAL_CIPHERTEXT *ct = NULL;
+    const EC_GROUP *group;
+
+    if (!TEST_ptr(key = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1))
+        || !TEST_true(EC_KEY_generate_key(key))
+        || !TEST_ptr(ctx = EC_ELGAMAL_CTX_new(key, NULL, 0))
+        || !TEST_ptr(ct = EC_ELGAMAL_CIPHERTEXT_new(ctx))
+        || !TEST_true(EC_ELGAMAL_encrypt(ctx, ct, 42)))
+        goto err;
+
+    group = EC_KEY_get0_group(key);
+
+    /* C1 at infinity must be rejected */
+    if (!TEST_true(EC_POINT_set_to_infinity(group, ct->C1)))
+        goto err;
+    ERR_clear_error();
+    if (!TEST_false(EC_ELGAMAL_decrypt(ctx, &plaintext, ct))
+        || !TEST_int_eq(ERR_GET_REASON(ERR_peek_error()), EC_R_POINT_AT_INFINITY))
+        goto err;
+    ERR_clear_error();
+
+    /* Restore a valid ciphertext, then reject C2 at infinity */
+    if (!TEST_true(EC_ELGAMAL_encrypt(ctx, ct, 42))
+        || !TEST_true(EC_POINT_set_to_infinity(group, ct->C2)))
+        goto err;
+    ERR_clear_error();
+    if (!TEST_false(EC_ELGAMAL_decrypt(ctx, &plaintext, ct))
+        || !TEST_int_eq(ERR_GET_REASON(ERR_peek_error()), EC_R_POINT_AT_INFINITY))
+        goto err;
+
+    ret = 1;
+err:
+    EC_ELGAMAL_CIPHERTEXT_free(ct);
+    EC_ELGAMAL_CTX_free(ctx);
+    EC_KEY_free(key);
+    return ret;
+}
+
 static int ec_elgamal_tests(void)
 {
     if (!TEST_true(ec_elgamal_test(NID_X9_62_prime256v1, ADD, 0))
@@ -440,6 +489,7 @@ static int ec_elgamal_tests(void)
 int setup_tests(void)
 {
     ADD_TEST(ec_elgamal_tests);
+    ADD_TEST(ec_elgamal_decrypt_reject_infinity_test);
     return 1;
 }
 

@@ -96,6 +96,10 @@ end:
 int PAILLIER_CIPHERTEXT_decode(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
                                unsigned char *in, size_t size)
 {
+    int ret = 0;
+    BIGNUM *t = NULL;
+    BN_CTX *bn_ctx = NULL;
+
     if (ctx == NULL || ctx->key == NULL || r == NULL || r->data == NULL) {
         ERR_raise(ERR_LIB_PAILLIER, ERR_R_PASSED_NULL_PARAMETER);
         return 0;
@@ -104,5 +108,20 @@ int PAILLIER_CIPHERTEXT_decode(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
     if (!BN_bin2bn(in, (int)size, r->data))
         return 0;
 
-    return 1;
+    if ((bn_ctx = BN_CTX_new()) == NULL)
+        return 0;
+    BN_CTX_start(bn_ctx);
+
+    if ((t = BN_CTX_get(bn_ctx)) == NULL)
+        goto err;
+
+    /* Check ciphertext \in \mathbb{Z}^{*}_{n^{2}} */
+    if (!BN_gcd(t, r->data, ctx->key->n_square, bn_ctx) || !BN_is_one(t))
+        goto err;
+
+    ret = 1;
+err:
+    BN_CTX_end(bn_ctx);
+    BN_CTX_free(bn_ctx);
+    return ret;
 }

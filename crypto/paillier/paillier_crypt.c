@@ -99,9 +99,9 @@ int PAILLIER_decrypt(PAILLIER_CTX *ctx, int32_t *out, PAILLIER_CIPHERTEXT *c)
     char *p = NULL;
     PAILLIER_KEY *key;
     BN_CTX *bn_ctx = NULL;
-    BIGNUM *c_exp_lambda, *l_ret, *bn_out;
+    BIGNUM *c_exp_lambda, *l_ret, *bn_out, *t = NULL;
 
-    if (ctx == NULL || out == NULL || c == NULL) {
+    if (ctx == NULL || out == NULL || c == NULL || ctx->key == NULL) {
         ERR_raise(ERR_LIB_PAILLIER, ERR_R_PASSED_NULL_PARAMETER);
         return ret;
     }
@@ -118,6 +118,15 @@ int PAILLIER_decrypt(PAILLIER_CTX *ctx, int32_t *out, PAILLIER_CIPHERTEXT *c)
 #endif
 
     key = ctx->key;
+
+    if ((t = BN_CTX_get(bn_ctx)) == NULL)
+        goto err;
+
+    /* Check ciphertext \in \mathbb{Z}^{*}_{n^{2}} */
+    if (!BN_gcd(t, c->data, key->n_square, bn_ctx))
+        goto err;
+    if (!BN_is_one(t))
+        goto err;
 
     bn_out = BN_CTX_get(bn_ctx);
     c_exp_lambda = BN_CTX_get(bn_ctx);
@@ -171,8 +180,9 @@ int PAILLIER_add(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
 {
     int ret = 0;
     BN_CTX *bn_ctx = NULL;
+    BIGNUM *t = NULL;
 
-    if (ctx == NULL || r == NULL || c1 == NULL || c2 == NULL) {
+    if (ctx == NULL || r == NULL || c1 == NULL || c2 == NULL || ctx->key == NULL) {
         ERR_raise(ERR_LIB_PAILLIER, ERR_R_PASSED_NULL_PARAMETER);
         return 0;
     }
@@ -180,16 +190,29 @@ int PAILLIER_add(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
     bn_ctx = BN_CTX_new();
     if (bn_ctx == NULL)
         return 0;
+    BN_CTX_start(bn_ctx);
+
+    if ((t = BN_CTX_get(bn_ctx)) == NULL)
+        goto end;
+    /* Check ciphertext \in \mathbb{Z}^{*}_{n^{2}} */
+    if (!BN_gcd(t, c1->data, ctx->key->n_square, bn_ctx))
+        goto end;
+    if (!BN_is_one(t))
+        goto end;
+    if (!BN_gcd(t, c2->data, ctx->key->n_square, bn_ctx))
+        goto end;
+    if (!BN_is_one(t))
+        goto end;
 
 #if !defined(OPENSSL_NO_ENGINE) && !defined(OPENSSL_NO_BN_METHOD)
-    if (ctx->engine != NULL && !BN_CTX_set_engine(bn_ctx, ctx->engine)) {
-        BN_CTX_free(bn_ctx);
-        return ret;
-    }
+    if (ctx->engine != NULL && !BN_CTX_set_engine(bn_ctx, ctx->engine))
+        goto end;
 #endif
 
     ret = BN_mod_mul(r->data, c1->data, c2->data, ctx->key->n_square, bn_ctx);
 
+end:
+    BN_CTX_end(bn_ctx);
     BN_CTX_free(bn_ctx);
     return ret;
 }
@@ -208,9 +231,9 @@ int PAILLIER_add_plain(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
 {
     int ret = 0;
     BN_CTX *bn_ctx = NULL;
-    BIGNUM *g_exp_p, *bn_plain;
+    BIGNUM *g_exp_p, *bn_plain, *t = NULL;
 
-    if (ctx == NULL || r == NULL || c == NULL) {
+    if (ctx == NULL || r == NULL || c == NULL || ctx->key == NULL) {
         ERR_raise(ERR_LIB_PAILLIER, ERR_R_PASSED_NULL_PARAMETER);
         return 0;
     }
@@ -220,6 +243,13 @@ int PAILLIER_add_plain(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
         goto err;
 
     BN_CTX_start(bn_ctx);
+    if ((t = BN_CTX_get(bn_ctx)) == NULL)
+        goto err;
+    /* Check ciphertext \in \mathbb{Z}^{*}_{n^{2}} */
+    if (!BN_gcd(t, c->data, ctx->key->n_square, bn_ctx))
+        goto err;
+    if (!BN_is_one(t))
+        goto err;
 
 #if !defined(OPENSSL_NO_ENGINE) && !defined(OPENSSL_NO_BN_METHOD)
     if (ctx->engine != NULL && !BN_CTX_set_engine(bn_ctx, ctx->engine))
@@ -262,9 +292,9 @@ int PAILLIER_sub(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
 {
     int ret = 0;
     BN_CTX *bn_ctx = NULL;
-    BIGNUM *inv;
+    BIGNUM *inv, *t = NULL;
 
-    if (ctx == NULL || r == NULL || c1 == NULL || c2 == NULL) {
+    if (ctx == NULL || r == NULL || c1 == NULL || c2 == NULL || ctx->key == NULL) {
         ERR_raise(ERR_LIB_PAILLIER, ERR_R_PASSED_NULL_PARAMETER);
         return 0;
     }
@@ -274,6 +304,18 @@ int PAILLIER_sub(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
         return 0;
 
     BN_CTX_start(bn_ctx);
+
+    if ((t = BN_CTX_get(bn_ctx)) == NULL)
+        goto err;
+    /* Check ciphertext \in \mathbb{Z}^{*}_{n^{2}} */
+    if (!BN_gcd(t, c1->data, ctx->key->n_square, bn_ctx))
+        goto err;
+    if (!BN_is_one(t))
+        goto err;
+    if (!BN_gcd(t, c2->data, ctx->key->n_square, bn_ctx))
+        goto err;
+    if (!BN_is_one(t))
+        goto err;
 
 #if !defined(OPENSSL_NO_ENGINE) && !defined(OPENSSL_NO_BN_METHOD)
     if (ctx->engine != NULL && !BN_CTX_set_engine(bn_ctx, ctx->engine))
@@ -308,9 +350,9 @@ int PAILLIER_mul(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
 {
     int ret = 0;
     BN_CTX *bn_ctx = NULL;
-    BIGNUM *bn_plain;
+    BIGNUM *bn_plain, *t = NULL;
 
-    if (ctx == NULL || r == NULL || c == NULL) {
+    if (ctx == NULL || r == NULL || c == NULL || ctx->key == NULL) {
         ERR_raise(ERR_LIB_PAILLIER, ERR_R_PASSED_NULL_PARAMETER);
         return 0;
     }
@@ -320,6 +362,14 @@ int PAILLIER_mul(PAILLIER_CTX *ctx, PAILLIER_CIPHERTEXT *r,
         goto err;
 
     BN_CTX_start(bn_ctx);
+
+    if ((t = BN_CTX_get(bn_ctx)) == NULL)
+        goto err;
+    /* Check ciphertext \in \mathbb{Z}^{*}_{n^{2}} */
+    if (!BN_gcd(t, c->data, ctx->key->n_square, bn_ctx))
+        goto err;
+    if (!BN_is_one(t))
+        goto err;
 
 #if !defined(OPENSSL_NO_ENGINE) && !defined(OPENSSL_NO_BN_METHOD)
     if (ctx->engine != NULL && !BN_CTX_set_engine(bn_ctx, ctx->engine))

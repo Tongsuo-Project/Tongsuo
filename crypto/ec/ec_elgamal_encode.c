@@ -220,10 +220,17 @@ size_t EC_ELGAMAL_CIPHERTEXT_encode(EC_ELGAMAL_CTX *ctx, unsigned char *out,
                                                 POINT_CONVERSION_UNCOMPRESSED;
     BN_CTX *bn_ctx = NULL;
 
-    if (ctx == NULL || ctx->key == NULL || ciphertext == NULL ||
-        ciphertext->C1 == NULL || ciphertext->C2 == NULL) {
+    if (ctx == NULL || ctx->key == NULL || ctx->key->group == NULL ||
+        ciphertext == NULL || ciphertext->C1 == NULL || ciphertext->C2 == NULL) {
         ERR_raise(ERR_LIB_EC, ERR_R_PASSED_NULL_PARAMETER);
         return ret;
+    }
+
+    /* Infinity point check */
+    if (EC_POINT_is_at_infinity(ctx->key->group, ciphertext->C1) 
+        || EC_POINT_is_at_infinity(ctx->key->group, ciphertext->C2)) {
+        ERR_raise(ERR_LIB_EC, EC_R_POINT_AT_INFINITY);
+        goto end;
     }
 
     bn_ctx = BN_CTX_new();
@@ -278,7 +285,7 @@ int EC_ELGAMAL_CIPHERTEXT_decode(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r,
 {
     int ret = 0;
     size_t point_len;
-    unsigned char *p = in, zero[128];
+    unsigned char *p = in;
     BN_CTX *bn_ctx = NULL;
 
     if (ctx == NULL || ctx->key == NULL || r == NULL || r->C1 == NULL ||
@@ -294,19 +301,18 @@ int EC_ELGAMAL_CIPHERTEXT_decode(EC_ELGAMAL_CTX *ctx, EC_ELGAMAL_CIPHERTEXT *r,
     }
 
     point_len = size / 2;
-    memset(zero, 0, sizeof(zero));
 
-    if (!EC_POINT_oct2point(ctx->key->group, r->C1, p, point_len, bn_ctx)) {
-        if (memcmp(p, zero, point_len) != 0 ||
-            !EC_POINT_set_to_infinity(ctx->key->group, r->C1))
-            goto err;
-    }
+    if (!EC_POINT_oct2point(ctx->key->group, r->C1, p, point_len, bn_ctx))
+        goto err;
 
     p += point_len;
+    if (!EC_POINT_oct2point(ctx->key->group, r->C2, p, point_len, bn_ctx))
+            goto err;
 
-    if (!EC_POINT_oct2point(ctx->key->group, r->C2, p, point_len, bn_ctx)) {
-        if (memcmp(p, zero, point_len) != 0 ||
-            !EC_POINT_set_to_infinity(ctx->key->group, r->C2))
+    /* Infinity point check */
+    if (EC_POINT_is_at_infinity(ctx->key->group, r->C1) 
+        || EC_POINT_is_at_infinity(ctx->key->group, r->C2)) {
+            ERR_raise(ERR_LIB_EC, EC_R_POINT_AT_INFINITY);
             goto err;
     }
 
@@ -428,7 +434,7 @@ size_t EC_ELGAMAL_MR_CIPHERTEXT_encode(EC_ELGAMAL_MR_CTX *ctx, unsigned char *ou
                                        const EC_ELGAMAL_MR_CIPHERTEXT *ciphertext,
                                        int compressed)
 {
-    size_t point_len, ret = 0, len, plen;
+    size_t point_len, ret = 0, len, plen, i = 0, n = 0;
     unsigned char *p = out;
     point_conversion_form_t form = compressed ? POINT_CONVERSION_COMPRESSED :
                                                 POINT_CONVERSION_UNCOMPRESSED;
@@ -437,6 +443,20 @@ size_t EC_ELGAMAL_MR_CIPHERTEXT_encode(EC_ELGAMAL_MR_CTX *ctx, unsigned char *ou
     if (ctx == NULL || ctx->group == NULL || ciphertext == NULL ||
         ciphertext->sk_C1 == NULL || ciphertext->C2 == NULL) {
         ERR_raise(ERR_LIB_EC, ERR_R_PASSED_NULL_PARAMETER);
+        return ret;
+    }
+
+    n = sk_EC_POINT_num(ciphertext->sk_C1);
+    for (i = 0; i < n; i++) {
+        if (EC_POINT_is_at_infinity(ctx->group, sk_EC_POINT_value(ciphertext->sk_C1, i))) {
+            ERR_raise(ERR_LIB_EC, EC_R_POINT_AT_INFINITY);
+            return ret;
+        }
+    }
+
+    /* Infinity point check */
+    if (EC_POINT_is_at_infinity(ctx->group, ciphertext->C2)) {
+        ERR_raise(ERR_LIB_EC, EC_R_POINT_AT_INFINITY);
         return ret;
     }
 
@@ -492,9 +512,9 @@ end:
 int EC_ELGAMAL_MR_CIPHERTEXT_decode(EC_ELGAMAL_MR_CTX *ctx, EC_ELGAMAL_MR_CIPHERTEXT *r,
                                     unsigned char *in, size_t size)
 {
-    int ret = 0, len = 0;
+    int ret = 0, len = 0, i = 0, n = 0;
     size_t point_len;
-    unsigned char *p = in, zero[128];
+    unsigned char *p = in;
     BN_CTX *bn_ctx = NULL;
     STACK_OF(EC_POINT) *sk_C1 = NULL;
     point_conversion_form_t form;
@@ -503,8 +523,6 @@ int EC_ELGAMAL_MR_CIPHERTEXT_decode(EC_ELGAMAL_MR_CTX *ctx, EC_ELGAMAL_MR_CIPHER
         ERR_raise(ERR_LIB_EC, ERR_R_PASSED_NULL_PARAMETER);
         return ret;
     }
-
-    memset(zero, 0, sizeof(zero));
 
     bn_ctx = BN_CTX_new();
     if (bn_ctx == NULL) {
@@ -517,13 +535,24 @@ int EC_ELGAMAL_MR_CIPHERTEXT_decode(EC_ELGAMAL_MR_CTX *ctx, EC_ELGAMAL_MR_CIPHER
     point_len = EC_POINT_point2oct(ctx->group, EC_GROUP_get0_generator(ctx->group),
                                    form, NULL, 0, bn_ctx);
 
-    sk_C1 = stack_of_point_decode(p, &len, ctx->group, bn_ctx);
-    p += len;
+    if ((sk_C1 = stack_of_point_decode(p, &len, ctx->group, bn_ctx)) == NULL)
+        goto err;
 
-    if (!EC_POINT_oct2point(ctx->group, r->C2, p, point_len, bn_ctx)) {
-        if (memcmp(p, zero, point_len) != 0 ||
-            !EC_POINT_set_to_infinity(ctx->group, r->C2))
+    p += len;
+    if (!EC_POINT_oct2point(ctx->group, r->C2, p, point_len, bn_ctx))
+        goto err;
+
+    /* infinity point check */
+    n = sk_EC_POINT_num(sk_C1);
+    for (i = 0; i < n; i++) {
+        if (EC_POINT_is_at_infinity(ctx->group, sk_EC_POINT_value(sk_C1, i))) {
+            ERR_raise(ERR_LIB_EC, EC_R_POINT_AT_INFINITY);
             goto err;
+        }
+    }
+    if (EC_POINT_is_at_infinity(ctx->group, r->C2)) {
+        ERR_raise(ERR_LIB_EC, EC_R_POINT_AT_INFINITY);
+        goto err;
     }
 
     if (r->sk_C1 != NULL) {
