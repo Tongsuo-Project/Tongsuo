@@ -2,6 +2,16 @@
  Tongsuo CHANGES
  _______________
 
+ Changes between 8.5.0-pre1 and 8.5.0-pre2 [3 Aug 2026]
+
+  *) 修复若干 CVE 和安全问题
+
+  *) 修复若干编译问题
+
+  *) 提供 BoringSSL-style QUIC 接口
+
+  *) 提供白盒 SM4 功能
+
  Changes between 8.4.0 and 8.5.0-pre1 [23 Mar 2026]
 
   *) 修复 CVE 若干
@@ -12,7 +22,7 @@
 
   *) 支持 PQC 算法 ML-KEM、ML-DSA 和 SLH-DSA，支持 PQC 密钥协商机制 curveSM2MLKEM768、X25519MLKEM768 等
 
-  *) 实现 QUIC协议（RFC9000）
+  *) 实现 QUIC 协议（RFC9000）
 
   *) 实现 TCP Fast Open（RFC7413）
 
