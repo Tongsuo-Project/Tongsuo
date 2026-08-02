@@ -105,6 +105,9 @@ OSSL_LIB_CTX *ossl_ml_dsa_key_get0_libctx(const ML_DSA_KEY *key);
 __owur int ossl_ml_dsa_key_public_from_private(ML_DSA_KEY *key);
 __owur int ossl_ml_dsa_pk_decode(ML_DSA_KEY *key, const uint8_t *in, size_t in_len);
 __owur int ossl_ml_dsa_sk_decode(ML_DSA_KEY *key, const uint8_t *in, size_t in_len);
+__owur int ossl_ml_dsa_generated_keypair_decode(ML_DSA_KEY *key,
+                                                const uint8_t *pk, size_t pk_len,
+                                                const uint8_t *sk, size_t sk_len);
 
 __owur int ossl_ml_dsa_sign(const ML_DSA_KEY *priv, int msg_is_mu,
                             const uint8_t *msg, size_t msg_len,
