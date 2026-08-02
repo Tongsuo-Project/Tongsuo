@@ -694,3 +694,13 @@ SSL_CTX_enable_force_ntls               694	3_0_3	EXIST::FUNCTION:NTLS
 SSL_CTX_disable_force_ntls              695	3_0_3	EXIST::FUNCTION:NTLS
 SSL_enable_force_ntls                   696	3_0_3	EXIST::FUNCTION:NTLS
 SSL_disable_force_ntls                  697	3_0_3	EXIST::FUNCTION:NTLS
+SSL_set_quic_method                     698	3_5_0	EXIST::FUNCTION:
+SSL_process_quic_post_handshake         699	3_5_0	EXIST::FUNCTION:
+SSL_set_quic_early_data_enabled         700	3_5_0	EXIST::FUNCTION:
+SSL_quic_read_level                     701	3_5_0	EXIST::FUNCTION:
+SSL_quic_write_level                    702	3_5_0	EXIST::FUNCTION:
+SSL_set_quic_early_data_context         703	3_5_0	EXIST::FUNCTION:
+SSL_provide_quic_data                   704	3_5_0	EXIST::FUNCTION:
+SSL_set_quic_use_legacy_codepoint       705	3_5_0	EXIST::FUNCTION:
+SSL_get_peer_quic_transport_params      706	3_5_0	EXIST::FUNCTION:
+SSL_set_quic_transport_params           707	3_5_0	EXIST::FUNCTION:

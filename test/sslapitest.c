@@ -13211,6 +13211,281 @@ static int test_quic_tls_early_data(void)
 
     return testresult;
 }
+
+static int quic_api_test_alert = 0;
+
+
+struct quic_tls_api_test_data {
+    unsigned char rsecret[3][48];
+    size_t rsecret_len[3];
+    unsigned char wsecret[3][48];
+    size_t wsecret_len[3];
+};
+
+static struct quic_tls_api_test_data csecdata, ssecdata;
+
+static int quic_api_set_read_secret(SSL *ssl,
+                                    OSSL_ENCRYPTION_LEVEL level,
+                                    const SSL_CIPHER *cipher,
+                                    const uint8_t *secret,
+                                    size_t secret_len)
+{
+    int index = (int)level - 1;
+
+    if (SSL_is_server(ssl)) {
+        ssecdata.rsecret_len[index] = secret_len;
+        memcpy(&ssecdata.rsecret[index], secret, secret_len);
+    } else {
+        csecdata.rsecret_len[index] = secret_len;
+        memcpy(&csecdata.rsecret[index], secret, secret_len);
+    }
+
+    return 1;
+}
+
+static int quic_api_set_write_secret(SSL *ssl,
+                                     OSSL_ENCRYPTION_LEVEL level,
+                                     const SSL_CIPHER *cipher,
+                                     const uint8_t *secret,
+                                     size_t secret_len)
+{
+    int index = (int)level - 1;
+
+    if (SSL_is_server(ssl)) {
+        ssecdata.wsecret_len[index] = secret_len;
+        memcpy(&ssecdata.wsecret[index], secret, secret_len);
+    } else {
+        csecdata.wsecret_len[index] = secret_len;
+        memcpy(&csecdata.wsecret[index], secret, secret_len);
+    }
+
+    return 1;
+}
+
+static int quic_api_add_handshake_data(SSL *ssl, OSSL_ENCRYPTION_LEVEL level,
+                                       const uint8_t *data, size_t len)
+{
+    SSL *peer = (SSL*)SSL_get_app_data(ssl);
+
+    if(!TEST_ptr(peer))
+        return 0;
+    
+    /* For SSL_provide_quic_data, we should test different pattern. */
+    if (!TEST_true(SSL_provide_quic_data(peer, level, data, len)))
+        return 0;
+
+    return 1;
+}
+
+static int quic_api_flush_flight(SSL *ssl)
+{
+    return 1;
+}
+
+static int quic_api_send_alert(SSL *ssl, OSSL_ENCRYPTION_LEVEL level, uint8_t alert)
+{
+    if (alert != 0)
+        quic_api_test_alert = 1;
+    return 1;
+}
+
+/* In real applications, these methods are provided by the QUIC implementation. */
+static SSL_QUIC_METHOD quic_api_method = {
+    quic_api_set_read_secret,
+    quic_api_set_write_secret,
+    quic_api_add_handshake_data,
+    quic_api_flush_flight,
+    quic_api_send_alert
+};
+
+static int test_quic_tls_api_method(void)
+{
+    int testresult = 0, i;
+    SSL_CTX *sctx = NULL, *cctx = NULL;
+    SSL *serverssl = NULL, *clientssl = NULL;
+    SSL_SESSION *sess = NULL;
+
+    const unsigned char cparams[] = {
+        0xff, 0x01, 0x00
+    };
+    const unsigned char sparams[] = {
+        0xfe, 0x01, 0x00
+    };
+
+    const unsigned char *cpeerparams = NULL, *speerparams = NULL;
+    size_t cpeerparams_length = 0, speerparams_length = 0;
+    int cm_count = 0, sm_count = 0;
+
+    const unsigned char *early_data_context = (const unsigned char *)"default";
+    size_t early_data_context_len = strlen("default");
+
+    end_of_early_data = 0;
+
+    if (!TEST_true(create_ssl_ctx_pair(libctx, TLS_server_method(),
+                                       TLS_client_method(), TLS1_3_VERSION, 0,
+                                       &sctx, &cctx, cert, privkey)))
+        goto end;
+
+    if (
+        !TEST_true(SSL_CTX_set_max_early_data(sctx, 0xffffffff))
+        || !TEST_true(SSL_CTX_set_max_early_data(cctx, 0xffffffff))
+        || !TEST_true(create_ssl_objects(sctx, cctx, &serverssl, &clientssl, NULL, NULL)))
+        goto end;
+
+    /* Reset the BIOs we set in create_ssl_objects. We should not need them */
+    SSL_set_bio(serverssl, NULL, NULL);
+    SSL_set_bio(clientssl, NULL, NULL);
+
+    if (!TEST_true(SSL_set_quic_method(clientssl, &quic_api_method))
+        || !TEST_true(SSL_set_quic_method(serverssl, &quic_api_method))
+        || !TEST_true(SSL_set_quic_transport_params(clientssl, cparams, sizeof(cparams)))
+        || !TEST_true(SSL_set_quic_transport_params(serverssl, sparams, sizeof(sparams)))
+        || !TEST_true(SSL_set_app_data(serverssl, clientssl))
+        || !TEST_true(SSL_set_app_data(clientssl, serverssl))
+        || !TEST_true(SSL_set_quic_early_data_context(serverssl, early_data_context, early_data_context_len))
+        )
+        goto end; 
+
+    if(!TEST_true(create_bare_ssl_connection_ex(serverssl, clientssl, SSL_ERROR_NONE, 1, 0,
+                                                &cm_count, &sm_count)))
+        goto end;
+
+    /* Test post-handshake message (NewSessionTicket) */
+    if(!TEST_true(SSL_process_quic_post_handshake(clientssl)))
+        goto end;
+
+    /* Test that we (correctly) fail to send KeyUpdate */
+    /*
+    if (!TEST_true(SSL_key_update(clientssl, SSL_KEY_UPDATE_NOT_REQUESTED))
+        || !TEST_int_le(SSL_do_handshake(clientssl), 0))
+        goto end;
+    if (!TEST_true(SSL_key_update(serverssl, SSL_KEY_UPDATE_NOT_REQUESTED))
+        || !TEST_int_le(SSL_do_handshake(serverssl), 0))
+        goto end;
+    */
+
+    /* Check version and encryption level */
+    if(!TEST_true(SSL_version(serverssl) == TLS1_3_VERSION)
+       || !TEST_true(SSL_version(clientssl) == TLS1_3_VERSION)
+       || !(TEST_int_eq(SSL_quic_read_level(clientssl), ssl_encryption_application))
+       || !(TEST_int_eq(SSL_quic_read_level(serverssl), ssl_encryption_application))
+       || !(TEST_int_eq(SSL_quic_write_level(clientssl), ssl_encryption_application))
+       || !(TEST_int_eq(SSL_quic_write_level(serverssl), ssl_encryption_application))
+       )
+       goto end;
+
+    /* Check QUIC transport parameters */
+    SSL_get_peer_quic_transport_params(clientssl, &cpeerparams, &cpeerparams_length);
+    SSL_get_peer_quic_transport_params(serverssl, &speerparams, &speerparams_length);
+   
+    if (!TEST_mem_eq(sparams, sizeof(sparams), cpeerparams, cpeerparams_length)
+        || !TEST_mem_eq(cparams, sizeof(cparams), speerparams, speerparams_length))
+        goto end;
+
+    /* Check early data */
+    sess = SSL_get1_session(clientssl);
+    SSL_shutdown(clientssl);
+    SSL_shutdown(serverssl);
+    SSL_free(serverssl);
+    SSL_free(clientssl);
+    serverssl = clientssl = NULL;
+    
+    /* 
+     * Use random data rather than zero to prevent the false positive
+     * case that the callback functions are not called during the 
+     * (resumed) handshake.
+     */
+    RAND_bytes((unsigned char *)&csecdata, sizeof(csecdata));
+    RAND_bytes((unsigned char *)&ssecdata, sizeof(ssecdata));
+
+    if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl, &clientssl, NULL, NULL))
+        || !TEST_true(SSL_set_session(clientssl, sess)))
+        goto end;
+
+    SSL_set_bio(serverssl, NULL, NULL);
+    SSL_set_bio(clientssl, NULL, NULL);
+
+    if (!TEST_true(SSL_set_quic_method(clientssl, &quic_api_method))
+        || !TEST_true(SSL_set_quic_method(serverssl, &quic_api_method))
+        || !TEST_true(SSL_set_quic_transport_params(clientssl, cparams, sizeof(cparams)))
+        || !TEST_true(SSL_set_quic_transport_params(serverssl, sparams, sizeof(sparams)))
+        /* QUIC API method test needs app_data to communicate */
+        || !TEST_true(SSL_set_app_data(serverssl, clientssl))
+        || !TEST_true(SSL_set_app_data(clientssl, serverssl))
+        /* If this is not set, SSL_accept should fail */
+        || !TEST_true(SSL_set_quic_early_data_context(serverssl, early_data_context, early_data_context_len))
+        )
+        goto end;
+
+    /* Use a different API call */
+    SSL_set_quic_early_data_enabled(clientssl, 1);
+    SSL_set_quic_early_data_enabled(serverssl, 1);
+
+    SSL_set_msg_callback(serverssl, assert_no_end_of_early_data);
+    SSL_set_msg_callback(clientssl, assert_no_end_of_early_data);
+    
+    if (!TEST_int_eq(SSL_connect(clientssl), -1)
+            || !TEST_int_eq(SSL_accept(serverssl), -1)
+            || !TEST_int_eq(SSL_get_early_data_status(serverssl), SSL_EARLY_DATA_ACCEPTED)
+            || !TEST_int_eq(SSL_get_error(clientssl, 0), SSL_ERROR_WANT_READ)
+            || !TEST_int_eq(SSL_get_error(serverssl, 0), SSL_ERROR_WANT_READ)
+        )
+        goto end;
+
+    /* Check the encryption levels are what we expect them to be */
+    if (!TEST_true(SSL_quic_read_level(serverssl) == ssl_encryption_handshake)
+        || !TEST_true(SSL_quic_write_level(serverssl) == ssl_encryption_application)
+        || !TEST_true(SSL_quic_read_level(clientssl) == ssl_encryption_initial)
+        || !TEST_true(SSL_quic_write_level(clientssl) == ssl_encryption_early_data))
+    goto end;
+
+    if (!TEST_true(create_ssl_connection_ex(serverssl, clientssl, SSL_ERROR_NONE,
+                                            &cm_count, &sm_count)))
+        goto end;
+
+    /* Check the secrets all match */
+    for (i = 0; i < 3; i++) {
+        if (!TEST_mem_eq(ssecdata.wsecret[i], ssecdata.wsecret_len[i],
+                         csecdata.rsecret[i], csecdata.rsecret_len[i]))
+            goto end;
+    }
+
+    /* Check the transport params */
+    SSL_get_peer_quic_transport_params(clientssl, &cpeerparams, &cpeerparams_length);
+    SSL_get_peer_quic_transport_params(serverssl, &speerparams, &speerparams_length);
+   
+    if (!TEST_mem_eq(sparams, sizeof(sparams), cpeerparams, cpeerparams_length)
+        || !TEST_mem_eq(cparams, sizeof(cparams), speerparams, speerparams_length))
+        goto end;
+
+    /* Check the encryption levels are what we expect them to be */
+    if (!(TEST_int_eq(SSL_quic_read_level(clientssl), ssl_encryption_application))
+        || !(TEST_int_eq(SSL_quic_read_level(serverssl), ssl_encryption_application))
+        || !(TEST_int_eq(SSL_quic_write_level(clientssl), ssl_encryption_application))
+        || !(TEST_int_eq(SSL_quic_write_level(serverssl), ssl_encryption_application))
+        )
+        goto end;
+    /* 
+     * Check alert: There should be no alert except for 0 (close_notify), 
+     * which is raised by SSL_shutdown.
+     */
+    if (!TEST_int_eq(quic_api_test_alert, 0))
+        goto end;
+
+    /* Check there is no EndOfEearlyData in handshake */
+    if (!TEST_int_eq(end_of_early_data, 0))
+        goto end;
+
+    testresult = 1;
+end:    
+    SSL_SESSION_free(sess);
+    SSL_free(serverssl);
+    SSL_free(clientssl);
+    SSL_CTX_free(sctx);
+    SSL_CTX_free(cctx);
+    return testresult;
+}
+
 #endif /* !defined(OSSL_NO_USABLE_TLS1_3) */
 
 static int test_no_renegotiation(int idx)
@@ -13694,6 +13969,7 @@ int setup_tests(void)
 #if !defined(OSSL_NO_USABLE_TLS1_3)
     ADD_ALL_TESTS(test_quic_tls, 6);
     ADD_TEST(test_quic_tls_early_data);
+    ADD_TEST(test_quic_tls_api_method);
 #endif
     ADD_ALL_TESTS(test_no_renegotiation, 2);
 #if defined(DO_SSL_TRACE_TEST)

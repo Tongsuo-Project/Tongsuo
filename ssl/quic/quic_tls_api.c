@@ -43,6 +43,7 @@ static int crypto_release_rcd_cb(size_t bytes_read, void *arg)
         return 0;
     return sc->qtcb.crypto_release_rcd_cb(s, bytes_read, sc->qtarg);
 }
+
 static int yield_secret_cb(uint32_t prot_level, int direction,
                            uint32_t suite_id, EVP_MD *md,
                            const unsigned char *secret, size_t secret_len,
@@ -143,6 +144,8 @@ int SSL_set_quic_tls_cbs(SSL *s, const OSSL_DISPATCH *qtdis, void *arg)
         /* ERR_raise already called */
         return 0;
 
+    if (sc->qtarg != NULL)
+        return 0;
     sc->qtarg = arg;
 
     ossl_quic_tls_free(sc->qtls);
