@@ -1,0 +1,60 @@
+# Build artifacts
+*.o
+*.a
+*.so
+*.d
+*.lo
+*.la
+mlkem[0-9]*_*.c
+mlkem[0-9]*_*.S
+
+# Project shared libraries
+libpqcrystals_*.so
+
+# Test and benchmark binaries
+test/test_kyber512
+test/test_kyber768
+test/test_kyber1024
+test/test_speed512
+test/test_speed768
+test/test_speed1024
+test/test_vectors512
+test/test_vectors768
+test/test_vectors1024
+
+# Generated KAT/vector outputs
+*.req
+*.rsp
+PQCkemKAT_*.req
+PQCkemKAT_*.rsp
+
+# Build directories
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile.user
+
+# Coverage and profiling
+*.gcda
+*.gcno
+*.gcov
+*.profraw
+*.profdata
+gmon.out
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
