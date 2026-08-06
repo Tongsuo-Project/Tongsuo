@@ -1019,9 +1019,10 @@ int cbd_2(scalar *out, uint8_t in[ML_KEM_RANDOM_BYTES + 1],
     uint8_t randbuf[4 * DEGREE / 8], *r = randbuf;  /* 64 * eta slots */
     uint16_t value, mask;
     uint8_t b;
+    int ret = 0;
 
     if (!prf(randbuf, sizeof(randbuf), in, mdctx, key))
-        return 0;
+        goto end;
 
     do {
         b = *r++;
@@ -1043,7 +1044,10 @@ int cbd_2(scalar *out, uint8_t in[ML_KEM_RANDOM_BYTES + 1],
         mask = constish_time_non_zero(value >> 15);
         *curr++ = value + (kPrime & mask);
     } while (curr < end);
-    return 1;
+    ret = 1;
+ end:
+    OPENSSL_cleanse(randbuf, sizeof(randbuf));
+    return ret;
 }
 
 /*
@@ -1060,9 +1064,10 @@ int cbd_3(scalar *out, uint8_t in[ML_KEM_RANDOM_BYTES + 1],
     uint8_t randbuf[6 * DEGREE / 8], *r = randbuf;  /* 64 * eta slots */
     uint8_t b1, b2, b3;
     uint16_t value, mask;
+    int ret = 0;
 
     if (!prf(randbuf, sizeof(randbuf), in, mdctx, key))
-        return 0;
+        goto end;
 
     do {
         b1 = *r++;
@@ -1096,7 +1101,10 @@ int cbd_3(scalar *out, uint8_t in[ML_KEM_RANDOM_BYTES + 1],
         mask = constish_time_non_zero(value >> 15);
         *curr++ = value + (kPrime & mask);
     } while (curr < end);
-    return 1;
+    ret = 1;
+ end:
+    OPENSSL_cleanse(randbuf, sizeof(randbuf));
+    return ret;
 }
 
 /*
@@ -1109,14 +1117,18 @@ int gencbd_vector(scalar *out, CBD_FUNC cbd, uint8_t *counter,
                   EVP_MD_CTX *mdctx, const ML_KEM_KEY *key)
 {
     uint8_t input[ML_KEM_RANDOM_BYTES + 1];
+    int ret = 0;
 
     memcpy(input, seed, ML_KEM_RANDOM_BYTES);
     do {
         input[ML_KEM_RANDOM_BYTES] = (*counter)++;
         if (!cbd(out++, input, mdctx, key))
-            return 0;
+            goto end;
     } while (--rank > 0);
-    return 1;
+    ret = 1;
+ end:
+    OPENSSL_cleanse(input, sizeof(input));
+    return ret;
 }
 
 /*
@@ -1128,15 +1140,19 @@ int gencbd_vector_ntt(scalar *out, CBD_FUNC cbd, uint8_t *counter,
                       EVP_MD_CTX *mdctx, const ML_KEM_KEY *key)
 {
     uint8_t input[ML_KEM_RANDOM_BYTES + 1];
+    int ret = 0;
 
     memcpy(input, seed, ML_KEM_RANDOM_BYTES);
     do {
         input[ML_KEM_RANDOM_BYTES] = (*counter)++;
         if (!cbd(out, input, mdctx, key))
-            return 0;
+            goto end;
         scalar_ntt(out++);
     } while (--rank > 0);
-    return 1;
+    ret = 1;
+ end:
+    OPENSSL_cleanse(input, sizeof(input));
+    return ret;
 }
 
 /* The |ETA1| value for ML-KEM-512 is 3, the rest and all ETA2 values are 2. */
@@ -1176,6 +1192,7 @@ int encrypt_cpa(uint8_t out[ML_KEM_SHARED_SECRET_BYTES],
     uint8_t counter = 0;
     int du = vinfo->du;
     int dv = vinfo->dv;
+    int ok;
 
     /* FIPS 203 "y" vector */
     if (!gencbd_vector_ntt(y, cbd_1, &counter, r, rank, mdctx, key))
@@ -1196,7 +1213,9 @@ int encrypt_cpa(uint8_t out[ML_KEM_SHARED_SECRET_BYTES],
     /* All done with |e1|, now free to reuse tmp[0] for FIPS 203 |e2| */
     memcpy(input, r, ML_KEM_RANDOM_BYTES);
     input[ML_KEM_RANDOM_BYTES] = counter;
-    if (!cbd_2(e2, input, mdctx, key))
+    ok = cbd_2(e2, input, mdctx, key);
+    OPENSSL_cleanse(input, sizeof(input));
+    if (!ok)
         return 0;
     scalar_add(&v, e2);
 
