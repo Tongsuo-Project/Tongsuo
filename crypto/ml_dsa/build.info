@@ -2,9 +2,37 @@ LIBS=../../libcrypto
 
 $COMMON=ml_dsa_encoders.c ml_dsa_key_compress.c ml_dsa_key.c \
         ml_dsa_matrix.c ml_dsa_ntt.c ml_dsa_params.c ml_dsa_sample.c \
-        ml_dsa_sign.c
+        ml_dsa_sign.c ml_dsa_avx2.c ml_dsa_poly.c
+
+$ML_DSA_AVX2_SRC=
+$ML_DSA_POLY_ASM=
+$ML_DSA_NTT_ASM=
+$ML_DSA_POLY_ARITH_ASM=
+$ML_DSA_SO_C=
+IF[{- !$disabled{asm} -}]
+  IF[{- $target{asm_arch} eq "x86_64" -}]
+    $ML_DSA_POLY_ASM=ml_dsa_poly-x86_64.s
+    $ML_DSA_NTT_ASM=ml_dsa_ntt-x86_64.s
+    $ML_DSA_POINTWISE_ASM=ml_dsa_pointwise-x86_64.s
+    $ML_DSA_SAMPLE_ASM=ml_dsa_sample-x86_64.s
+    $ML_DSA_POLY_ARITH_ASM=ml_dsa_poly_arith-x86_64.s
+    $ML_DSA_PSPM_ASM=ml_dsa_pspm-x86_64.s
+    $ML_DSA_NTT_SO_ASM=ml_dsa_ntt_so-x86_64.s
+    $ML_DSA_AVX2_SRC=$ML_DSA_POLY_ASM $ML_DSA_NTT_ASM $ML_DSA_POINTWISE_ASM $ML_DSA_SAMPLE_ASM $ML_DSA_POLY_ARITH_ASM $ML_DSA_PSPM_ASM $ML_DSA_NTT_SO_ASM
+    # Glue for SO ExpandA / vector NTT (no avx/ OBJECTS; asm is self-contained)
+    $ML_DSA_SO_C=ml_dsa_so.c
+  ENDIF
+ENDIF
 
 IF[{- !$disabled{'ml-dsa'} -}]
-  SOURCE[../../libcrypto]=$COMMON
-  SOURCE[../../providers/libfips.a]=$COMMON
+  SOURCE[../../libcrypto]=$COMMON $ML_DSA_AVX2_SRC $ML_DSA_SO_C
+  SOURCE[../../providers/libfips.a]=$COMMON $ML_DSA_AVX2_SRC $ML_DSA_SO_C
 ENDIF
+
+GENERATE[ml_dsa_poly-x86_64.s]=asm/ml_dsa_poly-x86_64.pl
+GENERATE[ml_dsa_ntt-x86_64.s]=asm/ml_dsa_ntt-x86_64.pl
+GENERATE[ml_dsa_pointwise-x86_64.s]=asm/ml_dsa_pointwise-x86_64.pl
+GENERATE[ml_dsa_sample-x86_64.s]=asm/ml_dsa_sample-x86_64.pl
+GENERATE[ml_dsa_poly_arith-x86_64.s]=asm/ml_dsa_poly_arith-x86_64.pl
+GENERATE[ml_dsa_pspm-x86_64.s]=asm/ml_dsa_pspm-x86_64.pl
+GENERATE[ml_dsa_ntt_so-x86_64.s]=asm/ml_dsa_ntt_so-x86_64.pl

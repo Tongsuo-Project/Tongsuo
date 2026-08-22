@@ -7,6 +7,9 @@
  * https://www.openssl.org/source/license.html
  */
 
+#ifndef OSSL_CRYPTO_ML_DSA_MATRIX_H
+# define OSSL_CRYPTO_ML_DSA_MATRIX_H
+
 /* A 'k' by 'l' Matrix object ('k' rows and 'l' columns) containing polynomial scalars */
 struct matrix_st {
     POLY *m_poly;
@@ -42,3 +45,5 @@ matrix_expand_A(EVP_MD_CTX *g_ctx, const EVP_MD *md, const uint8_t *rho,
 {
     return ossl_ml_dsa_matrix_expand_A(g_ctx, md, rho, out);
 }
+
+#endif /* OSSL_CRYPTO_ML_DSA_MATRIX_H */
