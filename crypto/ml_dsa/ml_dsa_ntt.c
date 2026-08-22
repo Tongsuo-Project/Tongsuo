@@ -10,9 +10,15 @@
 #include "ml_dsa_local.h"
 #include "ml_dsa_poly.h"
 
-#include "avx/ml_dsa_ntt_avx2.h"
-#include "avx/ml_dsa_consts_avx2.h"
-#include "ml_dsa_avx2.h"
+#if !defined(OPENSSL_NO_ASM) && (defined(__x86_64) || defined(__x86_64__) \
+    || defined(_M_AMD64) || defined(_M_X64))
+# define ML_DSA_NTT_ASM
+int ml_dsa_ntt_avx2_capable(void);
+void ml_dsa_poly_ntt_avx2(uint32_t *p_coeff, const uint32_t *p_zetas);
+void ml_dsa_poly_ntt_inverse_avx2(uint32_t *p_coeff);
+void ml_dsa_poly_ntt_mult_avx2(const uint32_t *a, const uint32_t *b,
+                                 uint32_t *out);
+#endif
 
 
 /*
@@ -225,31 +231,31 @@ void poly_ntt_inverse_scalar(POLY *p)
                                         (uint64_t)inverse_degree_montgomery);
 }
 
-#ifdef ML_DSA_AVX
-static void poly_ntt_mult_avx2(const POLY *lhs, const POLY *rhs,
-    POLY *out)
+#ifdef ML_DSA_NTT_ASM
+static void poly_ntt_mult_avx2_wrapper(const POLY *lhs, const POLY *rhs,
+                                       POLY *out)
 {
-    pointwise_avx(&out->coeff, &lhs->coeff, &rhs->coeff);
+    ml_dsa_poly_ntt_mult_avx2(&lhs->coeff[0], &rhs->coeff[0], &out->coeff[0]);
 }
 
-static void poly_ntt_avx2(POLY *p)
+static void poly_ntt_avx2_wrapper(POLY *p)
 {
-    XRQ_ntt_avx2_bo(&p->coeff);
+    ml_dsa_poly_ntt_avx2(&p->coeff[0], zetas_montgomery);
 }
 
-static void poly_ntt_inverse_avx2(POLY *p)
+static void poly_ntt_inverse_avx2_wrapper(POLY *p)
 {
-    XRQ_intt_avx2_bo(&p->coeff);
+    ml_dsa_poly_ntt_inverse_avx2(&p->coeff[0]);
 }
 #endif
 
 static void ml_dsa_ntt_init(void)
 {
-#ifdef ML_DSA_AVX
-    if (ossl_ml_dsa_avx2_capable()) {
-        poly_ntt_impl = poly_ntt_avx2;
-        poly_ntt_inverse_impl = poly_ntt_inverse_avx2;
-        poly_ntt_mult_impl = poly_ntt_mult_avx2;
+#ifdef ML_DSA_NTT_ASM
+    if (ml_dsa_ntt_avx2_capable()) {
+        poly_ntt_impl = poly_ntt_avx2_wrapper;
+        poly_ntt_inverse_impl = poly_ntt_inverse_avx2_wrapper;
+        poly_ntt_mult_impl = poly_ntt_mult_avx2_wrapper;
     }
 #endif
 }

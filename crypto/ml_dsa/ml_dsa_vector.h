@@ -6,15 +6,13 @@
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
  */
-#ifndef OSSL_CRYPTO_ML_DSA_VECTOR_H
-#define OSSL_CRYPTO_ML_DSA_VECTOR_H
 
 #include <assert.h>
+#include <openssl/crypto.h>
 #include "ml_dsa_poly.h"
-
-#include "avx/ml_dsa_sample_avx2.h"
-#include "avx/ml_dsa_poly_avx2.h"
-#include "ml_dsa_avx2.h"
+#if defined(ML_DSA_AVX) && defined(KECCAK1600_ASM)
+# include "internal/sha3.h"
+#endif
 
 struct vector_st {
     POLY *poly;
@@ -145,12 +143,6 @@ vector_expand_S(EVP_MD_CTX *h_ctx, const EVP_MD *md, int eta,
     return ossl_ml_dsa_vector_expand_S(h_ctx, md, eta, seed, s1, s2);
 }
 
-typedef void (*vector_expand_mask_fn)(VECTOR *out, const uint8_t *rho_prime, size_t rho_prime_len,
-                   uint32_t kappa, uint32_t gamma1,
-                   EVP_MD_CTX *h_ctx, const EVP_MD *md);
-
-static CRYPTO_ONCE ml_dsa_mask_once = CRYPTO_ONCE_STATIC_INIT;
-
 static ossl_inline ossl_unused void
 vector_expand_mask_scalar(VECTOR *out, const uint8_t *rho_prime, size_t rho_prime_len,
                    uint32_t kappa, uint32_t gamma1,
@@ -159,6 +151,7 @@ vector_expand_mask_scalar(VECTOR *out, const uint8_t *rho_prime, size_t rho_prim
     size_t i;
     uint8_t derived_seed[ML_DSA_RHO_PRIME_BYTES + 2];
 
+    (void)rho_prime_len;
     memcpy(derived_seed, rho_prime, ML_DSA_RHO_PRIME_BYTES);
 
     for (i = 0; i < out->num_poly; i++) {
@@ -171,36 +164,43 @@ vector_expand_mask_scalar(VECTOR *out, const uint8_t *rho_prime, size_t rho_prim
     }
 }
 
+typedef void (*vector_expand_mask_fn)(VECTOR *out, const uint8_t *rho_prime, size_t rho_prime_len,
+                   uint32_t kappa, uint32_t gamma1,
+                   EVP_MD_CTX *h_ctx, const EVP_MD *md);
+
 static vector_expand_mask_fn vector_expand_mask_impl = vector_expand_mask_scalar;
 
-#ifdef ML_DSA_AVX
+#if defined(ML_DSA_AVX) && defined(KECCAK1600_ASM)
+static CRYPTO_ONCE ml_dsa_mask_once = CRYPTO_ONCE_STATIC_INIT;
+
 static ossl_inline ossl_unused void
 vector_expand_mask_avx2(VECTOR *out, const uint8_t *rho_prime, size_t rho_prime_len,
                    uint32_t kappa, uint32_t gamma1,
                    EVP_MD_CTX *h_ctx, const EVP_MD *md)
 {
-    expand_mask_avx2(out, rho_prime, kappa, gamma1);
+    (void)rho_prime_len;
+    (void)h_ctx;
+    (void)md;
+    ossl_ml_dsa_expand_mask_avx2(out, rho_prime, kappa, gamma1);
 }
-#endif
 
 static void ml_dsa_mask_init(void)
 {
-#ifdef ML_DSA_AVX
-    if (ossl_ml_dsa_avx2_capable()) {
+    if (ossl_ml_dsa_avx2_capable() && SHA3_avx2_capable())
         vector_expand_mask_impl = vector_expand_mask_avx2;
-    }
-#endif
 }
+#endif
 
 static ossl_inline ossl_unused void
 vector_expand_mask(VECTOR *out, const uint8_t *rho_prime, size_t rho_prime_len,
                    uint32_t kappa, uint32_t gamma1,
                    EVP_MD_CTX *h_ctx, const EVP_MD *md)
 {
+#if defined(ML_DSA_AVX) && defined(KECCAK1600_ASM)
     (void)CRYPTO_THREAD_run_once(&ml_dsa_mask_once, ml_dsa_mask_init);
+#endif
     vector_expand_mask_impl(out, rho_prime, rho_prime_len, kappa, gamma1, h_ctx, md);
 }
-
 
 /* Scale back previously rounded value */
 static ossl_inline ossl_unused void
@@ -298,5 +298,3 @@ vector_use_hint(const VECTOR *h, const VECTOR *r, uint32_t gamma2, VECTOR *out)
     for (i = 0; i < out->num_poly; i++)
         poly_use_hint(h->poly + i, r->poly + i, gamma2, out->poly + i);
 }
-
-#endif

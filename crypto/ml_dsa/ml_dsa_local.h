@@ -62,6 +62,8 @@ typedef struct ml_dsa_sig_st ML_DSA_SIG;
 
 int ossl_ml_dsa_matrix_expand_A(EVP_MD_CTX *g_ctx, const EVP_MD *md,
                                 const uint8_t *rho, MATRIX *out);
+int ossl_ml_dsa_matrix_expand_A_scalar(EVP_MD_CTX *g_ctx, const EVP_MD *md,
+                                       const uint8_t *rho, MATRIX *out);
 int ossl_ml_dsa_vector_expand_S(EVP_MD_CTX *h_ctx, const EVP_MD *md, int eta,
                                 const uint8_t *seed, VECTOR *s1, VECTOR *s2);
 void ossl_ml_dsa_matrix_mult_vector(const MATRIX *matrix_kl, const VECTOR *vl,
@@ -77,9 +79,47 @@ void ossl_ml_dsa_poly_ntt(POLY *s);
 void ossl_ml_dsa_poly_ntt_inverse(POLY *s);
 void ossl_ml_dsa_poly_ntt_mult(const POLY *lhs, const POLY *rhs, POLY *out);
 
+void ossl_ml_dsa_poly_add(const POLY *lhs, const POLY *rhs, POLY *out);
+void ossl_ml_dsa_poly_sub(const POLY *lhs, const POLY *rhs, POLY *out);
+void ossl_ml_dsa_poly_max_reduce(const POLY *p, uint32_t *mx);
+void ossl_ml_dsa_poly_max_signed_reduce(const POLY *p, uint32_t *mx);
+
 #if !defined(OPENSSL_NO_ASM) && (defined(__x86_64) || defined(__x86_64__) || defined(_M_AMD64) || defined(_M_X64))
 #define ML_DSA_AVX
 #endif
+
+# if defined(ML_DSA_AVX)
+/* SO ExpandA / NTT (ml_dsa_so.c + asm/ml_dsa_ntt_so-x86_64.pl) */
+int matrix_expand_A_so(EVP_MD_CTX *g_ctx, const EVP_MD *md,
+                       const uint8_t *rho, MATRIX *out);
+void vector_ntt_so(VECTOR *v);
+void vector_ntt_inverse_so(VECTOR *v);
+
+/* Sparse c·s / c·t0 (asm/ml_dsa_pspm-x86_64.pl) */
+#  define ML_DSA_SPARSE_CS_U8_STRIDE  (3 * ML_DSA_NUM_POLY_COEFFICIENTS)
+#  define ML_DSA_SPARSE_CS_U16_STRIDE (3 * ML_DSA_NUM_POLY_COEFFICIENTS)
+#  define ML_DSA_SPARSE_CT_I32_STRIDE (3 * ML_DSA_NUM_POLY_COEFFICIENTS)
+void poly_sparse_cs_table_u8(const int32_t *s, uint8_t *stable);
+void poly_sparse_cs_table_u16(const int32_t *s, uint16_t *stable);
+void poly_sparse_ct_table_i32(const int32_t *t, int32_t *stable);
+void poly_sparse_cs_mult_u8_pos(const uint8_t *stable, const int32_t *c,
+                                const int *pos, int npos, int32_t *r);
+void poly_sparse_cs_mult_u16_pos(const uint16_t *stable, const int32_t *c,
+                                 const int *pos, int npos, int32_t *r);
+void poly_sparse_ct_mult_i32_pos(const int32_t *stable, const int32_t *c,
+                                 const int *pos, int npos, int32_t *r);
+# endif
+
+# if defined(ML_DSA_AVX) && defined(KECCAK1600_ASM)
+void ossl_ml_dsa_expand_A_44(MATRIX *mat, const uint8_t *rho);
+void ossl_ml_dsa_expand_A_65(MATRIX *mat, const uint8_t *rho);
+void ossl_ml_dsa_expand_A_87(MATRIX *mat, const uint8_t *rho);
+void ossl_ml_dsa_expand_S_44(VECTOR *s1, VECTOR *s2, const uint64_t seed[8]);
+void ossl_ml_dsa_expand_S_65(VECTOR *s1, VECTOR *s2, const uint64_t seed[8]);
+void ossl_ml_dsa_expand_S_87(VECTOR *s1, VECTOR *s2, const uint64_t seed[8]);
+void ossl_ml_dsa_expand_mask_avx2(VECTOR *out, const uint8_t *rho_prime,
+                                  uint32_t kappa, uint32_t gamma1);
+# endif
 
 void ossl_ml_dsa_key_compress_power2_round(uint32_t r, uint32_t *r1, uint32_t *r0);
 uint32_t ossl_ml_dsa_key_compress_high_bits(uint32_t r, uint32_t gamma2);

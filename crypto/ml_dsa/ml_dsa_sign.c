@@ -1,11 +1,11 @@
 /*
- * Copyright 2024-2025 The OpenSSL Project Authors. All Rights Reserved.
- *
- * Licensed under the Apache License 2.0 (the "License").  You may not use
- * this file except in compliance with the License.  You can obtain a copy
- * in the file LICENSE in the source distribution or at
- * https://www.openssl.org/source/license.html
- */
+* Copyright 2024-2025 The OpenSSL Project Authors. All Rights Reserved.
+*
+* Licensed under the Apache License 2.0 (the "License").  You may not use
+* this file except in compliance with the License.  You can obtain a copy
+* in the file LICENSE in the source distribution or at
+* https://www.openssl.org/source/license.html
+*/
 
 #include <openssl/core_dispatch.h>
 #include <openssl/core_names.h>
@@ -16,6 +16,9 @@
 #include "ml_dsa_matrix.h"
 #include "ml_dsa_sign.h"
 #include "ml_dsa_hash.h"
+#if defined(ML_DSA_AVX) && !defined(OPENSSL_NO_ASM)
+# include "ml_dsa_avx2.h"
+#endif
 
 #define ML_DSA_MAX_LAMBDA 256 /* bit strength for ML-DSA-87 */
 
@@ -73,6 +76,20 @@ static int ml_dsa_sign_internal(const ML_DSA_KEY *priv, int msg_is_mu,
     uint8_t c_tilde[ML_DSA_MAX_LAMBDA / 4];
     size_t c_tilde_len = params->bit_strength >> 2;
     size_t kappa;
+    int use_y_so = 0;
+    int use_sparse_c_mult = 0;
+    int sparse_eta2 = 0;
+    uint8_t *sparse_cs_tables = NULL; /* s2 then s1: packed u8/u16 [-s|+s|-s] */
+    int32_t *sparse_ct_tables = NULL; /* t0: centered int32 [-t|+t|-t] */
+    size_t sparse_cs_stride = 0;
+    size_t sparse_cs_elem_sz = 0;
+    size_t sparse_ct_stride = ML_DSA_SPARSE_CT_I32_STRIDE;
+    size_t sparse_table_bytes = 0;
+
+#if defined(ML_DSA_AVX) && !defined(OPENSSL_NO_ASM)
+    use_sparse_c_mult = ossl_ml_dsa_avx2_capable();
+    use_y_so = ossl_ml_dsa_avx2_capable();
+#endif
 
     /*
      * Allocate a single blob for most of the variable size temporary variables.
@@ -82,6 +99,21 @@ static int ml_dsa_sign_internal(const ML_DSA_KEY *priv, int msg_is_mu,
     alloc_len = w1_encoded_len
         + sizeof(*polys) * (1 + num_polys_k + num_polys_l
                             + num_polys_k_by_l + num_polys_sig_k);
+    if (use_sparse_c_mult) {
+        /*
+         * Temporary tables only (not stored in the key):
+         *   s1/s2: packed u8 (eta=2) / u16 (eta=4)
+         *   t0:    centered int32
+         */
+        sparse_eta2 = (params->eta == ML_DSA_ETA_2);
+        sparse_cs_elem_sz = sparse_eta2 ? sizeof(uint8_t) : sizeof(uint16_t);
+        sparse_cs_stride = sparse_eta2 ? ML_DSA_SPARSE_CS_U8_STRIDE
+                                       : ML_DSA_SPARSE_CS_U16_STRIDE;
+        sparse_table_bytes =
+            sparse_cs_stride * sparse_cs_elem_sz * (k + l)
+            + sparse_ct_stride * sizeof(int32_t) * k;
+        alloc_len += sparse_table_bytes + 64;
+    }
     alloc = OPENSSL_malloc(alloc_len);
     if (alloc == NULL)
         return 0;
@@ -106,10 +138,33 @@ static int ml_dsa_sign_internal(const ML_DSA_KEY *priv, int msg_is_mu,
     vector_init(&cs1, p + 2 * l, l);
     p += num_polys_l;
     signature_init(&sig, p, k, p + k, l, c_tilde, c_tilde_len);
+    p += num_polys_sig_k;
+    if (use_sparse_c_mult) {
+        uint8_t *tables = (uint8_t *)p;
+        size_t align = (32 - ((size_t)tables & 31)) & 31;
+        size_t cs_bytes = sparse_cs_stride * sparse_cs_elem_sz * (k + l);
+
+        sparse_cs_tables = tables + align;
+        {
+            uint8_t *ct = sparse_cs_tables + cs_bytes;
+            size_t ctalign = (32 - ((size_t)ct & 31)) & 31;
+
+            sparse_ct_tables = (int32_t *)(ct + ctalign);
+        }
+    }
     /* End of the allocated blob setup */
 
+#if defined(ML_DSA_AVX) && !defined(OPENSSL_NO_ASM)
+    if (use_y_so) {
+        if (!matrix_expand_A_so(md_ctx, priv->shake128_md,
+                                                 priv->rho, &a_ntt))
+            goto err;
+    } else
+#endif
     if (!matrix_expand_A(md_ctx, priv->shake128_md, priv->rho, &a_ntt))
         goto err;
+
+
     if (msg_is_mu) {
         if (encoded_msg_len != mu_len)
             goto err;
@@ -125,11 +180,39 @@ static int ml_dsa_sign_internal(const ML_DSA_KEY *priv, int msg_is_mu,
         goto err;
 
     vector_copy(&s1_ntt, &priv->s1);
-    vector_ntt(&s1_ntt);
     vector_copy(&s2_ntt, &priv->s2);
-    vector_ntt(&s2_ntt);
     vector_copy(&t0_ntt, &priv->t0);
-    vector_ntt(&t0_ntt);
+    if (use_sparse_c_mult) {
+        size_t i;
+
+        if (sparse_eta2) {
+            uint8_t *cs = sparse_cs_tables;
+
+            for (i = 0; i < k; i++, cs += sparse_cs_stride)
+                poly_sparse_cs_table_u8(
+                    (const int32_t *)s2_ntt.poly[i].coeff, cs);
+            for (i = 0; i < l; i++, cs += sparse_cs_stride)
+                poly_sparse_cs_table_u8(
+                    (const int32_t *)s1_ntt.poly[i].coeff, cs);
+        } else {
+            uint16_t *cs = (uint16_t *)sparse_cs_tables;
+
+            for (i = 0; i < k; i++, cs += sparse_cs_stride)
+                poly_sparse_cs_table_u16(
+                    (const int32_t *)s2_ntt.poly[i].coeff, cs);
+            for (i = 0; i < l; i++, cs += sparse_cs_stride)
+                poly_sparse_cs_table_u16(
+                    (const int32_t *)s1_ntt.poly[i].coeff, cs);
+        }
+        for (i = 0; i < k; i++)
+            poly_sparse_ct_table_i32(
+                (const int32_t *)t0_ntt.poly[i].coeff,
+                sparse_ct_tables + i * sparse_ct_stride);
+    } else {
+        vector_ntt(&s1_ntt);
+        vector_ntt(&s2_ntt);
+        vector_ntt(&t0_ntt);
+    }
 
     /*
      * kappa must not exceed 2^16. But the probability of it
@@ -140,14 +223,25 @@ static int ml_dsa_sign_internal(const ML_DSA_KEY *priv, int msg_is_mu,
         VECTOR *r0 = &w1;
         VECTOR *ct0 = &w1;
         uint32_t z_max, r0_max, ct0_max, h_ones;
+        int cpos[64];
+        int cnpos = 0;
 
         vector_expand_mask(&y, rho_prime, sizeof(rho_prime), kappa,
                            gamma1, md_ctx, priv->shake256_md);
-        vector_copy(y_ntt, &y);
-        vector_ntt(y_ntt);
 
-        matrix_mult_vector(&a_ntt, y_ntt, &w);
-        vector_ntt_inverse(&w);
+        vector_copy(y_ntt, &y);
+#if defined(ML_DSA_AVX) && !defined(OPENSSL_NO_ASM)
+        if (use_y_so) {
+            vector_ntt_so(y_ntt);
+            matrix_mult_vector(&a_ntt, y_ntt, &w);
+            vector_ntt_inverse_so(&w);
+        } else
+#endif
+        {
+            vector_ntt(y_ntt);
+            matrix_mult_vector(&a_ntt, y_ntt, &w);
+            vector_ntt_inverse(&w);
+        }
 
         vector_high_bits(&w, gamma2, &w1);
         ossl_ml_dsa_w1_encode(&w1, gamma2, w1_encoded, w1_encoded_len);
@@ -156,40 +250,136 @@ static int ml_dsa_sign_internal(const ML_DSA_KEY *priv, int msg_is_mu,
                          w1_encoded, w1_encoded_len, c_tilde, c_tilde_len))
             break;
 
-        if (!poly_sample_in_ball_ntt(c_ntt, c_tilde, c_tilde_len,
-                                     md_ctx, priv->shake256_md, params->tau))
-            break;
+        if (use_sparse_c_mult) {
+            size_t ci;
 
-        vector_mult_scalar(&s1_ntt, c_ntt, &cs1);
-        vector_ntt_inverse(&cs1);
-        vector_mult_scalar(&s2_ntt, c_ntt, &cs2);
-        vector_ntt_inverse(&cs2);
+            if (!ossl_ml_dsa_poly_sample_in_ball(c_ntt, c_tilde, (int)c_tilde_len,
+                                                 md_ctx, priv->shake256_md,
+                                                 params->tau))
+                break;
+            /*
+             * SampleInBall stores -1 as q-1. Map to signed -1 (all-ones)
+             * and record nnz positions once for all c·s / c·t0 calls.
+             */
+            cnpos = 0;
+            for (ci = 0; ci < ML_DSA_NUM_POLY_COEFFICIENTS; ci++) {
+                if (c_ntt->coeff[ci] == 0)
+                    continue;
+                if (c_ntt->coeff[ci] > (ML_DSA_Q >> 1))
+                    c_ntt->coeff[ci] = (uint32_t)-1;
+                if (cnpos < (int)(sizeof(cpos) / sizeof(cpos[0])))
+                    cpos[cnpos++] = (int)ci;
+            }
+        } else {
+            if (!poly_sample_in_ball_ntt(c_ntt, c_tilde, (int)c_tilde_len,
+                                         md_ctx, priv->shake256_md, params->tau))
+                break;
+        }
 
-        vector_add(&y, &cs1, &sig.z);
+        /* c·s2 per poly, then r0 check */
+        {
+            size_t i;
+            int rej_r0 = 0;
+            uint32_t bound = gamma2 - params->beta;
 
-        /* r0 = lowbits(w - cs2) */
-        vector_sub(&w, &cs2, r0);
-        vector_low_bits(r0, gamma2, r0);
+            for (i = 0; i < k; i++) {
+                if (use_sparse_c_mult) {
+                    if (sparse_eta2)
+                        poly_sparse_cs_mult_u8_pos(
+                            sparse_cs_tables + i * sparse_cs_stride,
+                            (const int32_t *)c_ntt->coeff, cpos, cnpos,
+                            (int32_t *)cs2.poly[i].coeff);
+                    else
+                        poly_sparse_cs_mult_u16_pos(
+                            (const uint16_t *)sparse_cs_tables
+                                + i * sparse_cs_stride,
+                            (const int32_t *)c_ntt->coeff, cpos, cnpos,
+                            (int32_t *)cs2.poly[i].coeff);
+                } else {
+                    ossl_ml_dsa_poly_ntt_mult(&s2_ntt.poly[i], c_ntt,
+                                              &cs2.poly[i]);
+                    ossl_ml_dsa_poly_ntt_inverse(&cs2.poly[i]);
+                }
+                poly_sub(&w.poly[i], &cs2.poly[i], &r0->poly[i]);
+                poly_low_bits(&r0->poly[i], gamma2, &r0->poly[i]);
+                r0_max = 0;
+                poly_max_signed(&r0->poly[i], &r0_max);
+                if (constant_time_ge(r0_max, bound)) {
+                    rej_r0 = 1;
+                    break;
+                }
+            }
+            if (value_barrier_32(rej_r0))
+                continue;
+        }
 
-        /*
-         * Leaking that the signature is rejected is fine as the next attempt at a
-         * signature will be (indistinguishable from) independent of this one.
-         */
-        z_max = vector_max(&sig.z);
-        r0_max = vector_max_signed(r0);
-        if (value_barrier_32(constant_time_ge(z_max, gamma1 - params->beta)
-                             | constant_time_ge(r0_max, gamma2 - params->beta)))
-            continue;
+        /* c·s1 per poly, then z check */
+        {
+            size_t i;
+            int rej_z = 0;
+            uint32_t bound = gamma1 - params->beta;
 
-        vector_mult_scalar(&t0_ntt, c_ntt, ct0);
-        vector_ntt_inverse(ct0);
+            vector_copy(&sig.z, &y);
+            for (i = 0; i < l; i++) {
+                if (use_sparse_c_mult) {
+                    if (sparse_eta2)
+                        poly_sparse_cs_mult_u8_pos(
+                            sparse_cs_tables + (k + i) * sparse_cs_stride,
+                            (const int32_t *)c_ntt->coeff, cpos, cnpos,
+                            (int32_t *)cs1.poly[i].coeff);
+                    else
+                        poly_sparse_cs_mult_u16_pos(
+                            (const uint16_t *)sparse_cs_tables
+                                + (k + i) * sparse_cs_stride,
+                            (const int32_t *)c_ntt->coeff, cpos, cnpos,
+                            (int32_t *)cs1.poly[i].coeff);
+                } else {
+                    ossl_ml_dsa_poly_ntt_mult(&s1_ntt.poly[i], c_ntt,
+                                              &cs1.poly[i]);
+                    ossl_ml_dsa_poly_ntt_inverse(&cs1.poly[i]);
+                }
+                poly_add(&y.poly[i], &cs1.poly[i], &sig.z.poly[i]);
+                z_max = 0;
+                poly_max(&sig.z.poly[i], &z_max);
+                if (constant_time_ge(z_max, bound)) {
+                    rej_z = 1;
+                    break;
+                }
+            }
+            if (value_barrier_32(rej_z))
+                continue;
+        }
+
+        /* c·t0 per poly, then ct0 norm check */
+        {
+            size_t i;
+            int rej_ct0 = 0;
+
+            for (i = 0; i < k; i++) {
+                if (use_sparse_c_mult) {
+                    poly_sparse_ct_mult_i32_pos(
+                        sparse_ct_tables + i * sparse_ct_stride,
+                        (const int32_t *)c_ntt->coeff, cpos, cnpos,
+                        (int32_t *)ct0->poly[i].coeff);
+                } else {
+                    ossl_ml_dsa_poly_ntt_mult(&t0_ntt.poly[i], c_ntt,
+                                              &ct0->poly[i]);
+                    ossl_ml_dsa_poly_ntt_inverse(&ct0->poly[i]);
+                }
+                ct0_max = 0;
+                poly_max(&ct0->poly[i], &ct0_max);
+                if (constant_time_ge(ct0_max, gamma2)) {
+                    rej_ct0 = 1;
+                    break;
+                }
+            }
+            if (value_barrier_32(rej_ct0))
+                continue;
+        }
+
         vector_make_hint(ct0, &cs2, &w, gamma2, &sig.hint);
-
-        ct0_max = vector_max(ct0);
         h_ones = vector_count_ones(&sig.hint);
-        /* Same reasoning applies to the leak as above */
-        if (value_barrier_32(constant_time_ge(ct0_max, gamma2)
-                             | constant_time_lt(params->omega, h_ones)))
+        if (value_barrier_32(constant_time_lt(params->omega, h_ones)))
             continue;
         ret = ossl_ml_dsa_sig_encode(&sig, params, out_sig);
         break;

@@ -9,8 +9,6 @@
 #ifndef OSSL_CRYPTO_ML_DSA_POLY_H
 #define OSSL_CRYPTO_ML_DSA_POLY_H
 #include <openssl/crypto.h>
-
-#include "avx/ml_dsa_poly_avx2.h"
 #include "ml_dsa_avx2.h"
 
 #define ML_DSA_NUM_POLY_COEFFICIENTS 256
@@ -38,10 +36,7 @@ poly_zero(POLY *p)
 static ossl_inline ossl_unused void
 poly_add(const POLY *lhs, const POLY *rhs, POLY *out)
 {
-    int i;
-
-    for (i = 0; i < ML_DSA_NUM_POLY_COEFFICIENTS; i++)
-        out->coeff[i] = reduce_once(lhs->coeff[i] + rhs->coeff[i]);
+    ossl_ml_dsa_poly_add(lhs, rhs, out);
 }
 
 /**
@@ -56,10 +51,7 @@ poly_add(const POLY *lhs, const POLY *rhs, POLY *out)
 static ossl_inline ossl_unused void
 poly_sub(const POLY *lhs, const POLY *rhs, POLY *out)
 {
-    int i;
-
-    for (i = 0; i < ML_DSA_NUM_POLY_COEFFICIENTS; i++)
-        out->coeff[i] = mod_sub(lhs->coeff[i], rhs->coeff[i]);
+    ossl_ml_dsa_poly_sub(lhs, rhs, out);
 }
 
 /* @returns 1 if the polynomials are equal, or 0 otherwise */
@@ -220,18 +212,6 @@ poly_high_bits(const POLY *in, uint32_t gamma2, POLY *out);
 static ossl_inline ossl_unused void
 poly_low_bits(const POLY *in, uint32_t gamma2, POLY *out);
 
-// static ossl_inline ossl_unused void
-// print_poly(POLY *p)
-// {
-//     for(int i = 0; i < ML_DSA_NUM_POLY_COEFFICIENTS; i++)
-//     {
-//         printf("%8d  ", p->coeff[i]);
-//         if((i+1) % 8 == 0) printf("\n");
-//     }
-//     printf("\n");
-// }
-
-
 static ossl_inline ossl_unused void
 poly_make_hint_avx(const POLY *ct0, const POLY *cs2, const POLY *w, uint32_t gamma2,
                         POLY *out)
@@ -246,7 +226,6 @@ poly_make_hint_avx(const POLY *ct0, const POLY *cs2, const POLY *w, uint32_t gam
     poly_high_bits(&r, gamma2, &r_high);
 
     make_hint_avx(r_high.coeff, r_plus_z_high.coeff, out->coeff);
-    // print_poly(out);
 }
 
 static ossl_inline ossl_unused void
@@ -301,26 +280,12 @@ poly_use_hint(const POLY *h, const POLY *r, uint32_t gamma2, POLY *out)
 static ossl_inline ossl_unused void
 poly_max(const POLY *p, uint32_t *mx)
 {
-    int i;
-
-    for (i = 0; i < ML_DSA_NUM_POLY_COEFFICIENTS; i++) {
-        uint32_t c = p->coeff[i];
-        uint32_t abs = abs_mod_prime(c);
-
-        *mx = maximum(*mx, abs);
-    }
+    ossl_ml_dsa_poly_max_reduce(p, mx);
 }
 
 static ossl_inline ossl_unused void
 poly_max_signed(const POLY *p, uint32_t *mx)
 {
-    int i;
-
-    for (i = 0; i < ML_DSA_NUM_POLY_COEFFICIENTS; i++) {
-        uint32_t c = p->coeff[i];
-        uint32_t abs = abs_signed(c);
-
-        *mx = maximum(*mx, abs);
-    }
+    ossl_ml_dsa_poly_max_signed_reduce(p, mx);
 }
 #endif
