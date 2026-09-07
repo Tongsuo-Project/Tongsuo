@@ -1,6 +1,18 @@
 LIBS = ../../libcrypto
 
-IF[{- !$disabled{'ml-kem'} -}]
-    SOURCE[../../libcrypto]=ml_kem.c
-    SOURCE[../../providers/libfips.a]=ml_kem.c
+$ML_KEM_ASM=
+IF[{- !$disabled{asm} -}]
+  $ML_KEM_ASM_x86_64=ml_kem_poly-x86_64.s
+
+  IF[$ML_KEM_ASM_{- $target{asm_arch} -}]
+    $ML_KEM_ASM=$ML_KEM_ASM_{- $target{asm_arch} -}
+  ENDIF
 ENDIF
+
+IF[{- !$disabled{'ml-kem'} -}]
+    SOURCE[../../libcrypto]=ml_kem.c $ML_KEM_ASM
+    SOURCE[../../providers/libfips.a]=ml_kem.c $ML_KEM_ASM
+ENDIF
+
+# Assembly implementations
+GENERATE[ml_kem_poly-x86_64.s]=asm/ml_kem_poly-x86_64.pl

@@ -10,10 +10,30 @@
 #include <openssl/byteorder.h>
 #include <openssl/rand.h>
 #include <openssl/proverr.h>
+#include <openssl/crypto.h>
 #include "crypto/ml_kem.h"
 #include "internal/common.h"
 #include "internal/constant_time.h"
 #include "internal/sha3.h"
+
+/*
+ * Assembly optimized polynomial arithmetic backends.  The capability probe
+ * and the AVX2 routines live in asm/ml_kem_poly-x86_64.pl and are declared
+ * in crypto/ml_kem.h so that symbol-prefix builds rename the C references
+ * in step with the assembly symbols; scalar C code is used on other
+ * platforms and on x86_64 CPUs without AVX2.
+ */
+#if !defined(OPENSSL_NO_ASM) \
+    && (defined(__x86_64) || defined(__x86_64__) \
+        || defined(_M_AMD64) || defined(_M_X64))
+# define ML_KEM_POLY_ASM
+#endif
+
+#if defined(KECCAK1600_ASM) && !defined(OPENSSL_NO_ASM) \
+    && (defined(__x86_64) || defined(__x86_64__) \
+        || defined(_M_AMD64) || defined(_M_X64))
+# define ML_KEM_SAMPLE_X4
+#endif
 
 #if defined(OPENSSL_CONSTANT_TIME_VALIDATION)
 #include <valgrind/memcheck.h>
@@ -427,33 +447,49 @@ int kdf(uint8_t out[ML_KEM_SHARED_SECRET_BYTES],
  * uniformly distributed elements in the range [0,q). This is used for matrix
  * expansion and only operates on public inputs.
  */
-static __owur
-int sample_scalar(scalar *out, EVP_MD_CTX *mdctx)
+/*
+ * Rejection-sample one squeezed block into out->c starting at *idx, advancing
+ * *idx.  Each group of 3 bytes yields two 12-bit candidates, kept if < kPrime.
+ * Stops when the polynomial is full (DEGREE) or the block is exhausted.
+ *
+ * Split out of sample_scalar so the SHAKE squeeze and the rejection parser can
+ * be exercised independently once the x4 backend squeezes per-lane blocks.
+ * |buflen| must be a positive multiple of 3.
+ */
+static void sample_rej_parse(scalar *out, int *idx,
+                             const uint8_t *buf, size_t buflen)
 {
-    uint16_t *curr = out->c, *endout = curr + DEGREE;
-    uint8_t buf[SCALAR_SAMPLING_BUFSIZE], *in;
-    uint8_t *endin = buf + sizeof(buf);
+    const uint8_t *in = buf, *endin = buf + buflen;
     uint16_t d;
     uint8_t b1, b2, b3;
 
     do {
-        if (!EVP_DigestSqueeze(mdctx, in = buf, sizeof(buf)))
-            return 0;
-        do {
-            b1 = *in++;
-            b2 = *in++;
-            b3 = *in++;
+        b1 = *in++;
+        b2 = *in++;
+        b3 = *in++;
 
-            if (curr >= endout)
-                break;
-            if ((d = ((b2 & 0x0f) << 8) + b1) < kPrime)
-                *curr++ = d;
-            if (curr >= endout)
-                break;
-            if ((d = (b3 << 4) + (b2 >> 4)) < kPrime)
-                *curr++ = d;
-        } while (in < endin);
-    } while (curr < endout);
+        if (*idx >= DEGREE)
+            break;
+        if ((d = ((b2 & 0x0f) << 8) + b1) < kPrime)
+            out->c[(*idx)++] = d;
+        if (*idx >= DEGREE)
+            break;
+        if ((d = (b3 << 4) + (b2 >> 4)) < kPrime)
+            out->c[(*idx)++] = d;
+    } while (in < endin);
+}
+
+static __owur
+int sample_scalar(scalar *out, EVP_MD_CTX *mdctx)
+{
+    uint8_t buf[SCALAR_SAMPLING_BUFSIZE];
+    int idx = 0;
+
+    do {
+        if (!EVP_DigestSqueeze(mdctx, buf, sizeof(buf)))
+            return 0;
+        sample_rej_parse(out, &idx, buf, sizeof(buf));
+    } while (idx < DEGREE);
     return 1;
 }
 
@@ -498,6 +534,76 @@ static void scalar_mult_const(scalar *s, uint16_t a)
     } while (curr < end);
 }
 
+/*
+ * Polynomial arithmetic backend dispatch.
+ * This follows the upstream ml_kem NTT dispatch pattern: the function
+ * pointer takes the original function name so that call sites stay
+ * unchanged, the C implementation is renamed to *_generic, and
+ * ml_kem_poly_init() upgrades the pointers once when the CPU supports
+ * the assembly backend.  Initialization is triggered from
+ * ossl_ml_kem_get_vinfo(), which every public entry point calls before
+ * any polynomial arithmetic can run.
+ */
+#if defined(ML_KEM_POLY_ASM)
+typedef void (*ml_kem_scalar_binop_fn)(scalar *lhs, const scalar *rhs);
+typedef void (*ml_kem_scalar_unop_fn)(scalar *s);
+
+static void scalar_add_generic(scalar *lhs, const scalar *rhs);
+static void scalar_add_avx2(scalar *lhs, const scalar *rhs);
+static void scalar_sub_generic(scalar *lhs, const scalar *rhs);
+static void scalar_sub_avx2(scalar *lhs, const scalar *rhs);
+static void scalar_ntt_generic(scalar *s);
+static void scalar_ntt_avx2(scalar *s);
+static void scalar_inverse_ntt_generic(scalar *s);
+static void scalar_inverse_ntt_avx2(scalar *s);
+static void scalar_mult_generic(scalar *out, const scalar *lhs,
+                                const scalar *rhs);
+static void scalar_mult_avx2(scalar *out, const scalar *lhs,
+                             const scalar *rhs);
+static void scalar_mult_add_generic(scalar *out, const scalar *lhs,
+                                    const scalar *rhs);
+static void scalar_mult_add_avx2(scalar *out, const scalar *lhs,
+                                 const scalar *rhs);
+
+typedef void (*ml_kem_scalar_basemul_fn)(scalar *out, const scalar *lhs,
+                                         const scalar *rhs);
+
+static ml_kem_scalar_binop_fn scalar_add = scalar_add_generic;
+static ml_kem_scalar_binop_fn scalar_sub = scalar_sub_generic;
+static ml_kem_scalar_unop_fn scalar_ntt = scalar_ntt_generic;
+static ml_kem_scalar_unop_fn scalar_inverse_ntt = scalar_inverse_ntt_generic;
+static ml_kem_scalar_basemul_fn scalar_mult = scalar_mult_generic;
+static ml_kem_scalar_basemul_fn scalar_mult_add = scalar_mult_add_generic;
+#else
+# define scalar_add_generic scalar_add
+# define scalar_sub_generic scalar_sub
+# define scalar_ntt_generic scalar_ntt
+# define scalar_inverse_ntt_generic scalar_inverse_ntt
+# define scalar_mult_generic scalar_mult
+# define scalar_mult_add_generic scalar_mult_add
+#endif
+
+static CRYPTO_ONCE ml_kem_poly_once = CRYPTO_ONCE_STATIC_INIT;
+
+/*
+ * Initialize polynomial arithmetic function pointers to the AVX2
+ * implementations if available.  Scalar implementations are used by
+ * default.
+ */
+static void ml_kem_poly_init(void)
+{
+#if defined(ML_KEM_POLY_ASM)
+    if (ml_kem_poly_avx2_capable()) {
+        scalar_add = scalar_add_avx2;
+        scalar_sub = scalar_sub_avx2;
+        scalar_ntt = scalar_ntt_avx2;
+        scalar_inverse_ntt = scalar_inverse_ntt_avx2;
+        scalar_mult = scalar_mult_avx2;
+        scalar_mult_add = scalar_mult_add_avx2;
+    }
+#endif
+}
+
 /*-
  * FIPS 203, Section 4.3, Algoritm 9: "NTT".
  * In-place number theoretic transform of a given scalar.  Note that ML-KEM's
@@ -507,7 +613,7 @@ static void scalar_mult_const(scalar *s, uint16_t a)
  * elements in GF(3329^2), with the coefficients of the elements being
  * consecutive entries in |s->c|.
  */
-static void scalar_ntt(scalar *s)
+static void scalar_ntt_generic(scalar *s)
 {
     const uint16_t *roots = kNTTRoots;
     uint16_t *end = s->c + DEGREE;
@@ -531,6 +637,13 @@ static void scalar_ntt(scalar *s)
     } while ((offset >>= 1) >= 2);
 }
 
+#if defined(ML_KEM_POLY_ASM)
+static void scalar_ntt_avx2(scalar *s)
+{
+    ml_kem_ntt_avx2(s->c);
+}
+#endif
+
 /*-
  * FIPS 203, Section 4.3, Algoritm 10: "NTT^(-1)".
  * In-place inverse number theoretic transform of a given scalar, with pairs of
@@ -539,7 +652,7 @@ static void scalar_ntt(scalar *s)
  * iFFT to account for the fact that 3329 does not have a 512th root of unity,
  * using the precomputed 128 roots of unity stored in InverseNTTRoots.
  */
-static void scalar_inverse_ntt(scalar *s)
+static void scalar_inverse_ntt_generic(scalar *s)
 {
     const uint16_t *roots = kInverseNTTRoots;
     uint16_t *end = s->c + DEGREE;
@@ -564,8 +677,16 @@ static void scalar_inverse_ntt(scalar *s)
     scalar_mult_const(s, kInverseDegree);
 }
 
+#if defined(ML_KEM_POLY_ASM)
+/* The assembly transform includes the kInverseDegree scaling. */
+static void scalar_inverse_ntt_avx2(scalar *s)
+{
+    ml_kem_intt_avx2(s->c);
+}
+#endif
+
 /* Addition updating the LHS scalar in-place. */
-static void scalar_add(scalar *lhs, const scalar *rhs)
+static void scalar_add_generic(scalar *lhs, const scalar *rhs)
 {
     int i;
 
@@ -573,14 +694,28 @@ static void scalar_add(scalar *lhs, const scalar *rhs)
         lhs->c[i] = reduce_once(lhs->c[i] + rhs->c[i]);
 }
 
+#if defined(ML_KEM_POLY_ASM)
+static void scalar_add_avx2(scalar *lhs, const scalar *rhs)
+{
+    ml_kem_scalar_add_avx2(lhs->c, rhs->c);
+}
+#endif
+
 /* Subtraction updating the LHS scalar in-place. */
-static void scalar_sub(scalar *lhs, const scalar *rhs)
+static void scalar_sub_generic(scalar *lhs, const scalar *rhs)
 {
     int i;
 
     for (i = 0; i < DEGREE; i++)
         lhs->c[i] = reduce_once(lhs->c[i] - rhs->c[i] + kPrime);
 }
+
+#if defined(ML_KEM_POLY_ASM)
+static void scalar_sub_avx2(scalar *lhs, const scalar *rhs)
+{
+    ml_kem_scalar_sub_avx2(lhs->c, rhs->c);
+}
+#endif
 
 /*
  * Multiplying two scalars in the number theoretically transformed state. Since
@@ -593,8 +728,8 @@ static void scalar_sub(scalar *lhs, const scalar *rhs)
  * two reduced numbers together, so we need some intermediate reduction steps,
  * even if an uint64_t could hold 3 multiplied numbers.
  */
-static void scalar_mult(scalar *out, const scalar *lhs,
-                        const scalar *rhs)
+static void scalar_mult_generic(scalar *out, const scalar *lhs,
+                                const scalar *rhs)
 {
     uint16_t *curr = out->c, *end = curr + DEGREE;
     const uint16_t *lc = lhs->c, *rc = rhs->c;
@@ -610,10 +745,17 @@ static void scalar_mult(scalar *out, const scalar *lhs,
     } while (curr < end);
 }
 
+#if defined(ML_KEM_POLY_ASM)
+static void scalar_mult_avx2(scalar *out, const scalar *lhs,
+                             const scalar *rhs)
+{
+    ml_kem_basemul_avx2(out->c, lhs->c, rhs->c);
+}
+#endif
+
 /* Above, but add the result to an existing scalar */
-static ossl_inline
-void scalar_mult_add(scalar *out, const scalar *lhs,
-                     const scalar *rhs)
+static void scalar_mult_add_generic(scalar *out, const scalar *lhs,
+                                    const scalar *rhs)
 {
     uint16_t *curr = out->c, *end = curr + DEGREE;
     const uint16_t *lc = lhs->c, *rc = rhs->c;
@@ -630,6 +772,14 @@ void scalar_mult_add(scalar *out, const scalar *lhs,
         *c1 = reduce(*c1 + l0 * r1 + l1 * r0);
     } while (curr < end);
 }
+
+#if defined(ML_KEM_POLY_ASM)
+static void scalar_mult_add_avx2(scalar *out, const scalar *lhs,
+                                 const scalar *rhs)
+{
+    ml_kem_basemul_acc_avx2(out->c, lhs->c, rhs->c);
+}
+#endif
 
 /*-
  * FIPS 203, Section 4.2.1, Algorithm 5: "ByteEncode_d", for 2<=d<=12.
@@ -1011,17 +1161,18 @@ int matrix_expand(EVP_MD_CTX *mdctx, ML_KEM_KEY *key)
  * two this gives -2/2 with a probability of 1/16, -1/1 with probability 1/4,
  * and 0 with probability 3/8.
  */
-static __owur
-int cbd_2(scalar *out, uint8_t in[ML_KEM_RANDOM_BYTES + 1],
-          EVP_MD_CTX *mdctx, const ML_KEM_KEY *key)
+/*
+ * CBD parser for eta=2: fold |4 * DEGREE / 8| PRF bytes into DEGREE
+ * coefficients, no PRF/EVP involved.  Split out of cbd_2 so the SHAKE256 PRF
+ * and this constant-time bit folding can be exercised independently by the x4
+ * backend (which squeezes four PRF buffers at once and parses each here).
+ */
+static void cbd_eta2_parse(scalar *out, const uint8_t *randbuf)
 {
     uint16_t *curr = out->c, *end = curr + DEGREE;
-    uint8_t randbuf[4 * DEGREE / 8], *r = randbuf;  /* 64 * eta slots */
+    const uint8_t *r = randbuf;
     uint16_t value, mask;
     uint8_t b;
-
-    if (!prf(randbuf, sizeof(randbuf), in, mdctx, key))
-        return 0;
 
     do {
         b = *r++;
@@ -1043,6 +1194,17 @@ int cbd_2(scalar *out, uint8_t in[ML_KEM_RANDOM_BYTES + 1],
         mask = constish_time_non_zero(value >> 15);
         *curr++ = value + (kPrime & mask);
     } while (curr < end);
+}
+
+static __owur
+int cbd_2(scalar *out, uint8_t in[ML_KEM_RANDOM_BYTES + 1],
+          EVP_MD_CTX *mdctx, const ML_KEM_KEY *key)
+{
+    uint8_t randbuf[4 * DEGREE / 8];  /* 64 * eta slots */
+
+    if (!prf(randbuf, sizeof(randbuf), in, mdctx, key))
+        return 0;
+    cbd_eta2_parse(out, randbuf);
     return 1;
 }
 
@@ -1052,17 +1214,17 @@ int cbd_2(scalar *out, uint8_t in[ML_KEM_RANDOM_BYTES + 1],
  * and setting the coefficient to the count of the first bits minus the count of
  * the second bits, resulting in a centered binomial distribution.
  */
-static __owur
-int cbd_3(scalar *out, uint8_t in[ML_KEM_RANDOM_BYTES + 1],
-          EVP_MD_CTX *mdctx, const ML_KEM_KEY *key)
+/*
+ * CBD parser for eta=3: fold |6 * DEGREE / 8| PRF bytes into DEGREE
+ * coefficients, no PRF/EVP involved.  Split out of cbd_3 for the same reason
+ * as cbd_eta2_parse.
+ */
+static void cbd_eta3_parse(scalar *out, const uint8_t *randbuf)
 {
     uint16_t *curr = out->c, *end = curr + DEGREE;
-    uint8_t randbuf[6 * DEGREE / 8], *r = randbuf;  /* 64 * eta slots */
+    const uint8_t *r = randbuf;
     uint8_t b1, b2, b3;
     uint16_t value, mask;
-
-    if (!prf(randbuf, sizeof(randbuf), in, mdctx, key))
-        return 0;
 
     do {
         b1 = *r++;
@@ -1096,6 +1258,17 @@ int cbd_3(scalar *out, uint8_t in[ML_KEM_RANDOM_BYTES + 1],
         mask = constish_time_non_zero(value >> 15);
         *curr++ = value + (kPrime & mask);
     } while (curr < end);
+}
+
+static __owur
+int cbd_3(scalar *out, uint8_t in[ML_KEM_RANDOM_BYTES + 1],
+          EVP_MD_CTX *mdctx, const ML_KEM_KEY *key)
+{
+    uint8_t randbuf[6 * DEGREE / 8];  /* 64 * eta slots */
+
+    if (!prf(randbuf, sizeof(randbuf), in, mdctx, key))
+        return 0;
+    cbd_eta3_parse(out, randbuf);
     return 1;
 }
 
@@ -1141,6 +1314,257 @@ int gencbd_vector_ntt(scalar *out, CBD_FUNC cbd, uint8_t *counter,
 
 /* The |ETA1| value for ML-KEM-512 is 3, the rest and all ETA2 values are 2. */
 #define CBD1(evp_type)  ((evp_type) == EVP_PKEY_ML_KEM_512 ? cbd_3 : cbd_2)
+#define ETA1(evp_type)  ((evp_type) == EVP_PKEY_ML_KEM_512 ? 3 : 2)
+
+#if defined(ML_KEM_SAMPLE_X4)
+# define ML_KEM_X4_LANES 4
+# define ML_KEM_CBD_MAX_BYTES (6 * DEGREE / 8)
+
+/*
+ * Sample up to four CBD polynomials with one SHAKE256 x4 invocation.  Lanes
+ * above |count| are initialized dummy lanes whose output is discarded.  The
+ * SHAKE input and all output buffers are cleansed because they are derived
+ * from a secret seed, including the dummy lanes.
+ */
+static void sample_cbd_x4(scalar *out[ML_KEM_X4_LANES], int count,
+                          const uint8_t seed[ML_KEM_RANDOM_BYTES],
+                          uint8_t first_nonce, int eta, int apply_ntt)
+{
+    uint8_t input[ML_KEM_X4_LANES][ML_KEM_RANDOM_BYTES + 1];
+    uint8_t randbuf[ML_KEM_X4_LANES][ML_KEM_CBD_MAX_BYTES];
+    size_t outlen = eta == 3 ? 6 * DEGREE / 8 : 4 * DEGREE / 8;
+    int i;
+
+    for (i = 0; i < ML_KEM_X4_LANES; i++) {
+        memcpy(input[i], seed, ML_KEM_RANDOM_BYTES);
+        input[i][ML_KEM_RANDOM_BYTES] =
+            (uint8_t)(first_nonce + (i < count ? i : 0));
+    }
+
+    ossl_sha3_shake256_x4_avx512vl(randbuf[0], randbuf[1],
+                                   randbuf[2], randbuf[3], outlen,
+                                   input[0], input[1], input[2], input[3],
+                                   sizeof(input[0]));
+
+    for (i = 0; i < count; i++) {
+        if (eta == 3)
+            cbd_eta3_parse(out[i], randbuf[i]);
+        else
+            cbd_eta2_parse(out[i], randbuf[i]);
+        if (apply_ntt)
+            scalar_ntt(out[i]);
+    }
+
+    OPENSSL_cleanse(input, sizeof(input));
+    OPENSSL_cleanse(randbuf, sizeof(randbuf));
+}
+
+/*
+ * Expand complete groups of four matrix entries with SHAKE128 x4.  Rejection
+ * sampling has no fixed squeeze bound, so each lane maintains its own output
+ * index and completed lanes are no longer parsed.  The ML-KEM-768 one-entry
+ * tail is deliberately left on the generic path in this phase.
+ */
+static __owur int matrix_expand_x4(EVP_MD_CTX *mdctx, ML_KEM_KEY *key)
+{
+    KECCAK1600_X4_AVX512VL_CTX ctx;
+    uint8_t input[ML_KEM_X4_LANES][ML_KEM_RANDOM_BYTES + 2];
+    uint8_t buf[ML_KEM_X4_LANES][SCALAR_SAMPLING_BUFSIZE];
+    scalar *out = key->m;
+    int rank = key->vinfo->rank;
+    int total = rank * rank;
+    int pos = 0;
+
+    while (total - pos >= ML_KEM_X4_LANES) {
+        int idx[ML_KEM_X4_LANES] = { 0, 0, 0, 0 };
+        unsigned int done = 0;
+        int lane;
+
+        for (lane = 0; lane < ML_KEM_X4_LANES; lane++) {
+            int matrix_pos = pos + lane;
+
+            memcpy(input[lane], key->rho, ML_KEM_RANDOM_BYTES);
+            input[lane][ML_KEM_RANDOM_BYTES] =
+                (uint8_t)(matrix_pos / rank);
+            input[lane][ML_KEM_RANDOM_BYTES + 1] =
+                (uint8_t)(matrix_pos % rank);
+        }
+
+        ossl_sha3_shake128_x4_inc_init_avx512vl(&ctx);
+        ossl_sha3_shake128_x4_inc_absorb_avx512vl(
+            &ctx, input[0], input[1], input[2], input[3], sizeof(input[0]));
+
+        do {
+            ossl_sha3_shake128_x4_inc_squeeze_avx512vl(
+                buf[0], buf[1], buf[2], buf[3], sizeof(buf[0]), &ctx);
+            for (lane = 0; lane < ML_KEM_X4_LANES; lane++) {
+                if ((done & (1U << lane)) != 0)
+                    continue;
+                sample_rej_parse(&out[lane], &idx[lane], buf[lane],
+                                 sizeof(buf[lane]));
+                if (idx[lane] == DEGREE)
+                    done |= 1U << lane;
+            }
+        } while (done != (1U << ML_KEM_X4_LANES) - 1);
+
+        ossl_sha3_shake128_x4_inc_cleanup_avx512vl(&ctx);
+        out += ML_KEM_X4_LANES;
+        pos += ML_KEM_X4_LANES;
+    }
+
+    if (pos < total) {
+        uint8_t tail[ML_KEM_RANDOM_BYTES + 2];
+
+        memcpy(tail, key->rho, ML_KEM_RANDOM_BYTES);
+        do {
+            tail[ML_KEM_RANDOM_BYTES] = (uint8_t)(pos / rank);
+            tail[ML_KEM_RANDOM_BYTES + 1] = (uint8_t)(pos % rank);
+            if (!EVP_DigestInit_ex(mdctx, key->shake128_md, NULL)
+                || !EVP_DigestUpdate(mdctx, tail, sizeof(tail))
+                || !sample_scalar(out++, mdctx))
+                return 0;
+            pos++;
+        } while (pos < total);
+    }
+    return 1;
+}
+
+/* Keygen samples the nonce-continuous logical sequence s || e. */
+static __owur
+int keygen_noise_x4(scalar *s, scalar *e,
+                    const uint8_t seed[ML_KEM_RANDOM_BYTES],
+                    int rank, int eta,
+                    EVP_MD_CTX *mdctx, const ML_KEM_KEY *key)
+{
+    scalar *task[2 * ML_KEM_X4_LANES];
+    int total = 2 * rank;
+    int pos = 0;
+    int i;
+
+    for (i = 0; i < rank; i++) {
+        task[i] = &s[i];
+        task[rank + i] = &e[i];
+    }
+    while (total - pos >= ML_KEM_X4_LANES) {
+        scalar *lane[ML_KEM_X4_LANES];
+
+        for (i = 0; i < ML_KEM_X4_LANES; i++)
+            lane[i] = task[pos + i];
+        sample_cbd_x4(lane, ML_KEM_X4_LANES, seed, (uint8_t)pos, eta, 1);
+        pos += ML_KEM_X4_LANES;
+    }
+
+    /* Phase 3d keeps a non-full keygen batch on the established EVP path. */
+    while (pos < total) {
+        uint8_t input[ML_KEM_RANDOM_BYTES + 1];
+        CBD_FUNC cbd = eta == 3 ? cbd_3 : cbd_2;
+        int ok;
+
+        memcpy(input, seed, ML_KEM_RANDOM_BYTES);
+        input[ML_KEM_RANDOM_BYTES] = (uint8_t)pos;
+        ok = cbd(task[pos], input, mdctx, key);
+        OPENSSL_cleanse(input, sizeof(input));
+        if (!ok)
+            return 0;
+        scalar_ntt(task[pos]);
+        pos++;
+    }
+    return 1;
+}
+
+/* Encrypt y/e1 vectors use initialized dummy lanes when rank is below four. */
+static __owur
+int cbd_vector_x4(scalar *out, const uint8_t seed[ML_KEM_RANDOM_BYTES],
+                  uint8_t *counter, int rank, int eta, int apply_ntt,
+                  EVP_MD_CTX *mdctx, const ML_KEM_KEY *key)
+{
+    scalar *lane[ML_KEM_X4_LANES] = { NULL, NULL, NULL, NULL };
+    int i;
+
+    (void)mdctx;
+    (void)key;
+    for (i = 0; i < rank; i++)
+        lane[i] = &out[i];
+    sample_cbd_x4(lane, rank, seed, *counter, eta, apply_ntt);
+    *counter = (uint8_t)(*counter + rank);
+    return 1;
+}
+#endif
+
+/*
+ * Task-level sampling vtable.  Phase 3 introduces this so that a SHAKE x4
+ * backend can batch four independent Keccak streams inside matrix expansion
+ * and the noise generators, without exposing SIMD details to the high-level
+ * keygen/encrypt control flow.  This step (3b) wires only the generic table:
+ * the control flow is unchanged and KAT output is identical.
+ *
+ * keygen s and e are nonce-continuous with no intervening computation, so they
+ * form one batchable unit (keygen_noise).  In encrypt, y must be consumed to
+ * form u/v before e1 is sampled into the same scratch, so y and e1 cannot be
+ * merged; each is a separate cbd_vector call and the lone e2 stays scalar.
+ */
+typedef struct {
+    int (*matrix_expand)(EVP_MD_CTX *mdctx, ML_KEM_KEY *key);
+    int (*keygen_noise)(scalar *s, scalar *e,
+                        const uint8_t seed[ML_KEM_RANDOM_BYTES],
+                        int rank, int eta,
+                        EVP_MD_CTX *mdctx, const ML_KEM_KEY *key);
+    int (*cbd_vector)(scalar *out,
+                      const uint8_t seed[ML_KEM_RANDOM_BYTES],
+                      uint8_t *counter, int rank, int eta, int apply_ntt,
+                      EVP_MD_CTX *mdctx, const ML_KEM_KEY *key);
+} ML_KEM_SAMPLE_OPS;
+
+/* Generic keygen noise: sample s then e as one nonce-continuous unit. */
+static __owur
+int keygen_noise_generic(scalar *s, scalar *e,
+                         const uint8_t seed[ML_KEM_RANDOM_BYTES],
+                         int rank, int eta,
+                         EVP_MD_CTX *mdctx, const ML_KEM_KEY *key)
+{
+    CBD_FUNC cbd = (eta == 3) ? cbd_3 : cbd_2;
+    uint8_t counter = 0;
+
+    return gencbd_vector_ntt(s, cbd, &counter, seed, rank, mdctx, key)
+        && gencbd_vector_ntt(e, cbd, &counter, seed, rank, mdctx, key);
+}
+
+/* Generic single-vector CBD; apply_ntt selects the NTT-transformed variant. */
+static __owur
+int cbd_vector_generic(scalar *out, const uint8_t seed[ML_KEM_RANDOM_BYTES],
+                       uint8_t *counter, int rank, int eta, int apply_ntt,
+                       EVP_MD_CTX *mdctx, const ML_KEM_KEY *key)
+{
+    CBD_FUNC cbd = (eta == 3) ? cbd_3 : cbd_2;
+
+    return apply_ntt
+        ? gencbd_vector_ntt(out, cbd, counter, seed, rank, mdctx, key)
+        : gencbd_vector(out, cbd, counter, seed, rank, mdctx, key);
+}
+
+static const ML_KEM_SAMPLE_OPS ml_kem_sample_generic = {
+    matrix_expand,
+    keygen_noise_generic,
+    cbd_vector_generic,
+};
+
+#if defined(ML_KEM_SAMPLE_X4)
+static const ML_KEM_SAMPLE_OPS ml_kem_sample_avx512vl = {
+    matrix_expand_x4,
+    keygen_noise_x4,
+    cbd_vector_x4,
+};
+#endif
+
+/* Select once per high-level operation; an active backend never falls back. */
+static const ML_KEM_SAMPLE_OPS *ml_kem_sample_ops(void)
+{
+#if defined(ML_KEM_SAMPLE_X4)
+    if (SHA3_avx512vl_capable())
+        return &ml_kem_sample_avx512vl;
+#endif
+    return &ml_kem_sample_generic;
+}
 
 /*
  * FIPS 203, Section 5.2, Algorithm 14: K-PKE.Encrypt.
@@ -1165,7 +1589,8 @@ int encrypt_cpa(uint8_t out[ML_KEM_SHARED_SECRET_BYTES],
                 EVP_MD_CTX *mdctx, const ML_KEM_KEY *key)
 {
     const ML_KEM_VINFO *vinfo = key->vinfo;
-    CBD_FUNC cbd_1 = CBD1(vinfo->evp_type);
+    const ML_KEM_SAMPLE_OPS *sops = ml_kem_sample_ops();
+    int eta1 = ETA1(vinfo->evp_type);
     int rank = vinfo->rank;
     /* We can use tmp[0..rank-1] as storage for |y|, then |e1|, ... */
     scalar *y = &tmp[0], *e1 = y, *e2 = y;
@@ -1178,7 +1603,7 @@ int encrypt_cpa(uint8_t out[ML_KEM_SHARED_SECRET_BYTES],
     int dv = vinfo->dv;
 
     /* FIPS 203 "y" vector */
-    if (!gencbd_vector_ntt(y, cbd_1, &counter, r, rank, mdctx, key))
+    if (!sops->cbd_vector(y, r, &counter, rank, eta1, /*apply_ntt=*/1, mdctx, key))
         return 0;
     /* FIPS 203 "v" scalar */
     inner_product(&v, key->t, y, rank);
@@ -1187,7 +1612,7 @@ int encrypt_cpa(uint8_t out[ML_KEM_SHARED_SECRET_BYTES],
     matrix_mult_intt(u, key->m, y, rank);
 
     /* All done with |y|, now free to reuse tmp[0] for FIPS 203 |e1| */
-    if (!gencbd_vector(e1, cbd_2, &counter, r, rank, mdctx, key))
+    if (!sops->cbd_vector(e1, r, &counter, rank, /*eta=*/2, /*apply_ntt=*/0, mdctx, key))
         return 0;
     vector_add(u, e1, rank);
     vector_compress(u, du, rank);
@@ -1277,6 +1702,7 @@ static void encode_prvkey(uint8_t *out, const ML_KEM_KEY *key)
 static int parse_pubkey(const uint8_t *in, EVP_MD_CTX *mdctx, ML_KEM_KEY *key)
 {
     const ML_KEM_VINFO *vinfo = key->vinfo;
+    const ML_KEM_SAMPLE_OPS *sops = ml_kem_sample_ops();
 
     /* Decode and check |t| */
     if (!vector_decode_12(key->t, in, vinfo->rank)) {
@@ -1292,7 +1718,7 @@ static int parse_pubkey(const uint8_t *in, EVP_MD_CTX *mdctx, ML_KEM_KEY *key)
      * Also pre-compute the matrix expansion, stored with the public key.
      */
     if (!hash_h(key->pkhash, in, vinfo->pubkey_bytes, mdctx, key)
-        || !matrix_expand(mdctx, key)) {
+        || !sops->matrix_expand(mdctx, key)) {
         ERR_raise_data(ERR_LIB_CRYPTO, ERR_R_INTERNAL_ERROR,
                        "internal error while parsing %s public key",
                        vinfo->algorithm_name);
@@ -1370,9 +1796,9 @@ int genkey(const uint8_t seed[ML_KEM_SEED_BYTES],
     const uint8_t *const sigma = hashed + ML_KEM_RANDOM_BYTES;
     uint8_t augmented_seed[ML_KEM_RANDOM_BYTES + 1];
     const ML_KEM_VINFO *vinfo = key->vinfo;
-    CBD_FUNC cbd_1 = CBD1(vinfo->evp_type);
+    const ML_KEM_SAMPLE_OPS *sops = ml_kem_sample_ops();
+    int eta1 = ETA1(vinfo->evp_type);
     int rank = vinfo->rank;
-    uint8_t counter = 0;
     int ret = 0;
 
     /*
@@ -1388,9 +1814,8 @@ int genkey(const uint8_t seed[ML_KEM_SEED_BYTES],
     CONSTTIME_DECLASSIFY(key->rho, ML_KEM_RANDOM_BYTES);
 
     /* FIPS 203 |e| vector is initial value of key->t */
-    if (!matrix_expand(mdctx, key)
-        || !gencbd_vector_ntt(key->s, cbd_1, &counter, sigma, rank, mdctx, key)
-        || !gencbd_vector_ntt(key->t, cbd_1, &counter, sigma, rank, mdctx, key))
+    if (!sops->matrix_expand(mdctx, key)
+        || !sops->keygen_noise(key->s, key->t, sigma, rank, eta1, mdctx, key))
         goto end;
 
     /* To |e| we now add the product of transpose |m| and |s|, giving |t|. */
@@ -1597,6 +2022,8 @@ ossl_ml_kem_key_reset(ML_KEM_KEY *key)
 /* Retrieve the parameters of one of the ML-KEM variants */
 const ML_KEM_VINFO *ossl_ml_kem_get_vinfo(int evp_type)
 {
+    (void)CRYPTO_THREAD_run_once(&ml_kem_poly_once, ml_kem_poly_init);
+
     switch (evp_type) {
     case EVP_PKEY_ML_KEM_512:
         return &vinfo_map[ML_KEM_512_VINFO];

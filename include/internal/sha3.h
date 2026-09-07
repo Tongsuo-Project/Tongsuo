@@ -59,4 +59,117 @@ int ossl_sha3_squeeze(KECCAK1600_CTX *ctx, unsigned char *out, size_t outlen);
 size_t SHA3_absorb(uint64_t A[5][5], const unsigned char *inp, size_t len,
                    size_t r);
 
+/* Multi-buffer (x4) Keccak-f[1600] context and API */
+#if defined(KECCAK1600_ASM)                                                               \
+    && (defined(__x86_64) || defined(__x86_64__) || defined(_M_AMD64) || defined(_M_X64)) \
+    && !defined(OPENSSL_NO_ASM)
+
+/* Runtime capability check for AVX512VL */
+int SHA3_avx512vl_capable(void);
+
+/*
+ * Low-level x4 assembly entry points (defined in keccak1600x4-avx512vl.pl).
+ * Declared here rather than in sha3_x4_avx512vl.c so that symbol-prefix builds
+ * rename the C references in step with the prefixed assembly symbols.
+ */
+void SHA3_shake128_x4_inc_absorb_avx512vl(
+    uint64_t *state,
+    const void *in0, const void *in1,
+    const void *in2, const void *in3,
+    size_t inlen);
+void SHA3_shake256_x4_inc_absorb_avx512vl(
+    uint64_t *state,
+    const void *in0, const void *in1,
+    const void *in2, const void *in3,
+    size_t inlen);
+void SHA3_shake128_x4_inc_finalize_avx512vl(uint64_t *state);
+void SHA3_shake256_x4_inc_finalize_avx512vl(uint64_t *state);
+void SHA3_shake128_x4_inc_squeeze_avx512vl(
+    void *out0, void *out1,
+    void *out2, void *out3,
+    size_t outlen,
+    uint64_t *state);
+void SHA3_shake256_x4_inc_squeeze_avx512vl(
+    void *out0, void *out1,
+    void *out2, void *out3,
+    size_t outlen,
+    uint64_t *state);
+void SHA3_shake128_x4_avx512vl(
+    void *out0, void *out1,
+    void *out2, void *out3,
+    size_t outlen,
+    const void *in0, const void *in1,
+    const void *in2, const void *in3,
+    size_t inlen);
+void SHA3_shake256_x4_avx512vl(
+    void *out0, void *out1,
+    void *out2, void *out3,
+    size_t outlen,
+    const void *in0, const void *in1,
+    const void *in2, const void *in3,
+    size_t inlen);
+
+/* Context for 4-way parallel SHAKE operations */
+typedef struct {
+    /* 4 interleaved Keccak states (800 bytes)
+       plus 8 bytes to store the number of
+       already absorbed or not yet squeezed bytes */
+    uint64_t A[(25 * 4) + 1];
+    size_t rate; /* Rate in bytes: 168 (SHAKE-128) or 136 (SHAKE-256) */
+    unsigned finalized; /* Has finalize been called? 0=no, 1=yes */
+} KECCAK1600_X4_AVX512VL_CTX;
+
+/* SHAKE-128 x4 incremental API */
+void ossl_sha3_shake128_x4_inc_init_avx512vl(KECCAK1600_X4_AVX512VL_CTX *ctx);
+
+void ossl_sha3_shake128_x4_inc_absorb_avx512vl(
+    KECCAK1600_X4_AVX512VL_CTX *ctx,
+    const void *in0, const void *in1,
+    const void *in2, const void *in3,
+    size_t inlen);
+
+void ossl_sha3_shake128_x4_inc_cleanup_avx512vl(KECCAK1600_X4_AVX512VL_CTX *ctx);
+
+void ossl_sha3_shake128_x4_inc_squeeze_avx512vl(
+    void *out0, void *out1,
+    void *out2, void *out3,
+    size_t outlen,
+    KECCAK1600_X4_AVX512VL_CTX *ctx);
+
+/* SHAKE-256 x4 incremental API */
+void ossl_sha3_shake256_x4_inc_init_avx512vl(KECCAK1600_X4_AVX512VL_CTX *ctx);
+
+void ossl_sha3_shake256_x4_inc_absorb_avx512vl(
+    KECCAK1600_X4_AVX512VL_CTX *ctx,
+    const void *in0, const void *in1,
+    const void *in2, const void *in3,
+    size_t inlen);
+
+void ossl_sha3_shake256_x4_inc_cleanup_avx512vl(KECCAK1600_X4_AVX512VL_CTX *ctx);
+
+void ossl_sha3_shake256_x4_inc_squeeze_avx512vl(
+    void *out0, void *out1,
+    void *out2, void *out3,
+    size_t outlen,
+    KECCAK1600_X4_AVX512VL_CTX *ctx);
+
+/* Single-call SHAKE x4 APIs (wrapper functions) */
+void ossl_sha3_shake128_x4_avx512vl(
+    void *out0, void *out1,
+    void *out2, void *out3,
+    size_t outlen,
+    const void *in0, const void *in1,
+    const void *in2, const void *in3,
+    size_t inlen);
+
+void ossl_sha3_shake256_x4_avx512vl(
+    void *out0, void *out1,
+    void *out2, void *out3,
+    size_t outlen,
+    const void *in0, const void *in1,
+    const void *in2, const void *in3,
+    size_t inlen);
+
+#endif /* KECCAK1600_ASM && x86_64 && !OPENSSL_NO_ASM */
+
 #endif /* OSSL_INTERNAL_SHA3_H */
