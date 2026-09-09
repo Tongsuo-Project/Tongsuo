@@ -694,3 +694,5 @@ SSL_CTX_enable_force_ntls               694	3_0_3	EXIST::FUNCTION:NTLS
 SSL_CTX_disable_force_ntls              695	3_0_3	EXIST::FUNCTION:NTLS
 SSL_enable_force_ntls                   696	3_0_3	EXIST::FUNCTION:NTLS
 SSL_disable_force_ntls                  697	3_0_3	EXIST::FUNCTION:NTLS
+SSL_get0_peer_sign_certificate_ntls     698	3_5_4	EXIST::FUNCTION:NTLS
+SSL_get0_peer_enc_certificate_ntls      699	3_5_4	EXIST::FUNCTION:NTLS
