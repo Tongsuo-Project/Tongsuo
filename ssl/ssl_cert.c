@@ -1313,9 +1313,6 @@ static int ssl_security_default_callback(const SSL *s, const SSL_CTX *ctx,
             return 0;
         if (!SSL_CONNECTION_IS_DTLS(sc)) {
 #ifndef OPENSSL_NO_NTLS
-            /* NTLS v1.1 not allowed at level 3 */
-            if (nid == NTLS_VERSION && level >= 3)
-                return 0;
             /* NTLS v1.1 has a version number of 0x0101 < 0x0300 */
             if (nid != NTLS_VERSION) {
 #endif

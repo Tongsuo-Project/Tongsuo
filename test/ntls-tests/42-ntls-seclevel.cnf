@@ -1,0 +1,42 @@
+# Generated with generate_ssl_tests.pl
+
+num_tests = 1
+
+test-0 = 0-NTLS ECDHE-SM2-SM4 with SECLEVEL 3
+# ===========================================================
+
+[0-NTLS ECDHE-SM2-SM4 with SECLEVEL 3]
+ssl_conf = 0-NTLS ECDHE-SM2-SM4 with SECLEVEL 3-ssl
+
+[0-NTLS ECDHE-SM2-SM4 with SECLEVEL 3-ssl]
+server = 0-NTLS ECDHE-SM2-SM4 with SECLEVEL 3-server
+client = 0-NTLS ECDHE-SM2-SM4 with SECLEVEL 3-client
+
+[0-NTLS ECDHE-SM2-SM4 with SECLEVEL 3-server]
+Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
+CipherString = ALL:@SECLEVEL=3
+Enable_ntls = on
+EncCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_enc.crt
+EncPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_enc.key
+PrivateKey = ${ENV::TEST_CERTS_DIR}/serverkey.pem
+SignCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.crt
+SignPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.key
+VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2/chain-ca.crt
+
+[0-NTLS ECDHE-SM2-SM4 with SECLEVEL 3-client]
+CipherString = ALL:@SECLEVEL=3
+Enable_ntls = on
+EncCertificate = ${ENV::TEST_CERTS_DIR}/sm2/client_enc.crt
+EncPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/client_enc.key
+SignCertificate = ${ENV::TEST_CERTS_DIR}/sm2/client_sign.crt
+SignPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/client_sign.key
+VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2/chain-ca.crt
+VerifyMode = Peer
+
+[test-0]
+ExpectedCipher = ECDHE-SM2-SM4-GCM-SM3
+ExpectedProtocol = NTLS
+ExpectedResult = Success
+Method = NTLS
+
+
