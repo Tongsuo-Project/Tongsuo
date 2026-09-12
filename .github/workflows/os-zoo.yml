@@ -29,7 +29,7 @@ jobs:
       # for the reason why -Wno-sign-compare is needed with clang
       # -Wno-stringop-overflow is needed to silence a bogus
       # warning on new fortify-headers with gcc
-      EXTRA_CFLAGS: ${{ matrix.cc == 'clang' && '-Wno-sign-compare' || matrix.tag == 'edge' && '-Wno-stringop-overflow' || '' }}
+      EXTRA_CFLAGS: ${{ matrix.cc == 'clang' && '-Wno-sign-compare -Wno-unused-but-set-global' || matrix.tag == 'edge' && '-Wno-stringop-overflow' || '' }}
       CC: ${{ matrix.cc }}
     steps:
     - name: install packages
