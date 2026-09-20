@@ -694,3 +694,5 @@ SSL_CTX_enable_force_ntls               694	3_0_3	EXIST::FUNCTION:NTLS
 SSL_CTX_disable_force_ntls              695	3_0_3	EXIST::FUNCTION:NTLS
 SSL_enable_force_ntls                   696	3_0_3	EXIST::FUNCTION:NTLS
 SSL_disable_force_ntls                  697	3_0_3	EXIST::FUNCTION:NTLS
+SSL_CTX_set_ntls_strict_ecdhe_cke       698	3_5_4	EXIST::FUNCTION:NTLS
+SSL_set_ntls_strict_ecdhe_cke           699	3_5_4	EXIST::FUNCTION:NTLS

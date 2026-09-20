@@ -795,6 +795,7 @@ SSL *ossl_ssl_connection_new_int(SSL_CTX *ctx, SSL *user_ssl,
 #ifndef OPENSSL_NO_NTLS
     s->enable_ntls = ctx->enable_ntls;
     s->enable_force_ntls = ctx->enable_force_ntls;
+    s->enable_ntls_strict_ecdhe_cke = ctx->enable_ntls_strict_ecdhe_cke;
 #endif
 #ifndef OPENSSL_NO_SM2
     s->enable_sm_tls13_strict = ctx->enable_sm_tls13_strict;
@@ -4135,6 +4136,7 @@ SSL_CTX *SSL_CTX_new_ex(OSSL_LIB_CTX *libctx, const char *propq,
 #ifndef OPENSSL_NO_NTLS
     ret->enable_ntls = 0;
     ret->enable_force_ntls = 0;
+    ret->enable_ntls_strict_ecdhe_cke = 0;
 #endif
 #ifndef OPENSSL_NO_SM2
     ret->enable_sm_tls13_strict = 0;
@@ -5462,6 +5464,7 @@ SSL_CTX *SSL_CTX_dup(SSL_CTX *ctx)
     /* Tag of NTLS */
     ret->enable_ntls = ctx->enable_ntls;
     ret->enable_force_ntls = ctx->enable_force_ntls;
+    ret->enable_ntls_strict_ecdhe_cke = ctx->enable_ntls_strict_ecdhe_cke;
 #endif
 #ifndef OPENSSL_NO_SM2
     ret->enable_sm_tls13_strict = ctx->enable_sm_tls13_strict;
@@ -8159,6 +8162,21 @@ void SSL_disable_force_ntls(SSL *s)
         return;
 
     sc->enable_force_ntls = 0;
+}
+
+void SSL_CTX_set_ntls_strict_ecdhe_cke(SSL_CTX *ctx, int enable)
+{
+    ctx->enable_ntls_strict_ecdhe_cke = enable;
+}
+
+void SSL_set_ntls_strict_ecdhe_cke(SSL *s, int enable)
+{
+    SSL_CONNECTION *sc = SSL_CONNECTION_FROM_SSL(s);
+
+    if (sc == NULL)
+        return;
+
+    sc->enable_ntls_strict_ecdhe_cke = enable;
 }
 #endif
 
