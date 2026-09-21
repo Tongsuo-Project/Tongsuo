@@ -16,6 +16,10 @@
 #include <openssl/params.h>
 #include <openssl/err.h>
 #include <openssl/proverr.h>
+#include <openssl/rand.h>
+/* Just for SSL_MAX_MASTER_KEY_LENGTH */
+#include <openssl/prov_ssl.h>
+#include "internal/constant_time.h"
 #include "crypto/sm2.h"
 #include "prov/provider_ctx.h"
 #include "prov/implementations.h"
@@ -44,6 +48,8 @@ typedef struct {
     OSSL_LIB_CTX *libctx;
     EC_KEY *key;
     PROV_DIGEST md;
+    /* Non-zero enables NTLS PMS implicit-rejection decrypt */
+    unsigned int client_version;
 } PROV_SM2_CTX;
 
 static void *sm2_newctx(void *provctx)
@@ -100,6 +106,71 @@ static int sm2_asym_encrypt(void *vpsm2ctx, unsigned char *out, size_t *outlen,
     return ossl_sm2_encrypt(psm2ctx->key, md, in, inlen, out, outlen);
 }
 
+/*
+ * NTLS PMS decrypt (opt-in via OSSL_ASYM_CIPHER_PARAM_TLS_CLIENT_VERSION).
+ * Standard TLS does not use SM2 encryption for key transport; only NTLS
+ * ECC-SM2 ClientKeyExchange does. Failure of decrypt, plaintext length, or
+ * PMS.client_version (GB/T 38636-2020 6.4.5.8) still returns 48 random
+ * bytes successfully, matching the RSA PKCS#1.5 TLS padding policy.
+ */
+static int sm2_ntls_pms_decrypt(PROV_SM2_CTX *psm2ctx, const EVP_MD *md,
+                               unsigned char *out, size_t *outlen,
+                               size_t outsize, const unsigned char *in,
+                               size_t inlen)
+{
+    unsigned char *tmp = NULL;
+    unsigned char rand_premaster_secret[SSL_MAX_MASTER_KEY_LENGTH];
+    size_t tmplen, dec_len = 0;
+    unsigned int i, good;
+    int dec_ok;
+
+    if (out == NULL) {
+        *outlen = SSL_MAX_MASTER_KEY_LENGTH;
+        return 1;
+    }
+    if (outsize < SSL_MAX_MASTER_KEY_LENGTH) {
+        ERR_raise(ERR_LIB_PROV, PROV_R_BAD_LENGTH);
+        return 0;
+    }
+
+    if (RAND_priv_bytes_ex(psm2ctx->libctx, rand_premaster_secret,
+                           sizeof(rand_premaster_secret), 0) <= 0) {
+        ERR_raise(ERR_LIB_PROV, ERR_R_INTERNAL_ERROR);
+        return 0;
+    }
+
+    tmplen = SSL_MAX_MASTER_KEY_LENGTH;
+    ERR_set_mark();
+    if (ossl_sm2_plaintext_size(in, inlen, &dec_len) && (dec_len > tmplen))
+        tmplen = dec_len;
+    ERR_pop_to_mark();
+
+    tmp = OPENSSL_zalloc(tmplen);
+    if (tmp == NULL)
+        return 0;
+
+    dec_len = tmplen;
+    ERR_set_mark();
+    dec_ok = ossl_sm2_decrypt(psm2ctx->key, md, in, inlen, tmp, &dec_len);
+    ERR_pop_to_mark();
+
+    good = constant_time_eq_int(dec_ok, 1);
+    good &= constant_time_eq_s(dec_len, SSL_MAX_MASTER_KEY_LENGTH);
+    good &= constant_time_eq(tmp[0], (psm2ctx->client_version >> 8) & 0xff);
+    good &= constant_time_eq(tmp[1], psm2ctx->client_version & 0xff);
+
+    // Follows crypto/rsa/rsa_pk1.c
+    for (i = 0; i < SSL_MAX_MASTER_KEY_LENGTH; i++) {
+        out[i] = constant_time_select_8(good, tmp[i],
+                                        rand_premaster_secret[i]);
+    }
+
+    *outlen = SSL_MAX_MASTER_KEY_LENGTH;
+    OPENSSL_clear_free(tmp, tmplen);
+    OPENSSL_cleanse(rand_premaster_secret, sizeof(rand_premaster_secret));
+    return 1;
+}
+
 static int sm2_asym_decrypt(void *vpsm2ctx, unsigned char *out, size_t *outlen,
                             size_t outsize, const unsigned char *in,
                             size_t inlen)
@@ -109,6 +180,9 @@ static int sm2_asym_decrypt(void *vpsm2ctx, unsigned char *out, size_t *outlen,
 
     if (md == NULL)
         return 0;
+
+    if (psm2ctx->client_version != 0)
+        return sm2_ntls_pms_decrypt(psm2ctx, md, out, outlen, outsize, in, inlen);
 
     if (out == NULL) {
         if (!ossl_sm2_plaintext_size(in, inlen, outlen))
@@ -171,11 +245,16 @@ static int sm2_get_ctx_params(void *vpsm2ctx, OSSL_PARAM *params)
             return 0;
     }
 
+    p = OSSL_PARAM_locate(params, OSSL_ASYM_CIPHER_PARAM_TLS_CLIENT_VERSION);
+    if (p != NULL && !OSSL_PARAM_set_uint(p, psm2ctx->client_version))
+        return 0;
+
     return 1;
 }
 
 static const OSSL_PARAM known_gettable_ctx_params[] = {
     OSSL_PARAM_utf8_string(OSSL_ASYM_CIPHER_PARAM_DIGEST, NULL, 0),
+    OSSL_PARAM_uint(OSSL_ASYM_CIPHER_PARAM_TLS_CLIENT_VERSION, NULL),
     OSSL_PARAM_END
 };
 
@@ -188,6 +267,7 @@ static const OSSL_PARAM *sm2_gettable_ctx_params(ossl_unused void *vpsm2ctx,
 static int sm2_set_ctx_params(void *vpsm2ctx, const OSSL_PARAM params[])
 {
     PROV_SM2_CTX *psm2ctx = (PROV_SM2_CTX *)vpsm2ctx;
+    const OSSL_PARAM *p;
 
     if (psm2ctx == NULL)
         return 0;
@@ -198,6 +278,15 @@ static int sm2_set_ctx_params(void *vpsm2ctx, const OSSL_PARAM params[])
                                            psm2ctx->libctx))
         return 0;
 
+    p = OSSL_PARAM_locate_const(params, OSSL_ASYM_CIPHER_PARAM_TLS_CLIENT_VERSION);
+    if (p != NULL) {
+        unsigned int client_version;
+
+        if (!OSSL_PARAM_get_uint(p, &client_version))
+            return 0;
+        psm2ctx->client_version = client_version;
+    }
+
     return 1;
 }
 
@@ -205,6 +294,7 @@ static const OSSL_PARAM known_settable_ctx_params[] = {
     OSSL_PARAM_utf8_string(OSSL_ASYM_CIPHER_PARAM_DIGEST, NULL, 0),
     OSSL_PARAM_utf8_string(OSSL_ASYM_CIPHER_PARAM_PROPERTIES, NULL, 0),
     OSSL_PARAM_utf8_string(OSSL_ASYM_CIPHER_PARAM_ENGINE, NULL, 0),
+    OSSL_PARAM_uint(OSSL_ASYM_CIPHER_PARAM_TLS_CLIENT_VERSION, NULL),
     OSSL_PARAM_END
 };
 

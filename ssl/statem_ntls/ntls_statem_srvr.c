@@ -13,7 +13,6 @@
 #include "internal/ssl_unwrap.h"
 #include "ntls_ssl_local.h"
 #include "ntls_statem_local.h"
-#include "internal/constant_time.h"
 #include "internal/cryptlib.h"
 #include <openssl/buffer.h>
 #include <openssl/rand.h>
@@ -1857,12 +1856,11 @@ static int tls_process_cke_pms_ntls(SSL_CONNECTION *s, PACKET *pkt, unsigned lon
     /*
      * We must not leak whether a decryption failure occurs because of
      * Bleichenbacher's attack on PKCS #1 v1.5 RSA padding (see RFC 2246,
-     * section 7.4.7.1). We use the special padding type
-     * RSA_PKCS1_WITH_TLS_PADDING to do that. It will automaticaly decrypt the
-     * RSA, check the padding and check that the client version is as expected
-     * in the premaster secret. If any of that fails then the function appears
-     * to return successfully but with a random result. The call below could
-     * still fail if the input is publicly invalid.
+     * section 7.4.7.1). RSA uses RSA_PKCS1_WITH_TLS_PADDING; SM2 has no
+     * PKCS#1, but the same OSSL_ASYM_CIPHER_PARAM_TLS_CLIENT_VERSION
+     * opt-in makes SM2 decrypt check GB/T 38636-2020 6.4.5.8
+     * PMS.client_version and, on decrypt / length / version failure,
+     * appear to succeed with a random 48-byte result.
      * See https://tools.ietf.org/html/rfc5246#section-7.4.7.1
      */
     if (alg_k & SSL_kRSA) {
@@ -1871,16 +1869,16 @@ static int tls_process_cke_pms_ntls(SSL_CONNECTION *s, PACKET *pkt, unsigned lon
             SSLfatal_ntls(s, SSL_AD_DECRYPT_ERROR, SSL_R_DECRYPTION_FAILED);
             goto err;
         }
+    }
 
-        *p++ = OSSL_PARAM_construct_uint(
-                    OSSL_ASYM_CIPHER_PARAM_TLS_CLIENT_VERSION,
-                    (unsigned int *)&s->client_version);
-        *p++ = OSSL_PARAM_construct_end();
+    *p++ = OSSL_PARAM_construct_uint(
+                OSSL_ASYM_CIPHER_PARAM_TLS_CLIENT_VERSION,
+                (unsigned int *)&s->client_version);
+    *p++ = OSSL_PARAM_construct_end();
 
-        if (!EVP_PKEY_CTX_set_params(ctx, params)) {
-            SSLfatal_ntls(s, SSL_AD_DECRYPT_ERROR, SSL_R_DECRYPTION_FAILED);
-            goto err;
-        }
+    if (!EVP_PKEY_CTX_set_params(ctx, params)) {
+        SSLfatal_ntls(s, SSL_AD_DECRYPT_ERROR, SSL_R_DECRYPTION_FAILED);
+        goto err;
     }
 
     if (EVP_PKEY_decrypt(ctx, pkey_decrypt, &outlen,
@@ -1898,36 +1896,6 @@ static int tls_process_cke_pms_ntls(SSL_CONNECTION *s, PACKET *pkt, unsigned lon
         OPENSSL_cleanse(pkey_decrypt, SSL_MAX_MASTER_KEY_LENGTH);
         SSLfatal_ntls(s, SSL_AD_DECRYPT_ERROR, SSL_R_DECRYPTION_FAILED);
         goto err;
-    }
-
-    /*
-     * GB/T 38636-2020 Section 6.4.5.8: PMS.client_version must match
-     * ClientHello.client_version. SM2 has no RSA_PKCS1_WITH_TLS_PADDING
-     * equivalent, so do the PKCS #1.5-style check here: constant-time
-     * compare, and on mismatch continue with a random PMS (RFC 5246
-     * 7.4.7.1) rather than a distinct CKE alert.
-     * TODO: merge this flow with SM2 decryption, taking a
-     * OSSL_ASYM_CIPHER_PARAM_TLS_CLIENT_VERSION parameter as input.
-     */
-    if (alg_k & SSL_kSM2) {
-        unsigned int i, version_good;
-        unsigned char rand_premaster_secret[SSL_MAX_MASTER_KEY_LENGTH];
-
-        if (RAND_priv_bytes_ex(sctx->libctx, rand_premaster_secret,
-                               sizeof(rand_premaster_secret), 0) <= 0) {
-            OPENSSL_cleanse(pkey_decrypt, SSL_MAX_MASTER_KEY_LENGTH);
-            SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
-            goto err;
-        }
-
-        version_good = constant_time_eq(pkey_decrypt[0], (s->client_version >> 8) & 0xff);
-        version_good &= constant_time_eq(pkey_decrypt[1], s->client_version & 0xff);
-
-        for (i = 0; i < SSL_MAX_MASTER_KEY_LENGTH; i++) {
-            pkey_decrypt[i] = constant_time_select_8(version_good, pkey_decrypt[i],
-                                                     rand_premaster_secret[i]);
-        }
-        OPENSSL_cleanse(rand_premaster_secret, sizeof(rand_premaster_secret));
     }
 
     /* Also cleanses pkey_decrypt (on success or failure) */
