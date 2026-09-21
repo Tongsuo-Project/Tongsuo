@@ -159,7 +159,7 @@ static int sm2_ntls_pms_decrypt(PROV_SM2_CTX *psm2ctx, const EVP_MD *md,
     good &= constant_time_eq(tmp[0], (psm2ctx->client_version >> 8) & 0xff);
     good &= constant_time_eq(tmp[1], psm2ctx->client_version & 0xff);
 
-    // Follows crypto/rsa/rsa_pk1.c
+    /* Follows crypto/rsa/rsa_pk1.c */
     for (i = 0; i < SSL_MAX_MASTER_KEY_LENGTH; i++) {
         out[i] = constant_time_select_8(good, tmp[i],
                                         rand_premaster_secret[i]);
