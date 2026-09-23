@@ -1511,6 +1511,13 @@ static void port_default_packet_handler(QUIC_URXE *e, void *arg,
         goto undesirable;
 
     /*
+     * packet without destination connection id is invalid/corrupted here.
+     * stop wasting CPU cycles now.
+     */
+    if (dcid == NULL)
+        goto undesirable;
+
+    /*
      * We have got a packet for an unknown DCID. This might be an attempt to
      * open a new connection.
      */
