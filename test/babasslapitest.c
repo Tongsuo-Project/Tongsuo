@@ -1303,6 +1303,7 @@ static int test_babassl_status(void)
     SSL_CTX *cctx = NULL, *sctx = NULL;
     SSL *clientssl1 = NULL, *serverssl1 = NULL;
     SSL *clientssl2 = NULL, *serverssl2 = NULL;
+    SSL_CONNECTION *csc1 = NULL, *csc2 = NULL, *ssc2 = NULL;
     int testresult = 0;
     ssl_status_t status;
     SSL_SESSION *sess1 = NULL;
@@ -1337,7 +1338,10 @@ static int test_babassl_status(void)
 
     ellipticcurvelist_length = status.ellipticcurvelist_length;
 
-    if (!TEST_int_eq(clientssl1->session->kex_group, status.ecc_curve_name)
+    csc1 = SSL_CONNECTION_FROM_SSL(clientssl1);
+
+    if (!TEST_ptr(csc1) || !TEST_ptr(csc1->session)
+        || !TEST_int_eq(csc1->session->kex_group, status.ecc_curve_name)
         || !TEST_int_eq(status.cipher_suite_len, 2)
         || !TEST_int_eq(htons(*(uint16_t *)(status.buf+status.client_cipher_offset)),
                         0xc030)
@@ -1357,10 +1361,15 @@ static int test_babassl_status(void)
         || !TEST_true(SSL_session_reused(clientssl2)))
         goto end;
 
-    if (!TEST_int_eq(clientssl2->session->kex_group, 29)
+    csc2 = SSL_CONNECTION_FROM_SSL(clientssl2);
+    ssc2 = SSL_CONNECTION_FROM_SSL(serverssl2);
+
+    if (!TEST_ptr(csc2) || !TEST_ptr(csc2->session)
+        || !TEST_ptr(ssc2) || !TEST_ptr(ssc2->session)
+        || !TEST_int_eq(csc2->session->kex_group, 29)
         || !TEST_int_eq(status.ecc_curve_name, 0)
-        || !TEST_mem_eq(serverssl2->session->session_id,
-                        serverssl2->session->session_id_length,
+        || !TEST_mem_eq(ssc2->session->session_id,
+                        ssc2->session->session_id_length,
                         status.buf + status.client_session_offset,
                         status.client_session_len)
         || !TEST_int_eq(status.cipher_suite_len, 2)

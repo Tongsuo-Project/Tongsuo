@@ -29,7 +29,7 @@ jobs:
       # for the reason why -Wno-sign-compare is needed with clang
       # -Wno-stringop-overflow is needed to silence a bogus
       # warning on new fortify-headers with gcc
-      EXTRA_CFLAGS: ${{ matrix.cc == 'clang' && '-Wno-sign-compare' || matrix.tag == 'edge' && '-Wno-stringop-overflow' || '' }}
+      EXTRA_CFLAGS: ${{ matrix.cc == 'clang' && '-Wno-sign-compare -Wno-unused-but-set-global' || matrix.tag == 'edge' && '-Wno-stringop-overflow' || '' }}
       CC: ${{ matrix.cc }}
     steps:
     - name: install packages
@@ -55,8 +55,6 @@ jobs:
       fail-fast: false
       matrix:
         zoo:
-          - image: docker.io/library/debian:11
-            install: apt-get update && apt-get install -y gcc make perl
           - image: docker.io/library/debian:12
             install: apt-get update && apt-get install -y gcc make perl
           - image: docker.io/library/debian:13
