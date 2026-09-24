@@ -70,7 +70,7 @@ end:
 }
 
 static STACK_OF(EC_POINT) *stack_of_point_decode(const unsigned char *in,
-                                                 int *len,
+                                                 size_t inlen, int *len,
                                                  const EC_GROUP *group,
                                                  BN_CTX *bn_ctx)
 {
@@ -82,7 +82,11 @@ static STACK_OF(EC_POINT) *stack_of_point_decode(const unsigned char *in,
     point_conversion_form_t form;
 
     if (in == NULL || group == NULL)
-        return 0;
+        return NULL;
+
+    /* one format byte, then a 4-byte count */
+    if (inlen < 1 + sizeof(int))
+        return NULL;
 
     form = *p == 0x1 ? POINT_CONVERSION_COMPRESSED : POINT_CONVERSION_UNCOMPRESSED;
     p++;
@@ -95,9 +99,10 @@ static STACK_OF(EC_POINT) *stack_of_point_decode(const unsigned char *in,
     q++;
     p = (unsigned char *)q;
 
-    if (n < 0) {
+    /* Divide instead of multiplying so a large n cannot wrap the product. */
+    if (n < 0 || point_len == 0
+        || (size_t)n > (inlen - 1 - sizeof(int)) / point_len)
         return NULL;
-    }
 
     if (!(ret = sk_EC_POINT_new_reserve(NULL, n)))
         return NULL;
@@ -519,7 +524,8 @@ int EC_ELGAMAL_MR_CIPHERTEXT_decode(EC_ELGAMAL_MR_CTX *ctx, EC_ELGAMAL_MR_CIPHER
     STACK_OF(EC_POINT) *sk_C1 = NULL;
     point_conversion_form_t form;
 
-    if (ctx == NULL || ctx->group == NULL || r == NULL || r->C2 == NULL || in == NULL) {
+    if (ctx == NULL || ctx->group == NULL || r == NULL || r->C2 == NULL
+        || in == NULL || size == 0) {
         ERR_raise(ERR_LIB_EC, ERR_R_PASSED_NULL_PARAMETER);
         return ret;
     }
@@ -534,10 +540,14 @@ int EC_ELGAMAL_MR_CIPHERTEXT_decode(EC_ELGAMAL_MR_CTX *ctx, EC_ELGAMAL_MR_CIPHER
 
     point_len = EC_POINT_point2oct(ctx->group, EC_GROUP_get0_generator(ctx->group),
                                    form, NULL, 0, bn_ctx);
-
-    if ((sk_C1 = stack_of_point_decode(p, &len, ctx->group, bn_ctx)) == NULL)
+    if (point_len == 0)
         goto err;
 
+    if ((sk_C1 = stack_of_point_decode(p, size, &len, ctx->group, bn_ctx)) == NULL)
+        goto err;
+
+    if (size - (size_t)len < point_len)
+        goto err;
     p += len;
     if (!EC_POINT_oct2point(ctx->group, r->C2, p, point_len, bn_ctx))
         goto err;
