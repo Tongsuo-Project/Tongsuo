@@ -39,7 +39,7 @@ my @conf_files = map { basename($_, ".in") } @conf_srcs;
 
 # We hard-code the number of tests to double-check that the globbing above
 # finds all files as expected.
-plan tests => 5;
+plan tests => 6;
 
 
 # Add your test here if the test conf.in generates test cases and/or
@@ -50,6 +50,7 @@ my %conf_dependent_tests = (
   "39-ntls-sni-ticket.cnf" => disabled("ntls"),
   "40-ntls_client_auth.cnf" => disabled("ntls"),
   "41-ntls-alpn.cnf" => disabled("ntls"),
+  "42-ntls-seclevel.cnf" => disabled("ntls"),
 );
 
 # Add your test here if it should be skipped for some compile-time
@@ -67,6 +68,8 @@ my %skip = (
                                 || disabled("sm3") || disabled("sm4"),
   "41-ntls-alpn.cnf" => disabled("ntls") || disabled("sm2") || disabled("sm3")
                         || disabled("sm4"),
+  "42-ntls-seclevel.cnf" => disabled("ntls") || disabled("sm2") 
+                            || disabled("sm3") || disabled("sm4"),
 );
 
 foreach my $conf (@conf_files) {
