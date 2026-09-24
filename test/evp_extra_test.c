@@ -6373,6 +6373,12 @@ static const AEAD_ONESHOT_CFG aead_oneshot_cfgs[] = {
     { "ChaCha20-Poly1305", 32, 12, 16, 0 }
 };
 
+static const AEAD_ONESHOT_CFG aead_oneshot_zerolen_cfgs[] = {
+    { "AES-128-OCB", 16, 12, 16, 0 },
+    { "ChaCha20-Poly1305", 32, 12, 16, 0 },
+    { "AES-128-GCM-SIV", 16, 12, 16, 0 }
+};
+
 /*
  * Drive an encrypt or decrypt operation.  AAD always via EVP_CipherUpdate.
  * Body via EVP_Cipher() when oneshot_body is non-zero, EVP_CipherUpdate
@@ -7356,6 +7362,302 @@ end:
     return testresult;
 }
 
+static EVP_CIPHER_CTX *aead_oneshot_zerolen_ctx(const EVP_CIPHER *cipher,
+    int enc, const unsigned char *key, const unsigned char *iv,
+    const unsigned char *aad, size_t aad_len,
+    const unsigned char *tag, size_t tag_len)
+{
+    EVP_CIPHER_CTX *ctx = NULL;
+    int outl = 0;
+
+    if (!TEST_ptr(ctx = EVP_CIPHER_CTX_new())
+        || !TEST_true(EVP_CipherInit_ex2(ctx, cipher, key, iv, enc, NULL))
+        || (aad_len > 0
+            && !TEST_true(EVP_CipherUpdate(ctx, NULL, &outl, aad,
+                (int)aad_len)))
+        || (!enc
+            && !TEST_int_gt(EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_TAG,
+                                (int)tag_len, (void *)tag),
+                0))) {
+        EVP_CIPHER_CTX_free(ctx);
+        return NULL;
+    }
+    return ctx;
+}
+
+/*
+ * For these built-in provider implementations, a NULL-input EVP_Cipher() call
+ * must produce or check the empty-message tag even when no payload Update was
+ * made.
+ */
+static int test_aead_oneshot_zerolen(int idx)
+{
+    static const unsigned char key[32] = {
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+        0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+        0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f
+    };
+    static const unsigned char iv[12] = {
+        0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7,
+        0xa8, 0xa9, 0xaa, 0xab
+    };
+    static const unsigned char aad[] = "empty message context";
+    const AEAD_ONESHOT_CFG *cfg = &aead_oneshot_zerolen_cfgs[idx / 2];
+    int with_aad = idx % 2;
+    size_t aad_len = with_aad ? sizeof(aad) - 1 : 0;
+    EVP_CIPHER *cipher = NULL;
+    EVP_CIPHER_CTX *ctx_oracle = NULL, *ctx_oneshot = NULL;
+    EVP_CIPHER_CTX *ctx_dec = NULL, *ctx_dec_bad = NULL;
+    static const unsigned char empty = 0;
+    unsigned char out[16] = { 0 };
+    unsigned char tag_oracle[16] = { 0 };
+    unsigned char tag_oneshot[16] = { 0 };
+    unsigned char tag_bad[16] = { 0 };
+    int outl = 0, ret = 0;
+
+    ERR_set_mark();
+    cipher = EVP_CIPHER_fetch(testctx, cfg->name, testpropq);
+    ERR_pop_to_mark();
+    if (cipher == NULL)
+        return TEST_skip("'%s' is not available", cfg->name);
+
+    /*
+     * The explicit zero-length Update provides an oracle that also works on
+     * the unpatched GCM-SIV implementation, whose empty Final cannot generate
+     * a tag.
+     */
+    ctx_oracle = aead_oneshot_zerolen_ctx(cipher, 1, key, iv, aad, aad_len,
+        NULL, cfg->taglen);
+    if (!TEST_ptr(ctx_oracle)
+        || !TEST_true(EVP_EncryptUpdate(ctx_oracle, out, &outl, &empty, 0))
+        || !TEST_true(EVP_EncryptFinal_ex(ctx_oracle, out, &outl))
+        || !TEST_int_gt(EVP_CIPHER_CTX_ctrl(ctx_oracle, EVP_CTRL_AEAD_GET_TAG,
+                            (int)cfg->taglen, tag_oracle),
+            0))
+        goto end;
+
+    ctx_dec = aead_oneshot_zerolen_ctx(cipher, 0, key, iv, aad, aad_len,
+        tag_oracle, cfg->taglen);
+    if (!TEST_ptr(ctx_dec)
+        || !TEST_int_ge(EVP_Cipher(ctx_dec, out, NULL, 0), 0))
+        goto end;
+
+    memcpy(tag_bad, tag_oracle, cfg->taglen);
+    tag_bad[0] ^= 1;
+    ctx_dec_bad = aead_oneshot_zerolen_ctx(cipher, 0, key, iv, aad, aad_len,
+        tag_bad, cfg->taglen);
+    if (!TEST_ptr(ctx_dec_bad)
+        || !TEST_int_lt(EVP_Cipher(ctx_dec_bad, out, NULL, 0), 0))
+        goto end;
+
+    ctx_oneshot = aead_oneshot_zerolen_ctx(cipher, 1, key, iv, aad, aad_len,
+        NULL, cfg->taglen);
+    if (!TEST_ptr(ctx_oneshot)
+        || !TEST_int_ge(EVP_Cipher(ctx_oneshot, out, NULL, 0), 0)
+        || !TEST_int_gt(EVP_CIPHER_CTX_ctrl(ctx_oneshot, EVP_CTRL_AEAD_GET_TAG,
+                            (int)cfg->taglen, tag_oneshot),
+            0)
+        || !TEST_mem_eq(tag_oneshot, cfg->taglen,
+            tag_oracle, cfg->taglen))
+        goto end;
+
+    ret = 1;
+end:
+    if (!ret)
+        TEST_info("zero-length %s test failed (%s)", cfg->name,
+            with_aad ? "with AAD" : "no AAD");
+    EVP_CIPHER_CTX_free(ctx_oracle);
+    EVP_CIPHER_CTX_free(ctx_oneshot);
+    EVP_CIPHER_CTX_free(ctx_dec);
+    EVP_CIPHER_CTX_free(ctx_dec_bad);
+    EVP_CIPHER_free(cipher);
+    return ret;
+}
+
+static const AEAD_ONESHOT_CFG ccm_empty_final_cfgs[] = {
+    { "AES-128-CCM", 16, 12, 16, 1 },
+    { "AES-192-CCM", 24, 12, 16, 1 },
+    { "AES-256-CCM", 32, 12, 16, 1 },
+    { "ARIA-128-CCM", 16, 12, 16, 1 },
+    { "ARIA-192-CCM", 24, 12, 16, 1 },
+    { "ARIA-256-CCM", 32, 12, 16, 1 },
+    { "SM4-CCM", 16, 12, 16, 1 }
+};
+
+/*
+ * Finalize CCM after declaring an empty payload and supplying AAD, without a
+ * payload Update. Return one for authentication success, zero for an
+ * authentication failure, and minus one for any other failure.
+ */
+static int ccm_empty_final_op(const AEAD_ONESHOT_CFG *cfg, int enc,
+    int oneshot_final, const unsigned char *key, const unsigned char *iv,
+    const unsigned char *aad, size_t aad_len, unsigned char *tag,
+    const char **why)
+{
+    EVP_CIPHER_CTX *ctx = NULL;
+    EVP_CIPHER *cipher = NULL;
+    unsigned char out[1] = { 0 };
+    int outl = 0, rv;
+    int ret = -1;
+
+    *why = NULL;
+
+    if (!TEST_ptr(cipher = EVP_CIPHER_fetch(testctx, cfg->name, testpropq))) {
+        *why = "CIPHER_FETCH";
+        goto end;
+    }
+    if (!TEST_ptr(ctx = EVP_CIPHER_CTX_new())) {
+        *why = "CTX_NEW";
+        goto end;
+    }
+    if (!TEST_true(EVP_CipherInit_ex(ctx, cipher, NULL, NULL, NULL, enc))) {
+        *why = "INIT_CIPHER";
+        goto end;
+    }
+    if (!TEST_int_gt(EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_IVLEN,
+                         (int)cfg->ivlen, NULL),
+            0)) {
+        *why = "SET_IVLEN";
+        goto end;
+    }
+    if (!TEST_int_gt(EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_TAG,
+                         (int)cfg->taglen, enc ? NULL : tag),
+            0)) {
+        *why = "SET_TAG";
+        goto end;
+    }
+    if (!TEST_true(EVP_CipherInit_ex(ctx, NULL, NULL, key, iv, enc))) {
+        *why = "INIT_KEY_IV";
+        goto end;
+    }
+    if (!TEST_true(EVP_CipherUpdate(ctx, NULL, &outl, NULL, 0))) {
+        *why = "LENGTH";
+        goto end;
+    }
+    if (!TEST_true(EVP_CipherUpdate(ctx, NULL, &outl, aad, (int)aad_len))) {
+        *why = "AAD";
+        goto end;
+    }
+
+    if (oneshot_final) {
+        rv = EVP_Cipher(ctx, out, NULL, 0);
+        ret = rv >= 0;
+        if (ret && rv != 0) {
+            *why = "ONESHOT_FINAL_LENGTH";
+            ret = -1;
+            goto end;
+        }
+    } else {
+        ret = EVP_CipherFinal_ex(ctx, out, &outl) > 0;
+        if (ret && outl != 0) {
+            *why = "STREAM_FINAL_LENGTH";
+            ret = -1;
+            goto end;
+        }
+    }
+
+    if (ret && enc
+        && !TEST_int_gt(EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_GET_TAG,
+                            (int)cfg->taglen, tag),
+            0)) {
+        *why = "GET_TAG";
+        ret = -1;
+    }
+
+end:
+    EVP_CIPHER_CTX_free(ctx);
+    EVP_CIPHER_free(cipher);
+    return ret;
+}
+
+static int test_ccm_empty_final(int idx)
+{
+    static const unsigned char fixed_key[32] = {
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+        0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+        0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f
+    };
+    static const unsigned char fixed_iv[12] = {
+        0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5,
+        0xa6, 0xa7, 0xa8, 0xa9, 0xaa, 0xab
+    };
+    static const unsigned char fixed_aad[] = "CCM empty-payload Final regression";
+    const AEAD_ONESHOT_CFG *cfg = &ccm_empty_final_cfgs[idx];
+    EVP_CIPHER *probe = NULL;
+    unsigned char tag_stream[16], tag_oneshot[16], bad_tag[16];
+    const char *why = NULL;
+    int rv, ok = 0;
+
+    ERR_set_mark();
+    probe = EVP_CIPHER_fetch(testctx, cfg->name, testpropq);
+    ERR_pop_to_mark();
+    if (probe == NULL) {
+        TEST_info("skipping, '%s' is not available", cfg->name);
+        return 1;
+    }
+    EVP_CIPHER_free(probe);
+
+    memset(tag_stream, 0, sizeof(tag_stream));
+    rv = ccm_empty_final_op(cfg, 1, 0, fixed_key, fixed_iv, fixed_aad,
+        sizeof(fixed_aad) - 1, tag_stream, &why);
+    if (!TEST_int_eq(rv, 1)) {
+        TEST_error("%s: streaming encryption failed at %s",
+            cfg->name, why ? why : "FINAL");
+        goto end;
+    }
+
+    memset(tag_oneshot, 0, sizeof(tag_oneshot));
+    rv = ccm_empty_final_op(cfg, 1, 1, fixed_key, fixed_iv, fixed_aad,
+        sizeof(fixed_aad) - 1, tag_oneshot, &why);
+    if (!TEST_int_eq(rv, 1)) {
+        TEST_error("%s: one-shot encryption failed at %s",
+            cfg->name, why ? why : "FINAL");
+        goto end;
+    }
+    if (!TEST_mem_eq(tag_stream, cfg->taglen, tag_oneshot, cfg->taglen)) {
+        TEST_error("%s: streaming and one-shot tags differ", cfg->name);
+        goto end;
+    }
+
+    rv = ccm_empty_final_op(cfg, 0, 0, fixed_key, fixed_iv, fixed_aad,
+        sizeof(fixed_aad) - 1, tag_stream, &why);
+    if (!TEST_int_eq(rv, 1)) {
+        TEST_error("%s: streaming verification failed at %s",
+            cfg->name, why ? why : "FINAL");
+        goto end;
+    }
+    rv = ccm_empty_final_op(cfg, 0, 1, fixed_key, fixed_iv, fixed_aad,
+        sizeof(fixed_aad) - 1, tag_stream, &why);
+    if (!TEST_int_eq(rv, 1)) {
+        TEST_error("%s: one-shot verification failed at %s",
+            cfg->name, why ? why : "FINAL");
+        goto end;
+    }
+
+    memcpy(bad_tag, tag_stream, cfg->taglen);
+    bad_tag[0] ^= 1;
+    rv = ccm_empty_final_op(cfg, 0, 0, fixed_key, fixed_iv, fixed_aad,
+        sizeof(fixed_aad) - 1, bad_tag, &why);
+    if (!TEST_int_eq(rv, 0)) {
+        TEST_error("%s: streaming Final accepted an invalid tag", cfg->name);
+        goto end;
+    }
+    ERR_clear_error();
+    rv = ccm_empty_final_op(cfg, 0, 1, fixed_key, fixed_iv, fixed_aad,
+        sizeof(fixed_aad) - 1, bad_tag, &why);
+    if (!TEST_int_eq(rv, 0)) {
+        TEST_error("%s: one-shot Final accepted an invalid tag", cfg->name);
+        goto end;
+    }
+    ERR_clear_error();
+
+    ok = 1;
+end:
+    return ok;
+}
+
 int setup_tests(void)
 {
     char *config_file = NULL;
@@ -7551,6 +7853,9 @@ int setup_tests(void)
 #endif
 
     ADD_ALL_TESTS(test_aead_oneshot_roundtrip, 2 * OSSL_NELEM(aead_oneshot_cfgs));
+    ADD_ALL_TESTS(test_aead_oneshot_zerolen,
+        2 * OSSL_NELEM(aead_oneshot_zerolen_cfgs));
+    ADD_ALL_TESTS(test_ccm_empty_final, OSSL_NELEM(ccm_empty_final_cfgs));
 
     /* Test cases for CVE-2026-45446 */
     ADD_TEST(test_aes_gcm_siv_empty_data);

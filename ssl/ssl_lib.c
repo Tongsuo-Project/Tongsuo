@@ -1596,6 +1596,16 @@ void ossl_ssl_connection_free(SSL *ssl)
     BIO_free_all(s->rbio);
     s->rbio = NULL;
     OPENSSL_free(s->s3.tmp.valid_flags);
+
+    if(s->quic_api_method != NULL) {
+        SSL_QUIC_API_INFO *info = (SSL_QUIC_API_INFO *)s->qtarg;
+        BUF_MEM_free(info->quic_buf);
+        BUF_MEM_free(info->quic_transport_params_buf);
+        OPENSSL_free(s->qtarg);
+        s->qtarg = NULL;
+    }   
+    OPENSSL_free(s->quic_api_method_transport_params);
+    OPENSSL_free(s->quic_early_data_context);
 }
 
 void SSL_set0_rbio(SSL *s, BIO *rbio)
@@ -2099,6 +2109,42 @@ STACK_OF(X509) *SSL_get_peer_cert_chain(const SSL *s)
 
     return r;
 }
+
+#ifndef OPENSSL_NO_NTLS
+X509 *SSL_get0_peer_sign_certificate_ntls(const SSL *s)
+{
+    const SSL_CONNECTION *sc = SSL_CONNECTION_FROM_CONST_SSL(s);
+
+    if (sc == NULL)
+        return NULL;
+
+    if (!SSL_CONNECTION_IS_NTLS(sc))
+        return NULL;
+
+    if (sc->session == NULL)
+        return NULL;
+
+    return sc->session->peer;
+}
+X509 *SSL_get0_peer_enc_certificate_ntls(const SSL *s)
+{
+    const SSL_CONNECTION *sc = SSL_CONNECTION_FROM_CONST_SSL(s);
+
+    if (sc == NULL)
+        return NULL;
+
+    if (!SSL_CONNECTION_IS_NTLS(sc))
+        return NULL;
+
+    if (sc->session == NULL || sc->session->peer_chain == NULL)
+        return NULL;
+
+    if (sc->server)
+        return sk_X509_value(sc->session->peer_chain, 0);
+    else
+        return sk_X509_value(sc->session->peer_chain, 1);
+}
+#endif
 
 /*
  * Now in theory, since the calling process own 't' it should be safe to
@@ -5800,10 +5846,6 @@ SSL_CTX *SSL_CTX_dup(SSL_CTX *ctx)
 
     ret->async_cb = ctx->async_cb;
     ret->async_cb_arg = ctx->async_cb_arg;
-
-#ifndef OPENSSL_NO_QUIC
-    /* ret->quic_method = ctx->quic_method; */
-#endif
 
 #ifndef OPENSSL_NO_CERT_COMPRESSION
     /*
