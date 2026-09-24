@@ -1175,6 +1175,12 @@ struct ssl_ctx_st {
     /* Tag of NTLS */
     int enable_ntls;
     int enable_force_ntls;
+    /*
+     * When set, NTLS ECDHE ClientKeyExchange is encoded as
+     * opaque ClientECDHEParams<1..2^16-1> (GB/T 38636 6.4.5.8).
+     * Default 0 keeps the historical encoding without the u16 prefix.
+     */
+    int enable_ntls_strict_ecdhe_cke;
 #endif
 #ifndef OPENSSL_NO_SM2
     /*
@@ -1905,6 +1911,7 @@ struct ssl_connection_st {
 # ifndef OPENSSL_NO_NTLS
     int enable_ntls;
     int enable_force_ntls;
+    int enable_ntls_strict_ecdhe_cke;
 
     uint8_t preread_buf[PREREAD_HEADER_LENGTH];
     size_t preread_len;

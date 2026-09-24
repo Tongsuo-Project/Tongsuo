@@ -135,6 +135,34 @@ our @tests = (
     },
 
     {
+        name => "test ECDHE-SM2-SM4-CBC-SM3 with client Enable_ntls_strict_ecdhe_cke",
+        server => {
+            "SignCertificate" => test_pem("sm2", "server_sign.crt"),
+            "SignPrivateKey" => test_pem("sm2", "server_sign.key"),
+            "EncCertificate" => test_pem("sm2", "server_enc.crt"),
+            "EncPrivateKey" => test_pem("sm2", "server_enc.key"),
+            "VerifyCAFile" => test_pem("sm2", "chain-ca.crt"),
+            "Enable_ntls" => "on",
+        },
+        client => {
+            "SignCertificate" => test_pem("sm2", "client_sign.crt"),
+            "SignPrivateKey" => test_pem("sm2", "client_sign.key"),
+            "EncCertificate" => test_pem("sm2", "client_enc.crt"),
+            "EncPrivateKey" => test_pem("sm2", "client_enc.key"),
+            "CipherString" => "ECDHE-SM2-SM4-CBC-SM3",
+            "VerifyCAFile" => test_pem("sm2", "chain-ca.crt"),
+            "Enable_ntls" => "on",
+            "Enable_ntls_strict_ecdhe_cke" => "on",
+        },
+        test   => {
+            "Method" => "NTLS",
+            "ExpectedResult" => "Success",
+            "ExpectedCipher" => "ECDHE-SM2-SM4-CBC-SM3",
+            "ExpectedProtocol" => "NTLS",
+        },
+    },
+
+    {
         name => "test cipher ECDHE-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode",
         server => {
             "SignCertificate" => test_pem("sm2", "server_sign.crt"),

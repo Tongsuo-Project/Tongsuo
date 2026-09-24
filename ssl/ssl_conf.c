@@ -839,6 +839,18 @@ static int cmd_Enable_force_ntls(SSL_CONF_CTX *cctx, const char *value)
     }
     return 1;
 }
+
+static int cmd_Enable_ntls_strict_ecdhe_cke(SSL_CONF_CTX *cctx,
+                                            const char *value)
+{
+    int enable = strcmp(value, "on") == 0;
+
+    if (cctx->ctx)
+        SSL_CTX_set_ntls_strict_ecdhe_cke(cctx->ctx, enable);
+    if (cctx->ssl)
+        SSL_set_ntls_strict_ecdhe_cke(cctx->ssl, enable);
+    return 1;
+}
 #endif
 
 #ifndef OPENSSL_NO_SM2
@@ -1064,6 +1076,8 @@ static const ssl_conf_cmd_tbl ssl_conf_cmds[] = {
 #ifndef OPENSSL_NO_NTLS
     SSL_CONF_CMD_STRING(Enable_ntls, "enable_ntls", 0),
     SSL_CONF_CMD_STRING(Enable_force_ntls, "enable_force_ntls", 0),
+    SSL_CONF_CMD_STRING(Enable_ntls_strict_ecdhe_cke,
+                        "enable_ntls_strict_ecdhe_cke", 0),
     SSL_CONF_CMD(EncCertificate, "enc_cert", SSL_CONF_FLAG_CERTIFICATE,
                  SSL_CONF_TYPE_FILE),
     SSL_CONF_CMD(EncPrivateKey, "enc_key", SSL_CONF_FLAG_CERTIFICATE,

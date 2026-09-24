@@ -706,3 +706,5 @@ SSL_get_peer_quic_transport_params      706	3_5_0	EXIST::FUNCTION:
 SSL_set_quic_transport_params           707	3_5_0	EXIST::FUNCTION:
 SSL_get0_peer_sign_certificate_ntls     708	3_5_4	EXIST::FUNCTION:NTLS
 SSL_get0_peer_enc_certificate_ntls      709	3_5_4	EXIST::FUNCTION:NTLS
+SSL_CTX_set_ntls_strict_ecdhe_cke       710	3_5_4	EXIST::FUNCTION:NTLS
+SSL_set_ntls_strict_ecdhe_cke           711	3_5_4	EXIST::FUNCTION:NTLS
