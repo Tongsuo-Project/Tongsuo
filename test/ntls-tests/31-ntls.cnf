@@ -22,7 +22,6 @@ test-16 = 16-test server choose RSA-SM4 with RSA double certs only
 test-17 = 17-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs
 test-18 = 18-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs
 test-19 = 19-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs
-
 # ===========================================================
 
 [0-test server set min and max TLS version should not affect NTLS]
@@ -227,6 +226,7 @@ ExpectedCipher = ECDHE-SM2-SM4-CBC-SM3
 ExpectedProtocol = NTLS
 ExpectedResult = Success
 Method = NTLS
+
 
 # ===========================================================
 
@@ -514,14 +514,14 @@ Method = NTLS
 
 # ===========================================================
 
-[16-test server choose ECC-SM2-SM4 with SM2 double certs only]
-ssl_conf = 16-test server choose ECC-SM2-SM4 with SM2 double certs only-ssl
+[15-test server choose ECC-SM2-SM4 with SM2 double certs only]
+ssl_conf = 15-test server choose ECC-SM2-SM4 with SM2 double certs only-ssl
 
-[16-test server choose ECC-SM2-SM4 with SM2 double certs only-ssl]
-server = 16-test server choose ECC-SM2-SM4 with SM2 double certs only-server
-client = 16-test server choose ECC-SM2-SM4 with SM2 double certs only-client
+[15-test server choose ECC-SM2-SM4 with SM2 double certs only-ssl]
+server = 15-test server choose ECC-SM2-SM4 with SM2 double certs only-server
+client = 15-test server choose ECC-SM2-SM4 with SM2 double certs only-client
 
-[16-test server choose ECC-SM2-SM4 with SM2 double certs only-server]
+[15-test server choose ECC-SM2-SM4 with SM2 double certs only-server]
 Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
 CipherString = RSA-SM4-CBC-SM3:ECC-SM2-SM4-CBC-SM3
 Enable_ntls = on
@@ -531,7 +531,7 @@ PrivateKey = ${ENV::TEST_CERTS_DIR}/serverkey.pem
 SignCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.crt
 SignPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.key
 
-[16-test server choose ECC-SM2-SM4 with SM2 double certs only-client]
+[15-test server choose ECC-SM2-SM4 with SM2 double certs only-client]
 CipherString = ECC-SM2-SM4-CBC-SM3:RSA-SM4-CBC-SM3
 Enable_ntls = on
 VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2/chain-ca.crt
@@ -546,14 +546,14 @@ Method = NTLS
 
 # ===========================================================
 
-[17-test server choose RSA-SM4 with RSA double certs only]
-ssl_conf = 17-test server choose RSA-SM4 with RSA double certs only-ssl
+[16-test server choose RSA-SM4 with RSA double certs only]
+ssl_conf = 16-test server choose RSA-SM4 with RSA double certs only-ssl
 
-[17-test server choose RSA-SM4 with RSA double certs only-ssl]
-server = 17-test server choose RSA-SM4 with RSA double certs only-server
-client = 17-test server choose RSA-SM4 with RSA double certs only-client
+[16-test server choose RSA-SM4 with RSA double certs only-ssl]
+server = 16-test server choose RSA-SM4 with RSA double certs only-server
+client = 16-test server choose RSA-SM4 with RSA double certs only-client
 
-[17-test server choose RSA-SM4 with RSA double certs only-server]
+[16-test server choose RSA-SM4 with RSA double certs only-server]
 Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
 CipherString = ECC-SM2-SM4-CBC-SM3:RSA-SM4-CBC-SM3
 Enable_ntls = on
@@ -563,7 +563,7 @@ PrivateKey = ${ENV::TEST_CERTS_DIR}/serverkey.pem
 SignCertificate = ${ENV::TEST_CERTS_DIR}/server-rsa-sign.crt
 SignPrivateKey = ${ENV::TEST_CERTS_DIR}/server-rsa-sign.key
 
-[17-test server choose RSA-SM4 with RSA double certs only-client]
+[16-test server choose RSA-SM4 with RSA double certs only-client]
 CipherString = ECC-SM2-SM4-CBC-SM3:RSA-SM4-CBC-SM3
 Enable_ntls = on
 VerifyCAFile = ${ENV::TEST_CERTS_DIR}/root-cert.pem
@@ -578,14 +578,14 @@ Method = NTLS
 
 # ===========================================================
 
-[18-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs]
-ssl_conf = 18-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs-ssl
+[17-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs]
+ssl_conf = 17-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs-ssl
 
-[18-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs-ssl]
-server = 18-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs-server
-client = 18-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs-client
+[17-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs-ssl]
+server = 17-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs-server
+client = 17-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs-client
 
-[18-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs-server]
+[17-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs-server]
 Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
 CipherString = ECC-SM2-SM4-CBC-SM3:RSA-SM4-CBC-SM3
 Enable_ntls = on
@@ -600,7 +600,7 @@ SM2.EncPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_enc.key
 SM2.SignCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.crt
 SM2.SignPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.key
 
-[18-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs-client]
+[17-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs-client]
 CipherString = RSA-SM4-CBC-SM3:ECC-SM2-SM4-CBC-SM3
 Enable_ntls = on
 VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2/chain-ca.crt
@@ -615,14 +615,14 @@ Method = NTLS
 
 # ===========================================================
 
-[19-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs]
-ssl_conf = 19-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs-ssl
+[18-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs]
+ssl_conf = 18-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs-ssl
 
-[19-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs-ssl]
-server = 19-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs-server
-client = 19-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs-client
+[18-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs-ssl]
+server = 18-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs-server
+client = 18-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs-client
 
-[19-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs-server]
+[18-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs-server]
 Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
 CipherString = RSA-SM4-CBC-SM3:ECC-SM2-SM4-CBC-SM3
 Enable_ntls = on
@@ -637,7 +637,7 @@ SM2.EncPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_enc.key
 SM2.SignCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.crt
 SM2.SignPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.key
 
-[19-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs-client]
+[18-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs-client]
 CipherString = ECC-SM2-SM4-CBC-SM3:RSA-SM4-CBC-SM3
 Enable_ntls = on
 VerifyCAFile = ${ENV::TEST_CERTS_DIR}/root-cert.pem
@@ -652,14 +652,14 @@ Method = NTLS
 
 # ===========================================================
 
-[110-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs]
-ssl_conf = 110-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs-ssl
+[19-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs]
+ssl_conf = 19-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs-ssl
 
-[110-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs-ssl]
-server = 110-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs-server
-client = 110-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs-client
+[19-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs-ssl]
+server = 19-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs-server
+client = 19-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs-client
 
-[110-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs-server]
+[19-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs-server]
 Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
 CipherString = RSA-SM4-CBC-SM3:ECC-SM2-SM4-CBC-SM3
 Enable_ntls = on
@@ -673,7 +673,7 @@ SM2.EncPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_enc.key
 SM2.SignCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.crt
 SM2.SignPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.key
 
-[110-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs-client]
+[19-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs-client]
 CipherString = ECC-SM2-SM4-CBC-SM3:RSA-SM4-CBC-SM3
 Enable_ntls = on
 VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2/chain-ca.crt
