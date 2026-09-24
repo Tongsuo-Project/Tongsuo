@@ -91,7 +91,7 @@ int tls_close_construct_packet_ntls(SSL_CONNECTION *s, WPACKET *pkt, int htype)
 
 int tls_setup_handshake_ntls(SSL_CONNECTION *s)
 {
-    int ver_min, ver_max, ok;
+    int ver_max, ok;
     SSL *ssl = SSL_CONNECTION_GET_SSL(s);
     SSL_CTX *sctx = SSL_CONNECTION_GET_CTX(s);
 
@@ -103,10 +103,19 @@ int tls_setup_handshake_ntls(SSL_CONNECTION *s)
     /* Reset any extension flags */
     memset(s->ext.extflags, 0, sizeof(s->ext.extflags));
 
-    if (ssl_get_min_max_version(s, &ver_min, &ver_max, NULL) != 0) {
-        SSLfatal_ntls(s, SSL_AD_PROTOCOL_VERSION, SSL_R_NO_PROTOCOLS_AVAILABLE);
-        return 0;
-    }
+    /*
+     * This function sets up NTLS handshake rather than TLS,
+     * thus here we should consider NTLS version (currently
+     * only one value of NTLS1_1_VERSION = 0x0101) and use
+     * this version in the following sanity check.
+     *
+     * Furthermore, this function does not need ver_min
+     * anymore, as ver_min is only used in tls_setup_handshake
+     * to ensure that the minimum version is at least
+     * 1.2 when MD5-SHA1 PRF is unavailable by the provider.
+     */
+    ver_max = NTLS1_1_VERSION;
+
     ok = 0;
     if (s->server) {
         STACK_OF(SSL_CIPHER) *ciphers = SSL_get_ciphers(ssl);

@@ -1,25 +1,26 @@
 # Generated with generate_ssl_tests.pl
 
-num_tests = 18
+num_tests = 19
 
 test-0 = 0-test server set min and max TLS version should not affect NTLS
-test-1 = 1-test cipher ECC-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only
-test-2 = 2-test cipher ECC-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only
-test-3 = 3-test cipher ECDHE-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode
-test-4 = 4-test cipher ECDHE-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode
-test-5 = 5-test cipher RSA-SM4-CBC-SM3 in NTLS_UNIQUE mode
-test-6 = 6-test cipher RSA-SM4-GCM-SM3 in NTLS_UNIQUE mode
-test-7 = 7-test cipher RSA-SM4-CBC-SHA256 in NTLS_UNIQUE mode
-test-8 = 8-test cipher RSA-SM4-GCM-SHA256 in NTLS_UNIQUE mode
-test-9 = 9-test ntls client doing handshake without setting certs and pkey
-test-10 = 10-test server encryption certificate expired
-test-11 = 11-test server sign certificate expired
-test-12 = 12-test server certificates expired
-test-13 = 13-test server choose ECC-SM2-SM4 with SM2 double certs only
-test-14 = 14-test server choose RSA-SM4 with RSA double certs only
-test-15 = 15-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs
-test-16 = 16-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs
-test-17 = 17-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs
+test-1 = 1-test server disable all TLS versions should not affect NTLS
+test-2 = 2-test cipher ECC-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only
+test-3 = 3-test cipher ECC-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only
+test-4 = 4-test cipher ECDHE-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode
+test-5 = 5-test cipher ECDHE-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode
+test-6 = 6-test cipher RSA-SM4-CBC-SM3 in NTLS_UNIQUE mode
+test-7 = 7-test cipher RSA-SM4-GCM-SM3 in NTLS_UNIQUE mode
+test-8 = 8-test cipher RSA-SM4-CBC-SHA256 in NTLS_UNIQUE mode
+test-9 = 9-test cipher RSA-SM4-GCM-SHA256 in NTLS_UNIQUE mode
+test-10 = 10-test ntls client doing handshake without setting certs and pkey
+test-11 = 11-test server encryption certificate expired
+test-12 = 12-test server sign certificate expired
+test-13 = 13-test server certificates expired
+test-14 = 14-test server choose ECC-SM2-SM4 with SM2 double certs only
+test-15 = 15-test server choose RSA-SM4 with RSA double certs only
+test-16 = 16-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs
+test-17 = 17-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs
+test-18 = 18-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs
 # ===========================================================
 
 [0-test server set min and max TLS version should not affect NTLS]
@@ -56,24 +57,25 @@ Method = NTLS
 
 # ===========================================================
 
-[1-test cipher ECC-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only]
-ssl_conf = 1-test cipher ECC-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only-ssl
+[1-test server disable all TLS versions should not affect NTLS]
+ssl_conf = 1-test server disable all TLS versions should not affect NTLS-ssl
 
-[1-test cipher ECC-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only-ssl]
-server = 1-test cipher ECC-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only-server
-client = 1-test cipher ECC-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only-client
+[1-test server disable all TLS versions should not affect NTLS-ssl]
+server = 1-test server disable all TLS versions should not affect NTLS-server
+client = 1-test server disable all TLS versions should not affect NTLS-client
 
-[1-test cipher ECC-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only-server]
+[1-test server disable all TLS versions should not affect NTLS-server]
 Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
 CipherString = DEFAULT
 Enable_ntls = on
 EncCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_enc.crt
 EncPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_enc.key
 PrivateKey = ${ENV::TEST_CERTS_DIR}/serverkey.pem
+Protocol = -SSLv3,-TLSv1,-TLSv1.1,-TLSv1.2,-TLSv1.3
 SignCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.crt
 SignPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.key
 
-[1-test cipher ECC-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only-client]
+[1-test server disable all TLS versions should not affect NTLS-client]
 CipherString = ECC-SM2-SM4-CBC-SM3
 Enable_ntls = on
 VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2/chain-ca.crt
@@ -88,14 +90,14 @@ Method = NTLS
 
 # ===========================================================
 
-[2-test cipher ECC-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only]
-ssl_conf = 2-test cipher ECC-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only-ssl
+[2-test cipher ECC-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only]
+ssl_conf = 2-test cipher ECC-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only-ssl
 
-[2-test cipher ECC-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only-ssl]
-server = 2-test cipher ECC-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only-server
-client = 2-test cipher ECC-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only-client
+[2-test cipher ECC-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only-ssl]
+server = 2-test cipher ECC-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only-server
+client = 2-test cipher ECC-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only-client
 
-[2-test cipher ECC-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only-server]
+[2-test cipher ECC-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only-server]
 Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
 CipherString = DEFAULT
 Enable_ntls = on
@@ -105,13 +107,45 @@ PrivateKey = ${ENV::TEST_CERTS_DIR}/serverkey.pem
 SignCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.crt
 SignPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.key
 
-[2-test cipher ECC-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only-client]
-CipherString = ECC-SM2-SM4-GCM-SM3
+[2-test cipher ECC-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only-client]
+CipherString = ECC-SM2-SM4-CBC-SM3
 Enable_ntls = on
 VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2/chain-ca.crt
 VerifyMode = Peer
 
 [test-2]
+ExpectedCipher = ECC-SM2-SM4-CBC-SM3
+ExpectedProtocol = NTLS
+ExpectedResult = Success
+Method = NTLS
+
+
+# ===========================================================
+
+[3-test cipher ECC-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only]
+ssl_conf = 3-test cipher ECC-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only-ssl
+
+[3-test cipher ECC-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only-ssl]
+server = 3-test cipher ECC-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only-server
+client = 3-test cipher ECC-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only-client
+
+[3-test cipher ECC-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only-server]
+Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
+CipherString = DEFAULT
+Enable_ntls = on
+EncCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_enc.crt
+EncPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_enc.key
+PrivateKey = ${ENV::TEST_CERTS_DIR}/serverkey.pem
+SignCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.crt
+SignPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.key
+
+[3-test cipher ECC-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode, NTLS_UNIQUE test server and client all use NTLS only-client]
+CipherString = ECC-SM2-SM4-GCM-SM3
+Enable_ntls = on
+VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2/chain-ca.crt
+VerifyMode = Peer
+
+[test-3]
 ExpectedCipher = ECC-SM2-SM4-GCM-SM3
 ExpectedProtocol = NTLS
 ExpectedResult = Success
@@ -120,14 +154,14 @@ Method = NTLS
 
 # ===========================================================
 
-[3-test cipher ECDHE-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode]
-ssl_conf = 3-test cipher ECDHE-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode-ssl
+[4-test cipher ECDHE-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode]
+ssl_conf = 4-test cipher ECDHE-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode-ssl
 
-[3-test cipher ECDHE-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode-ssl]
-server = 3-test cipher ECDHE-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode-server
-client = 3-test cipher ECDHE-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode-client
+[4-test cipher ECDHE-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode-ssl]
+server = 4-test cipher ECDHE-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode-server
+client = 4-test cipher ECDHE-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode-client
 
-[3-test cipher ECDHE-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode-server]
+[4-test cipher ECDHE-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode-server]
 Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
 CipherString = DEFAULT
 Enable_ntls = on
@@ -138,7 +172,7 @@ SignCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.crt
 SignPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.key
 VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2/chain-ca.crt
 
-[3-test cipher ECDHE-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode-client]
+[4-test cipher ECDHE-SM2-SM4-CBC-SM3 in NTLS_UNIQUE mode-client]
 CipherString = ECDHE-SM2-SM4-CBC-SM3
 Enable_ntls = on
 EncCertificate = ${ENV::TEST_CERTS_DIR}/sm2/client_enc.crt
@@ -148,7 +182,7 @@ SignPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/client_sign.key
 VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2/chain-ca.crt
 VerifyMode = Peer
 
-[test-3]
+[test-4]
 ExpectedCipher = ECDHE-SM2-SM4-CBC-SM3
 ExpectedProtocol = NTLS
 ExpectedResult = Success
@@ -157,14 +191,14 @@ Method = NTLS
 
 # ===========================================================
 
-[4-test cipher ECDHE-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode]
-ssl_conf = 4-test cipher ECDHE-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode-ssl
+[5-test cipher ECDHE-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode]
+ssl_conf = 5-test cipher ECDHE-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode-ssl
 
-[4-test cipher ECDHE-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode-ssl]
-server = 4-test cipher ECDHE-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode-server
-client = 4-test cipher ECDHE-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode-client
+[5-test cipher ECDHE-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode-ssl]
+server = 5-test cipher ECDHE-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode-server
+client = 5-test cipher ECDHE-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode-client
 
-[4-test cipher ECDHE-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode-server]
+[5-test cipher ECDHE-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode-server]
 Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
 CipherString = DEFAULT
 Enable_ntls = on
@@ -175,7 +209,7 @@ SignCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.crt
 SignPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.key
 VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2/chain-ca.crt
 
-[4-test cipher ECDHE-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode-client]
+[5-test cipher ECDHE-SM2-SM4-GCM-SM3 in NTLS_UNIQUE mode-client]
 CipherString = ECDHE-SM2-SM4-GCM-SM3
 Enable_ntls = on
 EncCertificate = ${ENV::TEST_CERTS_DIR}/sm2/client_enc.crt
@@ -185,7 +219,7 @@ SignPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/client_sign.key
 VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2/chain-ca.crt
 VerifyMode = Peer
 
-[test-4]
+[test-5]
 ExpectedCipher = ECDHE-SM2-SM4-GCM-SM3
 ExpectedProtocol = NTLS
 ExpectedResult = Success
@@ -194,14 +228,14 @@ Method = NTLS
 
 # ===========================================================
 
-[5-test cipher RSA-SM4-CBC-SM3 in NTLS_UNIQUE mode]
-ssl_conf = 5-test cipher RSA-SM4-CBC-SM3 in NTLS_UNIQUE mode-ssl
+[6-test cipher RSA-SM4-CBC-SM3 in NTLS_UNIQUE mode]
+ssl_conf = 6-test cipher RSA-SM4-CBC-SM3 in NTLS_UNIQUE mode-ssl
 
-[5-test cipher RSA-SM4-CBC-SM3 in NTLS_UNIQUE mode-ssl]
-server = 5-test cipher RSA-SM4-CBC-SM3 in NTLS_UNIQUE mode-server
-client = 5-test cipher RSA-SM4-CBC-SM3 in NTLS_UNIQUE mode-client
+[6-test cipher RSA-SM4-CBC-SM3 in NTLS_UNIQUE mode-ssl]
+server = 6-test cipher RSA-SM4-CBC-SM3 in NTLS_UNIQUE mode-server
+client = 6-test cipher RSA-SM4-CBC-SM3 in NTLS_UNIQUE mode-client
 
-[5-test cipher RSA-SM4-CBC-SM3 in NTLS_UNIQUE mode-server]
+[6-test cipher RSA-SM4-CBC-SM3 in NTLS_UNIQUE mode-server]
 Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
 CipherString = DEFAULT
 Enable_ntls = on
@@ -211,13 +245,13 @@ PrivateKey = ${ENV::TEST_CERTS_DIR}/serverkey.pem
 SignCertificate = ${ENV::TEST_CERTS_DIR}/server-rsa-sign.crt
 SignPrivateKey = ${ENV::TEST_CERTS_DIR}/server-rsa-sign.key
 
-[5-test cipher RSA-SM4-CBC-SM3 in NTLS_UNIQUE mode-client]
+[6-test cipher RSA-SM4-CBC-SM3 in NTLS_UNIQUE mode-client]
 CipherString = RSA-SM4-CBC-SM3
 Enable_ntls = on
 VerifyCAFile = ${ENV::TEST_CERTS_DIR}/root-cert.pem
 VerifyMode = Peer
 
-[test-5]
+[test-6]
 ExpectedCipher = RSA-SM4-CBC-SM3
 ExpectedProtocol = NTLS
 ExpectedResult = Success
@@ -226,14 +260,14 @@ Method = NTLS
 
 # ===========================================================
 
-[6-test cipher RSA-SM4-GCM-SM3 in NTLS_UNIQUE mode]
-ssl_conf = 6-test cipher RSA-SM4-GCM-SM3 in NTLS_UNIQUE mode-ssl
+[7-test cipher RSA-SM4-GCM-SM3 in NTLS_UNIQUE mode]
+ssl_conf = 7-test cipher RSA-SM4-GCM-SM3 in NTLS_UNIQUE mode-ssl
 
-[6-test cipher RSA-SM4-GCM-SM3 in NTLS_UNIQUE mode-ssl]
-server = 6-test cipher RSA-SM4-GCM-SM3 in NTLS_UNIQUE mode-server
-client = 6-test cipher RSA-SM4-GCM-SM3 in NTLS_UNIQUE mode-client
+[7-test cipher RSA-SM4-GCM-SM3 in NTLS_UNIQUE mode-ssl]
+server = 7-test cipher RSA-SM4-GCM-SM3 in NTLS_UNIQUE mode-server
+client = 7-test cipher RSA-SM4-GCM-SM3 in NTLS_UNIQUE mode-client
 
-[6-test cipher RSA-SM4-GCM-SM3 in NTLS_UNIQUE mode-server]
+[7-test cipher RSA-SM4-GCM-SM3 in NTLS_UNIQUE mode-server]
 Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
 CipherString = DEFAULT
 Enable_ntls = on
@@ -243,13 +277,13 @@ PrivateKey = ${ENV::TEST_CERTS_DIR}/serverkey.pem
 SignCertificate = ${ENV::TEST_CERTS_DIR}/server-rsa-sign.crt
 SignPrivateKey = ${ENV::TEST_CERTS_DIR}/server-rsa-sign.key
 
-[6-test cipher RSA-SM4-GCM-SM3 in NTLS_UNIQUE mode-client]
+[7-test cipher RSA-SM4-GCM-SM3 in NTLS_UNIQUE mode-client]
 CipherString = RSA-SM4-GCM-SM3
 Enable_ntls = on
 VerifyCAFile = ${ENV::TEST_CERTS_DIR}/root-cert.pem
 VerifyMode = Peer
 
-[test-6]
+[test-7]
 ExpectedCipher = RSA-SM4-GCM-SM3
 ExpectedProtocol = NTLS
 ExpectedResult = Success
@@ -258,14 +292,14 @@ Method = NTLS
 
 # ===========================================================
 
-[7-test cipher RSA-SM4-CBC-SHA256 in NTLS_UNIQUE mode]
-ssl_conf = 7-test cipher RSA-SM4-CBC-SHA256 in NTLS_UNIQUE mode-ssl
+[8-test cipher RSA-SM4-CBC-SHA256 in NTLS_UNIQUE mode]
+ssl_conf = 8-test cipher RSA-SM4-CBC-SHA256 in NTLS_UNIQUE mode-ssl
 
-[7-test cipher RSA-SM4-CBC-SHA256 in NTLS_UNIQUE mode-ssl]
-server = 7-test cipher RSA-SM4-CBC-SHA256 in NTLS_UNIQUE mode-server
-client = 7-test cipher RSA-SM4-CBC-SHA256 in NTLS_UNIQUE mode-client
+[8-test cipher RSA-SM4-CBC-SHA256 in NTLS_UNIQUE mode-ssl]
+server = 8-test cipher RSA-SM4-CBC-SHA256 in NTLS_UNIQUE mode-server
+client = 8-test cipher RSA-SM4-CBC-SHA256 in NTLS_UNIQUE mode-client
 
-[7-test cipher RSA-SM4-CBC-SHA256 in NTLS_UNIQUE mode-server]
+[8-test cipher RSA-SM4-CBC-SHA256 in NTLS_UNIQUE mode-server]
 Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
 CipherString = DEFAULT
 Enable_ntls = on
@@ -275,13 +309,13 @@ PrivateKey = ${ENV::TEST_CERTS_DIR}/serverkey.pem
 SignCertificate = ${ENV::TEST_CERTS_DIR}/server-rsa-sign.crt
 SignPrivateKey = ${ENV::TEST_CERTS_DIR}/server-rsa-sign.key
 
-[7-test cipher RSA-SM4-CBC-SHA256 in NTLS_UNIQUE mode-client]
+[8-test cipher RSA-SM4-CBC-SHA256 in NTLS_UNIQUE mode-client]
 CipherString = RSA-SM4-CBC-SHA256
 Enable_ntls = on
 VerifyCAFile = ${ENV::TEST_CERTS_DIR}/root-cert.pem
 VerifyMode = Peer
 
-[test-7]
+[test-8]
 ExpectedCipher = RSA-SM4-CBC-SHA256
 ExpectedProtocol = NTLS
 ExpectedResult = Success
@@ -290,14 +324,14 @@ Method = NTLS
 
 # ===========================================================
 
-[8-test cipher RSA-SM4-GCM-SHA256 in NTLS_UNIQUE mode]
-ssl_conf = 8-test cipher RSA-SM4-GCM-SHA256 in NTLS_UNIQUE mode-ssl
+[9-test cipher RSA-SM4-GCM-SHA256 in NTLS_UNIQUE mode]
+ssl_conf = 9-test cipher RSA-SM4-GCM-SHA256 in NTLS_UNIQUE mode-ssl
 
-[8-test cipher RSA-SM4-GCM-SHA256 in NTLS_UNIQUE mode-ssl]
-server = 8-test cipher RSA-SM4-GCM-SHA256 in NTLS_UNIQUE mode-server
-client = 8-test cipher RSA-SM4-GCM-SHA256 in NTLS_UNIQUE mode-client
+[9-test cipher RSA-SM4-GCM-SHA256 in NTLS_UNIQUE mode-ssl]
+server = 9-test cipher RSA-SM4-GCM-SHA256 in NTLS_UNIQUE mode-server
+client = 9-test cipher RSA-SM4-GCM-SHA256 in NTLS_UNIQUE mode-client
 
-[8-test cipher RSA-SM4-GCM-SHA256 in NTLS_UNIQUE mode-server]
+[9-test cipher RSA-SM4-GCM-SHA256 in NTLS_UNIQUE mode-server]
 Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
 CipherString = DEFAULT
 Enable_ntls = on
@@ -307,13 +341,13 @@ PrivateKey = ${ENV::TEST_CERTS_DIR}/serverkey.pem
 SignCertificate = ${ENV::TEST_CERTS_DIR}/server-rsa-sign.crt
 SignPrivateKey = ${ENV::TEST_CERTS_DIR}/server-rsa-sign.key
 
-[8-test cipher RSA-SM4-GCM-SHA256 in NTLS_UNIQUE mode-client]
+[9-test cipher RSA-SM4-GCM-SHA256 in NTLS_UNIQUE mode-client]
 CipherString = RSA-SM4-GCM-SHA256
 Enable_ntls = on
 VerifyCAFile = ${ENV::TEST_CERTS_DIR}/root-cert.pem
 VerifyMode = Peer
 
-[test-8]
+[test-9]
 ExpectedCipher = RSA-SM4-GCM-SHA256
 ExpectedProtocol = NTLS
 ExpectedResult = Success
@@ -322,40 +356,40 @@ Method = NTLS
 
 # ===========================================================
 
-[9-test ntls client doing handshake without setting certs and pkey]
-ssl_conf = 9-test ntls client doing handshake without setting certs and pkey-ssl
+[10-test ntls client doing handshake without setting certs and pkey]
+ssl_conf = 10-test ntls client doing handshake without setting certs and pkey-ssl
 
-[9-test ntls client doing handshake without setting certs and pkey-ssl]
-server = 9-test ntls client doing handshake without setting certs and pkey-server
-client = 9-test ntls client doing handshake without setting certs and pkey-client
+[10-test ntls client doing handshake without setting certs and pkey-ssl]
+server = 10-test ntls client doing handshake without setting certs and pkey-server
+client = 10-test ntls client doing handshake without setting certs and pkey-client
 
-[9-test ntls client doing handshake without setting certs and pkey-server]
+[10-test ntls client doing handshake without setting certs and pkey-server]
 Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
 CipherString = DEFAULT
 Enable_ntls = on
 PrivateKey = ${ENV::TEST_CERTS_DIR}/serverkey.pem
 
-[9-test ntls client doing handshake without setting certs and pkey-client]
+[10-test ntls client doing handshake without setting certs and pkey-client]
 CipherString = ECC-SM2-SM4-CBC-SM3
 Enable_ntls = on
 VerifyCAFile = ${ENV::TEST_CERTS_DIR}/rootcert.pem
 VerifyMode = Peer
 
-[test-9]
+[test-10]
 ExpectedResult = ServerFail
 Method = NTLS
 
 
 # ===========================================================
 
-[10-test server encryption certificate expired]
-ssl_conf = 10-test server encryption certificate expired-ssl
+[11-test server encryption certificate expired]
+ssl_conf = 11-test server encryption certificate expired-ssl
 
-[10-test server encryption certificate expired-ssl]
-server = 10-test server encryption certificate expired-server
-client = 10-test server encryption certificate expired-client
+[11-test server encryption certificate expired-ssl]
+server = 11-test server encryption certificate expired-server
+client = 11-test server encryption certificate expired-client
 
-[10-test server encryption certificate expired-server]
+[11-test server encryption certificate expired-server]
 Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
 CipherString = DEFAULT
 Enable_ntls = on
@@ -365,38 +399,7 @@ PrivateKey = ${ENV::TEST_CERTS_DIR}/serverkey.pem
 SignCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.crt
 SignPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.key
 
-[10-test server encryption certificate expired-client]
-CipherString = DEFAULT
-Enable_ntls = on
-VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2/chain-ca.crt
-VerifyMode = Peer
-
-[test-10]
-ExpectedClientAlert = CertificateExpired
-ExpectedResult = ClientFail
-Method = NTLS
-
-
-# ===========================================================
-
-[11-test server sign certificate expired]
-ssl_conf = 11-test server sign certificate expired-ssl
-
-[11-test server sign certificate expired-ssl]
-server = 11-test server sign certificate expired-server
-client = 11-test server sign certificate expired-client
-
-[11-test server sign certificate expired-server]
-Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
-CipherString = DEFAULT
-Enable_ntls = on
-EncCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_enc.crt
-EncPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_enc.key
-PrivateKey = ${ENV::TEST_CERTS_DIR}/serverkey.pem
-SignCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_sign_expire.crt
-SignPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.key
-
-[11-test server sign certificate expired-client]
+[11-test server encryption certificate expired-client]
 CipherString = DEFAULT
 Enable_ntls = on
 VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2/chain-ca.crt
@@ -410,24 +413,24 @@ Method = NTLS
 
 # ===========================================================
 
-[12-test server certificates expired]
-ssl_conf = 12-test server certificates expired-ssl
+[12-test server sign certificate expired]
+ssl_conf = 12-test server sign certificate expired-ssl
 
-[12-test server certificates expired-ssl]
-server = 12-test server certificates expired-server
-client = 12-test server certificates expired-client
+[12-test server sign certificate expired-ssl]
+server = 12-test server sign certificate expired-server
+client = 12-test server sign certificate expired-client
 
-[12-test server certificates expired-server]
+[12-test server sign certificate expired-server]
 Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
 CipherString = DEFAULT
 Enable_ntls = on
-EncCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_enc_expire.crt
+EncCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_enc.crt
 EncPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_enc.key
 PrivateKey = ${ENV::TEST_CERTS_DIR}/serverkey.pem
 SignCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_sign_expire.crt
 SignPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.key
 
-[12-test server certificates expired-client]
+[12-test server sign certificate expired-client]
 CipherString = DEFAULT
 Enable_ntls = on
 VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2/chain-ca.crt
@@ -441,14 +444,45 @@ Method = NTLS
 
 # ===========================================================
 
-[13-test server choose ECC-SM2-SM4 with SM2 double certs only]
-ssl_conf = 13-test server choose ECC-SM2-SM4 with SM2 double certs only-ssl
+[13-test server certificates expired]
+ssl_conf = 13-test server certificates expired-ssl
 
-[13-test server choose ECC-SM2-SM4 with SM2 double certs only-ssl]
-server = 13-test server choose ECC-SM2-SM4 with SM2 double certs only-server
-client = 13-test server choose ECC-SM2-SM4 with SM2 double certs only-client
+[13-test server certificates expired-ssl]
+server = 13-test server certificates expired-server
+client = 13-test server certificates expired-client
 
-[13-test server choose ECC-SM2-SM4 with SM2 double certs only-server]
+[13-test server certificates expired-server]
+Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
+CipherString = DEFAULT
+Enable_ntls = on
+EncCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_enc_expire.crt
+EncPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_enc.key
+PrivateKey = ${ENV::TEST_CERTS_DIR}/serverkey.pem
+SignCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_sign_expire.crt
+SignPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.key
+
+[13-test server certificates expired-client]
+CipherString = DEFAULT
+Enable_ntls = on
+VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2/chain-ca.crt
+VerifyMode = Peer
+
+[test-13]
+ExpectedClientAlert = CertificateExpired
+ExpectedResult = ClientFail
+Method = NTLS
+
+
+# ===========================================================
+
+[14-test server choose ECC-SM2-SM4 with SM2 double certs only]
+ssl_conf = 14-test server choose ECC-SM2-SM4 with SM2 double certs only-ssl
+
+[14-test server choose ECC-SM2-SM4 with SM2 double certs only-ssl]
+server = 14-test server choose ECC-SM2-SM4 with SM2 double certs only-server
+client = 14-test server choose ECC-SM2-SM4 with SM2 double certs only-client
+
+[14-test server choose ECC-SM2-SM4 with SM2 double certs only-server]
 Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
 CipherString = RSA-SM4-CBC-SM3:ECC-SM2-SM4-CBC-SM3
 Enable_ntls = on
@@ -458,13 +492,13 @@ PrivateKey = ${ENV::TEST_CERTS_DIR}/serverkey.pem
 SignCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.crt
 SignPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.key
 
-[13-test server choose ECC-SM2-SM4 with SM2 double certs only-client]
+[14-test server choose ECC-SM2-SM4 with SM2 double certs only-client]
 CipherString = ECC-SM2-SM4-CBC-SM3:RSA-SM4-CBC-SM3
 Enable_ntls = on
 VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2/chain-ca.crt
 VerifyMode = Peer
 
-[test-13]
+[test-14]
 ExpectedCipher = ECC-SM2-SM4-CBC-SM3
 ExpectedProtocol = NTLS
 ExpectedResult = Success
@@ -473,14 +507,14 @@ Method = NTLS
 
 # ===========================================================
 
-[14-test server choose RSA-SM4 with RSA double certs only]
-ssl_conf = 14-test server choose RSA-SM4 with RSA double certs only-ssl
+[15-test server choose RSA-SM4 with RSA double certs only]
+ssl_conf = 15-test server choose RSA-SM4 with RSA double certs only-ssl
 
-[14-test server choose RSA-SM4 with RSA double certs only-ssl]
-server = 14-test server choose RSA-SM4 with RSA double certs only-server
-client = 14-test server choose RSA-SM4 with RSA double certs only-client
+[15-test server choose RSA-SM4 with RSA double certs only-ssl]
+server = 15-test server choose RSA-SM4 with RSA double certs only-server
+client = 15-test server choose RSA-SM4 with RSA double certs only-client
 
-[14-test server choose RSA-SM4 with RSA double certs only-server]
+[15-test server choose RSA-SM4 with RSA double certs only-server]
 Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
 CipherString = ECC-SM2-SM4-CBC-SM3:RSA-SM4-CBC-SM3
 Enable_ntls = on
@@ -490,13 +524,13 @@ PrivateKey = ${ENV::TEST_CERTS_DIR}/serverkey.pem
 SignCertificate = ${ENV::TEST_CERTS_DIR}/server-rsa-sign.crt
 SignPrivateKey = ${ENV::TEST_CERTS_DIR}/server-rsa-sign.key
 
-[14-test server choose RSA-SM4 with RSA double certs only-client]
+[15-test server choose RSA-SM4 with RSA double certs only-client]
 CipherString = ECC-SM2-SM4-CBC-SM3:RSA-SM4-CBC-SM3
 Enable_ntls = on
 VerifyCAFile = ${ENV::TEST_CERTS_DIR}/root-cert.pem
 VerifyMode = Peer
 
-[test-14]
+[test-15]
 ExpectedCipher = RSA-SM4-CBC-SM3
 ExpectedProtocol = NTLS
 ExpectedResult = Success
@@ -505,14 +539,14 @@ Method = NTLS
 
 # ===========================================================
 
-[15-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs]
-ssl_conf = 15-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs-ssl
+[16-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs]
+ssl_conf = 16-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs-ssl
 
-[15-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs-ssl]
-server = 15-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs-server
-client = 15-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs-client
+[16-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs-ssl]
+server = 16-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs-server
+client = 16-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs-client
 
-[15-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs-server]
+[16-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs-server]
 Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
 CipherString = ECC-SM2-SM4-CBC-SM3:RSA-SM4-CBC-SM3
 Enable_ntls = on
@@ -527,13 +561,13 @@ SM2.EncPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_enc.key
 SM2.SignCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.crt
 SM2.SignPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.key
 
-[15-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs-client]
+[16-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs-client]
 CipherString = RSA-SM4-CBC-SM3:ECC-SM2-SM4-CBC-SM3
 Enable_ntls = on
 VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2/chain-ca.crt
 VerifyMode = Peer
 
-[test-15]
+[test-16]
 ExpectedCipher = ECC-SM2-SM4-CBC-SM3
 ExpectedProtocol = NTLS
 ExpectedResult = Success
@@ -542,14 +576,14 @@ Method = NTLS
 
 # ===========================================================
 
-[16-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs]
-ssl_conf = 16-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs-ssl
+[17-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs]
+ssl_conf = 17-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs-ssl
 
-[16-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs-ssl]
-server = 16-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs-server
-client = 16-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs-client
+[17-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs-ssl]
+server = 17-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs-server
+client = 17-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs-client
 
-[16-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs-server]
+[17-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs-server]
 Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
 CipherString = RSA-SM4-CBC-SM3:ECC-SM2-SM4-CBC-SM3
 Enable_ntls = on
@@ -564,13 +598,13 @@ SM2.EncPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_enc.key
 SM2.SignCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.crt
 SM2.SignPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.key
 
-[16-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs-client]
+[17-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs-client]
 CipherString = ECC-SM2-SM4-CBC-SM3:RSA-SM4-CBC-SM3
 Enable_ntls = on
 VerifyCAFile = ${ENV::TEST_CERTS_DIR}/root-cert.pem
 VerifyMode = Peer
 
-[test-16]
+[test-17]
 ExpectedCipher = RSA-SM4-CBC-SM3
 ExpectedProtocol = NTLS
 ExpectedResult = Success
@@ -579,14 +613,14 @@ Method = NTLS
 
 # ===========================================================
 
-[17-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs]
-ssl_conf = 17-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs-ssl
+[18-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs]
+ssl_conf = 18-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs-ssl
 
-[17-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs-ssl]
-server = 17-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs-server
-client = 17-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs-client
+[18-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs-ssl]
+server = 18-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs-server
+client = 18-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs-client
 
-[17-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs-server]
+[18-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs-server]
 Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
 CipherString = RSA-SM4-CBC-SM3:ECC-SM2-SM4-CBC-SM3
 Enable_ntls = on
@@ -600,13 +634,13 @@ SM2.EncPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_enc.key
 SM2.SignCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.crt
 SM2.SignPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.key
 
-[17-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs-client]
+[18-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs-client]
 CipherString = ECC-SM2-SM4-CBC-SM3:RSA-SM4-CBC-SM3
 Enable_ntls = on
 VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2/chain-ca.crt
 VerifyMode = Peer
 
-[test-17]
+[test-18]
 ExpectedCipher = ECC-SM2-SM4-CBC-SM3
 ExpectedProtocol = NTLS
 ExpectedResult = Success
