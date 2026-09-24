@@ -21,6 +21,7 @@
 #include "crypto/asn1.h"
 #include "crypto/evp.h"
 #include "crypto/x509.h"
+#include "crypto/ec.h"
 #include <openssl/rsa.h>
 #include <openssl/dsa.h>
 #include <openssl/decoder.h>
@@ -204,6 +205,12 @@ static int x509_pubkey_ex_d2i_ex(ASN1_VALUE **pval,
             ERR_clear_last_mark();
             goto end;
         }
+#ifndef OPENSSL_NO_EC
+        /* SM2 abuses the EC oid, so this could actually be SM2 */
+        if (OBJ_obj2nid(pubkey->algor->algorithm) == NID_X9_62_id_ecPublicKey
+                && ossl_x509_algor_is_sm2(pubkey->algor))
+            strcpy(txtoidname, "SM2");
+#endif
         if ((dctx =
              OSSL_DECODER_CTX_new_for_pkey(&pubkey->pkey,
                                            "DER", "SubjectPublicKeyInfo",
