@@ -13,7 +13,6 @@
 #include "internal/ssl_unwrap.h"
 #include "ntls_ssl_local.h"
 #include "ntls_statem_local.h"
-#include "internal/constant_time.h"
 #include "internal/cryptlib.h"
 #include <openssl/buffer.h>
 #include <openssl/rand.h>
@@ -1857,12 +1856,11 @@ static int tls_process_cke_pms_ntls(SSL_CONNECTION *s, PACKET *pkt, unsigned lon
     /*
      * We must not leak whether a decryption failure occurs because of
      * Bleichenbacher's attack on PKCS #1 v1.5 RSA padding (see RFC 2246,
-     * section 7.4.7.1). We use the special padding type
-     * RSA_PKCS1_WITH_TLS_PADDING to do that. It will automaticaly decrypt the
-     * RSA, check the padding and check that the client version is as expected
-     * in the premaster secret. If any of that fails then the function appears
-     * to return successfully but with a random result. The call below could
-     * still fail if the input is publicly invalid.
+     * section 7.4.7.1). RSA uses RSA_PKCS1_WITH_TLS_PADDING; SM2 has no
+     * PKCS#1, but the same OSSL_ASYM_CIPHER_PARAM_TLS_CLIENT_VERSION
+     * opt-in makes SM2 decrypt check GB/T 38636-2020 6.4.5.8
+     * PMS.client_version and, on decrypt / length / version failure,
+     * appear to succeed with a random 48-byte result.
      * See https://tools.ietf.org/html/rfc5246#section-7.4.7.1
      */
     if (alg_k & SSL_kRSA) {
@@ -1871,16 +1869,16 @@ static int tls_process_cke_pms_ntls(SSL_CONNECTION *s, PACKET *pkt, unsigned lon
             SSLfatal_ntls(s, SSL_AD_DECRYPT_ERROR, SSL_R_DECRYPTION_FAILED);
             goto err;
         }
+    }
 
-        *p++ = OSSL_PARAM_construct_uint(
-                    OSSL_ASYM_CIPHER_PARAM_TLS_CLIENT_VERSION,
-                    (unsigned int *)&s->client_version);
-        *p++ = OSSL_PARAM_construct_end();
+    *p++ = OSSL_PARAM_construct_uint(
+                OSSL_ASYM_CIPHER_PARAM_TLS_CLIENT_VERSION,
+                (unsigned int *)&s->client_version);
+    *p++ = OSSL_PARAM_construct_end();
 
-        if (!EVP_PKEY_CTX_set_params(ctx, params)) {
-            SSLfatal_ntls(s, SSL_AD_DECRYPT_ERROR, SSL_R_DECRYPTION_FAILED);
-            goto err;
-        }
+    if (!EVP_PKEY_CTX_set_params(ctx, params)) {
+        SSLfatal_ntls(s, SSL_AD_DECRYPT_ERROR, SSL_R_DECRYPTION_FAILED);
+        goto err;
     }
 
     if (EVP_PKEY_decrypt(ctx, pkey_decrypt, &outlen,
