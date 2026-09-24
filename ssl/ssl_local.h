@@ -538,6 +538,9 @@ struct ssl_session_st {
      */
     struct ssl_session_st *prev, *next;
     CRYPTO_REF_COUNT references;
+
+    uint8_t *quic_early_data_context;
+    size_t quic_early_data_context_len;
 };
 
 /* Extended master secret support */
@@ -1223,6 +1226,19 @@ typedef struct ossl_quic_tls_callbacks_st {
     int (*alert_cb)(SSL *s, unsigned char alert_code, void *arg);
 } OSSL_QUIC_TLS_CALLBACKS;
 
+struct ssl_quic_api_info_st {
+    /* Current Read/Write Level */
+    OSSL_ENCRYPTION_LEVEL quic_read_level;
+    OSSL_ENCRYPTION_LEVEL quic_write_level;
+    OSSL_ENCRYPTION_LEVEL quic_latest_level_received;
+    BUF_MEM *quic_buf;
+    BUF_MEM *quic_transport_params_buf;
+    size_t quic_next_record_start;
+    size_t quic_buf_released;
+    size_t level_start_index[OSSL_ENCRYPTION_LEVEL_NUM];
+    size_t level_end_index[OSSL_ENCRYPTION_LEVEL_NUM];
+};
+
 #ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
 typedef struct dc_pkey_st DC_PKEY;
 #endif
@@ -1318,6 +1334,21 @@ struct ssl_connection_st {
     OSSL_QUIC_TLS_CALLBACKS qtcb;
     void *qtarg;
     QUIC_TLS *qtls;
+
+    /* QUIC API method */
+    const SSL_QUIC_METHOD *quic_api_method;
+    /* 
+     * BoringSSL style QUIC-API allows the SSL_set_quic_transport_params
+     * caller to use the buffer for other purposes after calling, 
+     * but OpenSSL's API does not.
+     * We use a temporary buffer to accommodate both API styles. 
+     */
+    uint8_t *quic_api_method_transport_params;
+    size_t quic_api_method_transport_params_len;
+
+    /* QUIC early data context */
+    uint8_t *quic_early_data_context;
+    size_t quic_early_data_context_len;
 
     struct {
         long flags;

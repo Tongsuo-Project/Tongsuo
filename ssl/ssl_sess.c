@@ -177,6 +177,9 @@ static SSL_SESSION *ssl_session_dup_intern(const SSL_SESSION *src, int ticket)
     dest->next = NULL;
     dest->owner = NULL;
 
+    dest->quic_early_data_context = NULL;
+    dest->quic_early_data_context_len = 0;
+
     if (!CRYPTO_NEW_REF(&dest->references, 1)) {
         OPENSSL_free(dest);
         return NULL;
@@ -272,6 +275,16 @@ static SSL_SESSION *ssl_session_dup_intern(const SSL_SESSION *src, int ticket)
             OPENSSL_memdup(src->ticket_appdata, src->ticket_appdata_len);
         if (dest->ticket_appdata == NULL)
             goto err;
+    }
+
+    if (src->quic_early_data_context) {
+        dest->quic_early_data_context =
+                OPENSSL_memdup(src->quic_early_data_context,
+                               src->quic_early_data_context_len);
+        if (dest->quic_early_data_context == NULL)
+            goto err;
+
+        dest->quic_early_data_context_len = src->quic_early_data_context_len;
     }
 
     return dest;
@@ -499,6 +512,19 @@ int ssl_get_new_session(SSL_CONNECTION *s, int session)
     s->session = ss;
     ss->ssl_version = s->version;
     ss->verify_result = X509_V_OK;
+
+    if (s->quic_early_data_context) {
+        ss->quic_early_data_context =
+                OPENSSL_memdup(s->quic_early_data_context,
+                               s->quic_early_data_context_len);
+        if (ss->quic_early_data_context == NULL) {
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+            SSL_SESSION_free(ss);
+            return 0;
+        }
+ 
+        ss->quic_early_data_context_len = s->quic_early_data_context_len;
+    }
 
     /* If client supports extended master secret set it in session */
     if (s->s3.flags & TLS1_FLAGS_RECEIVED_EXTMS)
@@ -921,6 +947,7 @@ void SSL_SESSION_free(SSL_SESSION *ss)
 #ifndef OPENSSL_NO_SRP
     OPENSSL_free(ss->srp_username);
 #endif
+    OPENSSL_free(ss->quic_early_data_context);
     OPENSSL_free(ss->ext.alpn_selected);
     OPENSSL_free(ss->ticket_appdata);
     CRYPTO_FREE_REF(&ss->references);
