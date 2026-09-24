@@ -15,6 +15,7 @@
 #include "internal/ssl_unwrap.h"
 #include "internal/nelem.h"
 #include "../ssl/ssl_local.h"
+#include "helpers/ssltestlib.h"
 
 static const char *sm2_sign_cert_file;
 static const char *sm2_sign_key_file;
@@ -622,6 +623,94 @@ err:
     return ret;
 }
 
+#ifndef OPENSSL_NO_SM4
+
+static X509 *load_cert(const char *file)
+{
+    BIO *in = BIO_new_file(file, "r");
+    X509 *x = in == NULL ? NULL : PEM_read_bio_X509(in, NULL, NULL, NULL);
+    BIO_free(in);
+    return x;
+}
+
+static int verify_always_ok(int ok, X509_STORE_CTX *ctx)
+{
+    return 1;
+}
+
+static int test_ntls_get0_peer_certs(int i)
+{
+    int ret = 0;
+    SSL_CTX *sctx = NULL, *cctx = NULL;
+    SSL *sssl = NULL, *cssl = NULL;
+    X509 *s_sign_cert = NULL, *s_enc_cert = NULL;
+    X509 *p_sign_cert = NULL, *p_enc_cert = NULL;
+    
+    s_sign_cert = load_cert(rsa_sign_cert_file);
+    s_enc_cert = load_cert(rsa_enc_cert_file);
+    if (!TEST_ptr(s_sign_cert) || !TEST_ptr(s_enc_cert))
+        goto err;
+
+    if (!TEST_true(create_ssl_ctx_pair(NULL, NTLS_server_method(),
+                   NTLS_client_method(), 0, 0, &sctx, &cctx, NULL, NULL)))
+        goto err;
+
+    SSL_CTX_enable_ntls(sctx);
+    SSL_CTX_enable_ntls(cctx);
+    SSL_CTX_set_verify(cctx, SSL_VERIFY_NONE, NULL);
+
+    if (!TEST_int_eq(SSL_CTX_use_sign_certificate_file(sctx, rsa_sign_cert_file, SSL_FILETYPE_PEM), 1)
+        || !TEST_int_eq(SSL_CTX_use_sign_PrivateKey_file(sctx, rsa_sign_key_file, SSL_FILETYPE_PEM), 1)
+        || !TEST_int_eq(SSL_CTX_use_enc_certificate_file(sctx, rsa_enc_cert_file, SSL_FILETYPE_PEM), 1)
+        || !TEST_int_eq(SSL_CTX_use_enc_PrivateKey_file(sctx, rsa_enc_key_file, SSL_FILETYPE_PEM), 1)
+        || !TEST_true(SSL_CTX_set_cipher_list(sctx, NTLS_TXT_RSA_SM4_CBC_SHA256))
+        || !TEST_true(SSL_CTX_set_cipher_list(cctx, NTLS_TXT_RSA_SM4_CBC_SHA256)))
+        goto err;
+
+    if (i == 0) {
+        /* Case 0: Unilateral authentication. */
+        SSL_CTX_set_verify(sctx, SSL_VERIFY_NONE, NULL);
+    } else {
+        /* Case 1: Mutual authentication. */
+        SSL_CTX_set_verify(sctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,verify_always_ok);
+        if (!TEST_int_eq(SSL_CTX_use_sign_certificate_file(cctx, rsa_sign_cert_file, SSL_FILETYPE_PEM), 1)
+            || !TEST_int_eq(SSL_CTX_use_sign_PrivateKey_file(cctx, rsa_sign_key_file, SSL_FILETYPE_PEM), 1)
+            || !TEST_int_eq(SSL_CTX_use_enc_certificate_file(cctx, rsa_enc_cert_file, SSL_FILETYPE_PEM), 1)
+            || !TEST_int_eq(SSL_CTX_use_enc_PrivateKey_file(cctx, rsa_enc_key_file, SSL_FILETYPE_PEM), 1))
+            goto err;
+    }
+
+    if (!TEST_true(create_ssl_objects(sctx, cctx, &sssl, &cssl, NULL, NULL))
+        || !TEST_true(create_ssl_connection(sssl, cssl, SSL_ERROR_NONE)))
+        goto err;
+
+    if (i == 0) {
+        /* Case 0: Unilateral authentication. Test c->s certificates. */
+        p_sign_cert = SSL_get0_peer_sign_certificate_ntls(cssl);
+        p_enc_cert = SSL_get0_peer_enc_certificate_ntls(cssl);
+    } else {
+        /* Case 1: Mutual authentication. Test s->c certificates.*/
+        p_sign_cert = SSL_get0_peer_sign_certificate_ntls(sssl);
+        p_enc_cert = SSL_get0_peer_enc_certificate_ntls(sssl);
+    }
+
+    if (!TEST_ptr(p_sign_cert) || !TEST_ptr(p_enc_cert)
+        || !TEST_int_eq(X509_cmp(p_sign_cert, s_sign_cert), 0)
+        || !TEST_int_eq(X509_cmp(p_enc_cert, s_enc_cert), 0))
+        goto err;
+    
+    ret = 1;
+err:
+    SSL_free(sssl);
+    SSL_free(cssl);
+    SSL_CTX_free(sctx);
+    SSL_CTX_free(cctx);
+    X509_free(s_sign_cert);
+    X509_free(s_enc_cert);
+    return ret;
+}
+#endif
+
 int setup_tests(void)
 {
     if (!TEST_ptr(sm2_sign_cert_file = test_get_argument(0))
@@ -643,5 +732,9 @@ int setup_tests(void)
 
     ADD_ALL_TESTS(test_ntls_ctx_set_cipher_list, OSSL_NELEM(cipher_list) - 1);
     ADD_ALL_TESTS(test_ntls_ssl_set_cipher_list, OSSL_NELEM(cipher_list) - 1);
+    /* All NTLS ciphersuites need SM4. */
+# ifndef OPENSSL_NO_SM4
+    ADD_ALL_TESTS(test_ntls_get0_peer_certs,2);
+# endif
     return 1;
 }

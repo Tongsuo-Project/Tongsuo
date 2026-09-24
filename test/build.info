@@ -1281,7 +1281,7 @@ IF[{- !$disabled{tests} -}]
 
   IF[{- !$disabled{'ntls'} -}]
     PROGRAMS{noinst}=ssl_ntls_api_test
-    SOURCE[ssl_ntls_api_test]=ssl_ntls_api_test.c
+    SOURCE[ssl_ntls_api_test]=ssl_ntls_api_test.c helpers/ssltestlib.c
     INCLUDE[ssl_ntls_api_test]=.. ../include ../apps/include
     DEPEND[ssl_ntls_api_test]=../libcrypto ../libssl libtestutil.a
   ENDIF

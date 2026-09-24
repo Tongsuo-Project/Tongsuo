@@ -1864,6 +1864,10 @@ void SSL_enable_ntls(SSL *s);
 void SSL_disable_ntls(SSL *s);
 void SSL_enable_force_ntls(SSL *s);
 void SSL_disable_force_ntls(SSL *s);
+
+__owur X509 *SSL_get0_peer_sign_certificate_ntls(const SSL *s);
+__owur X509 *SSL_get0_peer_enc_certificate_ntls(const SSL *s);
+
 # endif
 
 # ifndef OPENSSL_NO_SM2

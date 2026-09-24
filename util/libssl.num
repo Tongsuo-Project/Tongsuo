@@ -704,3 +704,5 @@ SSL_provide_quic_data                   704	3_5_0	EXIST::FUNCTION:
 SSL_set_quic_use_legacy_codepoint       705	3_5_0	EXIST::FUNCTION:
 SSL_get_peer_quic_transport_params      706	3_5_0	EXIST::FUNCTION:
 SSL_set_quic_transport_params           707	3_5_0	EXIST::FUNCTION:
+SSL_get0_peer_sign_certificate_ntls     708	3_5_4	EXIST::FUNCTION:NTLS
+SSL_get0_peer_enc_certificate_ntls      709	3_5_4	EXIST::FUNCTION:NTLS
