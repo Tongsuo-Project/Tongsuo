@@ -1958,10 +1958,17 @@ static int tls_construct_cke_sm2dhe_ntls(SSL_CONNECTION *s, WPACKET *pkt)
 
     curve_id = tls1_shared_group(s, -2);
 
+    if (s->enable_ntls_strict_ecdhe_cke
+            && !WPACKET_start_sub_packet_u16(pkt)) {
+        SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+        goto err;
+    }
+
     if (!WPACKET_put_bytes_u8(pkt, NAMED_CURVE_TYPE)
             || !WPACKET_put_bytes_u8(pkt, 0)
             || !WPACKET_put_bytes_u8(pkt, curve_id)
-            || !WPACKET_sub_memcpy_u8(pkt, encodedPoint, encoded_pt_len)) {
+            || !WPACKET_sub_memcpy_u8(pkt, encodedPoint, encoded_pt_len)
+            || (s->enable_ntls_strict_ecdhe_cke && !WPACKET_close(pkt))) {
         SSLfatal_ntls(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
         goto err;
     }

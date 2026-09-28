@@ -623,6 +623,42 @@ err:
     return ret;
 }
 
+static int test_ntls_strict_ecdhe_cke(void)
+{
+    int ret = 0;
+    SSL_CTX *ctx = NULL;
+    SSL *ssl = NULL;
+    SSL_CONNECTION *sc;
+
+    ctx = SSL_CTX_new(NTLS_client_method());
+    if (!TEST_ptr(ctx))
+        goto err;
+    if (!TEST_int_eq(ctx->enable_ntls_strict_ecdhe_cke, 0))
+        goto err;
+
+    SSL_CTX_set_ntls_strict_ecdhe_cke(ctx, 1);
+    if (!TEST_int_eq(ctx->enable_ntls_strict_ecdhe_cke, 1))
+        goto err;
+
+    ssl = SSL_new(ctx);
+    if (!TEST_ptr(ssl))
+        goto err;
+    sc = SSL_CONNECTION_FROM_SSL_ONLY(ssl);
+    if (!TEST_ptr(sc))
+        goto err;
+    if (!TEST_int_eq(sc->enable_ntls_strict_ecdhe_cke, 1))
+        goto err;
+
+    SSL_set_ntls_strict_ecdhe_cke(ssl, 0);
+    if (!TEST_int_eq(sc->enable_ntls_strict_ecdhe_cke, 0))
+        goto err;
+
+    ret = 1;
+err:
+    SSL_free(ssl);
+    SSL_CTX_free(ctx);
+    return ret;
+}
 #ifndef OPENSSL_NO_SM4
 
 static X509 *load_cert(const char *file)
@@ -729,6 +765,7 @@ int setup_tests(void)
     ADD_ALL_TESTS(test_ntls_ssl_set_cert_pkey_file_api, 2);
     ADD_ALL_TESTS(test_ntls_ssl_set_cert_pkey_api, 2);
     ADD_TEST(test_ntls_method_api);
+    ADD_TEST(test_ntls_strict_ecdhe_cke);
 
     ADD_ALL_TESTS(test_ntls_ctx_set_cipher_list, OSSL_NELEM(cipher_list) - 1);
     ADD_ALL_TESTS(test_ntls_ssl_set_cipher_list, OSSL_NELEM(cipher_list) - 1);

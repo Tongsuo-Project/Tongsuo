@@ -1926,8 +1926,22 @@ static int tls_process_cke_sm2dhe_ntls(SSL_CONNECTION *s, PACKET *pkt)
         SSLfatal_ntls(s, SSL_AD_HANDSHAKE_FAILURE, SSL_R_MISSING_TMP_ECDH_KEY);
         goto err;
     } else {
-        unsigned int i;
+        unsigned int i, n;
         const unsigned char *data;
+
+        /*
+         * To be compatible with GB/T 38636-2020 Section 6.4.5.8,
+         * where SKE contains "opaque ClientECDHEParams<0..2^16-1>"
+         * rather than "ClientECDHEParams" directly.
+         */
+        if (PACKET_remaining(pkt) >= 2
+            && PACKET_peek_net_2(pkt, &n)
+            && n == PACKET_remaining(pkt) - 2) {
+            if (!PACKET_get_net_2(pkt, &n)) {
+                SSLfatal_ntls(s, SSL_AD_DECODE_ERROR, SSL_R_LENGTH_MISMATCH);
+                goto err;
+            }
+        }
 
         /*
          * Get client's public key from encoded point in the
