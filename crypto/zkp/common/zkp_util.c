@@ -608,13 +608,18 @@ end:
     return p - out;
 }
 
-BIGNUM *zkp_bignum_decode(const unsigned char *in, int *len, int bn_len)
+BIGNUM *zkp_bignum_decode(const unsigned char *in, size_t inlen, int *len,
+                          int bn_len)
 {
     int neg;
     unsigned char *p = (unsigned char *)in;
     BIGNUM *b = NULL;
 
-    if (in == NULL)
+    if (in == NULL || bn_len < 0)
+        return NULL;
+
+    /* sign byte followed by a fixed-width magnitude */
+    if (inlen < 1 + (size_t)bn_len)
         return NULL;
 
     b = BN_new();
@@ -672,20 +677,32 @@ end:
 }
 
 STACK_OF(BIGNUM) *zkp_stack_of_bignum_decode(const unsigned char *in,
-                                             int *len, int bn_len)
+                                             size_t inlen, int *len,
+                                             int bn_len)
 {
     unsigned char *p;
     int *q = (int *)in, n, i, neg;
+    size_t elem_len;
     BIGNUM *b = NULL;
     STACK_OF(BIGNUM) *ret;
+
+    if (in == NULL || bn_len < 0)
+        return NULL;
+
+    if (inlen < sizeof(int))
+        return NULL;
 
     n = (int)zkp_n2l(*q);
     q++;
     p = (unsigned char *)q;
 
-    if (n < 0) {
+    /*
+     * Each element is one sign byte plus bn_len magnitude bytes.
+     * Divide instead of multiplying so a large n cannot wrap the product.
+     */
+    elem_len = 1 + (size_t)bn_len;
+    if (n < 0 || (size_t)n > (inlen - sizeof(int)) / elem_len)
         return NULL;
-    }
 
     if (!(ret = sk_BIGNUM_new_reserve(NULL, n)))
         return NULL;
@@ -754,7 +771,8 @@ end:
     return p - out;
 }
 
-STACK_OF(EC_POINT) *zkp_stack_of_point_decode(const unsigned char *in, int *len,
+STACK_OF(EC_POINT) *zkp_stack_of_point_decode(const unsigned char *in,
+                                              size_t inlen, int *len,
                                               const EC_GROUP *group,
                                               BN_CTX *bn_ctx)
 {
@@ -765,7 +783,10 @@ STACK_OF(EC_POINT) *zkp_stack_of_point_decode(const unsigned char *in, int *len,
     STACK_OF(EC_POINT) *ret = NULL;
 
     if (in == NULL || group == NULL)
-        return 0;
+        return NULL;
+
+    if (inlen < sizeof(int))
+        return NULL;
 
     point_len = EC_POINT_point2oct(group, EC_GROUP_get0_generator(group),
                                    form, NULL, 0, bn_ctx);
@@ -773,9 +794,10 @@ STACK_OF(EC_POINT) *zkp_stack_of_point_decode(const unsigned char *in, int *len,
     q++;
     p = (unsigned char *)q;
 
-    if (n < 0) {
+    /* Divide instead of multiplying so a large n cannot wrap the product. */
+    if (n < 0 || point_len == 0
+            || (size_t)n > (inlen - sizeof(int)) / point_len)
         return NULL;
-    }
 
     if (!(ret = sk_EC_POINT_new_reserve(NULL, n)))
         return NULL;
