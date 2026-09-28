@@ -2765,6 +2765,130 @@ done:
     return ret;
 }
 
+/*
+ * NTLS SM2 ClientKeyExchange encrypts a 48-byte premaster secret. Setting
+ * tls-client-version opts into PKCS#1.5-style implicit rejection: decrypt
+ * failure, wrong length, or PMS.client_version mismatch still returns 48
+ * random bytes successfully.
+ */
+static int test_EVP_SM2_ntls_pms_implicit_rejection(void)
+{
+    int ret = 0;
+    EVP_PKEY *pkey = NULL;
+    EVP_PKEY_CTX *cctx = NULL;
+    unsigned char pms[48], pms_badver[48], pms_short[16], out[64];
+    unsigned char *ct = NULL, *ct_badver = NULL, *ct_short = NULL;
+    size_t ct_len = 0, ct_badver_len = 0, ct_short_len = 0, out_len;
+    unsigned int ntls_ver = 0x0101, off = 0;
+    OSSL_PARAM params[2], params_off[2];
+
+    memset(pms, 0x42, sizeof(pms));
+    pms[0] = 0x01;
+    pms[1] = 0x01;
+    memset(pms_badver, 0x43, sizeof(pms_badver));
+    pms_badver[0] = 0x03;
+    pms_badver[1] = 0x03;
+    memset(pms_short, 0x44, sizeof(pms_short));
+    pms_short[0] = 0x01;
+    pms_short[1] = 0x01;
+
+    if (!TEST_ptr(pkey = EVP_PKEY_Q_keygen(testctx, testpropq, "SM2")))
+        goto done;
+
+    if (!TEST_ptr(cctx = EVP_PKEY_CTX_new_from_pkey(testctx, pkey, testpropq))
+        || !TEST_int_gt(EVP_PKEY_encrypt_init(cctx), 0)
+        || !TEST_int_gt(EVP_PKEY_encrypt(cctx, NULL, &ct_len, pms, sizeof(pms)), 0)
+        || !TEST_ptr(ct = OPENSSL_malloc(ct_len))
+        || !TEST_int_gt(EVP_PKEY_encrypt(cctx, ct, &ct_len, pms, sizeof(pms)), 0))
+        goto done;
+
+    params[0] = OSSL_PARAM_construct_uint(OSSL_ASYM_CIPHER_PARAM_TLS_CLIENT_VERSION,
+                                          &ntls_ver);
+    params[1] = OSSL_PARAM_construct_end();
+    params_off[0] = OSSL_PARAM_construct_uint(OSSL_ASYM_CIPHER_PARAM_TLS_CLIENT_VERSION,
+                                              &off);
+    params_off[1] = OSSL_PARAM_construct_end();
+
+    /* Matching NTLS version: plaintext is recovered */
+    if (!TEST_int_gt(EVP_PKEY_decrypt_init(cctx), 0)
+        || !TEST_true(EVP_PKEY_CTX_set_params(cctx, params)))
+        goto done;
+    out_len = sizeof(out);
+    if (!TEST_int_gt(EVP_PKEY_decrypt(cctx, out, &out_len, ct, ct_len), 0)
+        || !TEST_size_t_eq(out_len, sizeof(pms))
+        || !TEST_mem_eq(out, out_len, pms, sizeof(pms)))
+        goto done;
+
+    /* Corrupted ciphertext with the param cleared: ordinary SM2 decrypt fails */
+    ct[ct_len - 1] ^= 1;
+    if (!TEST_int_gt(EVP_PKEY_decrypt_init(cctx), 0)
+        || !TEST_true(EVP_PKEY_CTX_set_params(cctx, params_off)))
+        goto done;
+    out_len = sizeof(out);
+    if (!TEST_int_le(EVP_PKEY_decrypt(cctx, out, &out_len, ct, ct_len), 0))
+        goto done;
+    /* Flush error stack */
+    TEST_openssl_errors();
+
+    /* Same corrupted ciphertext with implicit rejection: success, 48 bytes */
+    if (!TEST_int_gt(EVP_PKEY_decrypt_init(cctx), 0)
+        || !TEST_true(EVP_PKEY_CTX_set_params(cctx, params)))
+        goto done;
+    out_len = sizeof(out);
+    if (!TEST_int_gt(EVP_PKEY_decrypt(cctx, out, &out_len, ct, ct_len), 0)
+        || !TEST_size_t_eq(out_len, sizeof(pms))
+        || !TEST_mem_ne(out, out_len, pms, sizeof(pms)))
+        goto done;
+
+    /* Restore ciphertext and encrypt a PMS with the wrong version bytes */
+    ct[ct_len - 1] ^= 1;
+    if (!TEST_int_gt(EVP_PKEY_encrypt_init(cctx), 0)
+        || !TEST_int_gt(EVP_PKEY_encrypt(cctx, NULL, &ct_badver_len,
+                                         pms_badver, sizeof(pms_badver)), 0)
+        || !TEST_ptr(ct_badver = OPENSSL_malloc(ct_badver_len))
+        || !TEST_int_gt(EVP_PKEY_encrypt(cctx, ct_badver, &ct_badver_len,
+                                         pms_badver, sizeof(pms_badver)), 0))
+        goto done;
+
+    if (!TEST_int_gt(EVP_PKEY_decrypt_init(cctx), 0)
+        || !TEST_true(EVP_PKEY_CTX_set_params(cctx, params)))
+        goto done;
+    out_len = sizeof(out);
+    if (!TEST_int_gt(EVP_PKEY_decrypt(cctx, out, &out_len, ct_badver,
+                                     ct_badver_len), 0)
+        || !TEST_size_t_eq(out_len, sizeof(pms_badver))
+        || !TEST_mem_ne(out, out_len, pms_badver, sizeof(pms_badver)))
+        goto done;
+
+    /* Correct version prefix, but plaintext length is not 48 bytes */
+    if (!TEST_int_gt(EVP_PKEY_encrypt_init(cctx), 0)
+        || !TEST_int_gt(EVP_PKEY_encrypt(cctx, NULL, &ct_short_len,
+                                         pms_short, sizeof(pms_short)), 0)
+        || !TEST_ptr(ct_short = OPENSSL_malloc(ct_short_len))
+        || !TEST_int_gt(EVP_PKEY_encrypt(cctx, ct_short, &ct_short_len,
+                                         pms_short, sizeof(pms_short)), 0))
+        goto done;
+
+    if (!TEST_int_gt(EVP_PKEY_decrypt_init(cctx), 0)
+        || !TEST_true(EVP_PKEY_CTX_set_params(cctx, params)))
+        goto done;
+    out_len = sizeof(out);
+    if (!TEST_int_gt(EVP_PKEY_decrypt(cctx, out, &out_len, ct_short,
+                                      ct_short_len), 0)
+        || !TEST_size_t_eq(out_len, sizeof(pms))
+        || !TEST_mem_ne(out, sizeof(pms_short), pms_short, sizeof(pms_short)))
+        goto done;
+
+    ret = 1;
+done:
+    EVP_PKEY_CTX_free(cctx);
+    EVP_PKEY_free(pkey);
+    OPENSSL_free(ct);
+    OPENSSL_free(ct_badver);
+    OPENSSL_free(ct_short);
+    return ret;
+}
+
 #endif
 
 #ifndef OPENSSL_NO_ML_KEM
@@ -7732,6 +7856,7 @@ int setup_tests(void)
 #if !defined(OPENSSL_NO_SM2)
     ADD_TEST(test_EVP_SM2);
     ADD_TEST(test_EVP_SM2_verify);
+    ADD_TEST(test_EVP_SM2_ntls_pms_implicit_rejection);
 #endif
     ADD_ALL_TESTS(test_set_get_raw_keys, OSSL_NELEM(keys));
 #ifndef OPENSSL_NO_DEPRECATED_3_0
