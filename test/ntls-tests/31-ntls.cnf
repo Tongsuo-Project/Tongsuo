@@ -23,7 +23,6 @@ test-17 = 17-test server choose the preferred cipher ECC-SM2 with SM2 and RSA do
 test-18 = 18-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs
 test-19 = 19-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs
 test-20 = 20-test server swapped sign and enc certificates
-
 # ===========================================================
 
 [0-test server set min and max TLS version should not affect NTLS]
