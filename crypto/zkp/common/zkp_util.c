@@ -9,6 +9,7 @@
 
 #include <openssl/err.h>
 #include <openssl/ec.h>
+#include <openssl/sha.h>
 #include <openssl/zkperr.h>
 #include <crypto/ec/ec_local.h>
 #include "zkp_util.h"
