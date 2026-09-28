@@ -1414,6 +1414,7 @@ int s_client_main(int argc, char **argv)
             break;
         case OPT_DISABLE_NTLS_CERT_KEY_USAGE_CHECK:
             disable_ntls_cert_key_usage_check = 1;
+            break;
         case OPT_ENABLE_NTLS_STRICT_ECDHE_CKE:
             enable_ntls_strict_ecdhe_cke = 1;
             break;
