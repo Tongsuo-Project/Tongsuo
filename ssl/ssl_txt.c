@@ -159,6 +159,14 @@ int SSL_SESSION_print(BIO *bp, const SSL_SESSION *x)
             goto err;
     }
 
+    if (x->quic_early_data_context) {
+        if (BIO_puts(bp, "    QUIC early data ctx:\n") <= 0)
+            goto err;
+        if (BIO_dump_indent(bp, (const char *)x->quic_early_data_context,
+                            (int)x->quic_early_data_context_len, 4) <= 0)
+            goto err;
+    }
+
     return 1;
  err:
     return 0;

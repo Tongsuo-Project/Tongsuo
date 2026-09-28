@@ -80,20 +80,23 @@ end:
 }
 
 static STACK_OF(BP_VARIABLE) *bp_stack_of_variable_decode(const unsigned char *in,
-                                                          int *len,
+                                                          size_t inlen, int *len,
                                                           const EC_GROUP *group,
                                                           BN_CTX *bn_ctx)
 {
     char *name;
     unsigned char *p;
     int *q = (int *)in, n, i;
-    size_t point_len;
+    size_t point_len, left, name_len, elem_min;
     EC_POINT *V = NULL;
     BP_VARIABLE *var = NULL;
     STACK_OF(BP_VARIABLE) *ret = NULL;
 
     if (in == NULL || group == NULL)
-        return 0;
+        return NULL;
+
+    if (inlen < sizeof(int))
+        return NULL;
 
     point_len = EC_POINT_point2oct(group, EC_GROUP_get0_generator(group),
                                    form, NULL, 0, bn_ctx);
@@ -101,14 +104,24 @@ static STACK_OF(BP_VARIABLE) *bp_stack_of_variable_decode(const unsigned char *i
     q++;
     p = (unsigned char *)q;
 
-    if (n < 0) {
+    /*
+     * Each element is at least one point plus a terminating NUL.
+     * Longer names are checked inside the loop, against the bytes left.
+     */
+    if (point_len == 0 || point_len > SIZE_MAX - 1)
         return NULL;
-    }
+    elem_min = point_len + 1;
+    if (n < 0 || (size_t)n > (inlen - sizeof(int)) / elem_min)
+        return NULL;
 
     if (!(ret = sk_BP_VARIABLE_new_reserve(NULL, n)))
         return NULL;
 
+    left = inlen - sizeof(int);
     for (i = 0; i < n; i++) {
+        if (left < point_len)
+            goto err;
+
         if (!(V = EC_POINT_new(group)))
             goto err;
 
@@ -116,22 +129,25 @@ static STACK_OF(BP_VARIABLE) *bp_stack_of_variable_decode(const unsigned char *i
             goto err;
 
         p += point_len;
-        name = (char *)p;
-        if (*name == '\0') {
-            name = NULL;
-        } else {
-            p += strlen(name);
-        }
+        left -= point_len;
 
-        p += 1;
+        name_len = OPENSSL_strnlen((const char *)p, left);
+        if (name_len == left)
+            goto err;
+
+        name = name_len == 0 ? NULL : (char *)p;
+        p += name_len + 1;
+        left -= name_len + 1;
 
         if (!(var = BP_VARIABLE_new(name, V, group)))
             goto err;
 
         if (sk_BP_VARIABLE_push(ret, var) <= 0)
             goto err;
+        var = NULL;
 
         EC_POINT_free(V);
+        V = NULL;
     }
 
     if (len != NULL)
@@ -213,12 +229,14 @@ end:
 }
 
 static bp_inner_product_proof_t *bp_inner_product_proof_decode(const unsigned char *in,
+                                                               size_t inlen,
                                                                int *len,
                                                                const EC_GROUP *group,
                                                                BN_CTX *bn_ctx)
 {
     int bn_len, sk_len;
     unsigned char *p = (unsigned char *)in;
+    size_t left = inlen;
     STACK_OF(BIGNUM) *sk_bn = NULL;
     bp_inner_product_proof_t *ip_proof = NULL;
 
@@ -235,7 +253,7 @@ static bp_inner_product_proof_t *bp_inner_product_proof_decode(const unsigned ch
     ip_proof->sk_L = NULL;
     ip_proof->sk_R = NULL;
 
-    if (!(sk_bn = zkp_stack_of_bignum_decode(p, &sk_len, bn_len)))
+    if (!(sk_bn = zkp_stack_of_bignum_decode(p, left, &sk_len, bn_len)))
         goto err;
 
     if (sk_BIGNUM_num(sk_bn) != 2)
@@ -246,13 +264,17 @@ static bp_inner_product_proof_t *bp_inner_product_proof_decode(const unsigned ch
         goto err;
 
     p += sk_len;
+    left -= (size_t)sk_len;
 
-    if (!(ip_proof->sk_L = zkp_stack_of_point_decode(p, &sk_len, group, bn_ctx)))
+    if (!(ip_proof->sk_L = zkp_stack_of_point_decode(p, left, &sk_len, group,
+                                                     bn_ctx)))
         goto err;
 
     p += sk_len;
+    left -= (size_t)sk_len;
 
-    if (!(ip_proof->sk_R = zkp_stack_of_point_decode(p, &sk_len, group, bn_ctx)))
+    if (!(ip_proof->sk_R = zkp_stack_of_point_decode(p, left, &sk_len, group,
+                                                     bn_ctx)))
         goto err;
 
     p += sk_len;
@@ -362,7 +384,7 @@ BP_PUB_PARAM *BP_PUB_PARAM_decode(const unsigned char *in, size_t size)
 {
     unsigned char *p;
     int curve_id, *q = (int *)in, sk_len;
-    size_t point_len, gens_capacity, party_capacity, n;
+    size_t point_len, gens_capacity, party_capacity, n, left;
     BP_PUB_PARAM *pp = NULL;
     BN_CTX *bn_ctx = NULL;
     EC_GROUP *group = NULL;
@@ -385,6 +407,7 @@ BP_PUB_PARAM *BP_PUB_PARAM_decode(const unsigned char *in, size_t size)
     party_capacity = (size_t)zkp_n2l(*q);
     q++;
     p = (unsigned char *)q;
+    left = size - sizeof(int) * 3;
     n = gens_capacity * party_capacity;
 
     group = EC_GROUP_new_by_curve_name_ex(NULL, NULL, curve_id);
@@ -410,22 +433,25 @@ BP_PUB_PARAM *BP_PUB_PARAM_decode(const unsigned char *in, size_t size)
     pp->sk_G = NULL;
     pp->sk_H = NULL;
 
-    if (!EC_POINT_oct2point(group, pp->H, p, point_len, bn_ctx))
+    if (point_len > left || !EC_POINT_oct2point(group, pp->H, p, point_len, bn_ctx))
         goto err;
 
     p += point_len;
+    left -= point_len;
 
-    if (!EC_POINT_oct2point(group, pp->U, p, point_len, bn_ctx))
+    if (point_len > left || !EC_POINT_oct2point(group, pp->U, p, point_len, bn_ctx))
         goto err;
 
     p += point_len;
+    left -= point_len;
 
-    if (!(pp->sk_G = zkp_stack_of_point_decode(p, &sk_len, group, bn_ctx)))
+    if (!(pp->sk_G = zkp_stack_of_point_decode(p, left, &sk_len, group, bn_ctx)))
         goto err;
 
     p += sk_len;
+    left -= (size_t)sk_len;
 
-    if (!(pp->sk_H = zkp_stack_of_point_decode(p, &sk_len, group, bn_ctx)))
+    if (!(pp->sk_H = zkp_stack_of_point_decode(p, left, &sk_len, group, bn_ctx)))
         goto err;
 
     p += sk_len;
@@ -563,7 +589,7 @@ BP_WITNESS *BP_WITNESS_decode(const unsigned char *in, size_t size, int flag)
 {
     unsigned char *p;
     int curve_id, *q = (int *)in, bn_len, sk_len;
-    size_t point_len;
+    size_t point_len, left;
     BP_WITNESS *witness = NULL;
     BN_CTX *bn_ctx = NULL;
     EC_GROUP *group = NULL;
@@ -582,6 +608,7 @@ BP_WITNESS *BP_WITNESS_decode(const unsigned char *in, size_t size, int flag)
     curve_id = zkp_n2l(*q);
     q++;
     p = (unsigned char *)q;
+    left = size - sizeof(int);
 
     group = EC_GROUP_new_by_curve_name_ex(NULL, NULL, curve_id);
     if (group == NULL)
@@ -601,23 +628,30 @@ BP_WITNESS *BP_WITNESS_decode(const unsigned char *in, size_t size, int flag)
     if (!(witness->H = EC_POINT_new(group)))
         goto err;
 
-    if (!EC_POINT_oct2point(group, witness->H, p, point_len, bn_ctx))
+    if (point_len > left || !EC_POINT_oct2point(group, witness->H, p, point_len,
+                                                bn_ctx))
         goto err;
 
     p += point_len;
+    left -= point_len;
 
-    if (!(witness->sk_V = bp_stack_of_variable_decode(p, &sk_len, group, bn_ctx)))
+    if (!(witness->sk_V = bp_stack_of_variable_decode(p, left, &sk_len, group,
+                                                      bn_ctx)))
         goto err;
 
     p += sk_len;
+    left -= (size_t)sk_len;
 
     if (flag == 1) {
-        if (!(witness->sk_r = zkp_stack_of_bignum_decode(p, &sk_len, bn_len)))
+        if (!(witness->sk_r = zkp_stack_of_bignum_decode(p, left, &sk_len,
+                                                         bn_len)))
             goto err;
 
         p += sk_len;
+        left -= (size_t)sk_len;
 
-        if (!(witness->sk_v = zkp_stack_of_bignum_decode(p, &sk_len, bn_len)))
+        if (!(witness->sk_v = zkp_stack_of_bignum_decode(p, left, &sk_len,
+                                                         bn_len)))
             goto err;
 
         p += sk_len;
@@ -771,7 +805,7 @@ BP_RANGE_PROOF *BP_RANGE_PROOF_decode(const unsigned char *in, size_t size)
 {
     unsigned char *p;
     int *q = (int *)in, curve_id, len;
-    size_t point_len, bn_len, proof_len;
+    size_t point_len, bn_len, proof_len, left;
     BP_RANGE_PROOF *proof = NULL;
     bp_inner_product_proof_t *ip_proof = NULL;
     BN_CTX *bn_ctx = NULL;
@@ -828,10 +862,13 @@ BP_RANGE_PROOF *BP_RANGE_PROOF_decode(const unsigned char *in, size_t size)
         goto err;
     }
 
-    sk_point = zkp_stack_of_point_decode(p, &len, group, bn_ctx);
+    left = size - sizeof(int);
+
+    sk_point = zkp_stack_of_point_decode(p, left, &len, group, bn_ctx);
     if (sk_point == NULL)
         goto err;
     p += len;
+    left -= (size_t)len;
 
     if (sk_EC_POINT_num(sk_point) < 4)
         goto err;
@@ -841,10 +878,11 @@ BP_RANGE_PROOF *BP_RANGE_PROOF_decode(const unsigned char *in, size_t size)
     proof->T1 = sk_EC_POINT_value(sk_point, 2);
     proof->T2 = sk_EC_POINT_value(sk_point, 3);
 
-    sk_bn = zkp_stack_of_bignum_decode(p, &len, bn_len);
+    sk_bn = zkp_stack_of_bignum_decode(p, left, &len, bn_len);
     if (sk_bn == NULL)
         goto err;
     p += len;
+    left -= (size_t)len;
 
     if (sk_BIGNUM_num(sk_bn) < 3)
         goto err;
@@ -853,7 +891,7 @@ BP_RANGE_PROOF *BP_RANGE_PROOF_decode(const unsigned char *in, size_t size)
     proof->mu = sk_BIGNUM_value(sk_bn, 1);
     proof->tx = sk_BIGNUM_value(sk_bn, 2);
 
-    ip_proof = bp_inner_product_proof_decode(p, &len, group, bn_ctx);
+    ip_proof = bp_inner_product_proof_decode(p, left, &len, group, bn_ctx);
     if (ip_proof == NULL)
         goto err;
     p += len;
@@ -1018,7 +1056,7 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_decode(const unsigned char *in, size_t size)
 {
     unsigned char *p;
     int *q = (int *)in, curve_id, len;
-    size_t point_len, bn_len, proof_len;
+    size_t point_len, bn_len, proof_len, left;
     BP_R1CS_PROOF *proof = NULL;
     bp_inner_product_proof_t *ip_proof = NULL;
     BN_CTX *bn_ctx = NULL;
@@ -1079,10 +1117,13 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_decode(const unsigned char *in, size_t size)
         goto err;
     }
 
-    sk_point = zkp_stack_of_point_decode(p, &len, group, bn_ctx);
+    left = size - sizeof(int);
+
+    sk_point = zkp_stack_of_point_decode(p, left, &len, group, bn_ctx);
     if (sk_point == NULL)
         goto err;
     p += len;
+    left -= (size_t)len;
 
     if (sk_EC_POINT_num(sk_point) < 8)
         goto err;
@@ -1113,10 +1154,11 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_decode(const unsigned char *in, size_t size)
     proof->S2 = sk_EC_POINT_value(sk_point, 10);
 #endif
 
-    sk_bn = zkp_stack_of_bignum_decode(p, &len, bn_len);
+    sk_bn = zkp_stack_of_bignum_decode(p, left, &len, bn_len);
     if (sk_bn == NULL)
         goto err;
     p += len;
+    left -= (size_t)len;
 
     if (sk_BIGNUM_num(sk_bn) < 3)
         goto err;
@@ -1125,7 +1167,7 @@ BP_R1CS_PROOF *BP_R1CS_PROOF_decode(const unsigned char *in, size_t size)
     proof->mu = sk_BIGNUM_value(sk_bn, 1);
     proof->tx = sk_BIGNUM_value(sk_bn, 2);
 
-    ip_proof = bp_inner_product_proof_decode(p, &len, group, bn_ctx);
+    ip_proof = bp_inner_product_proof_decode(p, left, &len, group, bn_ctx);
     if (ip_proof == NULL)
         goto err;
     p += len;

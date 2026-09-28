@@ -1,0 +1,33 @@
+# -*- mode: perl; -*-
+package ssltests;
+use OpenSSL::Test::Utils;
+
+our @tests = (
+    {
+        name => "NTLS ECDHE-SM2-SM4 with SECLEVEL 3",
+        server => {
+            "SignCertificate" => test_pem("sm2", "server_sign.crt"),
+            "SignPrivateKey"  => test_pem("sm2", "server_sign.key"),
+            "EncCertificate"  => test_pem("sm2", "server_enc.crt"),
+            "EncPrivateKey"   => test_pem("sm2", "server_enc.key"),
+            "VerifyCAFile"    => test_pem("sm2", "chain-ca.crt"),
+            "Enable_ntls"     => "on",
+            "CipherString"    => "ALL:\@SECLEVEL=3",
+        },
+        client => {
+            "SignCertificate" => test_pem("sm2", "client_sign.crt"),
+            "SignPrivateKey"  => test_pem("sm2", "client_sign.key"),
+            "EncCertificate"  => test_pem("sm2", "client_enc.crt"),
+            "EncPrivateKey"   => test_pem("sm2", "client_enc.key"),
+            "VerifyCAFile"    => test_pem("sm2", "chain-ca.crt"),
+            "Enable_ntls"     => "on",
+            "CipherString"    => "ALL:\@SECLEVEL=3",
+        },
+        test => {
+            "Method"           => "NTLS",
+            "ExpectedResult"   => "Success",
+            "ExpectedProtocol" => "NTLS",
+            "ExpectedCipher"   => "ECDHE-SM2-SM4-GCM-SM3",
+        },
+    },
+);

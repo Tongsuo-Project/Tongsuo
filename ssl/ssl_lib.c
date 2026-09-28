@@ -796,6 +796,7 @@ SSL *ossl_ssl_connection_new_int(SSL_CTX *ctx, SSL *user_ssl,
     s->enable_ntls = ctx->enable_ntls;
     s->enable_force_ntls = ctx->enable_force_ntls;
     s->enable_ntls_cert_key_usage_check = ctx->enable_ntls_cert_key_usage_check;
+    s->enable_ntls_strict_ecdhe_cke = ctx->enable_ntls_strict_ecdhe_cke;
 #endif
 #ifndef OPENSSL_NO_SM2
     s->enable_sm_tls13_strict = ctx->enable_sm_tls13_strict;
@@ -1596,6 +1597,16 @@ void ossl_ssl_connection_free(SSL *ssl)
     BIO_free_all(s->rbio);
     s->rbio = NULL;
     OPENSSL_free(s->s3.tmp.valid_flags);
+
+    if(s->quic_api_method != NULL) {
+        SSL_QUIC_API_INFO *info = (SSL_QUIC_API_INFO *)s->qtarg;
+        BUF_MEM_free(info->quic_buf);
+        BUF_MEM_free(info->quic_transport_params_buf);
+        OPENSSL_free(s->qtarg);
+        s->qtarg = NULL;
+    }   
+    OPENSSL_free(s->quic_api_method_transport_params);
+    OPENSSL_free(s->quic_early_data_context);
 }
 
 void SSL_set0_rbio(SSL *s, BIO *rbio)
@@ -2099,6 +2110,42 @@ STACK_OF(X509) *SSL_get_peer_cert_chain(const SSL *s)
 
     return r;
 }
+
+#ifndef OPENSSL_NO_NTLS
+X509 *SSL_get0_peer_sign_certificate_ntls(const SSL *s)
+{
+    const SSL_CONNECTION *sc = SSL_CONNECTION_FROM_CONST_SSL(s);
+
+    if (sc == NULL)
+        return NULL;
+
+    if (!SSL_CONNECTION_IS_NTLS(sc))
+        return NULL;
+
+    if (sc->session == NULL)
+        return NULL;
+
+    return sc->session->peer;
+}
+X509 *SSL_get0_peer_enc_certificate_ntls(const SSL *s)
+{
+    const SSL_CONNECTION *sc = SSL_CONNECTION_FROM_CONST_SSL(s);
+
+    if (sc == NULL)
+        return NULL;
+
+    if (!SSL_CONNECTION_IS_NTLS(sc))
+        return NULL;
+
+    if (sc->session == NULL || sc->session->peer_chain == NULL)
+        return NULL;
+
+    if (sc->server)
+        return sk_X509_value(sc->session->peer_chain, 0);
+    else
+        return sk_X509_value(sc->session->peer_chain, 1);
+}
+#endif
 
 /*
  * Now in theory, since the calling process own 't' it should be safe to
@@ -4138,6 +4185,7 @@ SSL_CTX *SSL_CTX_new_ex(OSSL_LIB_CTX *libctx, const char *propq,
     ret->enable_force_ntls = 0;
     /* GB/T 20518-2018 style certificate key usage check is enabled by default. */
     ret->enable_ntls_cert_key_usage_check = 1;
+    ret->enable_ntls_strict_ecdhe_cke = 0;
 #endif
 #ifndef OPENSSL_NO_SM2
     ret->enable_sm_tls13_strict = 0;
@@ -5466,6 +5514,7 @@ SSL_CTX *SSL_CTX_dup(SSL_CTX *ctx)
     ret->enable_ntls = ctx->enable_ntls;
     ret->enable_force_ntls = ctx->enable_force_ntls;
     ret->enable_ntls_cert_key_usage_check = ctx->enable_ntls_cert_key_usage_check;
+    ret->enable_ntls_strict_ecdhe_cke = ctx->enable_ntls_strict_ecdhe_cke;
 #endif
 #ifndef OPENSSL_NO_SM2
     ret->enable_sm_tls13_strict = ctx->enable_sm_tls13_strict;
@@ -5801,10 +5850,6 @@ SSL_CTX *SSL_CTX_dup(SSL_CTX *ctx)
 
     ret->async_cb = ctx->async_cb;
     ret->async_cb_arg = ctx->async_cb_arg;
-
-#ifndef OPENSSL_NO_QUIC
-    /* ret->quic_method = ctx->quic_method; */
-#endif
 
 #ifndef OPENSSL_NO_CERT_COMPRESSION
     /*
@@ -8180,7 +8225,21 @@ void SSL_set_ntls_cert_key_usage_check(SSL *s, int enable)
 
     sc->enable_ntls_cert_key_usage_check = enable;
 }
+  
+void SSL_CTX_set_ntls_strict_ecdhe_cke(SSL_CTX *ctx, int enable)
+{
+    ctx->enable_ntls_strict_ecdhe_cke = enable;
+}
 
+void SSL_set_ntls_strict_ecdhe_cke(SSL *s, int enable)
+{
+    SSL_CONNECTION *sc = SSL_CONNECTION_FROM_SSL(s);
+
+    if (sc == NULL)
+        return;
+ 
+    sc->enable_ntls_strict_ecdhe_cke = enable;
+}
 #endif
 
 const EVP_CIPHER *ssl_evp_cipher_fetch(OSSL_LIB_CTX *libctx,

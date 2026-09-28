@@ -205,6 +205,9 @@ typedef struct engine_st ENGINE;
 typedef struct ssl_st SSL;
 typedef struct ssl_ctx_st SSL_CTX;
 
+typedef struct ssl_quic_api_method_st SSL_QUIC_METHOD;
+typedef struct ssl_quic_api_info_st SSL_QUIC_API_INFO;
+
 # ifndef OPENSSL_NO_STATUS
 typedef struct ssl_status_st SSL_status;
 # endif

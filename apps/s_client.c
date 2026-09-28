@@ -488,7 +488,9 @@ typedef enum OPTION_choice {
     OPT_SSL3, OPT_SSL_CONFIG,
     OPT_TLS1_3, OPT_TLS1_2, OPT_TLS1_1, OPT_TLS1, OPT_DTLS, OPT_DTLS1,
 #ifndef OPENSSL_NO_NTLS
-    OPT_NTLS, OPT_ENABLE_NTLS, OPT_DISABLE_NTLS_CERT_KEY_USAGE_CHECK,
+    OPT_NTLS, OPT_ENABLE_NTLS, 
+    OPT_DISABLE_NTLS_CERT_KEY_USAGE_CHECK,
+    OPT_ENABLE_NTLS_STRICT_ECDHE_CKE,
 #endif
 #ifndef OPENSSL_NO_SM2
     OPT_ENABLE_SM_TLS13_STRICT,
@@ -708,6 +710,8 @@ const OPTIONS s_client_options[] = {
     {"enable_ntls", OPT_ENABLE_NTLS, '-', "enable ntls"},
     {"disable_ntls_cert_key_usage_check", OPT_DISABLE_NTLS_CERT_KEY_USAGE_CHECK,
      '-', "disable NTLS certificate keyUsage check"},
+    {"enable_ntls_strict_ecdhe_cke", OPT_ENABLE_NTLS_STRICT_ECDHE_CKE, '-',
+     "encode NTLS ECDHE ClientKeyExchange with GB/T 38636 vector prefix"},
 #endif
 #ifndef OPENSSL_NO_SM2
     {"enable_sm_tls13_strict", OPT_ENABLE_SM_TLS13_STRICT, '-', "enable sm tls13 strict"},
@@ -920,6 +924,7 @@ int s_client_main(int argc, char **argv)
     char *sign_cert_file = NULL, *sign_key_file = NULL;
     int enable_ntls = 0;
     int disable_ntls_cert_key_usage_check = 0;
+    int enable_ntls_strict_ecdhe_cke = 0;
 #endif
 #ifndef OPENSSL_NO_SM2
     int enable_sm_tls13_strict = 0;
@@ -1409,6 +1414,8 @@ int s_client_main(int argc, char **argv)
             break;
         case OPT_DISABLE_NTLS_CERT_KEY_USAGE_CHECK:
             disable_ntls_cert_key_usage_check = 1;
+        case OPT_ENABLE_NTLS_STRICT_ECDHE_CKE:
+            enable_ntls_strict_ecdhe_cke = 1;
             break;
 #endif
 #ifndef OPENSSL_NO_SM2
@@ -1992,6 +1999,8 @@ int s_client_main(int argc, char **argv)
         SSL_CTX_enable_ntls(ctx);
     if (disable_ntls_cert_key_usage_check)
         SSL_CTX_set_ntls_cert_key_usage_check(ctx, 0);
+    if (enable_ntls_strict_ecdhe_cke)
+        SSL_CTX_set_ntls_strict_ecdhe_cke(ctx, 1);
 #endif
 #ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
     if (enable_verify_peer_by_dc)

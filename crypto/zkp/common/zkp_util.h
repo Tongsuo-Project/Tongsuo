@@ -101,14 +101,17 @@ int zkp_poly_points_mul(zkp_poly_points_t *ps, EC_POINT *r, BIGNUM *scalar,
                         const EC_GROUP *group, BN_CTX *bn_ctx);
 
 int zkp_bignum_encode(BIGNUM *bn, unsigned char *out, int bn_len);
-BIGNUM *zkp_bignum_decode(const unsigned char *in, int *len, int bn_len);
+BIGNUM *zkp_bignum_decode(const unsigned char *in, size_t inlen, int *len,
+                          int bn_len);
 int zkp_stack_of_bignum_encode(STACK_OF(BIGNUM) *sk, unsigned char *out,
                                int bn_len);
 STACK_OF(BIGNUM) *zkp_stack_of_bignum_decode(const unsigned char *in,
-                                             int *len, int bn_len);
+                                             size_t inlen, int *len,
+                                             int bn_len);
 int zkp_stack_of_point_encode(STACK_OF(EC_POINT) *sk, unsigned char *out,
                               const EC_GROUP *group, BN_CTX *bn_ctx);
-STACK_OF(EC_POINT) *zkp_stack_of_point_decode(const unsigned char *in, int *len,
+STACK_OF(EC_POINT) *zkp_stack_of_point_decode(const unsigned char *in,
+                                              size_t inlen, int *len,
                                               const EC_GROUP *group,
                                               BN_CTX *bn_ctx);
 

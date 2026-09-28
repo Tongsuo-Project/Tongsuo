@@ -258,11 +258,17 @@ end:
 NIZK_WITNESS *NIZK_WITNESS_decode(const unsigned char *in, size_t size, int flag)
 {
     unsigned char *p;
-    int *q = (int *)in, bn_len;
+    int *q = (int *)in, bn_len, used;
+    size_t left;
     NIZK_WITNESS *witness = NULL;
 
     if (in == NULL) {
         ERR_raise(ERR_LIB_ZKP_NIZK, ERR_R_PASSED_NULL_PARAMETER);
+        return NULL;
+    }
+
+    if (size < sizeof(int)) {
+        ERR_raise(ERR_LIB_ZKP_NIZK, ERR_R_PASSED_INVALID_ARGUMENT);
         return NULL;
     }
 
@@ -275,23 +281,26 @@ NIZK_WITNESS *NIZK_WITNESS_decode(const unsigned char *in, size_t size, int flag
         return NULL;
     }
 
+    /* 4-byte bn_len already consumed */
+    left = size - sizeof(int);
+
     if (!(witness = OPENSSL_zalloc(sizeof(*witness)))) {
         goto err;
     }
 
-    witness->order = zkp_bignum_decode(p, NULL, bn_len);
-    if (witness->order == NULL) {
+    witness->order = zkp_bignum_decode(p, left, &used, bn_len);
+    if (witness->order == NULL)
         goto err;
-    }
 
-    p += bn_len;
+    p += used;
+    left -= (size_t)used;
 
-    witness->r = zkp_bignum_decode(p, NULL, bn_len);
-    if (witness->r == NULL) {
+    witness->r = zkp_bignum_decode(p, left, &used, bn_len);
+    if (witness->r == NULL)
         goto err;
-    }
 
-    p += bn_len;
+    p += used;
+    left -= (size_t)used;
 
     if (flag == 1) {
         if (size < (sizeof(int) + bn_len * 3)) {
@@ -299,10 +308,9 @@ NIZK_WITNESS *NIZK_WITNESS_decode(const unsigned char *in, size_t size, int flag
             goto err;
         }
 
-        witness->v = zkp_bignum_decode(p, NULL, bn_len);
-        if (witness->v == NULL) {
+        witness->v = zkp_bignum_decode(p, left, &used, bn_len);
+        if (witness->v == NULL)
             goto err;
-        }
     }
 
     CRYPTO_NEW_REF(&witness->references, 1);
@@ -431,7 +439,7 @@ NIZK_PLAINTEXT_KNOWLEDGE_PROOF *NIZK_PLAINTEXT_KNOWLEDGE_PROOF_decode(const unsi
 {
     unsigned char *p;
     int *q = (int *)in, curve_id, len;
-    size_t point_len, bn_len, proof_len;
+    size_t point_len, bn_len, proof_len, left;
     NIZK_PLAINTEXT_KNOWLEDGE_PROOF *proof = NULL;
     BN_CTX *bn_ctx = NULL;
     EC_GROUP *group = NULL;
@@ -481,10 +489,13 @@ NIZK_PLAINTEXT_KNOWLEDGE_PROOF *NIZK_PLAINTEXT_KNOWLEDGE_PROOF_decode(const unsi
     if (proof == NULL)
         goto err;
 
-    sk_point = zkp_stack_of_point_decode(p, &len, group, bn_ctx);
+    left = size - sizeof(int);
+
+    sk_point = zkp_stack_of_point_decode(p, left, &len, group, bn_ctx);
     if (sk_point == NULL)
         goto err;
     p += len;
+    left -= (size_t)len;
 
     if (sk_EC_POINT_num(sk_point) < 2)
         goto err;
@@ -492,7 +503,7 @@ NIZK_PLAINTEXT_KNOWLEDGE_PROOF *NIZK_PLAINTEXT_KNOWLEDGE_PROOF_decode(const unsi
     proof->A = sk_EC_POINT_value(sk_point, 0);
     proof->B = sk_EC_POINT_value(sk_point, 1);
 
-    sk_bn = zkp_stack_of_bignum_decode(p, &len, bn_len);
+    sk_bn = zkp_stack_of_bignum_decode(p, left, &len, bn_len);
     if (sk_bn == NULL)
         goto err;
     p += len;
@@ -632,7 +643,7 @@ NIZK_PLAINTEXT_EQUALITY_PROOF *NIZK_PLAINTEXT_EQUALITY_PROOF_decode(const unsign
 {
     unsigned char *p;
     int *q = (int *)in, curve_id, len;
-    size_t point_len, bn_len, proof_len;
+    size_t point_len, bn_len, proof_len, left;
     NIZK_PLAINTEXT_EQUALITY_PROOF *proof = NULL;
     BN_CTX *bn_ctx = NULL;
     EC_GROUP *group = NULL;
@@ -682,10 +693,13 @@ NIZK_PLAINTEXT_EQUALITY_PROOF *NIZK_PLAINTEXT_EQUALITY_PROOF_decode(const unsign
     if (proof == NULL)
         goto err;
 
-    sk_point = zkp_stack_of_point_decode(p, &len, group, bn_ctx);
+    left = size - sizeof(int);
+
+    sk_point = zkp_stack_of_point_decode(p, left, &len, group, bn_ctx);
     if (sk_point == NULL)
         goto err;
     p += len;
+    left -= (size_t)len;
 
     if (sk_EC_POINT_num(sk_point) < 1)
         goto err;
@@ -693,7 +707,7 @@ NIZK_PLAINTEXT_EQUALITY_PROOF *NIZK_PLAINTEXT_EQUALITY_PROOF_decode(const unsign
     proof->sk_A = sk_point;
     proof->B = sk_EC_POINT_pop(sk_point);
 
-    sk_bn = zkp_stack_of_bignum_decode(p, &len, bn_len);
+    sk_bn = zkp_stack_of_bignum_decode(p, left, &len, bn_len);
     if (sk_bn == NULL)
         goto err;
     p += len;
@@ -831,7 +845,7 @@ NIZK_DLOG_KNOWLEDGE_PROOF *NIZK_DLOG_KNOWLEDGE_PROOF_decode(const unsigned char 
 {
     unsigned char *p;
     int *q = (int *)in, curve_id, len;
-    size_t point_len, bn_len, proof_len;
+    size_t point_len, bn_len, proof_len, left;
     NIZK_DLOG_KNOWLEDGE_PROOF *proof = NULL;
     BN_CTX *bn_ctx = NULL;
     EC_GROUP *group = NULL;
@@ -881,17 +895,20 @@ NIZK_DLOG_KNOWLEDGE_PROOF *NIZK_DLOG_KNOWLEDGE_PROOF_decode(const unsigned char 
     if (proof == NULL)
         goto err;
 
-    sk_point = zkp_stack_of_point_decode(p, &len, group, bn_ctx);
+    left = size - sizeof(int);
+
+    sk_point = zkp_stack_of_point_decode(p, left, &len, group, bn_ctx);
     if (sk_point == NULL)
         goto err;
     p += len;
+    left -= (size_t)len;
 
     if (sk_EC_POINT_num(sk_point) < 1)
         goto err;
 
     proof->A = sk_EC_POINT_value(sk_point, 0);
 
-    sk_bn = zkp_stack_of_bignum_decode(p, &len, bn_len);
+    sk_bn = zkp_stack_of_bignum_decode(p, left, &len, bn_len);
     if (sk_bn == NULL)
         goto err;
     p += len;
@@ -1030,7 +1047,7 @@ NIZK_DLOG_EQUALITY_PROOF *NIZK_DLOG_EQUALITY_PROOF_decode(const unsigned char *i
 {
     unsigned char *p;
     int *q = (int *)in, curve_id, len;
-    size_t point_len, bn_len, proof_len;
+    size_t point_len, bn_len, proof_len, left;
     NIZK_DLOG_EQUALITY_PROOF *proof = NULL;
     BN_CTX *bn_ctx = NULL;
     EC_GROUP *group = NULL;
@@ -1080,10 +1097,13 @@ NIZK_DLOG_EQUALITY_PROOF *NIZK_DLOG_EQUALITY_PROOF_decode(const unsigned char *i
     if (proof == NULL)
         goto err;
 
-    sk_point = zkp_stack_of_point_decode(p, &len, group, bn_ctx);
+    left = size - sizeof(int);
+
+    sk_point = zkp_stack_of_point_decode(p, left, &len, group, bn_ctx);
     if (sk_point == NULL)
         goto err;
     p += len;
+    left -= (size_t)len;
 
     if (sk_EC_POINT_num(sk_point) < 2)
         goto err;
@@ -1091,7 +1111,7 @@ NIZK_DLOG_EQUALITY_PROOF *NIZK_DLOG_EQUALITY_PROOF_decode(const unsigned char *i
     proof->A1 = sk_EC_POINT_value(sk_point, 0);
     proof->A2 = sk_EC_POINT_value(sk_point, 1);
 
-    sk_bn = zkp_stack_of_bignum_decode(p, &len, bn_len);
+    sk_bn = zkp_stack_of_bignum_decode(p, left, &len, bn_len);
     if (sk_bn == NULL)
         goto err;
     p += len;

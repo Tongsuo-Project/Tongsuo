@@ -36,6 +36,8 @@
                          + SSL_MAX_SSL_SESSION_ID_LENGTH + 2 + 1 + 2 + 6 + 4 \
                          + MAX_COOKIE_SIZE)
 
+static int quic_ticket_compatible(const SSL_SESSION *session, const SSL_CONNECTION *s);
+
 /*
  * Parse the client's renegotiation binding and abort if it's not right
  */
@@ -1529,6 +1531,10 @@ int tls_parse_ctos_psk(SSL_CONNECTION *s, PACKET *pkt, unsigned int context,
                  */
                 s->ext.early_data_ok = 1;
             }
+            if (SSL_IS_QUIC_HANDSHAKE(s)) {
+                if (!quic_ticket_compatible(sess, s))
+                    s->ext.early_data_ok = 0;
+            }
         }
 
         md = ssl_md(sctx, sess->cipher->algorithm2);
@@ -2449,4 +2455,22 @@ int tls_parse_ctos_server_cert_type(SSL_CONNECTION *sc, PACKET *pkt,
     /* Did not receive an acceptable cert type */
     SSLfatal(sc, SSL_AD_UNSUPPORTED_CERTIFICATE, SSL_R_BAD_EXTENSION);
     return 0;
+}
+
+static int quic_ticket_compatible(const SSL_SESSION *session, const SSL_CONNECTION *s)
+{
+    if (session->quic_early_data_context == NULL && 
+        s->quic_early_data_context == NULL)
+        return 1;
+
+    if (session->quic_early_data_context == NULL ||
+        s->quic_early_data_context_len !=
+        session->quic_early_data_context_len ||
+        CRYPTO_memcmp(s->quic_early_data_context,
+                      session->quic_early_data_context,
+                      session->quic_early_data_context_len) != 0) {
+        return 0;
+    }
+
+    return 1;
 }
