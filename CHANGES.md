@@ -2,27 +2,19 @@
  Tongsuo CHANGES
  _______________
 
- Changes between 8.5.0-pre1 and 8.5.0-pre2 [3 Aug 2026]
+ Changes between 8.4.0 and 8.5.0 [30 Sep 2026]
 
   *) 修复若干 CVE 和安全问题
 
   *) 修复若干编译问题
 
-  *) 提供 BoringSSL-style QUIC 接口
-
-  *) 提供白盒 SM4 功能
-
- Changes between 8.4.0 and 8.5.0-pre1 [23 Mar 2026]
-
-  *) 修复 CVE 若干
-
   *) 优化 AES-GCM、SM4-GCM、HMAC、CMAC、RSA 等密码学方案以及 TLS 协议的性能，相较 8.4.0 最多可翻倍
 
-  *) TLS 连接的安全等级默认设置为 2，禁用过低的协议版本（如 TLS1.1 ）和安全强度低于 112bit 的密码原语
+  *) TLS 连接的安全等级默认设置为 2，禁用过低的协议版本（如 TLS1.1 ）和安全强度低于 112bit 的密码原语，NTLS 的 ECDHE 套件（SM2-AKE）安全等级为 3
 
   *) 支持 PQC 算法 ML-KEM、ML-DSA 和 SLH-DSA，支持 PQC 密钥协商机制 curveSM2MLKEM768、X25519MLKEM768 等
 
-  *) 实现 QUIC 协议（RFC9000）
+  *) 实现 QUIC 协议（RFC9000），并提供 BoringSSL-style QUIC 接口
 
   *) 实现 TCP Fast Open（RFC7413）
 
@@ -37,6 +29,14 @@
   *) 支持在 TLS1.3 ClientHello 中包含多个 keyshare
 
   *) 添加 TLS round-trip 时间测量功能
+
+  *) NTLS 默认开启双证书 keyUsage 检查
+
+  *) 增加获取 NTLS 对端签名证书与加密证书的 API
+
+  *) NTLS 加强 ECC-CKE 协议版本检查，针对 ECDHE-CKE 提供兼容的编码方案
+
+  *) 提供白盒 SM4 功能
 
   *) SMTC Provider 适配蚂蚁密码卡（atf_slibce）
 
