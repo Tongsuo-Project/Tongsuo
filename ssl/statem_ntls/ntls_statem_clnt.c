@@ -1323,6 +1323,12 @@ WORK_STATE tls_post_process_server_certificate_ntls(SSL_CONNECTION *s, WORK_STAT
             }
         }
 
+        if (ntls_check_cert_key_usage(s, sk_X509_value(sk, 0), 1) != 1
+            || ntls_check_cert_key_usage(s, sk_X509_value(sk, 1), 0) != 1) {
+            SSLfatal_ntls(s, SSL_AD_ILLEGAL_PARAMETER, SSL_R_WRONG_CERTIFICATE_TYPE);
+            return WORK_ERROR;
+        }
+
         ERR_clear_error();          /* but we keep s->verify_result */
 
         /*

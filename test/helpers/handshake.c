@@ -716,6 +716,33 @@ err:
     return 0;
 }
 
+#ifndef OPENSSL_NO_NTLS
+static void swap_ntls_sign_enc_pkeys(SSL *ssl)
+{
+    SSL_CONNECTION *sc = SSL_CONNECTION_FROM_SSL_ONLY(ssl);
+    static const int pairs[][2] = {
+        { SSL_PKEY_SM2_SIGN, SSL_PKEY_SM2_ENC },
+        { SSL_PKEY_RSA_SIGN, SSL_PKEY_RSA_ENC },
+    };
+    size_t i;
+
+    if (sc == NULL || sc->cert == NULL || sc->cert->pkeys == NULL)
+        return;
+
+    for (i = 0; i < OSSL_NELEM(pairs); i++) {
+        CERT_PKEY tmp, *a, *b;
+
+        a = &sc->cert->pkeys[pairs[i][0]];
+        b = &sc->cert->pkeys[pairs[i][1]];
+        if (a->x509 == NULL && b->x509 == NULL)
+            continue;
+        tmp = *a;
+        *a = *b;
+        *b = tmp;
+    }
+}
+#endif
+
 /* Configure per-SSL callbacks and other properties. */
 static void configure_handshake_ssl(SSL *server, SSL *client,
                                     const SSL_TEST_EXTRA_CONF *extra)
@@ -725,6 +752,10 @@ static void configure_handshake_ssl(SSL *server, SSL *client,
                                  ssl_servername_name(extra->client.servername));
     if (extra->client.enable_pha)
         SSL_set_post_handshake_auth(client, 1);
+#ifndef OPENSSL_NO_NTLS
+    if (extra->server.swap_ntls_sign_enc_certs)
+        swap_ntls_sign_enc_pkeys(server);
+#endif
 }
 
 /* The status for each connection phase. */

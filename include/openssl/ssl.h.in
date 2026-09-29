@@ -1864,6 +1864,9 @@ void SSL_enable_ntls(SSL *s);
 void SSL_disable_ntls(SSL *s);
 void SSL_enable_force_ntls(SSL *s);
 void SSL_disable_force_ntls(SSL *s);
+
+void SSL_CTX_set_ntls_cert_key_usage_check(SSL_CTX *ctx, int enable);
+void SSL_set_ntls_cert_key_usage_check(SSL *s, int enable);
 void SSL_CTX_set_ntls_strict_ecdhe_cke(SSL_CTX *ctx, int enable);
 void SSL_set_ntls_strict_ecdhe_cke(SSL *s, int enable);
 

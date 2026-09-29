@@ -150,6 +150,10 @@ typedef struct {
     /* Forced PHA */
     int force_pha;
     char *session_ticket_app_data;
+#ifndef OPENSSL_NO_NTLS
+    /* Swap NTLS sign/enc certificate slots after loading. */
+    int swap_ntls_sign_enc_certs;
+#endif
 } SSL_TEST_SERVER_CONF;
 
 typedef struct {

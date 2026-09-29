@@ -492,6 +492,9 @@ const char *ssl_ct_validation_name(ssl_ct_validation_t mode)
 
 IMPLEMENT_SSL_TEST_BOOL_OPTION(SSL_TEST_CTX, test, resumption_expected)
 IMPLEMENT_SSL_TEST_BOOL_OPTION(SSL_TEST_SERVER_CONF, server, broken_session_ticket)
+#ifndef OPENSSL_NO_NTLS
+IMPLEMENT_SSL_TEST_BOOL_OPTION(SSL_TEST_SERVER_CONF, server, swap_ntls_sign_enc_certs)
+#endif
 IMPLEMENT_SSL_TEST_BOOL_OPTION(SSL_TEST_CTX, test, use_sctp)
 IMPLEMENT_SSL_TEST_BOOL_OPTION(SSL_TEST_CTX, test, compress_certificates)
 IMPLEMENT_SSL_TEST_BOOL_OPTION(SSL_TEST_CTX, test, enable_client_sctp_label_bug)
@@ -828,6 +831,9 @@ static const ssl_test_server_option ssl_test_server_options[] = {
     { "SRPPassword", &parse_server_srp_password },
     { "ForcePHA", &parse_server_force_pha },
     { "SessionTicketAppData", &parse_server_session_ticket_app_data },
+#ifndef OPENSSL_NO_NTLS
+    { "SwapNTLSSignEncCerts", &parse_server_swap_ntls_sign_enc_certs },
+#endif
 };
 
 SSL_TEST_CTX *SSL_TEST_CTX_new(OSSL_LIB_CTX *libctx)

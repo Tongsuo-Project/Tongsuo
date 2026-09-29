@@ -2170,6 +2170,12 @@ MSG_PROCESS_RETURN tls_process_client_certificate_ntls(SSL_CONNECTION *s, PACKET
                 goto err;
             }
         }
+
+        if (ntls_check_cert_key_usage(s, sk_X509_value(sk, 0), 1) != 1
+            || ntls_check_cert_key_usage(s, sk_X509_value(sk, 1), 0) != 1) {
+            SSLfatal_ntls(s, SSL_AD_ILLEGAL_PARAMETER, SSL_R_WRONG_CERTIFICATE_TYPE);
+            goto err;
+        }
     }
 
     /*

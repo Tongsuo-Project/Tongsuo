@@ -1,6 +1,6 @@
 # Generated with generate_ssl_tests.pl
 
-num_tests = 20
+num_tests = 21
 
 test-0 = 0-test server set min and max TLS version should not affect NTLS
 test-1 = 1-test server disable all TLS versions should not affect NTLS
@@ -22,6 +22,7 @@ test-16 = 16-test server choose RSA-SM4 with RSA double certs only
 test-17 = 17-test server choose the preferred cipher ECC-SM2 with SM2 and RSA double certs
 test-18 = 18-test server choose the preferred cipher RSA-SM4 with SM2 and RSA double certs
 test-19 = 19-test server choose the client preferred cipher RSA-SM4 with SM2 and RSA double certs
+test-20 = 20-test server swapped sign and enc certificates
 # ===========================================================
 
 [0-test server set min and max TLS version should not affect NTLS]
@@ -684,5 +685,40 @@ ExpectedCipher = ECC-SM2-SM4-CBC-SM3
 ExpectedProtocol = NTLS
 ExpectedResult = Success
 Method = NTLS
+
+
+# ===========================================================
+
+[20-test server swapped sign and enc certificates]
+ssl_conf = 20-test server swapped sign and enc certificates-ssl
+
+[20-test server swapped sign and enc certificates-ssl]
+server = 20-test server swapped sign and enc certificates-server
+client = 20-test server swapped sign and enc certificates-client
+
+[20-test server swapped sign and enc certificates-server]
+Certificate = ${ENV::TEST_CERTS_DIR}/servercert.pem
+CipherString = DEFAULT
+Enable_ntls = on
+EncCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_enc.crt
+EncPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_enc.key
+PrivateKey = ${ENV::TEST_CERTS_DIR}/serverkey.pem
+SignCertificate = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.crt
+SignPrivateKey = ${ENV::TEST_CERTS_DIR}/sm2/server_sign.key
+
+[20-test server swapped sign and enc certificates-client]
+CipherString = ECC-SM2-SM4-CBC-SM3
+Enable_ntls = on
+VerifyCAFile = ${ENV::TEST_CERTS_DIR}/sm2/chain-ca.crt
+VerifyMode = Peer
+
+[test-20]
+ExpectedClientAlert = IllegalParameter
+ExpectedResult = ClientFail
+Method = NTLS
+server = 20-test server swapped sign and enc certificates-server-extra
+
+[20-test server swapped sign and enc certificates-server-extra]
+SwapNTLSSignEncCerts = Yes
 
 

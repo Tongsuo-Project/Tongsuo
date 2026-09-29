@@ -795,6 +795,7 @@ SSL *ossl_ssl_connection_new_int(SSL_CTX *ctx, SSL *user_ssl,
 #ifndef OPENSSL_NO_NTLS
     s->enable_ntls = ctx->enable_ntls;
     s->enable_force_ntls = ctx->enable_force_ntls;
+    s->enable_ntls_cert_key_usage_check = ctx->enable_ntls_cert_key_usage_check;
     s->enable_ntls_strict_ecdhe_cke = ctx->enable_ntls_strict_ecdhe_cke;
 #endif
 #ifndef OPENSSL_NO_SM2
@@ -4182,6 +4183,8 @@ SSL_CTX *SSL_CTX_new_ex(OSSL_LIB_CTX *libctx, const char *propq,
 #ifndef OPENSSL_NO_NTLS
     ret->enable_ntls = 0;
     ret->enable_force_ntls = 0;
+    /* GB/T 20518-2018 style certificate key usage check is enabled by default. */
+    ret->enable_ntls_cert_key_usage_check = 1;
     ret->enable_ntls_strict_ecdhe_cke = 0;
 #endif
 #ifndef OPENSSL_NO_SM2
@@ -5510,6 +5513,7 @@ SSL_CTX *SSL_CTX_dup(SSL_CTX *ctx)
     /* Tag of NTLS */
     ret->enable_ntls = ctx->enable_ntls;
     ret->enable_force_ntls = ctx->enable_force_ntls;
+    ret->enable_ntls_cert_key_usage_check = ctx->enable_ntls_cert_key_usage_check;
     ret->enable_ntls_strict_ecdhe_cke = ctx->enable_ntls_strict_ecdhe_cke;
 #endif
 #ifndef OPENSSL_NO_SM2
@@ -8206,6 +8210,22 @@ void SSL_disable_force_ntls(SSL *s)
     sc->enable_force_ntls = 0;
 }
 
+
+void SSL_CTX_set_ntls_cert_key_usage_check(SSL_CTX *ctx, int enable)
+{
+    ctx->enable_ntls_cert_key_usage_check = enable;
+}
+
+void SSL_set_ntls_cert_key_usage_check(SSL *s, int enable)
+{
+    SSL_CONNECTION *sc = SSL_CONNECTION_FROM_SSL(s);
+
+    if (sc == NULL)
+        return;
+
+    sc->enable_ntls_cert_key_usage_check = enable;
+}
+  
 void SSL_CTX_set_ntls_strict_ecdhe_cke(SSL_CTX *ctx, int enable)
 {
     ctx->enable_ntls_strict_ecdhe_cke = enable;
@@ -8217,7 +8237,7 @@ void SSL_set_ntls_strict_ecdhe_cke(SSL *s, int enable)
 
     if (sc == NULL)
         return;
-
+ 
     sc->enable_ntls_strict_ecdhe_cke = enable;
 }
 #endif

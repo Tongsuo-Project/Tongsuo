@@ -824,6 +824,18 @@ static int cmd_Enable_ntls(SSL_CONF_CTX *cctx, const char *value)
     return 1;
 }
 
+static int cmd_Enable_ntls_cert_key_usage_check(SSL_CONF_CTX *cctx,
+                                                const char *value)
+{
+    int enable = strcmp(value, "on") == 0;
+
+    if (cctx->ctx)
+        SSL_CTX_set_ntls_cert_key_usage_check(cctx->ctx, enable);
+    if (cctx->ssl)
+        SSL_set_ntls_cert_key_usage_check(cctx->ssl, enable);
+    return 1;
+}
+
 static int cmd_Enable_force_ntls(SSL_CONF_CTX *cctx, const char *value)
 {
     if (strcmp(value, "on") == 0) {
@@ -1075,6 +1087,8 @@ static const ssl_conf_cmd_tbl ssl_conf_cmds[] = {
     SSL_CONF_CMD_STRING(NumTickets, "num_tickets", SSL_CONF_FLAG_SERVER),
 #ifndef OPENSSL_NO_NTLS
     SSL_CONF_CMD_STRING(Enable_ntls, "enable_ntls", 0),
+    SSL_CONF_CMD_STRING(Enable_ntls_cert_key_usage_check,
+                        "enable_ntls_cert_key_usage_check", 0),
     SSL_CONF_CMD_STRING(Enable_force_ntls, "enable_force_ntls", 0),
     SSL_CONF_CMD_STRING(Enable_ntls_strict_ecdhe_cke,
                         "enable_ntls_strict_ecdhe_cke", 0),

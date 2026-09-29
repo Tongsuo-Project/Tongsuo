@@ -1864,3 +1864,31 @@ int SSL_connection_is_ntls(SSL_CONNECTION *s, int is_server)
 
     return 0;
 }
+
+int ntls_check_cert_key_usage(SSL_CONNECTION *s, X509 *x, int is_sign)
+{
+    uint32_t ku;
+
+    if (s == NULL || x == NULL)
+        return 0;
+
+    if (!s->enable_ntls_cert_key_usage_check)
+        return 1;
+
+    /*
+     * Align with some common NTLS/TLCP practice: require at least
+     * one purpose bit from GB/T 20518-2018 Appendix C.3 / C.4, not an exact
+     * match. Criticality is not enforced (many real certs use non-critical KU).
+     * Sign: digitalSignature or nonRepudiation.
+     * Enc:  keyEncipherment or dataEncipherment or keyAgreement.
+     * Absent keyUsage (X509_get_key_usage returns UINT32_MAX) fails.
+     */
+    ku = X509_get_key_usage(x);
+    if (ku == UINT32_MAX)
+        return 0;
+
+    if ((ku & (is_sign ? NTLS_SIG_CERT_KU_FLAG : NTLS_ENC_CERT_KU_FLAG)) == 0)
+        return 0;
+
+    return 1;
+}

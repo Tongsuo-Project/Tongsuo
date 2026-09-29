@@ -305,6 +305,12 @@
 #  define SSL_PKEY_NUM           7
 # endif
 
+# ifndef OPENSSL_NO_NTLS
+/* Allowed keyUsage bit masks (any bit set is enough; not exact-match). */
+#  define NTLS_SIG_CERT_KU_FLAG (X509v3_KU_DIGITAL_SIGNATURE | X509v3_KU_NON_REPUDIATION)
+#  define NTLS_ENC_CERT_KU_FLAG (X509v3_KU_KEY_ENCIPHERMENT | X509v3_KU_DATA_ENCIPHERMENT | X509v3_KU_KEY_AGREEMENT)
+# endif
+
 # define SSL_ENC_DES_IDX         0
 # define SSL_ENC_3DES_IDX        1
 # define SSL_ENC_RC4_IDX         2
@@ -1175,6 +1181,8 @@ struct ssl_ctx_st {
     /* Tag of NTLS */
     int enable_ntls;
     int enable_force_ntls;
+    /* Tag of checking cert key usage */
+    int enable_ntls_cert_key_usage_check;
     /*
      * When set, NTLS ECDHE ClientKeyExchange is encoded as
      * opaque ClientECDHEParams<1..2^16-1> (GB/T 38636 6.4.5.8).
@@ -1915,6 +1923,9 @@ struct ssl_connection_st {
 
     uint8_t preread_buf[PREREAD_HEADER_LENGTH];
     size_t preread_len;
+
+    /* Tag of checking cert key usage */
+    int enable_ntls_cert_key_usage_check;
 # endif
 
 # ifndef OPENSSL_NO_SKIP_SCSV
@@ -2967,6 +2978,7 @@ __owur int tls13_alert_code(int code);
 __owur int ssl3_alert_code(int code);
 #ifndef OPENSSL_NO_NTLS
 __owur int ntls_alert_code(int code);
+__owur int ntls_check_cert_key_usage(SSL_CONNECTION *s, X509 *x, int is_sign);
 int tls_choose_sigalg_ntls(SSL_CONNECTION *s, int fatalerrs);
 #endif
 

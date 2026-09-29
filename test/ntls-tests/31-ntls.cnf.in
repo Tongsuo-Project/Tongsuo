@@ -480,4 +480,28 @@ our @tests = (
             "ExpectedProtocol" => "NTLS",
         },
     },
+
+    {
+        name => "test server swapped sign and enc certificates",
+        server => {
+            "SignCertificate" => test_pem("sm2", "server_sign.crt"),
+            "SignPrivateKey" => test_pem("sm2", "server_sign.key"),
+            "EncCertificate" => test_pem("sm2", "server_enc.crt"),
+            "EncPrivateKey" => test_pem("sm2", "server_enc.key"),
+            "Enable_ntls" => "on",
+            "extra" => {
+                "SwapNTLSSignEncCerts" => "Yes",
+            },
+        },
+        client => {
+            "CipherString" => "ECC-SM2-SM4-CBC-SM3",
+            "VerifyCAFile" => test_pem("sm2", "chain-ca.crt"),
+            "Enable_ntls" => "on",
+        },
+        test   => {
+            "Method" => "NTLS",
+            "ExpectedResult" => "ClientFail",
+            "ExpectedClientAlert" => "IllegalParameter",
+        },
+    },
 );
