@@ -306,6 +306,7 @@
 # endif
 
 # ifndef OPENSSL_NO_NTLS
+/* Allowed keyUsage bit masks (any bit set is enough; not exact-match). */
 #  define NTLS_SIG_CERT_KU_FLAG (X509v3_KU_DIGITAL_SIGNATURE | X509v3_KU_NON_REPUDIATION)
 #  define NTLS_ENC_CERT_KU_FLAG (X509v3_KU_KEY_ENCIPHERMENT | X509v3_KU_DATA_ENCIPHERMENT | X509v3_KU_KEY_AGREEMENT)
 # endif
