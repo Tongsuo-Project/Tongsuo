@@ -649,11 +649,130 @@ static int test_rstream_random(int idx)
     return ret;
 }
 
+/*
+ * Verify the reference counting of packets pinned by buffered stream
+ * chunks and the cleansing of packet backed chunks.
+ */
+static int test_rstream_pkt(void)
+{
+    QUIC_RSTREAM *rstream = NULL;
+    OSSL_QRX_PKT *pkt_a = NULL, *pkt_b = NULL, *pkt_c = NULL;
+    unsigned char pdata[64], cbuf[64], buf[64];
+    size_t readbytes = 0, avail = 0, i;
+    int fin = 0;
+    int ret = 0;
+
+    for (i = 0; i < sizeof(pdata); ++i)
+        pdata[i] = (unsigned char)(0x40 + i);
+
+    if (!TEST_ptr(pkt_a = pkt_test_new(1200))
+        || !TEST_ptr(pkt_b = pkt_test_new(1200))
+        || !TEST_ptr(pkt_c = pkt_test_new(1200))
+        || !TEST_ptr(rstream = ossl_quic_rstream_new(NULL, NULL)))
+        goto err;
+
+    /* A buffered frame holds a reference to its packet */
+    if (!TEST_true(ossl_quic_rstream_queue_data(rstream, pkt_a, 0,
+            pdata, 10, 0))
+        || !TEST_size_t_eq(pkt_test_refcount(pkt_a), 2))
+        goto err;
+
+    /* Two frames from the same packet hold two references */
+    if (!TEST_true(ossl_quic_rstream_queue_data(rstream, pkt_a, 20,
+            pdata + 20, 10, 0))
+        || !TEST_size_t_eq(pkt_test_refcount(pkt_a), 3))
+        goto err;
+
+    /* A frame contained in already buffered data takes no reference */
+    if (!TEST_true(ossl_quic_rstream_queue_data(rstream, pkt_b, 2,
+            pdata + 2, 6, 0))
+        || !TEST_size_t_eq(pkt_test_refcount(pkt_b), 1))
+        goto err;
+
+    /*
+     * An overlapping frame drops the frames it covers and releases
+     * their references
+     */
+    if (!TEST_true(ossl_quic_rstream_queue_data(rstream, pkt_c, 0,
+            pdata, 15, 0))
+        || !TEST_size_t_eq(pkt_test_refcount(pkt_a), 2)
+        || !TEST_size_t_eq(pkt_test_refcount(pkt_c), 2))
+        goto err;
+
+    /* Reading past a frame releases its reference */
+    if (!TEST_true(ossl_quic_rstream_available(rstream, &avail, &fin))
+        || !TEST_size_t_eq(avail, 15)
+        || !TEST_true(ossl_quic_rstream_read(rstream, buf, sizeof(buf),
+            &readbytes, &fin))
+        || !TEST_size_t_eq(readbytes, 15)
+        || !TEST_mem_eq(buf, 15, pdata, 15)
+        || !TEST_size_t_eq(pkt_test_refcount(pkt_c), 1)
+        || !TEST_size_t_eq(pkt_test_refcount(pkt_a), 2))
+        goto err;
+
+    /* Moving frames to the ring buffer releases their references */
+    if (!TEST_true(ossl_quic_rstream_queue_data(rstream, pkt_b, 15,
+            pdata + 15, 5, 0))
+        || !TEST_size_t_eq(pkt_test_refcount(pkt_b), 2)
+        || !TEST_true(ossl_quic_rstream_resize_rbuf(rstream, sizeof(pdata)))
+        || !TEST_true(ossl_quic_rstream_move_to_rbuf(rstream))
+        || !TEST_size_t_eq(pkt_test_refcount(pkt_a), 1)
+        || !TEST_size_t_eq(pkt_test_refcount(pkt_b), 1))
+        goto err;
+
+    /* The moved data is still readable from the ring buffer */
+    if (!TEST_true(ossl_quic_rstream_read(rstream, buf, sizeof(buf),
+            &readbytes, &fin))
+        || !TEST_size_t_eq(readbytes, 15)
+        || !TEST_mem_eq(buf, 15, pdata + 15, 15))
+        goto err;
+
+    /* Freeing the stream releases the references of buffered frames */
+    if (!TEST_true(ossl_quic_rstream_queue_data(rstream, pkt_c, 30,
+            pdata + 30, 10, 0))
+        || !TEST_size_t_eq(pkt_test_refcount(pkt_c), 2))
+        goto err;
+    ossl_quic_rstream_free(rstream);
+    rstream = NULL;
+    if (!TEST_size_t_eq(pkt_test_refcount(pkt_c), 1))
+        goto err;
+
+    /*
+     * Cleansing a consumed packet backed chunk wipes exactly the chunk
+     * data, leaving the surrounding bytes intact.
+     */
+    memset(cbuf, 0xAA, sizeof(cbuf));
+    if (!TEST_ptr(rstream = ossl_quic_rstream_new(NULL, NULL)))
+        goto err;
+    ossl_quic_rstream_set_cleanse(rstream, 1);
+    if (!TEST_true(ossl_quic_rstream_queue_data(rstream, pkt_a, 0,
+            cbuf + 8, 48, 0))
+        || !TEST_size_t_eq(pkt_test_refcount(pkt_a), 2)
+        || !TEST_true(ossl_quic_rstream_read(rstream, buf, 48,
+            &readbytes, &fin))
+        || !TEST_size_t_eq(readbytes, 48)
+        || !TEST_size_t_eq(pkt_test_refcount(pkt_a), 1))
+        goto err;
+    for (i = 0; i < sizeof(cbuf); ++i)
+        if (!TEST_uchar_eq(cbuf[i], i >= 8 && i < 56 ? 0 : 0xAA))
+            goto err;
+
+    ret = 1;
+
+err:
+    ossl_quic_rstream_free(rstream);
+    pkt_test_free(pkt_a);
+    pkt_test_free(pkt_b);
+    pkt_test_free(pkt_c);
+    return ret;
+}
+
 int setup_tests(void)
 {
     ADD_TEST(test_sstream_simple);
     ADD_ALL_TESTS(test_sstream_bulk, 100);
     ADD_ALL_TESTS(test_rstream_simple, 4);
     ADD_ALL_TESTS(test_rstream_random, 100);
+    ADD_TEST(test_rstream_pkt);
     return 1;
 }
