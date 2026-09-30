@@ -1,6 +1,157 @@
 LIBS = ../../libcrypto
 
-IF[{- !$disabled{'ml-kem'} -}]
-    SOURCE[../../libcrypto]=ml_kem.c
-    SOURCE[../../providers/libfips.a]=ml_kem.c
+$COMMON=ml_kem.c ml_kem_avx2.c
+
+$MLKEMASM=
+$MLKEMDEF=
+IF[{- !$disabled{asm} -}]
+  GENERATE[asm/mlkem_avx2/mlkem512_kem.c]=asm/mlkem_avx2/mkwrapper.pl kem 2
+  GENERATE[asm/mlkem_avx2/mlkem512_indcpa.c]=asm/mlkem_avx2/mkwrapper.pl indcpa 2
+  GENERATE[asm/mlkem_avx2/mlkem512_polyvec.c]=asm/mlkem_avx2/mkwrapper.pl polyvec 2
+  GENERATE[asm/mlkem_avx2/mlkem512_poly.c]=asm/mlkem_avx2/mkwrapper.pl poly 2
+  GENERATE[asm/mlkem_avx2/mlkem512_consts.c]=asm/mlkem_avx2/mkwrapper.pl consts 2
+  GENERATE[asm/mlkem_avx2/mlkem512_rejsample.c]=asm/mlkem_avx2/mkwrapper.pl rejsample 2
+  GENERATE[asm/mlkem_avx2/mlkem512_cbd.c]=asm/mlkem_avx2/mkwrapper.pl cbd 2
+  GENERATE[asm/mlkem_avx2/mlkem512_verify.c]=asm/mlkem_avx2/mkwrapper.pl verify 2
+  GENERATE[asm/mlkem_avx2/mlkem512_symmetric-shake.c]=asm/mlkem_avx2/mkwrapper.pl symmetric-shake 2
+  GENERATE[asm/mlkem_avx2/mlkem512_basemul.S]=asm/mlkem_avx2/mkwrapper.pl basemul 2
+  GENERATE[asm/mlkem_avx2/mlkem512_fq.S]=asm/mlkem_avx2/mkwrapper.pl fq 2
+  GENERATE[asm/mlkem_avx2/mlkem512_ntt.S]=asm/mlkem_avx2/mkwrapper.pl ntt 2
+  GENERATE[asm/mlkem_avx2/mlkem512_invntt.S]=asm/mlkem_avx2/mkwrapper.pl invntt 2
+  GENERATE[asm/mlkem_avx2/mlkem512_shuffle.S]=asm/mlkem_avx2/mkwrapper.pl shuffle 2
+  GENERATE[asm/mlkem_avx2/mlkem768_kem.c]=asm/mlkem_avx2/mkwrapper.pl kem 3
+  GENERATE[asm/mlkem_avx2/mlkem768_indcpa.c]=asm/mlkem_avx2/mkwrapper.pl indcpa 3
+  GENERATE[asm/mlkem_avx2/mlkem768_polyvec.c]=asm/mlkem_avx2/mkwrapper.pl polyvec 3
+  GENERATE[asm/mlkem_avx2/mlkem768_poly.c]=asm/mlkem_avx2/mkwrapper.pl poly 3
+  GENERATE[asm/mlkem_avx2/mlkem768_consts.c]=asm/mlkem_avx2/mkwrapper.pl consts 3
+  GENERATE[asm/mlkem_avx2/mlkem768_rejsample.c]=asm/mlkem_avx2/mkwrapper.pl rejsample 3
+  GENERATE[asm/mlkem_avx2/mlkem768_cbd.c]=asm/mlkem_avx2/mkwrapper.pl cbd 3
+  GENERATE[asm/mlkem_avx2/mlkem768_verify.c]=asm/mlkem_avx2/mkwrapper.pl verify 3
+  GENERATE[asm/mlkem_avx2/mlkem768_symmetric-shake.c]=asm/mlkem_avx2/mkwrapper.pl symmetric-shake 3
+  GENERATE[asm/mlkem_avx2/mlkem768_basemul.S]=asm/mlkem_avx2/mkwrapper.pl basemul 3
+  GENERATE[asm/mlkem_avx2/mlkem768_fq.S]=asm/mlkem_avx2/mkwrapper.pl fq 3
+  GENERATE[asm/mlkem_avx2/mlkem768_ntt.S]=asm/mlkem_avx2/mkwrapper.pl ntt 3
+  GENERATE[asm/mlkem_avx2/mlkem768_invntt.S]=asm/mlkem_avx2/mkwrapper.pl invntt 3
+  GENERATE[asm/mlkem_avx2/mlkem768_shuffle.S]=asm/mlkem_avx2/mkwrapper.pl shuffle 3
+  GENERATE[asm/mlkem_avx2/mlkem1024_kem.c]=asm/mlkem_avx2/mkwrapper.pl kem 4
+  GENERATE[asm/mlkem_avx2/mlkem1024_indcpa.c]=asm/mlkem_avx2/mkwrapper.pl indcpa 4
+  GENERATE[asm/mlkem_avx2/mlkem1024_polyvec.c]=asm/mlkem_avx2/mkwrapper.pl polyvec 4
+  GENERATE[asm/mlkem_avx2/mlkem1024_poly.c]=asm/mlkem_avx2/mkwrapper.pl poly 4
+  GENERATE[asm/mlkem_avx2/mlkem1024_consts.c]=asm/mlkem_avx2/mkwrapper.pl consts 4
+  GENERATE[asm/mlkem_avx2/mlkem1024_rejsample.c]=asm/mlkem_avx2/mkwrapper.pl rejsample 4
+  GENERATE[asm/mlkem_avx2/mlkem1024_cbd.c]=asm/mlkem_avx2/mkwrapper.pl cbd 4
+  GENERATE[asm/mlkem_avx2/mlkem1024_verify.c]=asm/mlkem_avx2/mkwrapper.pl verify 4
+  GENERATE[asm/mlkem_avx2/mlkem1024_symmetric-shake.c]=asm/mlkem_avx2/mkwrapper.pl symmetric-shake 4
+  GENERATE[asm/mlkem_avx2/mlkem1024_basemul.S]=asm/mlkem_avx2/mkwrapper.pl basemul 4
+  GENERATE[asm/mlkem_avx2/mlkem1024_fq.S]=asm/mlkem_avx2/mkwrapper.pl fq 4
+  GENERATE[asm/mlkem_avx2/mlkem1024_ntt.S]=asm/mlkem_avx2/mkwrapper.pl ntt 4
+  GENERATE[asm/mlkem_avx2/mlkem1024_invntt.S]=asm/mlkem_avx2/mkwrapper.pl invntt 4
+  GENERATE[asm/mlkem_avx2/mlkem1024_shuffle.S]=asm/mlkem_avx2/mkwrapper.pl shuffle 4
+
+  $MLKEMASM_x86_64=asm/mlkem_avx2/mlkem512_kem.c \
+                   asm/mlkem_avx2/mlkem512_indcpa.c \
+                   asm/mlkem_avx2/mlkem512_polyvec.c \
+                   asm/mlkem_avx2/mlkem512_poly.c \
+                   asm/mlkem_avx2/mlkem512_consts.c \
+                   asm/mlkem_avx2/mlkem512_rejsample.c \
+                   asm/mlkem_avx2/mlkem512_cbd.c \
+                   asm/mlkem_avx2/mlkem512_verify.c \
+                   asm/mlkem_avx2/mlkem512_symmetric-shake.c \
+                   asm/mlkem_avx2/mlkem512_basemul.S \
+                   asm/mlkem_avx2/mlkem512_fq.S \
+                   asm/mlkem_avx2/mlkem512_ntt.S \
+                   asm/mlkem_avx2/mlkem512_invntt.S \
+                   asm/mlkem_avx2/mlkem512_shuffle.S \
+                   asm/mlkem_avx2/mlkem768_kem.c \
+                   asm/mlkem_avx2/mlkem768_indcpa.c \
+                   asm/mlkem_avx2/mlkem768_polyvec.c \
+                   asm/mlkem_avx2/mlkem768_poly.c \
+                   asm/mlkem_avx2/mlkem768_consts.c \
+                   asm/mlkem_avx2/mlkem768_rejsample.c \
+                   asm/mlkem_avx2/mlkem768_cbd.c \
+                   asm/mlkem_avx2/mlkem768_verify.c \
+                   asm/mlkem_avx2/mlkem768_symmetric-shake.c \
+                   asm/mlkem_avx2/mlkem768_basemul.S \
+                   asm/mlkem_avx2/mlkem768_fq.S \
+                   asm/mlkem_avx2/mlkem768_ntt.S \
+                   asm/mlkem_avx2/mlkem768_invntt.S \
+                   asm/mlkem_avx2/mlkem768_shuffle.S \
+                   asm/mlkem_avx2/mlkem1024_kem.c \
+                   asm/mlkem_avx2/mlkem1024_indcpa.c \
+                   asm/mlkem_avx2/mlkem1024_polyvec.c \
+                   asm/mlkem_avx2/mlkem1024_poly.c \
+                   asm/mlkem_avx2/mlkem1024_consts.c \
+                   asm/mlkem_avx2/mlkem1024_rejsample.c \
+                   asm/mlkem_avx2/mlkem1024_cbd.c \
+                   asm/mlkem_avx2/mlkem1024_verify.c \
+                   asm/mlkem_avx2/mlkem1024_symmetric-shake.c \
+                   asm/mlkem_avx2/mlkem1024_basemul.S \
+                   asm/mlkem_avx2/mlkem1024_fq.S \
+                   asm/mlkem_avx2/mlkem1024_ntt.S \
+                   asm/mlkem_avx2/mlkem1024_invntt.S \
+                   asm/mlkem_avx2/mlkem1024_shuffle.S \
+                   asm/mlkem_avx2/fips202.c \
+                   asm/mlkem_avx2/fips202x4.c \
+                   asm/mlkem_avx2/keccak4x/KeccakP-1600-times4-SIMD256.c
+  $MLKEMDEF_x86_64=ML_KEM_AVX2_ASM
+
+  IF[$MLKEMASM_{- $target{asm_arch} -}]
+    $MLKEMASM=$MLKEMASM_{- $target{asm_arch} -}
+    $MLKEMDEF=$MLKEMDEF_{- $target{asm_arch} -}
+  ENDIF
 ENDIF
+
+IF[{- !$disabled{'ml-kem'} -}]
+    SOURCE[../../libcrypto]=$COMMON $MLKEMASM
+    SOURCE[../../providers/libfips.a]=$COMMON $MLKEMASM
+ENDIF
+
+DEFINE[../../libcrypto]=$MLKEMDEF
+DEFINE[../../providers/libfips.a]=$MLKEMDEF
+DEFINE[../../providers/libdefault.a]=$MLKEMDEF
+
+INCLUDE[asm/mlkem_avx2/mlkem512_kem.o]=asm/mlkem_avx2 asm/mlkem_avx2/keccak4x
+INCLUDE[asm/mlkem_avx2/mlkem512_indcpa.o]=asm/mlkem_avx2 asm/mlkem_avx2/keccak4x
+INCLUDE[asm/mlkem_avx2/mlkem512_polyvec.o]=asm/mlkem_avx2 asm/mlkem_avx2/keccak4x
+INCLUDE[asm/mlkem_avx2/mlkem512_poly.o]=asm/mlkem_avx2 asm/mlkem_avx2/keccak4x
+INCLUDE[asm/mlkem_avx2/mlkem512_consts.o]=asm/mlkem_avx2
+INCLUDE[asm/mlkem_avx2/mlkem512_rejsample.o]=asm/mlkem_avx2 asm/mlkem_avx2/keccak4x
+INCLUDE[asm/mlkem_avx2/mlkem512_cbd.o]=asm/mlkem_avx2
+INCLUDE[asm/mlkem_avx2/mlkem512_verify.o]=asm/mlkem_avx2
+INCLUDE[asm/mlkem_avx2/mlkem512_symmetric-shake.o]=asm/mlkem_avx2 asm/mlkem_avx2/keccak4x
+INCLUDE[asm/mlkem_avx2/mlkem512_basemul.o]=asm/mlkem_avx2
+INCLUDE[asm/mlkem_avx2/mlkem512_fq.o]=asm/mlkem_avx2
+INCLUDE[asm/mlkem_avx2/mlkem512_ntt.o]=asm/mlkem_avx2
+INCLUDE[asm/mlkem_avx2/mlkem512_invntt.o]=asm/mlkem_avx2
+INCLUDE[asm/mlkem_avx2/mlkem512_shuffle.o]=asm/mlkem_avx2
+INCLUDE[asm/mlkem_avx2/mlkem768_kem.o]=asm/mlkem_avx2 asm/mlkem_avx2/keccak4x
+INCLUDE[asm/mlkem_avx2/mlkem768_indcpa.o]=asm/mlkem_avx2 asm/mlkem_avx2/keccak4x
+INCLUDE[asm/mlkem_avx2/mlkem768_polyvec.o]=asm/mlkem_avx2 asm/mlkem_avx2/keccak4x
+INCLUDE[asm/mlkem_avx2/mlkem768_poly.o]=asm/mlkem_avx2 asm/mlkem_avx2/keccak4x
+INCLUDE[asm/mlkem_avx2/mlkem768_consts.o]=asm/mlkem_avx2
+INCLUDE[asm/mlkem_avx2/mlkem768_rejsample.o]=asm/mlkem_avx2 asm/mlkem_avx2/keccak4x
+INCLUDE[asm/mlkem_avx2/mlkem768_cbd.o]=asm/mlkem_avx2
+INCLUDE[asm/mlkem_avx2/mlkem768_verify.o]=asm/mlkem_avx2
+INCLUDE[asm/mlkem_avx2/mlkem768_symmetric-shake.o]=asm/mlkem_avx2 asm/mlkem_avx2/keccak4x
+INCLUDE[asm/mlkem_avx2/mlkem768_basemul.o]=asm/mlkem_avx2
+INCLUDE[asm/mlkem_avx2/mlkem768_fq.o]=asm/mlkem_avx2
+INCLUDE[asm/mlkem_avx2/mlkem768_ntt.o]=asm/mlkem_avx2
+INCLUDE[asm/mlkem_avx2/mlkem768_invntt.o]=asm/mlkem_avx2
+INCLUDE[asm/mlkem_avx2/mlkem768_shuffle.o]=asm/mlkem_avx2
+INCLUDE[asm/mlkem_avx2/mlkem1024_kem.o]=asm/mlkem_avx2 asm/mlkem_avx2/keccak4x
+INCLUDE[asm/mlkem_avx2/mlkem1024_indcpa.o]=asm/mlkem_avx2 asm/mlkem_avx2/keccak4x
+INCLUDE[asm/mlkem_avx2/mlkem1024_polyvec.o]=asm/mlkem_avx2 asm/mlkem_avx2/keccak4x
+INCLUDE[asm/mlkem_avx2/mlkem1024_poly.o]=asm/mlkem_avx2 asm/mlkem_avx2/keccak4x
+INCLUDE[asm/mlkem_avx2/mlkem1024_consts.o]=asm/mlkem_avx2
+INCLUDE[asm/mlkem_avx2/mlkem1024_rejsample.o]=asm/mlkem_avx2 asm/mlkem_avx2/keccak4x
+INCLUDE[asm/mlkem_avx2/mlkem1024_cbd.o]=asm/mlkem_avx2
+INCLUDE[asm/mlkem_avx2/mlkem1024_verify.o]=asm/mlkem_avx2
+INCLUDE[asm/mlkem_avx2/mlkem1024_symmetric-shake.o]=asm/mlkem_avx2 asm/mlkem_avx2/keccak4x
+INCLUDE[asm/mlkem_avx2/mlkem1024_basemul.o]=asm/mlkem_avx2
+INCLUDE[asm/mlkem_avx2/mlkem1024_fq.o]=asm/mlkem_avx2
+INCLUDE[asm/mlkem_avx2/mlkem1024_ntt.o]=asm/mlkem_avx2
+INCLUDE[asm/mlkem_avx2/mlkem1024_invntt.o]=asm/mlkem_avx2
+INCLUDE[asm/mlkem_avx2/mlkem1024_shuffle.o]=asm/mlkem_avx2
+INCLUDE[asm/mlkem_avx2/fips202.o]=asm/mlkem_avx2
+INCLUDE[asm/mlkem_avx2/fips202x4.o]=asm/mlkem_avx2 asm/mlkem_avx2/keccak4x
+INCLUDE[asm/mlkem_avx2/keccak4x/KeccakP-1600-times4-SIMD256.o]=asm/mlkem_avx2 asm/mlkem_avx2/keccak4x
