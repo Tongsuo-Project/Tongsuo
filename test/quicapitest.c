@@ -21,6 +21,7 @@
 #include "testutil.h"
 #include "testutil/output.h"
 #include "../ssl/ssl_local.h"
+#include "../ssl/quic/quic_channel_local.h"
 #include "internal/quic_error.h"
 #include "internal/quic_ssl.h"
 #include "internal/quic_port.h"
