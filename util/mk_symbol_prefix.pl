@@ -42,6 +42,7 @@ my %ignore_symbols = (
     "DEFINE_LIST_OF" => 1,
     "OSSL_LIST(urxe)QUIC_URXE_LIST" => 1,
     "OSSL_LIST(uint_set)UINT_SET" => 1,
+    "OSSL_LIST(rxe)RXE_LIST" => 1,
 );
 
 foreach my $f (catfile($config{sourcedir}, "util/engines.num"),

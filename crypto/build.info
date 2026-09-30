@@ -7,7 +7,7 @@ SUBDIRS=objects buffer bio stack lhash hashtable rand evp asn1 pem x509 conf \
         sm4 chacha modes bn ec rsa dsa dh sm2 dso engine \
         err comp http ocsp cms ts srp cmac ct async ess crmf cmp encode_decode \
         sdf tsapi paillier zkp \
-        ffc hpke thread ml_dsa slh_dsa
+        ffc hpke thread ml_dsa slh_dsa rbtree
 
 LIBS=../libcrypto
 
