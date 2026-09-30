@@ -715,6 +715,7 @@ static int chop_range(SFRAME_SET *fs, struct stream_range_t *sr,
     uint64_t new_end)
 {
     struct stream_chunk_t *sc;
+    size_t unused_sz;
 
     assert(sr->sr_range.end >= new_end);
 
@@ -1185,6 +1186,7 @@ int ossl_sframe_set_move_offset(SFRAME_SET *fs, uint64_t new_offset)
 {
     struct stream_range_t *sr = OSSL_RBT_MIN(srange, &fs->ranges);
     struct stream_chunk_t *sc, *save_sc;
+    size_t unused_sz;
 
     if (new_offset == fs->offset)
         return 1;
