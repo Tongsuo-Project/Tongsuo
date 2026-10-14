@@ -76,8 +76,9 @@ static int ml_dsa_sign_internal(const ML_DSA_KEY *priv, int msg_is_mu,
     uint8_t c_tilde[ML_DSA_MAX_LAMBDA / 4];
     size_t c_tilde_len = params->bit_strength >> 2;
     size_t kappa;
-    int use_y_so = 0;
-    int use_sparse_c_mult = 0;
+#if defined(ML_DSA_AVX) && !defined(OPENSSL_NO_ASM)
+    int use_y_so;
+    int use_sparse_c_mult;
     int sparse_eta2 = 0;
     uint8_t *sparse_cs_tables = NULL; /* s2 then s1: packed u8/u16 [-s|+s|-s] */
     int32_t *sparse_ct_tables = NULL; /* t0: centered int32 [-t|+t|-t] */
@@ -86,9 +87,8 @@ static int ml_dsa_sign_internal(const ML_DSA_KEY *priv, int msg_is_mu,
     size_t sparse_ct_stride = ML_DSA_SPARSE_CT_I32_STRIDE;
     size_t sparse_table_bytes = 0;
 
-#if defined(ML_DSA_AVX) && !defined(OPENSSL_NO_ASM)
     use_sparse_c_mult = ossl_ml_dsa_avx2_capable();
-    use_y_so = ossl_ml_dsa_avx2_capable();
+    use_y_so = use_sparse_c_mult;
 #endif
 
     /*
@@ -99,6 +99,7 @@ static int ml_dsa_sign_internal(const ML_DSA_KEY *priv, int msg_is_mu,
     alloc_len = w1_encoded_len
         + sizeof(*polys) * (1 + num_polys_k + num_polys_l
                             + num_polys_k_by_l + num_polys_sig_k);
+#if defined(ML_DSA_AVX) && !defined(OPENSSL_NO_ASM)
     if (use_sparse_c_mult) {
         /*
          * Temporary tables only (not stored in the key):
@@ -114,6 +115,7 @@ static int ml_dsa_sign_internal(const ML_DSA_KEY *priv, int msg_is_mu,
             + sparse_ct_stride * sizeof(int32_t) * k;
         alloc_len += sparse_table_bytes + 64;
     }
+#endif
     alloc = OPENSSL_malloc(alloc_len);
     if (alloc == NULL)
         return 0;
@@ -139,6 +141,7 @@ static int ml_dsa_sign_internal(const ML_DSA_KEY *priv, int msg_is_mu,
     p += num_polys_l;
     signature_init(&sig, p, k, p + k, l, c_tilde, c_tilde_len);
     p += num_polys_sig_k;
+#if defined(ML_DSA_AVX) && !defined(OPENSSL_NO_ASM)
     if (use_sparse_c_mult) {
         uint8_t *tables = (uint8_t *)p;
         size_t align = (32 - ((size_t)tables & 31)) & 31;
@@ -152,6 +155,7 @@ static int ml_dsa_sign_internal(const ML_DSA_KEY *priv, int msg_is_mu,
             sparse_ct_tables = (int32_t *)(ct + ctalign);
         }
     }
+#endif
     /* End of the allocated blob setup */
 
 #if defined(ML_DSA_AVX) && !defined(OPENSSL_NO_ASM)
@@ -182,6 +186,7 @@ static int ml_dsa_sign_internal(const ML_DSA_KEY *priv, int msg_is_mu,
     vector_copy(&s1_ntt, &priv->s1);
     vector_copy(&s2_ntt, &priv->s2);
     vector_copy(&t0_ntt, &priv->t0);
+#if defined(ML_DSA_AVX) && !defined(OPENSSL_NO_ASM)
     if (use_sparse_c_mult) {
         size_t i;
 
@@ -208,7 +213,9 @@ static int ml_dsa_sign_internal(const ML_DSA_KEY *priv, int msg_is_mu,
             poly_sparse_ct_table_i32(
                 (const int32_t *)t0_ntt.poly[i].coeff,
                 sparse_ct_tables + i * sparse_ct_stride);
-    } else {
+    } else
+#endif
+    {
         vector_ntt(&s1_ntt);
         vector_ntt(&s2_ntt);
         vector_ntt(&t0_ntt);
@@ -223,8 +230,10 @@ static int ml_dsa_sign_internal(const ML_DSA_KEY *priv, int msg_is_mu,
         VECTOR *r0 = &w1;
         VECTOR *ct0 = &w1;
         uint32_t z_max, r0_max, ct0_max, h_ones;
+#if defined(ML_DSA_AVX) && !defined(OPENSSL_NO_ASM)
         int cpos[64];
         int cnpos = 0;
+#endif
 
         vector_expand_mask(&y, rho_prime, sizeof(rho_prime), kappa,
                            gamma1, md_ctx, priv->shake256_md);
@@ -250,6 +259,7 @@ static int ml_dsa_sign_internal(const ML_DSA_KEY *priv, int msg_is_mu,
                          w1_encoded, w1_encoded_len, c_tilde, c_tilde_len))
             break;
 
+#if defined(ML_DSA_AVX) && !defined(OPENSSL_NO_ASM)
         if (use_sparse_c_mult) {
             size_t ci;
 
@@ -270,7 +280,9 @@ static int ml_dsa_sign_internal(const ML_DSA_KEY *priv, int msg_is_mu,
                 if (cnpos < (int)(sizeof(cpos) / sizeof(cpos[0])))
                     cpos[cnpos++] = (int)ci;
             }
-        } else {
+        } else
+#endif
+        {
             if (!poly_sample_in_ball_ntt(c_ntt, c_tilde, (int)c_tilde_len,
                                          md_ctx, priv->shake256_md, params->tau))
                 break;
@@ -283,6 +295,7 @@ static int ml_dsa_sign_internal(const ML_DSA_KEY *priv, int msg_is_mu,
             uint32_t bound = gamma2 - params->beta;
 
             for (i = 0; i < k; i++) {
+#if defined(ML_DSA_AVX) && !defined(OPENSSL_NO_ASM)
                 if (use_sparse_c_mult) {
                     if (sparse_eta2)
                         poly_sparse_cs_mult_u8_pos(
@@ -295,7 +308,9 @@ static int ml_dsa_sign_internal(const ML_DSA_KEY *priv, int msg_is_mu,
                                 + i * sparse_cs_stride,
                             (const int32_t *)c_ntt->coeff, cpos, cnpos,
                             (int32_t *)cs2.poly[i].coeff);
-                } else {
+                } else
+#endif
+                {
                     ossl_ml_dsa_poly_ntt_mult(&s2_ntt.poly[i], c_ntt,
                                               &cs2.poly[i]);
                     ossl_ml_dsa_poly_ntt_inverse(&cs2.poly[i]);
@@ -321,6 +336,7 @@ static int ml_dsa_sign_internal(const ML_DSA_KEY *priv, int msg_is_mu,
 
             vector_copy(&sig.z, &y);
             for (i = 0; i < l; i++) {
+#if defined(ML_DSA_AVX) && !defined(OPENSSL_NO_ASM)
                 if (use_sparse_c_mult) {
                     if (sparse_eta2)
                         poly_sparse_cs_mult_u8_pos(
@@ -333,7 +349,9 @@ static int ml_dsa_sign_internal(const ML_DSA_KEY *priv, int msg_is_mu,
                                 + (k + i) * sparse_cs_stride,
                             (const int32_t *)c_ntt->coeff, cpos, cnpos,
                             (int32_t *)cs1.poly[i].coeff);
-                } else {
+                } else
+#endif
+                {
                     ossl_ml_dsa_poly_ntt_mult(&s1_ntt.poly[i], c_ntt,
                                               &cs1.poly[i]);
                     ossl_ml_dsa_poly_ntt_inverse(&cs1.poly[i]);
@@ -356,12 +374,15 @@ static int ml_dsa_sign_internal(const ML_DSA_KEY *priv, int msg_is_mu,
             int rej_ct0 = 0;
 
             for (i = 0; i < k; i++) {
+#if defined(ML_DSA_AVX) && !defined(OPENSSL_NO_ASM)
                 if (use_sparse_c_mult) {
                     poly_sparse_ct_mult_i32_pos(
                         sparse_ct_tables + i * sparse_ct_stride,
                         (const int32_t *)c_ntt->coeff, cpos, cnpos,
                         (int32_t *)ct0->poly[i].coeff);
-                } else {
+                } else
+#endif
+                {
                     ossl_ml_dsa_poly_ntt_mult(&t0_ntt.poly[i], c_ntt,
                                               &ct0->poly[i]);
                     ossl_ml_dsa_poly_ntt_inverse(&ct0->poly[i]);

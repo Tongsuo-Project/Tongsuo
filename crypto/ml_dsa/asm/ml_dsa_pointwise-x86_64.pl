@@ -54,6 +54,10 @@ open OUT, "| \"$^X\" \"$xlate\" $flavour \"$output\""
   or die "can't call $xlate: $!";
 *STDOUT = *OUT;
 
+do { my $p = "${dir}ml_dsa_win64_xmm.pl"; $p = "./$p" unless $p =~ m|^/|; do $p or die "can't load $p: $@ $!"; };
+my $w64save = $win64 ? ml_dsa_win64_xmm_save_pl() : "";
+my $w64rest = $win64 ? ml_dsa_win64_xmm_restore_pl() : "";
+
 my $poly_bytes = 256 * 4;
 my $ML_DSA_Q = 8380417;
 my $ML_DSA_Q_INV = 58728449;   # q^{-1} mod 2^32 (Dilithium montgomery)
@@ -159,6 +163,7 @@ ___
 .align  32
 $sym:
 .cfi_startproc
+$w64save
     vpbroadcastd    ml_dsa_pw_qinv(\%rip), \%ymm0
     vpbroadcastd    ml_dsa_pw_q(\%rip), \%ymm1
     xor             \%eax, \%eax
@@ -172,6 +177,7 @@ $body
     jb              .L${sym}_loop
 $norm
     vzeroupper
+$w64rest
     ret
 .cfi_endproc
 .size   $sym, .-$sym

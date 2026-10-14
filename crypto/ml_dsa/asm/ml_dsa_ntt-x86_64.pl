@@ -1449,7 +1449,7 @@ $code .= <<___;
 ###############################################################################
 ### Data section
 
-.section .rodata
+.section .rodata align=64
 
 ###############################################################################
 # zetas_inverse:
@@ -2022,7 +2022,7 @@ ml_dsa_poly_ntt_inverse_avx2:
     ret
 .size   ml_dsa_poly_ntt_mult_avx2, .-ml_dsa_poly_ntt_mult_avx2
 
-.section .rodata
+.section .rodata align=64
 .align 64
 .globl  qdata
 .type   qdata,\@object

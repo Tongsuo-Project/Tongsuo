@@ -11,9 +11,7 @@
 #include <openssl/evp.h>
 #include <stdint.h>
 
-void ossl_ml_dsa_avx_poly_shuffle(POLY *p);
-void ml_dsa_avx_ntt_forward_so_impl(int32_t c[256]);
-void ml_dsa_avx_ntt_inverse_so_impl(int32_t c[256]);
+/* asm prototypes live in ml_dsa_local.h (for --symbol-prefix) */
 
 int matrix_expand_A_so(EVP_MD_CTX *g_ctx, const EVP_MD *md,
                        const uint8_t *rho, MATRIX *out)
@@ -30,12 +28,12 @@ int matrix_expand_A_so(EVP_MD_CTX *g_ctx, const EVP_MD *md,
     return 1;
 }
 
-void ossl_ml_dsa_avx_poly_ntt_forward_so(POLY *p)
+static void ossl_ml_dsa_avx_poly_ntt_forward_so(POLY *p)
 {
     ml_dsa_avx_ntt_forward_so_impl((int32_t *)p->coeff);
 }
 
-void ossl_ml_dsa_avx_poly_ntt_inverse_so(POLY *p)
+static void ossl_ml_dsa_avx_poly_ntt_inverse_so(POLY *p)
 {
     ml_dsa_avx_ntt_inverse_so_impl((int32_t *)p->coeff);
 }

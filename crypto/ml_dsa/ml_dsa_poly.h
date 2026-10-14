@@ -104,11 +104,15 @@ poly_power2_round_scalar(const POLY *t, POLY *t1, POLY *t0)
 
 static poly_power2_round_fn poly_power2_round_impl = poly_power2_round_scalar;
 
+#ifdef ML_DSA_AVX
+void power2_round_avx(const uint32_t *in, uint32_t *t1, uint32_t *t0);
+
 static ossl_inline ossl_unused void
 poly_power2_round_avx(const POLY *t, POLY *t1, POLY *t0)
 {
     power2_round_avx(t->coeff, t1->coeff, t0->coeff);
 }
+#endif
 
 static ossl_inline ossl_unused void poly_power2_round_init(void)
 {
@@ -194,6 +198,17 @@ static poly_low_bits_fn poly_low_bits_impl = poly_low_bits_scalar;
 static poly_make_hint_fn poly_make_hint_impl = poly_make_hint_scalar;
 static poly_use_hint_fn poly_use_hint_impl = poly_use_hint_scalar;
 
+static ossl_inline ossl_unused void
+poly_high_bits(const POLY *in, uint32_t gamma2, POLY *out);
+static ossl_inline ossl_unused void
+poly_low_bits(const POLY *in, uint32_t gamma2, POLY *out);
+
+#ifdef ML_DSA_AVX
+void high_bits_avx(const uint32_t *in, uint32_t gamma2, uint32_t *out);
+void low_bits_avx(const uint32_t *in, uint32_t gamma2, uint32_t *out);
+void make_hint_avx(const uint32_t *a, const uint32_t *b, uint32_t *out);
+void use_hint_avx(const uint32_t *h, const uint32_t *r, uint32_t gamma2,
+                  uint32_t *out);
 
 static ossl_inline ossl_unused void
 poly_high_bits_avx(const POLY *in, uint32_t gamma2, POLY *out)
@@ -206,11 +221,6 @@ poly_low_bits_avx(const POLY *in, uint32_t gamma2, POLY *out)
 {
     low_bits_avx(in->coeff, gamma2, out->coeff);
 }
-
-static ossl_inline ossl_unused void
-poly_high_bits(const POLY *in, uint32_t gamma2, POLY *out);
-static ossl_inline ossl_unused void
-poly_low_bits(const POLY *in, uint32_t gamma2, POLY *out);
 
 static ossl_inline ossl_unused void
 poly_make_hint_avx(const POLY *ct0, const POLY *cs2, const POLY *w, uint32_t gamma2,
@@ -233,6 +243,7 @@ poly_use_hint_avx(const POLY *h, const POLY *r, uint32_t gamma2, POLY *out)
 {
     use_hint_avx(h->coeff, r->coeff, gamma2, out->coeff);
 }
+#endif
 
 static ossl_inline ossl_unused void poly_decompose_init(void)
 {

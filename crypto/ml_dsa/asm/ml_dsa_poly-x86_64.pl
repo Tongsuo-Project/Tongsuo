@@ -60,6 +60,10 @@ open OUT, "| \"$^X\" \"$xlate\" $flavour \"$output\""
   or die "can't call $xlate: $!";
 *STDOUT = *OUT;
 
+do { my $p = "${dir}ml_dsa_win64_xmm.pl"; $p = "./$p" unless $p =~ m|^/|; do $p or die "can't load $p: $@ $!"; };
+my $w64save = $win64 ? ml_dsa_win64_xmm_save_pl() : "";
+my $w64rest = $win64 ? ml_dsa_win64_xmm_restore_pl() : "";
+
 # ML-DSA constants (ml_dsa_local.h)
 my $q              = 8380417;
 my $d_bits         = 13;
@@ -104,6 +108,7 @@ $code .= <<___;
 .align 32
 power2_round_avx:
 .cfi_startproc
+$w64save
     @{[broadcastd($half, "%xmm2", "%ymm2")]}
     @{[broadcastd($mask, "%xmm3", "%ymm3")]}
     vmovdqa qdata+32(%rip), %ymm4           # _8XQ: broadcast q
@@ -128,6 +133,7 @@ power2_round_avx:
     jnz     .Lpower2_loop
 
     vzeroupper
+$w64rest
     ret
 .cfi_endproc
 .size   power2_round_avx, .-power2_round_avx
@@ -137,6 +143,16 @@ power2_round_avx:
 .align 32
 decompose_avx:
 .cfi_startproc
+$w64save
+    call    .Ldecompose_avx_body
+$w64rest
+    ret
+.cfi_endproc
+.size   decompose_avx, .-decompose_avx
+
+# SysV-only body for in-asm callers (high/low/use_hint); skips Win64 gearing.
+.align 32
+.Ldecompose_avx_body:
     cmp     \$$gamma2_div32, %esi
     je      .Ldecompose_div32
     jmp     .Ldecompose_div88
@@ -212,19 +228,19 @@ decompose_avx:
     jnz     .Ldecompose_div88_loop
     vzeroupper
     ret
-.cfi_endproc
-.size   decompose_avx, .-decompose_avx
 
 .globl  high_bits_avx
 .type   high_bits_avx,\@function,3
 .align 32
 high_bits_avx:
 .cfi_startproc
+$w64save
     sub     \$$stack_scratch, %rsp
     mov     %rsp, %rcx
-    call    decompose_avx
+    call    .Ldecompose_avx_body
     add     \$$stack_scratch, %rsp
     vzeroupper
+$w64rest
     ret
 .cfi_endproc
 .size   high_bits_avx, .-high_bits_avx
@@ -234,13 +250,15 @@ high_bits_avx:
 .align 32
 low_bits_avx:
 .cfi_startproc
+$w64save
     mov     %rdx, %r8                       # preserve a0 output pointer
     sub     \$$stack_scratch, %rsp
     mov     %rsp, %rdx                      # a1 scratch (discarded)
     mov     %r8, %rcx                       # a0 output
-    call    decompose_avx
+    call    .Ldecompose_avx_body
     add     \$$stack_scratch, %rsp
     vzeroupper
+$w64rest
     ret
 .cfi_endproc
 .size   low_bits_avx, .-low_bits_avx
@@ -250,6 +268,7 @@ low_bits_avx:
 .align 32
 make_hint_avx:
 .cfi_startproc
+$w64save
     @{[broadcastd(1, "%xmm3", "%ymm3")]}
     xor     %eax, %eax
     mov     \$32, %r8d
@@ -266,6 +285,7 @@ make_hint_avx:
     jnz     .Lmake_hint_loop
 
     vzeroupper
+$w64rest
     ret
 .cfi_endproc
 .size   make_hint_avx, .-make_hint_avx
@@ -275,6 +295,7 @@ make_hint_avx:
 .align 32
 use_hint_avx:
 .cfi_startproc
+$w64save
     push    %rbp
     push    %rbx
     push    %r12
@@ -289,7 +310,7 @@ use_hint_avx:
     mov     %r14, %rsi
     mov     %rbx, %rdx
     mov     %rsp, %rcx
-    call    decompose_avx
+    call    .Ldecompose_avx_body
 
     cmp     \$$gamma2_div32, %r14d
     je      .Luse_hint_div32
@@ -323,6 +344,7 @@ use_hint_avx:
     pop     %rbx
     pop     %rbp
     vzeroupper
+$w64rest
     ret
 
 .align 32
@@ -355,6 +377,7 @@ use_hint_avx:
     pop     %rbx
     pop     %rbp
     vzeroupper
+$w64rest
     ret
 .cfi_endproc
 .size   use_hint_avx, .-use_hint_avx

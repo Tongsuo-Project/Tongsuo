@@ -804,12 +804,15 @@ my @chandlers = (
           return ("", $3, 'F', $2, "$2$4", all_conds());
       },
     },
-    # Variable declaration, including arrays, or typedef thereof
+    # Variable declaration, including arrays, or typedef thereof.
+    # Optional "= initializer" is accepted but not part of the symbol name
+    # (needed for --symbol-prefix / mk_symbol_prefix.pl).
     { regexp   => qr/\s*(?:(typedef)\s?)?       # Possible typedef      ($1)
                      ((?:\w|\*|\s)*?)           # Type                  ($2)
                      \s?                        # Possible space
                      ([[:alpha:]_]\w*)          # Variable name         ($3)
                      ((?:<<<\[[^\]]*\]>>>)*)    # Possible array declaration ($4)
+                     (?:\s*=\s*[^;]*)?          # Optional initializer
                      ;
                     /x,
       massager => sub {
@@ -828,6 +831,9 @@ my @chandlers = (
       massager => sub {
           my @names = split(",", $3);
           my $n0 = $names[0];
+          # Drop C initializer so "foo = BAR" does not become the symbol name
+          $n0 =~ s/\s*=\s*.*$//;
+          $n0 =~ s/^\s+|\s+$//g;
           my $rest = "";
           shift(@names);
           foreach my $name (@names) {

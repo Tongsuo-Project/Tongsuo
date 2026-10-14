@@ -94,6 +94,31 @@ int matrix_expand_A_so(EVP_MD_CTX *g_ctx, const EVP_MD *md,
                        const uint8_t *rho, MATRIX *out);
 void vector_ntt_so(VECTOR *v);
 void vector_ntt_inverse_so(VECTOR *v);
+/* Asm entry points — must be in a header so --symbol-prefix sees them. */
+void ossl_ml_dsa_avx_poly_shuffle(POLY *p);
+void ml_dsa_avx_ntt_forward_so_impl(int32_t c[256]);
+void ml_dsa_avx_ntt_inverse_so_impl(int32_t c[256]);
+
+/* NTT (asm/ml_dsa_ntt-x86_64.pl) */
+int ml_dsa_ntt_avx2_capable(void);
+void ml_dsa_poly_ntt_avx2(uint32_t *p_coeff, const uint32_t *p_zetas);
+void ml_dsa_poly_ntt_inverse_avx2(uint32_t *p_coeff);
+void ml_dsa_poly_ntt_mult_avx2(const uint32_t *a, const uint32_t *b,
+                               uint32_t *out);
+
+/* Poly arith (asm/ml_dsa_poly_arith-x86_64.pl) */
+void ossl_ml_dsa_poly_add_avx2(const POLY *lhs, const POLY *rhs, POLY *out);
+void ossl_ml_dsa_poly_sub_avx2(const POLY *lhs, const POLY *rhs, POLY *out);
+void ossl_ml_dsa_poly_max_avx2(const POLY *p, uint32_t *mx);
+void ossl_ml_dsa_poly_max_signed_avx2(const POLY *p, uint32_t *mx);
+
+/* Pointwise accumulate (asm/ml_dsa_pointwise-x86_64.pl) */
+void ml_dsa_pointwise_acc_avx_l4(uint32_t *out, const uint32_t *row,
+                                 const uint32_t *vec);
+void ml_dsa_pointwise_acc_avx_l5(uint32_t *out, const uint32_t *row,
+                                 const uint32_t *vec);
+void ml_dsa_pointwise_acc_avx_l7(uint32_t *out, const uint32_t *row,
+                                 const uint32_t *vec);
 
 /* Sparse c·s / c·t0 (asm/ml_dsa_pspm-x86_64.pl) */
 #  define ML_DSA_SPARSE_CS_U8_STRIDE  (3 * ML_DSA_NUM_POLY_COEFFICIENTS)

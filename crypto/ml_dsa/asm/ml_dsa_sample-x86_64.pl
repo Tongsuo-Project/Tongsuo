@@ -57,12 +57,182 @@ if (!$avx2 && `$cc -v 2>&1` =~ /((?:clang|LLVM) version|.*based on LLVM) ([0-9]+
 
 die "output path required\n" unless defined $output;
 
-if ($avx2>0) {{{
-    open my $out, '>', $output or die "can't write $output: $!";
-    while (<DATA>) {
-        print $out $_;
+# Always pipe Windows builds through x86_64-xlate.pl. The __DATA__ payload is a
+# gcc/gas dump: raw dump is correct for gas on Linux, but breaks NASM/MASM on
+# Windows. Before xlate: expand `.set` aliases, normalize locals / AT&T quirks,
+# and strip Linux stack-canary sequences.
+sub emit_via_xlate {
+    my ($code) = @_;
+    open OUT, "| \"$^X\" \"$xlate\" $flavour \"$output\""
+      or die "can't call $xlate: $!";
+    print OUT $code;
+    close OUT or die "error closing STDOUT: $!";
+}
+
+sub emit_raw {
+    my ($code) = @_;
+    # Raw gas bypasses x86_64-xlate.pl, so honour --symbol-prefix here the same
+    # way keccak1600x4-avx2.pl does; otherwise C (via symbol_prefix.h) links to
+    # BABA_* names while this object still exports unprefixed symbols.
+    #
+    # Only rename .globl / cross-TU symbols. File-local data (idxlut,
+    # inte_qdata, …) must keep their labels: we do not rewrite sym(%rip)
+    # references, and prefixing just the label yields
+    # R_X86_64_PC32 against undefined symbol (symbol_prefix-test).
+    my $sym_prefix = "";
+    {
+        local @INC = (".", @INC);
+        eval {
+            require configdata;
+            $sym_prefix = $configdata::config{symbol_prefix} // "";
+        };
     }
+    my %no_prefix = map { $_ => 1 } qw(
+        __memcpy_chk __stack_chk_fail __chk_fail
+        memcpy memset memmove memcmp calloc free malloc
+    );
+    if ($sym_prefix ne "") {
+        my %globl;
+        while ($code =~ /^\s*\.glob(?:l|al)\s+([A-Za-z_][\w]*)/mg) {
+            $globl{$1} = 1;
+        }
+        my %defined;
+        while ($code =~ /^([A-Za-z_][\w]*):/mg) {
+            $defined{$1} = 1;
+        }
+        my $prefix_sym = sub {
+            my ($sym) = @_;
+            return $sym if $sym =~ /^\./ || $no_prefix{$sym};
+            return $sym if index($sym, $sym_prefix) == 0;
+            return $sym_prefix . $sym if $sym eq "OPENSSL_ia32cap_P";
+            return $sym_prefix . $sym if $globl{$sym};
+            # Defined here but not exported → file-local, leave alone.
+            return $sym if $defined{$sym};
+            # Undefined here → external (e.g. ossl_sha3_*_avx2); prefix.
+            return $sym_prefix . $sym;
+        };
+        $code =~ s/^(\s*\.(?:globl|global|type|size|hidden|protected|weak)\s+)([A-Za-z_][\w]*)/
+            $1 . $prefix_sym->($2)/mge;
+        $code =~ s/^(\s*\.size\s+)([A-Za-z_][\w]*)(\s*,\s*\.-\s*)([A-Za-z_][\w]*)/
+            $1 . $prefix_sym->($2) . $3 . $prefix_sym->($4)/mge;
+        $code =~ s/^([A-Za-z_][\w]*):/$prefix_sym->($1) . ":"/mge;
+        $code =~ s/\bOPENSSL_ia32cap_P\b/$prefix_sym->("OPENSSL_ia32cap_P")/ge;
+        $code =~ s/\bcall\s+([A-Za-z_][\w]*)(@PLT)?/{
+            my ($s, $plt) = ($1, defined($2) ? $2 : "");
+            "call\t" . $prefix_sym->($s) . $plt;
+        }/ge;
+    }
+    open my $out, '>', $output or die "can't write $output: $!";
+    print $out $code;
     close $out or die "can't close $output: $!";
+}
+
+sub prepare_gas_dump_for_xlate {
+    my ($code) = @_;
+    my %alias;
+
+    # Drop `.set A,B` and record A -> B (gas constant aliases).
+    $code =~ s{^\s*\.set\s+(\S+)\s*,\s*(\S+)\s*\n}{
+        $alias{$1} = $2;
+        "";
+    }mge;
+
+    # Resolve alias chains, then rewrite every occurrence of the alias name.
+    foreach my $from (sort { length($b) <=> length($a) } keys %alias) {
+        my $to = $alias{$from};
+        my %seen;
+        while (exists $alias{$to}) {
+            last if $seen{$to}++;
+            $to = $alias{$to};
+        }
+        $code =~ s/\Q$from\E/$to/g;
+    }
+
+    # gcc may emit locals like `.iLC0` / `.sLFB` (not `.L...`); xlate only
+    # rewrites `.L*` consistently for NASM. Prefix with L so refs and defs match.
+    $code =~ s/(?<![A-Za-z0-9_])\.iL/\.LiL/g;
+    $code =~ s/(?<![A-Za-z0-9_])\.sL/\.LsL/g;
+
+    # Strip C block comments (hand annotations in dumps); NASM rejects them.
+    $code =~ s{/\*.*?\*/}{}sg;
+
+    # gcc CFI is for Linux DWARF; removing canary handlers leaves unpaired
+    # .cfi_remember_state and xlate aborts. Drop all CFI for the WIN64 path.
+    $code =~ s/^\s*\.cfi_[^\n]*\n//mg;
+
+    # 2-letter AT&T sized ops are not stripped by xlate (need 3+ char stem).
+    $code =~ s/\b(or|in|out)[bwlq]\b/$1/g;
+
+    # movslq mem,r64: xlate emits movsxd r64,QWORD[...] (wrong width). Rewrite
+    # as movl + movslq reg,reg which xlate/NASM handle correctly.
+    $code =~ s{
+        \bmovslq\s+
+        (\([^)]+\))\s*,\s*
+        %(r(?:[a-d]x|[sb]p|[sd]i)|r(?:8|9|1[0-5]))
+    }{
+        my ($mem, $r64) = ($1, $2);
+        my $r32 = ($r64 =~ /^r([a-d]x|[sb]p|[sd]i)$/) ? "e$1" :
+                  ($r64 =~ /^r(8|9|1[0-5])$/) ? "r$1d" : die "bad reg %$r64";
+        "movl\t$mem, %$r32\n\tmovslq\t%$r32, %$r64";
+    }gex;
+    # NASM/MASM: movslq->movsxd; mingw64 gas: keep movslq. Also PE .rdata.
+    # (see ml_dsa_prepare_pe_compat in ml_dsa_win64_xmm.pl — applied below)
+
+    # Linux stack canary prolog/epilog / fail helper are invalid on WIN64 NASM.
+    $code =~ s/^\s*movq?\s+%fs:40,\s*%rax\s*\n\s*movq?\s+%rax,\s*[^\n]+\n\s*xorl?\s+%eax,\s*%eax\s*\n//mg;
+    $code =~ s/^\s*movq?\s+[^\n]+,\s*%rax\s*\n\s*subq?\s+%fs:40,\s*%rax\s*\n\s*jne\s+\S+\s*\n//mg;
+    $code =~ s/^\s*\.L\w+:\s*\n(?:\s*\.cfi[^\n]*\n)*(?:\s*vzeroupper\s*\n)?\s*call\s+__stack_chk_fail\S*\s*\n//mg;
+    $code =~ s/^\s*call\s+__stack_chk_fail\S*\s*\n//mg;
+
+    # Drop ELF note / ident tails that NASM cannot parse.
+    $code =~ s/\n\s*\.ident\b[\s\S]*\z/\n/;
+    $code =~ s/\n\s*\.section\s+\.note\.GNU-stack[\s\S]*\z/\n/;
+    $code =~ s/\n\s*\.section\s+\.note\.gnu\.property[\s\S]*\z/\n/;
+
+    # NASM requires EXTERN for undefined call targets; emit gas .extern for xlate.
+    my %ext;
+    while ($code =~ /\bcall\s+([A-Za-z_][\w.]*)/g) {
+        my $sym = $1;
+        $sym =~ s/@PLT\z//;
+        next if $sym =~ /^\./;
+        next if $sym eq "__stack_chk_fail";
+        $ext{$sym} = 1;
+    }
+    if (%ext) {
+        my $externs = join("", map { ".extern\t$_\n" } sort keys %ext);
+        $code = $externs . $code;
+    }
+
+    # x86_64-xlate.pl does: split(',', $line); $type eq "\@function".
+    # gcc dumps emit `.type name, @function` (space after comma), so Win64
+    # ABI gearing never runs — C args stay in rcx/rdx/r8 while the body
+    # still reads rdi/rsi (fatal on windows.yml / FIPS ML-DSA KAT).
+    # Globals called from C need \@function; asm-only helpers must be
+    # \@abi-omnipotent (sibling calls already use SysV rdi/rsi).
+    my %globl;
+    while ($code =~ /^\s*\.glob(?:l|al)\s+([A-Za-z_][\w]*)/mg) {
+        $globl{$1} = 1;
+    }
+    $code =~ s{^(\s*\.type\s+)([A-Za-z_][\w]*)\s*,\s*\@function\b}{
+        $globl{$2} ? "$1$2,\@function" : "$1$2,\@abi-omnipotent"
+    }mge;
+
+    # Win64 PE/mingw gas compat + optional xmm6-15 save (see ml_dsa_win64_xmm.pl).
+    do { my $p = "${dir}ml_dsa_win64_xmm.pl"; $p = "./$p" unless $p =~ m|^/|; do $p or die "can't load $p: $@ $!"; };
+    $code = ml_dsa_prepare_pe_compat($code, $flavour);
+    $code = ml_dsa_inject_win64_xmm_save_restore($code)
+        unless $ENV{ML_DSA_SKIP_XMM_SAVE};
+
+    return $code;
+}
+
+if ($avx2>0) {{{
+    my $code = do { local $/; <DATA> };
+    if ($win64) {
+        emit_via_xlate(prepare_gas_dump_for_xlate($code));
+    } else {
+        emit_raw($code);
+    }
 }}} else {{{
     my $code = <<___;
 .text
@@ -88,10 +258,7 @@ ossl_ml_dsa_expand_mask_avx2:
 .size   ossl_ml_dsa_expand_A_44, .-ossl_ml_dsa_expand_A_44
 ___
 
-    open OUT, "| \"$^X\" \"$xlate\" $flavour \"$output\""
-      or die "can't call $xlate: $!";
-    print OUT $code;
-    close OUT or die "error closing STDOUT: $!";
+    emit_via_xlate($code);
 }}}
 
 __DATA__
@@ -477,691 +644,203 @@ ml_dsa_rej_eta_avx_2:
 	pushq	%rbp
 	.cfi_def_cfa_offset 16
 	.cfi_offset 6, -16
-	vmovdqa	.LC3(%rip), %ymm7
-	movq	%rdi, %rax
-	movq	%rsi, %r9
-	xorl	%r8d, %r8d
 	movq	%rsp, %rbp
 	.cfi_def_cfa_register 6
-	pushq	%r14
 	pushq	%r13
+	.cfi_offset 13, -24
 	pushq	%r12
+	.cfi_offset 12, -32
 	pushq	%rbx
-	.cfi_offset 14, -24
-	.cfi_offset 13, -32
-	.cfi_offset 12, -40
-	.cfi_offset 3, -48
-	vmovdqu	(%rsi), %xmm2
-	vmovdqu	(%rsi), %ymm6
-	vmovdqu	32(%rsi), %xmm10
-	vpmovzxbw	%xmm2, %ymm2
-	vpsllw	$4, %ymm2, %ymm5
-	vextracti128	$0x1, %ymm6, %xmm1
-	vmovdqu	32(%rsi), %ymm6
-	vpmovzxbw	%xmm10, %ymm10
-	vpor	%ymm5, %ymm2, %ymm2
-	vpsllw	$4, %ymm10, %ymm3
-	vpmovzxbw	%xmm1, %ymm1
-	vpand	%ymm7, %ymm2, %ymm2
-	vextracti128	$0x1, %ymm6, %xmm9
-	vpor	%ymm3, %ymm10, %ymm10
-	vmovdqa	.LC6(%rip), %ymm3
-	vpsllw	$1, %ymm2, %ymm5
-	vpmovzxbw	%xmm9, %ymm9
-	vpand	%ymm7, %ymm10, %ymm10
-	vmovdqa	.LC7(%rip), %ymm6
-	vpsllw	$4, %ymm1, %ymm4
-	vpsllw	$4, %ymm9, %ymm0
-	vpaddw	%ymm2, %ymm5, %ymm5
-	vpsllw	$2, %ymm5, %ymm5
-	vpor	%ymm4, %ymm1, %ymm1
-	vpor	%ymm0, %ymm9, %ymm9
-	vpaddw	%ymm2, %ymm5, %ymm5
-	vpand	%ymm7, %ymm1, %ymm1
-	vpaddb	%ymm2, %ymm3, %ymm0
-	vpsrld	$6, %ymm5, %ymm5
-	vpmovmskb	%ymm0, %edx
-	vpaddb	%ymm1, %ymm3, %ymm0
-	vpand	%ymm6, %ymm5, %ymm5
-	vpsllw	$1, %ymm1, %ymm4
-	vpand	%ymm7, %ymm9, %ymm9
-	movzbl	%dh, %ecx
-	vpmovmskb	%ymm0, %r10d
-	vpaddw	%ymm1, %ymm4, %ymm4
-	vpaddb	%ymm10, %ymm3, %ymm0
-	movzbl	%dl, %r12d
-	vpsllw	$1, %ymm10, %ymm11
-	vpsllw	$2, %ymm5, %ymm8
-	vpmovmskb	%ymm0, %ebx
-	movl	%edx, %edi
-	vpaddb	%ymm9, %ymm3, %ymm0
-	vpaddw	%ymm10, %ymm11, %ymm11
-	vpsllw	$2, %ymm4, %ymm4
-	shrl	$24, %edx
-	vpaddw	%ymm5, %ymm8, %ymm8
-	vpmovmskb	%ymm0, %r13d
-	vpaddw	%ymm1, %ymm4, %ymm4
-	movl	%edx, %r11d
-	vpsllw	$1, %ymm9, %ymm0
-	vpsllw	$2, %ymm11, %ymm11
-	movq	%r12, %rsi
-	shrl	$16, %edi
-	vpaddw	%ymm10, %ymm11, %ymm11
-	vpaddw	%ymm9, %ymm0, %ymm0
-	vpsrld	$6, %ymm4, %ymm4
-	vmovdqa	.LC8(%rip), %ymm5
-	vpsrld	$6, %ymm11, %ymm11
-	vpsllw	$2, %ymm0, %ymm0
-	movzbl	%dil, %edi
-	popcntl	%esi, %esi
-	vpaddb	%ymm5, %ymm8, %ymm8
-	vpand	%ymm6, %ymm11, %ymm11
-	vpaddw	%ymm9, %ymm0, %ymm0
-	popcntl	%ecx, %r8d
-	vpsubb	%ymm2, %ymm8, %ymm8
-	vpsrld	$6, %ymm0, %ymm0
-	vpand	%ymm6, %ymm4, %ymm2
-	addl	%esi, %r8d
-	vpsllw	$2, %ymm2, %ymm4
-	leaq	idxlut(%rip), %rdx
-	vpand	%ymm6, %ymm0, %ymm0
-	vpaddw	%ymm2, %ymm4, %ymm4
-	vpsllw	$2, %ymm11, %ymm2
-	vpaddb	%ymm5, %ymm4, %ymm4
-	vpaddw	%ymm11, %ymm2, %ymm2
-	vmovq	(%rdx,%r12,8), %xmm11
-	movl	%ecx, %r12d
-	vpsubb	%ymm1, %ymm4, %ymm4
-	vpaddb	%ymm5, %ymm2, %ymm2
-	vpsllw	$2, %ymm0, %ymm1
-	movl	%r10d, %ecx
-	vpsubb	%ymm10, %ymm2, %ymm2
-	vpaddw	%ymm0, %ymm1, %ymm1
-	vmovdqa	%xmm8, %xmm10
-	vpaddb	%ymm5, %ymm1, %ymm1
-	vpshufb	%xmm11, %xmm10, %xmm10
-	vmovq	(%rdx,%r12,8), %xmm11
-	movl	%edi, %r12d
-	vpsubb	%ymm9, %ymm1, %ymm1
-	vpsrldq	$8, %xmm8, %xmm9
-	vextracti128	$0x1, %ymm8, %xmm0
-	popcntl	%edi, %edi
-	vpshufb	%xmm11, %xmm9, %xmm9
-	vpsrldq	$8, %xmm0, %xmm8
-	vpmovsxbd	%xmm10, %ymm10
-	addl	%r8d, %edi
-	vmovq	(%rdx,%r12,8), %xmm11
-	movl	%r11d, %r12d
-	vpmovsxbd	%xmm9, %ymm9
-	vmovdqu	%ymm10, (%rax)
-	popcntl	%r11d, %r11d
-	addl	%edi, %r11d
-	vpshufb	%xmm11, %xmm0, %xmm0
-	vmovq	(%rdx,%r12,8), %xmm11
-	movslq	%esi, %r12
-	movl	%r10d, %esi
-	vmovdqu	%ymm9, (%rax,%r12,4)
-	vpmovsxbd	%xmm0, %ymm0
-	movzbl	%r10b, %r12d
-	shrl	$16, %esi
-	vpshufb	%xmm11, %xmm8, %xmm8
-	vmovdqu	%ymm0, (%rax,%r8,4)
-	movq	%r12, %r8
-	movzbl	%sil, %esi
-	vpmovsxbd	%xmm8, %ymm8
-	vmovq	(%rdx,%r12,8), %xmm10
-	vpsrldq	$8, %xmm4, %xmm9
-	shrl	$24, %r10d
-	vmovdqu	%ymm8, (%rax,%rdi,4)
-	movzbl	%ch, %edi
-	vmovdqa	%xmm4, %xmm8
-	movl	%r13d, %ecx
-	movl	%edi, %r12d
-	vpshufb	%xmm10, %xmm8, %xmm8
-	vextracti128	$0x1, %ymm4, %xmm0
-	popcntl	%r8d, %r8d
-	vmovq	(%rdx,%r12,8), %xmm10
-	movl	%esi, %r12d
-	vpsrldq	$8, %xmm0, %xmm4
-	popcntl	%edi, %edi
-	vpmovsxbd	%xmm8, %ymm8
-	popcntl	%esi, %esi
-	vpshufb	%xmm10, %xmm9, %xmm9
-	vmovq	(%rdx,%r12,8), %xmm10
-	movl	%r10d, %r12d
-	popcntl	%r10d, %r10d
-	vpmovsxbd	%xmm9, %ymm9
-	vpshufb	%xmm10, %xmm0, %xmm0
-	vmovq	(%rdx,%r12,8), %xmm10
-	movl	%r11d, %r12d
-	addl	%r8d, %r11d
-	movq	%r11, %r8
-	vmovdqu	%ymm8, (%rax,%r12,4)
-	vpmovsxbd	%xmm0, %ymm0
-	addl	%edi, %r8d
-	vpshufb	%xmm10, %xmm4, %xmm4
-	vmovdqu	%ymm9, (%rax,%r11,4)
-	movzbl	%bl, %r11d
-	movq	%r8, %rdi
-	vpsrldq	$8, %xmm2, %xmm8
-	vpmovsxbd	%xmm4, %ymm4
-	vmovq	(%rdx,%r11,8), %xmm9
-	addl	%esi, %edi
-	vmovdqu	%ymm0, (%rax,%r8,4)
-	movl	%ebx, %esi
-	vmovdqa	%xmm2, %xmm0
-	addl	%edi, %r10d
-	vmovdqu	%ymm4, (%rax,%rdi,4)
-	movzbl	%bh, %edi
-	movq	%r11, %r8
-	shrl	$16, %esi
-	movl	%edi, %r11d
-	vpshufb	%xmm9, %xmm0, %xmm0
-	shrl	$24, %ebx
-	vmovq	(%rdx,%r11,8), %xmm9
-	movzbl	%sil, %esi
-	vextracti128	$0x1, %ymm2, %xmm2
-	popcntl	%r8d, %r8d
-	movl	%esi, %r11d
-	vpsrldq	$8, %xmm2, %xmm4
-	popcntl	%edi, %edi
-	vpmovsxbd	%xmm0, %ymm0
-	vpshufb	%xmm9, %xmm8, %xmm8
-	vmovq	(%rdx,%r11,8), %xmm9
-	movl	%ebx, %r11d
-	popcntl	%esi, %esi
-	vpmovsxbd	%xmm8, %ymm8
-	popcntl	%ebx, %ebx
-	vpshufb	%xmm9, %xmm2, %xmm2
-	vmovq	(%rdx,%r11,8), %xmm9
-	movl	%r10d, %r11d
-	addl	%r8d, %r10d
-	movq	%r10, %r8
-	vmovdqu	%ymm0, (%rax,%r11,4)
-	vpmovsxbd	%xmm2, %ymm2
-	vmovdqa	%xmm1, %xmm0
-	addl	%edi, %r8d
-	vpshufb	%xmm9, %xmm4, %xmm4
-	vmovdqu	%ymm8, (%rax,%r10,4)
-	movzbl	%r13b, %r10d
-	movq	%r8, %rdi
-	vpmovsxbd	%xmm4, %ymm4
-	vmovdqu	%ymm2, (%rax,%r8,4)
-	movq	%r10, %r8
-	addl	%esi, %edi
-	vmovq	(%rdx,%r10,8), %xmm8
-	vmovdqu	%ymm4, (%rax,%rdi,4)
-	addl	%edi, %ebx
-	vpsrldq	$8, %xmm1, %xmm4
-	movzbl	%ch, %edi
-	movl	%edi, %r10d
-	shrl	$16, %ecx
-	vpshufb	%xmm8, %xmm0, %xmm0
-	vextracti128	$0x1, %ymm1, %xmm1
-	vmovq	(%rdx,%r10,8), %xmm8
-	movzbl	%cl, %esi
-	movl	%r13d, %ecx
-	vpmovsxbd	%xmm0, %ymm0
-	movl	%esi, %r10d
-	shrl	$24, %ecx
-	vpsrldq	$8, %xmm1, %xmm2
-	popcntl	%r8d, %r8d
-	vpshufb	%xmm8, %xmm4, %xmm4
-	popcntl	%edi, %edi
-	popcntl	%esi, %esi
-	xorl	%r12d, %r12d
-	vmovq	(%rdx,%r10,8), %xmm8
-	movl	%ecx, %r10d
-	vpmovsxbd	%xmm4, %ymm4
-	popcntl	%ecx, %r12d
-	vpshufb	%xmm8, %xmm1, %xmm1
-	vmovq	(%rdx,%r10,8), %xmm8
-	movl	%ebx, %r10d
-	vmovdqu	%ymm0, (%rax,%r10,4)
-	leal	(%r8,%rbx), %r10d
-	vpmovsxbd	%xmm1, %ymm1
-	movq	%r10, %r8
-	vpshufb	%xmm8, %xmm2, %xmm2
-	vmovdqu	%ymm4, (%rax,%r10,4)
-	vmovdqu	96(%r9), %ymm4
-	addl	%edi, %r8d
-	vpmovsxbd	%xmm2, %ymm2
-	vmovdqu	96(%r9), %xmm8
-	movq	%r8, %rdi
-	vmovdqu	%ymm1, (%rax,%r8,4)
-	vmovdqu	64(%r9), %ymm1
-	vextracti128	$0x1, %ymm4, %xmm4
-	addl	%esi, %edi
-	vpmovzxbw	%xmm8, %ymm8
-	vpmovzxbw	%xmm4, %ymm4
-	vmovdqu	%ymm2, (%rax,%rdi,4)
-	vmovdqu	64(%r9), %xmm2
-	vextracti128	$0x1, %ymm1, %xmm1
-	addl	%edi, %r12d
-	vpsllw	$4, %ymm8, %ymm9
-	vpsllw	$4, %ymm4, %ymm0
-	vpmovzxbw	%xmm1, %ymm1
-	vpmovzxbw	%xmm2, %ymm2
-	vpsllw	$4, %ymm1, %ymm10
-	vpor	%ymm9, %ymm8, %ymm8
-	vpsllw	$4, %ymm2, %ymm11
-	vpor	%ymm10, %ymm1, %ymm1
-	vpor	%ymm0, %ymm4, %ymm4
-	vpor	%ymm11, %ymm2, %ymm2
-	vpand	%ymm7, %ymm1, %ymm1
-	vpand	%ymm7, %ymm8, %ymm8
-	vpand	%ymm7, %ymm2, %ymm2
-	vpsllw	$1, %ymm1, %ymm9
-	vpand	%ymm7, %ymm4, %ymm4
-	vpaddb	%ymm2, %ymm3, %ymm0
-	vpaddw	%ymm1, %ymm9, %ymm9
-	vpsllw	$1, %ymm8, %ymm7
-	vpmovmskb	%ymm0, %r11d
-	vpaddb	%ymm1, %ymm3, %ymm0
-	vpaddw	%ymm8, %ymm7, %ymm7
-	vpmovmskb	%ymm0, %r10d
-	vpaddb	%ymm8, %ymm3, %ymm0
-	movzbl	%r11b, %r13d
-	movl	%r11d, %ecx
-	vpmovmskb	%ymm0, %ebx
-	vpaddb	%ymm4, %ymm3, %ymm0
-	movzbl	%ch, %edi
-	movl	%r11d, %esi
-	vpsllw	$1, %ymm2, %ymm3
-	vpmovmskb	%ymm0, %r14d
-	movq	%r13, %r8
-	shrl	$16, %esi
-	vpaddw	%ymm2, %ymm3, %ymm3
-	vpsllw	$1, %ymm4, %ymm0
-	movzbl	%sil, %esi
-	movl	%r10d, %ecx
-	vpsllw	$2, %ymm3, %ymm3
-	vpsllw	$2, %ymm9, %ymm9
-	vpaddw	%ymm4, %ymm0, %ymm0
-	shrl	$24, %r11d
-	vpaddw	%ymm2, %ymm3, %ymm3
-	vpaddw	%ymm1, %ymm9, %ymm9
-	vpsllw	$2, %ymm7, %ymm7
-	popcntl	%r8d, %r8d
-	vpsrld	$6, %ymm3, %ymm3
-	vpsrld	$6, %ymm9, %ymm9
-	vpaddw	%ymm8, %ymm7, %ymm7
-	vpand	%ymm6, %ymm3, %ymm10
-	vpsllw	$2, %ymm0, %ymm0
-	vpand	%ymm6, %ymm9, %ymm9
-	vpsllw	$2, %ymm10, %ymm3
-	vpsrld	$6, %ymm7, %ymm7
-	vpaddw	%ymm4, %ymm0, %ymm0
-	vpaddw	%ymm10, %ymm3, %ymm3
-	vpsrld	$6, %ymm0, %ymm0
-	vpand	%ymm6, %ymm7, %ymm7
-	vpaddb	%ymm5, %ymm3, %ymm3
-	vpand	%ymm6, %ymm0, %ymm6
-	vpsubb	%ymm2, %ymm3, %ymm3
-	vpsllw	$2, %ymm9, %ymm2
-	vpaddw	%ymm9, %ymm2, %ymm2
-	vpsllw	$2, %ymm6, %ymm0
-	vpaddb	%ymm5, %ymm2, %ymm2
-	vpaddw	%ymm6, %ymm0, %ymm0
-	vpsrldq	$8, %xmm3, %xmm6
-	vpsubb	%ymm1, %ymm2, %ymm2
-	vpsllw	$2, %ymm7, %ymm1
-	vpaddb	%ymm5, %ymm0, %ymm0
-	vpaddw	%ymm7, %ymm1, %ymm1
-	vmovq	(%rdx,%r13,8), %xmm7
-	vpsubb	%ymm4, %ymm0, %ymm0
-	movl	%edi, %r13d
-	vmovdqa	%xmm3, %xmm4
-	vextracti128	$0x1, %ymm3, %xmm3
-	vpaddb	%ymm5, %ymm1, %ymm1
-	popcntl	%edi, %edi
-	vpshufb	%xmm7, %xmm4, %xmm4
-	vmovq	(%rdx,%r13,8), %xmm7
-	movl	%esi, %r13d
-	popcntl	%esi, %esi
-	vpsrldq	$8, %xmm3, %xmm5
-	vpmovsxbd	%xmm4, %ymm4
-	vpsubb	%ymm8, %ymm1, %ymm1
-	vpshufb	%xmm7, %xmm6, %xmm6
-	vmovq	(%rdx,%r13,8), %xmm7
-	movl	%r11d, %r13d
-	vpmovsxbd	%xmm6, %ymm6
-	vpshufb	%xmm7, %xmm3, %xmm3
-	vmovq	(%rdx,%r13,8), %xmm7
-	movl	%r12d, %r13d
-	addl	%r8d, %r12d
-	movq	%r12, %r8
-	vpmovsxbd	%xmm3, %ymm3
-	vmovdqu	%ymm4, (%rax,%r13,4)
-	addl	%edi, %r8d
-	vpshufb	%xmm7, %xmm5, %xmm5
-	vmovdqu	%ymm6, (%rax,%r12,4)
-	movzbl	%r10b, %r12d
-	movq	%r8, %rdi
-	vpmovsxbd	%xmm5, %ymm5
-	vmovdqu	%ymm3, (%rax,%r8,4)
-	vmovdqa	%xmm2, %xmm3
-	addl	%esi, %edi
-	vmovq	(%rdx,%r12,8), %xmm6
-	movq	%r12, %r8
-	vmovdqu	%ymm5, (%rax,%rdi,4)
-	movq	%rdi, %rsi
-	xorl	%edi, %edi
-	popcntl	%r8d, %r8d
-	popcntl	%r11d, %edi
-	leal	(%rdi,%rsi), %r11d
-	movzbl	%ch, %edi
-	movl	%r10d, %esi
-	movl	%edi, %r12d
-	shrl	$16, %esi
-	vpshufb	%xmm6, %xmm3, %xmm3
-	popcntl	%edi, %edi
-	movzbl	%sil, %esi
-	vpsrldq	$8, %xmm2, %xmm5
-	shrl	$24, %r10d
-	movl	%r14d, %ecx
-	vmovq	(%rdx,%r12,8), %xmm6
-	movl	%esi, %r12d
-	vextracti128	$0x1, %ymm2, %xmm2
-	vpmovsxbd	%xmm3, %ymm3
-	vpsrldq	$8, %xmm2, %xmm4
-	popcntl	%esi, %esi
-	vpshufb	%xmm6, %xmm5, %xmm5
-	vmovq	(%rdx,%r12,8), %xmm6
-	movl	%r10d, %r12d
-	popcntl	%r10d, %r10d
-	vpmovsxbd	%xmm5, %ymm5
-	vpshufb	%xmm6, %xmm2, %xmm2
-	vmovq	(%rdx,%r12,8), %xmm6
-	movl	%r11d, %r12d
-	addl	%r8d, %r11d
-	movq	%r11, %r8
-	vmovdqu	%ymm3, (%rax,%r12,4)
-	vpmovsxbd	%xmm2, %ymm2
-	addl	%edi, %r8d
-	vpshufb	%xmm6, %xmm4, %xmm4
-	vmovdqu	%ymm5, (%rax,%r11,4)
-	movzbl	%bl, %r11d
-	movq	%r8, %rdi
-	vpmovsxbd	%xmm4, %ymm4
-	vmovdqu	%ymm2, (%rax,%r8,4)
-	vmovdqa	%xmm1, %xmm2
-	addl	%esi, %edi
-	movl	%ebx, %esi
-	movq	%r11, %r8
-	vmovdqu	%ymm4, (%rax,%rdi,4)
-	addl	%edi, %r10d
-	movzbl	%bh, %edi
-	shrl	$16, %esi
-	vmovq	(%rdx,%r11,8), %xmm5
-	movl	%edi, %r11d
-	movzbl	%sil, %esi
-	shrl	$24, %ebx
-	vpsrldq	$8, %xmm1, %xmm4
-	vextracti128	$0x1, %ymm1, %xmm1
-	popcntl	%r8d, %r8d
-	vpshufb	%xmm5, %xmm2, %xmm2
-	vmovq	(%rdx,%r11,8), %xmm5
-	movl	%esi, %r11d
-	vpsrldq	$8, %xmm1, %xmm3
-	vpmovsxbd	%xmm2, %ymm2
-	vpshufb	%xmm5, %xmm4, %xmm4
-	vmovq	(%rdx,%r11,8), %xmm5
-	movl	%ebx, %r11d
-	vpmovsxbd	%xmm4, %ymm4
-	vpshufb	%xmm5, %xmm1, %xmm1
-	vmovq	(%rdx,%r11,8), %xmm5
-	movl	%r10d, %r11d
-	addl	%r8d, %r10d
-	movq	%r10, %r8
-	popcntl	%edi, %edi
-	vmovdqu	%ymm2, (%rax,%r11,4)
-	vpmovsxbd	%xmm1, %ymm1
-	addl	%edi, %r8d
-	vpshufb	%xmm5, %xmm3, %xmm3
-	popcntl	%esi, %esi
-	popcntl	%ebx, %ebx
-	movq	%r8, %rdi
-	vmovdqu	%ymm4, (%rax,%r10,4)
-	vpmovsxbd	%xmm3, %ymm3
-	movzbl	%r14b, %r10d
-	addl	%esi, %edi
-	vmovdqu	%ymm1, (%rax,%r8,4)
-	vmovdqa	%xmm0, %xmm1
-	movq	%r10, %r8
-	vmovdqu	%ymm3, (%rax,%rdi,4)
-	vmovq	(%rdx,%r10,8), %xmm4
-	addl	%edi, %ebx
-	movzbl	%ch, %edi
-	movl	%edi, %r10d
-	shrl	$16, %ecx
-	vpsrldq	$8, %xmm0, %xmm3
-	popcntl	%r8d, %r8d
-	movzbl	%cl, %esi
-	vpshufb	%xmm4, %xmm1, %xmm1
-	movl	%r14d, %ecx
-	popcntl	%edi, %edi
-	vmovq	(%rdx,%r10,8), %xmm4
-	movl	%esi, %r10d
-	shrl	$24, %ecx
-	vpmovsxbd	%xmm1, %ymm1
-	vextracti128	$0x1, %ymm0, %xmm0
-	popcntl	%esi, %esi
-	vpshufb	%xmm4, %xmm3, %xmm3
-	vmovq	(%rdx,%r10,8), %xmm4
-	movl	%ecx, %r10d
-	popcntl	%ecx, %ecx
-	vpsrldq	$8, %xmm0, %xmm2
-	vpmovsxbd	%xmm3, %ymm3
-	vpshufb	%xmm4, %xmm0, %xmm0
-	vmovq	(%rdx,%r10,8), %xmm4
-	movl	%ebx, %r10d
-	vmovdqu	%ymm1, (%rax,%r10,4)
-	leal	(%r8,%rbx), %r10d
-	vpmovsxbd	%xmm0, %ymm0
-	movq	%r10, %r8
-	vpshufb	%xmm4, %xmm2, %xmm2
-	vmovdqu	%ymm3, (%rax,%r10,4)
-	addl	%edi, %r8d
-	vpmovsxbd	%xmm2, %ymm2
-	movq	%r8, %rdi
-	vmovdqu	%ymm0, (%rax,%r8,4)
-	addl	%esi, %edi
-	leal	(%rcx,%rdi), %r8d
-	vmovdqu	%ymm2, (%rax,%rdi,4)
-	cmpl	$256, %r8d
-	je	.L85
-	vpmovzxbw	128(%r9), %xmm2
-	vpsllw	$4, %xmm2, %xmm0
-	vpor	%xmm0, %xmm2, %xmm2
-	vpand	.LC9(%rip), %xmm2, %xmm2
-	vpaddb	.LC10(%rip), %xmm2, %xmm0
-	vpmovmskb	%xmm0, %ecx
-	vpsllw	$1, %xmm2, %xmm0
-	vpaddw	%xmm2, %xmm0, %xmm0
-	movzbl	%cl, %edi
-	movzbl	%ch, %ecx
+	.cfi_offset 3, -40
+	andq	$-32, %rsp
+	subq	$32, %rsp
+	movq	%rdi, %r10
+	movq	%rsi, %r13
+	xorl	%eax, %eax
+	xorl	%esi, %esi
+	leaq	idxlut(%rip), %r12
+	vmovdqa	.LC3(%rip), %xmm2
+	vmovdqa	.LC6(%rip), %xmm5
+	vmovdqa	.LC7(%rip), %xmm4
+	vmovdqa	.LC8(%rip), %xmm3
+	jmp	.L700
+	.p2align 4,,10
+	.p2align 3
+.L701:
+	addl	$8, %esi
+.L700:
+	/* pos + 8 <= 136  &&  ctr < 256 */
+	cmpl	$128, %esi
+	ja	.L720
+	cmpl	$255, %eax
+	ja	.L730
+	vmovq	0(%r13,%rsi), %xmm1
+	vpsrlw	$4, %xmm1, %xmm0
+	vpand	%xmm2, %xmm1, %xmm1
+	vpand	%xmm0, %xmm2, %xmm0
+	vpunpcklbw	%xmm0, %xmm1, %xmm1
+	vpand	%xmm1, %xmm2, %xmm1
+	vpmovzxbw	%xmm1, %xmm6
+	vpsrldq	$8, %xmm1, %xmm7
+	vpaddb	%xmm1, %xmm5, %xmm0
+	vpmovmskb	%xmm0, %ebx
+	vpsllw	$1, %xmm6, %xmm0
+	vpmovzxbw	%xmm7, %xmm7
+	vpaddw	%xmm6, %xmm0, %xmm0
+	movl	%ebx, %edx
 	vpsllw	$2, %xmm0, %xmm0
-	movq	%rdi, %rsi
-	vpaddw	%xmm2, %xmm0, %xmm0
+	vpaddw	%xmm6, %xmm0, %xmm0
+	vpsllw	$1, %xmm7, %xmm6
+	vpaddw	%xmm7, %xmm6, %xmm6
 	vpsrlw	$6, %xmm0, %xmm0
-	vpand	.LC11(%rip), %xmm0, %xmm0
-	vpsllw	$2, %xmm0, %xmm1
-	vpaddw	%xmm0, %xmm1, %xmm0
-	vmovq	(%rdx,%rdi,8), %xmm1
+	vpsllw	$2, %xmm6, %xmm6
+	vpaddw	%xmm7, %xmm6, %xmm6
+	vpsrlw	$6, %xmm6, %xmm6
+	vpackuswb	%xmm6, %xmm0, %xmm0
+	vpand	%xmm0, %xmm4, %xmm0
+	vpmovzxbw	%xmm0, %xmm7
+	vpsrldq	$8, %xmm0, %xmm0
+	vpmovzxbw	%xmm0, %xmm0
+	vpsllw	$2, %xmm7, %xmm6
+	vpaddw	%xmm7, %xmm6, %xmm6
+	vpsllw	$2, %xmm0, %xmm7
+	vpaddw	%xmm0, %xmm7, %xmm0
+	vpackuswb	%xmm0, %xmm6, %xmm0
+	/* coeffs = 2 + 5*k - x  ==  2 - (x - 5*k) */
+	vpaddb	%xmm3, %xmm0, %xmm0
+	vpsubb	%xmm1, %xmm0, %xmm0
+	andl	$255, %edx
+	je	.L705
 	xorl	%edi, %edi
-	vpsubb	%xmm2, %xmm0, %xmm0
-	vpaddb	.LC12(%rip), %xmm0, %xmm0
-	popcntl	%ecx, %edi
+	popcntl	%edx, %edi
+	movl	%edx, %edx
+	vmovq	(%r12,%rdx,8), %xmm1
 	vpshufb	%xmm1, %xmm0, %xmm1
 	vpmovsxbd	%xmm1, %ymm1
-	cmpl	$240, %r8d
-	jbe	.L196
-	cmpl	$248, %r8d
-	jbe	.L197
-	testl	%ecx, %ecx
-	je	.L85
-	movl	%r8d, %edx
-	leal	-1(%rdi), %ecx
-	vmovd	%xmm1, (%rax,%rdx,4)
-	leal	1(%r8), %edx
-	testl	%ecx, %ecx
-	jle	.L104
-	cmpl	$255, %edx
-	ja	.L104
-	leal	-2(%rdi), %ecx
-	vpextrd	$1, %xmm1, (%rax,%rdx,4)
-	leal	2(%r8), %edx
-	testl	%ecx, %ecx
-	jle	.L104
-	cmpl	$255, %edx
-	ja	.L104
-	leal	-3(%rdi), %ecx
-	vpextrd	$2, %xmm1, (%rax,%rdx,4)
-	leal	3(%r8), %edx
-	testl	%ecx, %ecx
-	jle	.L104
-	cmpl	$255, %edx
-	ja	.L104
-	leal	-4(%rdi), %ecx
-	vpextrd	$3, %xmm1, (%rax,%rdx,4)
-	leal	4(%r8), %edx
-	testl	%ecx, %ecx
-	jle	.L104
-	cmpl	$255, %edx
-	ja	.L104
-	vextracti128	$0x1, %ymm1, %xmm1
-	leal	-5(%rdi), %ecx
-	vmovd	%xmm1, (%rax,%rdx,4)
-	leal	5(%r8), %edx
-	testl	%ecx, %ecx
-	jle	.L104
-	cmpl	$255, %edx
-	ja	.L104
-	addl	$6, %r8d
-	vpextrd	$1, %xmm1, (%rax,%rdx,4)
-	cmpl	$6, %edi
-	jle	.L85
-	cmpl	$255, %r8d
-	ja	.L85
-	vpextrd	$2, %xmm1, 1020(%rax)
-	movl	$256, %r8d
-.L85:
-	movl	%r8d, %eax
-	vzeroupper
-	popq	%rbx
-	popq	%r12
-	popq	%r13
-	popq	%r14
-	popq	%rbp
-	.cfi_remember_state
-	.cfi_def_cfa 7, 8
-	ret
+	cmpl	$248, %eax
+	jbe	.L702
+	/* ctr > 248: store only the first n good coeffs */
+	movl	%eax, %edx
+	vmovdqu	%ymm1, (%rsp)
+	leaq	(%r10,%rdx,4), %r9
+	xorl	%edx, %edx
 	.p2align 4,,10
 	.p2align 3
-.L196:
-	.cfi_restore_state
-	movl	%ecx, %ecx
+.L703:
+	cmpl	$256, %eax
+	je	.L730
+	movl	(%rsp,%rdx,4), %ecx
+	addl	$1, %eax
+	movl	%ecx, (%r9,%rdx,4)
+	addq	$1, %rdx
+	cmpl	%edx, %edi
+	ja	.L703
+	jmp	.L705
+	.p2align 4,,10
+	.p2align 3
+.L702:
+	movl	%eax, %edx
+	addl	%edi, %eax
+	vmovdqu	%ymm1, (%r10,%rdx,4)
+.L705:
+	cmpl	$256, %eax
+	je	.L730
+	movzbl	%bh, %edx
+	testl	%edx, %edx
+	je	.L701
+	xorl	%edi, %edi
 	vpsrldq	$8, %xmm0, %xmm0
-	popcntl	%esi, %esi
-	vmovq	(%rdx,%rcx,8), %xmm2
-	movl	%r8d, %edx
-	vmovdqu	%ymm1, (%rax,%rdx,4)
-	leal	(%rsi,%r8), %edx
-	vpshufb	%xmm2, %xmm0, %xmm0
-	leal	(%rdi,%rdx), %r8d
+	popcntl	%edx, %edi
+	movl	%edx, %edx
+	vmovq	(%r12,%rdx,8), %xmm1
+	vpshufb	%xmm1, %xmm0, %xmm0
 	vpmovsxbd	%xmm0, %ymm0
-	vmovdqu	%ymm0, (%rax,%rdx,4)
-	movl	%r8d, %eax
+	cmpl	$248, %eax
+	jbe	.L706
+	movl	%eax, %edx
+	vmovdqu	%ymm0, (%rsp)
+	leaq	(%r10,%rdx,4), %r9
+	xorl	%edx, %edx
+	.p2align 4,,10
+	.p2align 3
+.L707:
+	cmpl	$256, %eax
+	je	.L730
+	movl	(%rsp,%rdx,4), %ecx
+	addl	$1, %eax
+	movl	%ecx, (%r9,%rdx,4)
+	addq	$1, %rdx
+	cmpl	%edx, %edi
+	ja	.L707
+	jmp	.L701
+	.p2align 4,,10
+	.p2align 3
+.L706:
+	movl	%eax, %edx
+	addl	%edi, %eax
+	vmovdqu	%ymm0, (%r10,%rdx,4)
+	jmp	.L701
+	.p2align 4,,10
+	.p2align 3
+.L720:
+	/* scalar tail: remaining bytes in [pos, 136) */
+	cmpl	$135, %esi
+	ja	.L730
+	cmpl	$255, %eax
+	ja	.L730
+	movl	$2, %r9d
+	.p2align 4,,10
+	.p2align 3
+.L721:
+	movzbl	0(%r13,%rsi), %ecx
+	movl	%ecx, %edx
+	movl	%ecx, %edi
+	andl	$15, %edx
+	shrb	$4, %dil
+	cmpb	$15, %dl
+	je	.L722
+	movzbl	%dl, %edx
+	movl	%r9d, %ebx
+	movl	%eax, %r8d
+	addl	$1, %eax
+	leal	(%rdx,%rdx,2), %ecx
+	subl	%edx, %ebx
+	leal	(%rdx,%rcx,4), %ecx
+	shrl	$6, %ecx
+	leal	(%rcx,%rcx,4), %ecx
+	addl	%ebx, %ecx
+	movl	%ecx, (%r10,%r8,4)
+.L722:
+	cmpl	$255, %eax
+	ja	.L730
+	cmpb	$15, %dil
+	je	.L723
+	movzbl	%dil, %ecx
+	movl	%r9d, %ebx
+	movl	%eax, %r8d
+	addl	$1, %eax
+	leal	(%rcx,%rcx,2), %edx
+	subl	%ecx, %ebx
+	leal	(%rcx,%rdx,4), %edx
+	shrl	$6, %edx
+	leal	(%rdx,%rdx,4), %edx
+	addl	%ebx, %edx
+	movl	%edx, (%r10,%r8,4)
+.L723:
+	addl	$1, %esi
+	cmpl	$135, %esi
+	ja	.L730
+	cmpl	$255, %eax
+	jbe	.L721
+.L730:
 	vzeroupper
+	leaq	-24(%rbp), %rsp
 	popq	%rbx
 	popq	%r12
 	popq	%r13
-	popq	%r14
 	popq	%rbp
-	.cfi_remember_state
 	.cfi_def_cfa 7, 8
 	ret
-	.p2align 4,,10
-	.p2align 3
-.L104:
-	.cfi_restore_state
-	movl	%edx, %r8d
-	movl	%r8d, %eax
-	vzeroupper
-	popq	%rbx
-	popq	%r12
-	popq	%r13
-	popq	%r14
-	popq	%rbp
-	.cfi_remember_state
-	.cfi_def_cfa 7, 8
-	ret
-	.p2align 4,,10
-	.p2align 3
-.L197:
-	.cfi_restore_state
-	movl	%ecx, %r9d
-	vpsrldq	$8, %xmm0, %xmm0
-	popcntl	%esi, %esi
-	vmovq	(%rdx,%r9,8), %xmm2
-	movl	%r8d, %edx
-	addl	%esi, %r8d
-	vmovdqu	%ymm1, (%rax,%rdx,4)
-	vpshufb	%xmm2, %xmm0, %xmm0
-	vpmovsxbd	%xmm0, %ymm0
-	cmpl	$255, %r8d
-	ja	.L85
-	testl	%ecx, %ecx
-	je	.L85
-	movl	%r8d, %edx
-	vmovd	%xmm0, (%rax,%rdx,4)
-	leal	1(%r8), %edx
-	cmpl	$1, %edi
-	je	.L104
-	cmpl	$255, %edx
-	ja	.L104
-	vpextrd	$1, %xmm0, (%rax,%rdx,4)
-	leal	2(%r8), %edx
-	cmpl	$2, %edi
-	je	.L104
-	cmpl	$255, %edx
-	ja	.L104
-	vpextrd	$2, %xmm0, (%rax,%rdx,4)
-	leal	3(%r8), %edx
-	cmpl	$3, %edi
-	je	.L104
-	cmpl	$255, %edx
-	ja	.L104
-	vpextrd	$3, %xmm0, (%rax,%rdx,4)
-	leal	4(%r8), %edx
-	cmpl	$4, %edi
-	je	.L104
-	cmpl	$255, %edx
-	ja	.L104
-	vextracti128	$0x1, %ymm0, %xmm0
-	vmovd	%xmm0, (%rax,%rdx,4)
-	leal	5(%r8), %edx
-	cmpl	$5, %edi
-	je	.L104
-	cmpl	$255, %edx
-	ja	.L104
-	vpextrd	$1, %xmm0, (%rax,%rdx,4)
-	leal	-6(%rdi), %ecx
-	leal	6(%r8), %edx
-	cmpl	$6, %edi
-	je	.L104
-	cmpl	$255, %edx
-	ja	.L104
-	vpextrd	$2, %xmm0, (%rax,%rdx,4)
-	leal	7(%r8), %edx
-	cmpl	$1, %ecx
-	je	.L104
-	cmpl	$255, %edx
-	ja	.L104
-	addl	$8, %r8d
-	vpextrd	$3, %xmm0, (%rax,%rdx,4)
-	jmp	.L85
 	.cfi_endproc
 .LFE5717:
 	.size	ml_dsa_rej_eta_avx_2, .-ml_dsa_rej_eta_avx_2
@@ -2700,6 +2379,9 @@ ossl_ml_dsa_expand_A_65:
 	call	poly_uniform_4x_op13
 	addq	$32, %rsp
 	.cfi_def_cfa_offset 32
+	/* scratch from calloc(2, 1024) for the final 2-of-4 batch */
+	movq	%r12, %rdi
+	call	free@PLT
 	popq	%rbx
 	.cfi_def_cfa_offset 24
 	popq	%rbp
@@ -3213,19 +2895,20 @@ ossl_ml_dsa_expand_S_44:
 	movq	144(%rsp), %rdx
 	movq	112(%rsp), %rdi
 	movl	%r14d, %esi
-	addl	%eax, %r13d
+	/* rej_eta_2 returns the absolute ctr; assign, do not add. */
+	movl	%eax, %r13d
 	call	rej_eta_2
 	movq	152(%rsp), %rdx
 	movq	96(%rsp), %rdi
 	movl	%r12d, %esi
-	addl	%eax, %r14d
+	movl	%eax, %r14d
 	call	rej_eta_2
 	movl	140(%rsp), %esi
 	movq	88(%rsp), %rdi
 	movq	%r15, %rdx
-	addl	%eax, %r12d
+	movl	%eax, %r12d
 	call	rej_eta_2
-	addl	%eax, 140(%rsp)
+	movl	%eax, 140(%rsp)
 	cmpl	$255, %r14d
 	movl	140(%rsp), %ecx
 	setbe	%al
@@ -3424,14 +3107,13 @@ ossl_ml_dsa_expand_S_65:
 	movq	%r13, 96(%rsp)
 	movq	%r12, 80(%rsp)
 	call	ossl_sha3_shake256_x4_inc_squeeze_avx2@PLT
-	movq	%r14, %rdx
-	movq	%r15, %r9
-	movq	%r15, %rcx
-	movl	$136, %r8d
-	movq	%r13, %rsi
-	movq	%r12, %rdi
+	/*
+	 * Former nblocks=2 migration emitted a second squeeze here with
+	 * out3=ctx (r15), which corrupted the Keccak state.  rej_eta_avx_4
+	 * only consumes one SHAKE256 block (136 bytes), so a single squeeze
+	 * matches the scalar path; further blocks come from the while-loop.
+	 */
 	movq	%rbx, %r15
-	call	ossl_sha3_shake256_x4_inc_squeeze_avx2@PLT
 	movq	104(%rsp), %rsi
 	movq	%rbx, %rdi
 	movq	%rbx, 8(%rsp)
@@ -3713,14 +3395,8 @@ ossl_ml_dsa_expand_S_65:
 	movq	%r14, %rsi
 	movq	%r12, %rdi
 	call	ossl_sha3_shake256_x4_inc_squeeze_avx2@PLT
-	movq	%r15, %rdx
-	movq	%rbx, %r9
-	movq	%rbx, %rcx
-	movl	$136, %r8d
-	movq	%r13, %rsi
-	movq	%r14, %rdi
+	/* Dropped bogus nblocks=2 second squeeze (out3 was ctx). */
 	movq	%r15, 112(%rsp)
-	call	ossl_sha3_shake256_x4_inc_squeeze_avx2@PLT
 	movq	144(%rsp), %rax
 	movq	%r12, %rsi
 	addq	$4096, %rax
@@ -4004,13 +3680,7 @@ ossl_ml_dsa_expand_S_65:
 	movq	%r15, %rdi
 	movq	%r13, %rsi
 	call	ossl_sha3_shake256_x4_inc_squeeze_avx2@PLT
-	movq	%r14, %rdx
-	movq	%rbx, %r9
-	movq	%rbx, %rcx
-	movl	$136, %r8d
-	movq	%r12, %rsi
-	movq	%r13, %rdi
-	call	ossl_sha3_shake256_x4_inc_squeeze_avx2@PLT
+	/* Dropped bogus nblocks=2 second squeeze (out3 was ctx). */
 	movq	152(%rsp), %rbx
 	movq	%r15, %rsi
 	leaq	3072(%rbx), %rax
@@ -4809,19 +4479,20 @@ ossl_ml_dsa_expand_S_87:
 	movq	112(%rsp), %rdi
 	movl	%r13d, %esi
 	movq	%rbx, %rdx
-	addl	%eax, %r12d
+	/* rej_eta_2 returns the absolute ctr; assign, do not add. */
+	movl	%eax, %r12d
 	call	rej_eta_2
 	movq	152(%rsp), %rdx
 	movq	96(%rsp), %rdi
 	movl	%r14d, %esi
-	addl	%eax, %r13d
+	movl	%eax, %r13d
 	call	rej_eta_2
 	movq	144(%rsp), %rdx
 	movq	88(%rsp), %rdi
 	movl	136(%rsp), %esi
-	addl	%eax, %r14d
+	movl	%eax, %r14d
 	call	rej_eta_2
-	addl	%eax, 136(%rsp)
+	movl	%eax, 136(%rsp)
 	movl	136(%rsp), %ecx
 .L642:
 	cmpl	$255, %r12d
@@ -4926,19 +4597,20 @@ ossl_ml_dsa_expand_S_87:
 	movq	88(%rsp), %rdi
 	movl	%r13d, %esi
 	movq	%rbx, %rdx
-	addl	%eax, %r12d
+	/* rej_eta_2 returns the absolute ctr; assign, do not add. */
+	movl	%eax, %r12d
 	call	rej_eta_2
 	movq	152(%rsp), %rdx
 	movq	80(%rsp), %rdi
 	movl	%r14d, %esi
-	addl	%eax, %r13d
+	movl	%eax, %r13d
 	call	rej_eta_2
 	movq	144(%rsp), %rdx
 	movq	120(%rsp), %rdi
 	movl	136(%rsp), %esi
-	addl	%eax, %r14d
+	movl	%eax, %r14d
 	call	rej_eta_2
-	addl	%eax, 136(%rsp)
+	movl	%eax, 136(%rsp)
 	movl	136(%rsp), %ecx
 .L645:
 	cmpl	$255, %r13d

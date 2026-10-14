@@ -6,11 +6,21 @@
 #
 # AVX2 body is GNU gas (elf) after the DATA section marker (gcc -O3 -S snapshot).
 # No separate .inc files; regenerate by re-running gcc on the XKCP AVX2 C sources.
+#
+# The DATA payload is emitted as raw gas (not via x86_64-xlate.pl).  When built
+# with --symbol-prefix, apply the same prefix that xlate would, otherwise
+# OPENSSL_ia32cap_P / SHA3_* / ossl_* symbols will not match the C objects and
+# shared-library link fails with R_X86_64_PC32 against an undefined symbol.
+
+use lib ".";
+use configdata;
 
 $output = $#ARGV >= 0 && $ARGV[$#ARGV] =~ m|\.\w+$| ? pop : undef;
 $flavour = $#ARGV >= 0 && $ARGV[0] !~ m|\.| ? shift : undef;
 
 die "keccak1600x4-avx2.pl: missing output path\n" if !defined($output);
+
+my $sym_prefix = $config{symbol_prefix} // "";
 
 $win64 = 0;
 $win64 = 1 if (defined($flavour) && $flavour =~ /[nm]asm|mingw64/)
@@ -85,10 +95,57 @@ ___
     exit 0;
 }
 
-open my $out, '>', $output or die "can't write $output: $!";
-while (<DATA>) {
-    print $out $_;
+# Symbols that must keep their libc / toolchain names under --symbol-prefix.
+my %no_prefix = map { $_ => 1 } qw(
+    __memcpy_chk __stack_chk_fail __chk_fail
+    memcpy memset memmove memcmp calloc free malloc
+);
+
+my $code = do { local $/; <DATA> };
+
+# Only rename .globl / cross-TU symbols. File-local data such as
+# KeccakF1600RoundConstants must keep their labels: we do not rewrite
+# sym(%rip) references, and prefixing just the label yields
+# R_X86_64_PC32 against undefined symbol (symbol_prefix-test).
+my %globl;
+my %defined;
+if ($sym_prefix ne "") {
+    while ($code =~ /^\s*\.glob(?:l|al)\s+([A-Za-z_][\w]*)/mg) {
+        $globl{$1} = 1;
+    }
+    while ($code =~ /^([A-Za-z_][\w]*):/mg) {
+        $defined{$1} = 1;
+    }
 }
+
+sub prefix_sym {
+    my ($sym) = @_;
+    return $sym if $sym_prefix eq "" || $sym =~ /^\./ || $no_prefix{$sym};
+    return $sym if index($sym, $sym_prefix) == 0;
+    return $sym_prefix . $sym if $sym eq "OPENSSL_ia32cap_P";
+    return $sym_prefix . $sym if $globl{$sym};
+    return $sym if $defined{$sym};    # file-local
+    return $sym_prefix . $sym;        # external
+}
+
+if ($sym_prefix ne "") {
+    $code =~ s/^(\s*\.(?:globl|global|type|size|hidden|protected|weak)\s+)([A-Za-z_][\w]*)/
+        $1 . prefix_sym($2)/mge;
+    $code =~ s/^(\s*\.size\s+)([A-Za-z_][\w]*)(\s*,\s*\.-\s*)([A-Za-z_][\w]*)/
+        $1 . prefix_sym($2) . $3 . prefix_sym($4)/mge;
+    $code =~ s/^([A-Za-z_][\w]*):/prefix_sym($1) . ":"/mge;
+    $code =~ s/\bOPENSSL_ia32cap_P\b/prefix_sym("OPENSSL_ia32cap_P")/ge;
+    $code =~ s/\bcall\s+([A-Za-z_][\w]*)(@PLT)?/{
+        my ($s, $plt) = ($1, defined($2) ? $2 : "");
+        "call\t" . prefix_sym($s) . $plt;
+    }/ge;
+}
+
+open my $out, '>', $output or die "can't write $output: $!";
+# Same DSO as x86_64cpuid.s (.hidden OPENSSL_ia32cap_P); declare extern so
+# gas emits a proper PC-relative reloc, and honour --symbol-prefix.
+print $out ".extern\t" . prefix_sym("OPENSSL_ia32cap_P") . "\n";
+print $out $code;
 close $out or die "can't close $output: $!";
 
 __DATA__

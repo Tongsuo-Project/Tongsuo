@@ -55,6 +55,10 @@ open OUT, "| \"$^X\" \"$xlate\" $flavour \"$output\""
   or die "can't call $xlate: $!";
 *STDOUT = *OUT;
 
+do { my $p = "${dir}ml_dsa_win64_xmm.pl"; $p = "./$p" unless $p =~ m|^/|; do $p or die "can't load $p: $@ $!"; };
+my $w64save = $win64 ? ml_dsa_win64_xmm_save_pl() : "";
+my $w64rest = $win64 ? ml_dsa_win64_xmm_restore_pl() : "";
+
 my $ML_DSA_Q = 8380417;
 my $ML_DSA_Q_HALF = ($ML_DSA_Q - 1) / 2;
 my $poly_bytes = 256 * 4;
@@ -87,6 +91,7 @@ sub emit_poly_add {
 .align 32
 ossl_ml_dsa_poly_add_avx2:
 .cfi_startproc
+$w64save
     vpbroadcastd    ml_dsa_arith_q(\%rip), %ymm15
     xor             \%r10d, \%r10d
 .Lpoly_add_loop:
@@ -100,6 +105,7 @@ ___
     cmp             \$$poly_bytes, \%r10d
     jb              .Lpoly_add_loop
     vzeroupper
+$w64rest
     ret
 .cfi_endproc
 .size   ossl_ml_dsa_poly_add_avx2, .-ossl_ml_dsa_poly_add_avx2
@@ -115,6 +121,7 @@ sub emit_poly_sub {
 .align 32
 ossl_ml_dsa_poly_sub_avx2:
 .cfi_startproc
+$w64save
     vpbroadcastd    ml_dsa_arith_q(\%rip), %ymm15
     xor             \%r10d, \%r10d
 .Lpoly_sub_loop:
@@ -127,6 +134,7 @@ ___
     cmp             \$$poly_bytes, \%r10d
     jb              .Lpoly_sub_loop
     vzeroupper
+$w64rest
     ret
 .cfi_endproc
 .size   ossl_ml_dsa_poly_sub_avx2, .-ossl_ml_dsa_poly_sub_avx2
@@ -141,34 +149,35 @@ sub emit_horiz_max_epu32 {
     mov             (\%rsi), \%ecx
     mov             (\%rsp), \%eax
     cmp             \%eax, \%ecx
-    cmovb           \%eax, \%ecx
+    cmovbl          \%eax, \%ecx
     mov             4(\%rsp), \%eax
     cmp             \%eax, \%ecx
-    cmovb           \%eax, \%ecx
+    cmovbl          \%eax, \%ecx
     mov             8(\%rsp), \%eax
     cmp             \%eax, \%ecx
-    cmovb           \%eax, \%ecx
+    cmovbl          \%eax, \%ecx
     mov             12(\%rsp), \%eax
     cmp             \%eax, \%ecx
-    cmovb           \%eax, \%ecx
+    cmovbl          \%eax, \%ecx
     mov             16(\%rsp), \%eax
     cmp             \%eax, \%ecx
-    cmovb           \%eax, \%ecx
+    cmovbl          \%eax, \%ecx
     mov             20(\%rsp), \%eax
     cmp             \%eax, \%ecx
-    cmovb           \%eax, \%ecx
+    cmovbl          \%eax, \%ecx
     mov             24(\%rsp), \%eax
     cmp             \%eax, \%ecx
-    cmovb           \%eax, \%ecx
+    cmovbl          \%eax, \%ecx
     mov             28(\%rsp), \%eax
     cmp             \%eax, \%ecx
-    cmovb           \%eax, \%ecx
+    cmovbl          \%eax, \%ecx
     mov             \%ecx, (\%rsi)
 ___
 }
 
 sub emit_poly_max_prologue {
     return <<___;
+$w64save
     push            \%rbp
     .cfi_offset     \%rbp,-16
     mov             \%rsp, \%rbp
@@ -184,6 +193,7 @@ sub emit_poly_max_epilogue {
     pop             \%rbp
     .cfi_def_cfa_register \%rsp
     vzeroupper
+$w64rest
     ret
 ___
 }
@@ -239,8 +249,8 @@ ___
 .Lpoly_max_s_loop:
     vmovdqu         (\%rdi,\%r10), %ymm0
     vpsrad          \$31, %ymm0, %ymm1
-    vpsubd          %ymm0, %ymm8, %ymm2
-    vpand           %ymm1, %ymm2, %ymm3
+    vpsubd          %ymm0, \%ymm8, %ymm2
+    vpand           %ymm1, %ymm2, \%ymm3
     vpandn          %ymm0, %ymm1, %ymm4
     vpor            %ymm3, %ymm4, %ymm0
     vpmaxud         %ymm0, %ymm7, %ymm7

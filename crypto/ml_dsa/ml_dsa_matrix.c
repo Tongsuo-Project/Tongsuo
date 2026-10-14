@@ -36,12 +36,7 @@ static void matrix_mult_vector_scalar(const MATRIX *a, const VECTOR *s,
 typedef void (*ml_dsa_pointwise_acc_fn)(uint32_t *out, const uint32_t *row,
                                         const uint32_t *vec);
 
-void ml_dsa_pointwise_acc_avx_l4(uint32_t *out, const uint32_t *row,
-                                 const uint32_t *vec);
-void ml_dsa_pointwise_acc_avx_l5(uint32_t *out, const uint32_t *row,
-                                 const uint32_t *vec);
-void ml_dsa_pointwise_acc_avx_l7(uint32_t *out, const uint32_t *row,
-                                 const uint32_t *vec);
+/* asm prototypes live in ml_dsa_local.h (for --symbol-prefix) */
 
 static ml_dsa_pointwise_acc_fn pointwise_acc_for_l(size_t l)
 {

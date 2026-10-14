@@ -13,11 +13,7 @@
 #if !defined(OPENSSL_NO_ASM) && (defined(__x86_64) || defined(__x86_64__) \
     || defined(_M_AMD64) || defined(_M_X64))
 # define ML_DSA_NTT_ASM
-int ml_dsa_ntt_avx2_capable(void);
-void ml_dsa_poly_ntt_avx2(uint32_t *p_coeff, const uint32_t *p_zetas);
-void ml_dsa_poly_ntt_inverse_avx2(uint32_t *p_coeff);
-void ml_dsa_poly_ntt_mult_avx2(const uint32_t *a, const uint32_t *b,
-                                 uint32_t *out);
+/* asm prototypes live in ml_dsa_local.h (for --symbol-prefix) */
 #endif
 
 
