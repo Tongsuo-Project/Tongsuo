@@ -278,4 +278,24 @@ int ossl_ml_kem_decap(uint8_t *shared_secret, size_t slen,
 __owur
 int ossl_ml_kem_pubkey_cmp(const ML_KEM_KEY *key1, const ML_KEM_KEY *key2);
 
+/*
+ * AVX2 assembly backend for polynomial arithmetic; see
+ * crypto/ml_kem/asm/ml_kem_poly-x86_64.pl.  These are declared here rather
+ * than in ml_kem.c so that symbol-prefix builds rename the C references in
+ * step with the assembly symbols, which the perlasm translator prefixes.
+ */
+# if !defined(OPENSSL_NO_ASM) \
+    && (defined(__x86_64) || defined(__x86_64__) \
+        || defined(_M_AMD64) || defined(_M_X64))
+__owur int ml_kem_poly_avx2_capable(void);
+void ml_kem_scalar_add_avx2(uint16_t *lhs, const uint16_t *rhs);
+void ml_kem_scalar_sub_avx2(uint16_t *lhs, const uint16_t *rhs);
+void ml_kem_ntt_avx2(uint16_t *c);
+void ml_kem_intt_avx2(uint16_t *c);
+void ml_kem_basemul_avx2(uint16_t *out, const uint16_t *lhs,
+                         const uint16_t *rhs);
+void ml_kem_basemul_acc_avx2(uint16_t *out, const uint16_t *lhs,
+                             const uint16_t *rhs);
+# endif
+
 #endif  /* OPENSSL_HEADER_ML_KEM_H */
