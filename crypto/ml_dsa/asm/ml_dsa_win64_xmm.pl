@@ -85,10 +85,43 @@ sub ml_dsa_win64_xmm_restore_pl {
 ___
 }
 
+# Post-process xlate MASM output so ml64 accepts AVX2 gas dumps.
+# xlate often tags VPMOVZX* sources as YMMWORD (dest width) and omits BYTE PTR
+# on SETcc memory ops; MASM then raises A2070 / A2023.
+sub ml_dsa_fixup_masm_asm_file {
+    my ($file) = @_;
+    open my $fh, '<', $file or die "can't read $file: $!";
+    local $/;
+    my $asm = <$fh>;
+    close $fh or die "can't close $file: $!";
+
+    # VPMOVZXBD ymm, mem64; VPMOVZXBW ymm, mem128; VPMOVZXWD ymm, mem128; etc.
+    $asm =~ s/\bvpmovzxbd\s+(ymm\w+)\s*,\s*YMMWORD\s+PTR/vpmovzxbd\t$1,QWORD PTR/gi;
+    $asm =~ s/\bvpmovzxbw\s+(ymm\w+)\s*,\s*YMMWORD\s+PTR/vpmovzxbw\t$1,XMMWORD PTR/gi;
+    $asm =~ s/\bvpmovzxwd\s+(ymm\w+)\s*,\s*YMMWORD\s+PTR/vpmovzxwd\t$1,XMMWORD PTR/gi;
+    $asm =~ s/\bvpmovzxdq\s+(ymm\w+)\s*,\s*YMMWORD\s+PTR/vpmovzxdq\t$1,XMMWORD PTR/gi;
+    $asm =~ s/\bvpmovzxbd\s+(xmm\w+)\s*,\s*(?:XMMWORD|YMMWORD)\s+PTR/vpmovzxbd\t$1,DWORD PTR/gi;
+    $asm =~ s/\bvpmovzxbw\s+(xmm\w+)\s*,\s*(?:XMMWORD|YMMWORD)\s+PTR/vpmovzxbw\t$1,QWORD PTR/gi;
+
+    # SETcc [mem] -> SETcc BYTE PTR[mem]
+    $asm =~ s/\b(set(?:n?[abceglopsz]|[abgs]e|n[abgs]e|[poc]))\s+\[/$1\tBYTE PTR[/gi;
+
+    # MASM prefers [base+index*scale] over [index*scale+base]
+    $asm =~ s/\[([re](?:[a-d]x|[sb]p|[sd]i)|r(?:8|9|1[0-5])|[re](?:[a-d]x|[sb]p|[sd]i)d?|r(?:8|9|1[0-5])d)\*([1248])\+([re](?:[a-d]x|[sb]p|[sd]i)|r(?:8|9|1[0-5]))\]/[$3+$1*$2]/g;
+
+    open $fh, '>', $file or die "can't write $file: $!";
+    print {$fh} $asm;
+    close $fh or die "can't close $file: $!";
+}
+
 # PE/COFF (mingw64 gas + NASM via xlate): gas dumps carry ELF .rodata.cst*
 # section attrs that mingw as rejects; NASM path is fine via xlate rewrite but
 # mingw64 flavour still emits gas. Also: only NASM/MASM want movslq->movsxd;
 # mingw gas rejects xlate's movsxdl.
+#
+# MASM: bare `.section .rdata` becomes `SEGMENT ... ALIGN(8)`. AVX2 constant
+# tables use `.align 32`, which then hits A2189 ("invalid combination with
+# segment alignment : 32"). Pass align=32 so xlate emits ALIGN(32).
 sub ml_dsa_prepare_pe_compat {
     my ($code, $flavour) = @_;
     $flavour = "" unless defined $flavour;
@@ -97,8 +130,13 @@ sub ml_dsa_prepare_pe_compat {
         $code =~ s/\bmovslq\b/movsxd/g;
     }
 
-    $code =~ s/^\s*\.section\s+\.rodata\S*/\t.section\t.rdata/mg;
-    $code =~ s/^\s*\.section\s+\.data\.rel\.ro\S*/\t.section\t.rdata/mg;
+    if ($flavour =~ /masm/) {
+        $code =~ s/^\s*\.section\s+\.rodata\S*/\t.section\t.rdata align=32/mg;
+        $code =~ s/^\s*\.section\s+\.data\.rel\.ro\S*/\t.section\t.rdata align=32/mg;
+    } else {
+        $code =~ s/^\s*\.section\s+\.rodata\S*/\t.section\t.rdata/mg;
+        $code =~ s/^\s*\.section\s+\.data\.rel\.ro\S*/\t.section\t.rdata/mg;
+    }
 
     return $code;
 }

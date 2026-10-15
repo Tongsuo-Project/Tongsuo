@@ -47,6 +47,14 @@ if (!$avx2
   $avx2 = ($1 >= 2.10);
 }
 
+if (!$avx2
+  && $win64
+  && ($flavour =~ /masm/ || $ENV{ASM} =~ /ml64/)
+  && `ml64 2>&1` =~ /Version ([0-9]+)\./)
+{
+  $avx2 = ($1 >= 11);
+}
+
 if (!$avx2 && `$cc -v 2>&1` =~ /((?:clang|LLVM) version|.*based on LLVM) ([0-9]+\.[0-9]+)/) {
     $avx2 = ($2>=3.3);
 }

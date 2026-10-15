@@ -51,6 +51,14 @@ if (!$avx2
   $avx2 = ($1 >= 2.10);
 }
 
+if (!$avx2
+  && $win64
+  && (defined($flavour) && $flavour =~ /masm/ || $ENV{ASM} =~ /ml64/)
+  && `ml64 2>&1` =~ /Version ([0-9]+)\./)
+{
+  $avx2 = ($1 >= 11);
+}
+
 if (!$avx2 && `$cc -v 2>&1` =~ /((?:clang|LLVM) version|.*based on LLVM) ([0-9]+\.[0-9]+)/) {
     $avx2 = ($2>=3.3);
 }
@@ -67,6 +75,14 @@ sub emit_via_xlate {
       or die "can't call $xlate: $!";
     print OUT $code;
     close OUT or die "error closing STDOUT: $!";
+    if (defined($flavour) && $flavour =~ /masm/) {
+        unless (defined &ml_dsa_fixup_masm_asm_file) {
+            my $p = "${dir}ml_dsa_win64_xmm.pl";
+            $p = "./$p" unless $p =~ m|^/|;
+            do $p or die "can't load $p: $@ $!";
+        }
+        ml_dsa_fixup_masm_asm_file($output);
+    }
 }
 
 sub emit_raw {
@@ -189,13 +205,21 @@ sub prepare_gas_dump_for_xlate {
     $code =~ s/\n\s*\.section\s+\.note\.GNU-stack[\s\S]*\z/\n/;
     $code =~ s/\n\s*\.section\s+\.note\.gnu\.property[\s\S]*\z/\n/;
 
-    # NASM requires EXTERN for undefined call targets; emit gas .extern for xlate.
+    # NASM/MASM need EXTERN for true cross-TU call targets. Do not emit EXTERN
+    # for labels defined in this dump — MASM rejects EXTERN + PROC for the same
+    # name (A2005 symbol redefinition), which previously forced disabling AVX2
+    # on VC-*-masm.
+    my %defined;
+    while ($code =~ /^([A-Za-z_][\w]*):/mg) {
+        $defined{$1} = 1;
+    }
     my %ext;
     while ($code =~ /\bcall\s+([A-Za-z_][\w.]*)/g) {
         my $sym = $1;
         $sym =~ s/@PLT\z//;
         next if $sym =~ /^\./;
         next if $sym eq "__stack_chk_fail";
+        next if $defined{$sym};
         $ext{$sym} = 1;
     }
     if (%ext) {
