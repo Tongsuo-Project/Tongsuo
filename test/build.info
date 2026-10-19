@@ -295,6 +295,16 @@ IF[{- !$disabled{tests} -}]
     DEPEND[ml_dsa_test]=../libcrypto.a libtestutil.a
   ENDIF
 
+  IF[{- !$disabled{sm4th} -}]
+    PROGRAMS{noinst}=sm4th_test sm4th_fault_test
+    SOURCE[sm4th_test]=sm4th_test.c
+    INCLUDE[sm4th_test]=../include ../apps/include
+    DEPEND[sm4th_test]=../libcrypto.a libtestutil.a
+    SOURCE[sm4th_fault_test]=sm4th_fault_test.c sm4th_fault_bavc.c
+    INCLUDE[sm4th_fault_test]=../include
+    DEPEND[sm4th_fault_test]=../libcrypto.a
+  ENDIF
+
   SOURCE[v3nametest]=v3nametest.c
   INCLUDE[v3nametest]=../include ../apps/include
   DEPEND[v3nametest]=../libcrypto libtestutil.a

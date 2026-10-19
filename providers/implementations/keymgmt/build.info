@@ -13,6 +13,7 @@ $ML_DSA_GOAL=../../libdefault.a ../../libfips.a
 $ML_KEM_GOAL=../../libdefault.a ../../libfips.a
 $TLS_ML_KEM_HYBRID_GOAL=../../libdefault.a ../../libfips.a
 $SLH_DSA_GOAL=../../libdefault.a ../../libfips.a
+$SM4TH_GOAL=../../libdefault.a
 
 IF[{- !$disabled{dh} -}]
   SOURCE[$DH_GOAL]=dh_kmgmt.c
@@ -62,4 +63,8 @@ ENDIF
 
 IF[{- !$disabled{'slh-dsa'} -}]
   SOURCE[$SLH_DSA_GOAL]=slh_dsa_kmgmt.c
+ENDIF
+
+IF[{- !$disabled{sm4th} -}]
+  SOURCE[$SM4TH_GOAL]=sm4th_kmgmt.c
 ENDIF

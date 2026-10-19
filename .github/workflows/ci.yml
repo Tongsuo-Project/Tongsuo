@@ -46,7 +46,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: config
-      run: CPPFLAGS=-ansi ./config --banner=Configured no-asm no-makedepend enable-buildtest-c++ enable-fips enable-quic --strict-warnings -D_DEFAULT_SOURCE && perl configdata.pm --dump
+      run: CPPFLAGS=-ansi ./config --banner=Configured no-asm no-makedepend enable-buildtest-c++ enable-fips enable-quic enable-sm4th --strict-warnings -D_DEFAULT_SOURCE && perl configdata.pm --dump
     - name: make
       run: make -s -j4
 
@@ -73,6 +73,25 @@ jobs:
       run: make -s -j4
     - name: make test
       run: make test HARNESS_JOBS=${HARNESS_JOBS:-4}
+
+  sm4th:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        cc: [gcc, clang]
+        options: ["", "no-filenames no-threads no-shared"]
+    env:
+      CC: ${{ matrix.cc }}
+      SM4TH_OPTIONS: ${{ matrix.options }}
+    steps:
+    - uses: actions/checkout@v4
+    - name: config
+      run: ./config --banner=Configured enable-sm4th --strict-warnings $SM4TH_OPTIONS && perl configdata.pm --dump
+    - name: make
+      run: make -s -j4
+    - name: SM4th regression and fault injection tests
+      run: make test TESTS=test_sm4th
 
   minimal:
     runs-on: ubuntu-latest

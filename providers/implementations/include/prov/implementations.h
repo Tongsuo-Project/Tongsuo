@@ -260,6 +260,10 @@ extern const OSSL_DISPATCH ossl_ed448_keymgmt_functions[];
 extern const OSSL_DISPATCH ossl_sm2_keymgmt_functions[];
 # endif
 #endif
+#ifndef OPENSSL_NO_SM4TH
+extern const OSSL_DISPATCH ossl_sm4th_f_keymgmt_functions[];
+extern const OSSL_DISPATCH ossl_sm4th_s_keymgmt_functions[];
+#endif
 extern const OSSL_DISPATCH ossl_ml_dsa_44_keymgmt_functions[];
 extern const OSSL_DISPATCH ossl_ml_dsa_65_keymgmt_functions[];
 extern const OSSL_DISPATCH ossl_ml_dsa_87_keymgmt_functions[];
@@ -366,6 +370,10 @@ extern const OSSL_DISPATCH ossl_sm2_signature_functions[];
 extern const OSSL_DISPATCH ossl_ml_dsa_44_signature_functions[];
 extern const OSSL_DISPATCH ossl_ml_dsa_65_signature_functions[];
 extern const OSSL_DISPATCH ossl_ml_dsa_87_signature_functions[];
+#ifndef OPENSSL_NO_SM4TH
+extern const OSSL_DISPATCH ossl_sm4th_f_signature_functions[];
+extern const OSSL_DISPATCH ossl_sm4th_s_signature_functions[];
+#endif
 #ifndef OPENSSL_NO_SLH_DSA
 extern const OSSL_DISPATCH ossl_slh_dsa_sha2_128s_signature_functions[];
 extern const OSSL_DISPATCH ossl_slh_dsa_sha2_128f_signature_functions[];

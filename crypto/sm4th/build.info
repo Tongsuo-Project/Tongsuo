@@ -1,0 +1,19 @@
+LIBS=../../libcrypto
+
+# SM4-in-the-Head (SM4th) signature scheme.
+# Core from aux_notes_20261012/code (spec-faithful reimplementation);
+# key/sigops layer mirrors Tongsuo_bak (include/crypto/sm4th.h).
+
+IF[{- !$disabled{sm4th} -}]
+  SOURCE[../../libcrypto]= \
+    sm4th_params.c \
+    sm4th_key.c \
+    sm4th_sigops.c \
+    fields.c \
+    blockcipher.c \
+    uhash.c \
+    bavc.c \
+    owf.c \
+    sign.c
+
+ENDIF

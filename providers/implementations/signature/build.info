@@ -8,6 +8,7 @@ $RSA_GOAL=../../libdefault.a ../../libfips.a
 $SM2_GOAL=../../libdefault.a
 $ML_DSA_GOAL=../../libdefault.a ../../libfips.a
 $SLH_DSA_GOAL=../../libdefault.a ../../libfips.a
+$SM4TH_GOAL=../../libdefault.a
 
 IF[{- !$disabled{dsa} -}]
   SOURCE[$DSA_GOAL]=dsa_sig.c
@@ -42,4 +43,8 @@ ENDIF
 
 IF[{- !$disabled{'slh-dsa'} -}]
   SOURCE[$DSA_GOAL]=slh_dsa_sig.c
+ENDIF
+
+IF[{- !$disabled{sm4th} -}]
+  SOURCE[$SM4TH_GOAL]=sm4th_sig.c
 ENDIF
