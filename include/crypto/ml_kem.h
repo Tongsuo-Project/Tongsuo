@@ -179,6 +179,7 @@ typedef struct ossl_ml_kem_key_st {
     uint8_t *pkhash;                        /* Public key hash */
     struct ossl_ml_kem_scalar_st *t;        /* Public key vector */
     struct ossl_ml_kem_scalar_st *m;        /* Pre-computed pubkey matrix */
+    int m_valid;                            /* Whether |m| is expanded */
     struct ossl_ml_kem_scalar_st *s;        /* Private key secret vector */
     uint8_t *z;                             /* Private key FO failure secret */
     uint8_t *d;                             /* Private key seed */
