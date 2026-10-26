@@ -5,6 +5,9 @@ $COMMON=ml_kem.c ml_kem_avx2.c
 $MLKEMASM=
 $MLKEMDEF=
 IF[{- !$disabled{asm} -}]
+  # Polynomial-arithmetic backend (existing perlasm line from dev/perf_opt)
+  GENERATE[ml_kem_poly-x86_64.s]=asm/ml_kem_poly-x86_64.pl
+  # Full-chain ML-KEM AVX2 implementation (PR #817): per-parameter-set wrappers
   GENERATE[asm/mlkem_avx2/mlkem512_kem.c]=asm/mlkem_avx2/mkwrapper.pl kem 2
   GENERATE[asm/mlkem_avx2/mlkem512_indcpa.c]=asm/mlkem_avx2/mkwrapper.pl indcpa 2
   GENERATE[asm/mlkem_avx2/mlkem512_polyvec.c]=asm/mlkem_avx2/mkwrapper.pl polyvec 2
@@ -48,7 +51,8 @@ IF[{- !$disabled{asm} -}]
   GENERATE[asm/mlkem_avx2/mlkem1024_invntt.S]=asm/mlkem_avx2/mkwrapper.pl invntt 4
   GENERATE[asm/mlkem_avx2/mlkem1024_shuffle.S]=asm/mlkem_avx2/mkwrapper.pl shuffle 4
 
-  $MLKEMASM_x86_64=asm/mlkem_avx2/mlkem512_kem.c \
+  $MLKEMASM_x86_64=ml_kem_poly-x86_64.s \
+                   asm/mlkem_avx2/mlkem512_kem.c \
                    asm/mlkem_avx2/mlkem512_indcpa.c \
                    asm/mlkem_avx2/mlkem512_polyvec.c \
                    asm/mlkem_avx2/mlkem512_poly.c \
