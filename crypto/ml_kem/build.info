@@ -51,8 +51,13 @@ IF[{- !$disabled{asm} -}]
   GENERATE[asm/mlkem_avx2/mlkem1024_invntt.S]=asm/mlkem_avx2/mkwrapper.pl invntt 4
   GENERATE[asm/mlkem_avx2/mlkem1024_shuffle.S]=asm/mlkem_avx2/mkwrapper.pl shuffle 4
 
-  $MLKEMASM_x86_64=ml_kem_poly-x86_64.s \
-                   asm/mlkem_avx2/mlkem512_kem.c \
+  # The ML-KEM AVX2 wrappers rely on GNU-style .S assembly and on
+  # per-function target pragmas that MSVC cannot compile, so on VC
+  # targets keep only the perlasm polynomial backend for now.
+  $MLKEMASM_x86_64=ml_kem_poly-x86_64.s
+  IF[{- $config{target} !~ /^(?:VC-|BC-)/ -}]
+    $MLKEMASM_x86_64=ml_kem_poly-x86_64.s \
+                     asm/mlkem_avx2/mlkem512_kem.c \
                    asm/mlkem_avx2/mlkem512_indcpa.c \
                    asm/mlkem_avx2/mlkem512_polyvec.c \
                    asm/mlkem_avx2/mlkem512_poly.c \
@@ -97,7 +102,8 @@ IF[{- !$disabled{asm} -}]
                    asm/mlkem_avx2/fips202.c \
                    asm/mlkem_avx2/fips202x4.c \
                    asm/mlkem_avx2/keccak4x/KeccakP-1600-times4-SIMD256.c
-  $MLKEMDEF_x86_64=ML_KEM_AVX2_ASM
+    $MLKEMDEF_x86_64=ML_KEM_AVX2_ASM
+  ENDIF
 
   IF[$MLKEMASM_{- $target{asm_arch} -}]
     $MLKEMASM=$MLKEMASM_{- $target{asm_arch} -}

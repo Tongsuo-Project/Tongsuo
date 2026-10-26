@@ -1029,3 +1029,5 @@ size_t KeccakP1600times4_12rounds_FastLoop_Absorb(void *states, unsigned int lan
         return data - dataStart;
     }
 }
+
+#include "ml_kem_avx2_target_end.h"

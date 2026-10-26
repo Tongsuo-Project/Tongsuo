@@ -199,3 +199,5 @@ void shake256x4(uint8_t *out0,
     }
   }
 }
+
+#include "ml_kem_avx2_target_end.h"

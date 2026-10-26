@@ -60,4 +60,10 @@ print $fh <<"EOF";
 #include "$module.$extension"
 EOF
 
+if ($c_modules{$module}) {
+    print $fh <<'EOF';
+#include "ml_kem_avx2_target_end.h"
+EOF
+}
+
 close $fh or die "cannot close output: $!\n";
