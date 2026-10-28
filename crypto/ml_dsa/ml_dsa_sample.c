@@ -160,12 +160,13 @@ static int rej_bounded_poly(EVP_MD_CTX *h_ctx, const EVP_MD *md,
                             const uint8_t *seed, size_t seed_len, POLY *out)
 {
     int j = 0;
+    int ret = 0;
     uint32_t z0, z1;
     uint8_t blocks[SHAKE256_BLOCKSIZE], *b, *end = blocks + sizeof(blocks);
 
     /* Instead of just squeezing 1 byte at a time, we grab a whole block */
     if (!shake_xof(h_ctx, md, seed, seed_len, blocks, sizeof(blocks)))
-        return 0;
+        goto end;
 
     while (1) {
         for (b = blocks; b < end; b++) {
@@ -173,15 +174,23 @@ static int rej_bounded_poly(EVP_MD_CTX *h_ctx, const EVP_MD *md,
             z1 = *b >> 4;   /* high nibble of byte */
 
             if (coef_from_nibble(z0, &out->coeff[j])
-                    && ++j >= ML_DSA_NUM_POLY_COEFFICIENTS)
-                return 1;
+                    && ++j >= ML_DSA_NUM_POLY_COEFFICIENTS) {
+                ret = 1;
+                goto end;
+            }
             if (coef_from_nibble(z1, &out->coeff[j])
-                    && ++j >= ML_DSA_NUM_POLY_COEFFICIENTS)
-                return 1;
+                    && ++j >= ML_DSA_NUM_POLY_COEFFICIENTS) {
+                ret = 1;
+                goto end;
+            }
         }
         if (!EVP_DigestSqueeze(h_ctx, blocks, sizeof(blocks)))
-            return 0;
+            goto end;
     }
+end:
+    /* blocks holds the SHAKE256 stream the secret s1/s2 coefficients come from */
+    OPENSSL_cleanse(blocks, sizeof(blocks));
+    return ret;
 }
 
 /**
@@ -274,6 +283,8 @@ int ossl_ml_dsa_vector_expand_S(EVP_MD_CTX *h_ctx, const EVP_MD *md, int eta,
     }
     ret = 1;
 err:
+    /* derived_seed contains a verbatim copy of the private seed */
+    OPENSSL_cleanse(derived_seed, sizeof(derived_seed));
     return ret;
 }
 
@@ -284,9 +295,13 @@ int ossl_ml_dsa_poly_expand_mask(POLY *out, const uint8_t *seed, size_t seed_len
 {
     uint8_t buf[32 * 20];
     size_t buf_len = 32 * (gamma1 == ML_DSA_GAMMA1_TWO_POWER_19 ? 20 : 18);
+    int ret;
 
-    return shake_xof(h_ctx, md, seed, seed_len, buf, buf_len)
+    ret = shake_xof(h_ctx, md, seed, seed_len, buf, buf_len)
         && ossl_ml_dsa_poly_decode_expand_mask(out, buf, buf_len, gamma1);
+    /* buf decodes into the secret mask polynomial y */
+    OPENSSL_cleanse(buf, sizeof(buf));
+    return ret;
 }
 
 /*

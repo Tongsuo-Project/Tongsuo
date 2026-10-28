@@ -157,6 +157,8 @@ vector_expand_mask(VECTOR *out, const uint8_t *rho_prime, size_t rho_prime_len,
         poly_expand_mask(out->poly + i, derived_seed, sizeof(derived_seed),
                          gamma1, h_ctx, md);
     }
+    /* derived_seed holds a verbatim copy of the secret rho_prime */
+    OPENSSL_cleanse(derived_seed, sizeof(derived_seed));
 }
 
 /* Scale back previously rounded value */

@@ -466,7 +466,7 @@ int ossl_ml_dsa_generate_key(ML_DSA_KEY *out)
         if ((out->seed = OPENSSL_malloc(seed_len)) == NULL)
             return 0;
         if (RAND_priv_bytes_ex(out->libctx, out->seed, seed_len, 0) <= 0) {
-            OPENSSL_free(out->seed);
+            OPENSSL_clear_free(out->seed, seed_len);
             out->seed = NULL;
             return 0;
         }
@@ -485,7 +485,8 @@ int ossl_ml_dsa_generate_key(ML_DSA_KEY *out)
                            "explicit %s private key does not match seed",
                            out->params->alg);
         }
-        OPENSSL_free(sk);
+        /* sk is the raw private key encoding */
+        OPENSSL_clear_free(sk, out->params->sk_len);
     }
     return ret;
 }

@@ -244,6 +244,9 @@ int ossl_slh_wots_sign(SLH_DSA_HASH_CTX *ctx, const uint8_t *msg,
     }
     ret = 1;
 err:
+    /* sk holds the per-chain PRF(SK_SEED) secrets */
+    OPENSSL_cleanse(sk, sizeof(sk));
+    OPENSSL_cleanse(msg_and_csum_nibbles, sizeof(msg_and_csum_nibbles));
     return ret;
 }
 
