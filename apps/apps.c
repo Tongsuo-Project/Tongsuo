@@ -1345,7 +1345,7 @@ ENGINE *setup_engine(const char *engine, int debug)
 {
     ENGINE *e = NULL;
 #ifndef OPENSSL_NO_ENGINE
-    char *p;
+    const char *p;
     char *id = NULL;
     const char *eng = engine;
     unsigned int meth = ENGINE_METHOD_NONE;
