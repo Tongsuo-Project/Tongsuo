@@ -52,8 +52,8 @@ static int test_afalg_aes_cbc(int keysize_idx)
     unsigned char iv[] = "\x3d\xaf\xba\x42\x9d\x9e\xb4\x30"
                          "\xb4\x22\xda\x80\x2c\x9f\xac\x41";
     /* input = "Single block msg\n"  17Bytes*/
-    unsigned char in[BUFFER_SIZE] = "\x53\x69\x6e\x67\x6c\x65\x20\x62"
-                                    "\x6c\x6f\x63\x6b\x20\x6d\x73\x67\x0a";
+    unsigned char in[] = "\x53\x69\x6e\x67\x6c\x65\x20\x62"
+                         "\x6c\x6f\x63\x6b\x20\x6d\x73\x67\x0a";
     unsigned char ebuf[BUFFER_SIZE + 32];
     unsigned char dbuf[BUFFER_SIZE + 32];
     unsigned char encresult_128[] = "\xe3\x53\x77\x9c\x10\x79\xae\xb8"
