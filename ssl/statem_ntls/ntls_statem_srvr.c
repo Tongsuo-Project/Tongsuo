@@ -1479,6 +1479,8 @@ WORK_STATE tls_post_process_client_hello_ntls(SSL_CONNECTION *s, WORK_STATE wst)
         wst = WORK_MORE_C;
     }
 
+    ssl_free_rbio_buffer(s);
+
     return WORK_FINISHED_STOP;
  err:
     return WORK_ERROR;

@@ -6002,6 +6002,36 @@ int ssl_free_wbio_buffer(SSL_CONNECTION *s)
     return 1;
 }
 
+#ifndef OPENSSL_NO_NTLS
+int ssl_init_rbio_buffer(SSL_CONNECTION *s)
+{
+    BIO *bbio;
+
+    bbio = BIO_new(BIO_f_buffer());
+    if (bbio == NULL) {
+        ERR_raise(ERR_LIB_SSL, ERR_R_BUF_LIB);
+        return 0;
+    }
+
+    s->rbio = BIO_push(bbio, s->rbio);
+    s->rlayer.rrlmethod->set1_bio(s->rlayer.rrl, s->rbio);
+
+    return 1;
+}
+
+int ssl_free_rbio_buffer(SSL_CONNECTION *s)
+{
+    BIO *bbio;
+
+    bbio = s->rbio;
+    s->rbio = BIO_pop(s->rbio);
+    s->rlayer.rrlmethod->set1_bio(s->rlayer.rrl, s->rbio);
+
+    BIO_free(bbio);
+
+    return 1;
+}
+#endif
 void SSL_CTX_set_quiet_shutdown(SSL_CTX *ctx, int mode)
 {
     ctx->quiet_shutdown = mode;

@@ -1837,22 +1837,17 @@ int SSL_connection_is_ntls(SSL_CONNECTION *s, int is_server)
             s->preread_len += ret;
 
         if (s->preread_len >= sizeof(s->preread_buf)) {
-            BIO *bbio = BIO_new(BIO_f_buffer());
-            if (bbio == NULL) {
-                SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+            if (ssl_init_rbio_buffer(s) != 1)
                 return -1;
-            }
 
-            if (BIO_set_buffer_read_data(bbio, s->preread_buf,
+            if (BIO_set_buffer_read_data(s->rbio, s->preread_buf,
                                          sizeof(s->preread_buf))
                 != 1) {
-                BIO_vfree(bbio);
                 SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
                 return -1;
             }
 
             s->rwstate = SSL_NOTHING;
-            s->rbio = BIO_push(bbio, s->rbio);
 
             p = &s->preread_buf[1];
             n2s(p, version);
