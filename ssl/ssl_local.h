@@ -2911,6 +2911,11 @@ __owur int dtls1_dispatch_alert(SSL *s);
 __owur int ssl_init_wbio_buffer(SSL_CONNECTION *s);
 int ssl_free_wbio_buffer(SSL_CONNECTION *s);
 
+#ifndef OPENSSL_NO_NTLS
+__owur int ssl_init_rbio_buffer(SSL_CONNECTION *s);
+int ssl_free_rbio_buffer(SSL_CONNECTION *s);
+#endif
+
 __owur int tls1_change_cipher_state(SSL_CONNECTION *s, int which);
 __owur int tls1_setup_key_block(SSL_CONNECTION *s);
 __owur size_t tls1_final_finish_mac(SSL_CONNECTION *s, const char *str,
