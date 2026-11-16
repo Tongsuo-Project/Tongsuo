@@ -9,7 +9,6 @@ jobs:
     strategy:
       matrix:
         os:
-        - windows-2019
         - windows-2022
         platform:
         - arch: win64
@@ -50,7 +49,6 @@ jobs:
     strategy:
       matrix:
         os:
-        - windows-2019
         - windows-2022
     runs-on: ${{matrix.os}}
     steps:
@@ -74,7 +72,6 @@ jobs:
     strategy:
       matrix:
         os:
-        - windows-2019
         - windows-2022
     runs-on: ${{matrix.os}}
     steps:
@@ -98,7 +95,6 @@ jobs:
     strategy:
       matrix:
         os:
-          - windows-2019
           - windows-2022
         platform:
           - arch: win64
