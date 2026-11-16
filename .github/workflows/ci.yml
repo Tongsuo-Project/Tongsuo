@@ -338,10 +338,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        RUST:
-          - 1.51.0
         PYTHON:
-          - 3.9
+          - 3.12
     steps:
     - uses: actions/checkout@v2
       with:
@@ -351,15 +349,12 @@ jobs:
     - name: make
       run: make -s -j4
     - name: Setup Python
-      uses: actions/setup-python@v2.2.2
+      uses: actions/setup-python@v7
       with:
         python-version: ${{ matrix.PYTHON }}
-    - uses: actions-rs/toolchain@v1
+    - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
       with:
-        profile: minimal
-        toolchain: ${{ matrix.RUST }}
-        override: true
-        default: true
+        toolchain: stable
     - name: test external pyca
       run: make test TESTS="test_external_pyca" VERBOSE=1
 
