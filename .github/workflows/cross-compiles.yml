@@ -59,17 +59,20 @@ jobs:
             fips: no,
             tests: -test_includes -test_store -test_x509_store
           }, {
+            os: ubuntu-24.04,
             arch: mips-linux-gnu,
             libs: libc6-dev-mips-cross,
             target: -static linux-mips32,
             fips: no,
             tests: -test_includes -test_store -test_x509_store
           }, {
+            os: ubuntu-24.04,
             arch: mips64-linux-gnuabi64,
             libs: libc6-dev-mips64-cross,
             target: -static linux64-mips64,
             fips: no
           }, {
+            os: ubuntu-24.04,
             arch: mipsel-linux-gnu,
             libs: libc6-dev-mipsel-cross,
             target: linux-mips32,
@@ -112,18 +115,20 @@ jobs:
             target: -mcfv4e -mxgot linux-latomic -Wno-stringop-overflow no-quic,
             tests: none
           }, {
+            os: ubuntu-24.04,
             arch: mips-linux-gnu,
             libs: libc6-dev-mips-cross,
             target: linux-mips32,
             tests: none
           }, {
+            os: ubuntu-24.04,
             arch: mips64-linux-gnuabi64,
             libs: libc6-dev-mips64-cross,
             target: linux64-mips64,
             tests: none
           }
         ]
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.platform.os || 'ubuntu-latest' }}
     steps:
     - name: install packages
       if: matrix.platform.version == ''
