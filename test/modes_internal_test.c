@@ -30,8 +30,8 @@ typedef struct {
  ***/
 
 /* cts128 test vectors from RFC 3962 */
-static const unsigned char cts128_test_key[16] = "chicken teriyaki";
-static const unsigned char cts128_test_input[64] =
+static const unsigned char cts128_test_key[] = "chicken teriyaki";
+static const unsigned char cts128_test_input[] =
     "I would like the" " General Gau's C"
     "hicken, please, " "and wonton soup.";
 static const unsigned char cts128_test_iv[] =
