@@ -1290,6 +1290,12 @@ IF[{- !$disabled{tests} -}]
     INCLUDE[ssl_ntls_api_test]=.. ../include ../apps/include
     DEPEND[ssl_ntls_api_test]=../libcrypto ../libssl libtestutil.a
   ENDIF
+  IF[{- !$disabled{'ntls'} -}]
+    PROGRAMS{noinst}=ntls_empty_frag_test
+    SOURCE[ntls_empty_frag_test]=ntls_empty_frag_test.c
+    INCLUDE[ntls_empty_frag_test]=.. ../include ../apps/include
+    DEPEND[ntls_empty_frag_test]=../libcrypto ../libssl libtestutil.a
+  ENDIF
 
   IF[{- !$disabled{'ec'} -}]
     PROGRAMS{noinst}=ecpmeth_test
