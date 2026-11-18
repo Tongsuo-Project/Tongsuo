@@ -5611,14 +5611,14 @@ static int tick_key_cb(SSL *s, unsigned char key_name[16],
                        unsigned char iv[EVP_MAX_IV_LENGTH], EVP_CIPHER_CTX *ctx,
                        HMAC_CTX *hctx, int enc)
 {
-    const unsigned char tick_aes_key[16] = "0123456789abcdef";
-    const unsigned char tick_hmac_key[16] = "0123456789abcdef";
+    const unsigned char tick_aes_key[] = "0123456789abcdef";
+    const unsigned char tick_hmac_key[] = "0123456789abcdef";
 
     tick_key_cb_called = 1;
     memset(iv, 0, AES_BLOCK_SIZE);
     memset(key_name, 0, 16);
     if (!EVP_CipherInit_ex(ctx, EVP_aes_128_cbc(), NULL, tick_aes_key, iv, enc)
-            || !HMAC_Init_ex(hctx, tick_hmac_key, sizeof(tick_hmac_key),
+            || !HMAC_Init_ex(hctx, tick_hmac_key, 16,
                              EVP_sha256(), NULL))
         return -1;
 
