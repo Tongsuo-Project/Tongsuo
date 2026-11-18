@@ -2538,6 +2538,11 @@ WORK_STATE tls_post_process_client_hello(SSL_CONNECTION *s, WORK_STATE wst)
     }
 #endif
 
+#ifndef OPENSSL_NO_NTLS
+    if (s->preread_len >= sizeof(s->preread_buf))
+        ssl_free_rbio_buffer_ntls(s);
+#endif
+
     return WORK_FINISHED_STOP;
  err:
     return WORK_ERROR;
