@@ -80,7 +80,7 @@ EVP_KDF_CTX *EVP_KDF_CTX_new_id(int id)
     }
 
     if (kmeth->new != NULL && (ret->impl = kmeth->new()) == NULL) {
-        EVP_KDF_CTX_free(ret);
+        OPENSSL_free(ret);
         return NULL;
     }
 
