@@ -1372,8 +1372,7 @@ tls_int_new_record_layer(OSSL_LIB_CTX *libctx, const char *propq, int vers,
 
     if ((rl->options & SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS) == 0
             && rl->version <= TLS1_VERSION
-            && !EVP_CIPHER_is_a(ciph, "NULL")
-            && !EVP_CIPHER_is_a(ciph, "RC4")) {
+            && EVP_CIPHER_get_mode(ciph) == EVP_CIPH_CBC_MODE) {
         /*
          * Enable vulnerability countermeasure for CBC ciphers with known-IV
          * problem (http://www.openssl.org/~bodo/tls-cbc.txt)
