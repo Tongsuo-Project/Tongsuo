@@ -35,7 +35,7 @@ jobs:
     - name: make test
       run: make test HARNESS_JOBS=${HARNESS_JOBS:-4}
     - name: generate coverage info
-      run: lcov --ignore-errors mismatch -d . -c -o ./lcov.info
+      run: lcov --ignore-errors mismatch,inconsistent -d . -c -o ./lcov.info
     - name: Coveralls upload
       uses: coverallsapp/github-action@v1.1.2
       with:
