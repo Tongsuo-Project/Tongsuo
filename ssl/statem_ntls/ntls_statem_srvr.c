@@ -1479,6 +1479,9 @@ WORK_STATE tls_post_process_client_hello_ntls(SSL_CONNECTION *s, WORK_STATE wst)
         wst = WORK_MORE_C;
     }
 
+    if ((s->preread_len >= sizeof(s->preread_buf)) && SSL_IS_FIRST_HANDSHAKE(s))
+        ssl_free_rbio_buffer_ntls(s);
+
     return WORK_FINISHED_STOP;
  err:
     return WORK_ERROR;
