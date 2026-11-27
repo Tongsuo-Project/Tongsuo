@@ -222,8 +222,9 @@ static int slh_dsa_sign(void *vctx, unsigned char *sig, size_t *siglen,
                             ctx->context_string, ctx->context_string_len,
                             opt_rand, ctx->msg_encode,
                             sig, siglen, sigsize);
-    if (opt_rand != add_rand)
-        OPENSSL_cleanse(opt_rand, n);
+    /* add_rand holds fresh signing randomness on the randomized path */
+    if (opt_rand == add_rand)
+        OPENSSL_cleanse(add_rand, sizeof(add_rand));
     return ret;
 }
 
